@@ -46,7 +46,7 @@ const normalizeExcelValue = (value) => {
     return value;
 };
 
-const CORE_HEADERS = ['appVersion', 'question', 'answer', 'baselineAnswer', 'flagged'];
+const CORE_HEADERS = ['appVersion', 'question', 'answer', 'redactedAnswer', 'referenceAnswer', 'flagged'];
 const ANALYZER_DEBUG_COLUMNS = new Set(['flagged', 'differenceFound']);
 
 const resolveAnalyzerId = (config = {}) => {
@@ -113,7 +113,7 @@ const buildOrderedHeaders = (flattenedItems, analyzerId = '', analyzerOutputColu
     );
     const nonDateHeaders = remainingHeaders.filter((header) => !dateHeaders.includes(header));
     const tailHeaders = nonDateHeaders.filter((header) =>
-        (header.startsWith('baseline') && header !== 'baselineAnswer') || header.startsWith('originalData')
+        (header.startsWith('reference') && header !== 'referenceAnswer') || header.startsWith('originalData')
     );
     const regularHeaders = nonDateHeaders.filter((header) => !tailHeaders.includes(header));
 

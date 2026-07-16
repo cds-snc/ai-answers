@@ -47,6 +47,7 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
     static id = 'similar-answer';
     static inputType = 'universal';
     static outputColumns = [
+        'explanation',
         'status',
         'label',
         'flagged',
@@ -54,7 +55,7 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
         'confidence',
         'differenceExplanation',
         'changedFacts',
-        'baselineOnlyFacts',
+        'referenceOnlyFacts',
         'currentOnlyFacts',
         'ignoredDifferences'
     ];
@@ -79,10 +80,10 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
             .trim();
     }
 
-    _buildPrompt({ question, answer, baselineAnswer }) {
+    _buildPrompt({ question, answer, referenceAnswer }) {
         return `You are a strict answer-drift analyzer for an experiment system.
 
-Compare the BASELINE ANSWER from a previous run against the CURRENT ANSWER from a new run.
+Compare the REFERENCE ANSWER from a previous run against the CURRENT ANSWER from a new run.
 Your job is to notice meaningful differences. Be especially sensitive to concrete facts:
 - dates, deadlines, months, years, durations, timeframes, and effective dates
 - numbers, amounts, percentages, limits, counts, ages, scores, fees, rates, and units
@@ -97,8 +98,8 @@ If you are uncertain whether a concrete difference matters, use "needs-review" a
 QUESTION:
 ${question || 'N/A'}
 
-BASELINE ANSWER:
-${baselineAnswer}
+REFERENCE ANSWER:
+${referenceAnswer}
 
 CURRENT ANSWER:
 ${answer}
@@ -118,7 +119,7 @@ Return ONLY a JSON object with this shape:
       "impact": "Why this matters"
     }
   ],
-  "baselineOnlyFacts": ["Material facts present only in the baseline answer"],
+  "referenceOnlyFacts": ["Material facts present only in the reference answer"],
   "currentOnlyFacts": ["Material facts present only in the current answer"],
   "ignoredDifferences": ["Non-material wording or formatting differences ignored"]
 }`;
@@ -140,7 +141,7 @@ Return ONLY a JSON object with this shape:
             confidence: typeof result?.confidence === 'number' ? result.confidence : null,
             differenceExplanation: result?.differenceExplanation || '',
             changedFacts: Array.isArray(result?.changedFacts) ? result.changedFacts : [],
-            baselineOnlyFacts: Array.isArray(result?.baselineOnlyFacts) ? result.baselineOnlyFacts : [],
+            referenceOnlyFacts: Array.isArray(result?.referenceOnlyFacts) ? result.referenceOnlyFacts : [],
             currentOnlyFacts: Array.isArray(result?.currentOnlyFacts) ? result.currentOnlyFacts : [],
             ignoredDifferences: Array.isArray(result?.ignoredDifferences) ? result.ignoredDifferences : []
         };
@@ -149,18 +150,18 @@ Return ONLY a JSON object with this shape:
     async analyze(input) {
         const question = input?.question || '';
         const answer = this._normalize(input?.answer);
-        const baselineAnswer = this._normalize(input?.baselineAnswer);
+        const referenceAnswer = this._normalize(input?.referenceAnswer);
 
-        if (!baselineAnswer) {
+        if (!referenceAnswer) {
             return {
                 status: 'baseline',
                 label: 'no-baseline',
                 flagged: false,
                 differenceFound: false,
                 confidence: 1,
-                differenceExplanation: 'No baseline answer was provided; this run can be used as the baseline for a future comparison.',
+                differenceExplanation: 'No reference answer was provided; this run can be used as the reference for a future comparison.',
                 changedFacts: [],
-                baselineOnlyFacts: [],
+                referenceOnlyFacts: [],
                 currentOnlyFacts: [],
                 ignoredDifferences: []
             };
@@ -173,20 +174,20 @@ Return ONLY a JSON object with this shape:
                 flagged: true,
                 differenceFound: true,
                 confidence: 1,
-                differenceExplanation: 'Current answer is empty while the baseline has an answer.',
+                    differenceExplanation: 'Current answer is empty while the reference has an answer.',
                 changedFacts: [{
                     type: 'answer-type',
-                    baseline: 'Baseline has an answer.',
+                    reference: 'Reference has an answer.',
                     current: 'Current answer is empty.',
-                    impact: 'The current run failed to provide the information that was available in the baseline run.'
+                    impact: 'The current run failed to provide the information that was available in the reference run.'
                 }],
-                baselineOnlyFacts: [],
+                referenceOnlyFacts: [],
                 currentOnlyFacts: [],
                 ignoredDifferences: []
             };
         }
 
-        if (answer === baselineAnswer) {
+        if (answer === referenceAnswer) {
             return {
                 status: 'pass',
                 label: 'same-meaning',
@@ -195,14 +196,14 @@ Return ONLY a JSON object with this shape:
                 confidence: 1,
                 differenceExplanation: 'Answers are identical after normalization.',
                 changedFacts: [],
-                baselineOnlyFacts: [],
+                referenceOnlyFacts: [],
                 currentOnlyFacts: [],
                 ignoredDifferences: []
             };
         }
 
         const llm = await this._getLLM();
-        const prompt = this._buildPrompt({ question, answer, baselineAnswer });
+        const prompt = this._buildPrompt({ question, answer, referenceAnswer });
         const response = await llm.invoke([{ role: 'user', content: prompt }]);
 
         try {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ExperimentalAnalyzerRegistry from '../ExperimentalAnalyzerRegistry.js';
+import AnalyzerBase from '../analyzers/AnalyzerBase.js';
 import path from 'path';
 
 describe('ExperimentalAnalyzerRegistry', () => {
@@ -43,6 +44,9 @@ describe('ExperimentalAnalyzerRegistry', () => {
         const similarAnswer = await ExperimentalAnalyzerRegistry.get('similar-answer');
         expect(similarAnswer).toBeDefined();
         expect(similarAnswer.nameKey).toBe('experimental.analysis.analyzers.similar-answer.name');
+
+        expect(all.every(analyzer => AnalyzerBase.standardOutputColumns
+            .every(column => analyzer.outputColumns.includes(column)))).toBe(true);
     });
 
     it('should return undefined for unknown analyzer', async () => {
@@ -54,5 +58,31 @@ describe('ExperimentalAnalyzerRegistry', () => {
         await ExperimentalAnalyzerRegistry.initialize();
         const processor = await ExperimentalAnalyzerRegistry.getProcessor('safety');
         expect(typeof processor).toBe('function');
+    });
+
+    it('normalizes analyzer output to the shared explanation contract', async () => {
+        await ExperimentalAnalyzerRegistry.initialize();
+        const processor = await ExperimentalAnalyzerRegistry.getProcessor('refusal');
+
+        const result = await processor({ answer: '<not-gc>Not a Government of Canada answer.</not-gc>', config: {} });
+
+        expect(result.explanation).toContain('prompt refusal');
+        expect(result).toMatchObject({
+            verdict: 'pass',
+            label: 'refusal-prompt',
+            flagged: false,
+            differenceFound: false
+        });
+    });
+
+    it('normalizes legacy fail verdicts to flagged', async () => {
+        await ExperimentalAnalyzerRegistry.initialize();
+        const processor = await ExperimentalAnalyzerRegistry.getProcessor('expert-scorer');
+
+        // The early answer checks avoid invoking the LLM.
+        const result = await processor({ answer: '', referenceAnswer: 'Reference answer', config: {} });
+
+        expect(result.verdict).toBe('flagged');
+        expect(result.flagged).toBe(true);
     });
 });

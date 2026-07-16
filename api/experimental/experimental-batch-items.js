@@ -3,7 +3,7 @@ import { ExperimentalBatchItem } from '../../models/experimentalBatchItem.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import { requireObjectIdString } from '../util/db-query.js';
 
-// Items that deviated from the golden/baseline answer or errored out.
+// Items that deviated from the reference answer or errored out.
 const ATTENTION_FILTER = { $or: [{ flagged: true }, { match: false }, { status: 'failed' }] };
 const ERRORS_FILTER = { status: 'failed' };
 
@@ -21,7 +21,8 @@ const buildItemFilter = (batchId, filter, row) => {
  * GET /api/experimental/experimental-batch-items/:id
  * Query: ?filter=all|attention|errors&page=1&limit=25
  *
- * Paginated batch items for the results drill-down view.
+ * Paginated chat groups for the results drill-down view. Items sharing a
+ * chatId stay together so a multiturn chat is never split across pages.
  * `originalData` is excluded to keep the payload small (it can contain
  * downloaded page content used by judges).
  */
@@ -45,12 +46,10 @@ async function handler(req, res) {
         }
 
         const query = buildItemFilter(id, filter, row);
-        const [items, totalItems, counts] = await Promise.all([
+        const [allItems, totalItems, counts] = await Promise.all([
             ExperimentalBatchItem.find(query)
                 .select('-originalData')
                 .sort({ rowIndex: 1, trialIndex: 1 })
-                .skip((page - 1) * limit)
-                .limit(limit)
                 .lean(),
             ExperimentalBatchItem.countDocuments(query),
             Promise.all([
@@ -60,17 +59,33 @@ async function handler(req, res) {
             ]).then(([total, attention, errors]) => ({ total, attention, errors }))
         ]);
 
+        // A missing chatId means the item is its own conversation. This keeps
+        // older datasets and single-row inputs behaving exactly as before.
+        const groupsByKey = new Map();
+        allItems.forEach((item, index) => {
+            const chatId = item.chatId || null;
+            const key = chatId || `item:${item._id || index}`;
+            if (!groupsByKey.has(key)) groupsByKey.set(key, { chatId, items: [] });
+            groupsByKey.get(key).items.push(item);
+        });
+        const groups = [...groupsByKey.values()];
+        const totalGroups = groups.length;
+        const pagedGroups = groups.slice((page - 1) * limit, page * limit);
+
         res.json({
             batch,
-            items,
+            // Keep items for clients that have not adopted grouped rendering.
+            items: pagedGroups.flatMap(group => group.items),
+            groups: pagedGroups,
             filter,
             row,
             counts,
             pagination: {
                 page,
                 limit,
-                total: totalItems,
-                pages: Math.ceil(totalItems / limit) || 1
+                total: totalGroups,
+                totalItems,
+                pages: Math.ceil(totalGroups / limit) || 1
             }
         });
     } catch (error) {

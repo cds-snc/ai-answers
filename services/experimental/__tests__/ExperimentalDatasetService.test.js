@@ -119,7 +119,7 @@ describe('ExperimentalDatasetService', () => {
 
         it('should normalize answer aliases into the canonical answer field', async () => {
             const data = [
-                { question: 'What is IA?', NewAnswer: 'Intelligence Artificielle' }
+                { question: 'What is IA?', response: 'Intelligence Artificielle' }
             ];
             const buffer = await createXlsxBuffer(data);
             const metadata = { name: 'Answer Alias Dataset', type: 'qa-pair' };
@@ -135,7 +135,7 @@ describe('ExperimentalDatasetService', () => {
             const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
             expect(rows).toHaveLength(1);
             expect(rows[0].data).toHaveProperty('answer', 'Intelligence Artificielle');
-            expect(rows[0].data).not.toHaveProperty('NewAnswer');
+            expect(rows[0].data).not.toHaveProperty('response');
         });
 
         it('should normalize chatId and referringUrl aliases from spreadsheet uploads', async () => {
@@ -160,7 +160,7 @@ describe('ExperimentalDatasetService', () => {
             expect(rows[0].data).toHaveProperty('referringUrl', 'https://www.sac-isc.gc.ca');
         });
 
-        it('should drop answer columns for question-only uploads', async () => {
+        it('should discard answer columns for question-only uploads', async () => {
             const data = [
                 { question: 'What is IA?', answer: 'Intelligence Artificielle' }
             ];
@@ -174,11 +174,22 @@ describe('ExperimentalDatasetService', () => {
                 userId,
                 'question-only.xlsx'
             );
-
             const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
-            expect(rows).toHaveLength(1);
-            expect(rows[0].data).toHaveProperty('question', 'What is IA?');
             expect(rows[0].data).not.toHaveProperty('answer');
+        });
+
+        it('should discard reference answer columns for question-only uploads', async () => {
+            const buffer = await createXlsxBuffer([{ question: 'What is IA?', referenceAnswer: 'Intelligence Artificielle' }]);
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer,
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                { name: 'Question Only Reference Dataset', type: 'question-only' },
+                userId,
+                'question-only-reference.xlsx'
+            );
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows[0].data).not.toHaveProperty('referenceAnswer');
         });
 
         it('should reject legacy xls uploads', async () => {
@@ -406,6 +417,38 @@ describe('ExperimentalDatasetService', () => {
             const result2 = await ExperimentalDatasetService.getDatasetRows(ds1._id, { page: 2, limit: 2 });
             expect(result2.rows).toHaveLength(1);
             expect(result2.rows[0].data.q).toBe('ds1-r3');
+        });
+    });
+
+    describe('exportDataset', () => {
+        it('should export dataset rows as csv with chatId, question and answer columns', async () => {
+            const ds = await ExperimentalDataset.create({ name: 'Export Dataset', type: 'qa-pair' });
+            await ExperimentalDatasetRow.create([
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 1,
+                    data: { chatId: 'chat-1', question: 'First question?', answer: 'First answer' }
+                },
+                {
+                    experimentalDataset: ds._id,
+                    rowIndex: 2,
+                    data: { chatId: 'chat-2', question: 'Second question?', answer: '' }
+                }
+            ]);
+
+            const result = await ExperimentalDatasetService.exportDataset(ds._id);
+
+            expect(result.dataset.name).toBe('Export Dataset');
+            expect(result.csvText.startsWith('\uFEFF')).toBe(true);
+            expect(result.csvText).toContain('chatId,question,answer');
+            expect(result.csvText).toContain('chat-1,First question?,First answer');
+            expect(result.csvText).toContain('chat-2,Second question?,');
+        });
+
+        it('should return null for a missing dataset', async () => {
+            const missingId = new mongoose.Types.ObjectId();
+            const result = await ExperimentalDatasetService.exportDataset(missingId);
+            expect(result).toBeNull();
         });
     });
 

@@ -14,12 +14,18 @@ const VERDICT_COLORS = {
  * List of batch items for the results drill-down. Rows open the
  * side-by-side detail view.
  */
-export default function BatchItemsTable({ items, lang = 'en', onSelect, showTrials = false }) {
+export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, showTrials = false }) {
     const { t } = useTranslations(lang);
+    const displayGroups = groups || (items || []).map(item => ({ chatId: item.chatId || null, items: [item] }));
 
-    if (!items || items.length === 0) {
+    if (displayGroups.length === 0) {
         return <GcdsText>{t('experimental.results.table.empty')}</GcdsText>;
     }
+
+    const rows = displayGroups.flatMap(group => group.items.map(item => ({
+        item,
+        chatId: group.chatId,
+    })));
 
     return (
         <div className="overflow-auto">
@@ -27,6 +33,7 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect, showTria
                 <thead>
                     <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                         <th className="p-200">{t('experimental.results.table.row')}</th>
+                        <th className="p-200">{t('experimental.results.table.chatId')}</th>
                         {showTrials && <th className="p-200">{t('experimental.results.table.trial')}</th>}
                         <th className="p-200">{t('experimental.results.table.question')}</th>
                         <th className="p-200">{t('experimental.results.table.verdict')}</th>
@@ -35,15 +42,16 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect, showTria
                     </tr>
                 </thead>
                 <tbody>
-                    {items.map((item, index) => {
+                    {rows.map(({ item, chatId }, selectedIndex) => {
                         const verdict = getItemVerdict(item);
                         return (
                             <tr
-                                key={item._id || index}
+                                key={item._id || selectedIndex}
                                 style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
-                                onClick={() => onSelect(index)}
+                                onClick={() => onSelect(selectedIndex)}
                             >
-                                <td className="p-200">{formatNumber(item.rowIndex ?? (index + 1), lang)}</td>
+                                <td className="p-200">{formatNumber(item.rowIndex ?? (selectedIndex + 1), lang)}</td>
+                                <td className="p-200">{chatId || t('experimental.results.table.noChatId')}</td>
                                 {showTrials && <td className="p-200">{formatNumber(item.trialIndex || 1, lang)}</td>}
                                 <td className="p-200">{truncate(item.question, 90)}</td>
                                 <td className="p-200">
@@ -58,7 +66,7 @@ export default function BatchItemsTable({ items, lang = 'en', onSelect, showTria
                                         buttonRole="secondary"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onSelect(index);
+                                            onSelect(selectedIndex);
                                         }}
                                     >
                                         {t('experimental.results.table.view')}

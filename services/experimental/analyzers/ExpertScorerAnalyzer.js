@@ -1,6 +1,7 @@
 import AnalyzerBase from './AnalyzerBase.js';
 import { createJudgeLLM } from '../../../agents/AgentFactory.js';
 import { EXPERT_SCORER_PROMPT } from '../../../agents/prompts/judges/ExpertScorerPrompt.js';
+import { pickReferenceAnswer } from '../datasetColumns.js';
 
 const normalizeJudgeProvider = (aiProvider = 'azure') => {
     const value = String(aiProvider || '').trim();
@@ -14,18 +15,19 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
     return 'azure';
 };
 
-import { BASELINE_ANSWER_ALIASES } from '../datasetColumns.js';
-
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static inputType = 'comparison';
-    static outputColumns = ['verdict', 'confidence', 'explanation', 'flags', 'keyIdeasFound', 'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck'];
+    static outputColumns = [
+        'explanation', 'verdict', 'confidence', 'flags', 'keyIdeasFound',
+        'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck',
+        'driftStatus', 'driftExplanation'
+    ];
 
     static validateBatch(items) {
-        const hasBaseline = items.some(
-            (item) => BASELINE_ANSWER_ALIASES.some((alias) => item[alias])
-        );
-        if (!hasBaseline) {
+        const hasReference = Array.isArray(items)
+            && items.some(item => String(pickReferenceAnswer(item) || '').trim() !== '');
+        if (!hasReference) {
             return {
                 valid: false,
                 code: 'NO_REFERENCE',
@@ -56,10 +58,16 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
     }
 
     async analyze(input) {
-        const { question, answer, baselineAnswer, originalData } = input;
+        const { question, answer, referenceAnswer, goldenReferenceAnswer, originalData } = input;
+
+        if (!referenceAnswer) {
+            throw new Error('Expert scorer requires a reference answer.');
+        }
 
         // 1. Pre-LLM auto-checks
-        const baselineType = baselineAnswer ? this._getAnswerType(baselineAnswer) : 'n/a';
+        const evaluationReferenceAnswer = goldenReferenceAnswer || referenceAnswer;
+        const referenceType = this._getAnswerType(evaluationReferenceAnswer);
+        // Keep the response contract name stable for existing consumers.
         const answerType = this._getAnswerType(answer);
 
         if (!answer || answer.trim() === '') {
@@ -67,17 +75,17 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
                 verdict: 'fail',
                 confidence: 1.0,
                 explanation: 'New answer is empty.',
-                answerTypeCheck: { goldenType: baselineType, newType: 'empty', flag: 'regression' }
+                answerTypeCheck: { referenceType, newType: 'empty', flag: 'regression' }
             };
         }
 
         // normal -> not-gc is a regression (only if baseline exists)
-        if (baselineAnswer && baselineType === 'normal' && answerType === 'not-gc') {
+        if (referenceAnswer && referenceType === 'normal' && answerType === 'not-gc') {
             return {
                 verdict: 'fail',
                 confidence: 1.0,
                 explanation: 'Answer type regression from normal to not-gc.',
-                answerTypeCheck: { goldenType: baselineType, newType: answerType, flag: 'regression' }
+                answerTypeCheck: { referenceType, newType: answerType, flag: 'regression' }
             };
         }
 
@@ -86,34 +94,30 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
             ? originalData.downloadedPages.map((p, i) => `PAGE ${i + 1}:\n${p}`).join('\n\n')
             : 'No downloaded page content available.';
 
-        let prompt;
-        if (baselineAnswer) {
-            prompt = EXPERT_SCORER_PROMPT
-                .replace('{question}', question)
-                .replace('{baselineAnswer}', baselineAnswer)
-                .replace('{baselineAnswerType}', baselineType)
-                .replace('{answer}', answer)
-                .replace('{answerType}', answerType)
-                .replace('{downloadedPages}', downloadedPages);
-        } else {
-            // General quality check if no baseline
-            prompt = `You are an expert evaluator for a Government of Canada AI service.
-Evaluate the "Answer" to the "Question" for accuracy and adherence to GC standards.
+        let prompt = EXPERT_SCORER_PROMPT
+            .replace('{question}', question)
+            .replace('{baselineAnswer}', evaluationReferenceAnswer)
+            .replace('{baselineAnswerType}', referenceType)
+            .replace('{answer}', answer)
+            .replace('{answerType}', answerType)
+            .replace('{downloadedPages}', downloadedPages);
 
-QUESTION: ${question}
-ANSWER: ${answer}
+        const hasRunBaseline = Boolean(goldenReferenceAnswer && referenceAnswer);
+        if (hasRunBaseline) {
+            prompt += `
 
-DOCUMENT CONTEXT:
-${downloadedPages}
+### DRIFT COMPARISON
+The Golden Answer above is the canonical dataset reference and must be used for the main verdict.
+The Previous Run Answer below is from the selected earlier system run. Separately assess whether the New Answer is better, worse, or unchanged compared with that previous answer.
+Do not let the previous-run comparison change the main verdict against the Golden Answer.
 
-Return ONLY a JSON object:
+Previous Run Answer:
+${referenceAnswer}
+
+Add this field to the JSON response:
 {
-  "verdict": "pass" | "fail" | "needs-review",
-  "confidence": 0.0-1.0,
-  "explanation": "Detailed rationale",
-  "keyIdeasFound": ["list"],
-  "keyIdeasMissing": ["list"],
-  "flags": []
+  "driftStatus": "improved" | "regressed" | "unchanged" | "needs-review",
+  "driftExplanation": "Brief explanation of the change from the previous run"
 }`;
         }
 
@@ -124,8 +128,14 @@ Return ONLY a JSON object:
         try {
             const result = JSON.parse(response.content.trim().replace(/^```json/, '').replace(/```$/, ''));
 
+            if (hasRunBaseline) {
+                const drift = result.drift || {};
+                result.driftStatus = drift.status || result.driftStatus || 'needs-review';
+                result.driftExplanation = drift.explanation || result.driftExplanation || 'Drift could not be determined.';
+            }
+
             // Auto-tag needs-review for certain type changes if LLM didn't already fail it
-            if (baselineType === 'normal' && answerType === 'clarifying-question' && result.verdict === 'pass') {
+            if (referenceType === 'normal' && answerType === 'clarifying-question' && result.verdict === 'pass') {
                 result.verdict = 'needs-review';
                 result.explanation = (result.explanation || '') + ' [Auto-flag: answerType downgrade normal -> clarifying]';
                 result.match = false;

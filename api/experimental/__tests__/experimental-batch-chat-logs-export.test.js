@@ -79,12 +79,12 @@ describe('experimental-batch-chat-logs-export API', () => {
             .mockReturnValueOnce({
                 sort: vi.fn().mockReturnThis(),
                 select: vi.fn().mockReturnThis(),
-                lean: vi.fn().mockResolvedValue([{ chatId: '', baselineChatId: '' }])
+                lean: vi.fn().mockResolvedValue([{ chatId: '', referenceChatId: '' }])
             })
             .mockReturnValueOnce({
                 sort: vi.fn().mockReturnThis(),
                 select: vi.fn().mockReturnThis(),
-                lean: vi.fn().mockResolvedValue([{ chatId: '', baselineChatId: '' }])
+                lean: vi.fn().mockResolvedValue([{ chatId: '', referenceChatId: '' }])
             });
 
         await handler(req, res);

@@ -23,15 +23,14 @@ describe('Analyzer contracts', () => {
     it('should use inputType "comparison" for expert-scorer', () => {
         expect(ExpertScorerAnalyzer.inputType).toBe('comparison');
 
-        // validateBatch must reject items with no baseline and return the
-        // correct error code and locale key.
+        // validateBatch requires a reference answer from the dataset or a baseline run.
         expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1' }])).toMatchObject({
             valid: false,
             code: 'NO_REFERENCE',
             localeKey: 'experimental.analysis.messages.error.NO_REFERENCE_EXPERT_SCORER'
         });
-        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', GoldenAnswer: 'A' }])).toEqual({ valid: true });
-        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', baselineAnswer: 'A' }])).toEqual({ valid: true });
+        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', referenceAnswer: 'A' }])).toEqual({ valid: true });
+        expect(ExpertScorerAnalyzer.validateBatch([{ question: 'Q1', referenceAnswer: 'A' }])).toEqual({ valid: true });
 
         // All other analyzers are universal — they handle missing baseline gracefully.
         expect(RefusalAnalyzer.inputType).toBe('universal');
@@ -44,6 +43,7 @@ describe('Analyzer contracts', () => {
     it('should have non-empty outputColumns for all analyzers', () => {
         for (const AnalyzerClass of analyzerClasses) {
             expect(AnalyzerClass.outputColumns.length).toBeGreaterThan(0);
+            expect(AnalyzerClass.outputColumns).toContain('explanation');
         }
     });
 });

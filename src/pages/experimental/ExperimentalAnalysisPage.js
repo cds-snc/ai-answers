@@ -9,8 +9,6 @@ import { formatNumber } from '../../utils/numberFormat.js';
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
 const NO_ANALYZER_ID = 'no-analyzer';
-// Keep in sync with BASELINE_ANSWER_ALIASES in ExperimentalBatchService.js
-const GOLDEN_COLUMN_NAMES = ['baselineAnswer', 'BaselineAnswer', 'baseline', 'GoldenAnswer', 'goldenAnswer'];
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -52,6 +50,15 @@ const isActivelyRunningBatch = (batch) => {
 
 const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
 const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
+
+const ANALYZER_RULE_ROWS = {
+    'no-analyzer': ['always'],
+    'expert-scorer': ['datasetOnly', 'datasetAndRun'],
+    'similar-answer': ['standalone', 'withReference'],
+    'refusal': ['standalone', 'withReference'],
+    safety: ['standalone', 'withReference'],
+    'bias-detection': ['standalone', 'withReference']
+};
 
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -190,7 +197,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const getAnalyzerDisplayName = (analyzer) => getLocalizedAnalyzerText(analyzer, 'name');
-    const getAnalyzerDescription = (analyzer) => getLocalizedAnalyzerText(analyzer, 'description');
+    const getAnalyzerDescription = (analyzer) => analyzer?.id === 'expert-scorer'
+        ? t('experimental.analysis.expertScorerDescription')
+        : getLocalizedAnalyzerText(analyzer, 'description');
 
     const getStatusLabel = (status) => {
         const key = getStatusTranslationKey(status);
@@ -284,9 +293,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setRunLabel('');
         } catch (err) {
             console.error(err);
-            // err.message is a locale key when the server returned a known error
-            // code (e.g. NO_REFERENCE). Try translating it first; fall back to
-            // the generic failure message when it resolves to the key itself.
+            // err.message is a locale key when the server returned a known error.
+            // Try translating it first; fall back to the generic failure message
+            // when it resolves to the key itself.
             const translated = err?.message ? t(err.message) : null;
             const isLocaleKey = translated && translated !== err.message;
             setMessage(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
@@ -352,7 +361,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const handleUseAsBaseline = (batchId) => setBaselineBatchId(batchId);
+    const handleUseAsBaseline = (batch) => {
+        setBaselineBatchId(batch._id);
+
+        const analyzerId = resolveBatchAnalyzerId(batch);
+        if (analyzerId && analyzerId !== NO_ANALYZER_ID) {
+            setSelectedAnalyzerId(analyzerId);
+        }
+    };
 
     const getRunLabel = (batch) => batch?.name || `${t('experimental.analysis.batchPrefix')} ${String(batch?._id || '').slice(-6)}`;
 
@@ -391,8 +407,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
     );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
-    const datasetHasGoldenColumn = (selectedDataset?.columns || [])
-        .some(col => GOLDEN_COLUMN_NAMES.includes(col?.name));
+    const datasetHasReferenceColumn = Boolean(selectedDataset?.hasReferenceAnswer);
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
@@ -469,6 +484,31 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         .map((line, idx) => (
                                             <GcdsText key={idx} className="mb-200">{line}</GcdsText>
                                         ))}
+                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId] && (
+                                        <div className="overflow-auto mt-300">
+                                            <GcdsText className="mb-200">
+                                                <strong>{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.title`)}</strong>
+                                            </GcdsText>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.setup')}</th>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.comparison')}</th>
+                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.flagged')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId].map(rule => (
+                                                        <tr key={rule} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.setup`)}</td>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.comparison`)}</td>
+                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.flagged`)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </GcdsDetails>
                             )}
                         </div>
@@ -552,26 +592,38 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         </option>
                                     ))}
                                 </select>
-                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && !datasetHasGoldenColumn && !baselineBatchId && (
+                                <GcdsText className="mt-200">
+                                    {t('experimental.analysis.baselineHint')}
+                                </GcdsText>
+                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && (
                                     <div
                                         role="alert"
                                         className="mt-200"
                                         style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
                                     >
-                                        <strong>{t('experimental.analysis.expertScorerNeedsReference')}</strong>
+                                        <strong>{t('experimental.analysis.expertScorerInfo')}</strong>
                                     </div>
                                 )}
-                                {baselineBatchId && datasetHasGoldenColumn && (
+                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId !== 'expert-scorer' && (
                                     <div
                                         role="alert"
                                         className="mt-200"
                                         style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
                                     >
-                                        <strong>{t('experimental.analysis.baselineOverridesGolden')}</strong>
+                                        <strong>{t('experimental.analysis.baselineOverridesReference')}</strong>
+                                    </div>
+                                )}
+                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId === 'expert-scorer' && (
+                                    <div
+                                        role="alert"
+                                        className="mt-200"
+                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
+                                    >
+                                        <strong>{t('experimental.analysis.expertScorerBaselineHint')}</strong>
                                     </div>
                                 )}
                                 <GcdsText className="mt-200">
-                                    {t('experimental.analysis.goldenHint')}
+                                    {t('experimental.analysis.referenceHint')}
                                 </GcdsText>
                             </div>
                         )}
@@ -738,7 +790,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                                 size="small"
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
                                                 disabled={!!selectedAnalyzerId && !canBaseline(batch)}
-                                                onClick={() => handleUseAsBaseline(batch._id)}
+                                                onClick={() => handleUseAsBaseline(batch)}
                                             >
                                                 {baselineBatchId === batch._id
                                                     ? t('experimental.analysis.baselineSelected')

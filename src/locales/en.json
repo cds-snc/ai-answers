@@ -1865,6 +1865,9 @@
       "uploadFailed": "Upload failed",
       "readFailed": "Failed to read file",
       "delete": "Delete Dataset",
+      "export": "Export",
+      "exporting": "Exporting...",
+      "exportFailed": "Failed to export dataset",
       "view": "View Data",
       "viewing": "Viewing Data: {name}",
       "backToList": "Back to Datasets",
@@ -1881,14 +1884,24 @@
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
       "requiredColumns": "Columns",
-      "columnAliasHint": "Batch files work without renaming columns: matching ignores case, and batch names like redactedQuestion, QUESTION and URL are accepted. Extra columns are kept and ignored.",
+      "columnAliasHint": "Column names are matched without regard to case, spaces, hyphens or underscores. Extra columns are kept and ignored unless they conflict with the selected dataset type.",
       "uploadDescriptions": {
-        "questionOnly": "Use this to test the current system: each question gets a fresh answer from the pipeline when you run an analysis. Include a GoldenAnswer column to have every generated answer judged against your expert-approved answer. Any column named answer is dropped at upload.",
-        "qaPair": "Use this to evaluate answers that already exist (for example, from a past run or export) — the answer column holds those answers, they are judged as-is, and no new answers are generated. Include a GoldenAnswer column to also compare them against an expert-approved answer."
+        "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Do not include an answer or reference answer column.",
+        "qaPair": "Use this when the dataset already contains the reference answer for each question. For comparison analyzers, the answer column is used as the reference and the system generates a fresh answer to compare against it."
       },
       "uploadColumns": {
-        "questionOnly": "question (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)",
-        "qaPair": "question and answer (required), GoldenAnswer (optional reference answer), referringUrl (optional), chatId (optional)"
+        "questionOnly": "question (required), referringUrl (optional), chatId (optional)",
+        "qaPair": "question and answer (required), reference answer (optional), referringUrl (optional), chatId (optional)"
+      },
+      "columnVariants": {
+        "title": "Accepted field variants",
+        "fieldHeader": "Field",
+        "variantsHeader": "Accepted variants",
+        "question": { "field": "Question", "variants": "question, redactedQuestion, problemDetails, prompt" },
+        "answer": { "field": "Answer", "variants": "answer, redactedAnswer, response" },
+        "referenceAnswer": { "field": "Reference answer", "variants": "referenceAnswer" },
+        "referringUrl": { "field": "Referring URL", "variants": "referringUrl, URL" },
+        "chatId": { "field": "Chat ID", "variants": "chatId" }
       },
       "rowCount": "Rows",
       "created": "Created",
@@ -1898,7 +1911,7 @@
       "actions": "Actions",
       "type": {
         "questionOnly": "Question only",
-        "qaPair": "Q&A pair",
+        "qaPair": "Question and answer",
         "batchOutput": "Batch output"
       }
     },
@@ -1911,17 +1924,79 @@
       "analyzerDetailsTitle": "Analyzer details",
       "analyzerPrefix": "Analyzer",
       "workflowLabel": "Workflow",
-      "selectBaseline": "Select baseline run (comparison)",
-      "baselineHint": "Pick a previous analysis to act as the baseline. Subsequent runs will be compared against this one's answers.",
-      "goldenHint": "No baseline run is needed if your dataset has a GoldenAnswer column — it is used automatically as the reference answer.",
-      "expertScorerNeedsReference": "Expert scorer needs a reference answer to judge against: use a dataset with a GoldenAnswer column, or select a baseline run. Without one, the run will not start.",
-      "baselineOverridesGolden": "Warning: this dataset has a GoldenAnswer column, but the selected baseline run's answers will replace it as the reference for this run. Results will measure drift from that run, not correctness against the golden answers. Choose \"No baseline\" to compare against the golden answers.",
+      "selectBaseline": "Select reference run (comparison)",
+      "baselineHint": "Pick a previous analysis to act as the comparison reference. When selected, new runs are compared against that run's answers.",
+      "referenceHint": "If no reference run is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
+      "expertScorerDescription": "Judges the current answer against the dataset's canonical reference when one is available. It checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and answer quality. With a previous run selected, the main verdict still uses the dataset reference and a separate drift result describes whether the current answer improved, regressed, or stayed unchanged.",
+      "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison run. Use a question and answer dataset with a referenceAnswer column, or a comparison run.",
+      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare the current answer with the selected reference run for drift.",
+      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference run's answers will replace it as the comparison reference for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No reference run\" to compare against the dataset reference answer.",
+      "analyzerRules": {
+        "headers": {
+          "setup": "Run setup",
+          "comparison": "What is compared",
+          "flagged": "What can be flagged"
+        },
+        "no-analyzer": {
+          "title": "No scoring rules",
+          "rows": {
+            "always": {
+              "setup": "Any setup",
+              "comparison": "No comparison is performed.",
+              "flagged": "Nothing is flagged; the run only validates generation and storage."
+            }
+          }
+        },
+        "expert-scorer": {
+        "title": "Expert scorer comparison rules",
+        "rows": {
+          "datasetOnly": {
+            "setup": "Dataset reference, no reference run",
+            "comparison": "Current answer against the dataset reference answer.",
+            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+          },
+          "datasetAndRun": {
+            "setup": "Dataset reference and reference run",
+            "comparison": "Main verdict against the dataset reference; separate drift result against the previous run.",
+            "flagged": "The main verdict can be flagged for quality issues. Drift is reported separately as improved, regressed, unchanged, or needs review."
+          }
+        }
+      },
+        "similar-answer": {
+          "title": "Similar answer comparison rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the run can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
+          }
+        },
+        "refusal": {
+          "title": "Refusal comparison rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is checked for recognized refusal signals.", "flagged": "The answer fails to refuse when the refusal evaluator expects a refusal." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior.", "flagged": "An expected refusal is missing or refusal behavior changes relative to the reference." }
+          }
+        },
+        "safety": {
+          "title": "Safety evaluation rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful, unsafe, privacy, or other restricted content.", "flagged": "The answer contains a safety concern requiring review." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current safety status and, separately, change from the reference.", "flagged": "A current safety concern or a meaningful safety regression can be flagged." }
+          }
+        },
+        "bias-detection": {
+          "title": "Bias evaluation rules",
+          "rows": {
+            "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful bias.", "flagged": "The answer is classified as biased or caution-worthy." },
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current bias level and change from the reference bias level.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." }
+          }
+        }
+      },
       "runLabelLabel": "Run label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",
       "trialsLabel": "Trials per question",
       "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline runs",
-      "noBaseline": "-- No baseline (standalone evaluation) --",
+      "noBaseline": "-- No reference run (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
       "datasetHelper": "Upload and manage datasets through the Datasets page, then select one here.",
@@ -1955,12 +2030,12 @@
         "date": "Date",
         "actions": "Actions"
       },
-      "baseline": "BASELINE",
+      "baseline": "REFERENCE",
       "viewResults": "View results",
       "export": "Export",
       "exportChatLogs": "Export chat logs",
-      "useAsBaseline": "Use as baseline",
-      "baselineSelected": "Baseline selected",
+      "useAsBaseline": "Use as reference",
+      "baselineSelected": "Reference selected",
       "delete": "Delete",
       "empty": "No previous runs found for this dataset.",
       "statuses": {
@@ -1988,8 +2063,8 @@
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
         "exportChatLogsError": "Failed to export chat logs",
-        "error.NO_REFERENCE": "This analyzer requires a baseline answer: use a dataset with a baselineAnswer (or GoldenAnswer) column, or select a baseline run.",
-        "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a GoldenAnswer (or baselineAnswer) column, or select a baseline run.",
+      "error.NO_REFERENCE": "This analyzer requires a reference answer: use a dataset with a referenceAnswer column, or select a comparison run.",
+      "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a referenceAnswer column, or select a comparison run.",
         "error.NO_ITEMS": "Batch has no rows to process.",
         "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
         "error.NOT_FOUND": "Resource not found.",
@@ -2000,28 +2075,28 @@
       },
       "analyzers": {
         "no-analyzer": {
-          "name": "No analyzer",
-          "description": "This option runs the batch without any scoring pass. It is useful when you want to validate the batch pipeline, exports, or storage path without comparing answers or generating flags. Because nothing is being evaluated, status stays pass and flagged remains false. There is no baseline comparison, no drift detection, and no regression logic. Use this mode when you only want to confirm that the workflow can move data from input to output, not when you need quality review."
+          "name": "No scoring",
+          "description": "This option runs the batch without any scoring pass. It is useful when you want to validate the batch pipeline, exports, or storage path without comparing answers or generating flags. Because nothing is being evaluated, status stays pass and flagged remains false. There is no reference comparison, no drift detection, and no regression logic. Use this mode when you only want to confirm that the workflow can move data from input to output, not when you need quality review."
         },
         "bias-detection": {
-          "name": "Bias detector",
-          "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a baseline run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the baseline. If no baseline exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
+          "name": "Bias",
+          "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a reference run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the reference. If no reference exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "Judges answer quality against Government of Canada expectations. It always needs a reference answer — a run without one will not start. What each answer is judged against depends on how you set up the run:\n• Your dataset has a GoldenAnswer column — each freshly generated answer is judged against the expert answer: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard. This is the usual setup for golden test suites.\n• You selected a baseline run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has golden answers, the baseline run's answers take precedence.\nUse this as the default scorer when you have expert-approved answers, or for a broad quality judgment rather than a narrow fact-by-fact comparison."
+          "description": "Judges answer quality against Government of Canada expectations. It can score a question and answer pair on its own, or compare that answer against a reference answer or reference run when you provide one. What each answer is judged against depends on how you set up the run:\n• Your dataset has a reference answer column — each answer is judged against the expert-approved reference: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard.\n• You selected a reference run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has a reference answer, the reference run's answers take precedence.\nUse this as the default scorer when you want a broad quality judgment, whether or not you have a comparison answer."
         },
         "refusal": {
-          "name": "Refusal analyzer",
-          "description": "This analyzer detects refusal-style or blocked responses, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the system refused, blocked, or denied the request in a way that is worth reviewing. In comparison mode, it checks whether refusal behaviour changed between the baseline and the current run, for example from answering normally to refusing, or from refusing to answering. This makes it useful for tracking where the system stops helping the user and whether that change was intentional, safe, or a regression."
+          "name": "Refusal",
+          "description": "This analyzer checks whether an expected refusal is preserved, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the reference refused but the current answer responded normally. In comparison mode, it checks whether refusal behaviour changed between the reference and the current run."
         },
         "safety": {
-          "name": "Safety evaluator",
-          "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a baseline is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
+          "name": "Safety",
+          "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a reference is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
         },
         "similar-answer": {
-          "name": "Similar answer analyzer",
-          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a baseline run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a GoldenAnswer column — each generated answer is compared against the expert answer, flagging factual deviations only. For a broader quality judgment against golden answers, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a baseline capture). Select it as the baseline for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+          "name": "Similar answer",
+          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a reference run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a reference capture). Select it as the reference for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
         }
       }
     },
@@ -2043,6 +2118,9 @@
         "errors": "Errors only"
       },
       "table": {
+        "chat": "Chat",
+        "chatId": "Chat ID",
+        "noChatId": "No chat ID",
         "row": "Row",
         "trial": "Trial",
         "question": "Question",
@@ -2063,6 +2141,10 @@
         "skipped": "Skipped"
       },
       "detail": {
+        "chat": "Chat",
+        "interaction": "Interaction",
+        "simpleView": "Simple view",
+        "detailedView": "Detailed view",
         "backToList": "Back to list",
         "previous": "Previous",
         "next": "Next",
@@ -2071,13 +2153,14 @@
         "question": "Question",
         "referringUrl": "Referring URL",
         "itemError": "Processing error",
-        "goldenAnswer": "Golden answer (expert)",
+        "referenceAnswer": "Reference answer",
+        "noReferenceAnswer": "No reference answer was used.",
         "currentAnswer": "Generated answer",
         "noAnswer": "No answer was generated.",
         "legendRemoved": "Missing from generated answer",
         "legendAdded": "Added in generated answer",
         "viewChatLogs": "View chat logs",
-        "viewBaselineChatLogs": "View baseline chat logs",
+      "viewBaselineChatLogs": "View reference chat logs",
         "analyzerResults": "Judge results",
         "analyzerErrors": "Analyzer errors"
       },
@@ -2096,7 +2179,7 @@
       "scoreColumn": "Score",
       "scoreAll": "all trials",
       "scoreAny": "any trial",
-      "captureRun": "Baseline capture — not scored against a reference",
+      "captureRun": "Reference capture — not scored against a reference",
       "newRun": "New analysis run",
       "categoryLabel": "Category",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",

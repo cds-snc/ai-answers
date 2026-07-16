@@ -9,6 +9,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [datasets, setDatasets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [exportingDatasetId, setExportingDatasetId] = useState(null);
     const [message, setMessage] = useState(null);
 
     // Upload form state
@@ -106,6 +107,33 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         window.location.href = `/${lang}/experimental/analysis?datasetId=${id}`;
     };
 
+    const handleExportDataset = async (dataset) => {
+        setExportingDatasetId(dataset._id);
+        try {
+            const blob = await ExperimentalBatchClientService.exportDataset(dataset._id);
+            const fileName = `dataset-${dataset.name || dataset._id}.csv`
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9._-]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '') || `dataset-${dataset._id}.csv`;
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export dataset error:', err);
+            alert(t('experimental.datasets.exportFailed'));
+        } finally {
+            setExportingDatasetId(null);
+        }
+    };
+
     const typeInfo = newType === 'qa-pair'
         ? {
             description: t('experimental.datasets.uploadDescriptions.qaPair'),
@@ -115,6 +143,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             description: t('experimental.datasets.uploadDescriptions.questionOnly'),
             columns: t('experimental.datasets.uploadColumns.questionOnly')
         };
+
+    const columnVariants = [
+        { field: t('experimental.datasets.columnVariants.question.field'), variants: t('experimental.datasets.columnVariants.question.variants') },
+        ...(newType === 'qa-pair' ? [{ field: t('experimental.datasets.columnVariants.answer.field'), variants: t('experimental.datasets.columnVariants.answer.variants') }] : []),
+        ...(newType === 'qa-pair' ? [{ field: t('experimental.datasets.columnVariants.referenceAnswer.field'), variants: t('experimental.datasets.columnVariants.referenceAnswer.variants') }] : []),
+        { field: t('experimental.datasets.columnVariants.referringUrl.field'), variants: t('experimental.datasets.columnVariants.referringUrl.variants') },
+        { field: t('experimental.datasets.columnVariants.chatId.field'), variants: t('experimental.datasets.columnVariants.chatId.variants') }
+    ];
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -185,6 +221,23 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                             <GcdsText className="mb-200">
                                 {t('experimental.datasets.columnAliasHint')}
                             </GcdsText>
+                            <table className="review-table">
+                                <caption>{t('experimental.datasets.columnVariants.title')}</caption>
+                                <thead>
+                                    <tr>
+                                        <th>{t('experimental.datasets.columnVariants.fieldHeader')}</th>
+                                        <th>{t('experimental.datasets.columnVariants.variantsHeader')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {columnVariants.map(({ field, variants }) => (
+                                        <tr key={field}>
+                                            <td>{field}</td>
+                                            <td>{variants}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                                     {t('experimental.datasets.fileLabel')}
@@ -274,6 +327,16 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                                 onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
                                             >
                                                 {t('experimental.datasets.suiteView')}
+                                            </GcdsButton>
+                                            <GcdsButton
+                                                size="small"
+                                                buttonRole="secondary"
+                                                onClick={() => handleExportDataset(ds)}
+                                                disabled={exportingDatasetId === ds._id}
+                                            >
+                                                {exportingDatasetId === ds._id
+                                                    ? t('experimental.datasets.exporting')
+                                                    : t('experimental.datasets.export')}
                                             </GcdsButton>
                                             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
                                                 {t('experimental.datasets.delete')}
