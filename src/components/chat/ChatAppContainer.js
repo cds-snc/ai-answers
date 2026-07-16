@@ -115,7 +115,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [errorAlert, setErrorAlert] = useState('');
   const userLeftChatRef = useRef(false);
   const stillWorkingTimerRef = useRef(null);
-  const hintTimerRef = useRef(null);
   const lastStatusAnnounceTimeRef = useRef(0);
   const pendingStatusAnnounceTimeoutRef = useRef(null);
 
@@ -186,20 +185,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => chatEl.removeEventListener('focusout', handleFocusOut);
   }, [isLoading]);
 
-  // Guaranteed early reassurance: always fires ~1s into a request, regardless
-  // of backend timing, so it's never crowded out by anything else competing
-  // for the live region (the throttled status effect below deliberately
-  // can't announce before ~4s, specifically so it never collides with this).
-  useEffect(() => {
-    if (!isLoading) {
-      clearTimeout(hintTimerRef.current);
-      return;
-    }
-    hintTimerRef.current = setTimeout(() => {
-      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
-    }, 1000);
-    return () => clearTimeout(hintTimerRef.current);
-  }, [isLoading, safeT, announceToLiveRegion]);
+  // The "AI can make mistakes" disclaimer is now folded into the loading
+  // container's aria-label (ChatInterface.js), announced atomically at
+  // focus-time instead of as a separate announcement 1s later — a fast
+  // response could interrupt the old delayed version mid-sentence. The
+  // throttled status effect below still deliberately can't announce before
+  // ~4s, giving that combined announcement room to finish uninterrupted.
 
   // Real backend progress (searching, building context, verifying citation,
   // ...), throttled to at most one announcement every

@@ -836,7 +836,15 @@ const ChatInterface = ({
               className="loading-container"
               ref={loadingContainerRef}
               tabIndex={-1}
-              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+              // Both phrases in one atomic, focus-triggered announcement — the
+              // "AI can make mistakes" disclaimer used to fire as a separate
+              // announcement 1s later, which a fast response could interrupt
+              // mid-sentence (focus moving to the new answer cuts off whatever
+              // the screen reader is currently saying). Firing everything at
+              // focus-time (t=0) instead of delaying part of it gives the
+              // full announcement the most possible time to finish before
+              // anything else can interrupt it.
+              aria-label={`${safeT("homepage.chat.messages.moderatingQuestion")}. ${safeT("homepage.chat.input.loadingHint")}`}
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
