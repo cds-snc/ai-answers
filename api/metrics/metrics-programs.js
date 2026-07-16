@@ -3,6 +3,7 @@ import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 import { NON_NORMAL_ANSWER_TYPES } from '../util/answerTypes.js';
+import { getAllProgramNameMap } from '../data/programSeedsLoader.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 const MAX_PROGRAMS = 25;
@@ -163,7 +164,16 @@ async function getProgramMetrics(req, res) {
 
         const result = await executeWithRetry(() => Chat.aggregate(buildProgramPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
 
-        const topPrograms = result.map((row) => ({ program: row._id, count: row.total }));
+        // Stored program names are canonical English; attach the curated French
+        // name (when one exists) so the client can localize the chart without a
+        // second round trip. Emergent/unmapped names keep an empty programFr and
+        // fall back to English at display time.
+        const frMap = getAllProgramNameMap();
+        const topPrograms = result.map((row) => ({
+            program: row._id,
+            count: row.total,
+            programFr: frMap.get(row._id) || ''
+        }));
 
         return res.status(200).json({ success: true, metrics: { topPrograms } });
     } catch (error) {

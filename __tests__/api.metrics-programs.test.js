@@ -43,10 +43,11 @@ describe('metrics-programs', () => {
     mockAggregateRows([]);
   });
 
-  it('maps grouped rows to { program, count }', async () => {
+  it('maps grouped rows to { program, count, programFr } with the curated French name', async () => {
     mockAggregateRows([
-      { _id: 'Canada Pension Plan', total: 12 },
-      { _id: 'unknown', total: 5 },
+      { _id: 'GST/HST', total: 12 },
+      { _id: 'Canada Carbon Rebate', total: 5 },
+      { _id: 'unknown', total: 3 },
     ]);
 
     const res = mockRes();
@@ -54,8 +55,11 @@ describe('metrics-programs', () => {
 
     const { topPrograms } = res.json.mock.calls[0][0].metrics;
     expect(topPrograms).toEqual([
-      { program: 'Canada Pension Plan', count: 12 },
-      { program: 'unknown', count: 5 },
+      // Curated CRA program → French name attached.
+      { program: 'GST/HST', count: 12, programFr: 'TPS/TVH' },
+      // Emergent/unmapped name → empty programFr (English fallback at display).
+      { program: 'Canada Carbon Rebate', count: 5, programFr: '' },
+      { program: 'unknown', count: 3, programFr: '' },
     ]);
   });
 

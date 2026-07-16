@@ -130,12 +130,15 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
   ].filter(d => d.value > 0) : [];
 
-  // Question volume by program (per-question task classification). Values are
-  // canonical English strings from the DB (dynamic content). The 'unknown'
-  // sentinel bucket — unclassified or low-confidence — is pulled out of the
-  // bars and surfaced in the subtitle instead, so it doesn't dominate the axis;
-  // real programs are capped at the top N so the long single-count tail drops
-  // off. The API returns more (MAX_PROGRAMS) in case another view needs it.
+  // Question volume by program (per-question task classification). Values stored
+  // in the DB are canonical English (dynamic content); the API also returns the
+  // curated French name (programFr) when one exists, so French users see the
+  // French program title and fall back to English when unmapped (emergent names,
+  // or departments without a curated list yet). The 'unknown' sentinel bucket —
+  // unclassified or low-confidence — is pulled out of the bars and surfaced in
+  // the subtitle instead, so it doesn't dominate the axis; real programs are
+  // capped at the top N so the long single-count tail drops off. The API returns
+  // more (MAX_PROGRAMS) in case another view needs it.
   const { topProgramsData, unclassifiedCount } = useMemo(() => {
     const rows = metrics.topPrograms || [];
     const unclassified = rows
@@ -145,9 +148,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       .filter((row) => row.program !== 'unknown')
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .slice(0, TOP_PROGRAMS_LIMIT)
-      .map((row) => ({ name: row.program, value: row.count }));
+      .map((row) => ({ name: (lang === 'fr' && row.programFr) ? row.programFr : row.program, value: row.count }));
     return { topProgramsData: bars, unclassifiedCount: unclassified };
-  }, [metrics.topPrograms]);
+  }, [metrics.topPrograms, lang]);
 
   // Top referring pages (distinct conversations / click-throughs per page).
   // Already normalized, merged and ranked server-side; scoped to the selected

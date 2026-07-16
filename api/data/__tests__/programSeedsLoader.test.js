@@ -3,6 +3,7 @@ import {
   parseProgramsMarkdown,
   getSeedPrograms,
   getProgramNameMap,
+  getAllProgramNameMap,
   _clearProgramSeedCache,
 } from '../programSeedsLoader.js';
 
@@ -62,5 +63,19 @@ describe('getSeedPrograms — fallback for departments without a .md file', () =
 
   it('has no French map when falling back to legacy seeds', () => {
     expect(getProgramNameMap('EDSC-ESDC').size).toBe(0);
+  });
+});
+
+describe('getAllProgramNameMap — merged across departments', () => {
+  it('includes CRA entries from the curated .md file', () => {
+    const merged = getAllProgramNameMap();
+    expect(merged.get('GST/HST')).toBe('TPS/TVH');
+    expect(merged.get('Personal tax return')).toBe('Déclaration de revenus des particuliers');
+  });
+
+  it('has no entry for an emergent/unmapped program name', () => {
+    // Names the classifier invented that are not in any curated list get no
+    // French mapping and fall back to English at display time.
+    expect(getAllProgramNameMap().has('Canada Carbon Rebate')).toBe(false);
   });
 });

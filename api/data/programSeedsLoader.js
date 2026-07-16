@@ -9,7 +9,7 @@
 // Server-side only (reads from disk, cached per abbrKey). Not imported by the
 // React build.
 
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { PROGRAM_SEEDS_BY_DEPARTMENT } from './programActionSeeds.js';
@@ -19,6 +19,9 @@ const SCENARIOS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '.
 
 // abbrKey -> { programs: [{ en, fr }], enToFr: Map<string,string> }
 const cache = new Map();
+
+// Merged English→French map across every department's .md (built once, lazily).
+let mergedMapCache = null;
 
 const deptDashed = (abbrKey) =>
   resolveScenarioKey(String(abbrKey || '')).toLowerCase().replace(/\s+/g, '-');
@@ -79,7 +82,41 @@ export function getProgramNameMap(abbrKey) {
   return load(abbrKey).enToFr;
 }
 
+// Merged English → French program-name map across every department that has a
+// curated .md file. Lets a consumer localize a stored (English) program name for
+// display without knowing which department produced it — e.g. the program-volume
+// chart, whose rows may span departments when no department filter is applied.
+export function getAllProgramNameMap() {
+  if (mergedMapCache) return mergedMapCache;
+
+  const merged = new Map();
+  let entries = [];
+  try {
+    entries = readdirSync(SCENARIOS_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name.startsWith('context-'))
+      .map((d) => d.name);
+  } catch (e) {
+    entries = [];
+  }
+
+  for (const dir of entries) {
+    const dashed = dir.replace(/^context-/, '');
+    const file = path.join(SCENARIOS_DIR, dir, `${dashed}-programs.md`);
+    try {
+      for (const { en, fr } of parseProgramsMarkdown(readFileSync(file, 'utf8'))) {
+        if (en && fr) merged.set(en, fr);
+      }
+    } catch (e) {
+      // No programs file for this department yet — skip.
+    }
+  }
+
+  mergedMapCache = merged;
+  return merged;
+}
+
 // Test hook — the disk read is cached for the process lifetime.
 export function _clearProgramSeedCache() {
   cache.clear();
+  mergedMapCache = null;
 }
