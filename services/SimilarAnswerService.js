@@ -32,10 +32,18 @@ function sanitizeQuestionArray(arr) {
     }).filter(q => typeof q === 'string' && q.length > 0);
 }
 
-async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10, languageParam = null) {
+async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10, languageParam = null, interactionLanguage = null) {
     if (!VectorService) await initVectorService();
     const safeQuestions = Array.isArray(questionsArr) && questionsArr.length ? questionsArr : [''];
-    const matchesArr = await VectorService.matchQuestions(safeQuestions, { provider: selectedAI, k: kCandidates, threshold: null, expertFeedbackRating: requestedRating, language: languageParam });
+    const matchesArr = await VectorService.matchQuestions(safeQuestions, {
+        provider: selectedAI,
+        k: kCandidates,
+        threshold: null,
+        expertFeedbackRating: requestedRating,
+        language: languageParam,
+        interactionLanguage,
+        useDenormalizedPreFilter: true,
+    });
     return Array.isArray(matchesArr) && matchesArr.length ? matchesArr[0] : [];
 }
 
@@ -238,7 +246,7 @@ export const SimilarAnswerService = {
         detectedLanguage
     }) {
         // Use pageLanguage for vector matching (matches should be in the page language)
-        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 5, pageLanguage);
+        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 5, pageLanguage, detectedLanguage || null);
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return null;

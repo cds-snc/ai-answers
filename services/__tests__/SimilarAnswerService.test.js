@@ -148,6 +148,10 @@ describe('SimilarAnswerService', () => {
         expect(VectorService.matchQuestions).toHaveBeenCalled();
         const firstArgList = VectorService.matchQuestions.mock.calls[0][0];
         expect(firstArgList).toEqual(questions);
+        expect(VectorService.matchQuestions.mock.calls[0][1]).toEqual(expect.objectContaining({
+            useDenormalizedPreFilter: true,
+            language: 'en',
+        }));
     });
 
 
