@@ -15,6 +15,7 @@ import { LLMRankerComparator } from './comparators/LLMRankerComparator.js';
 
 const localComparator = new QuoraCrossEncoderComparator();
 const llmComparator = new LLMRankerComparator();
+const DEFAULT_RECENCY_DAYS = 365;
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -240,7 +241,7 @@ export const SimilarAnswerService = {
         questions,
         conversationHistory = [],
         selectedAI,
-        recencyDays = 3650,
+        recencyDays = DEFAULT_RECENCY_DAYS,
         requestedRating,
         pageLanguage,
         detectedLanguage

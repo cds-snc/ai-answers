@@ -180,4 +180,19 @@ describe('SimilarAnswerService', () => {
 
         expect(result).toBeNull();
     });
+
+    it('rejects matches older than the default 365-day freshness window', async () => {
+        const staleDate = new Date(Date.now() - (366 * 24 * 60 * 60 * 1000));
+        await InteractionModel.collection.updateMany(
+            { _id: { $in: fixedInteractionIds } },
+            { $set: { createdAt: staleDate } }
+        );
+
+        const result = await SimilarAnswerService.findSimilarAnswer({
+            questions: ['What is SCIS?'], selectedAI: 'openai', pageLanguage: 'en', chatId: 'test-chat'
+        });
+
+        expect(result).toBeNull();
+        expect(AgentOrchestratorService.invokeWithStrategy).not.toHaveBeenCalled();
+    });
 });
