@@ -27,35 +27,51 @@ const graph = new StateGraph(GraphState);
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
   await ServerLoggingService.info('Starting DefaultWithLocalModel', state.chatId, { lang: state.lang, referringUrl: state.referringUrl, selectedAI: state.selectedAI });
+  logGraphEvent('info', 'node:init input', state.chatId, { lang: state.lang, referringUrl: state.referringUrl, selectedAI: state.selectedAI });
   const out = { startTime, status: WorkflowStatus.MODERATING_QUESTION };
   logGraphEvent('info', 'node:init output', state.chatId, out);
   return out;
 });
 graph.addNode('validate', async (state) => {
+  logGraphEvent('info', 'node:validate input', state.chatId, { conversationHistory: state.conversationHistory, lang: state.lang, department: state.department });
   await workflow.validateShortQuery(state.conversationHistory, state.userMessage, state.lang, state.department);
+  logGraphEvent('info', 'node:validate output', state.chatId, {});
   return {};
 });
 graph.addNode('redact', async (state) => {
+  logGraphEvent('info', 'node:redact input', state.chatId, { lang: state.lang, selectedAI: state.selectedAI });
   const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-  return { redactedText };
+  const out = { redactedText };
+  logGraphEvent('info', 'node:redact output', state.chatId, out);
+  return out;
 });
 graph.addNode('translate', async (state) => {
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
+  logGraphEvent('info', 'node:translate input', state.chatId, { redactedText: state.redactedText, translationContext, selectedAI: state.selectedAI });
   const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-  return { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
+  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
+  logGraphEvent('info', 'node:translate output', state.chatId, out);
+  return out;
 });
 
 graph.addNode('shortCircuit', async (state) => {
   const cleanedHistory = (state.conversationHistory || []).filter(message => message && !message.error);
+  logGraphEvent('info', 'node:shortCircuit input', state.chatId, { userMessage: state.userMessage, historyCount: cleanedHistory.length, language: state.lang });
   if (cleanedHistory.length > 0) {
-    return { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
+    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true, reason: 'conversation-history-present' });
+    return out;
   }
   const similar = await workflow.checkSimilarAnswer({
     chatId: state.chatId, userMessage: state.userMessage, conversationHistory: [], selectedAI: state.selectedAI,
     lang: state.lang, detectedLang: state.translationData?.originalLanguage || state.lang, searchProvider: state.searchProvider,
   });
-  if (!similar) return { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
+  if (!similar) {
+    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, reason: 'no-confirmed-match' });
+    return out;
+  }
 
   const payload = workflow.buildShortCircuitPayload({
     similarShortCircuit: similar, startTime: state.startTime, endTime: Date.now(), translationData: state.translationData,
@@ -67,22 +83,38 @@ graph.addNode('shortCircuit', async (state) => {
   } catch (error) {
     await ServerLoggingService.error('Local-model short-circuit persistence error', state.chatId, error);
   }
-  return { shortCircuitPayload: payload, finalCitationUrl: payload.finalCitationUrl, status: WorkflowStatus.GENERATING_ANSWER };
+  const out = { shortCircuitPayload: payload, finalCitationUrl: payload.finalCitationUrl, status: WorkflowStatus.GENERATING_ANSWER };
+  logGraphEvent('info', 'node:shortCircuit output', state.chatId, {
+    shortCircuit: true,
+    answer: payload.answer,
+    question: payload.question,
+    sourceChatId: payload.instantAnswerChatId,
+    sourceInteractionId: payload.instantAnswerInteractionId,
+    historySignature: payload.historySignature,
+    payload,
+  });
+  return out;
 });
 
 graph.addNode('contextNode', async (state) => {
+  logGraphEvent('info', 'node:context input', state.chatId, { conversationHistory: state.conversationHistory, translationData: state.translationData, lang: state.lang });
   const cleanedHistory = (state.conversationHistory || []).filter(message => message && !message.error);
   const context = await workflow.deriveContext({
     selectedAI: state.selectedAI, translationData: state.translationData, lang: state.lang, department: state.department,
     referringUrl: state.referringUrl, searchProvider: state.searchProvider, conversationHistory: cleanedHistory,
     overrideUserId: state.overrideUserId, chatId: state.chatId, userMessage: state.userMessage,
   });
-  return { context, cleanedHistory, usedExistingContext: false, status: WorkflowStatus.GENERATING_ANSWER };
+  const out = { context, cleanedHistory, usedExistingContext: false, status: WorkflowStatus.GENERATING_ANSWER };
+  logGraphEvent('info', 'node:context output', state.chatId, out);
+  return out;
 });
-graph.addNode('answerNode', async (state) => ({
-  answer: await workflow.sendAnswerRequest({ selectedAI: state.selectedAI, conversationHistory: state.cleanedHistory, lang: state.lang, context: state.context, referringUrl: state.referringUrl, chatId: state.chatId }),
-  status: WorkflowStatus.VERIFYING_CITATION,
-}));
+graph.addNode('answerNode', async (state) => {
+  logGraphEvent('info', 'node:answer input', state.chatId, { selectedAI: state.selectedAI, contextTopic: state.context?.topic || null, contextDepartment: state.context?.department || null, searchResultsCount: state.context?.searchResults?.length || 0 });
+  const answer = await workflow.sendAnswerRequest({ selectedAI: state.selectedAI, conversationHistory: state.cleanedHistory, lang: state.lang, context: state.context, referringUrl: state.referringUrl, chatId: state.chatId });
+  const out = { answer, status: WorkflowStatus.VERIFYING_CITATION };
+  logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
+  return out;
+});
 graph.addNode('verifyNode', async (state) => {
   const shortCircuit = Boolean(state.shortCircuitPayload);
   const answer = shortCircuit ? state.shortCircuitPayload.answer : state.answer;
@@ -92,18 +124,26 @@ graph.addNode('verifyNode', async (state) => {
     const citation = await workflow.verifyCitation({ citationUrl: answer.citationUrl, lang: state.lang, question: state.userMessage, department: state.department, translationF: state.translationF, chatId: state.chatId });
     finalCitationUrl = citation.url || citation.fallbackUrl;
   }
-  return { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl, historySignature: answer?.historySignature || null } };
+  logGraphEvent('info', 'node:verify input', state.chatId, { answer, shortCircuit });
+  const out = { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl, historySignature: answer?.historySignature || null } };
+  logGraphEvent('info', 'node:verify output', state.chatId, { finalCitationUrl, shortCircuit });
+  return out;
 });
 graph.addNode('persistNode', async (state) => {
+  const totalResponseTime = Date.now() - state.startTime;
+  logGraphEvent('info', 'node:persist input', state.chatId, { shortCircuit: Boolean(state.shortCircuitPayload), totalResponseTime });
   if (!state.shortCircuitPayload) {
     await workflow.persistInteraction({
       selectedAI: state.selectedAI, question: state.userMessage, userMessageId: state.userMessageId, referringUrl: state.referringUrl,
       answer: state.answer, finalCitationUrl: state.finalCitationUrl || null, context: state.context, chatId: state.chatId,
-      workflow: 'DefaultWithLocalModel', pageLanguage: state.lang, responseTime: Date.now() - state.startTime, searchProvider: state.searchProvider,
+      workflow: 'DefaultWithLocalModel', pageLanguage: state.lang, responseTime: totalResponseTime, searchProvider: state.searchProvider,
     }, graphRequestContext.getStore()?.user);
   }
   const answer = state.shortCircuitPayload?.answer || state.answer;
-  return { status: answer?.answerType?.includes('question') ? WorkflowStatus.NEED_CLARIFICATION : WorkflowStatus.COMPLETE };
+  await ServerLoggingService.info('Workflow complete', state.chatId, { totalResponseTime });
+  const out = { status: answer?.answerType?.includes('question') ? WorkflowStatus.NEED_CLARIFICATION : WorkflowStatus.COMPLETE };
+  logGraphEvent('info', 'node:persist output', state.chatId, out);
+  return out;
 });
 
 graph.addConditionalEdges('shortCircuit', state => state.shortCircuitPayload ? 'reuse' : 'generate', { reuse: 'verifyNode', generate: 'contextNode' });
