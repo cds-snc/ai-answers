@@ -6,7 +6,7 @@ import ServerLoggingService from '../ServerLoggingService.js';
 
 /**
  * LLM-based question flow comparator.
- * Uses the existing ranker agent (GPT-4.1-mini) to compare question flows.
+ * Uses the GPT-5 mini ranker agent to compare question flows.
  */
 export class LLMRankerComparator extends QuestionFlowComparator {
     /**
