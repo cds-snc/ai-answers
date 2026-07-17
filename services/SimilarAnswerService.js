@@ -260,11 +260,23 @@ export const SimilarAnswerService = {
         // Clean up trailing whitespace/newline characters from question strings
         const sanitizedCandidateQuestions = sanitizeQuestionArray(candidateQuestions);
         const sanitizedUserQuestions = sanitizeQuestionArray(questions);
-        const vectorMatches = matches.map(match => ({
-            interactionId: match.interactionId?.toString?.() || match.interactionId || null,
-            similarity: match.similarity ?? null,
-            score: match.score ?? null,
-        }));
+        const vectorMatches = matches.map(match => {
+            const interactionId = match.interactionId?.toString?.() || match.interactionId || null;
+            const interaction = interactionById[interactionId] || null;
+            const entry = orderedEntries.find(candidate => String(candidate.candidate?.interaction?._id) === String(interactionId));
+            const answer = interaction?.answer?.englishAnswer
+                || interaction?.answer?.paragraphs?.join('\n\n')
+                || interaction?.answer?.content
+                || null;
+            return {
+                interactionId,
+                chatId: entry?.chatId || null,
+                question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
+                answer,
+                similarity: match.similarity ?? null,
+                score: match.score ?? null,
+            };
+        });
         ServerLoggingService.info(`Invoking local comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
             userQuestions: sanitizedUserQuestions,
             candidateQuestions: sanitizedCandidateQuestions,
@@ -338,10 +350,13 @@ export const SimilarAnswerService = {
 
         const nlpCandidates = comparisonResult.results.map(localResult => {
             const entry = orderedEntries[localResult.index];
+            const interaction = entry?.candidate?.interaction;
             return {
                 index: localResult.index,
                 chatId: entry?.chatId || null,
-                interactionId: entry?.candidate?.interaction?._id?.toString?.() || null,
+                interactionId: interaction?._id?.toString?.() || null,
+                question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
+                answer: interaction?.answer?.englishAnswer || interaction?.answer?.paragraphs?.join('\n\n') || interaction?.answer?.content || null,
                 questionFlow: entry?.questionFlow || null,
                 vectorSimilarity: entry?.candidate?.match?.similarity ?? null,
                 localScore: localResult.score ?? null,
