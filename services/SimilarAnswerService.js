@@ -260,6 +260,11 @@ export const SimilarAnswerService = {
         // Clean up trailing whitespace/newline characters from question strings
         const sanitizedCandidateQuestions = sanitizeQuestionArray(candidateQuestions);
         const sanitizedUserQuestions = sanitizeQuestionArray(questions);
+        const vectorMatches = matches.map(match => ({
+            interactionId: match.interactionId?.toString?.() || match.interactionId || null,
+            similarity: match.similarity ?? null,
+            score: match.score ?? null,
+        }));
         ServerLoggingService.info(`Invoking local comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
             userQuestions: sanitizedUserQuestions,
             candidateQuestions: sanitizedCandidateQuestions,
@@ -331,6 +336,20 @@ export const SimilarAnswerService = {
             { sender: 'ai', text: formatted.text }
         ]);
 
+        const nlpCandidates = comparisonResult.results.map(localResult => {
+            const entry = orderedEntries[localResult.index];
+            return {
+                index: localResult.index,
+                chatId: entry?.chatId || null,
+                interactionId: entry?.candidate?.interaction?._id?.toString?.() || null,
+                questionFlow: entry?.questionFlow || null,
+                vectorSimilarity: entry?.candidate?.match?.similarity ?? null,
+                localScore: localResult.score ?? null,
+                localRecommendation: localResult.recommendation ?? 'reject',
+            };
+        });
+        const selectedCandidate = nlpCandidates.find(candidate => candidate.index === topIndex) || null;
+
         return {
             answer: formatted.text,
             englishAnswer: formatted.englishAnswer || null,
@@ -340,6 +359,14 @@ export const SimilarAnswerService = {
             similarity: chosen.match?.similarity ?? null,
             citation: formatted.citation || null,
             rankerTop: { index: topIndex, checks: confirmedChecks },
+            vectorMatches,
+            nlpCandidates,
+            llmSelection: {
+                ...selectedCandidate,
+                accepted: true,
+                checks: confirmedChecks,
+                metadata: llmResult.metadata || {},
+            },
             historySignature
         };
     }

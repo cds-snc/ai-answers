@@ -90,6 +90,9 @@ graph.addNode('shortCircuit', async (state) => {
     question: payload.question,
     sourceChatId: payload.instantAnswerChatId,
     sourceInteractionId: payload.instantAnswerInteractionId,
+    vectorMatches: payload.vectorMatches,
+    nlpCandidates: payload.nlpCandidates,
+    llmSelection: payload.llmSelection,
     historySignature: payload.historySignature,
     payload,
   });

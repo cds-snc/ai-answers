@@ -241,6 +241,9 @@ export class GraphWorkflowHelper {
       // Optional: the matched chat and interaction identifiers (if available)
       instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
       instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null,
+      vectorMatches: similarShortCircuit.vectorMatches || [],
+      nlpCandidates: similarShortCircuit.nlpCandidates || [],
+      llmSelection: similarShortCircuit.llmSelection || null,
     };
   }
 
@@ -297,6 +300,11 @@ export class GraphWorkflowHelper {
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
         sourceCitation: similarJson.citation || null,
         historySignature: similarJson.historySignature || null,
+        instantAnswerChatId,
+        instantAnswerInteractionId,
+        vectorMatches: similarJson.vectorMatches || [],
+        nlpCandidates: similarJson.nlpCandidates || [],
+        llmSelection: similarJson.llmSelection || null,
       };
     }
 
