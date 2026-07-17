@@ -244,6 +244,7 @@ export class GraphWorkflowHelper {
       vectorMatches: similarShortCircuit.vectorMatches || [],
       nlpCandidates: similarShortCircuit.nlpCandidates || [],
       llmSelection: similarShortCircuit.llmSelection || null,
+      similarityLatencyMs: similarShortCircuit.similarityLatencyMs ?? null,
     };
   }
 
@@ -259,6 +260,7 @@ export class GraphWorkflowHelper {
       .filter(Boolean);
     const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
 
+    const similarityStartTime = Date.now();
     const similarJson = await SimilarAnswerService.findSimilarAnswer({
       chatId,
       questions,
@@ -269,6 +271,7 @@ export class GraphWorkflowHelper {
       // defaults to expertFeedbackComparison='eq', so this is an exact-match filter.
       requestedRating: 100,
     });
+    const similarityLatencyMs = Date.now() - similarityStartTime;
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
@@ -305,6 +308,7 @@ export class GraphWorkflowHelper {
         vectorMatches: similarJson.vectorMatches || [],
         nlpCandidates: similarJson.nlpCandidates || [],
         llmSelection: similarJson.llmSelection || null,
+        similarityLatencyMs,
       };
     }
 

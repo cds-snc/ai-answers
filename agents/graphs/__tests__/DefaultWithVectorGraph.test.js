@@ -184,6 +184,7 @@ describe('DefaultWithVectorGraph Workflow', () => {
         expect(resultState.status).toBe('complete');
         expect(resultState.result.historySignature).toBe('sc-sig');
         expect(resultState.result.answer.content).toBe('Cached answer text');
+        expect(resultState.shortCircuitPayload.similarityLatencyMs).toEqual(expect.any(Number));
 
         expect(SimilarAnswerService.findSimilarAnswer).toHaveBeenCalled();
         expect(SearchContextService.search).not.toHaveBeenCalled();
