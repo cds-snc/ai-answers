@@ -16,6 +16,7 @@ import { LLMRankerComparator } from './comparators/LLMRankerComparator.js';
 const localComparator = new QuoraCrossEncoderComparator();
 const llmComparator = new LLMRankerComparator();
 const DEFAULT_RECENCY_DAYS = 365;
+const MAX_RERANK_CANDIDATES = 10;
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -33,7 +34,7 @@ function sanitizeQuestionArray(arr) {
     }).filter(q => typeof q === 'string' && q.length > 0);
 }
 
-async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10, languageParam = null, interactionLanguage = null) {
+async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10, languageParam = null, interactionLanguage = null, recencyDays = null) {
     if (!VectorService) await initVectorService();
     const safeQuestions = Array.isArray(questionsArr) && questionsArr.length ? questionsArr : [''];
     const matchesArr = await VectorService.matchQuestions(safeQuestions, {
@@ -43,6 +44,7 @@ async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandi
         expertFeedbackRating: requestedRating,
         language: languageParam,
         interactionLanguage,
+        recencyDays,
         useDenormalizedPreFilter: true,
     });
     return Array.isArray(matchesArr) && matchesArr.length ? matchesArr[0] : [];
@@ -60,25 +62,6 @@ async function loadInteractions(matches) {
         .lean();
     const interactionById = interactions.reduce((acc, it) => { acc[it._id.toString()] = it; return acc; }, {});
     return { interactions, interactionById };
-}
-
-function applyRecencyFilter(matches, interactionById, recencyDays) {
-    const cutoff = Date.now() - (recencyDays * 24 * 60 * 60 * 1000);
-    const recent = [];
-    for (const m of matches) {
-        const it = interactionById[m.interactionId?.toString?.() || m.interactionId];
-        if (!it || !it.answer) continue;
-        const created = new Date(it.createdAt || it._id?.getTimestamp?.() || Date.now()).getTime();
-
-        // If the interaction has expertFeedback populated and neverStale is true, always treat it as recent
-        const ef = it.expertFeedback;
-        const hasNeverStale = ef && (ef.neverStale === true || String(ef.neverStale) === 'true');
-        // Only include items that are explicitly neverStale or fall within the recency cutoff.
-        if (hasNeverStale || created >= cutoff) {
-            recent.push({ match: m, interaction: it });
-        }
-    }
-    return recent.slice(0, 5);
 }
 
 async function buildQuestionFlows(finalCandidates) {
@@ -247,16 +230,30 @@ export const SimilarAnswerService = {
         detectedLanguage
     }) {
         // Use pageLanguage for vector matching (matches should be in the page language)
-        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 5, pageLanguage, detectedLanguage || null);
+        const matches = await retrieveMatches(
+            questions,
+            selectedAI,
+            requestedRating,
+            MAX_RERANK_CANDIDATES,
+            pageLanguage,
+            detectedLanguage || null,
+            recencyDays
+        );
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return null;
         }
 
         const { interactionById } = await loadInteractions(matches);
-        const finalCandidates = applyRecencyFilter(matches, interactionById, recencyDays);
+        const finalCandidates = matches
+            .map(match => ({
+                match,
+                interaction: interactionById[match.interactionId?.toString?.() || match.interactionId],
+            }))
+            .filter(candidate => candidate.interaction?.answer)
+            .slice(0, MAX_RERANK_CANDIDATES);
         if (!finalCandidates.length) {
-            ServerLoggingService.info('No candidate interactions after recency filter', 'chat-similar-answer');
+            ServerLoggingService.info('No candidate interactions after vector eligibility filters', 'chat-similar-answer');
             return null;
         }
 
@@ -303,32 +300,43 @@ export const SimilarAnswerService = {
             latencyMs: comparisonResult.metadata?.latencyMs
         });
 
-        // Find top accepted result (score >= threshold, default 0.95)
-        const topResult = comparisonResult.results.find(r => r.recommendation === 'accept');
-        const topIndex = topResult?.index ?? -1;
-        const topChecks = topResult?.checks ?? null;
+        // The local model filters candidates. Send every threshold-passing
+        // candidate, in Quora rank order, to the LLM for final ranking.
+        const acceptedLocalResults = comparisonResult.results
+            .filter(result => result.recommendation === 'accept')
+            .slice(0, MAX_RERANK_CANDIDATES);
 
-        if (topIndex === -1) {
+        if (!acceptedLocalResults.length) {
             ServerLoggingService.info('Local comparator produced no accepted match; continuing normal flow', 'chat-similar-answer');
             return null;
         }
 
-        // The local model is deliberately only a candidate filter. Re-run the
-        // selected candidate through the ranker and reuse an answer only when
-        // every LLM safety/semantic check passes.
+        const llmCandidateQuestions = acceptedLocalResults.map(
+            result => sanitizedCandidateQuestions[result.index]
+        );
+
+        // The local model is deliberately only a candidate filter. Re-rank all
+        // accepted candidates and reuse an answer only when the LLM's selected
+        // candidate passes every safety/semantic check.
         const llmResult = await llmComparator.compare(
             sanitizedUserQuestions,
-            [sanitizedCandidateQuestions[topIndex]],
+            llmCandidateQuestions,
             { chatId, selectedAI }
         );
-        const llmConfirmation = llmResult.results.find(result => result.index === 0 && result.recommendation === 'accept');
+        const llmConfirmation = llmResult.results.find(result =>
+            result.recommendation === 'accept' &&
+            Number.isInteger(result.index) &&
+            acceptedLocalResults[result.index]
+        );
         if (!llmConfirmation) {
             ServerLoggingService.info('LLM confirmation rejected local match; continuing normal flow', chatId, {
-                localScore: topResult.score,
+                localScores: acceptedLocalResults.map(result => result.score),
                 llmError: llmResult.metadata?.error || null,
             });
             return null;
         }
+        const topResult = acceptedLocalResults[llmConfirmation.index];
+        const topIndex = topResult.index;
         const confirmedChecks = llmConfirmation.checks;
 
         ServerLoggingService.info(`Comparator selected index ${topIndex} as top candidate`, chatId, {

@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterAll, beforeAll, afterEach } 
 import { setup, teardown, reset } from '../../test/setup.js';
 import mongoose from 'mongoose';
 
+const { quoraCompareMock } = vi.hoisted(() => ({
+    quoraCompareMock: vi.fn(),
+}));
+
 // Declare mocks before importing the module under test
 vi.mock('../VectorServiceFactory.js', () => ({
     VectorService: { matchQuestions: vi.fn() },
@@ -37,10 +41,7 @@ vi.mock('../../agents/AgentFactory.js', () => ({
 vi.mock('../comparators/QuoraCrossEncoderComparator.js', () => ({
     QuoraCrossEncoderComparator: class {
         getName() { return 'QuoraCrossEncoderComparator'; }
-        compare = vi.fn().mockResolvedValue({
-            results: [{ index: 0, score: 0.99, recommendation: 'accept' }],
-            method: 'quora-crossencoder', metadata: {}
-        });
+        compare = quoraCompareMock;
     }
 }));
 
@@ -98,6 +99,10 @@ describe('SimilarAnswerService', () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({
             results: [{ index: 0, checks: { numbers: 'pass', dates_times: 'pass' } }]
         });
+        quoraCompareMock.mockResolvedValue({
+            results: [{ index: 0, score: 0.99, recommendation: 'accept' }],
+            method: 'quora-crossencoder', metadata: {}
+        });
 
         const [answer1, answer2] = await AnswerModel.create([
             { englishAnswer: 'Answer 1' },
@@ -151,6 +156,7 @@ describe('SimilarAnswerService', () => {
         expect(VectorService.matchQuestions.mock.calls[0][1]).toEqual(expect.objectContaining({
             useDenormalizedPreFilter: true,
             language: 'en',
+            recencyDays: 365,
         }));
     });
 
@@ -181,18 +187,25 @@ describe('SimilarAnswerService', () => {
         expect(result).toBeNull();
     });
 
-    it('rejects matches older than the default 365-day freshness window', async () => {
-        const staleDate = new Date(Date.now() - (366 * 24 * 60 * 60 * 1000));
-        await InteractionModel.collection.updateMany(
-            { _id: { $in: fixedInteractionIds } },
-            { $set: { createdAt: staleDate } }
-        );
+    it('sends every threshold-passing Quora candidate to the LLM in Quora rank order', async () => {
+        quoraCompareMock.mockResolvedValueOnce({
+            results: [
+                { index: 1, score: 0.99, recommendation: 'accept' },
+                { index: 0, score: 0.98, recommendation: 'accept' },
+            ],
+            method: 'quora-crossencoder', metadata: {}
+        });
 
         const result = await SimilarAnswerService.findSimilarAnswer({
             questions: ['What is SCIS?'], selectedAI: 'openai', pageLanguage: 'en', chatId: 'test-chat'
         });
 
-        expect(result).toBeNull();
-        expect(AgentOrchestratorService.invokeWithStrategy).not.toHaveBeenCalled();
+        expect(AgentOrchestratorService.invokeWithStrategy).toHaveBeenCalledWith(expect.objectContaining({
+            request: expect.objectContaining({
+                candidateQuestions: ['Q1 Q2', 'Q1'],
+            }),
+        }));
+        expect(result?.interactionId).toBe(fixedInteractionIds[1].toString());
     });
+
 });

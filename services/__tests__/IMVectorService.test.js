@@ -101,4 +101,41 @@ describe('IMVectorService', () => {
     // threshold null = short-circuit caller behaviour: keep everything.
     expect(mapped.map(m => m.id)).toEqual(['p', 'q']);
   });
+
+  it('filters by denormalized feedback freshness before selecting the top results', async () => {
+    const query = vi.fn().mockResolvedValue([
+      { document: { id: 'stale' }, similarity: 0.99 },
+      { document: { id: 'fresh' }, similarity: 0.95 },
+      { document: { id: 'never-stale' }, similarity: 0.9 },
+    ]);
+    svc.questionsDB = { size: () => 3, query };
+    svc.qaMeta.set('stale', {
+      interactionId: 'i1',
+      expertFeedbackId: 'ef-1',
+      expertFeedbackCreatedAt: new Date(Date.now() - (366 * 24 * 60 * 60 * 1000)),
+      expertFeedbackNeverStale: false,
+    });
+    svc.qaMeta.set('fresh', {
+      interactionId: 'i2',
+      expertFeedbackId: 'ef-2',
+      expertFeedbackCreatedAt: new Date(),
+      expertFeedbackNeverStale: false,
+    });
+    svc.qaMeta.set('never-stale', {
+      interactionId: 'i3',
+      expertFeedbackId: 'ef-3',
+      expertFeedbackCreatedAt: new Date(Date.now() - (366 * 24 * 60 * 60 * 1000)),
+      expertFeedbackNeverStale: true,
+    });
+
+    const [matches] = await svc.matchQuestions(['why is x'], {
+      provider: 'openai',
+      k: 2,
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+    });
+
+    expect(query).toHaveBeenCalledWith(expect.any(Array), 3);
+    expect(matches.map(match => match.id)).toEqual(['fresh', 'never-stale']);
+  });
 });
