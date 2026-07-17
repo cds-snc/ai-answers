@@ -7,6 +7,7 @@ import {
     withProtection
 } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { requireObjectIdString, requireString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
@@ -52,6 +53,22 @@ const parseFallbackDate = (value) => {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const parseChatIdList = (value) => {
+    if (!value) return [];
+    const rawValues = Array.isArray(value) ? value : String(value).split(',');
+    const chatIds = [];
+    const seen = new Set();
+
+    for (const rawValue of rawValues) {
+        const trimmed = String(rawValue || '').trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+        chatIds.push(requireString(trimmed, 'chatId'));
+    }
+
+    return chatIds;
+};
+
 const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
     if (!startDate || !endDate) return null;
     const start = parseLocalDateTime(startDate, { timezoneOffsetMinutes }) || parseFallbackDate(startDate);
@@ -89,6 +106,7 @@ const VIEW_DEFINITIONS = {
 const DEFAULT_HEADER_ORDER = [
     'uniqueID',
     'chatId',
+    'appVersion',
     'userEmail',
     'createdAt',
     'pageLanguage',
@@ -294,6 +312,7 @@ function flattenInteraction(chat, interaction, view) {
         return {
             uniqueID,
             chatId: chat.chatId || '',
+            appVersion: get(interaction, 'appVersion') || chat.appVersion || '',
             userEmail: get(chat, 'user.email'),
             createdAt: interaction.createdAt ? new Date(interaction.createdAt).toISOString() : (chat.createdAt ? new Date(chat.createdAt).toISOString() : ''),
 
@@ -304,6 +323,20 @@ function flattenInteraction(chat, interaction, view) {
             aiService: chat.aiProvider || '',
             searchService: chat.searchProvider || '',
 
+            // The `answer.citation.url` fallback below is dead: no document in the `citations`
+            // collection has ever had a `url` field, at any point in this schema's history.
+            //   - models/citation.js only defines aiCitationUrl / providedCitationUrl / citationHead.
+            //   - The only place a Citation gets created, services/InteractionPersistenceService.js,
+            //     writes exclusively to those three fields — never `url`.
+            //   - This function reads via Chat.aggregate() $lookup and Chat.find().lean(), both of
+            //     which return raw Mongo documents that bypass Mongoose's schema stripping — so if
+            //     any legacy record had a stray `url` field, it would still show up here. None do.
+            // Don't mistake this for a real shape that src/utils/getCitationUrl.js (the canonical
+            // client-side citation-URL resolver) is missing — it deliberately omits the same
+            // fallback for the same reason. Left in place rather than deleted to avoid scope creep
+            // on an unrelated file — validate this finding from Claude with team, out of scope for
+            // this PR. Documented here because Claude PR reviews kept flagging this line as a
+            // possible bug, requiring re-deriving the same schema/write-path trace each time.
             citationUrl: get(interaction, 'answer.citation.providedCitationUrl') || get(interaction, 'answer.citation.url') || '',
             englishAnswer: get(interaction, 'answer.englishAnswer'),
             answer: get(interaction, 'answer.content'),
@@ -366,6 +399,7 @@ function flattenInteraction(chat, interaction, view) {
     const base = {
         uniqueID,
         chatId: chat.chatId || '',
+        appVersion: get(interaction, 'appVersion') || chat.appVersion || '',
         pageLanguage: chat.pageLanguage || get(interaction, 'context.pageLanguage') || '',
         aiService: chat.aiProvider || '',
         searchService: chat.searchProvider || '',
@@ -411,7 +445,7 @@ function flattenInteraction(chat, interaction, view) {
     return merged;
 }
 
-async function chatExportHandler(req, res) {
+export async function chatExportHandler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
@@ -422,10 +456,12 @@ async function chatExportHandler(req, res) {
             startDate, endDate,
             department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
             timezoneOffsetMinutes,
-            batchId,
             view = 'default',
             format = 'xlsx'
         } = req.query;
+        let { batchId } = req.query;
+        const requestedChatIds = parseChatIdList(req.query.chatIds);
+        const useExplicitChatIds = requestedChatIds.length > 0;
 
         if (!VIEW_DEFINITIONS[view]) {
             return res.status(400).json({ error: `Invalid view: ${view}` });
@@ -467,18 +503,24 @@ async function chatExportHandler(req, res) {
         }
 
         const dateFilter = {};
-        if (startDate && endDate) {
-            const range = buildDateRange({ startDate, endDate, timezoneOffsetMinutes });
-            if (!range) return res.status(400).json({ error: 'Invalid dates' });
-            dateFilter.createdAt = range;
-        } else {
-            const now = new Date();
-            const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
-            dateFilter.createdAt = { $gte: start, $lte: now };
+        if (!useExplicitChatIds) {
+            if (startDate && endDate) {
+                const range = buildDateRange({ startDate, endDate, timezoneOffsetMinutes });
+                if (!range) return res.status(400).json({ error: 'Invalid dates' });
+                dateFilter.createdAt = range;
+            } else {
+                const now = new Date();
+                const start = new Date(now.getTime() - DEFAULT_DAYS * HOURS_IN_DAY * 60 * 60 * 1000);
+                dateFilter.createdAt = { $gte: start, $lte: now };
+            }
         }
 
         if (userType === 'public' || userType === 'referredPublic') dateFilter.user = { $exists: false };
         else if (userType === 'admin') dateFilter.user = { $exists: true };
+
+        if (useExplicitChatIds) {
+            dateFilter.chatId = { $in: requestedChatIds };
+        }
 
         const chatPopulate = getPopulateOptions(view);
         let chats;
@@ -506,8 +548,9 @@ async function chatExportHandler(req, res) {
         //    For aggregate, we already define lookups.
         //    I will need to ADD conditional lookups to the pipeline based on `view`.
 
-        const isAggregate = department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval
-            || userType === 'referredPublic';
+        const isAggregate = !useExplicitChatIds && (
+            department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic'
+        );
 
         if (isAggregate) {
             const pipeline = [];
@@ -522,7 +565,8 @@ async function chatExportHandler(req, res) {
                     createdAt: 1,
                     pageLanguage: 1,
                     aiProvider: 1,
-                    searchProvider: 1
+                    searchProvider: 1,
+                    appVersion: 1
                 }
             });
 
@@ -634,7 +678,8 @@ async function chatExportHandler(req, res) {
                     createdAt: '$doc.createdAt',
                     pageLanguage: '$doc.pageLanguage',
                     aiProvider: '$doc.aiProvider',
-                    searchProvider: '$doc.searchProvider'
+                    searchProvider: '$doc.searchProvider',
+                    appVersion: '$doc.appVersion'
                 }
             });
 
@@ -642,7 +687,8 @@ async function chatExportHandler(req, res) {
 
         } else {
             // Non-Aggregate Optimized Path - used when no filters are specified
-            if (batchId) {
+            if (!useExplicitChatIds && batchId) {
+                batchId = requireObjectIdString(batchId, 'batchId');
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
                 dateFilter._id = { $in: bIds };
@@ -651,6 +697,13 @@ async function chatExportHandler(req, res) {
             chats = await Chat.find(dateFilter)
                 .populate(chatPopulate)
                 .lean(); // Use lean for performance since we flatten anyway
+
+            if (useExplicitChatIds) {
+                const chatOrder = new Map(requestedChatIds.map((chatId, index) => [chatId, index]));
+                chats = chats
+                    .slice()
+                    .sort((a, b) => (chatOrder.get(a.chatId) ?? Number.MAX_SAFE_INTEGER) - (chatOrder.get(b.chatId) ?? Number.MAX_SAFE_INTEGER));
+            }
         }
 
         // Flatten & Headers

@@ -1,14 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
+
+    const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
     const handleToggle = useCallback(async () => {
         try {
@@ -34,6 +37,14 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
     }, [data, message]);
 
     const handleDelete = useCallback(async () => {
+        // Note: window.confirm()'s OK/Cancel buttons render in the browser/OS
+        // language, not the app's selected locale — only the message text above
+        // is translated. Matches existing precedent (VectorPage.js, UsersPage.js
+        // also use window.confirm() for destructive actions). Flagged as a known
+        // limitation, out of scope for this PR.
+        if (!window.confirm(t('common.confirmDelete'))) {
+            return;
+        }
         try {
             setDeleting(true);
             setError(null);
@@ -53,7 +64,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
         } finally {
             setDeleting(false);
         }
-    }, [message]);
+    }, [message, t]);
 
     const handleNeverStaleToggle = useCallback(async () => {
         try {
@@ -163,14 +174,16 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
             ? ` \u2714 ${expert.totalScore}`
             : ' \u2714')
         : '';
-    const expertTitle = baseTitle + expertTitleSuffix;
+    const expertTitle = withAnswerNumber(baseTitle + expertTitleSuffix);
+
+    if (!hasExpert) return null;
 
     return (
-        <GcdsDetails detailsTitle={expertTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
-            // e.target should be the gcds-details web component; check its open property
+        <details className="review-details" onToggle={(e) => {
+            // e.target is the native <details> element; check its open property
             try {
                 // call load when panel is being opened
-                if (e && e.target && !e.target.open) {
+                if (e && e.target && e.target.open) {
                     handleToggle(e);
                 }
             } catch (err) {
@@ -178,6 +191,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                 handleToggle(e);
             }
         }}>
+            <summary>{expertTitle}</summary>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
@@ -286,9 +300,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <GcdsButton
                                     onClick={handleDelete}
-                                    variant="danger"
+                                    buttonRole="danger"
                                     disabled={deleting}
                                     className="hydrated"
+                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback'))}
                                 >
                                     {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
                                 </GcdsButton>
@@ -306,7 +321,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                     );
                 })()}
             </div>
-        </GcdsDetails>
+        </details>
     );
 };
 

@@ -12,6 +12,18 @@ if (!process.env.GC_NOTIFY_API_KEY) {
 
 const client = new NotifyClient.NotifyClient("https://api.notification.canada.ca",process.env.GC_NOTIFY_API_KEY);
 
+function summarizeNotifyResponse(res) {
+  return {
+    status: res?.status ?? null,
+    statusText: res?.statusText ?? null,
+    data: {
+      id: res?.data?.id ?? res?.id ?? null,
+      reference: res?.data?.reference ?? res?.reference ?? null,
+      uri: res?.data?.uri ?? res?.uri ?? null,
+    },
+  };
+}
+
 async function sendEmail({ email, personalisation = {}, templateId = null, reference = null } = {}) {
   const tpl = templateId || process.env.GC_NOTIFY_2FA_TEMPLATE_ID || process.env[templateEnvKey];
   if (!tpl) throw new Error('GC notify template id missing');
@@ -19,7 +31,11 @@ async function sendEmail({ email, personalisation = {}, templateId = null, refer
   const options = { personalisation };
   if (reference) options.reference = reference;
   const res = await client.sendEmail(tpl, email, options);
-  ServerLoggingService.info('GC Notify sent email', 'gc-notify-service', { template: tpl, email, result: res });
+  ServerLoggingService.info('GC Notify sent email', 'gc-notify-service', {
+    template: tpl,
+    email,
+    result: summarizeNotifyResponse(res),
+  });
   return { success: true, response: res };
 }
 
@@ -29,7 +45,11 @@ async function sendSMS({ phone, personalisation = {}, templateId = null, referen
   const options = { personalisation };
   if (reference) options.reference = reference;
   const res = await client.sendSms(tpl, phone, options);
-  ServerLoggingService.info('GC Notify sent sms', 'gc-notify-service', { template: tpl, phone, result: res });
+  ServerLoggingService.info('GC Notify sent sms', 'gc-notify-service', {
+    template: tpl,
+    phone,
+    result: summarizeNotifyResponse(res),
+  });
   return { success: true, response: res };
 }
 

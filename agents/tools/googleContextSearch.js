@@ -3,6 +3,61 @@ import { tool } from "@langchain/core/tools";
 
 const customsearch = google.customsearch('v1');
 
+function maskSecretValue(text) {
+    if (!text) return text;
+
+    return String(text)
+        .replace(/([?&]key=)([^&\s]+)/gi, '$1[REDACTED]');
+}
+
+function sanitizeErrorForLogging(error) {
+    if (!error) return error;
+
+    return {
+        name: error.name,
+        message: maskSecretValue(error.message),
+        code: error.code,
+        status: error.status,
+        stack: maskSecretValue(error.stack),
+    };
+}
+
+const MAX_SEARCH_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 250;
+
+/**
+ * Transient transport/network failures (e.g. node-fetch "Premature close" from a
+ * dropped keep-alive socket, connection resets, timeouts, 5xx) are worth retrying;
+ * client errors (4xx, missing config) are not.
+ */
+function isRetryableSearchError(error) {
+    if (!error) return false;
+
+    const status = error.status ?? error.code ?? error.response?.status;
+    if (typeof status === 'number' && status >= 500) return true;
+
+    const code = String(error.code ?? '').toUpperCase();
+    const retryableCodes = [
+        'ECONNRESET',
+        'ETIMEDOUT',
+        'ECONNREFUSED',
+        'EPIPE',
+        'ENOTFOUND',
+        'EAI_AGAIN',
+        'ERR_STREAM_PREMATURE_CLOSE',
+    ];
+    if (retryableCodes.includes(code)) return true;
+
+    const message = String(error.message ?? '').toLowerCase();
+    return (
+        message.includes('premature close') ||
+        message.includes('socket hang up') ||
+        message.includes('network socket disconnected')
+    );
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 
 /**
  * Extracts search results from Google Custom Search API response.
@@ -56,7 +111,23 @@ const contextSearch = async (query, lang) => {
             searchOptions.lr = lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
         }
 
-        const res = await customsearch.cse.list(searchOptions);
+        let res;
+        for (let attempt = 1; attempt <= MAX_SEARCH_ATTEMPTS; attempt++) {
+            try {
+                res = await customsearch.cse.list(searchOptions);
+                break;
+            } catch (attemptError) {
+                if (attempt >= MAX_SEARCH_ATTEMPTS || !isRetryableSearchError(attemptError)) {
+                    throw attemptError;
+                }
+                console.warn(
+                    `Google search attempt ${attempt} failed with a transient error, retrying:`,
+                    maskSecretValue(attemptError.message)
+                );
+                await sleep(RETRY_BASE_DELAY_MS * attempt);
+            }
+        }
+
         const results = res.data;
         const extractedResults = extractSearchResults(results);
         return {
@@ -64,9 +135,10 @@ const contextSearch = async (query, lang) => {
             provider: "google"
         };
     } catch (error) {
-        console.error("Error performing Google search:", error);
+        const sanitizedError = sanitizeErrorForLogging(error);
+        console.error("Error performing Google search:", sanitizedError);
         return {
-            results: "Search failed: " + error.message,
+            results: "Search failed: " + maskSecretValue(error.message),
             provider: "google"
         };
     }

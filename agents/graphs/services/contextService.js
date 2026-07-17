@@ -23,9 +23,8 @@ async function exponentialBackoff(fn, retries = 5, initialDelay = 500) {
   }
 }
 
-function determineOutputLang(pageLang, translationData) {
-  const originalLang = translationData?.originalLanguage || 'eng';
-  return pageLang === 'fr' ? 'fra' : originalLang;
+function determineOutputLang(translationData) {
+  return translationData?.originalLanguage || 'eng';
 }
 
 export function parseContextMessage(context) {
@@ -100,7 +99,7 @@ export async function deriveContext({
     query: searchQuery,
     translatedQuestion,
     lang: pageLang,
-    outputLang: determineOutputLang(pageLang, translationData),
+    outputLang: determineOutputLang(translationData),
     originalLang: translationData?.originalLanguage || pageLang,
   };
 }

@@ -5,6 +5,7 @@ import { ROUTE_SLUGS } from '../utils/routes.js';
 class AuthService {
   static unauthorizedCallback = null;
   static currentUser = null; // Cache for current user
+  static sessionExpiresAt = null;
 
   static setUnauthorizedCallback(cb) {
     this.unauthorizedCallback = cb;
@@ -54,20 +55,24 @@ class AuthService {
 
       if (!response.ok) {
         this.currentUser = null;
+        this.sessionExpiresAt = null;
         return null;
       }
 
       const data = await response.json();
       if (data.success && data.user) {
         this.currentUser = data.user;
+        this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
         return data.user;
       }
 
       this.currentUser = null;
+      this.sessionExpiresAt = null;
       return null;
     } catch (error) {
       console.error('getCurrentUser error:', error);
       this.currentUser = null;
+      this.sessionExpiresAt = null;
       return null;
     }
   }
@@ -85,6 +90,7 @@ class AuthService {
   static logout() {
     // Clear cached user
     this.currentUser = null;
+    this.sessionExpiresAt = null;
 
     try {
       const logoutUrl = getApiUrl('auth-logout');
@@ -147,6 +153,7 @@ class AuthService {
     const data = await response.json();
     // Cookies are set automatically by the server
     this.currentUser = data.user;
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
     return data;
   }
 
@@ -172,6 +179,7 @@ class AuthService {
 
     // Cookies are set automatically by the server
     this.currentUser = data.user;
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
     return data;
   }
 
@@ -193,6 +201,7 @@ class AuthService {
     if (data.user) {
       this.currentUser = data.user;
     }
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
     return data;
   }
 
@@ -274,6 +283,10 @@ class AuthService {
   // Prefer using `getUser()` when you need to ensure the user is loaded.
   static getUserId() {
     return this.currentUser?.userId ?? null;
+  }
+
+  static getSessionExpiresAt() {
+    return this.sessionExpiresAt;
   }
 }
 

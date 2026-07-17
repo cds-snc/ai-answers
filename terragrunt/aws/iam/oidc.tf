@@ -5,7 +5,7 @@ locals {
 module "github_workflow_roles" {
   count = var.env == "production" ? 1 : 0
 
-  source            = "github.com/cds-snc/terraform-modules//gh_oidc_role?ref=v10.4.1"
+  source            = "github.com/cds-snc/terraform-modules//gh_oidc_role?ref=v11.4.3"
   billing_tag_value = var.billing_code
 
   roles = [
@@ -18,7 +18,8 @@ module "github_workflow_roles" {
 }
 
 resource "aws_iam_role_policy_attachment" "ai_answers_release" {
-  count = var.env == "production" ? 1 : 0
+  provider = aws.core_services
+  count    = var.env == "production" ? 1 : 0
 
   role       = local.ai_answers_release
   policy_arn = data.aws_iam_policy.admin.arn

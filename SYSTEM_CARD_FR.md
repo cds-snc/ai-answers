@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
 **Version** : 1.1
-**Date** : Février 2026
+**Date** : Avril 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -43,7 +43,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 </details>
 
 ## État actuel
-- **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en janvier 2026.
+- **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des [quatre essais publics](https://blogue.canada.ca/2025/12/17/reponses-ia.html) en fevrier 2026.
 - **[Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)**
 - **Production** : https://reponses-ia.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Évaluation** : Collection continue de commentaires d'experts et notation de réponses alimentant les évaluations IA et réponses
@@ -67,9 +67,8 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca)
 
 ### Support linguistique
 - Support bilingue complet (pages anglaises/françaises, y compris l'administration) pour la conformité aux langues officielles
-- Sur la page anglaise : Les utilisateurs peuvent poser des questions dans n'importe quelle langue et recevoir des réponses dans la même langue qu'ils ont posée
-- Sur la page française : Les utilisateurs reçoivent des réponses en français quelle que soit la langue dans laquelle la question a été posée
-- Citation correspond à la langue de la page
+- Les utilisateurs peuvent poser des questions dans n'importe quelle langue et reçoivent des réponses dans la même langue que celle de leur question
+- La citation correspond à la langue de la page
 ## Architecture technique
 
 ### Composants du système
@@ -115,6 +114,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 8. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
 9. **Vérification de citation** (Programmatique) : Valide le formatage des URLs de citation et génère une URL de recherche de secours si nécessaire
 10. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+11. **Évaluation automatique** : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -176,7 +176,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 - **Tests de lecteur d'écran** : Sessions d'utilisabilité itératives tenues avec une gamme d'utilisateurs de lecteurs d'écran pour tester et améliorer
 - **Conformité WCAG 2.1 AA** : Implémentation complète des normes d'accessibilité
 - **Support bilingue** : Support complet anglais/français avec conformité aux langues officielles
-- **Saisie multilingue** : Sur la page anglaise, les utilisateurs peuvent poser des questions dans plusieurs langues et recevoir une réponse dans la même langue posée. Sur la page française, les utilisateurs reçoivent des réponses en français quelle que soit la langue de la question. Le support des langues autochtones est planifié
+- **Saisie multilingue** : Les utilisateurs peuvent poser des questions dans de nombreuses langues et reçoivent une réponse dans la même langue que celle de leur question. Le support des langues autochtones sera planifié et assuré par Services aux Autochtones Canada.
 - **Langage simple** : Les réponses utilisent un langage clair et simple correspondant aux normes Canada.ca, tests d'utilisabilité itératifs extensifs
 
 #### **Risques de fiabilité du système**
@@ -191,6 +191,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 - **Planification de basculement** : Système conçu pour l'indépendance de modèle avec plusieurs fournisseurs IA
 - **Limitation du taux** : Prévient la surcharge du système et les abus
 - **Paramètre de panne** : Éteindre le système et afficher un message de panne via le panneau d'administration
+- **Surveillance automatisée de la santé** : Un moniteur en arrière-plan sonde continuellement les dépendances essentielles du système (base de données, recherche et modèle d'IA). Lorsqu'une dépendance échoue de façon répétée à l'intérieur d'une courte fenêtre glissante, le moniteur envoie un courriel d'alerte à l'équipe d'exploitation et — si la désactivation automatique est activée — règle automatiquement le site à indisponible afin que les utilisateurs voient le message de panne plutôt que des réponses défaillantes. La fréquence de sondage augmente pendant la confirmation des échecs et diminue une fois la dépendance rétablie, et le site redevient disponible automatiquement lorsque les échecs sont résorbés.
 
 ### Considérations de biais et d'équité
 
@@ -224,7 +225,7 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
   - **Notation de citation** : Notation séparée pour la précision et la pertinence de la citation (25/20/0 points)
   - **Score pondéré total** : 75% des scores de phrase + 25% du score de citation pour une évaluation de qualité complète
   - **Génération d'incorporations** : Les commentaires d'experts créent des incorporations qui permettent les évaluations IA automatisées pour des questions similaires
-  - **Amélioration future** : Ces incorporations aideront bientôt à répondre rapidement et avec précision aux questions
+  - **Réponse aux questions (en développement)** : Ces évaluations d'experts sont en voie d'être réinjectées dans la génération de réponses en direct afin de rendre les réponses plus précises — voir [Utiliser les évaluations pour améliorer les réponses](#utiliser-les-évaluations-pour-améliorer-les-réponses) ci-dessous pour l'état actuel
 
 - **Commentaires d'utilisateurs publics distincts** :
   - **Interface simple** : "Cela a-t-il été utile ?" avec des options Oui/Non pour tous les utilisateurs
@@ -232,6 +233,17 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
   - **Raisons positives** : Aucun appel nécessaire, aucune visite nécessaire, temps économisé, autre
   - **Raisons négatives** : Non pertinent, confus, pas assez détaillé, pas ce qu'ils voulaient, autre
   - **Intégration d'enquête** : Liens vers des enquêtes externes pour la collecte de commentaires supplémentaires
+
+### Utiliser les évaluations pour améliorer les réponses
+
+Les évaluations d'experts portant sur les réponses passées ne servent pas uniquement à la production de rapports — elles peuvent aussi être réinjectées dans la génération de réponses en direct. Deux mécanismes ont été conçus à cette fin, qui puisent tous deux dans le même ensemble de paires question/réponse évaluées par des experts. **Le pipeline de production actuel n'en utilise encore aucun** — il exécute le graphe de base qui génère chaque réponse à neuf, sans aucune étape fondée sur les évaluations. L'état de chaque mécanisme est précisé ci-dessous.
+
+- **Réponses éclairées par les évaluations (questions similaires) — entre en essai de production** : Avant que l'IA ne génère une réponse, le système récupère quelques-unes des paires passées les plus similaires évaluées par des experts et les inclut dans les instructions du modèle à titre d'exemples concrets — des paires à note parfaite à imiter, et des paires comportant des erreurs signalées (accompagnées des notes phrase par phrase de l'expert et de la citation corrigée) afin que le modèle puisse éviter de répéter des erreurs connues. Un seuil de similarité garantit que seuls des exemples véritablement pertinents sont utilisés; lorsqu'aucun exemple pertinent n'existe, aucun n'est injecté. C'est la prochaine étape prévue pour la production, introduite au moyen d'un essai contrôlé d'une variante de pipeline mise à jour.
+- **Réponses vérifiées instantanées (service par court-circuit) — expérimental, pas en production** : Lorsqu'une nouvelle question correspond de très près à une question passée dont la réponse a obtenu d'un expert la note parfaite de 100/100, le système servirait cette réponse vérifiée directement et contournerait le modèle d'IA, réduisant les coûts et la latence. Seules les réponses ayant obtenu la note parfaite seraient admissibles, et la correspondance doit être très étroite pour éviter de servir la mauvaise réponse. Lors des tests, cette approche ne s'est pas encore montrée assez fiable pour être déployée; elle demeure donc désactivée en production.
+
+Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sélectionnables (« graphes »), exigent qu'une évaluation d'expert existe pour une réponse passée, et sont conçus pour se dégrader en douceur — si la recherche est indisponible, la génération de réponses se poursuit normalement sans exemples.
+
+**Pour les détails techniques complets, voir [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
 ### Performance actuelle
 - **Temps de réponse** : Moins de 10 secondes pour la plupart des requêtes

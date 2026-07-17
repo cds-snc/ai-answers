@@ -1,12 +1,12 @@
-# Use Node.js LTS as the base image
-FROM node:lts AS build
+# Use Node.js 24.18.0 as the base image
+FROM node:24.18.0 AS build
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+RUN npm ci
 
 # Copy the rest of the application
 COPY . .
@@ -15,10 +15,13 @@ COPY . .
 RUN GENERATE_SOURCEMAP=false npm run build
 
 # Use Node.js for the backend
-FROM node:lts
+FROM node:24.18.0
 
 # Set working directory
 WORKDIR /app
+
+ARG APP_VERSION=unknown
+ENV APP_VERSION=${APP_VERSION}
 
 RUN apt-get update \
     && apt-get install -y socat \
@@ -30,15 +33,7 @@ RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install -omit=dev
-
-# Copy pre-downloaded/converted cross-encoder model
-# Model files are in models/ (committed to repo or generated locally)
-ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
-ENV HF_HOME=/app/.cache/huggingface
-COPY models /app/.cache/huggingface/
-# Set environment to use local models
-ENV LOCAL_CROSSENCODER_MODEL=cross-encoder/quora-distilroberta-base
+RUN npm ci --omit=dev
 
 # Copy built frontend and backend code
 COPY --from=build /app/build /app/build

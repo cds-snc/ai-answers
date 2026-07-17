@@ -24,21 +24,6 @@ const SessionService = {
     }
     return null;
   },
-  async report(chatId, latencyMs = 0, error = false, errorType = null) {
-    const url = getApiUrl('chat-report');
-    const visitorId = await this.getVisitorId();
-    try {
-      await AuthService.fetch(url, {
-        method: 'POST',
-        // Pass visitorId in body to allow transparent session recovery if session expired
-        body: JSON.stringify({ chatId, latencyMs, error, errorType, visitorId })
-      });
-    } catch (e) {
-      // swallow - non-fatal client-side telemetry
-      if (console && console.error) console.error('SessionService.report failed', e);
-    }
-  },
-
   async getSessionMetrics() {
     const url = getApiUrl('chat-session-metrics');
     const resp = await AuthService.fetch(url, {

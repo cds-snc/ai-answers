@@ -6,53 +6,50 @@ import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import storageService from './Storage.js';
 import { AzureOpenAI } from 'openai';
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
-import { QuoraCrossEncoderComparator } from './comparators/QuoraCrossEncoderComparator.js';
+import { google } from 'googleapis';
+import { SettingsService } from './SettingsService.js';
 
-/**
- * Test Quora Cross-Encoder model (local Transformers.js)
- */
-async function testQuoraModel() {
-    const startTime = Date.now();
+const CONNECTIVITY_TIMEOUT_MS = 10000;
+const SIMULATION_KEYS = {
+    database: 'connectivity.simulation.database',
+    search: 'connectivity.simulation.search',
+    llm: 'connectivity.simulation.llm',
+};
+
+async function withTimeout(promise, timeoutMs, label) {
+    let timeout;
     try {
-        const comparator = new QuoraCrossEncoderComparator();
-
-        // Test with one identical and one different question
-        const q1 = "What is the SCIS form number?";
-        const candidates = [
-            "What is the SCIS form number?", // Same
-            "How do I bake a cake?"          // Different
-        ];
-
-        const result = await comparator.compare([q1], candidates);
-
-        const sameScore = result.results.find(r => r.index === 0)?.score || 0;
-        const diffScore = result.results.find(r => r.index === 1)?.score || 0;
-
-        return {
-            service: 'Quora Cross-Encoder',
-            status: 'connected',
-            message: `Model loaded and verified. Threshold: ${result.metadata.threshold}`,
-            latencyMs: Date.now() - startTime,
-            configured: true,
-            details: {
-                model: result.metadata.model,
-                testPairs: [
-                    { q1, q2: candidates[0], score: sameScore, status: sameScore >= result.metadata.threshold ? 'MATCH' : 'REJECT' },
-                    { q1, q2: candidates[1], score: diffScore, status: diffScore >= result.metadata.threshold ? 'MATCH' : 'REJECT' }
-                ]
-            }
-        };
-    } catch (error) {
-        return {
-            service: 'Quora Cross-Encoder',
-            status: 'error',
-            message: error.message,
-            latencyMs: Date.now() - startTime,
-            configured: true
-        };
+        return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+            }),
+        ]);
+    } finally {
+        clearTimeout(timeout);
     }
+}
+
+function isSimulationEnabled(key) {
+    try {
+        return SettingsService.toBoolean(SettingsService.get(key), false);
+    } catch (_error) {
+        return false;
+    }
+}
+
+function simulatedFailure(service, startTime) {
+    return {
+        service,
+        status: 'error',
+        statusCode: 503,
+        message: 'Simulated connection failure',
+        latencyMs: Date.now() - startTime,
+        configured: true,
+        details: {
+            simulated: true,
+        }
+    };
 }
 
 /**
@@ -61,6 +58,10 @@ async function testQuoraModel() {
 async function testDocumentDB() {
     const startTime = Date.now();
     try {
+        if (isSimulationEnabled(SIMULATION_KEYS.database)) {
+            return simulatedFailure('DocumentDB', startTime);
+        }
+
         // Check if mongoose is connected
         if (mongoose.connection.readyState !== 1) {
             return {
@@ -241,6 +242,10 @@ async function testAzureOpenAI() {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-06-01';
 
+    if (isSimulationEnabled(SIMULATION_KEYS.llm)) {
+        return simulatedFailure('Azure OpenAI', startTime);
+    }
+
     if (!apiKey || !endpoint) {
         return {
             service: 'Azure OpenAI',
@@ -295,174 +300,135 @@ async function testAzureOpenAI() {
     }
 }
 
-/**
- * Test AWS Bedrock connection (with role assumption)
- */
-/**
- * Test AWS Bedrock connection (with role assumption)
- */
-async function testBedrockWithRole() {
-    const startTime = Date.now();
-    const bedrockRegion = 'us-east-1';
-    const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
+// Canada.ca/Coveo search is not currently available in this environment.
+// Keep this probe disabled until the endpoint is ready, otherwise the
+// connectivity dashboard reports a known unavailable dependency as an outage.
+// async function testCanadaCaSearch() {
+//     const startTime = Date.now();
+//     const searchUri = process.env.CANADA_CA_SEARCH_URI;
+//     const searchApiKey = process.env.CANADA_CA_SEARCH_API_KEY;
+//
+//     if (!searchUri || !searchApiKey) {
+//         return {
+//             service: 'Canada.ca search',
+//             status: 'not_configured',
+//             message: 'CANADA_CA_SEARCH_URI or CANADA_CA_SEARCH_API_KEY not set',
+//             latencyMs: Date.now() - startTime,
+//             configured: false
+//         };
+//     }
+//
+//     try {
+//         const controller = new AbortController();
+//         const timeout = setTimeout(() => controller.abort(), CONNECTIVITY_TIMEOUT_MS);
+//         const response = await (async () => {
+//             try {
+//                 return await fetch(searchUri, {
+//                     method: 'POST',
+//                     signal: controller.signal,
+//                     headers: {
+//                         Authorization: `Bearer ${searchApiKey}`,
+//                         'Content-Type': 'application/json',
+//                         Accept: 'application/json',
+//                     },
+//                     body: JSON.stringify({
+//                         q: 'passport',
+//                         searchHub: 'canada-gouv-public-websites',
+//                         originLevel3: '/en/sr/srb.html',
+//                     }),
+//                 });
+//             } finally {
+//                 clearTimeout(timeout);
+//             }
+//         })();
+//
+//         const responseText = await response.text();
+//         if (!response.ok) {
+//             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+//         }
+//
+//         const body = JSON.parse(responseText);
+//         const resultCount = Array.isArray(body?.results) ? body.results.length : 0;
+//
+//         return {
+//             service: 'Canada.ca search',
+//             status: 'connected',
+//             message: 'Connection successful',
+//             latencyMs: Date.now() - startTime,
+//             configured: true,
+//             details: {
+//                 resultCount,
+//                 endpoint: searchUri
+//             }
+//         };
+//     } catch (error) {
+//         return {
+//             service: 'Canada.ca search',
+//             status: 'error',
+//             message: error.message,
+//             latencyMs: Date.now() - startTime,
+//             configured: true
+//         };
+//     }
+// }
 
-    if (!bedrockRoleArn) {
+/**
+ * Test Google Custom Search connection
+ */
+async function testGoogleSearch() {
+    const startTime = Date.now();
+    const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+    const apiKey = process.env.GOOGLE_API_KEY;
+
+    if (isSimulationEnabled(SIMULATION_KEYS.search)) {
+        return simulatedFailure('Google search', startTime);
+    }
+
+    if (!searchEngineId || !apiKey) {
         return {
-            service: 'Bedrock (Claude US)',
+            service: 'Google search',
             status: 'not_configured',
-            message: 'BEDROCK_ROLE_ARN not set',
+            message: 'GOOGLE_SEARCH_ENGINE_ID or GOOGLE_API_KEY not set',
             latencyMs: Date.now() - startTime,
             configured: false
         };
     }
 
     try {
-        // Assume the cross-account role first
-        const stsClient = new STSClient({ region: 'us-east-1' });
-        const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
-            RoleArn: bedrockRoleArn,
-            RoleSessionName: 'connectivity-test',
-            DurationSeconds: 900
-        }));
+        const customsearch = google.customsearch('v1');
+        const response = await withTimeout(
+            customsearch.cse.list({
+                cx: searchEngineId,
+                key: apiKey,
+                q: 'passport',
+                lr: 'lang_en',
+            }),
+            CONNECTIVITY_TIMEOUT_MS,
+            'Google search connectivity test'
+        );
 
-        const credentials = {
-            accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
-            secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
-            sessionToken: assumeRoleResponse.Credentials.SessionToken
-        };
-
-        const client = new BedrockRuntimeClient({
-            region: bedrockRegion,
-            credentials
-        });
-
-        const command = new InvokeModelCommand({
-            modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
-            contentType: 'application/json',
-            accept: 'application/json',
-            body: JSON.stringify({
-                anthropic_version: 'bedrock-2023-05-31',
-                max_tokens: 50,
-                messages: [{ role: 'user', content: 'Hello' }]
-            })
-        });
-
-        const response = await client.send(command);
-        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-        const outputText = responseBody.content?.[0]?.text || 'No response text';
+        const resultCount = Array.isArray(response?.data?.items) ? response.data.items.length : 0;
 
         return {
-            service: 'Bedrock (Claude US)',
+            service: 'Google search',
             status: 'connected',
-            message: 'Connection successful with role assumption',
+            message: 'Connection successful',
             latencyMs: Date.now() - startTime,
             configured: true,
             details: {
-                region: bedrockRegion,
-                roleArn: bedrockRoleArn,
-                testModel: 'anthropic.claude-haiku-4-5-20251001-v1:0',
-                responseText: outputText
+                resultCount,
+                searchEngineId
             }
         };
     } catch (error) {
         return {
-            service: 'Bedrock (Claude US)',
+            service: 'Google search',
             status: 'error',
             message: error.message,
             latencyMs: Date.now() - startTime,
-            configured: true,
-            details: { region: bedrockRegion, roleArn: bedrockRoleArn }
+            configured: true
         };
     }
-}
-
-/* `testBedrockClaudeCanada` removed — no longer needed */
-
-/**
- * Test AWS Bedrock connection using Amazon Nova (No Marketplace dependency)
- */
-async function testBedrockNova() {
-    const startTime = Date.now();
-    const bedrockRegion = 'ca-central-1'; // Use Canada Central
-    const bedrockRoleArn = process.env.BEDROCK_ROLE_ARN;
-
-    if (!bedrockRoleArn) {
-        return {
-            service: 'Bedrock (Nova)',
-            status: 'not_configured',
-            message: 'BEDROCK_ROLE_ARN not set',
-            latencyMs: Date.now() - startTime,
-            configured: false
-        };
-    }
-
-    try {
-        // Assume the cross-account role first
-        const stsClient = new STSClient({ region: 'ca-central-1' });
-        const assumeRoleResponse = await stsClient.send(new AssumeRoleCommand({
-            RoleArn: bedrockRoleArn,
-            RoleSessionName: 'connectivity-test-nova',
-            DurationSeconds: 900
-        }));
-
-        const credentials = {
-            accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
-            secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
-            sessionToken: assumeRoleResponse.Credentials.SessionToken
-        };
-
-        const client = new BedrockRuntimeClient({
-            region: bedrockRegion,
-            credentials
-        });
-
-        // Amazon Nova Lite cross-region inference profile for Canada
-        const modelId = 'ca.amazon.nova-lite-v1:0';
-
-        const command = new InvokeModelCommand({
-            modelId,
-            contentType: 'application/json',
-            accept: 'application/json',
-            body: JSON.stringify({
-                inferenceConfig: {
-                    max_new_tokens: 50
-                },
-                messages: [{ role: 'user', content: [{ text: 'Hello' }] }]
-            })
-        });
-
-        const response = await client.send(command);
-        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-        const outputText = responseBody.output?.message?.content?.[0]?.text || 'No response text';
-
-        return {
-            service: 'Bedrock (Nova)',
-            status: 'connected',
-            message: 'Connection successful to Amazon Nova Lite!',
-            latencyMs: Date.now() - startTime,
-            configured: true,
-            details: {
-                region: bedrockRegion,
-                roleArn: bedrockRoleArn,
-                testModel: modelId,
-                responseText: outputText
-            }
-        };
-    } catch (error) {
-        return {
-            service: 'Bedrock (Nova)',
-            status: 'error',
-            message: error.message,
-            latencyMs: Date.now() - startTime,
-            configured: true,
-            details: { region: bedrockRegion, roleArn: bedrockRoleArn }
-        };
-    }
-}
-
-// Wrapper for backward compatibility
-async function testBedrock() {
-    return testBedrockWithRole();
 }
 
 /**
@@ -474,9 +440,7 @@ async function testAllConnections() {
         testRedis(),
         testS3(),
         testAzureOpenAI(),
-        testBedrockWithRole(),
-        testQuoraModel(),
-        testBedrockNova()
+        testGoogleSearch()
     ]);
 
     return {
@@ -497,9 +461,6 @@ export {
     testRedis,
     testS3,
     testAzureOpenAI,
-    testBedrock,
-    testBedrockWithRole,
-    testQuoraModel,
-    testBedrockNova,
+    testGoogleSearch,
     testAllConnections
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import UserService from '../../services/UserService.js';

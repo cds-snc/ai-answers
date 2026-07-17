@@ -1,0 +1,957 @@
+/* Add Font Awesome CSS import at the top */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
+
+/* Suppress focus ring on programmatically focused elements (tabindex="-1")
+   that exist only to move the screen-reader cursor for a status/loading
+   announcement (e.g. FeedbackComponent's "thank you" message, ChatInterface's
+   loading indicator) — sighted keyboard users have nothing to act on there,
+   so a visible ring would be confusing rather than helpful. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* Opt back into a visible ring for tabindex="-1" targets a sighted keyboard
+   user deliberately lands on, where the focus itself is meaningful and not
+   just a screen-reader cursor move: role="alert" errors (AnnouncedError.js,
+   FeedbackInlineError.js) and in-page jump targets (.focus-target — e.g.
+   BatchUpload's "Go to the Incomplete batches section" landing on
+   BatchPage's tabindex="-1" section). */
+[role="alert"][tabindex="-1"]:focus,
+.focus-target:focus {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
+}
+
+/* Custom non-responsive font sizes */
+.font-size-text-sm-nr {
+  font-size: var(--gcds-font-sizes-text-small); /* 18px — GC DS token, stays this size on mobile rather than shrinking to --gcds-font-sizes-text-small-mobile (16px) */
+}
+
+.font-size-text-xsm-nr {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.5em;
+}
+
+.font-size-text-xxs-nr {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.2em;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+}
+/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
+.referring-url-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.container-custom:first-of-type {
+  margin-bottom: 0px !important;
+}
+
+/* Fluid width + capped max-width, matching GcdsHeader's own inner container
+   (gcds-header.css: width:90%; max-width:var(--gcds-header-container-max-width))
+   and GcdsContainer's layout="page" — so page content lines up with the
+   header/logo/nav edges at every viewport width, not just at fixed breakpoints. */
+.container-custom {
+  width: 90%;
+  max-width: var(--gcds-container-size-xl);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
+.container-custom :after,
+.container-custom :before {
+  display: table;
+}
+
+.container-custom :after {
+  clear: both;
+}
+
+/* top banner for alpha/beta warning */
+/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
+.alpha-top {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  top: 0;
+  background-color: #f2f2f2;
+  z-index: 100;
+}
+.alpha {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: white;
+  z-index: 100;
+}
+.alpha-label {
+  background-color: black;
+  border: none;
+  color: white;
+  font-weight: 700;
+  padding: 8px 8px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin: 4px 2px;
+  border-radius: 0px;
+  font-size: 14px !important;
+}
+.alpha-fill {
+  background-color: #f2f2f2;
+  padding: 0.6em 1em 0.6em 0.6em;
+}
+
+/* index.css */
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.wb-inv {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+  font-size: 1em;
+}
+
+/* When focused, make it visible for keyboard users */
+.wb-inv:focus,
+.wb-inv:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--gcds-link-focus-background);
+  color: var(--gcds-link-focus-text);
+  border-radius: var(--gcds-link-focus-border-radius);
+  box-shadow: var(--gcds-link-focus-box-shadow);
+  outline: var(--gcds-link-focus-outline-width) solid
+    var(--gcds-link-focus-background);
+  outline-offset: var(--gcds-link-focus-outline-offset);
+  text-decoration: none;
+  padding: 10px;
+  display: inline-block;
+  z-index: 9999;
+  transition: none;
+  animation: none;
+}
+
+/* modifications of GCDS-tokens to Canada.ca design where appropriate */
+:root {
+  --gcds-header-margin: 0 0 1.55rem !important;
+  --gcds-heading-h1-border-background: #af3c43 !important;
+  --gcds-link-font-regular-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
+  --gcds-link-font-small-desktop: 400 1rem / 135% "Noto Sans", sans-serif;
+  --gcds-header-brand-grid-gap: 0rem !important;
+  --gcds-header-brand-padding: 0 0 0.9rem !important;
+  --gcds-header-brand-border-color: #ddd !important;
+  --gcds-header-brand-border-width: 0.01rem !important;
+  --gcds-link-underline-offset: 0.1rem !important;
+  --gcds-text-size-body-desktop: 400 1.25rem / 160% "Noto Sans", sans-serif !important;
+  --gcds-link-font-small-desktop: 400 1rem / 150% "Noto Sans", sans-serif !important;
+}
+
+/* clean up margins and spacing */
+gcds-button.send-button {
+  margin-bottom: 40px;
+}
+gcds-container {
+  margin-bottom: 40px !important;
+}
+gcds-details {
+  margin-bottom: 0px !important;
+}
+
+.mrgn-bttm-20 {
+  margin-bottom: 20px;
+}
+
+.form-error-message {
+  color: var(--gcds-error-message-text-color);
+  font-weight: var(--gcds-font-weights-bold);
+}
+
+.mrgn-bttm-10 {
+  margin-bottom: 10px;
+}
+
+.mrgn-bttm-4 {
+  margin-bottom: 4px;
+}
+
+.display-block {
+  display: block;
+}
+
+/* GC DS's own readable-line-length token (same one gcds-text's characterLimit
+   prop applies) — for plain markup GCDS has no bare utility class for.
+   TODO: revisit as a width restriction in combination with character restriction */
+.text-measure {
+  max-width: var(--gcds-text-character-limit);
+}
+
+/* .list-disc (gcds-utility) sets no spacing between <li> items. Shared by
+   BatchUpload's CSV-instructions list and ExpertFeedbackComponent's
+   .harmful-details list — both needed the same gap, so this replaced two
+   near-identical per-component rules.
+
+   TOKEN SUGGESTION for GC DS: their spacing scale is entirely rem-based, so
+   getting equivalent-looking item spacing across lists at different font
+   sizes (e.g. default body text vs .harmful-details' 18px text) means
+   picking a different --gcds-spacing-* per context by hand. Using 1.25em
+   here instead scales automatically with whatever font-size the list
+   renders at (note: this is below WCAG 1.4.12's 2x-font-size
+   paragraph-spacing guideline — a deliberate visual call, not a compliance
+   claim). Worth proposing to the GC DS team as a font-relative step (e.g.
+   --gcds-spacing-text-1-25x: 1.25em) alongside the fixed rem scale. */
+.canada-ca-list-spcd-2 li {
+  margin-bottom: 1.25em;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.mrgn-rght-15 {
+  margin-right: 15px;
+}
+
+.mrgn-tp-1r {
+  margin-top: 1rem;
+}
+
+.mrgn-lft-sm {
+  margin-left: 16px;
+  margin-top: 0px !important;
+}
+
+/* Homepage subtitle ("Get answers to your Canada.ca questions"). Was
+   h2:first-of-type — unscoped, so it silently applied to (and had to be
+   fought via !important elsewhere for) any other page's first h2, including
+   the feedback components' own headings. */
+h2.homepage-subtitle {
+  font: var(--gcds-heading-h4-desktop);
+  margin-bottom: 10px;
+  color: #333 !important;
+}
+
+gcds-container:first-of-type {
+  margin-bottom: 0px !important;
+}
+
+.loading-container {
+  border: 1px solid #d9d9d9;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 0.5rem;
+}
+
+.loading-text {
+  flex: 1;
+}
+
+.loading-animation {
+  color: #333;
+  position: relative;
+  font-size: 4px;
+  background: #333;
+  animation: escaleY 1s infinite ease-in-out;
+  width: 1em;
+  height: 4em;
+  animation-delay: -0.16s;
+  transform-origin: center;
+}
+.loading-animation:before,
+.loading-animation:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 2em;
+  background: #333;
+  width: 1em;
+  height: 4em;
+  animation: escaleY 1s infinite ease-in-out;
+  transform-origin: center;
+}
+.loading-animation:before {
+  left: -2em;
+  animation-delay: -0.32s;
+}
+
+@keyframes escaleY {
+  0%,
+  80%,
+  100% {
+    transform: scaleY(1);
+  }
+  40% {
+    transform: scaleY(1.25) translateY(-1em);
+  }
+}
+
+/* detail/summary styling */
+details {
+  padding-left: 1.1em;
+  padding-right: 1.1em;
+  margin-bottom: 0.25em;
+}
+
+details[open] {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+}
+
+details summary {
+  display: flex !important;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #295376;
+  padding: 5px 15px;
+  background-color: white;
+}
+
+/* Details that sit inside a form alongside GC DS inputs (e.g. BatchUpload's
+   workflow/model advanced options, ExpertFeedbackComponent's harmful details)
+   — darker border so they read as part of the form, matching GC DS's input
+   border color (--gcds-input-default-text) but 1px thinner than the input's
+   own 0.125rem (2px) border width. */
+.details-form[open],
+.details-form summary {
+  border-color: var(--gcds-input-default-text);
+  border-radius: 0;
+}
+
+/* "Page language" is a field label, not a heading — it shouldn't outrank
+   "Name the batch" (GcdsInput's own label) in size/weight. GcdsFieldset's
+   legendSize only offers heading-scale presets (h2-h6; even h6 is Lato
+   700 22px, bigger/bolder than a label), so match --gcds-label-font-desktop/
+   -mobile exactly — the same token GcdsInput/GcdsSelect's own labels use.
+   Custom properties cross shadow DOM boundaries, so redefining the legend's
+   size token here reaches GcdsFieldset's shadow-rendered <legend>. */
+.language-toggle {
+  --gcds-fieldset-legend-size-h6-desktop: var(--gcds-label-font-desktop);
+  --gcds-fieldset-legend-size-h6-mobile: var(--gcds-label-font-mobile);
+}
+
+/* Same reasoning as .language-toggle above: GcdsFileUploader's whole wrapper
+   (its "Add CSV file" label included) inherits font from
+   --gcds-file-uploader-font-desktop/-mobile (400 weight, 140% line-height) —
+   a different token than GcdsInput/GcdsSelect's labels use, not
+   --gcds-label-font-desktop/-mobile. Redefining it here matches "Add CSV
+   file" to "Name the batch" instead of letting it read as its own,
+   unrelated weight. */
+.csv-file-uploader {
+  --gcds-file-uploader-font-desktop: var(--gcds-label-font-desktop);
+  --gcds-file-uploader-font-mobile: var(--gcds-label-font-mobile);
+}
+
+details > summary {
+  margin-left: -1.1em;
+  margin-right: -1.1em;
+}
+
+/* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
+summary {
+  display: block !important;
+  list-style: none;
+  visibility: visible !important;
+  cursor: pointer;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: '►';
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 0.75em;
+  line-height: 1;
+}
+
+details[open] > summary::before {
+  content: '▼';
+}
+
+/* buttons */
+.btn-primary-sm {
+  padding: var(--gcds-button-small-padding);
+  background: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+  border: var(--gcds-button-border-width) solid transparent;
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
+  cursor: pointer;
+}
+
+.btn-secondary-sm {
+  padding: var(--gcds-button-small-padding);
+  background: white;
+  color: var(--gcds-color-blue-900);
+  border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-small-font-desktop);
+  cursor: pointer;
+}
+
+.btn-primary {
+  margin-top: 10px;
+  padding: 10px 18px;
+  background-color: var(--gcds-color-blue-900);
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1.55em;
+  font-family: "Noto Sans";
+}
+
+.btn-primary-sm:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-primary-send:hover:not(:disabled) {
+  background: var(--gcds-button-primary-hover-background);
+}
+
+.btn-secondary-sm:hover {
+  background: var(--gcds-color-blue-100);
+}
+
+.btn-primary-sm:focus,
+.btn-primary-sm:focus:hover,
+.btn-primary:focus,
+.btn-primary:focus:hover,
+summary:focus,
+.close-icon:focus {
+  background-color: var(--gcds-details-focus-background);
+  border-color: var(--gcds-details-focus-background);
+  border-radius: var(--gcds-details-focus-border-radius);
+  box-shadow: var(--gcds-details-focus-box-shadow);
+  color: var(--gcds-details-focus-text);
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+  text-decoration: none;
+}
+
+.btn-primary:focus {
+  border-radius: var(--gcds-border-radius-md);
+}
+
+
+.hr {
+  padding-top: 30px;
+  margin-top: 60px;
+  border-top: 1px solid #ccc;
+}
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  user-select: none;
+}
+
+.mrgn-bttm-lg {
+  margin-bottom: 22px;
+}
+
+.small-text {
+  font-size: 16px;
+}
+
+/* radios */
+
+fieldset {
+  border: 1px solid silver;
+  margin: 0 2px;
+  padding: 0.35em 0.625em 0.75em;
+}
+
+fieldset.gc-chckbxrdio legend:first-of-type {
+  padding-top: 20px;
+}
+
+legend {
+  border: 0;
+  padding: 0;
+}
+
+input[type="search"] {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.gc-chckbxrdio input[type="checkbox"],
+.gc-chckbxrdio input[type="radio"] {
+  margin: 4px 0 0;
+  line-height: normal;
+  margin-left: 10px;
+  opacity: 0;
+  z-index: 2;
+}
+
+fieldset[disabled] input[type="checkbox"],
+fieldset[disabled] input[type="radio"],
+input[type="checkbox"].disabled,
+input[type="checkbox"][disabled],
+input[type="radio"].disabled,
+input[type="radio"][disabled] {
+  cursor: not-allowed;
+}
+
+input[type="file"] {
+  display: block;
+}
+
+input[type="range"] {
+  display: block;
+  width: 100%;
+}
+
+select[multiple],
+select[size] {
+  height: auto;
+}
+
+input[type="checkbox"]:focus,
+input[type="file"]:focus,
+input[type="radio"]:focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+output {
+  display: block;
+  padding-top: 11px;
+  font-size: 16px;
+  line-height: 1.4375;
+  color: rgb(85.425, 85.425, 85.425);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 37px;
+  padding: 10px 14px;
+  font-size: 16px;
+  line-height: 1.4375;
+  color: rgb(85.425, 85.425, 85.425);
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-transition: border-color ease-in-out 0.15s,
+    box-shadow ease-in-out 0.15s;
+  -webkit-transition: border-color ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+}
+
+.form-control:focus {
+  border-color: #66afe9;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+}
+
+.form-control::-moz-placeholder {
+  color: #5c5c5c !important;
+  opacity: 1;
+}
+
+.form-control:-ms-input-placeholder {
+  color: #5c5c5c !important;
+}
+
+.form-control::-webkit-input-placeholder {
+  color: #5c5c5c !important;
+}
+
+.form-control::-ms-expand {
+  background-color: transparent;
+  border: 0;
+}
+
+.form-control[disabled],
+.form-control[readonly],
+fieldset[disabled] .form-control {
+  background-color: rgb(238.425, 238.425, 238.425);
+  opacity: 1;
+}
+
+.form-control[disabled],
+fieldset[disabled] .form-control {
+  cursor: not-allowed;
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="date"].form-control,
+  input[type="datetime-local"].form-control,
+  input[type="month"].form-control,
+  input[type="time"].form-control {
+    line-height: 37px;
+  }
+
+  .input-group-sm input[type="date"],
+  .input-group-sm input[type="datetime-local"],
+  .input-group-sm input[type="month"],
+  .input-group-sm input[type="time"],
+  .input-group-sm > .input-group-btn > input[type="date"].btn,
+  .input-group-sm > .input-group-btn > input[type="datetime-local"].btn,
+  .input-group-sm > .input-group-btn > input[type="month"].btn,
+  .input-group-sm > .input-group-btn > input[type="time"].btn,
+  input[type="date"].input-sm,
+  input[type="datetime-local"].input-sm,
+  input[type="month"].input-sm,
+  input[type="time"].input-sm {
+    line-height: 33px;
+  }
+
+  .input-group-lg input[type="date"],
+  .input-group-lg input[type="datetime-local"],
+  .input-group-lg input[type="month"],
+  .input-group-lg input[type="time"],
+  .input-group-lg > .input-group-btn > input[type="date"].btn,
+  .input-group-lg > .input-group-btn > input[type="datetime-local"].btn,
+  .input-group-lg > .input-group-btn > input[type="month"].btn,
+  .input-group-lg > .input-group-btn > input[type="time"].btn,
+  input[type="date"].input-lg,
+  input[type="datetime-local"].input-lg,
+  input[type="month"].input-lg,
+  input[type="time"].input-lg {
+    line-height: 46px;
+  }
+}
+
+.gc-chckbxrdio fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.answer-improvement label,
+label.expert-citation-url {
+  font-weight: 500 !important;
+}
+.gc-chckbxrdio .checkbox,
+.gc-chckbxrdio .radio {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 26px;
+  line-height: 2.8em;
+}
+
+.gc-chckbxrdio.md .checkbox,
+.gc-chckbxrdio.md .radio {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  line-height: 1em;
+}
+
+.checkbox.disabled label,
+.radio.disabled label,
+fieldset[disabled] .checkbox label,
+fieldset[disabled] .radio label {
+  cursor: not-allowed;
+}
+
+.checkbox label,
+.radio label {
+  min-height: 23px;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"],
+.checkbox-inline input[type="checkbox"],
+.radio input[type="radio"],
+.radio-inline input[type="radio"] {
+  position: absolute;
+  margin-left: -20px;
+}
+
+.checkbox + .checkbox,
+.radio + .radio {
+  margin-top: -5px;
+}
+
+.checkbox-inline,
+.radio-inline {
+  position: relative;
+  display: inline-block;
+  padding-left: 20px;
+  margin-bottom: 0;
+  font-weight: 400;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.checkbox-inline.disabled,
+.radio-inline.disabled,
+fieldset[disabled] .checkbox-inline,
+fieldset[disabled] .radio-inline {
+  cursor: not-allowed;
+}
+
+.checkbox-inline + .checkbox-inline,
+.radio-inline + .radio-inline {
+  margin-top: 0;
+  margin-left: 10px;
+}
+
+fieldset.gc-chckbxrdio {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.gc-chckbxrdio label {
+  cursor: pointer;
+  display: block;
+  max-width: 100%;
+  color: var(--gcds-label-text);
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
+  margin: var(--gcds-label-margin);
+}
+
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
+}
+
+.gc-chckbxrdio input[type="checkbox"][disabled] + label,
+.gc-chckbxrdio input[type="radio"][disabled] + label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label,
+.gc-chckbxrdio input[type="radio"] + label {
+  display: inline-block;
+  margin-left: 40px;
+  width: auto;
+  /* Wins over the generic .expert-rating-container label { font-size: 16px }
+     rule (chat.css) on specificity — two class-level selectors here vs one
+     there — that was shrinking radio/checkbox option labels below the GC DS
+     label token size. */
+  font: var(--gcds-label-font-desktop);
+  font-weight: var(--gcds-font-weights-medium);
+}
+
+@media only screen and (width < 48em) {
+  .gc-chckbxrdio input[type="checkbox"] + label,
+  .gc-chckbxrdio input[type="radio"] + label {
+    font: var(--gcds-label-font-mobile);
+    font-weight: var(--gcds-font-weights-medium);
+  }
+}
+
+.gc-chckbxrdio.md input[type="checkbox"] + label,
+.gc-chckbxrdio.md input[type="radio"] + label {
+  margin-left: 26px;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label::before,
+.gc-chckbxrdio input[type="radio"] + label::before {
+  border: 13px solid #fff;
+  -webkit-box-shadow: 0 0 0 2px #333;
+  box-shadow: 0 0 0 2px #000;
+  content: "";
+  display: inline-block;
+  height: 19px;
+  left: 0;
+  position: absolute;
+  top: 2px;
+  width: 19px;
+}
+
+.gc-chckbxrdio.md input[type="checkbox"] + label::before,
+.gc-chckbxrdio.md input[type="radio"] + label::before {
+  border: 8px solid #fff;
+  height: 14px;
+  width: 14px;
+}
+
+.gc-chckbxrdio input[type="checkbox"] + label:hover::before,
+.gc-chckbxrdio input[type="radio"] + label:hover::before {
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#e5e5e5),
+    color-stop(50%, #fff)
+  );
+  background-image: linear-gradient(to bottom, #e5e5e5, #fff 50%);
+}
+
+.gc-chckbxrdio input[type="checkbox"]:hover,
+.gc-chckbxrdio input[type="radio"]:hover {
+  cursor: pointer;
+}
+
+.gc-chckbxrdio input[type="checkbox"]:hover + label::before,
+.gc-chckbxrdio input[type="radio"]:hover + label::before {
+  background-image: -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#e5e5e5),
+    color-stop(50%, #fff)
+  );
+  background-image: linear-gradient(to bottom, #e5e5e5, #fff 50%);
+}
+
+.gc-chckbxrdio input[type="checkbox"]:focus + label::before,
+.gc-chckbxrdio input[type="radio"]:focus + label::before {
+  outline: 4px solid var(--gcds-details-focus-background);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px var(--gcds-details-focus-background);
+}
+
+.gc-chckbxrdio.md input[type="checkbox"]:focus:checked + label::after {
+  border-color: var(--gcds-details-focus-background);
+}
+
+.gc-chckbxrdio input[type="radio"]:checked:focus + label::before {
+  background: var(--gcds-details-focus-background);
+}
+
+.gc-chckbxrdio input[type="radio"] + label::before {
+  border-radius: 50%;
+}
+
+.gc-chckbxrdio input[type="radio"]:checked + label::before {
+  background: #333;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label,
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label + ul {
+  font-size: 17px;
+  min-height: 23px;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"] + label::before {
+  height: 24px;
+  left: 6px;
+  top: 4px;
+  width: 24px;
+}
+
+.gc-chckbxrdio.checkbox input[type="checkbox"]:checked + label::after {
+  border-width: 0 3px 3px 0;
+  height: 16px;
+  left: 14px;
+  top: 6px;
+  width: 9px;
+}
+
+.gc-chckbxrdio.md input[type="checkbox"]:checked + label::after {
+  border-width: 0 4px 4px 0;
+  height: 18px;
+  left: 9px;
+  width: 8px;
+}
+
+.gc-chckbxrdio input[type="checkbox"]:checked + label::after {
+  border-color: #333;
+  border-style: solid;
+  border-width: 0 5px 5px 0;
+  content: "";
+  display: inline-block;
+  height: 26px;
+  left: 12px;
+  position: absolute;
+  top: 4px;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+  width: 13px;
+}
+
+@media (prefers-contrast: more) {
+  .gc-chckbxrdio input[type="checkbox"]:focus + label::before {
+    border: 5px double #000;
+  }
+
+  .gc-chckbxrdio input[type="radio"]:focus + label::before {
+    border: 5px double #000;
+  }
+
+  .gc-chckbxrdio input[type="radio"]:checked + label::before {
+    outline: 10px solid #444;
+    outline-offset: -20px;
+  }
+}
+
+/* Suppress Edge's native password reveal button only where the custom toggle is present */
+.auth-password-wrapper input::-ms-reveal {
+  display: none;
+}
+/* Keep wide experimental result tables centred while containing overflow. */
+.experimental-results-table-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-inline: 1rem;
+  box-sizing: border-box;
+}
+
+.experimental-results-table {
+  width: 100%;
+  margin-inline: auto;
+}

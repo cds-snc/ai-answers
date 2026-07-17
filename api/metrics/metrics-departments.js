@@ -43,8 +43,12 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
         {
             $addFields: {
-                hasExpertFeedback: { $cond: [{ $ne: ['$expertFeedback', null] }, 1, 0] },
                 category: getPartnerEvalAggregationExpression('$expertFeedback')
+            }
+        },
+        {
+            $addFields: {
+                hasExpertFeedback: { $cond: [{ $ne: ['$category', null] }, 1, 0] }
             }
         },
         // Project only fields needed for aggregation (optimization)
@@ -135,7 +139,7 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
             expertScoredTotal: { $sum: '$hasExpertFeedback' },
             expertScoredCorrect: { $sum: { $cond: [{ $eq: ['$category', 'correct'] }, 1, 0] } },
             expertScoredNeedsImprovement: { $sum: { $cond: [{ $eq: ['$category', 'needsImprovement'] }, 1, 0] } },
-            expertScoredHasError: { $sum: { $cond: [{ $eq: ['$category', 'hasError'] }, 1, 0] } }
+            expertScoredHasError: { $sum: { $cond: [{ $in: ['$category', ['hasError', 'harmful']] }, 1, 0] } }
         }
     });
     stages.push({ $sort: { total: -1 } });

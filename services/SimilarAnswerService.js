@@ -11,10 +11,10 @@ import ConversationIntegrityService from './ConversationIntegrityService.js';
 // Toggle between LLM and local cross-encoder by changing the import:
 // import { LLMRankerComparator } from './comparators/LLMRankerComparator.js';
 import { QuoraCrossEncoderComparator } from './comparators/QuoraCrossEncoderComparator.js';
+import { LLMRankerComparator } from './comparators/LLMRankerComparator.js';
 
-// Instantiate the comparator (swap implementations here for testing)
-// const questionFlowComparator = new LLMRankerComparator();
-const questionFlowComparator = new QuoraCrossEncoderComparator();
+const localComparator = new QuoraCrossEncoderComparator();
+const llmComparator = new LLMRankerComparator();
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -260,20 +260,19 @@ export const SimilarAnswerService = {
         // Clean up trailing whitespace/newline characters from question strings
         const sanitizedCandidateQuestions = sanitizeQuestionArray(candidateQuestions);
         const sanitizedUserQuestions = sanitizeQuestionArray(questions);
-        ServerLoggingService.info(`Invoking comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
+        ServerLoggingService.info(`Invoking local comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
             userQuestions: sanitizedUserQuestions,
             candidateQuestions: sanitizedCandidateQuestions,
-            comparator: questionFlowComparator.getName()
+            comparator: localComparator.getName()
         });
 
-        // Use the comparator abstraction (swap implementations at top of file)
-        const comparisonResult = await questionFlowComparator.compare(
+        const comparisonResult = await localComparator.compare(
             sanitizedUserQuestions,
             sanitizedCandidateQuestions,
             { chatId, selectedAI }
         );
 
-        ServerLoggingService.info(`Comparator returned ${comparisonResult.results.length} results`, chatId, {
+        ServerLoggingService.info(`Local comparator returned ${comparisonResult.results.length} results`, chatId, {
             method: comparisonResult.method,
             latencyMs: comparisonResult.metadata?.latencyMs
         });
@@ -284,14 +283,32 @@ export const SimilarAnswerService = {
         const topChecks = topResult?.checks ?? null;
 
         if (topIndex === -1) {
-            ServerLoggingService.info('Comparator produced no accepted match; continuing normal flow', 'chat-similar-answer');
+            ServerLoggingService.info('Local comparator produced no accepted match; continuing normal flow', 'chat-similar-answer');
             return null;
         }
 
+        // The local model is deliberately only a candidate filter. Re-run the
+        // selected candidate through the ranker and reuse an answer only when
+        // every LLM safety/semantic check passes.
+        const llmResult = await llmComparator.compare(
+            sanitizedUserQuestions,
+            [sanitizedCandidateQuestions[topIndex]],
+            { chatId, selectedAI }
+        );
+        const llmConfirmation = llmResult.results.find(result => result.index === 0 && result.recommendation === 'accept');
+        if (!llmConfirmation) {
+            ServerLoggingService.info('LLM confirmation rejected local match; continuing normal flow', chatId, {
+                localScore: topResult.score,
+                llmError: llmResult.metadata?.error || null,
+            });
+            return null;
+        }
+        const confirmedChecks = llmConfirmation.checks;
+
         ServerLoggingService.info(`Comparator selected index ${topIndex} as top candidate`, chatId, {
             score: topResult?.score,
-            topChecks,
-            method: comparisonResult.method
+            topChecks: confirmedChecks,
+            method: `${comparisonResult.method}+${llmResult.method}`
         });
         // Choose the top-ranked entry from the ranker results. fall back to the first ordered entry or finalCandidates[0]
         const chosen = orderedEntries[topIndex];
@@ -322,7 +339,7 @@ export const SimilarAnswerService = {
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
             citation: formatted.citation || null,
-            rankerTop: { index: topIndex, checks: topChecks },
+            rankerTop: { index: topIndex, checks: confirmedChecks },
             historySignature
         };
     }

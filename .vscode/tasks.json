@@ -19,8 +19,8 @@
           "pattern": "$tsc",
           "background": {
             "activeOnStart": true,
-            "beginsPattern": "^.*Compiling\\.$",
-            "endsPattern": "^.*Compiled successfully\\.$"
+            "beginsPattern": "^\\s*VITE v\\d+",
+            "endsPattern": "^\\s*ready in \\d+ms\\.$"
           }
         }
       ],

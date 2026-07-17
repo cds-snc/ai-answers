@@ -37,6 +37,14 @@ const embeddingSchema = new mongoose.Schema(
     questionsEmbedding: { type: [Number], required: false, default: undefined },
     answerEmbedding: { type: [Number], required: false, default: undefined },
 
+    // Denormalized retrieval metadata for DocDB 8 pre-filtered QA searches.
+    pageLanguage: { type: String, required: false, default: undefined },
+    interactionLanguage: { type: String, required: false, default: undefined },
+    expertFeedbackId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExpertFeedback', required: false, default: undefined },
+    expertFeedbackTotalScore: { type: Number, required: false, default: undefined },
+    expertFeedbackCreatedAt: { type: Date, required: false, default: undefined },
+    expertFeedbackNeverStale: { type: Boolean, required: false, default: undefined },
+
   },
   {
     collection: 'embeddings',
@@ -51,6 +59,8 @@ const embeddingSchema = new mongoose.Schema(
 // - chatId: used when resolving/chat-level filters
 embeddingSchema.index({ interactionId: 1 });
 embeddingSchema.index({ chatId: 1 });
+embeddingSchema.index({ expertFeedbackId: 1, pageLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 });
+embeddingSchema.index({ expertFeedbackId: 1, interactionLanguage: 1, expertFeedbackTotalScore: 1, expertFeedbackCreatedAt: 1 });
 
 export const Embedding =
   mongoose.models.Embedding || mongoose.model('Embedding', embeddingSchema);

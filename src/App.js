@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
@@ -13,8 +13,10 @@ import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
 import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
-import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@cdssnc/gcds-components-react';
-import './styles/App.css';
+import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter, GcdsNotice, GcdsText } from '@gcds-core/components-react';
+import './styles/global.css';
+import './styles/admin.css';
+import './styles/chat.css';
 import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
 import EvalDashboardPage from './pages/EvalDashboardPage.js';
@@ -23,15 +25,24 @@ import DatabasePage from './pages/DatabasePage.js';
 import SettingsPage from './pages/SettingsPage.js';
 import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
+import { useAuth } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
+import ExecDashboardPage from './pages/ExecDashboardPage.js';
+import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
+import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
 import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
+import ExperimentalAnalysisPage from './pages/experimental/ExperimentalAnalysisPage.js';
+import ExperimentalDatasetsPage from './pages/experimental/ExperimentalDatasetsPage.js';
+import ExperimentalBatchResultsPage from './pages/experimental/ExperimentalBatchResultsPage.js';
+import ExperimentalSuitePage from './pages/experimental/ExperimentalSuitePage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
 import { translateSlug } from './utils/routes.js';
+import { PUBLIC_HOME_ROUTE_PATHS, isPublicAuthExemptPath } from './config/appRoutePaths.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -178,8 +189,20 @@ const AppLayout = () => {
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
   const { t } = useTranslations(currentLang);
+  const { currentUser, sessionWarningVisible } = useAuth();
+  const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
+
+  // Set the html lang attribute synchronously (before paint/microtasks) so that
+  // GCDS web components (gcds-header, gcds-footer) resolve the correct language
+  // the first time their componentWillLoad reads the ancestor [lang] attribute.
+  // A useEffect here fires too late: it runs after those components have already
+  // initialized off the stale <html lang="en"> from index.html, briefly rendering
+  // untranslated skip-link and footer text on French page loads.
+  useLayoutEffect(() => {
+    document.documentElement.lang = currentLang;
+  }, [currentLang]);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
@@ -214,9 +237,6 @@ const AppLayout = () => {
       const projectStatus = currentLang === 'fr' ? 'bêta' : 'beta';
       projectStatusMeta.setAttribute('content', projectStatus);
     }
-
-    // Update html lang attribute
-    document.documentElement.lang = currentLang;
 
     // Only update title and description for pages without custom metadata
     if (!isCustomMetadataPage) {
@@ -332,6 +352,17 @@ const AppLayout = () => {
           )}
         </GcdsBreadcrumbs>
       </GcdsHeader>
+      {currentUser && sessionWarningVisible && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
+        <div className="container-custom mb-400">
+          <GcdsNotice
+            noticeRole="warning"
+            noticeTitleTag="h2"
+            noticeTitle={t('auth.sessionWarning.title')}
+          >
+            <GcdsText>{t('auth.sessionWarning.message')}</GcdsText>
+          </GcdsNotice>
+        </div>
+      )}
       <main id="main-content">
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
@@ -350,13 +381,14 @@ export default function App() {
     const defaultLang = hostPrefixMatch && hostPrefixMatch[1] === 'reponses-ia' ? 'fr' : 'en';
     const homeDefault = defaultLang === 'fr' ? homeFr : homeEn;
     const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
+    const homeRouteEntries = PUBLIC_HOME_ROUTE_PATHS.map((path) => ({
+      path,
+      element: path === '/fr' ? homeFr : homeEn,
+    }));
+    homeRouteEntries[0] = { path: '/', element: homeDefault };
 
     const publicRoutes = [
-      ...(requireAuthForChat ? [] : [
-        { path: '/', element: homeDefault },
-        { path: '/en', element: homeEn },
-        { path: '/fr', element: homeFr },
-      ]),
+      ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
@@ -376,9 +408,10 @@ export default function App() {
 
     const protectedRoutes = [
       ...(requireAuthForChat ? [
-        { path: '/', element: homeDefault, roles: ['admin', 'partner'] },
-        { path: '/en', element: homeEn, roles: ['admin', 'partner'] },
-        { path: '/fr', element: homeFr, roles: ['admin', 'partner'] },
+        ...homeRouteEntries.map((route) => ({
+          ...route,
+          roles: ['admin', 'partner'],
+        })),
       ] : []),
       { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
@@ -400,6 +433,12 @@ export default function App() {
       { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/exec-dashboard', element: <ExecDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-executif', element: <ExecDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
@@ -411,7 +450,15 @@ export default function App() {
       { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
       { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/analysis', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/datasets', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'] },
+      { path: '/fr/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

@@ -3,7 +3,10 @@ import mongoose from 'mongoose';
 import EmbeddingService from './EmbeddingService.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import EvaluationService from './EvaluationService.js';
+import ProgramActionClassificationService from './ProgramActionClassificationService.js';
 import { Setting } from '../models/setting.js';
+import { requireString } from '../api/util/db-query.js';
+import { getPersistedAppVersion } from './AppVersionService.js';
 
 export const InteractionPersistenceService = {
     async persistInteraction(arg1, arg2, arg3, arg4) {
@@ -40,9 +43,11 @@ export const InteractionPersistenceService = {
         if (!chatId) {
             throw new Error('chatId_required');
         }
+        chatId = requireString(chatId, 'chatId');
 
         ServerLoggingService.info('[InteractionPersistenceService] Start - chatId:', chatId);
-        let chat = await Chat.findOne({ chatId: chatId });
+        let chat = await Chat.findOne({ chatId });
+        const appVersion = interaction.appVersion || getPersistedAppVersion();
 
         if (!chat) {
             chat = new Chat();
@@ -51,6 +56,9 @@ export const InteractionPersistenceService = {
         chat.aiProvider = interaction.selectedAI;
         chat.searchProvider = interaction.searchProvider;
         chat.pageLanguage = interaction.pageLanguage;
+        if (appVersion && !chat.appVersion) {
+            chat.appVersion = appVersion;
+        }
 
         // Assign user to chat if authenticated and not already set
         if (user && user.userId && !chat.user) {
@@ -67,6 +75,7 @@ export const InteractionPersistenceService = {
         dbInteraction.instantAnswerInteractionId = interaction.instantAnswerInteractionId || '';
         // Persist workflow name when provided by callers
         dbInteraction.workflow = interaction.workflow || '';
+        dbInteraction.appVersion = appVersion;
 
         const context = new Context(interaction.context || {});
         // Object.assign(context, interaction.context || {});
@@ -134,6 +143,19 @@ export const InteractionPersistenceService = {
         // 4. Update and save the chat
         chat.interactions.push(dbInteraction._id);
         await chat.save();
+
+        // 4b. Program/action task classification — fire-and-forget so the
+        // response path pays no latency; a failure leaves the Context fields
+        // at '' (see docs/plans/program-action-classification.md).
+        ProgramActionClassificationService.classifyInteractionInBackground({
+            contextId: savedContext._id,
+            chatId,
+            question: interaction.answer?.englishQuestion || interaction.question || '',
+            answer: interaction.answer?.englishAnswer || interaction.answer?.content || '',
+            department: savedContext.department || '',
+            citationUrl: interaction.finalCitationUrl || interaction.answer?.citationUrl || '',
+            referringUrl: interaction.referringUrl || ''
+        });
 
         // 5. Generate embeddings for the interaction (non-blocking for persistence)
         try {

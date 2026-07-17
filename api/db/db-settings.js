@@ -1,21 +1,25 @@
 import dbConnect from './db-connect.js';
 import { Setting } from '../../models/setting.js';
+import { requireLiteralString, requireString } from '../util/db-query.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function settingsHandler(req, res) {
   if (req.method === 'GET') {
-    const { key } = req.query;
+    let { key } = req.query;
     if (!key) {
       return res.status(400).json({ message: 'Key required' });
     }
+    key = requireLiteralString(key, 'setting key');
     await dbConnect();
     const setting = await Setting.findOne({ key });
     return res.status(200).json({ key, value: setting ? setting.value : null });
   } else if (req.method === 'POST') {
-    const { key, value } = req.body;
+    let { key, value } = req.body;
     if (!key) {
       return res.status(400).json({ message: 'Key required' });
     }
+    key = requireLiteralString(key, 'setting key');
+    value = requireString(value, 'setting value');
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
     return res.status(200).json({ message: 'Setting updated' });

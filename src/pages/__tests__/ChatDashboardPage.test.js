@@ -35,7 +35,7 @@ vi.mock('datatables.net-dt', () => ({
   default: () => null
 }));
 
-vi.mock('@cdssnc/gcds-components-react', () => ({
+vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <div>{children}</div>,
   GcdsLink: ({ children, href }) => <a href={href}>{children}</a>

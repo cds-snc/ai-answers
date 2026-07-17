@@ -1,4 +1,5 @@
 resource "aws_security_group" "ai_answers_load_balancer_sg" {
+  provider    = aws.core_services
   name        = "ai_answers_load_balancer_sg"
   description = "Security group for load balancer"
   vpc_id      = var.vpc_id

@@ -1,12 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
-const PublicFeedbackPanel = ({ message, t }) => {
+const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
+
+    const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
     const handleToggle = useCallback(async () => {
         try {
@@ -42,13 +44,15 @@ const PublicFeedbackPanel = ({ message, t }) => {
         // Before fetch: publicFeedback is an ObjectId reference — just show checkmark
         publicTitleSuffix = ' \u2714';
     }
-    const publicTitle = baseTitle + publicTitleSuffix;
+    const publicTitle = withAnswerNumber(baseTitle + publicTitleSuffix);
+
+    if (!interaction.publicFeedback && !message.publicFeedback) return null;
 
     return (
-        <GcdsDetails detailsTitle={publicTitle} className="review-details" tabIndex="0" onGcdsClick={(e) => {
+        <details className="review-details" onToggle={(e) => {
             try {
                 // Call handleToggle when the details panel is opened (e.target.open === true)
-                if (e && e.target && !e.target.open) {
+                if (e && e.target && e.target.open) {
                     handleToggle(e);
                 }
             } catch (err) {
@@ -56,6 +60,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
                 handleToggle(e);
             }
         }}>
+            <summary>{publicTitle}</summary>
             <div className="review-panel public-feedback-panel">
                 {loading && <div>{t('common.loading', 'Loading...')}</div>}
                 {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
@@ -73,7 +78,7 @@ const PublicFeedbackPanel = ({ message, t }) => {
                 </div>
                 {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>
-        </GcdsDetails>
+        </details>
     );
 };
 

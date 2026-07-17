@@ -1,15 +1,29 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
+import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInProgressError } from '../../services/ChatWorkflowService.js';
 
 
 import DataStoreService from '../../services/DataStoreService.js';
-import SessionService from '../../services/SessionService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS } from '../../config/workflows.js';
+import { safeHttpHref } from '../../utils/safeUrl.js';
+import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
+import { getCitationUrl } from '../../utils/getCitationUrl.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+
+// Minimum gap between real-backend-status live-region announcements, so a
+// fast-moving backend can't fire several in rapid succession — see the
+// throttled status-announce effect in ChatAppContainer.
+const STATUS_ANNOUNCE_THROTTLE_MS = 4000;
+
+// Minimum gap since the last status announcement (real or fallback) before
+// the "still working" reassurance fires — see the fallback effect below,
+// which shares this clock with the throttled effect above so the two can't
+// land back to back.
+const STILL_WORKING_INTERVAL_MS = 6000;
+
 // Utility functions go here, before the component
 const decodeHTMLEntities = (text) => {
   const entities = {
@@ -105,8 +119,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [ariaLiveMessage, setAriaLiveMessage] = useState('');
   const [errorAlert, setErrorAlert] = useState('');
   const userLeftChatRef = useRef(false);
-  const hintTimerRef = useRef(null);
-  const statusTimersRef = useRef([]);
+  const stillWorkingTimerRef = useRef(null);
+  const lastStatusAnnounceTimeRef = useRef(0);
+  const pendingStatusAnnounceTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
@@ -175,45 +190,78 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     return () => chatEl.removeEventListener('focusout', handleFocusOut);
   }, [isLoading]);
 
-  // Timed loading announcements while in moderatingQuestion phase:
-  // 1s  — hint text
-  // 5s  — "Building context..."          (buildingContext)
-  // 8s  — "Generating answer..."         (generatingAnswer)
-  // 12s — "Still generating answer..."   (thinkingMore)
-  // All timers are cancelled if status advances or loading ends.
-  useEffect(() => {
-    const clearAll = () => {
-      statusTimersRef.current.forEach(id => clearTimeout(id));
-      statusTimersRef.current = [];
-      if (hintTimerRef.current) {
-        clearTimeout(hintTimerRef.current);
-        hintTimerRef.current = null;
-      }
-    };
+  // The "AI can make mistakes" disclaimer is now folded into the loading
+  // container's aria-label (ChatInterface.js), announced atomically at
+  // focus-time instead of as a separate announcement 1s later — a fast
+  // response could interrupt the old delayed version mid-sentence. The
+  // throttled status effect below still deliberately can't announce before
+  // ~4s, giving that combined announcement room to finish uninterrupted.
 
-    if (!isLoading || displayStatus !== 'moderatingQuestion') {
-      clearAll();
+  // Real backend progress (searching, building context, verifying citation,
+  // ...), throttled to at most one announcement every
+  // STATUS_ANNOUNCE_THROTTLE_MS — a fast-moving backend can advance through
+  // several stages a second apart, and narrating every one of those is more
+  // noise than help. If several stages complete inside one throttle window,
+  // only the latest gets announced once the window opens. The throttle
+  // baseline resets to "now" whenever a request starts (the
+  // displayStatus === 'moderatingQuestion' branch below), so the earliest a
+  // real stage can be announced is ~4s in — after the guaranteed hint above.
+  useEffect(() => {
+    if (!isLoading) {
+      lastStatusAnnounceTimeRef.current = 0;
+      clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+      return;
+    }
+    if (displayStatus === 'moderatingQuestion') {
+      lastStatusAnnounceTimeRef.current = Date.now();
+      clearTimeout(pendingStatusAnnounceTimeoutRef.current);
       return;
     }
 
-    hintTimerRef.current = setTimeout(() => {
-      announceToLiveRegion(safeT('homepage.chat.input.loadingHint'));
-    }, 1000);
+    const announceNow = () => {
+      lastStatusAnnounceTimeRef.current = Date.now();
+      announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
+    };
 
-    statusTimersRef.current = [
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.buildingContext')), 5000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.generatingAnswer')), 12000),
-      setTimeout(() => announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore')), 17000),
-    ];
+    const elapsed = Date.now() - lastStatusAnnounceTimeRef.current;
+    clearTimeout(pendingStatusAnnounceTimeoutRef.current);
+    if (elapsed >= STATUS_ANNOUNCE_THROTTLE_MS) {
+      announceNow();
+    } else {
+      pendingStatusAnnounceTimeoutRef.current = setTimeout(announceNow, STATUS_ANNOUNCE_THROTTLE_MS - elapsed);
+    }
 
-    return clearAll;
+    return () => clearTimeout(pendingStatusAnnounceTimeoutRef.current);
   }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
 
-  // Announce other status changes immediately when they occur.
+  // Fallback reassurance if the request goes quiet for a while — shares the
+  // same clock (lastStatusAnnounceTimeRef) the throttled effect above writes
+  // to on every real announcement, instead of an independent fixed timer, so
+  // the two can't fire back to back. Each check either announces (if nothing
+  // else has been said in the last STILL_WORKING_INTERVAL_MS) or reschedules
+  // itself for whenever that window will next be up — so a real announcement
+  // always pushes the fallback back out, and a long-running request still
+  // gets occasional reassurance without ever duplicating a recent one.
   useEffect(() => {
-    if (!isLoading || displayStatus === 'moderatingQuestion') return;
-    announceToLiveRegion(safeT(`homepage.chat.messages.${displayStatus}`));
-  }, [isLoading, displayStatus, safeT, announceToLiveRegion]);
+    if (!isLoading) {
+      clearTimeout(stillWorkingTimerRef.current);
+      return;
+    }
+
+    const checkAndScheduleNext = () => {
+      const elapsed = Date.now() - lastStatusAnnounceTimeRef.current;
+      if (elapsed >= STILL_WORKING_INTERVAL_MS) {
+        lastStatusAnnounceTimeRef.current = Date.now();
+        announceToLiveRegion(safeT('homepage.chat.messages.thinkingMore'));
+        stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS);
+      } else {
+        stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS - elapsed);
+      }
+    };
+
+    stillWorkingTimerRef.current = setTimeout(checkAndScheduleNext, STILL_WORKING_INTERVAL_MS);
+    return () => clearTimeout(stillWorkingTimerRef.current);
+  }, [isLoading, safeT, announceToLiveRegion]);
 
   // Announce outcomes once loading ends.
   useEffect(() => {
@@ -457,11 +505,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           ...(referringUrl.trim() && { referringUrl: referringUrl.trim() })
         }
       ]);
-      let startMs;
       const overrideUserId = AuthService.getUserId ? AuthService.getUserId() : (AuthService.currentUser?.userId ?? null);
       try {
         const aiMessageId = messageIdCounter.current++;
-        startMs = Date.now();
         const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -477,19 +523,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           selectedSearch,  // Add this parameter
           overrideUserId
         );
-        const latencyMs = Date.now() - startMs;
 
         // Capture server-generated chatId (if this was the first request)
         if (interaction?.chatId && onChatIdUpdate) {
           onChatIdUpdate(interaction.chatId);
-        }
-
-        // Fire-and-forget report to server about latency (and success)
-        // Use the interaction's chatId if we didn't have one before
-        const effectiveChatId = interaction?.chatId || chatId;
-        // fire-and-forget session report (no specific errorType for success)
-        if (!overrideUserId) {
-          SessionService.report(effectiveChatId, latencyMs, false, null);
         }
 
         clearInput();
@@ -508,27 +545,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         setIsLoading(false);
 
       } catch (error) {
-        // attempt to record latency and error, including an errorType when we can
-        try {
-          const errLatency = Date.now() - (typeof startMs !== 'undefined' ? startMs : Date.now());
-          let errorType = null;
-          if (error instanceof RedactionError) {
-            errorType = 'redaction';
-          } else if (error instanceof ShortQueryValidation) {
-            errorType = 'shortQuery';
-          }
-          (async () => {
-            try {
-              if (!overrideUserId) {
-                await SessionService.report(chatId, errLatency, true, errorType);
-              }
-            } catch (e) {
-              if (console && console.error) console.error('session report failed', e);
-            }
-          })();
-        } catch (e) {
-          // ignore
-        }
         if (error instanceof RedactionError) {
           if (error.redactedText.includes('XXX')) {
             // Privacy (XXX): single combined system bubble — one bounding box for question + warning
@@ -575,10 +591,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           setIsLoading(false);
           return;
         } else if (error instanceof ShortQueryValidation) {
-          // Just append the short query error message, do not remove any messages
+          // Consolidate into one system bubble, same as the redaction paths:
+          // the original question rolls into the reply (quoted in the search
+          // link below) rather than staying its own bubble.
           const shortQueryMessageId = messageIdCounter.current++;
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: shortQueryMessageId,
               text: safeT('homepage.chat.messages.shortQueryMessage'),
@@ -589,6 +607,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               ...(error.historySignature ? { historySignature: error.historySignature } : {})
             }
           ]);
+          clearInput();
           setIsLoading(false);
           return;
         } else {
@@ -629,6 +648,21 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 sender: 'ai',
                 error: true,
                 isSessionTimeout: true
+              }
+            ]);
+            setIsLoading(false);
+            return;
+          }
+
+          if (error instanceof ChatRunInProgressError) {
+            const inProgressMessageId = messageIdCounter.current++;
+            setMessages(prevMessages => [
+              ...prevMessages,
+              {
+                id: inProgressMessageId,
+                text: safeT('homepage.chat.messages.chatRunInProgress'),
+                sender: 'system',
+                error: true,
               }
             ]);
             setIsLoading(false);
@@ -705,20 +739,26 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
     // Updated citation logic
     const answer = message.interaction?.answer || {};
-    const citation = answer.citation || {};
     // displayUrl is the citation URL to show and use for analytics
-    const displayUrl = message.interaction?.citationUrl || answer.providedCitationUrl || citation.providedCitationUrl || '';
+    const displayUrl = getCitationUrl(message.interaction);
     // interactionId is the message id (client-side userMessageId)
     const interactionId = messageId || message.interaction?.interactionId || message.interaction?.userMessageId || '';
+    const answerLang = toLangAttr(getAnswerLanguage(message.interaction));
     return (
       <div className="ai-message-content">
         {contentArr.map((content, index) => {
           // If using paragraphs, split into sentences; if using sentences, just display
-          const sentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
+          const rawSentences = (answer.paragraphs && Array.isArray(answer.paragraphs))
             ? extractSentences(content)
             : [content];
+          // Drop blanks: an empty <s-N></s-N> tag (translation collapsed a sentence) or a
+          // paragraph left empty after the <translated-question> strip above would otherwise
+          // render as an empty <p>.
+          const sentences = rawSentences.filter(
+            (sentence) => typeof sentence === 'string' && sentence.trim()
+          );
           return sentences.map((sentence, sentenceIndex) => (
-            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence">
+            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
               {decodeHTMLEntities(sentence)}
             </p>
           ));
@@ -727,13 +767,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head font-size-text-small">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     <a
-                      href={displayUrl}
+                      href={safeHttpHref(displayUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label={buildAriaLabel(displayUrl, lang)}
                       className={isMobile && displayUrl.length > 40 ? 'long-url-mobile' : ''}
                       onClick={() => {
                         try {
@@ -757,14 +798,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                         }
                       }}
                     >
-                      <span className="citation-url-text font-size-text-xsm-nr">
+                      <span className="citation-url-text font-size-text-small">
                         {(() => {
                           // Mobile: always render full URL, CSS handles ellipsis
                           if (isMobile) {
                             return (
                               <>
                                 {displayUrl}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
@@ -793,7 +833,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                             return (
                               <>
                                 {displayUrl}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
@@ -820,7 +859,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                               {beforeWrap.replace(/-/g, '\u2011')}
                               <span style={{ whiteSpace: 'nowrap' }}>
                                 {insideWrap}
-                                <span className="sr-only"> ({safeT('homepage.chat.input.opensInNewTab')})</span>
                                 <svg
                                   width="12"
                                   height="12"
@@ -914,8 +952,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Add handler for department changes
 
-  const initialInput = t('homepage.chat.input.initial');
-
   return (
     <>
       <ChatInterface
@@ -942,20 +978,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
-        getLabelForInput={() =>
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.text : initialInput)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').text
-              : t('homepage.chat.input.followUp'))
-        }
-        ariaLabelForInput={
-          turnCount === 0
-            ? (typeof initialInput === 'object' ? initialInput.ariaLabel : undefined)
-            : (typeof t('homepage.chat.input.followUp') === 'object'
-              ? t('homepage.chat.input.followUp').ariaLabel
-              : undefined)
-        }
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
@@ -980,5 +1002,3 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 };
 
 export default ChatAppContainer;
-
-

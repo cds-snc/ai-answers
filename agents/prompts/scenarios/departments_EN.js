@@ -15,6 +15,11 @@ export const departments_EN = [
     "abbrKey": "AAFC-AAC"
   },
   {
+    "name": "AgPal",
+    "url": "https://agpal.ca/en/home",
+    "abbrKey": "AGPAL"
+  },
+  {
     "name": "Atlantic Canada Opportunities Agency",
     "url": "https://www.canada.ca/en/atlantic-canada-opportunities.html",
     "abbrKey": "ACOA-APECA"
@@ -153,6 +158,11 @@ export const departments_EN = [
     "name": "Canada School of Public Service",
     "url": "https://www.csps-efpc.gc.ca/index-eng.aspx",
     "abbrKey": "CSPS-EFPC"
+  },
+   {
+    "name": "Canada Tariff finder",
+    "url": "https://www.tariffinder.ca/en/getStarted",
+    "abbrKey": "TARIFF-TARIF"
   },
   {
     "name": "Accessibility Standards Canada",
@@ -412,7 +422,7 @@ export const departments_EN = [
   {
     "name": "Competition Tribunal",
     "url": "https://www.ct-tc.gc.ca/en/home.html",
-    "abbrKey": "CT"
+    "abbrKey": "CT-TC"
   },
   {
     "name": "Conflict of Interest and Ethics Commissioner (Office of the)",
@@ -477,7 +487,7 @@ export const departments_EN = [
   {
     "name": "Democratic Institutions",
     "url": "https://www.canada.ca/en/democratic-institutions.html",
-    "abbrKey": "DI"
+    "abbrKey": "DEMO"
   },
   {
     "name": "Digital Museums Canada",
@@ -637,7 +647,7 @@ export const departments_EN = [
   {
     "name": "Impact Canada",
     "url": "https://impact.canada.ca/en",
-    "abbrKey": "IC"
+    "abbrKey": "IMPACT"
   },
   {
     "name": "Independent Review Panel for Defence Acquisition",
@@ -702,7 +712,7 @@ export const departments_EN = [
   {
     "name": "Labour Program",
     "url": "https://www.canada.ca/en/employment-social-development/corporate/portfolio/labour.html",
-    "abbrKey": "LP"
+    "abbrKey": "TRAVAIL-LABOUR"
   },
   {
     "name": "Laurentian Pilotage Authority Canada",
@@ -792,7 +802,7 @@ export const departments_EN = [
   {
     "name": "Canada Science and Technology Museum",
     "url": "https://ingeniumcanada.org/scitech",
-    "abbrKey": "INGEN-SCI"
+    "abbrKey": "INGENIUM"
   },
   {
     "name": "National Research Council Canada",
@@ -842,7 +852,7 @@ export const departments_EN = [
   {
     "name": "Parks Canada",
     "url": "https://parks.canada.ca/index",
-    "abbrKey": "PC"
+    "abbrKey": "PARKS-PARCS"
   },
   {
     "name": "Parole Board of Canada",
@@ -877,7 +887,7 @@ export const departments_EN = [
   {
     "name": "Privacy Commissioner of Canada (Office of the)",
     "url": "https://www.priv.gc.ca/en/",
-    "abbrKey": "OPC-CPVP"
+    "abbrKey": "PRIV"
   },
   {
     "name": "Privy Council Office",
@@ -1032,7 +1042,7 @@ export const departments_EN = [
   {
     "name": "Telefilm Canada",
     "url": "https://www.telefilm.ca/en/?q=en",
-    "abbrKey": "TFC"
+    "abbrKey": "TELEFILM"
   },
   {
     "name": "Translation Bureau",

@@ -11,6 +11,7 @@ import ServerLoggingService from '../ServerLoggingService.js';
 
 const DEFAULT_THRESHOLD = parseFloat(process.env.LOCAL_CROSSENCODER_THRESHOLD) || 0.94;
 const MODEL_NAME = 'cross-encoder/quora-distilroberta-base';
+const MODEL_LOAD_TIMEOUT_MS = parseInt(process.env.LOCAL_CROSSENCODER_LOAD_TIMEOUT_MS, 10) || 30000;
 
 // Singleton pipeline management
 let classifierPipeline = null;
@@ -33,32 +34,28 @@ async function getPipeline() {
         ServerLoggingService.info('Loading Quora cross-encoder model...', 'QuoraCrossEncoderComparator', { model: MODEL_NAME });
         const startTime = Date.now();
 
-        const { pipeline, env } = await import('@xenova/transformers');
+        const { pipeline, env } = await import('@huggingface/transformers');
 
         // Set local model path
         const path = await import('path');
         const { fileURLToPath } = await import('url');
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-        if (process.env.TRANSFORMERS_CACHE) {
-            // Docker: models are copied to cache dir
-            env.cacheDir = process.env.TRANSFORMERS_CACHE;
-        } else {
-            // Local dev: models are in project's models folder
-            env.localModelPath = path.resolve(__dirname, '../../models');
-        }
-        env.allowRemoteModels = true;
+        // The model is part of the application image. Do not attempt a Hub
+        // download or write a cache when Lambda/ECS storage is ephemeral.
+        env.localModelPath = path.resolve(__dirname, '../../models');
+        env.allowRemoteModels = false;
         env.allowLocalModels = true;
+        env.useFSCache = false;
 
-        // Load the text-classification pipeline
-        try {
-            classifierPipeline = await pipeline('text-classification', MODEL_NAME);
-            ServerLoggingService.info(`Quora cross-encoder model loaded in ${Date.now() - startTime}ms`, 'QuoraCrossEncoderComparator');
-        } catch (quantizedError) {
-            ServerLoggingService.info('Quantized model not found, falling back to non-quantized...', 'QuoraCrossEncoderComparator');
-            classifierPipeline = await pipeline('text-classification', MODEL_NAME, { quantized: false });
-            ServerLoggingService.info(`Quora cross-encoder model (non-quantized) loaded in ${Date.now() - startTime}ms`, 'QuoraCrossEncoderComparator');
-        }
+        // The committed artifact is Transformers.js' v2 `model_quantized.onnx`.
+        // In v3, `dtype: 'q8'` resolves that exact suffix; never fall back to a
+        // missing fp32 artifact or a remote model.
+        classifierPipeline = await Promise.race([
+            pipeline('text-classification', MODEL_NAME, { dtype: 'q8', device: 'cpu' }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`Local cross-encoder model load exceeded ${MODEL_LOAD_TIMEOUT_MS}ms`)), MODEL_LOAD_TIMEOUT_MS)),
+        ]);
+        ServerLoggingService.info(`Quora cross-encoder model loaded in ${Date.now() - startTime}ms`, 'QuoraCrossEncoderComparator');
 
         return classifierPipeline;
     })();

@@ -41,10 +41,38 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         },
         // Apply department filter after context lookup
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
-        { $match: { expertFeedback: { $ne: null } } },
+        // Exclude blank ExpertFeedback records created solely by the neverStale flag
+        // (those have totalScore: null because no human scored the interaction).
+        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
         {
             $addFields: {
-                category: getPartnerEvalAggregationExpression('$expertFeedback')
+                category: getPartnerEvalAggregationExpression('$expertFeedback'),
+                hasContentIssue: {
+                    $cond: [{
+                        $or: [
+                            { $eq: ['$expertFeedback.sentence1ContentIssue', true] },
+                            { $eq: ['$expertFeedback.sentence2ContentIssue', true] },
+                            { $eq: ['$expertFeedback.sentence3ContentIssue', true] },
+                            { $eq: ['$expertFeedback.sentence4ContentIssue', true] }
+                        ]
+                    }, 1, 0]
+                },
+                // Raw "answer error" signal (a sentence/total scored 0). Used to
+                // attribute content issues to error vs needs-improvement: harmful
+                // and citation-with-error answers are categorized away from
+                // 'hasError', but their underlying selection was Error, so they
+                // belong in the Error bucket. Content issues can only be flagged
+                // after selecting needs improvement or error, so "not an error
+                // signal" implies needs improvement.
+                hasErrorSignal: {
+                    $or: [
+                        { $eq: ['$expertFeedback.sentence1Score', 0] },
+                        { $eq: ['$expertFeedback.sentence2Score', 0] },
+                        { $eq: ['$expertFeedback.sentence3Score', 0] },
+                        { $eq: ['$expertFeedback.sentence4Score', 0] },
+                        { $eq: ['$expertFeedback.totalScore', 0] }
+                    ]
+                }
             }
         },
         // Project only fields needed for aggregation (optimization)
@@ -53,6 +81,8 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 pageLanguage: 1,
                 department: 1,
                 category: 1,
+                hasContentIssue: 1,
+                hasErrorSignal: 1,
                 // Keep IDs for potential cross-filter lookups
                 answerId: '$interactions.answer',
                 autoEvalId: '$interactions.autoEval'
@@ -135,15 +165,24 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
             needsImprovement: { $sum: { $cond: [{ $eq: ['$category', 'needsImprovement'] }, 1, 0] } },
             needsImprovementEn: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'needsImprovement'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
             needsImprovementFr: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'needsImprovement'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
-            hasError: { $sum: { $cond: [{ $eq: ['$category', 'hasError'] }, 1, 0] } },
-            hasErrorEn: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'hasError'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
-            hasErrorFr: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'hasError'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
+            hasError: { $sum: { $cond: [{ $in: ['$category', ['hasError', 'harmful']] }, 1, 0] } },
+            hasErrorEn: { $sum: { $cond: [{ $and: [{ $in: ['$category', ['hasError', 'harmful']] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
+            hasErrorFr: { $sum: { $cond: [{ $and: [{ $in: ['$category', ['hasError', 'harmful']] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
             hasCitationError: { $sum: { $cond: [{ $eq: ['$category', 'hasCitationError'] }, 1, 0] } },
             hasCitationErrorEn: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'hasCitationError'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
             hasCitationErrorFr: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'hasCitationError'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
             harmful: { $sum: { $cond: [{ $eq: ['$category', 'harmful'] }, 1, 0] } },
             harmfulEn: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'harmful'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
-            harmfulFr: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'harmful'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } }
+            harmfulFr: { $sum: { $cond: [{ $and: [{ $eq: ['$category', 'harmful'] }, { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
+            hasContentIssue: { $sum: '$hasContentIssue' },
+            hasContentIssueEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$hasContentIssue', 0] } },
+            hasContentIssueFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$hasContentIssue', 0] } },
+            // Content issues split into error vs needs-improvement by the raw
+            // error signal (not the priority category), so harmful/citation
+            // answers that also carry an error land in the Error bucket and the
+            // two always sum to the content-issue total.
+            hasContentIssueError: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, '$hasErrorSignal'] }, 1, 0] } },
+            hasContentIssueNeedsImprovement: { $sum: { $cond: [{ $and: [{ $eq: ['$hasContentIssue', 1] }, { $not: ['$hasErrorSignal'] }] }, 1, 0] } }
         }
     });
 
@@ -167,7 +206,12 @@ async function getExpertMetrics(req, res) {
                 needsImprovement: { total: expert.needsImprovement || 0, en: expert.needsImprovementEn || 0, fr: expert.needsImprovementFr || 0 },
                 hasError: { total: expert.hasError || 0, en: expert.hasErrorEn || 0, fr: expert.hasErrorFr || 0 },
                 hasCitationError: { total: expert.hasCitationError || 0, en: expert.hasCitationErrorEn || 0, fr: expert.hasCitationErrorFr || 0 },
-                harmful: { total: expert.harmful || 0, en: expert.harmfulEn || 0, fr: expert.harmfulFr || 0 }
+                harmful: { total: expert.harmful || 0, en: expert.harmfulEn || 0, fr: expert.harmfulFr || 0 },
+                hasContentIssue: {
+                    total: expert.hasContentIssue || 0, en: expert.hasContentIssueEn || 0, fr: expert.hasContentIssueFr || 0,
+                    needsImprovement: expert.hasContentIssueNeedsImprovement || 0,
+                    hasError: expert.hasContentIssueError || 0
+                }
             }
         };
         return res.status(200).json({ success: true, metrics });

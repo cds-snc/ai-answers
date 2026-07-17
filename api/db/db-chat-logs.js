@@ -3,6 +3,7 @@
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import {
   authMiddleware,
 
@@ -73,8 +74,9 @@ async function chatLogsHandler(req, res) {
       startDate, endDate,
       department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
       timezoneOffsetMinutes,
-      limit = 100, lastId, batchId,
+      limit = 100, lastId,
     } = req.query;
+    let { batchId } = req.query;
 
     // Validate eval category inputs (supports comma-separated multi-select)
     const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
@@ -166,7 +168,7 @@ async function chatLogsHandler(req, res) {
     let totalCount = 0;
 
     // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
-    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval) {
+    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
@@ -361,6 +363,7 @@ async function chatLogsHandler(req, res) {
       // Non-aggregate branch - used when no filters are specified
       // Apply batch filter if batchId is provided
       if (batchId) {
+        batchId = requireObjectIdString(batchId, 'batchId');
         const batchChatItems = await BatchItem.find({ batch: batchId }).select('chat');
         const batchChatIds = batchChatItems.filter(item => item.chat).map(item => item.chat);
         dateFilter = Object.keys(dateFilter).length

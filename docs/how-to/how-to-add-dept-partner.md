@@ -12,6 +12,8 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 | abbrKey | English Name | French Name |
 |---------|--------------|------------|
+| `AAFC-AAC` | Agriculture and Agri-Food Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Agriculture et Agroalimentaire Canada |
+| `BAC-LAC` | Library and Archives Canada | Bibliothèque et Archives Canada |
 | `CBSA-ASFC` | Canada Border Services Agency | Agence des services frontaliers du Canada |
 | `CEO-BEC` | Canada.ca Experience Office | Bureau de l'expérience Canada.ca |
 | `CDS-SNC` | Canadian Digital Service | Service numérique canadien |
@@ -31,6 +33,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `StatCan` | Statistics Canada | Statistique Canada |
 | `TBS-SCT` | Treasury Board of Canada Secretariat | Secrétariat du Conseil du Trésor du Canada |
+| `VAC-ACC` | Veterans Affairs Canada | Anciens Combattants Canada |
 
 ---
 
@@ -164,6 +167,9 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
+- **Regional Development Agencies → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan`
+- **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
+- **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
 ### Steps to add a new shared-scenario group
 
@@ -171,7 +177,7 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`FilterPanel.js`:** add every portfolio `abbrKey` as an individual filter option (admins often want to slice logs by the specific entity even when the scenario is shared).
+5. **`FilterPanel.js`:** add only the canonical `abbrKey` as a filter option — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
 6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 

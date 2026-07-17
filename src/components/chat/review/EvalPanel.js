@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { GcdsDetails, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
+import { formatDecimal } from '../../../utils/numberFormat.js';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
 const formatDate = (d) => {
   if (!d) return '';
@@ -26,13 +28,15 @@ const renderChatLink = (chatId) => {
   );
 };
 
-const EvalPanel = ({ message, t }) => {
+const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [reRunning, setReRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
   const getInteractionId = useCallback(() => (
     (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
@@ -89,6 +93,14 @@ const EvalPanel = ({ message, t }) => {
   }, [getInteractionId, loadEval, message]);
 
   const handleDelete = useCallback(async () => {
+    // Note: window.confirm()'s OK/Cancel buttons render in the browser/OS
+    // language, not the app's selected locale — only the message text above
+    // is translated. Matches existing precedent (VectorPage.js, UsersPage.js
+    // also use window.confirm() for destructive actions). Flagged as a known
+    // limitation, out of scope for this PR.
+    if (!window.confirm(t('common.confirmDelete'))) {
+      return;
+    }
     try {
       setDeleting(true);
       setError(null);
@@ -105,7 +117,7 @@ const EvalPanel = ({ message, t }) => {
     } finally {
       setDeleting(false);
     }
-  }, [getInteractionId, message]);
+  }, [getInteractionId, message, t]);
 
   if (!message) return null;
 
@@ -120,12 +132,7 @@ const EvalPanel = ({ message, t }) => {
         : evalObj?.noMatchReasonMsg || t('eval.noMatchReasonTypes.unknown', 'Unknown'))
     : '';
 
-  const fmt = (v) => {
-    if (v === null || typeof v === 'undefined' || v === '') return v;
-    const n = Number(v);
-    if (Number.isNaN(n)) return v;
-    return n.toFixed(3);
-  };
+  const fmt = (v) => formatDecimal(v, lang);
 
   // Translation helper: if the translator returns the raw key (meaning missing),
   // fall back to an alternate key or provided default string.
@@ -150,21 +157,34 @@ const EvalPanel = ({ message, t }) => {
   if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
     evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
   }
-  const evalTitle = baseEvalTitle + evalTitleSuffix;
+  const evalTitle = withAnswerNumber(baseEvalTitle + evalTitleSuffix);
+
+  if (!evalObj) return null;
 
   return (
-    <GcdsDetails
-      detailsTitle={evalTitle}
+    <details
       className="review-details"
-      tabIndex="0"
-      onGcdsClick={handleToggle}
+      onToggle={handleToggle}
     >
+      <summary>{evalTitle}</summary>
       <div className="review-panel eval-panel">
         <div className="actions" style={{ marginBottom: '1rem' }}>
-          <GcdsButton onClick={handleReRun} disabled={reRunning || deleting} className="hydrated">
+          <GcdsButton
+            onClick={handleReRun}
+            disabled={reRunning || deleting}
+            className="hydrated"
+            aria-label={withAnswerNumber(reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run'))}
+          >
             {reRunning ? t('eval.reRunning', 'Re-running...') : t('eval.reRun', 'Re-run')}
           </GcdsButton>
-          <GcdsButton onClick={handleDelete} variant="danger" disabled={deleting} className="hydrated" style={{ marginLeft: '0.5rem' }}>
+          <GcdsButton
+            onClick={handleDelete}
+            buttonRole="danger"
+            disabled={deleting}
+            className="hydrated"
+            style={{ marginLeft: '0.5rem' }}
+            aria-label={withAnswerNumber(deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation'))}
+          >
             {deleting ? t('common.deleting', 'Deleting...') : t('reviewPanels.deleteEvaluation', 'Delete Evaluation')}
           </GcdsButton>
         </div>
@@ -281,7 +301,8 @@ const EvalPanel = ({ message, t }) => {
         )}
       </div>
       {/* Stage timeline - collapsible */}
-      <GcdsDetails detailsTitle={t('reviewPanels.stageTimeline', 'Stage timeline')} className="mt-200">
+      <details className="review-details">
+        <summary>{t('reviewPanels.stageTimeline', 'Stage timeline')}</summary>
         {Array.isArray(evalObj?.stageTimeline) && evalObj.stageTimeline.length > 0 ? (
           <div>
             <table className="review-table">
@@ -318,7 +339,7 @@ const EvalPanel = ({ message, t }) => {
         ) : (
           <div>{t('reviewPanels.noStageTimeline', 'No stage timeline available.')}</div>
         )}
-      </GcdsDetails>
+      </details>
       <div className="eval-details">
         <table className="table">
           <tbody>
@@ -335,7 +356,8 @@ const EvalPanel = ({ message, t }) => {
       
 
             {/* Sentence match trace - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.sentenceMatchTrace', 'Sentence match trace')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.sentenceMatchTrace', 'Sentence match trace')}</summary>
               {sentenceTrace.length > 0 ? (
                 <table className="review-table">
                   <thead>
@@ -368,10 +390,11 @@ const EvalPanel = ({ message, t }) => {
               ) : (
                 <div>{t('reviewPanels.noSentenceTraces', 'No sentence match traces available.')}</div>
               )}
-            </GcdsDetails>
+            </details>
 
             {/* Fallback details section */}
-            <GcdsDetails detailsTitle={t('reviewPanels.fallbackDetails', 'Fallback details')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.fallbackDetails', 'Fallback details')}</summary>
               <div>
                 <div><strong>{t('reviewPanels.fallbackType', 'Fallback type')}:</strong> {evalObj.fallbackType || ''}</div>
                 <div><strong>{t('reviewPanels.fallbackSourceChatId', 'Fallback source chatId')}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
@@ -436,11 +459,12 @@ const EvalPanel = ({ message, t }) => {
 
                 {/* raw fallback compare data intentionally not shown */}
               </div>
-            </GcdsDetails>
+            </details>
 
             {/* Agent candidate choices per source sentence (if available) */}
             {sentenceTrace.some(s => Array.isArray(s.candidateChoices) && s.candidateChoices.length) ? (
-              <GcdsDetails detailsTitle={t('reviewPanels.agentCandidateChoices', 'Agent candidate choices')} className="mt-200">
+              <details className="review-details">
+                <summary>{t('reviewPanels.agentCandidateChoices', 'Agent candidate choices')}</summary>
                 <table className="review-table">
                   <thead>
                     <tr>
@@ -493,11 +517,12 @@ const EvalPanel = ({ message, t }) => {
                     ))}
                   </tbody>
                 </table>
-              </GcdsDetails>
+              </details>
             ) : null}
 
             {/* Similarity scores - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.similarityScores', 'Similarity scores')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.similarityScores', 'Similarity scores')}</summary>
               <table className="review-table">
                 <thead>
                   <tr>
@@ -518,10 +543,11 @@ const EvalPanel = ({ message, t }) => {
                   </tr>
                 </tbody>
               </table>
-            </GcdsDetails>
+            </details>
 
             {/* Agent usage - collapsible */}
-            <GcdsDetails detailsTitle={t('reviewPanels.agentUsage', 'Agent usage')} className="mt-200">
+            <details className="review-details">
+              <summary>{t('reviewPanels.agentUsage', 'Agent usage')}</summary>
               <h4>{t('reviewPanels.agentUsage', 'Agent usage')}</h4>
               <div>
                 <strong>{t('reviewPanels.sentenceCompareUsed', 'Sentence compare used')}:</strong> {evalObj.sentenceCompareUsed ? t('common.yes', 'yes') : t('common.no', 'no')}
@@ -592,7 +618,7 @@ const EvalPanel = ({ message, t }) => {
               ) : null}
 
               {/* raw fallback compare data intentionally not shown */}
-              </GcdsDetails>
+              </details>
           </>
         ) : (
           <>
@@ -600,7 +626,12 @@ const EvalPanel = ({ message, t }) => {
               <div>
                 {t('reviewPanels.noEvaluation', 'No evaluation available.')}
                 <div className="mt-200">
-                  <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
+                  <GcdsButton
+                    onClick={handleReRun}
+                    disabled={reRunning}
+                    className="hydrated"
+                    aria-label={withAnswerNumber(reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation'))}
+                  >
                     {reRunning ? t('common.processing', 'Processing...') : t('reviewPanels.runEvaluation', 'Run evaluation')}
                   </GcdsButton>
                 </div>
@@ -609,7 +640,7 @@ const EvalPanel = ({ message, t }) => {
           </>
         )}
       </div>
-    </GcdsDetails>
+    </details>
   );
 };
 

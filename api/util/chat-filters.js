@@ -6,7 +6,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function categorizeExpertFeedback(expertFeedback) {
   if (!expertFeedback) return null;
 
-  const hasCitationError = expertFeedback.citationScore === 0;
+  const hasCitationError = expertFeedback.citationScore === 0 || expertFeedback.citationScore === 20;
   const totalScore = expertFeedback.totalScore;
 
   const feedbackFields = [
@@ -81,6 +81,32 @@ const filterInteractionsByCategory = (chat, category, evaluator) => {
 // Filtering now happens in the aggregation pipeline using computed fields
 // via getPartnerEvalAggregationExpression() and getAiEvalAggregationExpression().
 
+// JS mirror of getPartnerEvalAggregationExpression below — the exact same
+// score signals and priority (harmful > hasCitationError > hasError >
+// needsImprovement > correct), for consumers that categorize in Node instead
+// of in the pipeline (e.g. the partner eval analysis). If the expression
+// changes, change this too — they live side by side for that reason.
+// (categorizeExpertFeedback above is the older categorizer with different
+// edge-case semantics — a scored row without totalScore 100 falls back to
+// 'correct' there, but stays null here and in the aggregation.)
+export function deriveExpertFeedbackCategory(ef) {
+  if (!ef) return null;
+  const sentenceScores = [1, 2, 3, 4].map((n) => ef[`sentence${n}Score`]);
+  const hasAnyScore =
+    sentenceScores.some((s) => [0, 80, 100].includes(s)) ||
+    [0, 20, 25].includes(ef.citationScore) ||
+    (ef.totalScore !== null && ef.totalScore !== undefined);
+  if (!hasAnyScore) return null;
+
+  const hasHarmful = [1, 2, 3, 4].some((n) => ef[`sentence${n}Harmful`] === true);
+  if (hasHarmful) return 'harmful';
+  if ([0, 20].includes(ef.citationScore)) return 'hasCitationError';
+  if (sentenceScores.some((s) => s === 0) || ef.totalScore === 0) return 'hasError';
+  if (sentenceScores.some((s) => s === 80) || ef.totalScore === 80) return 'needsImprovement';
+  if (ef.totalScore === 100) return 'correct';
+  return null;
+}
+
 export function getPartnerEvalAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
   return {
     $cond: {
@@ -106,7 +132,7 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -130,7 +156,6 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
@@ -187,7 +212,7 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                   ]
                 },
                 hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
-                hasCitationError: { $eq: ['$$ef.citationScore', 0] },
+                hasCitationError: { $in: ['$$ef.citationScore', [0, 20]] },
                 hasHarmful: {
                   $or: [
                     { $eq: ['$$ef.sentence1Harmful', true] },
@@ -211,7 +236,6 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     { $eq: ['$$ef.sentence2Score', 80] },
                     { $eq: ['$$ef.sentence3Score', 80] },
                     { $eq: ['$$ef.sentence4Score', 80] },
-                    { $eq: ['$$ef.citationScore', 20] },
                     { $eq: ['$$ef.totalScore', 80] }
                   ]
                 }
@@ -251,16 +275,44 @@ const EXCLUDED_CANADA_CA_SUBDOMAINS = [
   'digital', 'numerique',
   'design', 'conception',
   // Pre-production / internal
-  'alpha',                    // includes ai-answers.alpha.canada.ca
+  'alpha',
   'staging',
   'test',
 ];
 
-// Build exclusion regex from the list (exact subdomain match only)
-// Anchored to ://, . or ^ to handle URLs with or without protocol prefix
+// Host labels of the AI Answers app itself. Self-referrals (a user switching
+// language within the app, or navigating between answers) are not a public GC
+// page and must never count as "Public Referred". Matched by the app's own host
+// label rather than the environment subdomain, so the exclusion survives the
+// eventual alpha retirement and any domain move (ai-answers.alpha.canada.ca
+// today → ai-answers.canada.ca later). The EN and FR apps run on separate hosts.
+export const SELF_REFERRAL_LABELS = [
+  'ai-answers',   // English
+  'reponses-ia',  // French
+];
+
+// Build the exclusion regex. Two cases share a leading host boundary (://, ., or
+// start-of-string): a CDS/internal subdomain immediately before .canada.ca
+// (exact subdomain match only), OR the AI Answers app's own host label in any
+// environment (the label must be a full host segment — followed by ., :, /, or
+// end — so paths like /en/ai-answers on a real public page are not excluded).
 const _excluded = EXCLUDED_CANADA_CA_SUBDOMAINS.map(s => escapeRegex(s)).join('|');
+const _selfLabels = SELF_REFERRAL_LABELS.map(s => escapeRegex(s)).join('|');
 const REFERRED_PUBLIC_EXCLUSION_REGEX =
-  `(://|\\.|^)(${_excluded})\\.canada\\.ca(/|$)`;
+  `(://|\\.|^)((${_excluded})\\.canada\\.ca(/|$)|(${_selfLabels})(\\.|:|/|$))`;
+
+// Matches a canada.ca / gc.ca referrer that counts as "referred public" — i.e.
+// the question came from a public GC page, excluding CDS/internal subdomains.
+// Single source of truth for the same logic the userType filter applies in
+// getChatFilterConditions, reused by the blocked-query counter classification.
+const REFERRED_PUBLIC_DOMAIN_REGEX = /(:\/\/|\.|^)(canada\.ca|gc\.ca)(\/|$)/i;
+const REFERRED_PUBLIC_EXCLUSION_RE = new RegExp(REFERRED_PUBLIC_EXCLUSION_REGEX, 'i');
+
+export function isReferredPublicUrl(referringUrl) {
+  if (!referringUrl || typeof referringUrl !== 'string') return false;
+  return REFERRED_PUBLIC_DOMAIN_REGEX.test(referringUrl)
+    && !REFERRED_PUBLIC_EXCLUSION_RE.test(referringUrl);
+}
 
 export function getChatFilterConditions(filters, options = {}) {
   const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;

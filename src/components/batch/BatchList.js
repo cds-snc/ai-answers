@@ -3,9 +3,10 @@ import { createRoot } from 'react-dom/client'; // Import createRoot
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { formatNumber } from '../../utils/numberFormat.js';
 import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
@@ -115,7 +116,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   // Handle button actions mapped to explicit handlers
   const handleExport = (batchId, type) => onExport && onExport(batchId, type);
-  const handleDelete = (batchId) => onDelete && onDelete(batchId);
+  const handleDelete = (batchId) => {
+    if (!window.confirm(t('batch.list.actions.confirmDelete'))) return false;
+    onDelete && onDelete(batchId);
+    return true;
+  };
   // Pass workflow through when invoking onProcess so restarts can reuse the saved workflow
   const handleProcess = (batchId, provider, workflow) => onProcess && onProcess(batchId, provider, workflow);
   const handleCancel = (batchId, provider) => onCancel && onCancel(batchId, provider);
@@ -163,7 +168,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               const failed = Number(stats.failed || 0);
               const finished = Number(stats.finished ?? processed + failed);
               if (totalsCell) {
-                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', finished).replace('{total}', total);
+                totalsCell.innerText = t('batch.list.totalsLabel').replace('{finished}', formatNumber(finished, lang)).replace('{total}', formatNumber(total, lang));
               }
             } catch (e) {
               // ignore totals rendering errors
@@ -237,9 +242,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     )}
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -269,9 +274,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -297,9 +302,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}
@@ -325,9 +330,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     </GcdsButton>
                     <GcdsButton
                       size="small"
+                      buttonRole="danger"
                       onClick={() => {
-                        handleDelete(_id);
-                        setClicked(true);
+                        if (handleDelete(_id)) setClicked(true);
                       }}
                     >
                       {t('batch.list.actions.delete')}

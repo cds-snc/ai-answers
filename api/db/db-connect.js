@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import "../../models/interaction.js";
 import "../../models/question.js";
 import "../../models/answer.js";
@@ -24,26 +27,84 @@ import "../../models/sentenceEmbedding.js";
 // worker threads, as each thread gets its own module instance.
 let cached = { conn: null, promise: null };
 
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(moduleDir, "../../");
+
+function resolveDocumentDbCaFile() {
+  const configuredCaFile = process.env.DOCDB_CA_FILE || process.env.DOCDB_TLS_CA_FILE;
+  if (configuredCaFile) {
+    return configuredCaFile;
   }
 
-  if (!cached.promise) {
-    const mongoDbOpts = {
-      bufferCommands: false,
-      connectTimeoutMS: 60000, // 60 seconds timeout
-      socketTimeoutMS: 300000, // 5 minutes timeout for operations
-      serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
-      heartbeatFrequencyMS: 10000, // How often to check the connection
-      maxPoolSize: 100, // Maximum number of connections
-      minPoolSize: 1, // Minimum number of connections
-      directConnection: true,
-    };
+  const candidatePaths = [
+    path.resolve(repoRoot, "global-bundle.pem"),
+    "/app/global-bundle.pem",
+  ];
 
-    const docDbOpts = {
+  return candidatePaths.find((candidatePath) => fs.existsSync(candidatePath));
+}
+
+function shouldAllowInvalidDocumentDbHostnames(connectionString) {
+  if (process.env.DOCDB_TLS_ALLOW_INVALID_HOSTNAMES === "true") {
+    return true;
+  }
+
+  try {
+    const { hostname } = new URL(connectionString);
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
+function shouldUseDirectConnectionForDocumentDb(connectionString) {
+  if (process.env.DOCDB_DIRECT_CONNECTION === "true") {
+    return true;
+  }
+
+  try {
+    const { hostname } = new URL(connectionString);
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
+function getDocumentDbUri() {
+  return process.env.DOCDB_URI;
+}
+
+function getConnectionConfig() {
+  if (process.env.MONGODB_URI) {
+    return {
+      connectionString: process.env.MONGODB_URI,
+      targetKey: `mongo:${process.env.MONGODB_URI}`,
+      opts: {
+        bufferCommands: false,
+        connectTimeoutMS: 60000, // 60 seconds timeout
+        socketTimeoutMS: 300000, // 5 minutes timeout for operations
+        serverSelectionTimeoutMS: 60000, // 60 seconds timeout for server selection
+        heartbeatFrequencyMS: 10000, // How often to check the connection
+        maxPoolSize: 100, // Maximum number of connections
+        minPoolSize: 1, // Minimum number of connections
+        directConnection: true,
+      },
+    };
+  }
+
+  const connectionString = getDocumentDbUri();
+  const tlsCAFile = resolveDocumentDbCaFile();
+  const tlsAllowInvalidHostnames = shouldAllowInvalidDocumentDbHostnames(connectionString);
+  const directConnection = shouldUseDirectConnectionForDocumentDb(connectionString);
+
+  return {
+    connectionString,
+    targetKey: `docdb8:${connectionString}`,
+    opts: {
       tls: true,
-      tlsCAFile: "/app/global-bundle.pem",
+      ...(tlsCAFile ? { tlsCAFile } : {}),
+      ...(tlsAllowInvalidHostnames ? { tlsAllowInvalidHostnames: true } : {}),
+      ...(directConnection ? { directConnection: true } : {}),
       retryWrites: false,
       bufferCommands: false,
       connectTimeoutMS: 60000, // 60 seconds timeout
@@ -52,11 +113,23 @@ async function dbConnect() {
       heartbeatFrequencyMS: 10000, // How often to check the connection
       minPoolSize: 10, // Keep 20 connections ready
       maxPoolSize: 1000, // Allow up to 1000 connections
-    };
+    },
+  };
+}
 
-    const connectionString = process.env.MONGODB_URI || process.env.DOCDB_URI;
-    const opts = process.env.MONGODB_URI ? mongoDbOpts : docDbOpts;
+async function dbConnect() {
+  const { connectionString, opts, targetKey } = getConnectionConfig();
 
+  if (cached.conn && cached.targetKey === targetKey) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    if (process.env.MONGODB_URI) {
+      console.log('Connecting to MongoDB via MONGODB_URI');
+    } else {
+      console.log('Connecting to DocumentDB via DOCDB_URI');
+    }
     console.log("DB Connection Options:", opts);
 
     cached.promise = mongoose
@@ -64,6 +137,7 @@ async function dbConnect() {
       .then((mongoose) => {
         return mongoose;
       });
+    cached.targetKey = targetKey;
   }
 
   try {
@@ -77,3 +151,9 @@ async function dbConnect() {
 }
 
 export default dbConnect;
+export {
+  getDocumentDbUri,
+  resolveDocumentDbCaFile,
+  shouldAllowInvalidDocumentDbHostnames,
+  shouldUseDirectConnectionForDocumentDb,
+};

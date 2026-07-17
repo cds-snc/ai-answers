@@ -2,6 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { Eval } from '../../models/eval.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
@@ -10,10 +11,11 @@ async function handler(req, res) {
   }
   try {
     await dbConnect();
-    const { interactionId } = req.body || {};
+    let { interactionId } = req.body || {};
     if (!interactionId) {
       return res.status(400).json({ message: 'Missing interactionId' });
     }
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
 
     const interaction = await Interaction.findById(interactionId);
     if (!interaction) {

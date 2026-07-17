@@ -62,7 +62,8 @@ const verify2FAHandler = async (req, res) => {
             role: user.role,
             active: user.active,
             createdAt: user.createdAt
-          }
+          },
+          sessionExpiresAt: req.session?.cookie?.expires ? req.session.cookie.expires.toISOString() : null
         });
       });
     } else {

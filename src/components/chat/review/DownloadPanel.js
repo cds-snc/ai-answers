@@ -1,7 +1,9 @@
 import React from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
+import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
-const DownloadPanel = ({ message, t }) => {
+const DownloadPanel = ({ message, t, answerNumber }) => {
+    const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
+
     if (!message) return null;
 
     const interaction = message.interaction || {};
@@ -23,10 +25,11 @@ const DownloadPanel = ({ message, t }) => {
     const hasSuccess = downloads.some(d => d.error === 'none');
     const indicator = hasSuccess ? ' \u2714' : ' \u2718';
 
-    const title = (t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator;
+    const title = withAnswerNumber((t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator);
 
     return (
-        <GcdsDetails detailsTitle={title} className="review-details" tabIndex="0">
+        <details className="review-details">
+            <summary>{title}</summary>
             <div className="review-panel download-panel">
                 {downloads.map((d, i) => {
                     const url = parseUrl(d.input);
@@ -43,7 +46,7 @@ const DownloadPanel = ({ message, t }) => {
                     );
                 })}
             </div>
-        </GcdsDetails>
+        </details>
     );
 };
 

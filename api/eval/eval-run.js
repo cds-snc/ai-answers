@@ -3,6 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import { SettingsService } from '../../services/SettingsService.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
@@ -11,10 +12,11 @@ async function handler(req, res) {
   }
   try {
     await dbConnect();
-    const { interactionId, forceFallbackEval = false, replaceExisting = true } = req.body || {};
+    let { interactionId, forceFallbackEval = false, replaceExisting = true } = req.body || {};
     if (!interactionId) {
       return res.status(400).json({ message: 'Missing interactionId' });
     }
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
 
     const interaction = await Interaction.findById(interactionId);
     if (!interaction) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -16,6 +16,20 @@ const SessionPage = ({ lang: propLang }) => {
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const sessionTypeLabel = React.useCallback((value) => {
+    const type = value || 'unknown';
+    const labels = {
+      auth: t('admin.session.sessionTypes.auth'),
+      visitor: t('admin.session.sessionTypes.visitor'),
+      session: t('admin.session.sessionTypes.session'),
+      ip: t('admin.session.sessionTypes.ip'),
+      unknown: t('admin.session.sessionTypes.unknown'),
+    };
+    return labels[type] || labels.unknown;
+  }, [t]);
+  const creditsLeftLabel = React.useCallback((value) => (
+    value === null ? t('admin.session.unlimited', 'Unlimited') : (value !== undefined ? value : 0)
+  ), [t]);
 
   const fetchSessions = React.useCallback(async () => {
     setLoading(true);
@@ -54,7 +68,7 @@ const SessionPage = ({ lang: propLang }) => {
   }, [fetchSessions]);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('admin.session.title', 'Sessions')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
@@ -69,13 +83,14 @@ const SessionPage = ({ lang: propLang }) => {
         data={sessions}
         columns={[
           { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
+          { title: t('admin.session.sessionType', 'Session type'), data: 'sessionType', render: (data) => sessionTypeLabel(data) },
           {
             title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
               const cid = data || row.chatId || '';
               return cid ? `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>` : '';
             }
           },
-          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => data !== undefined ? data : 0 },
+          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => creditsLeftLabel(data) },
           { title: t('admin.session.lastSeen', 'Last seen'), data: 'lastSeen', render: (data) => new Date(data).toLocaleString() },
           { title: t('admin.session.requests', 'Requests'), data: 'requestCount' },
           { title: t('admin.session.errors', 'Errors'), data: 'errorCount' },

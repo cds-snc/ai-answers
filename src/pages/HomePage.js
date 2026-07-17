@@ -5,16 +5,16 @@ import ChatAppContainer from "../components/chat/ChatAppContainer.js";
 import {
   GcdsContainer,
   GcdsDetails,
-  GcdsText,
-  GcdsLink,
   GcdsNotice,
-} from "@cdssnc/gcds-components-react";
+  GcdsText,
+} from "@gcds-core/components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
+import { CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -35,9 +35,9 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const { t } = this.props;
       return (
-        <GcdsContainer size="xl" mainContainer centered>
+        <GcdsContainer layout="page">
           <h2>{t("homepage.errors.timeout.title")}</h2>
-          <GcdsText>{t("homepage.errors.timeout.message")}</GcdsText>
+          <p className="mb-300">{t("homepage.errors.timeout.message")}</p>
           <button
             onClick={() => window.location.reload()}
             className="gcds-button gcds-button--primary"
@@ -197,38 +197,38 @@ const HomePage = ({ lang = "en" }) => {
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
-        <h2
-          className="mt-400 mb-400"
-          aria-label={t("homepage.subtitle.ariaLabel")}
-        >
-          <span className="aria-hidden">{t("homepage.subtitle.text")}</span>
-        </h2>
-        <GcdsText className="mb-200">
-          {t("homepage.intro.researchOnly")}
-        </GcdsText>
+        <CanadaCaAccessibleLabel
+          as="h2"
+          className="homepage-subtitle mt-400"
+          text={t("homepage.subtitle")}
+          lang={lang}
+        />
+        <CanadaCaAccessibleLabel as="p" className="mb-200" text={t("homepage.intro.researchOnly")} lang={lang} />
         <GcdsDetails
           detailsTitle={t("homepage.privacy.title")}
           className="mb-400"
           tabIndex={0}
         >
-          <GcdsText>{t("homepage.privacy.storage")}</GcdsText>
-          <GcdsText>{t("homepage.privacy.disclaimer")}</GcdsText>
-          <GcdsText>
+          <p className="mb-300">{t("homepage.privacy.storage")}</p>
+          <p className="mb-300">{t("homepage.privacy.disclaimer")}</p>
+          <p className="mb-300">{t("homepage.privacy.language")}</p>
+          <p className="mb-300">
             {t("homepage.privacy.terms")}{" "}
-            <GcdsLink
+            <CanadaCaAccessibleLabel
+              as="a"
               href={
                 lang === "fr"
                   ? "https://www.canada.ca/fr/transparence/avis.html"
                   : "https://www.canada.ca/en/transparency/terms.html"
               }
-            >
-              {t("homepage.privacy.termsLink")}
-            </GcdsLink>
-          </GcdsText>
+              text={t("homepage.privacy.termsLink")}
+              lang={lang}
+            />.
+          </p>
         </GcdsDetails>
         {showWarningNotice && (
           <GcdsNotice
-            type="warning"
+            noticeRole="warning"
             noticeTitleTag="h3"
             noticeTitle={t("homepage.warning.title")}
             className="mt-200"
@@ -253,14 +253,12 @@ const HomePage = ({ lang = "en" }) => {
       </div>
       {!reviewMode && (
         <div className="mb-600 container-custom">
-          <GcdsText>
-            {t("homepage.about.builtBy")}{" "}
-            <GcdsLink
-              href={getPath('about', lang)}
-            >
+          <p className="mb-300">
+            <CanadaCaAccessibleLabel as="span" text={t("homepage.about.builtBy")} lang={lang} />{" "}
+            <a href={getPath('about', lang)}>
               {t("homepage.about.learnMore")}
-            </GcdsLink>
-          </GcdsText>
+            </a>.
+          </p>
         </div>
       )}
     </ErrorBoundary>

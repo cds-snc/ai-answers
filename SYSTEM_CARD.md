@@ -1,7 +1,7 @@
 # AI Answers System Card
 
 **Version**: 1.1
-**Date**: February 2026
+**Date**: April 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 
@@ -43,7 +43,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 </details>
 
 ## Current Status
-- **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in January 2026.
+- **Environment**: Beta-testing on Canada.ca paused after the last of [four public trials](https://blog.canada.ca/2025/12/17/ai-answers.html) ended in February 2026.
 - **Trial report**: [blog post](https://digital.canada.ca/2025/12/17/ai-answers-enterprise-scale-trial-for-canada.ca/)
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
 - **Evaluation**: Ongoing expert evaluation and response scoring generating AI automated evals & answers
@@ -67,8 +67,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### Language Support
 - Full bilingual support (English/French pages, including Admin) for Official language compliance
-- On the English page: Users can ask questions in any language and receive answers in the same language they asked
-- On the French page: Users receive answers in French regardless of the language in which the question was asked
+- Users can ask questions in any language and receive answers in the same language they asked
 - Citation matches the page language
 
 ## Technical Architecture
@@ -116,6 +115,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 8. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
 9. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
 10. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+11. **Auto-Evaluation**: Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -177,8 +177,8 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Screen reader testing**: Iterative usability sessions held with range of screen reader users to test and improve
 - **WCAG 2.1 AA compliance**: Full accessibility standards implementation
 - **Bilingual support**: Full English/French support with official language compliance
-- **Multi-language input**: On the English page, users can ask questions in many languages and receive an answer in the same language asked. On the French page, users receive answers in French regardless of question language. Indigenous language support is planned
-- **Plain language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing
+- **Multi-language input**: Users can ask questions in many languages and receive an answer in the same language asked. Indigenous language support will be planned and supported by Indigenous Services Canada. 
+- **Plain language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing of the short answers. 
 
 #### **System reliability risks**
 **Potential harms:**
@@ -192,6 +192,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Failover planning**: System designed for model independence with multiple AI providers
 - **Rate limiting**: Prevents system overload and abuse
 - **Outage setting**: Turn system off and show outage message via Admin panel
+- **Automated health monitoring**: A background monitor continuously probes the system's core dependencies (database, search, and AI model). When a dependency fails repeatedly within a short rolling window, the monitor sends an alert email to the operations team and — if auto-disable is enabled — automatically sets the site to unavailable so users see the outage message instead of failing responses. Polling speeds up while failures are being confirmed and backs off once the dependency recovers, and the site returns to available automatically when the failures clear.
 
 ### Bias and Fairness Considerations
 
@@ -225,7 +226,7 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
   - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
   - **Weighted Total Score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
   - **Embedding Generation**: Expert feedback creates embeddings that enable automated AI evaluations for similar questions
-  - **Future Enhancement**: These embeddings will soon assist in answering questions quickly and accurately
+  - **Answering questions (in development)**: These expert evaluations are being introduced as feedback into live answer generation to make answers more accurate — see [Using evaluations to improve answers](#using-evaluations-to-improve-answers) below for current status
 
 - **Separate Public User Feedback**: 
   - **Simple Interface**: "Was this helpful?" with Yes/No options for all users
@@ -233,6 +234,17 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
   - **Positive Reasons**: No call needed, no visit needed, saved time, other
   - **Negative Reasons**: Irrelevant, confusing, not detailed enough, not what they wanted, other
   - **Survey Integration**: Links to external surveys for additional feedback collection
+
+### Using evaluations to improve answers
+
+Expert evaluations of past answers are not only used for reporting — they can also be fed back into live answer generation. Two mechanisms have been built for this, both drawing on the same store of expert-rated question/answer pairs. **The current production pipeline uses neither yet** — it runs the baseline graph that generates every answer fresh, with no eval-driven steps. The status of each mechanism is noted below.
+
+- **Eval-informed answering (similar questions) — entering a production trial**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past pairs and includes them in the model's instructions as worked examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used; when no relevant example exists, none is injected. This is the next step planned for production, introduced through a controlled trial of an updated pipeline variant.
+- **Instant verified answers (short-circuit serving) — experimental, not in production**: When a new question very closely matches a past question whose answer an expert scored a perfect 100/100, the system would serve that verified answer directly and skip the AI model, reducing cost and latency. Only perfect-score answers would be eligible, and the match must be very close to avoid serving the wrong answer. In testing this approach has not yet performed reliably enough to deploy, so it remains off in production.
+
+Both mechanisms are implemented as selectable pipeline variants ("graphs"), require that expert feedback exists for a past answer, and are designed to degrade gracefully — if the lookup is unavailable, answer generation proceeds normally without examples.
+
+**For full technical detail, see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
 ### Current Performance
 - **Response Time**: Under 10 seconds for most queries

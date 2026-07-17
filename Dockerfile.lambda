@@ -1,13 +1,13 @@
 # -------------------------------------------------
 # Build Stage (Debian-based, safe for building)
 # -------------------------------------------------
-FROM node:lts AS build
+FROM node:24.18.0 AS build
 
 WORKDIR /app
 
 # Install deps for build
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev
+RUN npm ci
 
 # Copy source
 COPY . .
@@ -19,9 +19,12 @@ RUN GENERATE_SOURCEMAP=false npm run build
 # -------------------------------------------------
 # Runtime Stage (Amazon Linux 2023 - Lambda)
 # -------------------------------------------------
-FROM public.ecr.aws/lambda/nodejs:20
+FROM public.ecr.aws/lambda/nodejs:24
 
 WORKDIR ${LAMBDA_TASK_ROOT}
+
+ARG APP_VERSION=unknown
+ENV APP_VERSION=${APP_VERSION}
 
 # Ensure CA certs are present (AL2023 minimal image)
 RUN dnf install -y ca-certificates \
@@ -33,7 +36,7 @@ COPY global-bundle.pem /app/global-bundle.pem
 # Install runtime dependencies
 COPY package.json package-lock.json ./
 COPY server/package.json server/package-lock.json ./server/
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy built frontend + backend
 COPY --from=build /app/build ./build
@@ -58,6 +61,8 @@ ENV READINESS_CHECK_PORT=3001
 ENV READINESS_CHECK_PROTOCOL=http
 ENV READINESS_CHECK_MAX_WAIT=60
 ENV READINESS_CHECK_INTERVAL=1
+# Lambda Web Adapter defaults to buffered mode; SSE needs response streaming.
+ENV AWS_LWA_INVOKE_MODE=response_stream
 
 # Optional: ensure Node trusts the RDS bundle
 ENV NODE_EXTRA_CA_CERTS=/app/global-bundle.pem

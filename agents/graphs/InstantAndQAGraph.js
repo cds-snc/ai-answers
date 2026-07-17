@@ -45,13 +45,14 @@ const graph = new StateGraph(GraphState);
 
 graph.addNode('init', async (state) => {
   const startTime = Date.now();
-  logGraphEvent('info', 'node:init input', state.chatId, {
+  // 'Starting <Graph>' must be logged before 'node:init input' — ChatViewer uses it as the timeline anchor.
+  await ServerLoggingService.info('Starting InstantAndQAGraph', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
   });
 
-  await ServerLoggingService.info('Starting InstantAndQAGraph', state.chatId, {
+  logGraphEvent('info', 'node:init input', state.chatId, {
     lang: state.lang,
     referringUrl: state.referringUrl,
     selectedAI: state.selectedAI,
@@ -171,12 +172,12 @@ graph.addNode('similarQuestions', async (state) => {
   try {
     similarQuestions = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
-      threshold: 0.8,
+      threshold: 0.75,
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lt',
       language: state.lang,
       includeQuestionFlow: true,
-      provider: state.selectedAI,
+      recencyDays: 365,
     });
   } catch (err) {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);
@@ -185,7 +186,11 @@ graph.addNode('similarQuestions', async (state) => {
   const out = {
     context: { ...state.context, similarQuestions },
   };
-  logGraphEvent('info', 'node:similarQuestions output', state.chatId, { hasSimilar: !!similarQuestions });
+  logGraphEvent('info', 'node:similarQuestions output', state.chatId, {
+    hasSimilar: !!similarQuestions,
+    similarQuestionsLength: typeof similarQuestions === 'string' ? similarQuestions.length : 0,
+    similarQuestionsText: similarQuestions || '',
+  });
   return out;
 });
 graph.addNode('shortCircuit', async (state) => {
@@ -264,7 +269,9 @@ graph.addNode('shortCircuit', async (state) => {
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, {
     selectedAI: state.selectedAI,
-    contextSummary: state.context?.summary || null,
+    contextTopic: state.context?.topic || null,
+    contextDepartment: state.context?.department || null,
+    searchResultsCount: Array.isArray(state.context?.searchResults) ? state.context.searchResults.length : 0,
     hasSimilar: Boolean(state.context?.similarQuestions),
   });
 

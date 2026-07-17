@@ -1,5 +1,7 @@
-// Health Canada (HC-SC) and Public Health Agency of Canada (PHAC-ASPC) scenarios and updates
-
+// Shared scenarios for Health Canada and the Public Health Agency of Canada.
+// The following abbrKeys resolve to this file via SCENARIO_ALIASES in scenario-aliases.js:
+//   HC-SC (canonical) — Health Canada
+//   PHAC-ASPC         — Public Health Agency of Canada
 export const HC_SC_SCENARIOS = `
 
 ### Health Canada and Public Health Agency of Canada Scenarios

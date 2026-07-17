@@ -1,12 +1,11 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
-import '../styles/App.css';
 
 DataTable.use(DT);
 
@@ -128,6 +127,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
     filtersRef.current = enrichedFilters;
     setHasAppliedFilters(true);
+    setLoading(true);
     try {
       if (tableApiRef.current) {
         tableApiRef.current.ajax.reload();
@@ -181,9 +181,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        // TODO: Temporarily opening in same tab as a workaround for government VPN blocking new tabs.
-        // Admin users prefer target="_blank" — restore once VPN issue is resolved.
-        return `<a href="/${chatLang}?chat=${safeId}&review=1">${safeId}</a>`;
+        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
       }
     },
     {
@@ -285,7 +283,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   ]), [formatDate, truncateUrl, t]);
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('admin.chatDashboard.title', 'Chat dashboard')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
@@ -296,16 +294,19 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <p className="mb-0 small-text">
-        {t('admin.chatDashboard.description', 'Filter chat interactions and explore details in the table below.')}
-      </p>
-
-      <FilterPanel
-        lang={lang}
-        onApplyFilters={(filters) => { handleApplyFilters(filters); }}
-        onClearFilters={handleClearFilters}
-        isVisible={true}
-      />
+      <h2 className="mt-400 mb-400">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      <div className="mb-100">
+        <FilterPanel
+          lang={lang}
+          onApplyFilters={(filters) => { handleApplyFilters(filters); }}
+          onClearFilters={handleClearFilters}
+          isVisible={true}
+          filterLoading={loading}
+          filterError={error}
+          filterResultCount={recordsTotal}
+          hasAppliedFilters={hasAppliedFilters}
+        />
+      </div>
 
       {loading && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -322,10 +323,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && !error && recordsFiltered === 0 && recordsTotal === 0 && (
-        <p className="chat-dashboard-no-results">
-          {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
-        </p>
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('common.noDataForFilters')}
+        </div>
       )}
 
       {hasAppliedFilters && (

@@ -26,11 +26,13 @@ function makeRes() {
 describe('db-chat-logs handler filters (V2)', () => {
   let dbModule;
   let Chat;
+  let BatchItem;
 
   beforeEach(async () => {
     // load the handler module fresh each time
     dbModule = await import('../api/db/db-chat-logs.js');
     Chat = (await import('../models/chat.js')).Chat;
+    BatchItem = (await import('../models/batchItem.js')).BatchItem;
   });
 
   afterEach(() => {
@@ -73,5 +75,40 @@ describe('db-chat-logs handler filters (V2)', () => {
       return and.some(cond => cond['interactions.answerType'] === 'pt-muni');
     });
     expect(hasAnswerType).toBe(true);
+  });
+
+  it('routes referredPublic chats through the aggregation path with the referrer filter', async () => {
+    const spy = vi.spyOn(Chat, 'aggregate').mockResolvedValue([]);
+    const cnt = vi.spyOn(Chat, 'countDocuments').mockResolvedValue(0);
+    const req = makeReq({ userType: 'referredPublic', limit: '5' });
+    const res = makeRes();
+
+    const defaultExport = dbModule.default;
+    await defaultExport(req, res);
+
+    expect(spy).toHaveBeenCalled();
+    const pipeline = spy.mock.calls[0][0];
+    const andMatch = pipeline.find(stage => stage.$match && stage.$match.$and);
+    expect(andMatch).toBeDefined();
+    const urlFilters = andMatch.$match.$and.filter((cond) => cond['interactions.referringUrl']);
+    expect(urlFilters.length).toBeGreaterThanOrEqual(2);
+    expect(urlFilters.some((cond) => String(cond['interactions.referringUrl'].$regex || '').includes('canada\\.ca|gc\\.ca'))).toBe(true);
+  });
+
+  it('normalizes batchId before querying batch items', async () => {
+    const batchId = '64fec1000000000000000001';
+    const batchItemSelect = vi.fn().mockResolvedValue([{ chat: 'chat-1' }]);
+    const batchFind = vi.spyOn(BatchItem, 'find').mockReturnValue({ select: batchItemSelect });
+    const aggregate = vi.spyOn(Chat, 'aggregate').mockResolvedValue([]);
+
+    const req = makeReq({ batchId, limit: '5' });
+    const res = makeRes();
+
+    const defaultExport = dbModule.default;
+    await defaultExport(req, res);
+
+    expect(batchFind).toHaveBeenCalledWith({ batch: batchId });
+    expect(batchItemSelect).toHaveBeenCalledWith('chat');
+    expect(aggregate).toHaveBeenCalled();
   });
 });

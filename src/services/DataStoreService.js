@@ -3,6 +3,48 @@ import AuthService from './AuthService.js';
 import SessionService from './SessionService.js';
 
 class DataStoreService {
+  static async getSettings(keys, defaults = {}) {
+    if (!Array.isArray(keys) || keys.length === 0) {
+      return {};
+    }
+
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-bulk-handler'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ keys })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get settings: ${keys.join(', ')}`);
+      }
+
+      const data = await response.json();
+      const values = data.values || {};
+
+      return keys.reduce((acc, key) => {
+        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined) {
+          acc[key] = values[key];
+        } else if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+          acc[key] = defaults[key];
+        } else {
+          acc[key] = null;
+        }
+        return acc;
+      }, {});
+    } catch (error) {
+      console.error(`Error getting settings '${keys.join(', ')}':`, error);
+      const fallbackEntries = await Promise.all(keys.map(async (key) => {
+        const defaultValue = Object.prototype.hasOwnProperty.call(defaults, key) ? defaults[key] : null;
+        const value = await this.getSetting(key, defaultValue);
+        return [key, value === null || typeof value === 'undefined' ? defaultValue : value];
+      }));
+      return Object.fromEntries(fallbackEntries);
+    }
+  }
+
   static async getPublicSetting(key, defaultValue = null) {
     try {
       const response = await AuthService.fetch(getApiUrl(`setting-public-handler?key=${encodeURIComponent(key)}`));
@@ -42,8 +84,24 @@ class DataStoreService {
       throw error;
     }
   }
+
+  static async refreshSettingsCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-refresh-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to refresh settings cache');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error refreshing settings cache:', error);
+      throw error;
+    }
+  }
   static async checkDatabaseConnection() {
-    if (process.env.REACT_APP_ENV !== 'production') {
+    if (!import.meta.env.PROD) {
       console.log('Skipping database connection check in development environment');
       return true;
     }
@@ -128,6 +186,20 @@ class DataStoreService {
       return await response.json();
     } catch (error) {
       console.error('Error creating indexes:', error);
+      throw error;
+    }
+  }
+
+  static async checkIndexStatus() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=indexStatus'));
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to check index status');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking index status:', error);
       throw error;
     }
   }
@@ -233,5 +305,3 @@ class DataStoreService {
 }
 
 export default DataStoreService;
-
-

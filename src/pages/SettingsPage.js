@@ -1,29 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer, GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { usePageContext } from '../hooks/usePageParam.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+
+const normalizeChatTransport = (value) => (
+  ['sse', 'ndjson'].includes(value) ? value : 'sse'
+);
+
+const SETTINGS_LOAD_DEFAULTS = {
+  siteStatus: 'available',
+  deploymentMode: 'CDS',
+  vectorServiceType: 'imvectordb',
+  'site.baseUrl': '',
+  'workflow.default': 'GenericGraph',
+  'model.default': 'openai-gpt51',
+  'chat.transport': 'sse',
+  'guardrail.indigenousLanguageBlocking': 'true',
+  'systemHealth.enabled': 'false',
+  'systemHealth.checks.database.enabled': 'true',
+  'systemHealth.checks.search.enabled': 'true',
+  'systemHealth.checks.llm.enabled': 'true',
+  'systemHealth.autoDisableOnError': 'true',
+  'systemHealth.errorTemplateId': '',
+  'systemHealth.failureThreshold': '5',
+  'systemHealth.failureWindowMinutes': '5',
+  'systemHealth.intervalMinutes': '1',
+  'systemHealth.fastIntervalSeconds': '30',
+  'systemHealth.alertRecipients': '',
+  'systemHealth.alertTemplateId': '',
+  'twoFA.enabled': 'false',
+  'twoFA.templateId': '',
+  'notify.resetTemplateId': '',
+  'session.defaultTTLMinutes': '60',
+  'session.rateLimitCapacity': '60',
+  'session.rateLimitRefillPerSec': '60',
+  'session.maxActiveSessions': '',
+  'session.authenticatedTTLMinutes': '60',
+  'session.rateLimitPersistence': 'memory',
+  'session.singleAnonymousChatRunEnabled': 'true',
+  'session.managementEnabled': 'true',
+  'session.type': 'memory',
+  'metrics.type': 'memory',
+  'redaction.profanity.en': '',
+  'redaction.threat.en': '',
+  'redaction.manipulation.en': '',
+  'redaction.profanity.fr': '',
+  'redaction.threat.fr': '',
+  'redaction.manipulation.fr': '',
+};
+
+const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const { language } = usePageContext();
   const [status, setStatus] = useState('available');
   const [saving, setSaving] = useState(false);
   const [deploymentMode, setDeploymentMode] = useState('CDS');
   const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
+  const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
+  const [settingsCacheMessage, setSettingsCacheMessage] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('DefaultGraph');
+  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [savingDefaultModel, setSavingDefaultModel] = useState(false);
+  const [chatTransport, setChatTransport] = useState('sse');
+  const [savingChatTransport, setSavingChatTransport] = useState(false);
+
+  // Canadian Indigenous language blocking guardrail (on by default)
+  const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
+  const [savingIndigenousLanguageBlocking, setSavingIndigenousLanguageBlocking] = useState(false);
+
+  // Health monitoring settings
+  const [healthEnabled, setHealthEnabled] = useState('false');
+  const [savingHealthEnabled, setSavingHealthEnabled] = useState(false);
+  const [healthDatabaseEnabled, setHealthDatabaseEnabled] = useState('true');
+  const [savingHealthDatabaseEnabled, setSavingHealthDatabaseEnabled] = useState(false);
+  const [healthSearchEnabled, setHealthSearchEnabled] = useState('true');
+  const [savingHealthSearchEnabled, setSavingHealthSearchEnabled] = useState(false);
+  const [healthLlmEnabled, setHealthLlmEnabled] = useState('true');
+  const [savingHealthLlmEnabled, setSavingHealthLlmEnabled] = useState(false);
+  const [healthAutoDisableOnError, setHealthAutoDisableOnError] = useState('true');
+  const [savingHealthAutoDisableOnError, setSavingHealthAutoDisableOnError] = useState(false);
+  const [healthErrorTemplateId, setHealthErrorTemplateId] = useState('');
+  const [savingHealthErrorTemplateId, setSavingHealthErrorTemplateId] = useState(false);
+  const [healthFailureThreshold, setHealthFailureThreshold] = useState(5);
+  const [savingHealthFailureThreshold, setSavingHealthFailureThreshold] = useState(false);
+  const [healthFailureWindowSeconds, setHealthFailureWindowSeconds] = useState(5);
+  const [savingHealthFailureWindowSeconds, setSavingHealthFailureWindowSeconds] = useState(false);
+  const [healthIntervalSeconds, setHealthIntervalSeconds] = useState(1);
+  const [savingHealthIntervalSeconds, setSavingHealthIntervalSeconds] = useState(false);
+  const [healthFastIntervalSeconds, setHealthFastIntervalSeconds] = useState(30);
+  const [savingHealthFastIntervalSeconds, setSavingHealthFastIntervalSeconds] = useState(false);
+  const [healthAlertRecipients, setHealthAlertRecipients] = useState('');
+  const [savingHealthAlertRecipients, setSavingHealthAlertRecipients] = useState(false);
+  const [healthAlertTemplateId, setHealthAlertTemplateId] = useState('');
+  const [savingHealthAlertTemplateId, setSavingHealthAlertTemplateId] = useState(false);
 
 
 
@@ -45,82 +125,79 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
-  // Rate-limiter persistence mode (memory | mongo)
+  // Rate-limiter persistence mode.
   const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
   const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
-  // Authenticated session rate-limit settings
-  const [authRateLimitCapacity, setAuthRateLimitCapacity] = useState(100);
-  const [savingAuthRateLimitCapacity, setSavingAuthRateLimitCapacity] = useState(false);
-  const [authRateLimitRefill, setAuthRateLimitRefill] = useState(5);
-  const [savingAuthRateLimitRefill, setSavingAuthRateLimitRefill] = useState(false);
+  const [singleAnonymousChatRunEnabled, setSingleAnonymousChatRunEnabled] = useState('true');
+  const [savingSingleAnonymousChatRunEnabled, setSavingSingleAnonymousChatRunEnabled] = useState(false);
   const [maxActiveSessions, setMaxActiveSessions] = useState('');
   const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
   const [sessionManagementEnabled, setSessionManagementEnabled] = useState('true');
   const [savingSessionManagementEnabled, setSavingSessionManagementEnabled] = useState(false);
-  // Session store type (memory | mongo)
+  // Session store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [sessionStoreType, setSessionStoreType] = useState('memory');
   const [savingSessionStoreType, setSavingSessionStoreType] = useState(false);
-  // Metrics store type (memory | mongo)
+  // Metrics store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [metricsStoreType, setMetricsStoreType] = useState('memory');
   const [savingMetricsStoreType, setSavingMetricsStoreType] = useState(false);
+  const [redactionValues, setRedactionValues] = useState({
+    'redaction.profanity.en': '',
+    'redaction.threat.en': '',
+    'redaction.manipulation.en': '',
+    'redaction.profanity.fr': '',
+    'redaction.threat.fr': '',
+    'redaction.manipulation.fr': '',
+  });
 
   useEffect(() => {
     async function loadSettings() {
-      const current = await DataStoreService.getSetting('siteStatus', 'available');
-      setStatus(current);
-      const mode = await DataStoreService.getSetting('deploymentMode', 'CDS');
-      setDeploymentMode(mode);
-      const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
-      setVectorServiceType(type);
-      const url = await DataStoreService.getSetting('site.baseUrl', '');
-      setBaseUrl(url ?? '');
-      // Load default workflow setting
-      const defaultWorkflowSetting = await DataStoreService.getSetting('workflow.default', 'DefaultGraph');
-      // Validate default workflow against known options
+      const settings = await DataStoreService.getSettings(SETTINGS_LOAD_KEYS, SETTINGS_LOAD_DEFAULTS);
+      setStatus(settings.siteStatus);
+      setDeploymentMode(settings.deploymentMode);
+      setVectorServiceType(settings.vectorServiceType);
+      setBaseUrl(settings['site.baseUrl'] ?? '');
       const allowedWorkflows = WORKFLOW_VALUES;
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'DefaultGraph');
-      // Load default model setting (seeded server-side on startup if missing)
-      const defaultModelSetting = await DataStoreService.getSetting('model.default', AVAILABLE_MODELS[0].value);
-      setDefaultModel(defaultModelSetting || AVAILABLE_MODELS[0].value);
-
-      const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
-      setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
-      const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
-      setTwoFATemplateId(twoFATemplateSetting ?? '');
-      const resetTpl = await DataStoreService.getSetting('notify.resetTemplateId', '');
-      setResetTemplateId(resetTpl ?? '');
-      // Load session settings
-      const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
-      setSessionTTL(Number(ttl));
-      const capacity = await DataStoreService.getSetting('session.rateLimitCapacity', '60');
-      setRateLimitCapacity(Number(capacity));
-      // Stored value is refill per minute (no conversion)
-      const refill = await DataStoreService.getSetting('session.rateLimitRefillPerSec', '60');
-      setRateLimitRefill(Number(refill));
-      // Authenticated rate-limit settings
-      const authCap = await DataStoreService.getSetting('session.authenticatedRateLimitCapacity', '100');
-      setAuthRateLimitCapacity(Number(authCap));
-      const authRefill = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', '300');
-      setAuthRateLimitRefill(Number(authRefill));
-      const maxSessions = await DataStoreService.getSetting('session.maxActiveSessions', '');
-      setMaxActiveSessions(maxSessions === 'undefined' ? '' : maxSessions);
-      const authTtl = await DataStoreService.getSetting('session.authenticatedTTLMinutes', '60');
-      setSessionAuthTTL(Number(authTtl));
-      // Load rate-limiter persistence mode
-      const persistence = await DataStoreService.getSetting('session.rateLimitPersistence', 'memory');
-      const persistenceNorm = (persistence || '').toString().trim().toLowerCase();
-      setRateLimitPersistence(persistenceNorm === 'mongo' ? 'mongo' : 'memory');
-      const managementEnabled = await DataStoreService.getSetting('session.managementEnabled', 'true');
-      setSessionManagementEnabled(String(managementEnabled ?? 'true'));
-      // Load session store type (memory | mongo)
-      const storeType = await DataStoreService.getSetting('session.type', 'memory');
-      const storeNorm = (storeType || '').toString().trim().toLowerCase();
+      const defaultWorkflowSetting = settings['workflow.default'];
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
+      setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
+      setChatTransport(normalizeChatTransport(settings['chat.transport']));
+      setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
+      setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
+      setHealthDatabaseEnabled(String(settings['systemHealth.checks.database.enabled'] ?? 'true'));
+      setHealthSearchEnabled(String(settings['systemHealth.checks.search.enabled'] ?? 'true'));
+      setHealthLlmEnabled(String(settings['systemHealth.checks.llm.enabled'] ?? 'true'));
+      setHealthAutoDisableOnError(String(settings['systemHealth.autoDisableOnError'] ?? 'true'));
+      setHealthErrorTemplateId(settings['systemHealth.errorTemplateId'] ?? '');
+      setHealthFailureThreshold(Number(settings['systemHealth.failureThreshold']));
+      setHealthFailureWindowSeconds(Number(settings['systemHealth.failureWindowMinutes']));
+      setHealthIntervalSeconds(Number(settings['systemHealth.intervalMinutes']));
+      setHealthFastIntervalSeconds(Number(settings['systemHealth.fastIntervalSeconds']));
+      setHealthAlertRecipients(settings['systemHealth.alertRecipients'] ?? '');
+      setHealthAlertTemplateId(settings['systemHealth.alertTemplateId'] ?? '');
+      setTwoFAEnabled(String(settings['twoFA.enabled'] ?? 'false'));
+      setTwoFATemplateId(settings['twoFA.templateId'] ?? '');
+      setResetTemplateId(settings['notify.resetTemplateId'] ?? '');
+      setSessionTTL(Number(settings['session.defaultTTLMinutes']));
+      setRateLimitCapacity(Number(settings['session.rateLimitCapacity']));
+      setRateLimitRefill(Number(settings['session.rateLimitRefillPerSec']));
+      setMaxActiveSessions(settings['session.maxActiveSessions'] === 'undefined' ? '' : (settings['session.maxActiveSessions'] ?? ''));
+      setSessionAuthTTL(Number(settings['session.authenticatedTTLMinutes']));
+      const persistenceNorm = (settings['session.rateLimitPersistence'] || '').toString().trim().toLowerCase();
+      setRateLimitPersistence(persistenceNorm === 'redis' ? 'redis' : 'memory');
+      setSingleAnonymousChatRunEnabled(String(settings['session.singleAnonymousChatRunEnabled'] ?? 'true'));
+      setSessionManagementEnabled(String(settings['session.managementEnabled'] ?? 'true'));
+      const storeNorm = (settings['session.type'] || '').toString().trim().toLowerCase();
       setSessionStoreType(['mongo', 'mongodb', 'redis'].includes(storeNorm) ? storeNorm : 'memory');
-
-      // Load metrics store type (memory | mongo)
-      const metricsType = await DataStoreService.getSetting('metrics.type', 'memory');
-      const metricsNorm = (metricsType || '').toString().trim().toLowerCase();
+      const metricsNorm = (settings['metrics.type'] || '').toString().trim().toLowerCase();
       setMetricsStoreType(metricsNorm === 'mongo' || metricsNorm === 'mongodb' ? 'mongo' : 'memory');
+      setRedactionValues({
+        'redaction.profanity.en': settings['redaction.profanity.en'] ?? '',
+        'redaction.threat.en': settings['redaction.threat.en'] ?? '',
+        'redaction.manipulation.en': settings['redaction.manipulation.en'] ?? '',
+        'redaction.profanity.fr': settings['redaction.profanity.fr'] ?? '',
+        'redaction.threat.fr': settings['redaction.threat.fr'] ?? '',
+        'redaction.manipulation.fr': settings['redaction.manipulation.fr'] ?? '',
+      });
     }
     loadSettings();
   }, []);
@@ -130,6 +207,18 @@ const SettingsPage = ({ lang = 'en' }) => {
     await DataStoreService.setSetting(key, value);
     const current = await DataStoreService.getSetting(key, value);
     return readTransform(current);
+  };
+
+  const saveHealthSetting = async ({ key, value, setValue, setSaving, readTransform = (v) => v }) => {
+    setValue(value);
+    setSaving(true);
+    try {
+      const current = await saveAndVerify(key, value, readTransform);
+      setValue(current);
+      return current;
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Session handlers
@@ -169,18 +258,6 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleAuthRateLimitCapacityChange = async (e) => {
-    const val = Number(e.target.value);
-    setAuthRateLimitCapacity(val);
-    setSavingAuthRateLimitCapacity(true);
-    try {
-      const current = await saveAndVerify('session.authenticatedRateLimitCapacity', String(val), (v) => Number(v));
-      setAuthRateLimitCapacity(Number(current));
-    } finally {
-      setSavingAuthRateLimitCapacity(false);
-    }
-  };
-
   const handleRateLimitRefillChange = async (e) => {
     const val = Number(e.target.value);
     setRateLimitRefill(val);
@@ -191,19 +268,6 @@ const SettingsPage = ({ lang = 'en' }) => {
       setRateLimitRefill(Number(saved));
     } finally {
       setSavingRateLimitRefill(false);
-    }
-  };
-
-  const handleAuthRateLimitRefillChange = async (e) => {
-    const val = Number(e.target.value);
-    setAuthRateLimitRefill(val);
-    setSavingAuthRateLimitRefill(true);
-    try {
-      await DataStoreService.setSetting('session.authenticatedRateLimitRefillPerSec', String(val));
-      const saved = await DataStoreService.getSetting('session.authenticatedRateLimitRefillPerSec', String(val));
-      setAuthRateLimitRefill(Number(saved));
-    } finally {
-      setSavingAuthRateLimitRefill(false);
     }
   };
 
@@ -224,13 +288,28 @@ const SettingsPage = ({ lang = 'en' }) => {
     setRateLimitPersistence(val);
     setSavingRateLimitPersistence(true);
     try {
-      // store as 'mongo' or 'memory'
-      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => ((v || '').toString().trim().toLowerCase() === 'mongo' ? 'mongo' : 'memory'));
+      // Store as one of the supported rate-limiter backends.
+      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => {
+        const norm = (v || '').toString().trim().toLowerCase();
+        return norm === 'redis' ? 'redis' : 'memory';
+      });
       setRateLimitPersistence(current);
     } catch (error) {
       console.error('Failed to save rate-limiter persistence:', error);
     } finally {
       setSavingRateLimitPersistence(false);
+    }
+  };
+
+  const handleSingleAnonymousChatRunEnabledChange = async (e) => {
+    const val = e.target.value;
+    setSingleAnonymousChatRunEnabled(val);
+    setSavingSingleAnonymousChatRunEnabled(true);
+    try {
+      const current = await saveAndVerify('session.singleAnonymousChatRunEnabled', val, (v) => String(v ?? 'true'));
+      setSingleAnonymousChatRunEnabled(String(current));
+    } finally {
+      setSavingSingleAnonymousChatRunEnabled(false);
     }
   };
 
@@ -300,6 +379,19 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleRefreshSettingsCache = async () => {
+    setRefreshingSettingsCache(true);
+    setSettingsCacheMessage('');
+    try {
+      await DataStoreService.refreshSettingsCache();
+      setSettingsCacheMessage(t('settings.refreshCache.success'));
+    } catch (error) {
+      setSettingsCacheMessage(t('settings.refreshCache.error').replace('{error}', error.message));
+    } finally {
+      setRefreshingSettingsCache(false);
+    }
+  };
+
 
 
   const handleBaseUrlChange = (e) => {
@@ -342,6 +434,132 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleIndigenousLanguageBlockingChange = async (e) => {
+    const newValue = e.target.value;
+    setIndigenousLanguageBlocking(newValue);
+    setSavingIndigenousLanguageBlocking(true);
+    try {
+      const current = await saveAndVerify('guardrail.indigenousLanguageBlocking', newValue);
+      setIndigenousLanguageBlocking(String(current ?? 'true'));
+    } finally {
+      setSavingIndigenousLanguageBlocking(false);
+    }
+  };
+
+  const handleHealthEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.enabled',
+    value: e.target.value,
+    setValue: setHealthEnabled,
+    setSaving: setSavingHealthEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthDatabaseEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.database.enabled',
+    value: e.target.value,
+    setValue: setHealthDatabaseEnabled,
+    setSaving: setSavingHealthDatabaseEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthSearchEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.search.enabled',
+    value: e.target.value,
+    setValue: setHealthSearchEnabled,
+    setSaving: setSavingHealthSearchEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthLlmEnabledChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.checks.llm.enabled',
+    value: e.target.value,
+    setValue: setHealthLlmEnabled,
+    setSaving: setSavingHealthLlmEnabled,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthAutoDisableOnErrorChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.autoDisableOnError',
+    value: e.target.value,
+    setValue: setHealthAutoDisableOnError,
+    setSaving: setSavingHealthAutoDisableOnError,
+    readTransform: (v) => String(v ?? 'true'),
+  });
+
+  const handleHealthErrorTemplateIdChange = (e) => {
+    setHealthErrorTemplateId(e.target.value);
+  };
+
+  const handleHealthErrorTemplateIdBlur = async () => {
+    setSavingHealthErrorTemplateId(true);
+    try {
+      const current = await saveAndVerify('systemHealth.errorTemplateId', healthErrorTemplateId, (v) => v ?? '');
+      setHealthErrorTemplateId(current);
+    } finally {
+      setSavingHealthErrorTemplateId(false);
+    }
+  };
+
+  const handleHealthFailureThresholdChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.failureThreshold',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFailureThreshold,
+    setSaving: setSavingHealthFailureThreshold,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthFailureWindowSecondsChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.failureWindowMinutes',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFailureWindowSeconds,
+    setSaving: setSavingHealthFailureWindowSeconds,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthIntervalSecondsChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.intervalMinutes',
+    value: String(Number(e.target.value)),
+    setValue: setHealthIntervalSeconds,
+    setSaving: setSavingHealthIntervalSeconds,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthFastIntervalSecondsChange = async (e) => saveHealthSetting({
+    key: 'systemHealth.fastIntervalSeconds',
+    value: String(Number(e.target.value)),
+    setValue: setHealthFastIntervalSeconds,
+    setSaving: setSavingHealthFastIntervalSeconds,
+    readTransform: (v) => Number(v),
+  });
+
+  const handleHealthAlertRecipientsChange = (e) => {
+    setHealthAlertRecipients(e.target.value);
+  };
+
+  const handleHealthAlertRecipientsBlur = async () => {
+    setSavingHealthAlertRecipients(true);
+    try {
+      const current = await saveAndVerify('systemHealth.alertRecipients', healthAlertRecipients, (v) => v ?? '');
+      setHealthAlertRecipients(current);
+    } finally {
+      setSavingHealthAlertRecipients(false);
+    }
+  };
+
+  const handleHealthAlertTemplateIdChange = (e) => {
+    setHealthAlertTemplateId(e.target.value);
+  };
+
+  const handleHealthAlertTemplateIdBlur = async () => {
+    setSavingHealthAlertTemplateId(true);
+    try {
+      const current = await saveAndVerify('systemHealth.alertTemplateId', healthAlertTemplateId, (v) => v ?? '');
+      setHealthAlertTemplateId(current);
+    } finally {
+      setSavingHealthAlertTemplateId(false);
+    }
+  };
+
   const handleResetTemplateIdChange = (e) => {
     setResetTemplateId(e.target.value);
   };
@@ -357,11 +575,22 @@ const SettingsPage = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
+      <div className="mb-400">
+        <GcdsButton
+          type="button"
+          buttonRole="secondary"
+          onClick={handleRefreshSettingsCache}
+          disabled={refreshingSettingsCache}
+        >
+          {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
+        </GcdsButton>
+        {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
+      </div>
       <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
         <div>
           <label htmlFor="site-status" className="mb-200 display-block">
@@ -429,7 +658,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               try {
                 const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'DefaultGraph');
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'GenericGraph');
               } finally {
                 setSavingDefaultWorkflow(false);
               }
@@ -439,6 +668,29 @@ const SettingsPage = ({ lang = 'en' }) => {
             {WORKFLOWS.map(w => (
               <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
             ))}
+          </select>
+
+          <label htmlFor="chat-transport" className="mb-200 display-block mt-400">
+            {t('settings.chatTransport.label')}
+          </label>
+          <select
+            id="chat-transport"
+            value={chatTransport}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setChatTransport(v);
+              setSavingChatTransport(true);
+              try {
+                const current = await saveAndVerify('chat.transport', v);
+                setChatTransport(normalizeChatTransport(current));
+              } finally {
+                setSavingChatTransport(false);
+              }
+            }}
+            disabled={savingChatTransport}
+          >
+            <option value="sse">{t('settings.chatTransport.options.sse')}</option>
+            <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
           </select>
 
           <label htmlFor="default-model" className="mb-200 display-block mt-400">
@@ -465,7 +717,182 @@ const SettingsPage = ({ lang = 'en' }) => {
             ))}
           </select>
 
+          <label htmlFor="indigenous-language-blocking" className="mb-200 display-block mt-400">
+            {t('settings.indigenousLanguageBlocking.label')}
+          </label>
+          <select
+            id="indigenous-language-blocking"
+            value={indigenousLanguageBlocking}
+            onChange={handleIndigenousLanguageBlockingChange}
+            disabled={savingIndigenousLanguageBlocking}
+          >
+            <option value="true">{t('common.on')}</option>
+            <option value="false">{t('common.off')}</option>
+          </select>
+
         </div>
+      </GcdsDetails>
+
+      <GcdsDetails detailsTitle={t('settings.health.title')} className="mt-600 mb-200" tabIndex="0">
+        <p className="mb-400">{t('settings.health.description')}</p>
+
+        <label htmlFor="health-enabled" className="mb-200 display-block mt-200">
+          {t('settings.health.enabledLabel')}
+        </label>
+        <select
+          id="health-enabled"
+          value={healthEnabled}
+          onChange={handleHealthEnabledChange}
+          disabled={savingHealthEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-database-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.databaseEnabledLabel')}
+        </label>
+        <select
+          id="health-database-enabled"
+          value={healthDatabaseEnabled}
+          onChange={handleHealthDatabaseEnabledChange}
+          disabled={savingHealthDatabaseEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-search-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.searchEnabledLabel')}
+        </label>
+        <select
+          id="health-search-enabled"
+          value={healthSearchEnabled}
+          onChange={handleHealthSearchEnabledChange}
+          disabled={savingHealthSearchEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-llm-enabled" className="mb-200 display-block mt-400">
+          {t('settings.health.llmEnabledLabel')}
+        </label>
+        <select
+          id="health-llm-enabled"
+          value={healthLlmEnabled}
+          onChange={handleHealthLlmEnabledChange}
+          disabled={savingHealthLlmEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <label htmlFor="health-auto-disable" className="mb-200 display-block mt-400">
+          {t('settings.health.autoDisableOnErrorLabel')}
+        </label>
+        <select
+          id="health-auto-disable"
+          value={healthAutoDisableOnError}
+          onChange={handleHealthAutoDisableOnErrorChange}
+          disabled={savingHealthAutoDisableOnError}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
+        </select>
+
+        <div className="health-template-grid mt-400">
+          <div className="health-template-column">
+            <label htmlFor="health-error-template" className="mb-200 display-block">
+              {t('settings.health.errorTemplateId')}
+            </label>
+            <input
+              id="health-error-template"
+              type="text"
+              value={healthErrorTemplateId}
+              onChange={handleHealthErrorTemplateIdChange}
+              onBlur={handleHealthErrorTemplateIdBlur}
+              disabled={savingHealthErrorTemplateId}
+              className="w-full"
+            />
+          </div>
+
+          <div className="health-template-column">
+            <label htmlFor="health-alert-template" className="mb-200 display-block">
+              {t('settings.health.alertTemplateId')}
+            </label>
+            <input
+              id="health-alert-template"
+              type="text"
+              value={healthAlertTemplateId}
+              onChange={handleHealthAlertTemplateIdChange}
+              onBlur={handleHealthAlertTemplateIdBlur}
+              disabled={savingHealthAlertTemplateId}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <label htmlFor="health-failure-threshold" className="mb-200 display-block mt-400">
+          {t('settings.health.failureThreshold')}
+        </label>
+        <input
+          id="health-failure-threshold"
+          type="number"
+          min="1"
+          value={healthFailureThreshold}
+          onChange={handleHealthFailureThresholdChange}
+          disabled={savingHealthFailureThreshold}
+        />
+
+        <label htmlFor="health-failure-window" className="mb-200 display-block mt-400">
+          {t('settings.health.failureWindowMinutes')}
+        </label>
+        <input
+          id="health-failure-window"
+          type="number"
+          min="1"
+          value={healthFailureWindowSeconds}
+          onChange={handleHealthFailureWindowSecondsChange}
+          disabled={savingHealthFailureWindowSeconds}
+        />
+
+        <label htmlFor="health-interval" className="mb-200 display-block mt-400">
+          {t('settings.health.intervalMinutes')}
+        </label>
+        <input
+          id="health-interval"
+          type="number"
+          min="1"
+          value={healthIntervalSeconds}
+          onChange={handleHealthIntervalSecondsChange}
+          disabled={savingHealthIntervalSeconds}
+        />
+
+        <label htmlFor="health-fast-interval" className="mb-200 display-block mt-400">
+          {t('settings.health.fastIntervalSeconds')}
+        </label>
+        <input
+          id="health-fast-interval"
+          type="number"
+          min="1"
+          value={healthFastIntervalSeconds}
+          onChange={handleHealthFastIntervalSecondsChange}
+          disabled={savingHealthFastIntervalSeconds}
+        />
+
+        <label htmlFor="health-alert-recipients" className="mb-200 display-block mt-400">
+          {t('settings.health.alertRecipients')}
+        </label>
+        <input
+          id="health-alert-recipients"
+          type="text"
+          value={healthAlertRecipients}
+          onChange={handleHealthAlertRecipientsChange}
+          onBlur={handleHealthAlertRecipientsBlur}
+          disabled={savingHealthAlertRecipients}
+          className="w-full"
+        />
       </GcdsDetails>
 
 
@@ -576,7 +1003,20 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
           <option value="memory">{t('settings.session.persistence.options.memory')}</option>
-          <option value="mongo">{t('settings.session.persistence.options.mongo')}</option>
+          <option value="redis">{t('settings.session.persistence.options.redis')}</option>
+        </select>
+
+        <label htmlFor="session-single-anonymous-chat-run" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.singleAnonymousChatRunEnabled')}
+        </label>
+        <select
+          id="session-single-anonymous-chat-run"
+          value={singleAnonymousChatRunEnabled}
+          onChange={handleSingleAnonymousChatRunEnabledChange}
+          disabled={savingSingleAnonymousChatRunEnabled}
+        >
+          <option value="true">{t('common.yes')}</option>
+          <option value="false">{t('common.no')}</option>
         </select>
 
         <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
@@ -584,20 +1024,10 @@ const SettingsPage = ({ lang = 'en' }) => {
         </label>
         <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
 
-        <label htmlFor="session-auth-rate-capacity" className="mb-200 display-block mt-400">
-          {t('settings.rateLimiting.authenticatedRateLimitCapacity')}
-        </label>
-        <input id="session-auth-rate-capacity" type="number" min="1" value={authRateLimitCapacity} onChange={handleAuthRateLimitCapacityChange} disabled={savingAuthRateLimitCapacity} />
-
         <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
           {t('settings.rateLimiting.rateLimitRefill')}
         </label>
         <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
-
-        <label htmlFor="session-auth-rate-refill" className="mb-200 display-block mt-400">
-          {t('settings.rateLimiting.authenticatedRateLimitRefill')}
-        </label>
-        <input id="session-auth-rate-refill" type="number" min="0" step="0.1" value={authRateLimitRefill} onChange={handleAuthRateLimitRefillChange} disabled={savingAuthRateLimitRefill} />
       </GcdsDetails>
       <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200" tabIndex="0">
         <p className="mb-400">{t('settings.redaction.description')}</p>
@@ -609,17 +1039,17 @@ const SettingsPage = ({ lang = 'en' }) => {
             <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.en" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.profanity.en" initialValue={redactionValues['redaction.profanity.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="threat-en" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.threat.en" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.threat.en" initialValue={redactionValues['redaction.threat.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (EN)
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.en" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.manipulation.en" initialValue={redactionValues['redaction.manipulation.en']} saveAndVerify={saveAndVerify} lang={lang} />
           </div>
 
           <div>
@@ -628,17 +1058,17 @@ const SettingsPage = ({ lang = 'en' }) => {
             <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.fr" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.profanity.fr" initialValue={redactionValues['redaction.profanity.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.threat.fr" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.threat.fr" initialValue={redactionValues['redaction.threat.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
             <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (FR)
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.fr" saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea settingKey="redaction.manipulation.fr" initialValue={redactionValues['redaction.manipulation.fr']} saveAndVerify={saveAndVerify} lang={lang} />
           </div>
         </div>
       </GcdsDetails>
@@ -648,18 +1078,14 @@ const SettingsPage = ({ lang = 'en' }) => {
 };
 
 // Helper component for text areas to manage their own state and saving
-const SettingsTextArea = ({ settingKey, saveAndVerify, lang = 'en' }) => {
+const SettingsTextArea = ({ settingKey, initialValue = '', saveAndVerify, lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [value, setValue] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [value, setValue] = useState(initialValue);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    DataStoreService.getSetting(settingKey, '').then(val => {
-      setValue(val || '');
-      setLoading(false);
-    });
-  }, [settingKey]);
+    setValue(initialValue);
+  }, [initialValue]);
 
   const handleBlur = async () => {
     setSaving(true);
@@ -670,8 +1096,6 @@ const SettingsTextArea = ({ settingKey, saveAndVerify, lang = 'en' }) => {
       setSaving(false);
     }
   };
-
-  if (loading) return <div className="mb-200">{t('common.loading')}</div>;
 
   return (
     <textarea

@@ -89,7 +89,13 @@ export const UrlValidationService = {
 
 // --- NEW: Lightweight formatting-only validation (bottom of file for visibility) ---
 function isCanadaCaDomain(url) {
-  return url.startsWith('https://www.canada.ca') || url.startsWith('http://www.canada.ca');
+  try {
+    const parsed = new URL(url);
+    const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    return isHttp && parsed.hostname === 'www.canada.ca';
+  } catch (_e) {
+    return false;
+  }
 }
 
 function generateFallbackSearchUrl(lang, question, department, t) {

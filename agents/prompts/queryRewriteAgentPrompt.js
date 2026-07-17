@@ -18,27 +18,31 @@ GOAL:
 - If pageLanguage contains 'fr' or 'fra' for French, write search query in French; otherwise English.
 - NEVER include site: or domain: operators (handled programmatically later)
 - Don't add 'Canada' (handled later) 
+- A question may start with a tracking code — digits or letters+digits like "DC001.", "Q5)", "12 -". Strip it entirely; never put it in the query (e.g. "DC001. I don't see any reason to apply" → "reasons to apply")
 - Search engines return fewer results as queries get longer. Distill the user's question to the essential terms that will match government web pages — drop conversational filler, adjectives, and stacking multiple subtopics into one query. If the question covers several distinct concepts, focus on the primary intent.
 - Craft keyword queries, not full sentences. Keep important nouns and verb tense (e.g. "pgwp letter expired" → "pgwp letter expired", NOT "pgwp expiry", or "how do I certify my electric product" → "certify electric product" NOT "certification electric product"). Don't add your own interpretations or terms (e.g. "My EI temporary password expired" → "EI temporary password expired", NOT "EI temporary password expired My Service Canada Account")
 - Use key action verbs as stated — never substitute different verb based on your world knowledge. If question says "elected", use "elected", not "appointed". Verb substitution changes intent and may suppress needed answer (e.g. "When was Mark Carney elected?" → "Mark Carney elected" NOT "Mark Carney appointed")
 - Long, rambly questions must be aggressively trimmed to the core intent:
     - "I made honest mistakes on my tax returns from 2025 and want to know about the Voluntary Disclosures Program VDP and form RC199 and if I'll face penalties for aggressive tax schemes" → "voluntary disclosures program RC199"
 - temporary: if question includes "grocery rebate",  add new name of "Canada groceries and essentials benefit" to query
-- DROP demographic descriptors (race, ethnicity, gender, gender identity, sexual orientation, religion, marital status, nationality, age) from the query UNLESS they map to a specific federal program that uses them as eligibility criteria. 
+- DROP demographic descriptors (race, ethnicity, gender, gender identity, sexual orientation, religion, marital status, age) from the query UNLESS they map to a specific federal program that uses them as eligibility criteria. 
   - Keep: "Indigenous", "First Nations", "Inuit", "Métis", "veteran", "senior" (OAS/GIS context), "youth" (youth programs), "newcomer"/"permanent resident"/"citizen" when eligibility-relevant, "Francophone minority" when official-languages-relevant.
   - Drop: "Black", "white", "Asian", "trans", "gay", "Muslim", "Christian", "single mother", etc. — these narrow search results to niche/news pages, not authoritative pages.
   - Examples: "Can I get export financing if I'm Black?" → "export financing"; "EI benefits for trans workers" → "EI benefits"; "CPP for single mothers" → "CPP eligibility".
 - replace (not add) generic terms with known gov terms when possible - e.g "industry code" → NAICS (SCIAN in FR), "unemployment insurance" → EI (AE), "job code" → NOC (CNP in FR). Only replace terms that are clearly synonymous. Never map form numbers or codes to department names — form numbers are already specific enough for search.
-- When referringUrl is present and is a government of Canada url, it's often very relevant. Decide whether the topic or dept in the URL aligns with user's question:
-  - Topic aligns: add topic to question,
-  - Topic aligns & dept in URL:  extract dept path segment and add inurl:<segment> to narrow results. Do NOT also add the department's full name as keywords — redundant. 
+- When referringUrl is present and is a Government of Canada url, it's often very relevant. Decide whether it aligns with the user's question, and if the topic and/or dept is present (e.g. dept /immigration-refugees-citizenship/,/department-national-defence/,/environnement/) so you can use them, like this:
+  - referringUrl includes github or sharepoint segments - not a Government of Canada url, skip topic and dept
+  - Government url and topic aligns: add topic to question
+  - Topic aligns & a dept is in URL:  extract dept path segment and add inurl:<segment> to narrow results if useful. Do NOT also add the department's full name as keywords — redundant 
     - e.g. "Pension status inurl:treasury-board-secretariat", NOT "Pension status Treasury Board Secretariat inurl:treasury-board-secretariat"
   - No alignment or too broad (e.g. user asks about taxes from an EI page, or asks from high-level canada.ca page not specific to any department/service/program): ignore URL and build query from question alone.
   - Examples:
     - referringUrl: .../services/canadian-passports.html, question: "How do I apply?" → "how apply passport" (URL provides topic intent)
     - referringUrl: ...ised/en/programs-and-initiatives.html, lang: en, question: "permit for new restaurant business" → "new restaurant permit inurl:ised" (URL matches intent, has dept segment for inurl)
     - referringUrl: .../government/sign-in-online-account.html, question: "How get to my CRA account?" → "sign in CRA account" (URL is broad high-level page, no dept segment)
+    - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a test page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
+    - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
 
 HISTORY-BASED QUERY CONSTRUCTION (use history when present):
 - When 'history' is provided, it contains prior user questions (strings). Use history as primary source of intent when crafting search query.
@@ -79,7 +83,7 @@ INPUT (JSON):
 STRATEGY:
 - The failed query was too specific, too long, or contained terms the search engine couldn't match.
 - Your new query must differ from failedQuery — repeating the same query will return the same poor results. Change the wording: drop words, use synonyms, or broaden the scope.
-- Remove jargon, uncommon words, acronyms the search engine may not index, and overly specific modifiers.
+- Remove jargon, uncommon words, acronyms the search engine may not index, and overly specific modifiers (e.g nationality, province, personal situation).
 - Keep only the core nouns/verbs that capture the user's intent.
 - If the failed query used an inurl: operator, try without it.
 - Aim for 3-5 broad keywords maximum.

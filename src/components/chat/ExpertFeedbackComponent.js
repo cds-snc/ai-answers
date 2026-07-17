@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import '../../styles/App.css';
+import React, { useState, useId } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
+import FeedbackInlineError from './FeedbackInlineError.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
@@ -12,8 +14,16 @@ const ExpertFeedbackComponent = ({
   lang = 'en',
   sentenceCount = 1,
   sentences = [],
+  answerNumber,
+  citationUrl,
+  department,
+  titleRef,
 }) => {
   const { t } = useTranslations(lang);
+  // Namespaces every id in this component so multiple instances can render on
+  // one page (e.g. review mode, one per un-rated answer) without colliding.
+  const uid = useId();
+  const { answerText, withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
   const [expertFeedback, setExpertFeedback] = useState({
     sentence1Score: null,
     sentence1Explanation: '',
@@ -35,6 +45,7 @@ const ExpertFeedbackComponent = ({
     citationExplanation: '',
     expertCitationUrl: '',
   });
+  const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
@@ -45,6 +56,7 @@ const ExpertFeedbackComponent = ({
     };
 
     setExpertFeedback((prev) => ({ ...prev, ...updates }));
+    clearError();
   };
 
   const handleInputChange = (event) => {
@@ -64,8 +76,23 @@ const ExpertFeedbackComponent = ({
     }
   };
 
+  const hasAnyRating = (feedback) =>
+    [
+      feedback.sentence1Score,
+      feedback.sentence2Score,
+      feedback.sentence3Score,
+      feedback.sentence4Score,
+      feedback.citationScore,
+    ].some((score) => score !== null);
+
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (!hasAnyRating(expertFeedback)) {
+      triggerError();
+      return;
+    }
+    clearError();
 
     const totalScore = computeTotalScore(expertFeedback);
 
@@ -81,18 +108,6 @@ const ExpertFeedbackComponent = ({
   };
 
   const computeTotalScore = (feedback) => {
-    // Check if any ratings were provided at all
-    const hasAnyRating = [
-      feedback.sentence1Score,
-      feedback.sentence2Score,
-      feedback.sentence3Score,
-      feedback.sentence4Score,
-      feedback.citationScore,
-    ].some((score) => score !== null);
-
-    // If no ratings were provided at all, return null
-    if (!hasAnyRating) return null;
-
     // Get scores for existing sentences (up to sentenceCount)
     const sentenceScores = [
       feedback.sentence1Score,
@@ -109,7 +124,11 @@ const ExpertFeedbackComponent = ({
 
     // Citation score defaults to 25 (good) in two cases:
     // 1. Citation exists but wasn't rated
-    // 2. Answer has no citation section at all
+    // 2. Answer has no citation section at all and the reviewer didn't rate the
+    //    absence either — an edge case, since whether "no citation" is good, needs
+    //    improvement, or incorrect depends on whether the answer warranted one.
+    //    The rating radios stay available either way so a reviewer CAN score the
+    //    absence explicitly; this default only covers the case where they didn't.
     const citationComponent = feedback.citationScore !== null ? feedback.citationScore : 25;
 
     const totalScore = sentenceComponent + citationComponent;
@@ -126,31 +145,52 @@ const ExpertFeedbackComponent = ({
         onKeyDown={(e) => e.key === 'Enter' && onClose()}
         role="button"
         tabIndex={0}
-        aria-label="Close"
+        aria-label={t('common.close')}
       />
-      <fieldset className="gc-chckbxrdio sm-v">
-        <h2>{t('homepage.expertRating.intro')}</h2>
+      <fieldset className={`gc-chckbxrdio md expert-rating-fieldset${hasError ? ' has-error' : ''}`}>
+        <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
+          {t('homepage.expertRating.intro')}
+          {answerNumber && (
+            <span className="feedback-answer-number">{answerText}</span>
+          )}
+        </h4>
+        {hasError && (
+          <FeedbackInlineError
+            id={`${uid}-error`}
+            message={t('homepage.expertRating.selectionRequired')}
+            errorCount={errorCount}
+            inputRef={errorRef}
+          />
+        )}
         <details className="answer-details" open>
-          <summary>{t('homepage.expertRating.title')}</summary>
+          <summary>{withAnswerNumber(t('homepage.expertRating.title'))}</summary>
 
           {/* All sentences 1-4 */}
           {[...Array(Math.min(4, sentenceCount))].map((_, index) => (
-            <div key={index + 1} className="sentence-rating-group">
+            <fieldset
+              key={index + 1}
+              className="sentence-rating-group"
+              aria-describedby={sentences[index] ? `${uid}-sentence${index + 1}-text` : undefined}
+            >
               <legend>
                 {t(`homepage.expertRating.sentence${index + 1}`)}
-                {sentences[index] && <div className="sentence-text">"{sentences[index]}"</div>}
               </legend>
+              {sentences[index] && (
+                <div className="sentence-text mb-200" id={`${uid}-sentence${index + 1}-text`}>
+                  "{sentences[index]}"
+                </div>
+              )}
               <ul className="list-unstyled lst-spcd-2">
                 <li className="radio">
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-100`}
+                    id={`${uid}-sentence${index + 1}-100`}
                     value="100"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 100}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-100`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-100`}>
                     {t('homepage.expertRating.options.good')} (100)
                   </label>
                 </li>
@@ -158,12 +198,12 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-80`}
+                    id={`${uid}-sentence${index + 1}-80`}
                     value="80"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 80}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-80`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-80`}>
                     {t('homepage.expertRating.options.needsImprovement')} (80)
                   </label>
                 </li>
@@ -171,12 +211,12 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="radio"
                     name={`sentence${index + 1}Score`}
-                    id={`sentence${index + 1}-0`}
+                    id={`${uid}-sentence${index + 1}-0`}
                     value="0"
                     checked={expertFeedback[`sentence${index + 1}Score`] === 0}
                     onChange={handleRadioChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-0`}>
+                  <label htmlFor={`${uid}-sentence${index + 1}-0`}>
                     {t('homepage.expertRating.options.incorrect')} (0)
                   </label>
                 </li>
@@ -185,11 +225,11 @@ const ExpertFeedbackComponent = ({
                   <input
                     type="checkbox"
                     name={`sentence${index + 1}ContentIssue`}
-                    id={`sentence${index + 1}-content-issue`}
+                    id={`${uid}-sentence${index + 1}-content-issue`}
                     checked={expertFeedback[`sentence${index + 1}ContentIssue`]}
                     onChange={handleCheckboxChange}
                   />
-                  <label htmlFor={`sentence${index + 1}-content-issue`}
+                  <label htmlFor={`${uid}-sentence${index + 1}-content-issue`}
                   >{t('homepage.expertRating.options.contentIssue')}</label>
                 </li>
                 {expertFeedback[`sentence${index + 1}Score`] === 0 && (
@@ -197,17 +237,18 @@ const ExpertFeedbackComponent = ({
                     <input
                       type="checkbox"
                       name={`sentence${index + 1}Harmful`}
-                      id={`sentence${index + 1}-harmful`}
+                      id={`${uid}-sentence${index + 1}-harmful`}
+                      aria-describedby={`${uid}-sentence${index + 1}-harmful-details-summary`}
                       checked={expertFeedback[`sentence${index + 1}Harmful`]}
                       onChange={handleCheckboxChange}
                     />
-                    <label htmlFor={`sentence${index + 1}-harmful`}
-                    >{t('homepage.expertRating.options.harmful')}</label>
-                    <details className="harmful-details mt-100">
-                      <summary>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
-                      <p className="mb-100 mt-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
-                      <p className="mb-100 font-size-text-xsm-nr">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
-                      <ul className="mb-200 list-disc font-size-text-xsm-nr">
+                    <label htmlFor={`${uid}-sentence${index + 1}-harmful`}
+                    >{t('homepage.expertRating.options.harmful')} <span aria-hidden="true">*</span></label>
+                    <details className="harmful-details mt-100 mb-200 details-form">
+                      <summary id={`${uid}-sentence${index + 1}-harmful-details-summary`}><span aria-hidden="true" className="harmful-summary-marker">*</span>{t('homepage.expertRating.options.harmfulDetails.summary')}</summary>
+                      <p className="mb-100 mt-100">{t('homepage.expertRating.options.harmfulDetails.intro')}</p>
+                      <p className="mb-100">{t('homepage.expertRating.options.harmfulDetails.description')}</p>
+                      <ul className="mb-200 list-disc canada-ca-list-spcd-2">
                         <li>{t('homepage.expertRating.options.harmfulDetails.item1')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item2')}</li>
                         <li>{t('homepage.expertRating.options.harmfulDetails.item3')}</li>
@@ -222,10 +263,10 @@ const ExpertFeedbackComponent = ({
               {(expertFeedback[`sentence${index + 1}Score`] === 80 ||
                 expertFeedback[`sentence${index + 1}Score`] === 0) && (
                   <div className="explanation-field">
-                    <label htmlFor={`sentence${index + 1}-explanation`}>
+                    <label htmlFor={`${uid}-sentence${index + 1}-explanation`}>
                       {t('homepage.expertRating.options.explanation')}
                       <textarea
-                        id={`sentence${index + 1}-explanation`}
+                        id={`${uid}-sentence${index + 1}-explanation`}
                         name={`sentence${index + 1}Explanation`}
                         value={expertFeedback[`sentence${index + 1}Explanation`]}
                         onChange={handleInputChange}
@@ -234,36 +275,42 @@ const ExpertFeedbackComponent = ({
                     </label>
                   </div>
                 )}
-            </div>
+            </fieldset>
           ))}
         </details>
 
         <details className="citation-details">
-          <summary>{t('homepage.expertRating.citation')}</summary>
-          <div className="citation-rating-group">
+          <summary>{withAnswerNumber(t('homepage.expertRating.citation'))}</summary>
+          <fieldset className="citation-rating-group" aria-describedby={`${uid}-citation-text`}>
             <legend>{t('homepage.expertRating.citation')}</legend>
+            {/* The radios below still apply when there's no citation — a reviewer
+                can rate its absence as good, needs improvement, or incorrect
+                (e.g. an answer that should have cited a source but didn't). */}
+            <div className="citation-text mb-200" id={`${uid}-citation-text`}>
+              {citationUrl || t('homepage.expertRating.citationNoneProvided')}
+            </div>
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-25"
+                  id={`${uid}-citation-25`}
                   value="25"
                   checked={expertFeedback.citationScore === 25}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-25">{t('homepage.expertRating.options.good')} (25)</label>
+                <label htmlFor={`${uid}-citation-25`}>{t('homepage.expertRating.options.good')} (25)</label>
               </li>
               <li className="radio">
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-20"
+                  id={`${uid}-citation-20`}
                   value="20"
                   checked={expertFeedback.citationScore === 20}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-20">
+                <label htmlFor={`${uid}-citation-20`}>
                   {t('homepage.expertRating.options.needsImprovement')} (20)
                 </label>
               </li>
@@ -271,22 +318,22 @@ const ExpertFeedbackComponent = ({
                 <input
                   type="radio"
                   name="citationScore"
-                  id="citation-0"
+                  id={`${uid}-citation-0`}
                   value="0"
                   checked={expertFeedback.citationScore === 0}
                   onChange={handleRadioChange}
                 />
-                <label htmlFor="citation-0">
+                <label htmlFor={`${uid}-citation-0`}>
                   {t('homepage.expertRating.options.incorrect')} (0)
                 </label>
               </li>
             </ul>
             {(expertFeedback.citationScore === 20 || expertFeedback.citationScore === 0) && (
               <div className="explanation-field">
-                <label htmlFor="citation-explanation">
+                <label htmlFor={`${uid}-citation-explanation`}>
                   {t('homepage.expertRating.options.explanation')}
                   <textarea
-                    id="citation-explanation"
+                    id={`${uid}-citation-explanation`}
                     name="citationExplanation"
                     value={expertFeedback.citationExplanation}
                     onChange={handleInputChange}
@@ -295,14 +342,14 @@ const ExpertFeedbackComponent = ({
                 </label>
               </div>
             )}
-          </div>
+          </fieldset>
 
-          <div className="mrgn-bttm-lg">
-            <label className="expert-citation-url" htmlFor="expert-citation-url">
+          <div className="explanation-field">
+            <label className="expert-citation-url" htmlFor={`${uid}-expert-citation-url`}>
               {t('homepage.expertRating.options.betterCitation')}
               <input
                 type="url"
-                id="expert-citation-url"
+                id={`${uid}-expert-citation-url`}
                 name="expertCitationUrl"
                 value={expertFeedback.expertCitationUrl}
                 onChange={handleInputChange}
@@ -313,7 +360,8 @@ const ExpertFeedbackComponent = ({
         </details>
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">
-        {t('homepage.expertRating.submit')}
+        {withAnswerNumber(t('homepage.expertRating.submit'))}
+        {department ? ` - ${department}` : ''}
       </button>
     </form>
   );

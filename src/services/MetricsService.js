@@ -38,6 +38,26 @@ class MetricsService {
     return this._fetchMetric('metrics-departments', filters, signal);
   }
 
+  static async getTechnicalMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-technical', filters, signal);
+  }
+
+  static async getBlockedMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-blocked', filters, signal);
+  }
+
+  static async getReferralMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-referrals', filters, signal);
+  }
+
+  static async getProgramMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-programs', filters, signal);
+  }
+
+  static async getCitationMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-citations', filters, signal);
+  }
+
   static async _fetchMetric(endpoint, filters, signal) {
     try {
       const queryParams = new URLSearchParams(filters).toString();
