@@ -157,6 +157,7 @@ describe('SimilarAnswerService', () => {
             useDenormalizedPreFilter: true,
             language: 'en',
             recencyDays: 365,
+            threshold: 0.7,
         }));
     });
 

@@ -17,6 +17,7 @@ const localComparator = new QuoraCrossEncoderComparator();
 const llmComparator = new LLMRankerComparator();
 const DEFAULT_RECENCY_DAYS = 365;
 const MAX_RERANK_CANDIDATES = 10;
+const VECTOR_SIMILARITY_THRESHOLD = 0.7;
 
 // Helper: remove trailing whitespace/newline chars from each string in an array and drop empty items
 function sanitizeQuestionArray(arr) {
@@ -40,7 +41,7 @@ async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandi
     const matchesArr = await VectorService.matchQuestions(safeQuestions, {
         provider: selectedAI,
         k: kCandidates,
-        threshold: null,
+        threshold: VECTOR_SIMILARITY_THRESHOLD,
         expertFeedbackRating: requestedRating,
         language: languageParam,
         interactionLanguage,
