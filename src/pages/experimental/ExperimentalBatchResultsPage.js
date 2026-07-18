@@ -18,7 +18,7 @@ const STAT_STYLE = {
 
 /**
  * Results drill-down for one experimental batch: read every answer that
- * deviated from the golden/expert answer without exporting to Excel.
+ * deviated from the reference answer without exporting to Excel.
  */
 export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -29,6 +29,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const {
         batch,
         items,
+        groups,
         counts,
         pagination,
         filter,
@@ -38,6 +39,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         error,
         selectedIndex,
         selectedItem,
+        selectedChatItems,
         positionInFilter,
         selectItem,
         backToList,
@@ -72,7 +74,9 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/analysis`}>
+                    <GcdsLink href={`/${lang}/experimental/analysis${batch?.config?.datasetId
+                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}`
+                        : ''}`}>
                         {t('experimental.results.backToRuns')}
                     </GcdsLink>
                     {batch?.config?.datasetId && (
@@ -112,6 +116,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
             {selectedIndex !== null ? (
                 <BatchItemDetail
                     item={selectedItem}
+                    chatItems={selectedChatItems}
                     lang={lang}
                     position={positionInFilter}
                     totalInFilter={pagination.total}
@@ -148,6 +153,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                         <>
                             <BatchItemsTable
                                 items={items}
+                                groups={groups}
                                 lang={lang}
                                 onSelect={selectItem}
                                 showTrials={(batch?.config?.trials || 1) > 1}

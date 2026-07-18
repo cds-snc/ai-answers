@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslations } from '../../hooks/useTranslations.js';
 import { humanizeFieldName } from '../../utils/experimental/batchItems.js';
 
 const CELL_STYLE = { border: '1px solid #ddd', padding: '0.5rem', verticalAlign: 'top', textAlign: 'left' };
@@ -71,13 +72,15 @@ const renderValue = (value) => {
  * judge-generated content. Works for any analyzer shape: scalars, string
  * lists (keyIdeasMissing), and object arrays (changedFacts) all render.
  */
-export default function AnalyzerResultDetails({ analyzerId, result }) {
+export default function AnalyzerResultDetails({ analyzerId, result, lang = 'en' }) {
+    const { t } = useTranslations(lang);
+
     if (!result || typeof result !== 'object') {
         return <div>{renderScalar(result)}</div>;
     }
 
     const entries = Object.entries(result)
-        .filter(([, value]) => value !== undefined);
+        .filter(([key, value]) => key !== 'explanation' && value !== undefined);
 
     const verdict = result.verdict || result.status || result.label;
     const verdictColor = VERDICT_COLORS[String(verdict || '').toLowerCase()] || '#26374a';
@@ -93,6 +96,14 @@ export default function AnalyzerResultDetails({ analyzerId, result }) {
                 )}
             </div>
             <dl style={{ margin: 0 }}>
+                {result.explanation && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        <dt style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                            {t('experimental.results.table.explanation')}
+                        </dt>
+                        <dd style={{ margin: 0 }}>{renderValue(result.explanation)}</dd>
+                    </div>
+                )}
                 {entries.map(([key, value]) => (
                     <div key={key} style={{ marginBottom: '0.5rem' }}>
                         <dt style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{humanizeFieldName(key)}</dt>

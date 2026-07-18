@@ -1,5 +1,56 @@
 # Changelog
 
+## [1.164.0](https://github.com/cds-snc/ai-answers/compare/v1.163.0...v1.164.0) (2026-07-16)
+
+
+### Features
+
+* add expert scorer rules and descriptions to enhance analysis clarity and comparison logic ([8e2bdc9](https://github.com/cds-snc/ai-answers/commit/8e2bdc92e046e052a16e468785bd6fdfa0501408))
+* add goldenReferenceAnswer to support expert-scorer analysis and enhance drift comparison logic ([72f80bf](https://github.com/cds-snc/ai-answers/commit/72f80bf2006233899c2d4769db7697bb32390096))
+* cleanup from pr review ([854732f](https://github.com/cds-snc/ai-answers/commit/854732f16cc64e532f164e9379da3ae43317f415))
+* enhance analyzers to include shared explanation field and normalize output results ([e62d5ee](https://github.com/cds-snc/ai-answers/commit/e62d5ee0848af268d974d772cc515e7e6bdfc4f3))
+* enhance BatchItemDetail and localization to include reference answer and update ExperimentalAnalysisPage for improved baseline handling ([66b0234](https://github.com/cds-snc/ai-answers/commit/66b0234e122c49fc648280d5748a65160f89ea00))
+* enhance BatchItemDetail and related components for improved chat interaction display and pagination ([2a1bf3b](https://github.com/cds-snc/ai-answers/commit/2a1bf3b030fc7d18364c35b06a3dbdb6fe78cd77))
+* enhance BiasEvaluator to accurately assess bias level changes and add unit tests for validation ([aaaf4cf](https://github.com/cds-snc/ai-answers/commit/aaaf4cf501a934bfd3ded01b3fb954de47c6b1b0))
+* implement grouping of batch items by chatId for improved pagination and display in results ([f8d1917](https://github.com/cds-snc/ai-answers/commit/f8d191794402af8955fa00ad23437b5ac6f860f5))
+* pr review refinement ([32c51a9](https://github.com/cds-snc/ai-answers/commit/32c51a908b9619562d58d9cebb8babeb4f70a070))
+* remove conditional rendering for reference answer in BatchItemDetail for consistent display ([afe11df](https://github.com/cds-snc/ai-answers/commit/afe11df93cf93789b0a4ce190d98dccd4b2c0fdc))
+* streamline difference explanation logic in BiasEvaluator for clarity ([dcb2f1c](https://github.com/cds-snc/ai-answers/commit/dcb2f1c56da3af4ef50acf2160b03e2f2cae80c8))
+* update BatchItemsTable to include chatId in the display and enhance localization for chat ID in English and French ([cd12f2b](https://github.com/cds-snc/ai-answers/commit/cd12f2b62ffdc7fa5c6f7113602e5830792e80a8))
+* update ExperimentalBatchResultsPage to include datasetId in analysis link for improved navigation ([9f3ef1d](https://github.com/cds-snc/ai-answers/commit/9f3ef1d0c99215ec2051280321a0717ef07a05c5))
+* update ExperimentalDatasetService to discard answer columns for question-only uploads and enhance column variant descriptions in locales ([e07368a](https://github.com/cds-snc/ai-answers/commit/e07368a5de55444858c7b334ec50919ab5beb205))
+* update locale files to replace 'baseline' with 'reference' and adjust related hints and descriptions ([d4fc715](https://github.com/cds-snc/ai-answers/commit/d4fc7159e741e35e515aa38ab4b9fbd31240e5d9))
+* update RefusalAnalyzer to improve refusal detection logic and adjust related test cases ([2dc009e](https://github.com/cds-snc/ai-answers/commit/2dc009e5fd759713737be4e2d76a2d1ba14e3b24))
+
+
+### Bug Fixes
+
+* accouncment throttle ([c12d986](https://github.com/cds-snc/ai-answers/commit/c12d986ae871044ed7b73113c1e6a7b8d473f508))
+* loading throttle hint message ([35dc562](https://github.com/cds-snc/ai-answers/commit/35dc56274b6ad2e775959157a24c3e035a9c6e98))
+* move scroll button structure ([42a2b2e](https://github.com/cds-snc/ai-answers/commit/42a2b2e77fe17af574db787faba7733ca5719ef1))
+* pr review ([6321e13](https://github.com/cds-snc/ai-answers/commit/6321e139ed6f4662a251f357a6fd8d42554c6129))
+* pronunciation split ([be99edb](https://github.com/cds-snc/ai-answers/commit/be99edb2630929df847af615f83359399b30c753))
+* proper placement of periods after links ([0626727](https://github.com/cds-snc/ai-answers/commit/06267279985df287d8ae4650fb19827067f5eee9))
+* refinements to sr structure ([87f6650](https://github.com/cds-snc/ai-answers/commit/87f6650e2fe1b4f4529d41615b155f3b41f9b851))
+* restructure headings ([9ecc80d](https://github.com/cds-snc/ai-answers/commit/9ecc80d19aa9ef997c3637e20b83e0a5066605b9))
+* timing of sr loading messages ([bd6bb1f](https://github.com/cds-snc/ai-answers/commit/bd6bb1f3f6e46aa83f5728d5eab4ea3b7d0621cc))
+
+## [1.163.0](https://github.com/cds-snc/ai-answers/compare/v1.162.0...v1.163.0) (2026-07-14)
+
+
+### Features
+
+* eval analysis engine - passes tests on preview ([600525b](https://github.com/cds-snc/ai-answers/commit/600525ba044de0014c3429d94602564e9c1243c3))
+* serviceAction classification ([706d577](https://github.com/cds-snc/ai-answers/commit/706d577c7b5b9f06bb57831005c5a820ebd718d9))
+* **tunnel-scripts:** add local AWS connectivity scripts ([540e515](https://github.com/cds-snc/ai-answers/commit/540e515fa06c20ff2b881c6a5b7a314d86f87434))
+
+
+### Bug Fixes
+
+* change to programs from services ([3bf8424](https://github.com/cds-snc/ai-answers/commit/3bf842423adbf776c98e34ea24aeaaae31d309cb))
+* refine prompts re program names ([382b132](https://github.com/cds-snc/ai-answers/commit/382b132c007ea20c71246857eb9d92d7efa3f6e0))
+* soften evaluator section and add example links ([2f5c120](https://github.com/cds-snc/ai-answers/commit/2f5c120dde1e9dfe8db4de80b85d975ec92bc826))
+
 ## [1.162.0](https://github.com/cds-snc/ai-answers/compare/v1.161.0...v1.162.0) (2026-07-13)
 
 

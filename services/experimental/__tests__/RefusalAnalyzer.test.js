@@ -10,12 +10,13 @@ describe('RefusalAnalyzer', () => {
             answer: '<not-gc><s-1>An answer to your question was not found on Government of Canada websites.</s-1></not-gc>'
         });
 
-        expect(result.status).toBe('flagged');
+        expect(result.status).toBe('pass');
         expect(result.label).toBe('refusal-prompt');
         expect(result.refusalDetected).toBe(true);
         expect(result.refusalMode).toBe('prompt');
         expect(result.matchedPhrase).toBe('<not-gc>');
-        expect(result.flagged).toBe(true);
+        expect(result.explanation).toContain('prompt refusal');
+        expect(result.flagged).toBe(false);
         expect(result.differenceFound).toBe(false);
     });
 
@@ -27,12 +28,12 @@ describe('RefusalAnalyzer', () => {
             answer: '<pt-muni><s-1>This topic appears to be under provincial or territorial jurisdiction.</s-1></pt-muni>'
         });
 
-        expect(result.status).toBe('flagged');
+        expect(result.status).toBe('pass');
         expect(result.label).toBe('refusal-prompt');
         expect(result.refusalDetected).toBe(true);
         expect(result.refusalMode).toBe('prompt');
         expect(result.matchedPhrase).toBe('<pt-muni>');
-        expect(result.flagged).toBe(true);
+        expect(result.flagged).toBe(false);
     });
 
     it('passes a response without refusal tags even if it sounds apologetic', async () => {
@@ -43,10 +44,11 @@ describe('RefusalAnalyzer', () => {
             answer: "Sorry, but I can't help with that request."
         });
 
-        expect(result.status).toBe('pass');
-        expect(result.label).toBe('no-refusal');
+        expect(result.status).toBe('flagged');
+        expect(result.label).toBe('missing-refusal');
         expect(result.refusalDetected).toBe(false);
-        expect(result.flagged).toBe(false);
+        expect(result.flagged).toBe(true);
+        expect(result.explanation).toContain('does not contain');
     });
 
     it('detects refusal from error/status signals', async () => {
@@ -61,11 +63,11 @@ describe('RefusalAnalyzer', () => {
             }
         });
 
-        expect(result.status).toBe('flagged');
+        expect(result.status).toBe('pass');
         expect(result.label).toBe('refusal-error');
         expect(result.refusalDetected).toBe(true);
         expect(result.refusalMode).toBe('error');
-        expect(result.flagged).toBe(true);
+        expect(result.flagged).toBe(false);
     });
 
     it('flags an application short-query block as a refusal', async () => {
@@ -80,38 +82,39 @@ describe('RefusalAnalyzer', () => {
             }
         });
 
-        expect(result.status).toBe('flagged');
+        expect(result.status).toBe('pass');
         expect(result.label).toBe('refusal-error');
         expect(result.refusalDetected).toBe(true);
         expect(result.refusalMode).toBe('error');
         expect(result.matchedPhrase.toLowerCase()).toContain('short query');
-        expect(result.flagged).toBe(true);
+        expect(result.flagged).toBe(false);
     });
 
-    it('flags when refusal behavior differs from the baseline result', async () => {
+    it('flags a normal answer when the reference answer refused', async () => {
         const analyzer = new RefusalAnalyzer();
 
         const result = await analyzer.analyze({
             question: 'Can you help?',
             answer: 'Yes, here is the information you need.',
-            baselineAnswer: '<not-gc><s-1>An answer to your question was not found on Government of Canada websites.</s-1></not-gc>'
+            referenceAnswer: '<not-gc><s-1>An answer to your question was not found on Government of Canada websites.</s-1></not-gc>'
         });
 
-        expect(result.status).toBe('pass');
+        expect(result.status).toBe('flagged');
+        expect(result.label).toBe('missing-refusal');
         expect(result.refusalDetected).toBe(false);
-        expect(result.baselineRefusalDetected).toBe(true);
+        expect(result.referenceRefusalDetected).toBe(true);
         expect(result.flagsDiffer).toBe(true);
         expect(result.differenceFound).toBe(true);
-        expect(result.differenceExplanation).toContain('baseline');
+        expect(result.differenceExplanation).toContain('reference');
     });
 
-    it('uses baseline analyzer metadata when available', async () => {
+    it('uses reference analyzer metadata when available', async () => {
         const analyzer = new RefusalAnalyzer();
 
         const result = await analyzer.analyze({
             question: 'Can you help?',
             answer: 'Yes, here is the information you need.',
-            baselineAnalysisResults: {
+            referenceAnalysisResults: {
                 refusal: {
                     refusalDetected: true,
                     refusalMode: 'prompt',
@@ -121,8 +124,9 @@ describe('RefusalAnalyzer', () => {
         });
 
         expect(result.refusalDetected).toBe(false);
-        expect(result.baselineRefusalDetected).toBe(true);
-        expect(result.baselineRefusalMode).toBe('prompt');
+        expect(result.referenceRefusalDetected).toBe(true);
+        expect(result.referenceRefusalMode).toBe('prompt');
         expect(result.flagsDiffer).toBe(true);
+        expect(result.flagged).toBe(true);
     });
 });

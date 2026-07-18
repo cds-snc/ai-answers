@@ -10,13 +10,13 @@ import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
-import { BASELINE_ANSWER_ALIASES } from './datasetColumns.js';
+import { pickExplicitReferenceAnswer } from './datasetColumns.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const ANSWER_ALIASES = ['answer', 'Answer', 'Response', 'response', 'NewAnswer', 'comparison'];
+const ANSWER_ALIASES = ['answer', 'redactedAnswer', 'response'];
 const WORKFLOW_ALIASES = {
     DefaultGraph: 'GenericWorkflowGraph'
 };
@@ -76,7 +76,7 @@ const pickExactField = (item = {}, keys = []) => {
     return '';
 };
 
-const pickNormalizedAnswer = (item = {}) => pickExactField(item, ANSWER_ALIASES);
+const pickNormalizedAnswer = (item = {}) => pickFirstField([item], ANSWER_ALIASES);
 
 const normalizeFieldKey = (input = '') => String(input)
     .toLowerCase()
@@ -159,6 +159,26 @@ const resolveWorkflowName = (workflow = '') => {
     return WORKFLOW_ALIASES[trimmed] || trimmed;
 };
 
+const prepareQaPairRowsForComparison = (items, { referenceRunSelected = false } = {}) => items.map((item = {}) => {
+    const referenceAnswer = pickExplicitReferenceAnswer(item);
+    const uploadedAnswer = pickNormalizedAnswer(item);
+
+    if (!referenceRunSelected && (referenceAnswer || !uploadedAnswer)) {
+        return item;
+    }
+
+    const next = { ...item };
+    if (!referenceRunSelected && uploadedAnswer) {
+        next.referenceAnswer = uploadedAnswer;
+    }
+
+    for (const alias of ANSWER_ALIASES) {
+        delete next[alias];
+    }
+
+    return next;
+});
+
 class ExperimentalBatchService {
     constructor() {
         this.analyzerQueues = new Map(); // analyzerId -> PQueue
@@ -198,9 +218,10 @@ class ExperimentalBatchService {
     async createBatch(batchData, itemsData) {
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
         const config = batchData.config || {};
+        const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
+        let sourceDatasetType = '';
 
         if (batchData.type === 'analysis') {
-            const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
             const requestedAnalyzerIds = Array.isArray(config.analyzerIds)
                 ? config.analyzerIds.map(id => String(id || '').trim()).filter(Boolean)
                 : [];
@@ -244,6 +265,9 @@ class ExperimentalBatchService {
                 throw makeError('Invalid datasetId', 'BAD_REQUEST', 400);
             }
 
+            const sourceDataset = await ExperimentalDataset.findById(batchData.config.datasetId).select('type').lean();
+            sourceDatasetType = sourceDataset?.type || '';
+
             const rows = await ExperimentalDatasetRow.find({
                 experimentalDataset: new mongoose.Types.ObjectId(batchData.config.datasetId)
             }).sort({ rowIndex: 1 }).lean();
@@ -268,17 +292,22 @@ class ExperimentalBatchService {
 
             finalItems = rows.map((r, idx) => {
                 const data = { ...r.data };
-                // If comparing against previous run, set baselineAnswer to previous run's answer
+                const datasetReferenceAnswer = pickExplicitReferenceAnswer(data);
+                if (selectedAnalyzerId === 'expert-scorer' && datasetReferenceAnswer) {
+                    data.goldenReferenceAnswer = datasetReferenceAnswer;
+                }
+                // If comparing against previous run, set referenceAnswer to the previous run's answer.
                 if (baselineByRowIndex.size > 0) {
                     // Batch items are numbered idx + 1 over the same sorted rows,
                     // so position is the primary key; r.rowIndex is the fallback.
                     const match = baselineByRowIndex.get(idx + 1) || baselineByRowIndex.get(r.rowIndex);
                     if (match) {
-                        data.baselineAnswer = match.answer;
-                        data.baselineAnalysisResults = match.analysisResults || {};
-                        data.baselineMatch = match.match;
-                        data.baselineFlagged = match.flagged;
-                        data.baselineChatId = match.chatId || '';
+                        data.referenceAnswer = match.answer;
+                        data.referenceAnswer = match.answer;
+                        data.referenceAnalysisResults = match.analysisResults || {};
+                        data.referenceMatch = match.match;
+                        data.referenceFlagged = match.flagged;
+                        data.referenceChatId = match.chatId || '';
 
                         // Keep baseline output separate from the current answer. If the
                         // dataset row has no answer, processing will generate a fresh one.
@@ -294,9 +323,13 @@ class ExperimentalBatchService {
 
         // Delegate batch-level validation to the analyzer. Each analyzer
         // owns its own requirements — the service just calls and throws.
-        const selectedAnalyzerId = resolveSelectedAnalyzerId(batchData.config || {});
         if (selectedAnalyzerId) {
             const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
+            if (sourceDatasetType === 'qa-pair' && analyzerConfig?.inputType === 'comparison') {
+                finalItems = prepareQaPairRowsForComparison(finalItems, {
+                    referenceRunSelected: Boolean(batchData.config?.baselineRunId)
+                });
+            }
             const validation = analyzerConfig?.validateBatch(finalItems);
             if (validation && !validation.valid) {
                 throw makeError(validation.localeKey, validation.code, 400);
@@ -322,11 +355,12 @@ class ExperimentalBatchService {
             return Array.from({ length: trials }, (_, trialIdx) => ({
                 question: pickFirstField([item, item.originalData], QUESTION_ALIASES),
                 answer: pickNormalizedAnswer(item),
-                baselineAnswer: pickExactField(item, BASELINE_ANSWER_ALIASES) || '',
-                baselineAnalysisResults: item.baselineAnalysisResults || {},
-                baselineMatch: item.baselineMatch,
-                baselineFlagged: item.baselineFlagged,
-                baselineChatId: item.baselineChatId || item.originalData?.baselineChatId || '',
+                referenceAnswer: pickExplicitReferenceAnswer(item) || '',
+                goldenReferenceAnswer: item.goldenReferenceAnswer || '',
+                referenceAnalysisResults: item.referenceAnalysisResults || {},
+                referenceMatch: item.referenceMatch,
+                referenceFlagged: item.referenceFlagged,
+                referenceChatId: item.referenceChatId || item.originalData?.referenceChatId || '',
                 referringUrl: pickFirstField([item, item.originalData], REFERRING_URL_ALIASES),
                 // Each trial is an independent conversation thread. Rows that
                 // share a source chatId (multi-turn datasets) must also share
@@ -465,10 +499,11 @@ class ExperimentalBatchService {
                         const result = await this._runAnalyzer(analyzerDef, {
                             question: item.question,
                             answer: item.answer || '',
-                            baselineAnswer: item.baselineAnswer,
-                            baselineAnalysisResults: item.baselineAnalysisResults,
-                            baselineMatch: item.baselineMatch,
-                            baselineFlagged: item.baselineFlagged,
+                            referenceAnswer: item.referenceAnswer,
+                            goldenReferenceAnswer: item.goldenReferenceAnswer,
+                            referenceAnalysisResults: item.referenceAnalysisResults,
+                            referenceMatch: item.referenceMatch,
+                            referenceFlagged: item.referenceFlagged,
                             config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
                             originalData: {
                                 ...(item.originalData || {}),

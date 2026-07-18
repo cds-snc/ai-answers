@@ -3,10 +3,13 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import ExperimentalDatasetsPage from '../experimental/ExperimentalDatasetsPage.js';
 
-const { mockListDatasets } = vi.hoisted(() => ({ mockListDatasets: vi.fn() }));
+const { mockListDatasets, mockExportDataset } = vi.hoisted(() => ({
+    mockListDatasets: vi.fn(),
+    mockExportDataset: vi.fn()
+}));
 
 vi.mock('../../hooks/useTranslations.js', () => ({
     useTranslations: () => ({
@@ -16,7 +19,8 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 
 vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => ({
     ExperimentalBatchClientService: {
-        listDatasets: mockListDatasets
+        listDatasets: mockListDatasets,
+        exportDataset: mockExportDataset
     }
 }));
 
@@ -43,9 +47,14 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
 describe('ExperimentalDatasetsPage', () => {
     beforeEach(() => {
         mockListDatasets.mockReset().mockResolvedValue({ data: [] });
+        mockExportDataset.mockReset().mockResolvedValue(new Blob(['chatId,question,answer\n1,Question,Answer'], { type: 'text/csv' }));
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:dataset-export');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+        vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         cleanup();
     });
 
@@ -55,5 +64,34 @@ describe('ExperimentalDatasetsPage', () => {
         expect(screen.getByText('experimental.datasets.title').closest('[data-layout="page"]')).toBeTruthy();
         expect(screen.getByRole('link', { name: 'common.backToAdmin' }).getAttribute('href')).toBe('/en/admin');
         expect(await screen.findByText('experimental.datasets.empty')).toBeTruthy();
+    });
+
+    it('exports a dataset as csv from the actions column', async () => {
+        mockListDatasets.mockResolvedValueOnce({
+            data: [
+                {
+                    _id: 'dataset-1',
+                    name: 'My Dataset',
+                    description: '',
+                    type: 'qa-pair',
+                    createdBy: { email: 'user@example.com' },
+                    rowCount: 1,
+                    runCount: 0,
+                    createdAt: '2026-07-09T00:00:00.000Z'
+                }
+            ]
+        });
+
+        render(<ExperimentalDatasetsPage lang="en" />);
+
+        const exportButton = await screen.findByRole('button', { name: 'experimental.datasets.export' });
+        fireEvent.click(exportButton);
+
+        await waitFor(() => {
+            expect(mockExportDataset).toHaveBeenCalledWith('dataset-1');
+        });
+
+        expect(URL.createObjectURL).toHaveBeenCalled();
+        expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
     });
 });

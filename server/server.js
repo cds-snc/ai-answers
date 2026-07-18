@@ -35,10 +35,10 @@ import experimentalDatasetUploadHandler from '../api/experimental/experimental-d
 import experimentalDatasetListHandler from '../api/experimental/experimental-dataset-list.js';
 import experimentalDatasetDeleteHandler from '../api/experimental/experimental-dataset-delete.js';
 import experimentalDatasetRowsHandler from '../api/experimental/experimental-dataset-rows.js';
+import experimentalDatasetExportHandler from '../api/experimental/experimental-dataset-export.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
-import chatReportHandler from '../api/chat/chat-report.js';
 import chatSessionAvailabilityHandler from '../api/chat/chat-session-availability.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
@@ -297,7 +297,6 @@ app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
 app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
-app.post('/api/chat/chat-report', chatReportHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
@@ -322,6 +321,7 @@ app.get('/api/experimental/experimental-batch-progress/:id', experimentalBatchPr
 app.post('/api/experimental/experimental-dataset-upload', experimentalDatasetUploadHandler);
 app.get('/api/experimental/experimental-dataset-list', experimentalDatasetListHandler);
 app.get('/api/experimental/experimental-dataset-rows', experimentalDatasetRowsHandler);
+app.get('/api/experimental/experimental-dataset-export', experimentalDatasetExportHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);

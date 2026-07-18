@@ -1,5 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { ChatWorkflowService, ShortQueryValidation, RedactionError } from '../services/ChatWorkflowService.js';
+import { ChatWorkflowService, ShortQueryValidation, RedactionError, ChatRunInProgressError } from '../services/ChatWorkflowService.js';
 
 import AuthService from '../services/AuthService.js';
 import SessionService from '../services/SessionService.js';
@@ -69,6 +69,14 @@ export class GraphClient {
 
       if (!response.ok) {
         const errorText = await response.text();
+        try {
+          const errorPayload = JSON.parse(errorText);
+          if (response.status === 429 && errorPayload?.error === 'chat_run_in_progress') {
+            throw new ChatRunInProgressError(errorPayload.message || 'A chat response is already in progress for this session');
+          }
+        } catch (error) {
+          if (error instanceof ChatRunInProgressError) throw error;
+        }
         throw new Error(`Graph request failed: status=${response.status} body=${errorText}`);
       }
 

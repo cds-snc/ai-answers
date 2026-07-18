@@ -7,12 +7,21 @@ const STRINGS = {
   en: {
     opensInNewTab: '(opens in new tab)',
     govCa: 'Government of Canada',
+    dot: 'dot',
   },
   fr: {
     opensInNewTab: "(s'ouvre dans un nouvel onglet)",
     govCa: 'Gouvernement du Canada',
+    dot: 'point',
   },
 };
+
+// The localized word for "." when spoken aloud — exported so other modules
+// (e.g. pronounceCanadaCa.js) building their own spoken-form substitutions
+// reuse this translation instead of keeping an independent copy.
+export function spokenDot(lang = 'en') {
+  return (STRINGS[lang] || STRINGS.en).dot;
+}
 
 // Path segments that carry no meaningful label information.
 // Locale prefixes (en/fr/eng/fra) are included here.
@@ -164,9 +173,16 @@ export function buildReadableLocationLabel(url, lang = 'en') {
   // Strip www / www<N> prefix so registry lookups work for www.canada.ca,
   // canada.ca, www150.statcan.gc.ca, etc. all resolving to the base domain.
   const hostname = parsed.hostname.replace(/^www\d*\./, '');
-  // Spoken form for screen readers: "canada dot ca" rather than relying on each
-  // reader's punctuation-handling to expand the dot correctly.
-  const spokenHostname = hostname.replace(/\./g, ' dot ');
+  // Spoken form for screen readers: "canada dot ca" (English) / "canada point
+  // ca" (French) rather than relying on each reader's punctuation-handling to
+  // expand the dot correctly. Uppercase the bare "ca"/"gc" segments
+  // (country-code TLD / GC domain marker) — lowercase "ca" reads as a word
+  // ("cah") on some screen readers instead of the letters C-A; short all-caps
+  // tokens get read letter-by-letter instead.
+  const spokenHostname = hostname
+    .replace(/\./g, ` ${s.dot} `)
+    .replace(/\bca\b/g, 'CA')
+    .replace(/\bgc\b/g, 'GC');
 
   // Decode percent-encoded path characters (e.g. %C3%A9 → é) so slug labels
   // are readable. Falls back to the raw encoded form if decoding fails.

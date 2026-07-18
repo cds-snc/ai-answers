@@ -13,7 +13,7 @@ describe('ExpertScorerAnalyzer', () => {
 
     it('should return fail immediately if answer is empty', async () => {
         const analyzer = new ExpertScorerAnalyzer();
-        const result = await analyzer.analyze({ question: 'Q', answer: '', baselineAnswer: 'B' });
+        const result = await analyzer.analyze({ question: 'Q', answer: '', referenceAnswer: 'B' });
 
         expect(result.verdict).toBe('fail');
         expect(result.explanation).toContain('empty');
@@ -25,12 +25,20 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'This is <not-gc>',
-            baselineAnswer: 'Proper answer'
+            referenceAnswer: 'Proper answer'
         });
 
         expect(result.verdict).toBe('fail');
         expect(result.explanation).toContain('regression from normal to not-gc');
         expect(createJudgeLLM).not.toHaveBeenCalled();
+    });
+
+    it('should throw when called without a reference answer', async () => {
+        const analyzer = new ExpertScorerAnalyzer();
+        await expect(analyzer.analyze({
+            question: 'Q',
+            answer: 'A'
+        })).rejects.toThrow('Expert scorer requires a reference answer.');
     });
 
     it('should auto-flag needs-review for normal->clarifying-question downgrade', async () => {
@@ -43,7 +51,7 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'Can you specify? <clarifying-question>',
-            baselineAnswer: 'Proper answer'
+            referenceAnswer: 'Proper answer'
         });
 
         expect(result.verdict).toBe('needs-review');
@@ -62,7 +70,7 @@ describe('ExpertScorerAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'A',
-            baselineAnswer: 'A'
+            referenceAnswer: 'A'
         });
 
         expect(result.verdict).toBe('pass');
@@ -81,7 +89,7 @@ describe('ExpertScorerAnalyzer', () => {
         await analyzer.analyze({
             question: 'Q',
             answer: 'A',
-            baselineAnswer: 'A'
+            referenceAnswer: 'A'
         });
 
         expect(createJudgeLLM).toHaveBeenCalledWith('openai-gpt5-mini');

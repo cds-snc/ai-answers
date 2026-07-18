@@ -212,6 +212,19 @@ export const ExperimentalBatchClientService = {
     },
 
     /**
+     * Export a dataset as CSV
+     */
+    async exportDataset(id) {
+        const url = getApiUrl(`experimental-dataset-export?${new URLSearchParams({ id }).toString()}`);
+        const res = await AuthService.fetch(url);
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to export dataset: ${res.status} ${res.statusText}`);
+        }
+        return await res.blob();
+    },
+
+    /**
      * Get rows for a specific dataset
      */
     async getDatasetRows(id, page = 1, limit = 50) {

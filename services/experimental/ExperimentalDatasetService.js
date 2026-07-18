@@ -5,6 +5,9 @@ import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { normalizeObjectId } from '../../api/util/db-query.js';
+import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
+import { EXPLICIT_REFERENCE_ANSWER_ALIASES, hasReferenceAnswerColumn } from './datasetColumns.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Keep in sync with the production batch upload (BatchService._extractQuestion)
@@ -340,7 +343,15 @@ class ExperimentalDatasetService {
             delete normalized[questionKey];
         }
 
-        const answerKey = this._findColumnKey(normalized, ['answer', 'response', 'newanswer', 'comparison', 'comparisonanswer']);
+        // Exported chat logs may contain either the normal answer or the PII-safe
+        // answer. Prefer `answer` when both are present, but accept
+        // `redactedAnswer` so exported logs can be uploaded as QA datasets.
+        const answerKey = this._findColumnKey(normalized, [
+            'answer',
+            'redactedAnswer',
+            'response'
+        ]);
+        const referenceKey = this._findColumnKey(normalized, EXPLICIT_REFERENCE_ANSWER_ALIASES);
         if (answerKey) {
             if (type === 'qa-pair') {
                 normalized.answer = normalized[answerKey];
@@ -350,6 +361,15 @@ class ExperimentalDatasetService {
             } else {
                 delete normalized[answerKey];
             }
+        } else if (type === 'qa-pair' && referenceKey) {
+            // A reference-only QA row is still a valid QA pair. Keep the
+            // explicit reference column and add the canonical answer field so
+            // validation and the batch preparation path can consume it.
+            normalized.answer = normalized[referenceKey];
+        }
+
+        if (type === 'question-only' && referenceKey) {
+            delete normalized[referenceKey];
         }
 
         const chatIdKey = this._findColumnKey(normalized, CHAT_ID_ALIASES);
@@ -393,7 +413,12 @@ class ExperimentalDatasetService {
 
     _findColumnKey(row, aliases = []) {
         const normalizedAliases = aliases.map(alias => this._normalizeColumnKey(alias));
-        return Object.keys(row).find(key => normalizedAliases.includes(this._normalizeColumnKey(key)));
+        const keys = Object.keys(row);
+        // Alias order is significant for answer inputs: use the normal answer
+        // when an export contains both `answer` and `redactedAnswer`.
+        return normalizedAliases
+            .map(alias => keys.find(key => this._normalizeColumnKey(key) === alias))
+            .find(Boolean);
     }
 
     _buildPairKey(row, pairKeyColumn) {
@@ -416,6 +441,11 @@ class ExperimentalDatasetService {
     }
 
     async getDatasetRows(datasetId, options = {}) {
+        datasetId = normalizeObjectId(datasetId);
+        if (!datasetId) {
+            throw new Error('Invalid datasetId');
+        }
+
         const { page = 1, limit = 50 } = options;
         const skip = (page - 1) * limit;
 
@@ -434,6 +464,33 @@ class ExperimentalDatasetService {
             page,
             limit,
             totalPages: Math.ceil(total / limit)
+        };
+    }
+
+    async exportDataset(datasetId) {
+        datasetId = normalizeObjectId(datasetId);
+        if (!datasetId) {
+            throw new Error('Invalid datasetId');
+        }
+
+        const dataset = await ExperimentalDataset.findById(datasetId).lean();
+        if (!dataset) {
+            return null;
+        }
+
+        const rows = await ExperimentalDatasetRow.find({ experimentalDataset: datasetId })
+            .sort({ rowIndex: 1 })
+            .lean();
+
+        const headers = ['chatId', 'question', 'answer', 'redactedAnswer'];
+        const csvRows = [
+            headers,
+            ...rows.map((row) => headers.map((header) => row.data?.[header] ?? ''))
+        ];
+
+        return {
+            dataset,
+            csvText: `\uFEFF${serializeCsvRows(csvRows)}`
         };
     }
 
@@ -464,6 +521,7 @@ class ExperimentalDatasetService {
             data: data.map(d => {
                 const obj = d.toObject();
                 obj.runCount = countByDatasetId.get(String(d._id)) || 0;
+                obj.hasReferenceAnswer = hasReferenceAnswerColumn(obj.columns);
                 return obj;
             }),
             total,
@@ -474,6 +532,11 @@ class ExperimentalDatasetService {
     }
 
     async deleteDataset(id) {
+        id = normalizeObjectId(id);
+        if (!id) {
+            throw new Error('Invalid datasetId');
+        }
+
         const existing = await ExperimentalDataset.findById(id);
         if (!existing) return false;
 

@@ -1073,6 +1073,9 @@ fieldset.gc-chckbxrdio legend {
     transform: translateY(2px);
 }
 
+/* Unreachable in practice: the button is tabIndex="-1" (deliberately
+   mouse-only — see ChatInterface.js), so it never receives keyboard focus
+   and this rule never applies. Left in place in case that changes. */
 .scroll-down-btn:focus {
     background-color: var(--gcds-focus-background);
     border-radius: 50%;

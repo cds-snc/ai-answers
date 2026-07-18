@@ -127,6 +127,7 @@ class ChatSessionMetricsService {
   _createMetricsEntry(sessionId) {
     return {
       sessionId,
+      isAuthenticated: false,
       chatIds: new Set(),
       requestCount: 0,
       errorCount: 0,
@@ -145,6 +146,13 @@ class ChatSessionMetricsService {
       this.metricsBuffer.set(sessionId, this._createMetricsEntry(sessionId));
     }
     return this.metricsBuffer.get(sessionId);
+  }
+
+  markSessionAuth(sessionId, isAuthenticated) {
+    if (!sessionId) return;
+    const m = this._ensureMetricsEntry(sessionId);
+    m.isAuthenticated = Boolean(isAuthenticated);
+    m.lastSeen = Date.now();
   }
 
   async pruneStaleSessions() {
@@ -192,6 +200,7 @@ class ChatSessionMetricsService {
             const doc = {
                 sessionId,
                 status: 'active',
+                isAuthenticated: !!m.isAuthenticated,
                 chatIds,
                 lastSeen: new Date(m.lastSeen),
                 requestCount: m.requestCount,
@@ -239,6 +248,9 @@ class ChatSessionMetricsService {
       const persisted = bucketMap.get(sessionId);
       const isAuthenticated = (persisted && typeof persisted.isAuthenticated !== 'undefined') ? persisted.isAuthenticated : (v && v.isAuthenticated) || false;
       const sessionLimiterSnapshot = (persisted && persisted.rateLimiter) || (v && v.rateLimiterSnapshot) || null;
+      const sessionType = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.keyType === 'string')
+        ? sessionLimiterSnapshot.keyType
+        : (isAuthenticated ? 'auth' : 'unknown');
       const limiterRemaining = (sessionLimiterSnapshot && typeof sessionLimiterSnapshot.remainingPoints === 'number')
         ? sessionLimiterSnapshot.remainingPoints
         : null;
@@ -268,13 +280,15 @@ class ChatSessionMetricsService {
 
         out.push({
           sessionId,
+          sessionType,
           chatId: cid || null,
           // Use rate-limiter remaining points as the authoritative credits source.
           // Fall back to persisted/in-memory bucket only when limiter data is unavailable.
           creditsLeft: (() => {
             try {
+              if (isAuthenticated) return null;
               if (typeof limiterRemaining === 'number') return limiterRemaining;
-              const configuredCapacity = isAuthenticated ? limiterConfig.authCapacity : limiterConfig.publicCapacity;
+              const configuredCapacity = limiterConfig.publicCapacity;
               const fallbackCapacity = (typeof limiterPoints === 'number')
                 ? limiterPoints
                 : (Number.isFinite(configuredCapacity) ? configuredCapacity : 0);

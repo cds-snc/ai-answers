@@ -11,6 +11,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
+import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
@@ -102,14 +103,66 @@ const ChatInterface = ({
     }
   };
 
+  // GCDS elements (gcds-header/gcds-footer/gcds-breadcrumbs/gcds-notice in
+  // App.js, plus gcds-details/gcds-notice on the homepage, and any others
+  // added later) are Stencil web components that hydrate asynchronously. If
+  // any are still settling when we call focus(), VoiceOver's automatic
+  // read-from-top on page load isn't interrupted and just reads straight
+  // through the textarea instead of landing on it. Wait for every gcds-*
+  // element in the DOM to report itself hydrated (componentOnReady, the
+  // standard Stencil per-instance readiness API) before focusing, with a
+  // hard cap so a slow/broken component can't block focus indefinitely.
+  // Matched by tag-name prefix rather than a hand-maintained list — a
+  // hardcoded list silently misses new/existing gcds-* elements.
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (textareaRef.current) {
+    let cancelled = false;
+    let fallbackId;
+
+    const focusNow = () => {
+      if (!cancelled && textareaRef.current) {
         textareaRef.current.focus();
       }
-    }, 100);
+    };
 
-    return () => clearTimeout(timeoutId);
+    // Group by tag in one pass — custom-element upgrade applies to the same
+    // DOM node reference, so there's no need to re-query per tag once we
+    // already have the elements.
+    const elementsByTag = new Map();
+    Array.from(document.querySelectorAll('*')).forEach((el) => {
+      const tag = el.tagName.toLowerCase();
+      if (!tag.startsWith('gcds-')) return;
+      if (!elementsByTag.has(tag)) elementsByTag.set(tag, []);
+      elementsByTag.get(tag).push(el);
+    });
+
+    const hydrated = elementsByTag.size
+      ? Promise.all(
+        Array.from(elementsByTag.entries()).map(([tag, elements]) =>
+          // Wait for the tag's Stencil bundle to register before touching
+          // componentOnReady — an element present in the DOM but not yet
+          // upgraded won't have that method yet.
+          customElements.whenDefined(tag).then(() =>
+            Promise.all(
+              elements
+                .filter((el) => typeof el.componentOnReady === 'function')
+                .map((el) => el.componentOnReady())
+            )
+          )
+        )
+      )
+      : Promise.resolve();
+
+    // onRejected = focusNow too, so a rejected componentOnReady() still
+    // falls through to focusing instead of silently doing nothing.
+    Promise.race([
+      hydrated,
+      new Promise((resolve) => { fallbackId = setTimeout(resolve, 500); }),
+    ]).then(focusNow, focusNow);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(fallbackId);
+    };
   }, []);
 
   // Manage focus across the loading lifecycle so screen reader users are never
@@ -240,6 +293,9 @@ const ChatInterface = ({
       });
     };
 
+    // Unreachable in practice: the button is tabIndex="-1" (deliberately
+    // mouse-only, see the JSX below), so it never receives keyboard focus
+    // and this handler never fires. Left in place in case that changes.
     const handleKeyDown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -276,12 +332,10 @@ const ChatInterface = ({
     }
   }, [isLoading]);
 
-  const getInputCopy = () => {
-    const value = turnCount >= 1
+  const getInputCopy = () =>
+    turnCount >= 1
       ? t("homepage.chat.input.followUp")
       : t("homepage.chat.input.initial");
-    return typeof value === "object" ? value : { text: value, ariaLabel: value };
-  };
 
   // TOOD is there a difference between paragraphs and sentrences?
   const getLastMessageSentenceCount = () => {
@@ -373,7 +427,12 @@ const ChatInterface = ({
     setIsTextareaFocused(true);
   };
 
-  const { text: inputLabel, ariaLabel: inputSRLabel } = getInputCopy();
+  const inputCopy = getInputCopy();
+
+  // Single source of truth for whether the conversation-log section/heading
+  // pair renders — the <section>'s aria-labelledby and the <h2> it points at
+  // must agree, or the section can end up pointing at an ID that doesn't exist.
+  const hasMessages = messages.length > 0;
 
   // A readable department/page label for screen readers, instead of the
   // visual "domain/.../file.html" truncation (its literal dots and slashes
@@ -426,11 +485,19 @@ const ChatInterface = ({
           liveReferringUrlBanner
         )
       )}
-      <section aria-labelledby="chat-section-heading">
-        <h2 id="chat-section-heading" className="sr-only">
-          {safeT("homepage.chat.section.heading")}
-        </h2>
-        <div className="message-list" role="log" aria-live="off" aria-labelledby="chat-section-heading">
+      <section aria-labelledby={hasMessages ? "chat-section-heading" : undefined}>
+        {hasMessages && (
+          <h2 id="chat-section-heading" className="sr-only">
+            {safeT("homepage.chat.section.heading")}
+          </h2>
+        )}
+        {/* role="log" marks this as a conversation-history landmark for
+            assistive tech. aria-live="off" deliberately suppresses the
+            auto-announce-new-entries behaviour role="log" implies — new
+            messages/errors already get explicit focus (see the loading
+            lifecycle effect above), so a live-region announcement on top of
+            that would double up. */}
+        <div className="message-list" role="log" aria-live="off">
         {(() => {
           const nonErrorAIMessages = messages.filter(m => m.sender === "ai" && !m.error);
           // Every real question the user sent, whether it got a successful answer
@@ -586,13 +653,26 @@ const ChatInterface = ({
                       </p>
                       {message.searchUrl && (
                         <>
+                          <CanadaCaAccessibleLabel
+                            as="p"
+                            className="error-message"
+                            text={safeT("homepage.chat.messages.shortQueryDetails")}
+                            lang={lang}
+                          />
                           <p className="error-message">
-                            {safeT("homepage.chat.messages.shortQueryDetails")}
-                          </p>
-                          <p className="error-message">
-                            <a href={message.searchUrl}>
-                              {safeT("homepage.chat.messages.shortQuerySearch")}{message.searchQuery ? ` "${message.searchQuery}"` : ''}
-                            </a>
+                            {/* Link accessible name must stay one atomic string, so the
+                                appended search query is folded into `text` rather than
+                                rendered as a separate sibling node. */}
+                            <CanadaCaAccessibleLabel
+                              as="a"
+                              href={message.searchUrl}
+                              text={
+                                message.searchQuery
+                                  ? `${safeT("homepage.chat.messages.shortQuerySearch")} "${message.searchQuery}"`
+                                  : safeT("homepage.chat.messages.shortQuerySearch")
+                              }
+                              lang={lang}
+                            />
                           </p>
                         </>
                       )}
@@ -759,7 +839,15 @@ const ChatInterface = ({
               className="loading-container"
               ref={loadingContainerRef}
               tabIndex={-1}
-              aria-label={safeT("homepage.chat.messages.moderatingQuestion")}
+              // Both phrases in one atomic, focus-triggered announcement — the
+              // "AI can make mistakes" disclaimer used to fire as a separate
+              // announcement 1s later, which a fast response could interrupt
+              // mid-sentence (focus moving to the new answer cuts off whatever
+              // the screen reader is currently saying). Firing everything at
+              // focus-time (t=0) instead of delaying part of it gives the
+              // full announcement the most possible time to finish before
+              // anything else can interrupt it.
+              aria-label={`${safeT("homepage.chat.messages.moderatingQuestion")}. ${safeT("homepage.chat.input.loadingHint")}`}
             >
               <div className="loading-animation"></div>
               <div className="loading-text">
@@ -806,30 +894,18 @@ const ChatInterface = ({
           </div>
         )}
       </div>
-
-        {/* Accessible Scroll Down Button */}
-      <button
-        className="scroll-down-btn"
-        aria-label={safeT('homepage.scroll.ariaLabel')}
-        title={safeT('homepage.scroll.title')}
-        type="button"
-        tabIndex="-1"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+      </section>
 
       {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
-        <div className="input-area mt-200">
+        <section aria-labelledby="chat-input-heading" className="input-area mt-200">
+          <h2 id="chat-input-heading" className="sr-only">{safeT("homepage.chat.input.heading")}</h2>
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg" onSubmit={(e) => { e.preventDefault(); if (!isLoading && inputText.trim()) handleSendMessage(); }}>
               <div className="field-container">
-                <label htmlFor="message">
-                  <span aria-hidden="true">{inputLabel}</span>
-                  <span className="sr-only">{inputSRLabel}</span>
-                </label>
+                {/* The accessible-name source for the autofocused textarea (see the
+                    mount-time focus effect above) — its name must stay one atomic
+                    string. */}
+                <CanadaCaAccessibleLabel as="label" htmlFor="message" text={inputCopy} lang={lang} />
                 <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
@@ -943,9 +1019,34 @@ const ChatInterface = ({
             referringUrl={referringUrl}
             handleReferringUrlChange={handleReferringUrlChange}
           />
-        </div>
+        </section>
       )}
-      </section>
+
+      {/* Accessible Scroll Down Button — page-level utility (scrolls the whole
+          window toward the footer), not scoped to either section above, so it
+          lives outside both landmarks rather than nested inside the
+          conversation-log region. position:fixed in CSS means its DOM
+          location has no effect on where it renders visually.
+
+          Deliberately mouse-only, not keyboard-operable: tabIndex="-1" keeps
+          it out of the tab order on purpose — keyboard users already reach
+          the chat area via normal tab flow, so this button isn't part of
+          their expected path. The keydown handler (Enter/Space) below and
+          the .scroll-down-btn:focus rule in chat.css are unreachable as a
+          result — known, not a bug. Revisit only if the intended use case
+          changes. */}
+      <button
+        className="scroll-down-btn"
+        aria-label={safeT('homepage.scroll.ariaLabel')}
+        title={safeT('homepage.scroll.title')}
+        type="button"
+        tabIndex="-1"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M12 7 L12 15 M8 13 L12 17 L16 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       {/* Live region for character count alerts - mounts fresh each time to ensure re-announcement */}
         {charCountAlert && (

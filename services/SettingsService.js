@@ -23,6 +23,7 @@ const SETTING_DEFAULTS = {
   'connectivity.simulation.database': 'false',
   'connectivity.simulation.search': 'false',
   'connectivity.simulation.llm': 'false',
+  'session.singleAnonymousChatRunEnabled': 'true',
 };
 
 const EMPTY_ALLOWED_SETTINGS = new Set([

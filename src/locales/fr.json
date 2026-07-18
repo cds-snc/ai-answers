@@ -2,10 +2,7 @@
   "locale": "fr",
   "homepage": {
     "title": "Réponses IA",
-    "subtitle": {
-      "text": "Obtenez des réponses à vos questions sur Canada.ca",
-      "ariaLabel": "Obtenez des réponses à vos questions sur Canada point CA."
-    },
+    "subtitle": "Obtenez des réponses à vos questions sur Canada.ca",
     "status": {
       "label": "Bêta",
       "description": "Essais bêta"
@@ -69,7 +66,7 @@
       "disclaimer": "Utilisez le lien Canada.ca fourni dans la réponse pour vérifier votre réponse. Les réponses générées par ce système d'IA ne doivent pas être considérées comme des conseils professionnels, juridiques ou médicaux.\n\nNous nous efforçons de garantir l'exactitude des informations fournies, mais il est possible que les informations contiennent des inexactitudes, ne reflètent pas encore les changements récents ou ne répondent pas à vos besoins ou objectifs particuliers.",
       "language": "La Loi sur les langues officielles, le Règlement sur les langues officielles – communications avec le public et prestation des services et les exigences des politiques du Conseil du Trésor prévoient les circonstances où nous employons le français et l'anglais dans la prestation des services au public. Choisissez le bouton de langue anglaise ou française en haut de la page pour utiliser la version d'AI Answers dans la langue officielle correspondante. Les questions posées et répondues dans une langue autre que l'anglais ou le français sont offertes à titre gracieux aux visiteurs de notre site Web.",
       "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques.\n\nVotre utilisation de ce système et de toute information générée est également soumise aux",
-      "termsLink": "Conditions d'utilisation de Canada.ca."
+      "termsLink": "Conditions d'utilisation de Canada.ca"
     },
     "errors": {
       "timeout": {
@@ -82,14 +79,9 @@
     "chat": {
       "chatId": "ID de chat",
       "input": {
-        "initial": {
-          "text": "Posez une question sur Canada.ca",
-          "ariaLabel": "Posez une question sur Canada point CA"
-        },
-        "followUp": {
-          "text": "Posez une question de suivi ou répondez",
-          "ariaLabel": "Posez une question de suivi ou répondez"
-        },
+        "heading": "Zone de question",
+        "initial": "Posez une question sur Canada.ca",
+        "followUp": "Posez une question de suivi ou répondez",
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
         "referringPage": "Page où vous étiez :",
@@ -161,6 +153,7 @@
         "shortQueryDetails": "Veuillez réessayer avec plus de détails ci-dessous, ou utilisez ce lien pour rechercher les mots que vous avez entrés sur Canada.ca.",
         "shortQuerySearch": "Rechercher sur Canada.ca :",
         "sessionTimedOut": "Votre session a expiré. Veuillez recharger la page pour commencer une nouvelle discussion.",
+        "chatRunInProgress": "Vous avez un autre clavardage en cours dans un autre onglet ou navigateur. Veuillez attendre qu'il soit terminé avant de faire une autre demande.",
         "limitReachedHeading": "Limite de 3 questions atteinte",
         "yourQuestionLabel": "Votre question",
         "responseLabel": "Réponse",
@@ -180,7 +173,7 @@
         "noDepartment": "Aucun"
       },
       "section": {
-        "heading": "Historique de la conversation – Réponses IA"
+        "heading": "Conversation – Réponses IA"
       }
     },
     "expertRating": {
@@ -707,7 +700,16 @@
     "session": {
       "title": "Sessions",
       "sessionId": "ID de session",
+      "sessionType": "Type de session",
+      "sessionTypes": {
+        "auth": "Session authentifiée",
+        "visitor": "Empreinte",
+        "session": "Témoin de session",
+        "ip": "Repli sur l'adresse IP",
+        "unknown": "Inconnu"
+      },
       "creditsLeft": "Crédits restants",
+      "unlimited": "Illimité",
       "chatId": "ID de chat",
       "lastSeen": "Dernière activité",
       "requests": "Requêtes",
@@ -1068,7 +1070,7 @@
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)",
-      "storeType": "Stockage de session (mémoire | mongo)",
+      "storeType": "Stockage de session (mémoire | DocumentDB | Redis)",
       "store": {
         "options": {
           "memory": "En mémoire (volatile)",
@@ -1079,19 +1081,18 @@
       "persistence": {
         "options": {
           "memory": "Mémoire (en processus)",
-          "mongo": "DocumentDB (persistant/cache)"
+          "redis": "Redis (persistant/cache)"
         }
       }
     },
     "rateLimiting": {
       "title": "Limitation du débit",
       "persistence": {
-        "label": "Persistance du limiteur de débit (mémoire | mongo)"
+        "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
+      "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
       "rateLimitCapacity": "Capacité du quota (requêtes)",
-      "authenticatedRateLimitCapacity": "Capacité du quota authentifié (requêtes)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)",
-      "authenticatedRateLimitRefill": "Recharge du quota authentifié (requêtes/min)"
+      "rateLimitRefill": "Recharge du quota (requêtes/min)"
     },
     "redaction": {
       "title": "Paramètres de rédaction",
@@ -1103,7 +1104,7 @@
       "langFrench": "Français"
     },
     "metrics": {
-      "storeType": "Magasin de métriques de discussion (mémoire | mongo)"
+      "storeType": "Magasin de métriques de discussion (mémoire | DocumentDB)"
     }
   },
   "outage": {
@@ -1869,6 +1870,9 @@
       "uploadFailed": "Le téléversement a échoué",
       "readFailed": "Impossible de lire le fichier",
       "delete": "Supprimer l'ensemble de données",
+      "export": "Exporter",
+      "exporting": "Exportation...",
+      "exportFailed": "L'exportation de l'ensemble de données a échoué",
       "view": "Voir les données",
       "viewing": "Affichage des données : {name}",
       "backToList": "Retour aux ensembles",
@@ -1885,14 +1889,24 @@
       "suiteView": "Grille de la suite",
       "runCountLabel": "Exécutions",
       "requiredColumns": "Colonnes",
-      "columnAliasHint": "Les fichiers de lots fonctionnent sans renommer les colonnes : la correspondance ignore la casse, et les noms de lots comme redactedQuestion, QUESTION et URL sont acceptés. Les colonnes supplémentaires sont conservées et ignorées.",
+      "columnAliasHint": "La correspondance des noms de colonnes ignore la casse, les espaces, les traits d’union et les traits de soulignement. Les colonnes supplémentaires sont conservées et ignorées, sauf si elles sont incompatibles avec le type d’ensemble sélectionné.",
       "uploadDescriptions": {
-        "questionOnly": "Utilisez ce type pour tester le système actuel : chaque question reçoit une nouvelle réponse du pipeline lors de l'analyse. Incluez une colonne GoldenAnswer pour que chaque réponse générée soit évaluée par rapport à votre réponse approuvée par un expert. Toute colonne nommée answer est supprimée à l'importation.",
-        "qaPair": "Utilisez ce type pour évaluer des réponses qui existent déjà (par exemple, d'une exécution ou d'une exportation antérieure) — la colonne answer contient ces réponses, elles sont évaluées telles quelles et aucune nouvelle réponse n'est générée. Incluez une colonne GoldenAnswer pour les comparer aussi à une réponse approuvée par un expert."
+        "questionOnly": "Utilisez ce type lorsque vous voulez que le système génère une nouvelle réponse pendant l’analyse. N’incluez pas de colonne de réponse ou de réponse de référence.",
+        "qaPair": "Utilisez ce type lorsque l'ensemble de données contient déjà la réponse de référence pour chaque question. Pour les analyseurs de comparaison, la colonne answer est utilisée comme référence et le système génère une nouvelle réponse à comparer."
       },
       "uploadColumns": {
-        "questionOnly": "question (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)",
-        "qaPair": "question et answer (requis), GoldenAnswer (réponse de référence, optionnel), referringUrl (optionnel), chatId (optionnel)"
+        "questionOnly": "question (requis), referringUrl (optionnel), chatId (optionnel)",
+        "qaPair": "question et answer (requis), réponse de référence (optionnelle), referringUrl (optionnel), chatId (optionnel)"
+      },
+      "columnVariants": {
+        "title": "Variantes de champs acceptées",
+        "fieldHeader": "Champ",
+        "variantsHeader": "Variantes acceptées",
+        "question": { "field": "Question", "variants": "question, redactedQuestion, problemDetails, prompt" },
+        "answer": { "field": "Réponse", "variants": "answer, redactedAnswer, response" },
+        "referenceAnswer": { "field": "Réponse de référence", "variants": "referenceAnswer" },
+        "referringUrl": { "field": "URL de provenance", "variants": "referringUrl, URL" },
+        "chatId": { "field": "ID de conversation", "variants": "chatId" }
       },
       "rowCount": "Lignes",
       "created": "Créé le",
@@ -1902,7 +1916,7 @@
       "actions": "Actions",
       "type": {
         "questionOnly": "Question seulement",
-        "qaPair": "Paire Q/R",
+        "qaPair": "Question et réponse",
         "batchOutput": "Sortie de lot"
       }
     },
@@ -1916,16 +1930,78 @@
       "analyzerPrefix": "Analyseur",
       "workflowLabel": "Flux de travail",
       "selectBaseline": "Sélectionner une exécution de référence (comparaison)",
-      "baselineHint": "Choisissez une analyse précédente comme référence. Les exécutions suivantes seront comparées aux réponses de celle-ci.",
-      "goldenHint": "Aucune exécution de référence n'est nécessaire si votre ensemble de données contient une colonne GoldenAnswer — elle est utilisée automatiquement comme réponse de référence.",
-      "expertScorerNeedsReference": "L'évaluateur expert a besoin d'une réponse de référence pour juger : utilisez un ensemble de données avec une colonne GoldenAnswer, ou sélectionnez une exécution de référence. Sans référence, l'exécution ne démarrera pas.",
-      "baselineOverridesGolden": "Avertissement : cet ensemble de données contient une colonne GoldenAnswer, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non l'exactitude par rapport aux réponses en or. Choisissez « Aucune référence » pour comparer aux réponses en or.",
+      "baselineHint": "Choisissez une analyse précédente comme référence de comparaison. Lorsqu'elle est sélectionnée, les nouvelles exécutions sont comparées à ses réponses.",
+      "referenceHint": "Si aucune exécution de référence n'est sélectionnée, la référence de l'ensemble de données est utilisée automatiquement. Pour les ensembles de données de questions et réponses, la colonne answer sert de référence pour les analyseurs de comparaison.",
+      "expertScorerDescription": "Évalue la réponse actuelle par rapport à la référence canonique de l’ensemble de données lorsqu’elle est disponible. L’évaluation porte sur les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. Lorsqu’une exécution précédente est sélectionnée, le verdict principal utilise toujours la référence de l’ensemble de données et un résultat distinct indique si la réponse actuelle s’est améliorée, a régressé ou est demeurée inchangée.",
+      "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'une exécution de comparaison. Utilisez un ensemble de données de questions et réponses avec une colonne referenceAnswer, ou une exécution de comparaison.",
+      "expertScorerBaselineHint": "L’évaluateur expert utilisera la réponse de référence de l’ensemble de données pour la note de qualité principale et comparera la réponse actuelle à l’exécution de référence sélectionnée pour mesurer la dérive.",
+      "baselineOverridesReference": "Avertissement : cet ensemble de données contient une colonne de réponse de référence, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence de comparaison pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non par rapport à la réponse de référence de l'ensemble de données. Choisissez « Aucune exécution de référence » pour comparer à la réponse de référence de l'ensemble de données.",
+      "analyzerRules": {
+        "headers": {
+          "setup": "Configuration de l’exécution",
+          "comparison": "Éléments comparés",
+          "flagged": "Éléments pouvant être signalés"
+        },
+        "no-analyzer": {
+          "title": "Règles sans notation",
+          "rows": {
+            "always": {
+              "setup": "Toute configuration",
+              "comparison": "Aucune comparaison n’est effectuée.",
+              "flagged": "Rien n’est signalé; l’exécution ne fait que valider la génération et le stockage."
+            }
+          }
+        },
+        "expert-scorer": {
+        "title": "Règles de comparaison de l’évaluateur expert",
+        "rows": {
+          "datasetOnly": {
+            "setup": "Référence de l’ensemble de données, sans exécution de référence",
+            "comparison": "La réponse actuelle est comparée à la réponse de référence de l’ensemble de données.",
+            "flagged": "Idées clés manquantes, recommandations modifiées, affirmations non fondées, régressions du type de réponse, balises invalides ou qualité sensiblement inférieure."
+          },
+          "datasetAndRun": {
+            "setup": "Référence de l’ensemble de données et exécution de référence",
+            "comparison": "Verdict principal par rapport à la référence de l’ensemble de données; résultat de dérive distinct par rapport à l’exécution précédente.",
+            "flagged": "Le verdict principal peut être signalé pour des problèmes de qualité. La dérive est indiquée séparément comme améliorée, régressée, inchangée ou à vérifier."
+          }
+        }
+      },
+        "similar-answer": {
+          "title": "Règles de comparaison des réponses similaires",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "Aucune comparaison de réponses; l’exécution peut servir de référence ultérieurement.", "flagged": "Rien n’est signalé pour la comparaison." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "La réponse actuelle est comparée à la réponse de référence fournie.", "flagged": "Modifications importantes des faits, dates, nombres, critères d’admissibilité, étapes, programmes nommés, portée ou URL. Les changements de formulation inoffensifs sont ignorés." }
+          }
+        },
+        "refusal": {
+          "title": "Règles de comparaison des refus",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est vérifiée pour détecter les signaux de refus reconnus.", "flagged": "La réponse ne refuse pas lorsque l’évaluateur s’attend à un refus." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le comportement de refus actuel est comparé au comportement de refus de référence.", "flagged": "Un refus attendu est absent ou le comportement de refus change par rapport à la référence." }
+          }
+        },
+        "safety": {
+          "title": "Règles d’évaluation de la sécurité",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter le contenu nuisible, dangereux, lié à la vie privée ou autrement restreint.", "flagged": "La réponse présente un problème de sécurité qui doit être vérifié." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le niveau de sécurité actuel et, séparément, son changement par rapport à la référence.", "flagged": "Un problème de sécurité actuel ou une régression importante de la sécurité peut être signalé." }
+          }
+        },
+        "bias-detection": {
+          "title": "Règles d’évaluation des biais",
+          "rows": {
+            "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter les biais nuisibles.", "flagged": "La réponse est classée comme biaisée ou préoccupante." },
+            "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le niveau de biais actuel et son changement par rapport au niveau de biais de référence.", "flagged": "Un problème de biais actuel ou un changement de niveau de biais; les différences de détail seulement sont ignorées." }
+          }
+        }
+      },
       "runLabelLabel": "Étiquette d'exécution (facultatif)",
       "runLabelPlaceholder": "p. ex. v2 – consignes de citation resserrées",
       "suiteView": "Grille de la suite",
       "trialsLabel": "Essais par question",
       "trialsCostHint": "{rows} questions × {trials} essais = {total} exécutions du pipeline",
-      "noBaseline": "-- Aucune référence (évaluation autonome) --",
+      "noBaseline": "-- Aucune exécution de référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
       "datasetHelper": "Téléversez et gérez les ensembles de données dans la page des ensembles de données, puis sélectionnez-en un ici.",
@@ -1959,7 +2035,7 @@
         "date": "Date",
         "actions": "Actions"
       },
-      "baseline": "Référence",
+      "baseline": "RÉFÉRENCE",
       "viewResults": "Voir les résultats",
       "export": "Exporter",
       "exportChatLogs": "Exporter les journaux de clavardage",
@@ -1992,8 +2068,8 @@
         "deleteError": "Échec de la suppression du lot",
         "exportError": "Échec de l'exportation du lot",
         "exportChatLogsError": "Échec de l'exportation des journaux de clavardage",
-        "error.NO_REFERENCE": "Cet analyseur nécessite une réponse de référence : utilisez un ensemble de données avec une colonne baselineAnswer (ou GoldenAnswer), ou sélectionnez une exécution de référence.",
-        "error.NO_REFERENCE_EXPERT_SCORER": "L'évaluateur expert nécessite une réponse de référence pour évaluer : utilisez un ensemble de données avec une colonne GoldenAnswer (ou baselineAnswer), ou sélectionnez une exécution de référence.",
+        "error.NO_REFERENCE": "Cet analyseur nécessite une réponse de référence : utilisez un ensemble de données avec une colonne referenceAnswer, ou sélectionnez une exécution de comparaison.",
+        "error.NO_REFERENCE_EXPERT_SCORER": "L'évaluateur expert nécessite une réponse de référence pour évaluer : utilisez un ensemble de données avec une colonne referenceAnswer, ou sélectionnez une exécution de comparaison.",
         "error.NO_ITEMS": "Le lot ne contient aucune ligne à traiter.",
         "error.BAD_REQUEST": "Requête invalide. Veuillez vérifier votre configuration.",
         "error.NOT_FOUND": "Ressource introuvable.",
@@ -2004,28 +2080,28 @@
       },
       "analyzers": {
         "no-analyzer": {
-          "name": "Aucun analyseur",
+          "name": "Aucune notation",
           "description": "Cette option exécute le lot sans étape de notation. Elle est utile pour valider le pipeline du lot, les exportations ou le chemin de stockage sans comparer les réponses ni produire d'indicateurs. Comme rien n'est évalué, le statut reste pass et flagged demeure false. Il n'y a ni comparaison à une référence, ni détection de dérive, ni logique de régression. Utilisez ce mode uniquement pour vérifier que le flux peut déplacer les données de l'entrée à la sortie, et non pour analyser la qualité des réponses."
         },
         "bias-detection": {
-          "name": "Détecteur de biais",
+          "name": "Biais",
           "description": "Cet analyseur vérifie si la réponse introduit ou renforce un biais nuisible, par exemple un biais lié au genre, à la race, à l'âge, au handicap ou à d'autres caractéristiques protégées. Il recherche les formulations qui stéréotypent, excluent ou traitent un groupe de façon injuste, et il peut aussi comparer l'exécution actuelle à un lot de référence afin de déterminer si le biais s'est amélioré, aggravé ou maintenu. Un résultat signalé signifie que la réponse contient un signal de biais qui mérite une vérification, ou que la réponse actuelle est sensiblement plus biaisée que la référence. En l'absence de référence, l'analyseur agit comme une revue de sécurité autonome et évalue seulement la réponse courante. Utilisez-le pour surveiller les formulations nuisibles, les hypothèses injustes et les régressions subtiles de ton ou de vocabulaire."
         },
         "expert-scorer": {
           "name": "Évaluateur expert",
-          "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. Une réponse de référence est toujours nécessaire — une exécution sans référence ne démarrera pas. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse nouvellement générée est évaluée par rapport à la réponse de l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert. C'est la configuration habituelle pour les suites de tests en or.\n• Vous avez sélectionné une exécution de référence — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi des réponses en or, les réponses de l'exécution de référence ont priorité.\nUtilisez cet analyseur par défaut lorsque vous avez des réponses approuvées par un expert, ou pour un jugement de qualité global plutôt qu'une comparaison factuelle étroite."
+          "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. Il peut évaluer une paire question et réponse seule, ou comparer cette réponse à une réponse de référence ou à une exécution de comparaison lorsque vous en fournissez une. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse est évaluée par rapport à la réponse approuvée par l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert.\n• Vous avez sélectionné une exécution de comparaison — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi une réponse de référence, les réponses de l'exécution de comparaison ont priorité.\nUtilisez cet analyseur par défaut lorsque vous voulez un jugement de qualité global, avec ou sans réponse de comparaison."
         },
         "refusal": {
-          "name": "Analyseur de refus",
-          "description": "Cet analyseur détecte les réponses de type refus ou les réponses bloquées, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que le système a refusé, bloqué ou rejeté la demande d'une manière qui mérite d'être examinée. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante, par exemple si le système est passé d'une réponse normale à un refus, ou d'un refus à une réponse. C'est utile pour suivre les moments où le système cesse d'aider l'utilisateur et pour déterminer si ce changement était voulu, sûr ou régressif."
+          "name": "Refus",
+          "description": "Cet analyseur vérifie qu'un refus attendu est maintenu, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que la référence était un refus, mais que la réponse actuelle répond normalement. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante."
         },
         "safety": {
-          "name": "Évaluateur de sécurité",
+          "name": "Sécurité",
           "description": "Cet analyseur examine la réponse pour repérer du contenu nuisible, des propos haineux, des instructions dangereuses, des fuites de renseignements personnels et tout autre contenu qui ne devrait pas être diffusé tel quel. Un résultat signalé signifie que la réponse a franchi une limite de sécurité ou qu'elle a exposé du contenu qui devrait être examiné avant de considérer l'exécution comme acceptable. Lorsqu'une référence est fournie, l'analyseur compare les deux exécutions et indique si la sécurité s'est améliorée, détériorée ou maintenue. Utilisez cet analyseur pour surveiller la qualité de la modération, repérer rapidement les sorties à risque et vérifier que les changements apportés au système rendent les réponses plus sûres, et non moins sûres."
         },
         "similar-answer": {
-          "name": "Analyseur de réponses similaires",
-          "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de référence — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne GoldenAnswer — chaque réponse générée est comparée à la réponse de l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport aux réponses en or, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
+          "name": "Réponse similaire",
+          "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de comparaison — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse générée est comparée à la réponse approuvée par l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport à une réponse de référence, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
         }
       }
     },
@@ -2047,6 +2123,9 @@
         "errors": "Erreurs seulement"
       },
       "table": {
+        "chat": "Clavardage",
+        "chatId": "ID de clavardage",
+        "noChatId": "Aucun ID de clavardage",
         "row": "Ligne",
         "trial": "Essai",
         "question": "Question",
@@ -2067,6 +2146,10 @@
         "skipped": "Ignoré"
       },
       "detail": {
+        "chat": "Clavardage",
+        "interaction": "Interaction",
+        "simpleView": "Vue simple",
+        "detailedView": "Vue détaillée",
         "backToList": "Retour à la liste",
         "previous": "Précédent",
         "next": "Suivant",
@@ -2075,7 +2158,8 @@
         "question": "Question",
         "referringUrl": "URL de référence",
         "itemError": "Erreur de traitement",
-        "goldenAnswer": "Réponse de référence (expert)",
+        "referenceAnswer": "Réponse de référence",
+        "noReferenceAnswer": "Aucune réponse de référence n’a été utilisée.",
         "currentAnswer": "Réponse générée",
         "noAnswer": "Aucune réponse n'a été générée.",
         "legendRemoved": "Absent de la réponse générée",
@@ -2119,4 +2203,3 @@
     }
   }
 }
-

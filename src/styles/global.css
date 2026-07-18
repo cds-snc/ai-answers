@@ -110,9 +110,6 @@
 /* index.css */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -944,4 +941,17 @@ fieldset.gc-chckbxrdio {
 /* Suppress Edge's native password reveal button only where the custom toggle is present */
 .auth-password-wrapper input::-ms-reveal {
   display: none;
+}
+/* Keep wide experimental result tables centred while containing overflow. */
+.experimental-results-table-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-inline: 1rem;
+  box-sizing: border-box;
+}
+
+.experimental-results-table {
+  width: 100%;
+  margin-inline: auto;
 }

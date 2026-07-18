@@ -8,7 +8,7 @@ describe('NoOpAnalyzer', () => {
         const result = await analyzer.analyze({
             question: 'Q',
             answer: 'A',
-            baselineAnswer: 'B'
+            referenceAnswer: 'B'
         });
 
         expect(result.status).toBe('pass');

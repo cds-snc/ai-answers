@@ -16,15 +16,6 @@ services:
       # This prevents "Operation not permitted" errors caused by MongoDB's 
       # WiredTiger engine trying to allocate new files on NTFS folders.
       - mongo_data:/data/db
-  qdrant:
-    image: qdrant/qdrant
-    container_name: qdrant
-    restart: unless-stopped
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant_data:/qdrant/storage
-
   redis:
     image: redis:7.2
     container_name: redis
