@@ -50,7 +50,7 @@ Reuse the shared dashboard building blocks — don't recompute metrics or redefi
 - **Colours:** import `{ COLOURS, QUALITY_COLOURS }` from `src/constants/dashboardColours.js` — never hardcode chart hexes (greys/borders may stay local).
 - **Partner list:** `PARTNER_DEPARTMENTS` from `src/constants/partnerDepartments.js` (the official 22, shared with `FilterPanel`).
 
-`ExecDashboard.js` / `PartnerDashboard.js` are reference consumers. `MetricsDashboard.js` predates these helpers and does its own thing.
+`PublicDashboard.js` / `PartnerDashboard.js` are reference consumers. `MetricsDashboard.js` predates these helpers and does its own thing.
 
 ## Upgrading the AI Model
 

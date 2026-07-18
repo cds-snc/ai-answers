@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 
 const toISODate = (d) => d.toISOString().split('T')[0];
 
@@ -63,9 +62,10 @@ const getDateRange = (preset, customStart, customEnd, allTimeStart) => {
 
 const PRESETS = ['last30', 'currentQuarter', 'allTime', 'custom'];
 
-// Filter bar for the exec dashboard.
+// Filter bar for the public dashboard. Date range only — there is deliberately
+// no institution selector here (the public view is all-of-government).
 // Presets: Last 30 days | Current quarter | All time (default) | Custom. As more data and time passes, update to Last quarter, last year, etc.
-// Non-custom presets and department changes auto-apply immediately.
+// Non-custom presets auto-apply immediately.
 // Custom requires the user to set dates and click Apply in the expanded row.
 // Clicking the active Custom button collapses the row without applying.
 // `minDate` (YYYY-MM-DD, optional): the earliest date with actual data in the DB.
@@ -74,14 +74,12 @@ const PRESETS = ['last30', 'currentQuarter', 'allTime', 'custom'];
 const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLoad, minDate = DATA_START_DATE }) => {
   const { t } = useTranslations(lang);
 
-  const [department, setDepartment] = useState('');
   const [datePreset, setDatePreset] = useState('allTime');
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState(DATA_START_DATE);
   const [customEnd, setCustomEnd] = useState(todayStr);
 
   // Applied state — drives the pill display
-  const [appliedDept, setAppliedDept] = useState('');
   const [appliedPreset, setAppliedPreset] = useState('allTime');
   const [appliedCustomStart, setAppliedCustomStart] = useState('');
   const [appliedCustomEnd, setAppliedCustomEnd] = useState('');
@@ -92,8 +90,6 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   onInitialLoadRef.current = onInitialLoad;
 
   // Refs for use inside effects to avoid stale closures
-  const appliedDeptRef = useRef(appliedDept);
-  appliedDeptRef.current = appliedDept;
   const appliedPresetRef = useRef(appliedPreset);
   appliedPresetRef.current = appliedPreset;
 
@@ -106,7 +102,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   useEffect(() => {
     const { startDate, endDate } = getDateRange('allTime', null, null, DATA_START_DATE);
     const cb = onInitialLoadRef.current || onApplyRef.current;
-    cb({ startDate, endDate, department: '' });
+    cb({ startDate, endDate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,17 +128,16 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // Re-apply through getDateRange so the 12-month clamp uses the real first-data
     // date (start = max(firstDataDate, today − 12 months)).
     const { startDate, endDate } = getDateRange('allTime', null, null, minDate);
-    onApplyRef.current({ startDate, endDate, department: appliedDeptRef.current });
+    onApplyRef.current({ startDate, endDate });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minDate]);
 
-  const fireApply = (preset, dept) => {
+  const fireApply = (preset) => {
     const allTimeStart = preset === 'allTime' ? (minDate || DATA_START_DATE) : undefined;
     const { startDate, endDate } = getDateRange(preset, customStart, customEnd, allTimeStart);
     if (!startDate || !endDate) return;
-    setAppliedDept(dept);
     setAppliedPreset(preset);
-    onApplyRef.current({ startDate, endDate, department: dept });
+    onApplyRef.current({ startDate, endDate });
   };
 
   const handlePresetClick = (preset) => {
@@ -170,38 +165,22 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     if (preset === 'allTime' && (!minDate || minDate === DATA_START_DATE)) {
       didSnapAllTime.current = false;
     }
-    fireApply(preset, department);
-  };
-
-  const handleDeptChange = (newDept) => {
-    setDepartment(newDept);
-    if (datePreset === 'custom') {
-      // Close the custom panel and apply with the last confirmed preset so the
-      // dept change takes effect immediately (consistent with non-custom behaviour).
-      setShowCustom(false);
-      setDatePreset(appliedPreset);
-      fireApply(appliedPreset, newDept);
-    } else {
-      fireApply(datePreset, newDept);
-    }
+    fireApply(preset);
   };
 
   const handleCustomApply = () => {
     if (!customStart || !customEnd) return;
     const { startDate, endDate } = getDateRange('custom', customStart, customEnd);
-    setAppliedDept(department);
     setAppliedPreset('custom');
     setAppliedCustomStart(startDate);
     setAppliedCustomEnd(endDate);
     setShowCustom(false);
-    onApplyRef.current({ startDate, endDate, department });
+    onApplyRef.current({ startDate, endDate });
   };
 
   const handleReset = () => {
-    setDepartment('');
     setDatePreset('allTime');
     setShowCustom(false);
-    setAppliedDept('');
     setAppliedPreset('allTime');
     setAppliedCustomStart('');
     setAppliedCustomEnd('');
@@ -209,10 +188,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     // so the snap effect must not re-fire when loading completes.
     didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
-    onApplyRef.current({ startDate: allTimeStart, endDate: todayStr(), department: '' });
+    onApplyRef.current({ startDate: allTimeStart, endDate: todayStr() });
   };
 
-  const isDefault = appliedDept === '' && appliedPreset === 'allTime';
+  const isDefault = appliedPreset === 'allTime';
 
   const getPillDateLabel = () => {
     if (appliedPreset === 'custom' && appliedCustomStart && appliedCustomEnd) {
@@ -224,30 +203,13 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     return t(`dashboardFilter.${appliedPreset}`);
   };
 
-  const pillPartner = appliedDept || t('dashboardFilter.allPartners');
   const pillDate = getPillDateLabel();
 
   return (
     <div className="filter-bar-wrapper">
       <div className="filter-bar">
-      {/* Row 1: partner selector + date presets on one row */}
+      {/* Row 1: date presets */}
       <div className="filter-bar__row">
-        <div className="filter-bar__field">
-          <label htmlFor="dashboard-dept" className="filter-bar__label">
-            {t('dashboardFilter.department')}
-          </label>
-          <select
-            id="dashboard-dept"
-            className="filter-bar__select"
-            value={department}
-            onChange={e => handleDeptChange(e.target.value)}
-            disabled={loading}
-          >
-            <option value="">{t('dashboardFilter.allPartners')}</option>
-            {PARTNER_DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-
         <div className="filter-bar__field filter-bar__field--grow">
           <label className="filter-bar__label">{t('dashboardFilter.dateRange')}</label>
           <div className="filter-bar__presets">
@@ -325,7 +287,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       <div className="filter-bar__pills-row">
         <span className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
         <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
-          {pillPartner} · {pillDate}
+          {pillDate}
           {!isDefault && (
             <button
               type="button"

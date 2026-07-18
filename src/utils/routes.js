@@ -18,7 +18,7 @@ export const ROUTE_SLUGS = {
   'auto-eval-dashboard':   { en: 'auto-eval-dashboard',          fr: 'tableau-de-bord-auto-evaluation' },
   'public-eval':           { en: 'public-eval',                  fr: 'evaluation-publique' },
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
-  'exec-dashboard':        { en: 'exec-dashboard',               fr: 'tableau-de-bord-executif' },
+  'public-dashboard':      { en: 'public-dashboard',             fr: 'tableau-de-bord-public' },
   'partner-dashboard':     { en: 'partner-dashboard',            fr: 'tableau-de-bord-partenaire' },
   'technical-metrics':     { en: 'technical-metrics',            fr: 'metriques-techniques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },

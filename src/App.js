@@ -28,7 +28,7 @@ import { AuthProvider } from './contexts/AuthContext.js';
 import { useAuth } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
-import ExecDashboardPage from './pages/ExecDashboardPage.js';
+import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
 import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
 import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
@@ -433,8 +433,8 @@ export default function App() {
       { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/exec-dashboard', element: <ExecDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord-executif', element: <ExecDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/public-dashboard', element: <PublicDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin', 'partner'] },

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
+import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -12,41 +12,38 @@ import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 
-const ExecDashboard = ({ lang = 'en' }) => {
+const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
 
-  const [appliedDepartment, setAppliedDepartment] = useState('');
   const [appliedStartDate, setAppliedStartDate] = useState('');
   const [appliedEndDate, setAppliedEndDate] = useState('');
   const hasFetched = useRef(false);
 
-  // The exec dashboard reports on public usage only: it excludes questions from
+  // The public dashboard reports on public usage only: it excludes questions from
   // admin/partner accounts signed in to test and evaluate (userType 'public' =
   // no logged-in user, which already covers the referred-public subset). The
   // minimal filter bar has no userType selector, so this is fixed here.
-  const fetchExecMetrics = useCallback((filters) => {
+  const fetchPublicMetrics = useCallback((filters) => {
     fetchMetrics({ ...filters, userType: 'public' });
   }, [fetchMetrics]);
 
   const handleInitialLoad = useCallback((filters) => {
     hasFetched.current = true;
-    setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
-    fetchExecMetrics(filters);
-  }, [fetchExecMetrics]);
+    fetchPublicMetrics(filters);
+  }, [fetchPublicMetrics]);
 
   const handleApply = useCallback((filters) => {
     hasFetched.current = true;
-    setAppliedDepartment(filters?.department || '');
     setAppliedStartDate(filters?.startDate || '');
     setAppliedEndDate(filters?.endDate || '');
-    fetchExecMetrics(filters);
-  }, [fetchExecMetrics]);
+    fetchPublicMetrics(filters);
+  }, [fetchPublicMetrics]);
 
   const formatDateRange = (start, end) => {
     if (!start || !end) return '';
@@ -72,12 +69,25 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const hasError = (metrics.expertScored?.hasError?.total || 0) + (metrics.aiScored?.hasError?.total || 0);
   const accuracyPct = evalTotal > 0 ? 100 - Math.round((hasError / evalTotal) * 100) : null;
   const accuracyDonutData = evalTotal > 0 ? [
-    { name: t('execDashboard.charts.accurate'), value: evalTotal - hasError },
-    { name: t('execDashboard.charts.hasError'), value: hasError },
+    { name: t('publicDashboard.charts.accurate'), value: evalTotal - hasError },
+    { name: t('publicDashboard.charts.hasError'), value: hasError },
   ] : [];
 
-  // Harmful + content issues (expert evaluations only). Always shown, even at 0.
-  const harmful = metrics.expertScored?.harmful || {};
+  // EN/FR accuracy breakdown (expert + AI per language), shown as the donut
+  // footer only when each language has more than 10 evaluations — a percentage
+  // from a tiny sample is misleading, so below the threshold the footer is omitted.
+  const accuracyOf = (total, errors) => (total > 0 ? 100 - Math.round((errors / total) * 100) : null);
+  const enEvalTotal = (metrics.expertScored?.total?.en || 0) + (metrics.aiScored?.total?.en || 0);
+  const frEvalTotal = (metrics.expertScored?.total?.fr || 0) + (metrics.aiScored?.total?.fr || 0);
+  const enAccuracy = accuracyOf(enEvalTotal, (metrics.expertScored?.hasError?.en || 0) + (metrics.aiScored?.hasError?.en || 0));
+  const frAccuracy = accuracyOf(frEvalTotal, (metrics.expertScored?.hasError?.fr || 0) + (metrics.aiScored?.hasError?.fr || 0));
+  const accuracyByLangFooter = (enEvalTotal > 10 && frEvalTotal > 10)
+    ? t('publicDashboard.charts.accuracyByLang')
+        .replace('{en}', fmtPct(enAccuracy))
+        .replace('{fr}', fmtPct(frAccuracy))
+    : undefined;
+
+  // Content issues (expert evaluations only). Always shown, even at 0.
   const contentIssue = metrics.expertScored?.hasContentIssue || {};
 
   // Blocked queries (safety counter). Total card + ranked bar breakdown by type.
@@ -99,6 +109,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
   const filteredPfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
 
+  // Feedback split into helpful / not helpful, classified by score (not the raw
+  // yes/no click) so notWanted counts as helpful.
+  const feedbackData = useMemo(
+    () => buildFeedbackSplitData(metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t),
+    [metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t],
+  );
+  const satisfactionPct = filteredPfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / filteredPfTotal) * 100) : null;
+
   // Count of institutions with at least one question in the filtered period.
   const byDepartmentCount = Object.values(metrics.byDepartment || {})
     .filter(d => (d.total || 0) > 0).length;
@@ -111,13 +129,22 @@ const ExecDashboard = ({ lang = 'en' }) => {
       .slice(0, 10);
   }, [metrics.byDepartment]);
 
+  // Conversation length (sessions broken down by number of questions asked).
+  const totalConversations = metrics.totalConversations || 0;
+  const sq = metrics.sessionsByQuestionCount || {};
+  const sessionDepthData = totalConversations > 0 ? [
+    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
+    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
+    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+  ].filter(d => d.value > 0) : [];
+
   const responseTime = metrics.responseTime || {};
   const hasResponseTime = (responseTime.count || 0) > 0;
 
   return (
     <div>
       <h2 className="dashboard-section-title">
-        {t('execDashboard.overviewTitle')}
+        {t('publicDashboard.overviewTitle')}
       </h2>
 
       <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} minDate={minDate} />
@@ -135,14 +162,14 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {error && (
         <div className="dashboard-error">
-          {t('execDashboard.error')}
+          {t('publicDashboard.error')}
         </div>
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
         <div className="dashboard-warning">
           <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('execDashboard.noData')}
+          {t('publicDashboard.noData')}
         </div>
       )}
 
@@ -154,76 +181,117 @@ const ExecDashboard = ({ lang = 'en' }) => {
         <div className="dashboard-col-half">
           {evalTotal >= 10 ? (
             <DonutCard
-              title={t('execDashboard.charts.accuracyDonutTitle')}
-              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('execDashboard.charts.noData'), value: 1 }]}
+              title={t('publicDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
               colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
               centreValue={accuracyPct !== null ? fmtPct(accuracyPct) : '—'}
-              centreLabel={t('execDashboard.charts.accuracyCentre')}
+              centreLabel={t('publicDashboard.charts.accuracyCentre')}
               centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
+              footer={accuracyByLangFooter}
               lang={lang}
             />
           ) : (
             <NoDataCard
-              title={t('execDashboard.charts.accuracyDonutTitle')}
+              title={t('publicDashboard.charts.accuracyDonutTitle')}
               message={t('common.notEnoughData')}
             />
           )}
         </div>
         <div className="dashboard-col-half dashboard-col--equal-height">
           <StatCard
-            label={t('execDashboard.kpi.questionsAsked')}
+            label={t('publicDashboard.kpi.questionsAsked')}
             value={fmtN(totalQuestions)}
-            sub={t('execDashboard.kpi.questionsSub')
+            sub={t('publicDashboard.kpi.questionsSub')
               .replace('{en}', fmtN(metrics.totalQuestionsEn))
               .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
           />
           <div className="dashboard-row dashboard-row--nested">
             <StatCard
-              label={t('execDashboard.kpi.contentIssues')}
+              label={t('publicDashboard.kpi.contentIssues')}
               value={fmtN(contentIssue.total)}
-              sub={t('execDashboard.kpi.contentIssuesSub')
+              sub={t('publicDashboard.kpi.contentIssuesSub')
                 .replace('{ni}', fmtN(contentIssue.needsImprovement))
                 .replace('{error}', fmtN(contentIssue.hasError))}
             />
             <StatCard
-              label={t('execDashboard.kpi.evaluated')}
+              label={t('publicDashboard.kpi.evaluated')}
               value={fmtN(expertTotal)}
-              sub={t('execDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+              sub={t('publicDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
             />
           </div>
         </div>
       </div>
 
-      {/* Satisfaction (helpful or not) breakdown — full width diverging bar */}
-      <div className="dashboard-section">
-        {filteredPfTotal >= 10 ? (
-          <DivergingBarCard
-            title={t('execDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackReasonsData}
+      {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
+          Below 10 responses both are replaced by a single placeholder —
+          percentages from tiny samples are misleading. The bars are percentages,
+          so the subtitle carries the response total they're computed from. */}
+      {filteredPfTotal >= 10 ? (
+        <div className="dashboard-row">
+          <DonutCard
+            title={t('publicDashboard.charts.feedbackBreakdownTitle')}
+            data={feedbackData.length > 0 ? feedbackData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
+            colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
+            centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
+            centreLabel={t('publicDashboard.charts.satisfactionCentre').replace('{total}', fmtN(filteredPfTotal))}
+            centreMultiLine
             lang={lang}
           />
-        ) : (
+          <div className="dashboard-chart-wide">
+            <DivergingBarCard
+              title={t('publicDashboard.charts.feedbackBreakdownTitle')}
+              subtitle={t('publicDashboard.charts.feedbackBreakdownSubtitle')
+                .replace('{total}', fmtN(filteredPfTotal))}
+              data={feedbackReasonsData}
+              noDataLabel={t('publicDashboard.charts.noData')}
+              lang={lang}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="dashboard-section">
           <NoDataCard
-            title={t('execDashboard.charts.feedbackBreakdownTitle')}
+            title={t('publicDashboard.charts.feedbackBreakdownTitle')}
             message={t('common.notEnoughData')}
           />
-        )}
+        </div>
+      )}
+
+      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-half">
+          {totalConversations >= 10 ? (
+            <DonutCard
+              title={t('publicDashboard.charts.engagementTitle')}
+              subtitle={t('publicDashboard.charts.engagementSubtitle')}
+              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
+              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+              centreLabel={t('publicDashboard.charts.conversations')}
+              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+              lang={lang}
+            />
+          ) : (
+            <NoDataCard
+              title={t('publicDashboard.charts.engagementTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Top institutions: institution count stat card left, bar chart right.
-          Hidden when a single institution is filtered — both the count and the
-          ranking are answered by the filter itself. */}
-      {!appliedDepartment && departmentData.length > 0 && (
+      {/* Top institutions: institution count stat card left, bar chart right. */}
+      {departmentData.length > 0 && (
         <div className="dashboard-row">
           <div className="dashboard-col-third dashboard-col--equal-height">
             <StatCard
-              label={t('execDashboard.kpi.partnerCount')}
+              label={t('publicDashboard.kpi.partnerCount')}
               value={fmtN(byDepartmentCount)}
             />
           </div>
           <div className="dashboard-chart-wide">
             <HBarCard
-              title={t('execDashboard.charts.departmentsTitle')}
+              title={t('publicDashboard.charts.departmentsTitle')}
               data={departmentData}
               colour={COLOURS.brand}
               lang={lang}
@@ -237,94 +305,54 @@ const ExecDashboard = ({ lang = 'en' }) => {
 
       {/* Operations metrics */}
       <h2 className="dashboard-section-title">
-        {t('execDashboard.ops.title')}
+        {t('publicDashboard.ops.title')}
       </h2>
       <div className="dashboard-row">
-        <StatCard
-          label={t('execDashboard.ops.medianResponseTime')}
-          value={hasResponseTime
-            ? t('execDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
-            : '—'}
-          sub={hasResponseTime
-            ? t('execDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
-            : undefined}
-        />
-        <StatCard
-          className="stat-card--wide"
-          label={t('execDashboard.ops.inputTokens')}
-          value={fmtN(metrics.totalInputTokens)}
-          sub={t('execDashboard.ops.tokensSub')
-            .replace('{en}', fmtN(metrics.totalInputTokensEn))
-            .replace('{fr}', fmtN(metrics.totalInputTokensFr))}
-        />
-        <StatCard
-          className="stat-card--wide"
-          label={t('execDashboard.ops.outputTokens')}
-          value={fmtN(metrics.totalOutputTokens)}
-          sub={t('execDashboard.ops.tokensSub')
-            .replace('{en}', fmtN(metrics.totalOutputTokensEn))
-            .replace('{fr}', fmtN(metrics.totalOutputTokensFr))}
-        />
+        <div className="dashboard-col-third">
+          <StatCard
+            label={t('publicDashboard.ops.medianResponseTime')}
+            value={hasResponseTime
+              ? t('publicDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
+              : '—'}
+            sub={hasResponseTime
+              ? t('publicDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
+              : undefined}
+          />
+        </div>
       </div>
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">
-        {t('execDashboard.safety.title')}
+        {t('publicDashboard.safety.title')}
       </h2>
-      {/* Blocked queries — global safety counter, can't be department-scoped,
-          so hidden when a department filter is applied.
-          Layout: left column has blocked total + harmful stacked; chart fills the right. */}
-      {appliedDepartment ? (
-        <>
-          <p className="font-size-text-small mb-300">
-            {t('blockedQueries.deptNote')}
-          </p>
-          <div className="dashboard-row">
-            <div className="dashboard-col-third">
-              <StatCard
-                label={t('execDashboard.kpi.harmful')}
-                value={fmtN(harmful.total)}
-                sub={t('execDashboard.kpi.harmfulSub')
-                  .replace('{en}', fmtN(harmful.en))
-                  .replace('{fr}', fmtN(harmful.fr))}
-              />
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="dashboard-row">
-          <div className="dashboard-col-third dashboard-col--equal-height">
-            <StatCard
-              label={t('blockedQueries.totalCardLabel')}
-              value={fmtN(blockedTotal.total)}
-              sub={t('blockedQueries.langSub')
-                .replace('{en}', fmtN(blockedTotal.en))
-                .replace('{fr}', fmtN(blockedTotal.fr))}
-            />
-            <StatCard
-              label={t('execDashboard.kpi.harmful')}
-              value={fmtN(harmful.total)}
-              sub={t('execDashboard.kpi.harmfulSub')
-                .replace('{en}', fmtN(harmful.en))
-                .replace('{fr}', fmtN(harmful.fr))}
-            />
-          </div>
-          <div className="dashboard-chart-wide">
-            <HBarCard
-              title={t('blockedQueries.byTypeTitle')}
-              data={blockedBarData}
-              height={Math.max(240, blockedBarData.length * 60)}
-              lang={lang}
-              tooltipContent={BlockedBarTooltip}
-              noDataLabel={t('blockedQueries.noData')}
-            />
-          </div>
+      {/* Blocked queries — global safety counter. This dashboard has no
+          institution filter, so the counter is always in scope.
+          Layout: blocked total on the left; chart fills the right. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            label={t('blockedQueries.totalCardLabel')}
+            value={fmtN(blockedTotal.total)}
+            sub={t('blockedQueries.langSub')
+              .replace('{en}', fmtN(blockedTotal.en))
+              .replace('{fr}', fmtN(blockedTotal.fr))}
+          />
         </div>
-      )}
+        <div className="dashboard-chart-wide">
+          <HBarCard
+            title={t('blockedQueries.byTypeTitle')}
+            data={blockedBarData}
+            height={Math.max(240, blockedBarData.length * 60)}
+            lang={lang}
+            tooltipContent={BlockedBarTooltip}
+            noDataLabel={t('blockedQueries.noData')}
+          />
+        </div>
+      </div>
       </>
       )}
     </div>
   );
 };
 
-export default ExecDashboard;
+export default PublicDashboard;

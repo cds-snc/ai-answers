@@ -99,8 +99,8 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={getPath('exec-dashboard', lang)}>
-                {t('admin.navigation.execDashboard')}
+              <GcdsLink href={getPath('public-dashboard', lang)}>
+                {t('admin.navigation.publicDashboard')}
               </GcdsLink>
             </li>
           </ul>

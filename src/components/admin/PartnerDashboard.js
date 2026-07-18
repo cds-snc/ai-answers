@@ -24,7 +24,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const pctOrDash = (n) => (n !== null ? fmtPct(n) : '—');
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
@@ -76,16 +75,26 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const expertHasError = metrics.expertScored?.hasError?.total || 0;
   const aiTotal = metrics.aiScored?.total?.total || 0;
   const aiHasError = metrics.aiScored?.hasError?.total || 0;
-  const totalAccuracy = accuracyOf(expertTotal + aiTotal, expertHasError + aiHasError);
+  const evalTotal = expertTotal + aiTotal;
+  const hasError = expertHasError + aiHasError;
+  const totalAccuracy = accuracyOf(evalTotal, hasError);
+  const accuracyDonutData = evalTotal > 0 ? [
+    { name: t('partnerDashboard.charts.accurate'), value: evalTotal - hasError },
+    { name: t('partnerDashboard.charts.hasError'), value: hasError },
+  ] : [];
 
-  // EN/FR accuracy breakdown (expert + AI per language), shown only when each
-  // language has more than 10 evaluations — a percentage from a tiny sample is
-  // misleading, so below the threshold both are left blank.
+  // EN/FR accuracy breakdown (expert + AI per language), shown as the donut
+  // footer only when each language has more than 10 evaluations — a percentage
+  // from a tiny sample is misleading, so below the threshold the footer is omitted.
   const enEvalTotal = (metrics.expertScored?.total?.en || 0) + (metrics.aiScored?.total?.en || 0);
   const frEvalTotal = (metrics.expertScored?.total?.fr || 0) + (metrics.aiScored?.total?.fr || 0);
   const enAccuracy = accuracyOf(enEvalTotal, (metrics.expertScored?.hasError?.en || 0) + (metrics.aiScored?.hasError?.en || 0));
   const frAccuracy = accuracyOf(frEvalTotal, (metrics.expertScored?.hasError?.fr || 0) + (metrics.aiScored?.hasError?.fr || 0));
-  const showAccuracyByLang = enEvalTotal > 10 && frEvalTotal > 10;
+  const accuracyByLangFooter = (enEvalTotal > 10 && frEvalTotal > 10)
+    ? t('partnerDashboard.charts.accuracyByLang')
+        .replace('{en}', fmtPct(enAccuracy))
+        .replace('{fr}', fmtPct(frAccuracy))
+    : undefined;
 
   // Harmful + content issues (expert evaluations only). Always shown, even at 0.
   const harmful = metrics.expertScored?.harmful || {};
@@ -236,15 +245,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             .replace('{pct}', fmtPct(expertTotal > 0 && metrics.totalQuestions > 0 ? Math.round((expertTotal / metrics.totalQuestions) * 100) : 0))}
         />
         <StatCard
-          label={t('partnerDashboard.kpi.accuracyRate')}
-          value={pctOrDash(totalAccuracy)}
-          sub={showAccuracyByLang
-            ? t('partnerDashboard.kpi.accuracySub')
-                .replace('{en}', fmtPct(enAccuracy))
-                .replace('{fr}', fmtPct(frAccuracy))
-            : undefined}
-        />
-        <StatCard
           label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
           sub={t('partnerDashboard.kpi.contentIssuesSub')
@@ -253,26 +253,46 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Answer-quality bar — full width. Below 10 evals the chart is replaced by
-          a placeholder rather than dropped, so the reason stays on the page. */}
-      <div className="dashboard-section">
-        {(expertTotal + aiTotal) >= 10 ? (
-          <HBarCard
-            title={t('partnerDashboard.charts.accuracyTitle')}
-            subtitle={t('partnerDashboard.charts.accuracySubtitle')
-              .replace('{total}', fmtN(expertTotal + aiTotal))
-              .replace('{expert}', fmtN(expertTotal))
-              .replace('{ai}', fmtN(aiTotal))}
-            data={qualityData}
-            percent
-            height={240}
-            noDataLabel={t('partnerDashboard.charts.noData')}
-            tooltipContent={QualityBarTooltip}
+      {/* Answer-quality bar (wide) + answer-accuracy donut beside it. Below 10
+          evals both are replaced by placeholders rather than dropped, so the
+          reason stays on the page. */}
+      <div className="dashboard-row">
+        <div className="dashboard-chart-wide">
+          {evalTotal >= 10 ? (
+            <HBarCard
+              title={t('partnerDashboard.charts.accuracyTitle')}
+              subtitle={t('partnerDashboard.charts.accuracySubtitle')
+                .replace('{total}', fmtN(evalTotal))
+                .replace('{expert}', fmtN(expertTotal))
+                .replace('{ai}', fmtN(aiTotal))}
+              data={qualityData}
+              percent
+              height={240}
+              noDataLabel={t('partnerDashboard.charts.noData')}
+              tooltipContent={QualityBarTooltip}
+              lang={lang}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.accuracyTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
+        {evalTotal >= 10 ? (
+          <DonutCard
+            title={t('partnerDashboard.charts.accuracyDonutTitle')}
+            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
+            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
+            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
+            footer={accuracyByLangFooter}
             lang={lang}
           />
         ) : (
           <NoDataCard
-            title={t('partnerDashboard.charts.accuracyTitle')}
+            title={t('partnerDashboard.charts.accuracyDonutTitle')}
             message={t('common.notEnoughData')}
           />
         )}
@@ -295,6 +315,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           <div className="dashboard-chart-wide">
             <DivergingBarCard
               title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+              subtitle={t('partnerDashboard.charts.feedbackBreakdownSubtitle')
+                .replace('{total}', fmtN(pfTotal))}
               data={feedbackReasonsData}
               noDataLabel={t('partnerDashboard.charts.noData')}
               lang={lang}
