@@ -43,11 +43,11 @@ describe('metrics-programs', () => {
     mockAggregateRows([]);
   });
 
-  it('maps grouped rows to { program, count, programFr } with the curated French name', async () => {
+  it('maps grouped rows to { program, count, en, fr, programFr } with the curated French name', async () => {
     mockAggregateRows([
-      { _id: 'GST/HST', total: 12 },
-      { _id: 'Canada Carbon Rebate', total: 5 },
-      { _id: 'unknown', total: 3 },
+      { _id: 'GST/HST', total: 12, en: 10, fr: 2 },
+      { _id: 'Canada Carbon Rebate', total: 5, en: 5, fr: 0 },
+      { _id: 'unknown', total: 3, en: 1, fr: 2 },
     ]);
 
     const res = mockRes();
@@ -56,11 +56,39 @@ describe('metrics-programs', () => {
     const { topPrograms } = res.json.mock.calls[0][0].metrics;
     expect(topPrograms).toEqual([
       // Curated CRA program → French name attached.
-      { program: 'GST/HST', count: 12, programFr: 'TPS/TVH' },
+      { program: 'GST/HST', count: 12, en: 10, fr: 2, programFr: 'TPS/TVH' },
       // Emergent/unmapped name → empty programFr (English fallback at display).
-      { program: 'Canada Carbon Rebate', count: 5, programFr: '' },
-      { program: 'unknown', count: 3, programFr: '' },
+      { program: 'Canada Carbon Rebate', count: 5, en: 5, fr: 0, programFr: '' },
+      { program: 'unknown', count: 3, en: 1, fr: 2, programFr: '' },
     ]);
+  });
+
+  it('defaults the language split to 0 when the group returns no en/fr counts', async () => {
+    // Guards the client subtitle/tooltip against undefined arithmetic if a row
+    // ever comes back without the language fields (e.g. a legacy cached shape).
+    mockAggregateRows([{ _id: 'GST/HST', total: 12 }]);
+
+    const res = mockRes();
+    await programHandler(baseReq, res);
+
+    expect(res.json.mock.calls[0][0].metrics.topPrograms).toEqual([
+      { program: 'GST/HST', count: 12, en: 0, fr: 0, programFr: 'TPS/TVH' },
+    ]);
+  });
+
+  it('splits each program group by pageLanguage', async () => {
+    await programHandler(baseReq, mockRes());
+    const pipeline = pipelineOf();
+
+    // pageLanguage must survive the projection to be groupable...
+    const projection = pipeline.find((s) => s.$project && s.$project.program === 1);
+    expect(projection.$project.pageLanguage).toBe(1);
+
+    // ...and the group counts it per language alongside the total.
+    const group = pipeline.find((s) => s.$group && s.$group._id === '$program');
+    expect(group.$group.total).toEqual({ $sum: 1 });
+    expect(group.$group.en).toEqual({ $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } });
+    expect(group.$group.fr).toEqual({ $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } });
   });
 
   it('restricts to normal answers by excluding the non-normal types', async () => {

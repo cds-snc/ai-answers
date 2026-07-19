@@ -1337,7 +1337,6 @@
       "noData": "Aucune donnée"
     },
     "ops": {
-      "title": "Mesures opérationnelles",
       "medianResponseTime": "Temps de réponse médian",
       "responseTimeValue": "{n} s",
       "responseTimeSub": "P95 : {p95} s"
@@ -1394,8 +1393,10 @@
     },
     "programs": {
       "title": "Volume de questions par programme",
-      "subtitle": "Questions regroupées selon le programme gouvernemental visé par la question de l'utilisateur, calculé par question. Seules les questions posées après le lancement du marquage par programme sont classées.",
-      "unclassifiedNote": "{count} questions non classées."
+      "subtitle": "{total} questions classées · EN : {en} · FR : {fr}",
+      "unclassifiedNote": "{count} non classées",
+      "tooltipCount": "{count} questions",
+      "tooltipLang": "EN : {en} · FR : {fr}"
     },
     "referrals": {
       "title": "Principales pages référentes",

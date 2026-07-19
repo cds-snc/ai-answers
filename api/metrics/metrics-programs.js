@@ -67,11 +67,14 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
             }
         },
         { $match: { answerType: { $nin: NON_NORMAL_ANSWER_TYPES } } },
-        // Project only fields needed for aggregation + cross-filter lookups
+        // Project only fields needed for aggregation + cross-filter lookups.
+        // pageLanguage stays on the base chat document (interactions were
+        // unwound from it) and is kept so the group stage can split EN/FR.
         {
             $project: {
                 program: 1,
                 answerType: 1,
+                pageLanguage: 1,
                 autoEvalId: '$interactions.autoEval',
                 expertFeedbackId: '$interactions.expertFeedback'
             }
@@ -147,7 +150,9 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
     stages.push({
         $group: {
             _id: '$program',
-            total: { $sum: 1 }
+            total: { $sum: 1 },
+            en: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, 1, 0] } },
+            fr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, 1, 0] } }
         }
     });
     stages.push({ $sort: { total: -1 } });
@@ -172,6 +177,8 @@ async function getProgramMetrics(req, res) {
         const topPrograms = result.map((row) => ({
             program: row._id,
             count: row.total,
+            en: row.en || 0,
+            fr: row.fr || 0,
             programFr: frMap.get(row._id) || ''
         }));
 

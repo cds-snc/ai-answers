@@ -148,18 +148,62 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // the subtitle instead, so it doesn't dominate the axis; real programs are
   // capped at the top N so the long single-count tail drops off. The API returns
   // more (MAX_PROGRAMS) in case another view needs it.
-  const { topProgramsData, unclassifiedCount } = useMemo(() => {
+  // Bars are the % each program is of all *classified* questions, so the
+  // denominator is the classified total across every returned row — not just the
+  // top N shown. The bars therefore don't sum to 100% once the tail is cut,
+  // which is intended. Raw counts (and their EN/FR split) ride along on each row
+  // for the tooltip, since the bar label only carries the percentage.
+  const { topProgramsData, unclassifiedCount, classifiedTotals } = useMemo(() => {
     const rows = metrics.topPrograms || [];
     const unclassified = rows
       .filter((row) => row.program === 'unknown')
       .reduce((acc, row) => acc + (row.count || 0), 0);
-    const bars = rows
-      .filter((row) => row.program !== 'unknown')
+    const classified = rows.filter((row) => row.program !== 'unknown');
+    const totals = classified.reduce((acc, row) => ({
+      total: acc.total + (row.count || 0),
+      en: acc.en + (row.en || 0),
+      fr: acc.fr + (row.fr || 0),
+    }), { total: 0, en: 0, fr: 0 });
+    const bars = classified
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .slice(0, TOP_PROGRAMS_LIMIT)
-      .map((row) => ({ name: (lang === 'fr' && row.programFr) ? row.programFr : row.program, value: row.count }));
-    return { topProgramsData: bars, unclassifiedCount: unclassified };
+      .map((row) => ({
+        name: (lang === 'fr' && row.programFr) ? row.programFr : row.program,
+        value: totals.total > 0 ? Math.round(((row.count || 0) / totals.total) * 100) : 0,
+        count: row.count || 0,
+        en: row.en || 0,
+        fr: row.fr || 0,
+      }));
+    return { topProgramsData: bars, unclassifiedCount: unclassified, classifiedTotals: totals };
   }, [metrics.topPrograms, lang]);
+
+  // Classified total (the % denominator) + its EN/FR split, with the
+  // unclassified count appended when there is one.
+  const programsSubtitle = [
+    t('partnerDashboard.programs.subtitle')
+      .replace('{total}', fmtN(classifiedTotals.total))
+      .replace('{en}', fmtN(classifiedTotals.en))
+      .replace('{fr}', fmtN(classifiedTotals.fr)),
+    ...(unclassifiedCount > 0
+      ? [t('partnerDashboard.programs.unclassifiedNote').replace('{count}', fmtN(unclassifiedCount))]
+      : []),
+  ].join(' · ');
+
+  // Programs tooltip shows the raw count and its EN/FR split — the bar label
+  // already carries the percentage, so repeating it adds nothing.
+  const ProgramBarTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div className="chart-tooltip">
+        <div className="chart-tooltip__title">{row.name}</div>
+        <div>{t('partnerDashboard.programs.tooltipCount').replace('{count}', fmtN(row.count))}</div>
+        <div>{t('partnerDashboard.programs.tooltipLang')
+          .replace('{en}', fmtN(row.en))
+          .replace('{fr}', fmtN(row.fr))}</div>
+      </div>
+    );
+  };
 
   // Top referring pages (distinct conversations / click-throughs per page).
   // Already normalized, merged and ranked server-side; scoped to the selected
@@ -253,10 +297,27 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Answer-quality bar (wide) + answer-accuracy donut beside it. Below 10
+      {/* Answer-accuracy donut + answer-quality bar (wide) beside it. Below 10
           evals both are replaced by placeholders rather than dropped, so the
           reason stays on the page. */}
       <div className="dashboard-row">
+        {evalTotal >= 10 ? (
+          <DonutCard
+            title={t('partnerDashboard.charts.accuracyDonutTitle')}
+            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
+            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
+            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
+            footer={accuracyByLangFooter}
+            lang={lang}
+          />
+        ) : (
+          <NoDataCard
+            title={t('partnerDashboard.charts.accuracyDonutTitle')}
+            message={t('common.notEnoughData')}
+          />
+        )}
         <div className="dashboard-chart-wide">
           {evalTotal >= 10 ? (
             <HBarCard
@@ -279,24 +340,52 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             />
           )}
         </div>
-        {evalTotal >= 10 ? (
-          <DonutCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
-            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
-            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
-            footer={accuracyByLangFooter}
+      </div>
+
+      {/* Question volume by program — ranked bar of the per-question program
+          classification (top N), as a % of all classified questions. Hidden when
+          nothing in range has a real program (pre-feature data is all
+          unclassified). The subtitle carries the classified total the
+          percentages are computed from, its EN/FR split, and the unclassified
+          count — which stays out of the bars so it can't dominate the axis. */}
+      {topProgramsData.length > 0 && (
+        <div className="dashboard-section">
+          <HBarCard
+            title={t('partnerDashboard.programs.title')}
+            subtitle={programsSubtitle}
+            data={topProgramsData}
+            percent
+            tooltipContent={ProgramBarTooltip}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            yAxisWidth={220}
             lang={lang}
           />
-        ) : (
-          <NoDataCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            message={t('common.notEnoughData')}
-          />
-        )}
+        </div>
+      )}
+
+      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-half">
+          {totalConversations >= 10 ? (
+            <DonutCard
+              title={t('partnerDashboard.charts.engagementTitle')}
+              subtitle={t('partnerDashboard.charts.engagementSubtitle')}
+              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+              centreLabel={t('partnerDashboard.charts.conversations')}
+              footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+              lang={lang}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.engagementTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
       </div>
+
 
       {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
           Below 10 responses both are replaced by a single placeholder —
@@ -328,49 +417,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           <NoDataCard
             title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
             message={t('common.notEnoughData')}
-          />
-        </div>
-      )}
-
-      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
-      <div className="dashboard-row">
-        <div className="dashboard-col-half">
-          {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('partnerDashboard.charts.engagementTitle')}
-              subtitle={t('partnerDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('partnerDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
-              lang={lang}
-            />
-          ) : (
-            <NoDataCard
-              title={t('partnerDashboard.charts.engagementTitle')}
-              message={t('common.notEnoughData')}
-            />
-          )}
-        </div>
-      </div>
-
-
-      {/* Question volume by program — ranked bar of the per-question program
-          classification (top N). Hidden when nothing in range has a real
-          program (pre-feature data is all unclassified). The unclassified count
-          is noted in the subtitle rather than shown as a dominating bar. */}
-      {topProgramsData.length > 0 && (
-        <div className="dashboard-section">
-          <HBarCard
-            title={t('partnerDashboard.programs.title')}
-            subtitle={unclassifiedCount > 0
-              ? `${t('partnerDashboard.programs.subtitle')} ${t('partnerDashboard.programs.unclassifiedNote').replace('{count}', fmtN(unclassifiedCount))}`
-              : t('partnerDashboard.programs.subtitle')}
-            data={topProgramsData}
-            noDataLabel={t('partnerDashboard.charts.noData')}
-            yAxisWidth={220}
-            lang={lang}
           />
         </div>
       )}

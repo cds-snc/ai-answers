@@ -205,7 +205,14 @@ const PublicDashboard = ({ lang = 'en' }) => {
               .replace('{en}', fmtN(metrics.totalQuestionsEn))
               .replace('{fr}', fmtN(metrics.totalQuestionsFr))}
           />
+          {/* Expert evaluated sits before content issues: the issues are
+              identified by those evaluators, so the count they came from reads first. */}
           <div className="dashboard-row dashboard-row--nested">
+            <StatCard
+              label={t('publicDashboard.kpi.evaluated')}
+              value={fmtN(expertTotal)}
+              sub={t('publicDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+            />
             <StatCard
               label={t('publicDashboard.kpi.contentIssues')}
               value={fmtN(contentIssue.total)}
@@ -213,12 +220,65 @@ const PublicDashboard = ({ lang = 'en' }) => {
                 .replace('{ni}', fmtN(contentIssue.needsImprovement))
                 .replace('{error}', fmtN(contentIssue.hasError))}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Top institutions: institution count stat card left, bar chart right. */}
+      {departmentData.length > 0 && (
+        <div className="dashboard-row">
+          <div className="dashboard-col-third dashboard-col--equal-height">
             <StatCard
-              label={t('publicDashboard.kpi.evaluated')}
-              value={fmtN(expertTotal)}
-              sub={t('publicDashboard.kpi.evaluatedSub').replace('{pct}', fmtPct(evaluatedPct))}
+              label={t('publicDashboard.kpi.partnerCount')}
+              value={fmtN(byDepartmentCount)}
             />
           </div>
+          <div className="dashboard-chart-wide">
+            <HBarCard
+              title={t('publicDashboard.charts.departmentsTitle')}
+              data={departmentData}
+              colour={COLOURS.brand}
+              lang={lang}
+              yAxisWidth={240}
+              yAxisTextAlign="right"
+              marginLeft={32}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Conversation length donut + median response time beside it.
+          Below 10 conversations the donut becomes a placeholder. */}
+      <div className="dashboard-row">
+        <div className="dashboard-col-half">
+          {totalConversations >= 10 ? (
+            <DonutCard
+              title={t('publicDashboard.charts.engagementTitle')}
+              subtitle={t('publicDashboard.charts.engagementSubtitle')}
+              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
+              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
+              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
+              centreLabel={t('publicDashboard.charts.conversations')}
+              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+              lang={lang}
+            />
+          ) : (
+            <NoDataCard
+              title={t('publicDashboard.charts.engagementTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
+        <div className="dashboard-col-half">
+          <StatCard
+            label={t('publicDashboard.ops.medianResponseTime')}
+            value={hasResponseTime
+              ? t('publicDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
+              : '—'}
+            sub={hasResponseTime
+              ? t('publicDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
+              : undefined}
+          />
         </div>
       </div>
 
@@ -256,70 +316,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
           />
         </div>
       )}
-
-      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
-      <div className="dashboard-row">
-        <div className="dashboard-col-half">
-          {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('publicDashboard.charts.engagementTitle')}
-              subtitle={t('publicDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('publicDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
-              lang={lang}
-            />
-          ) : (
-            <NoDataCard
-              title={t('publicDashboard.charts.engagementTitle')}
-              message={t('common.notEnoughData')}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Top institutions: institution count stat card left, bar chart right. */}
-      {departmentData.length > 0 && (
-        <div className="dashboard-row">
-          <div className="dashboard-col-third dashboard-col--equal-height">
-            <StatCard
-              label={t('publicDashboard.kpi.partnerCount')}
-              value={fmtN(byDepartmentCount)}
-            />
-          </div>
-          <div className="dashboard-chart-wide">
-            <HBarCard
-              title={t('publicDashboard.charts.departmentsTitle')}
-              data={departmentData}
-              colour={COLOURS.brand}
-              lang={lang}
-              yAxisWidth={240}
-              yAxisTextAlign="right"
-              marginLeft={32}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Operations metrics */}
-      <h2 className="dashboard-section-title">
-        {t('publicDashboard.ops.title')}
-      </h2>
-      <div className="dashboard-row">
-        <div className="dashboard-col-third">
-          <StatCard
-            label={t('publicDashboard.ops.medianResponseTime')}
-            value={hasResponseTime
-              ? t('publicDashboard.ops.responseTimeValue').replace('{n}', fmtSec(responseTime.median))
-              : '—'}
-            sub={hasResponseTime
-              ? t('publicDashboard.ops.responseTimeSub').replace('{p95}', fmtSec(responseTime.p95))
-              : undefined}
-          />
-        </div>
-      </div>
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">
