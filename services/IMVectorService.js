@@ -84,7 +84,7 @@ class IMVectorService {
         ...this.filterQuery,
       };
       const qaDocs = await Embedding.find(qaQuery)
-        .select('_id interactionId questionsAnswerEmbedding questionsEmbedding createdAt')
+        .select('_id interactionId questionsAnswerEmbedding questionsEmbedding expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale')
         .lean();
 
       if (!qaDocs.length) {
@@ -105,8 +105,14 @@ class IMVectorService {
         .populate('expertFeedback')
         .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
         .lean();
-      const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? (i.expertFeedback._id?.toString?.() || i.expertFeedback.toString?.() || null) : null]));
-      const interactionToEFScore = new Map(interactions.map(i => [i._id.toString(), (i.expertFeedback && typeof i.expertFeedback.totalScore === 'number') ? Number(i.expertFeedback.totalScore) : null]));
+      const interactionToEF = new Map(interactions.map(i => [
+        i._id.toString(),
+        i.expertFeedback ? (i.expertFeedback._id?.toString() || i.expertFeedback.toString?.() || null) : null,
+      ]));
+      const interactionToEFScore = new Map(interactions.map(i => [
+        i._id.toString(),
+        i.expertFeedback && typeof i.expertFeedback.totalScore === 'number' ? Number(i.expertFeedback.totalScore) : null,
+      ]));
       const interactionToCitation = new Map(interactions.map(i => [i._id.toString(), i.answer && i.answer.citation ? {
         providedCitationUrl: i.answer.citation.providedCitationUrl || null,
         aiCitationUrl: i.answer.citation.aiCitationUrl || null,
@@ -114,11 +120,11 @@ class IMVectorService {
         confidenceRating: i.answer.citation.confidenceRating || null
       } : null]));
 
-      // Filter out QA docs without expertFeedback
-      // Keep QA docs that have an expertFeedback id associated; we'll also track its score
+      // Keep the existing evaluator search pool even when a legacy embedding
+      // has not yet received denormalized metadata. Recency-filtered callers
+      // below require the metadata; unfiltered evaluator searches do not.
       const qaDocsWithEF = qaDocs.filter(doc => {
-        const efId = interactionToEF.get(doc.interactionId?.toString() || '');
-        return !!efId;
+        return !!(doc.expertFeedbackId || interactionToEF.get(doc.interactionId?.toString() || ''));
       });
 
       // Precheck QA if enabled (pure numbers)
@@ -137,8 +143,10 @@ class IMVectorService {
         this.qaDB.add({ id, embedding: vec });
         this.qaMeta.set(id, {
           interactionId: doc.interactionId?.toString() || null,
-          expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
-          expertFeedbackScore: interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
+          expertFeedbackId: doc.expertFeedbackId?.toString() || interactionToEF.get(doc.interactionId?.toString() || '') || null,
+          expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
+          expertFeedbackCreatedAt: doc.expertFeedbackCreatedAt || null,
+          expertFeedbackNeverStale: doc.expertFeedbackNeverStale === true,
           citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
         });
       }
@@ -151,8 +159,10 @@ class IMVectorService {
           this.questionsDB.add({ id: qid, embedding: qvec });
           this.qaMeta.set(qid, {
             interactionId: doc.interactionId?.toString() || null,
-            expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
-            expertFeedbackScore: interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
+            expertFeedbackId: doc.expertFeedbackId?.toString() || interactionToEF.get(doc.interactionId?.toString() || '') || null,
+            expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
+            expertFeedbackCreatedAt: doc.expertFeedbackCreatedAt || null,
+            expertFeedbackNeverStale: doc.expertFeedbackNeverStale === true,
             citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
           });
         }
@@ -276,7 +286,7 @@ class IMVectorService {
   /**
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
-  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
+  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, expertFeedbackTotalScore = null, expertFeedbackCreatedAt = null, expertFeedbackNeverStale = false, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
     // Add QA (questions+answer) embedding
     if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
@@ -285,6 +295,9 @@ class IMVectorService {
       this.qaMeta.set(qaId, {
         interactionId: interactionId?.toString() || null,
         expertFeedbackId: expertFeedbackId?.toString() || null,
+        expertFeedbackScore: expertFeedbackTotalScore,
+        expertFeedbackCreatedAt,
+        expertFeedbackNeverStale: expertFeedbackNeverStale === true,
       });
       this.stats.embeddings++;
     }
@@ -297,6 +310,9 @@ class IMVectorService {
       this.qaMeta.set(qid, {
         interactionId: interactionId?.toString() || null,
         expertFeedbackId: expertFeedbackId?.toString() || null,
+        expertFeedbackScore: expertFeedbackTotalScore,
+        expertFeedbackCreatedAt,
+        expertFeedbackNeverStale: expertFeedbackNeverStale === true,
       });
       this.stats.questions = (this.stats.questions || 0) + 1;
     }
@@ -430,17 +446,19 @@ class IMVectorService {
       const emb = embeddings[questionIndex];
       // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
       const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
-      let results = await searchDb.query(emb, k * 2);
+      const searchLimit = useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0
+        ? searchDb.size()
+        : k * 2;
+      let results = await searchDb.query(emb, searchLimit);
       results = results.sort((a, b) => b.similarity - a.similarity);
       ServerLoggingService.info('matchQuestions raw search results', 'IMVectorService', {
         questionIndex,
         rawCount: Array.isArray(results) ? results.length : 0,
       });
 
-      // Map the top results to the simplified shape but do NOT apply a client-side
-      // similarity threshold. We trust the underlying index to return nearest
-      // neighbors in order. Keep up to k*2 items so we can promote expert-backed
-      // items and then slice down to k.
+      // Map results to the simplified shape. When applying a denormalized
+      // recency filter, retain the full local result set so stale nearest
+      // neighbors cannot starve newer eligible candidates.
       const mapped = [];
       const debugCandidates = [];
       for (const r of results) {
@@ -455,7 +473,7 @@ class IMVectorService {
           similarity: sim,
         });
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
-        if (mapped.length >= k * 2) break;
+        if (!(useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) && mapped.length >= k * 2) break;
       }
       debugPerQuestion.push(debugCandidates);
       ServerLoggingService.info('matchQuestions mapped results', 'IMVectorService', {
@@ -473,6 +491,21 @@ class IMVectorService {
       // whose chat.pageLanguage matches the desired one. If no language was
       // provided, keep existing behavior.
       let filtered = mapped;
+      if (useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) {
+        const cutoff = Date.now() - (recencyDays * 24 * 60 * 60 * 1000);
+        filtered = filtered.filter(m => {
+          const meta = this.qaMeta.get(m.id) || {};
+          if (meta.expertFeedbackNeverStale === true) return true;
+          const feedbackCreatedAt = new Date(meta.expertFeedbackCreatedAt).getTime();
+          return Number.isFinite(feedbackCreatedAt) && feedbackCreatedAt >= cutoff;
+        });
+        ServerLoggingService.info('matchQuestions denormalized recency filter', 'IMVectorService', {
+          questionIndex,
+          recencyDays,
+          beforeCount: mapped.length,
+          afterCount: filtered.length,
+        });
+      }
       if (language) {
         const interactionIds = Array.from(new Set(mapped.map(m => m.interactionId).filter(Boolean)));
         if (interactionIds.length) {

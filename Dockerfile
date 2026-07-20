@@ -24,9 +24,9 @@ ARG APP_VERSION=unknown
 ENV APP_VERSION=${APP_VERSION}
 
 RUN apt-get update \
- && apt-get install -y socat \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y socat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 

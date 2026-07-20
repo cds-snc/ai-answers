@@ -7,6 +7,7 @@
 export const WORKFLOWS = [
   { value: 'GenericGraph', labelKey: 'workflows.generic' },
   { value: 'DefaultWithVectorGraph', labelKey: 'workflows.defaultWithVector' },
+  { value: 'DefaultWithLocalModel', labelKey: 'workflows.defaultWithLocalModel' },
   { value: 'InstantAndQAGraph', labelKey: 'workflows.instantAndQA' },
   { value: 'GenericWithQAGraph', labelKey: 'workflows.genericWithQA' },
 ];

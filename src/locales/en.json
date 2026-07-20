@@ -989,6 +989,7 @@
   "workflows": {
     "generic": "Generic",
     "defaultWithVector": "Instant answer ON",
+    "defaultWithLocalModel": "Local-model instant answer ON",
     "instantAndQA": "Instant answer with context ON",
     "genericWithQA": "Past Q&A context ON"
   },

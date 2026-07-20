@@ -5,7 +5,7 @@ import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import mongoose from 'mongoose';
 import ExperimentalQueueService from './ExperimentalQueueService.js';
 import ExperimentalAnalyzerRegistry from './ExperimentalAnalyzerRegistry.js';
-import { getGraphApp } from '../../agents/graphs/registry.js';
+import * as GraphRegistry from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
@@ -178,6 +178,15 @@ const resolveWorkflowName = (workflow = '') => {
     return WORKFLOW_ALIASES[trimmed] || trimmed;
 };
 
+const getRegisteredWorkflowNames = () => {
+    try {
+        return typeof GraphRegistry.listGraphs === 'function' ? GraphRegistry.listGraphs() : [];
+    } catch {
+        // Some isolated tests mock only getGraphApp.
+        return [];
+    }
+};
+
 const prepareQaPairRowsForComparison = (items, { referenceRunSelected = false } = {}) => items.map((item = {}) => {
     const referenceAnswer = pickExplicitReferenceAnswer(item);
     const uploadedAnswer = pickNormalizedAnswer(item);
@@ -290,6 +299,13 @@ class ExperimentalBatchService {
             const rows = await ExperimentalDatasetRow.find({
                 experimentalDataset: new mongoose.Types.ObjectId(batchData.config.datasetId)
             }).sort({ rowIndex: 1 }).lean();
+
+            console.log('[ExperimentalBatchService] Loaded dataset rows for batch', {
+                datasetId: String(batchData.config.datasetId),
+                datasetType: sourceDatasetType || null,
+                rowCount: rows.length,
+                workflow: batchData.config.workflow || 'DefaultGraph'
+            });
 
             // Check if we are comparing against a previous run
             let baselineRunItems = [];
@@ -459,9 +475,42 @@ class ExperimentalBatchService {
             const shouldGenerateAnswer = batch.type === 'batch'
                 || (batch.type === 'analysis' && !item.answer);
             if (shouldGenerateAnswer) {
-                const graphName = resolveWorkflowName(batch.config.workflow || 'DefaultGraph');
-                const app = await getGraphApp(graphName);
-                if (!app) throw new Error(`Graph ${graphName} not found`);
+                const requestedWorkflow = batch.config.workflow || 'DefaultGraph';
+                const graphName = resolveWorkflowName(requestedWorkflow);
+                console.log('[ExperimentalBatchService] Resolving batch workflow', {
+                    batchId: String(batchId),
+                    itemId: String(itemId),
+                    batchType: batch.type,
+                    requestedWorkflow,
+                    resolvedWorkflow: graphName,
+                    availableWorkflows: getRegisteredWorkflowNames(),
+                    hasAnswer: Boolean(item.answer)
+                });
+
+                let app;
+                try {
+                    app = await GraphRegistry.getGraphApp(graphName);
+                } catch (error) {
+                    console.error('[ExperimentalBatchService] Batch workflow loader failed', {
+                        batchId: String(batchId),
+                        itemId: String(itemId),
+                        requestedWorkflow,
+                        resolvedWorkflow: graphName,
+                        error: error?.stack || error?.message || String(error)
+                    });
+                    throw error;
+                }
+
+                if (!app) {
+                    console.error('[ExperimentalBatchService] Batch workflow was not registered', {
+                        batchId: String(batchId),
+                        itemId: String(itemId),
+                        requestedWorkflow,
+                        resolvedWorkflow: graphName,
+                        availableWorkflows: getRegisteredWorkflowNames()
+                    });
+                    throw new Error(`Graph ${graphName} not found`);
+                }
 
                 const chatId = item.chatId || crypto.randomUUID();
                 const batchUser = batch.createdBy

@@ -256,22 +256,23 @@ const createProgramActionAgent = async (agentType = 'openai-gpt51', chatId = 'sy
   return llm;
 };
 
-// Ranker agent: LLM-only agent that uses the reranker prompt. Supports 'openai' and 'azure'.
+// Ranker agent: GPT-5 mini verifier that uses the reranker prompt.
 const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'azure':
     case 'openai-gpt51':
     case 'openai-gpt51-chat': {
-      // Use the Azure deployment mapped to the mini variant when available
-      const cfg = getModelConfig('azure', 'openai-gpt41');
+      const cfg = getModelConfig('azure', 'openai-gpt5-mini');
       llm = new AzureChatOpenAI({
-        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
-        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
         azureOpenAIApiDeploymentName: cfg.name,
-        temperature: cfg.temperature,
-        maxTokens: 4000,
+        azureOpenAIApiVersion: '2025-04-01-preview',
+        model: cfg.model,
+        reasoning: cfg.reasoning,
+        temperature: undefined,
+        maxCompletionTokens: cfg.maxTokens,
         timeout: cfg.timeoutMs,
       });
       break;
