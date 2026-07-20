@@ -2088,6 +2088,8 @@
         "exportChatLogsError": "Failed to export chat logs",
       "error.NO_REFERENCE": "This analyzer requires a reference answer: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a referenceAnswer column, or select a comparison run.",
+      "error.NO_REFERENCE_INSTANT_ANSWER": "Instant-answer validation requires a golden reference answer: use a dataset with an answer or referenceAnswer column.",
+      "error.WORKFLOW_NO_INSTANT_ANSWER": "Instant-answer validation requires a workflow with an instant-answer step.",
         "error.NO_ITEMS": "Batch has no rows to process.",
         "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
         "error.NOT_FOUND": "Resource not found.",
@@ -2120,6 +2122,10 @@
         "similar-answer": {
           "name": "Similar answer",
           "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a reference run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a reference capture). Select it as the reference for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+        },
+        "instant-answer": {
+          "name": "Instant-answer validation",
+          "description": "Checks that an instant-answer workflow used its short-circuit step and returned an answer identical to the golden reference. The detailed result includes the instant-answer debugging payload."
         }
       }
     },

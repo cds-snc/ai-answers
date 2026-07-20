@@ -4,6 +4,7 @@ import NoOpAnalyzer from './NoOpAnalyzer.js';
 import RefusalAnalyzer from './RefusalAnalyzer.js';
 import SafetyEvaluator from './SafetyEvaluator.js';
 import SimilarAnswerAnalyzer from './SimilarAnswerAnalyzer.js';
+import InstantAnswerAnalyzer from './InstantAnswerAnalyzer.js';
 
 export const analyzerClasses = [
     BiasEvaluator,
@@ -12,6 +13,7 @@ export const analyzerClasses = [
     RefusalAnalyzer,
     SafetyEvaluator,
     SimilarAnswerAnalyzer,
+    InstantAnswerAnalyzer,
 ];
 
 export default analyzerClasses;

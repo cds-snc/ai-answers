@@ -28,6 +28,7 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
     chatId: { type: String },   // Current run chat id
     referenceChatId: { type: String },   // Chat id of the reference comparison row
     referringUrl: { type: String }, // Per-row referring URL context
+    workflowDebugPayload: { type: mongoose.Schema.Types.Mixed }, // Instant-answer node payload for analyzer detail views
 
     // For comparison inputs
     referenceAnswer: { type: String },
