@@ -98,7 +98,7 @@ describe('ExperimentalDatasetService', () => {
         it('stores one original and meaning-preserving variants as independent first turns', async () => {
             const inRange = new Date('2026-06-15T12:00:00.000Z');
             const firstGolden = await createTurn({
-                question: 'What is SCIS?',
+                question: '12. What is SCIS?',
                 answer: 'SCIS is a secure status card.',
                 score: 100,
                 createdAt: inRange,

@@ -23,6 +23,13 @@ const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'pro
 const CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 
+// Chat exports sometimes prefix each question with a row/turn number (for
+// example, "12. What is SCIS?"). The number identifies the source row and is
+// not part of the question that should be sent through instant-answer tests.
+const stripQuestionNumber = (question = '') => String(question)
+    .replace(/^\s*\d{1,3}\s*[.)\-:]\s*/, '')
+    .trim();
+
 export class ValidationError extends Error {
     constructor(errors) {
         super('Validation failed');
@@ -94,7 +101,7 @@ class ExperimentalDatasetService {
             for (const turn of consecutivePerfectTurns.slice(0, lastCandidateIndex + 1)) {
                 rows.push({
                     chatId: chat.chatId,
-                    question: turn.question.redactedQuestion,
+                    question: stripQuestionNumber(turn.question.redactedQuestion),
                     answer: turn.answer.content,
                     ...(turn.referringUrl ? { referringUrl: turn.referringUrl } : {})
                 });
@@ -145,7 +152,7 @@ class ExperimentalDatasetService {
 
             return [{
                 chatId: chat.chatId,
-                question: firstTurn.question.redactedQuestion,
+                question: stripQuestionNumber(firstTurn.question.redactedQuestion),
                 answer: firstTurn.answer.content,
                 ...(firstTurn.referringUrl ? { referringUrl: firstTurn.referringUrl } : {})
             }];
