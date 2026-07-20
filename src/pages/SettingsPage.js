@@ -35,6 +35,8 @@ const SETTINGS_LOAD_DEFAULTS = {
   'session.defaultTTLMinutes': '60',
   'session.rateLimitCapacity': '60',
   'session.rateLimitRefillPerSec': '60',
+  'session.authenticatedRateLimitCapacity': '300',
+  'session.authenticatedRateLimitRefillPerSec': '300',
   'session.maxActiveSessions': '',
   'session.authenticatedTTLMinutes': '60',
   'session.rateLimitPersistence': 'memory',
@@ -125,6 +127,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
   const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
+  const [authenticatedRateLimitCapacity, setAuthenticatedRateLimitCapacity] = useState(300);
+  const [savingAuthenticatedRateLimitCapacity, setSavingAuthenticatedRateLimitCapacity] = useState(false);
+  const [authenticatedRateLimitRefill, setAuthenticatedRateLimitRefill] = useState(300);
+  const [savingAuthenticatedRateLimitRefill, setSavingAuthenticatedRateLimitRefill] = useState(false);
   // Rate-limiter persistence mode.
   const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
   const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
@@ -180,6 +186,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSessionTTL(Number(settings['session.defaultTTLMinutes']));
       setRateLimitCapacity(Number(settings['session.rateLimitCapacity']));
       setRateLimitRefill(Number(settings['session.rateLimitRefillPerSec']));
+      setAuthenticatedRateLimitCapacity(Number(settings['session.authenticatedRateLimitCapacity']));
+      setAuthenticatedRateLimitRefill(Number(settings['session.authenticatedRateLimitRefillPerSec']));
       setMaxActiveSessions(settings['session.maxActiveSessions'] === 'undefined' ? '' : (settings['session.maxActiveSessions'] ?? ''));
       setSessionAuthTTL(Number(settings['session.authenticatedTTLMinutes']));
       const persistenceNorm = (settings['session.rateLimitPersistence'] || '').toString().trim().toLowerCase();
@@ -268,6 +276,30 @@ const SettingsPage = ({ lang = 'en' }) => {
       setRateLimitRefill(Number(saved));
     } finally {
       setSavingRateLimitRefill(false);
+    }
+  };
+
+  const handleAuthenticatedRateLimitCapacityChange = async (e) => {
+    const val = Number(e.target.value);
+    setAuthenticatedRateLimitCapacity(val);
+    setSavingAuthenticatedRateLimitCapacity(true);
+    try {
+      const current = await saveAndVerify('session.authenticatedRateLimitCapacity', String(val), (v) => Number(v));
+      setAuthenticatedRateLimitCapacity(current);
+    } finally {
+      setSavingAuthenticatedRateLimitCapacity(false);
+    }
+  };
+
+  const handleAuthenticatedRateLimitRefillChange = async (e) => {
+    const val = Number(e.target.value);
+    setAuthenticatedRateLimitRefill(val);
+    setSavingAuthenticatedRateLimitRefill(true);
+    try {
+      const current = await saveAndVerify('session.authenticatedRateLimitRefillPerSec', String(val), (v) => Number(v));
+      setAuthenticatedRateLimitRefill(current);
+    } finally {
+      setSavingAuthenticatedRateLimitRefill(false);
     }
   };
 
@@ -1028,6 +1060,16 @@ const SettingsPage = ({ lang = 'en' }) => {
           {t('settings.rateLimiting.rateLimitRefill')}
         </label>
         <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+
+        <label htmlFor="session-authenticated-rate-capacity" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.authenticatedRateLimitCapacity')}
+        </label>
+        <input id="session-authenticated-rate-capacity" type="number" min="1" value={authenticatedRateLimitCapacity} onChange={handleAuthenticatedRateLimitCapacityChange} disabled={savingAuthenticatedRateLimitCapacity} />
+
+        <label htmlFor="session-authenticated-rate-refill" className="mb-200 display-block mt-400">
+          {t('settings.rateLimiting.authenticatedRateLimitRefill')}
+        </label>
+        <input id="session-authenticated-rate-refill" type="number" min="0" step="0.1" value={authenticatedRateLimitRefill} onChange={handleAuthenticatedRateLimitRefillChange} disabled={savingAuthenticatedRateLimitRefill} />
       </GcdsDetails>
       <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200" tabIndex="0">
         <p className="mb-400">{t('settings.redaction.description')}</p>
