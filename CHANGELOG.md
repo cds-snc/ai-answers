@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.165.0](https://github.com/cds-snc/ai-answers/compare/v1.164.0...v1.165.0) (2026-07-20)
+
+
+### Features
+
+* Add function to strip question numbers for instant-answer dataset ([08e8595](https://github.com/cds-snc/ai-answers/commit/08e85958417d44c96cef56c36ae7fad437726fba))
+* add golden answer dataset creation and preview functionality ([7635c46](https://github.com/cds-snc/ai-answers/commit/7635c4682167f8fae709f21a280a7a6e2d8f58e5))
+* add golden answer dataset creation and preview functionality ([4c806bd](https://github.com/cds-snc/ai-answers/commit/4c806bdf7b37af125b86cd1d3984cd3743863cb2))
+* Add instant-answer dataset functionality and related services ([b843229](https://github.com/cds-snc/ai-answers/commit/b8432294c7f263f6d7961467de3d14c272cef6d3))
+* add local model instant-answer workflow ([d4dcc1a](https://github.com/cds-snc/ai-answers/commit/d4dcc1a7b6f39efd32bc5fe2ed289ea128f4bd28))
+* add similarity latency measurement to GraphWorkflowHelper ([a809d80](https://github.com/cds-snc/ai-answers/commit/a809d80660317a76b1fc082003ead198463ccf9b))
+* enhance feedback handling and recency filtering in vector services ([aee1989](https://github.com/cds-snc/ai-answers/commit/aee19890e4b0edaa5dc6414167717bf092f2f3f5))
+* enhance reranker prompt for strict semantic equivalence evaluation ([cb53fb6](https://github.com/cds-snc/ai-answers/commit/cb53fb6c48143037ccc02809d022dc31b42f358e))
+* implement default recency filter and add test for stale matches ([d042d02](https://github.com/cds-snc/ai-answers/commit/d042d024a790bf90b75f1d671c623007307f3470))
+* Implement Instant Answer Analyzer with validation and debugging capabilities ([6e3e81a](https://github.com/cds-snc/ai-answers/commit/6e3e81abaf7281f6ed1e6f64aa8c3fa7ad280d4e))
+* include QA details in local match logs ([560134c](https://github.com/cds-snc/ai-answers/commit/560134c89424feec897ed3406c2de21fe48e95c0))
+* log local similarity selection stages ([3f9d97d](https://github.com/cds-snc/ai-answers/commit/3f9d97d5044c2cac9d8efa248accfbc8fe372779))
+* log local workflow decision payloads ([a161c4b](https://github.com/cds-snc/ai-answers/commit/a161c4be31c08f75a105f5ad392d5f13c27124d9))
+* refactor workflow handling in ExperimentalBatchService and enhance error logging ([0633ed8](https://github.com/cds-snc/ai-answers/commit/0633ed8d7331be030f3b053935a6223a7e1fb266))
+* set default vector similarity threshold in SimilarAnswerService ([21fc7ad](https://github.com/cds-snc/ai-answers/commit/21fc7adf05a0543ee94e00ac484f622f0321ae73))
+* update ranker agent to use GPT-5 mini and add tests for its functionality ([fedfc5f](https://github.com/cds-snc/ai-answers/commit/fedfc5f0daa5528eb103cd6c3a487e97fb69fb7f))
+* use denormalized filters for local matches ([437b843](https://github.com/cds-snc/ai-answers/commit/437b8432492160684916607db7c73fb5c48cac4f))
+
+
+### Bug Fixes
+
+* use question dpublication model for instant answers ([64852b7](https://github.com/cds-snc/ai-answers/commit/64852b7a4f0b4c2ad0c243c53a0951342e7226b1))
+
 ## [1.164.0](https://github.com/cds-snc/ai-answers/compare/v1.163.0...v1.164.0) (2026-07-16)
 
 
