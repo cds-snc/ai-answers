@@ -36,6 +36,8 @@ import experimentalDatasetListHandler from '../api/experimental/experimental-dat
 import experimentalDatasetDeleteHandler from '../api/experimental/experimental-dataset-delete.js';
 import experimentalDatasetRowsHandler from '../api/experimental/experimental-dataset-rows.js';
 import experimentalDatasetExportHandler from '../api/experimental/experimental-dataset-export.js';
+import experimentalGoldenAnswerDatasetHandler from '../api/experimental/experimental-golden-answer-dataset.js';
+import experimentalInstantAnswerDatasetHandler from '../api/experimental/experimental-instant-answer-dataset.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
@@ -322,6 +324,10 @@ app.post('/api/experimental/experimental-dataset-upload', experimentalDatasetUpl
 app.get('/api/experimental/experimental-dataset-list', experimentalDatasetListHandler);
 app.get('/api/experimental/experimental-dataset-rows', experimentalDatasetRowsHandler);
 app.get('/api/experimental/experimental-dataset-export', experimentalDatasetExportHandler);
+app.get('/api/experimental/experimental-golden-answer-dataset', experimentalGoldenAnswerDatasetHandler);
+app.post('/api/experimental/experimental-golden-answer-dataset', experimentalGoldenAnswerDatasetHandler);
+app.get('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
+app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);

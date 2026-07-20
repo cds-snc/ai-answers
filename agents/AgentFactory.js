@@ -285,6 +285,24 @@ const createRankerAgent = async (agentType = 'openai-gpt51', chatId = 'system') 
   return llm;
 };
 
+// Dataset question-variation agent: GPT-5 mini produces controlled paraphrases
+// for instant-answer evaluation datasets. It is separate from the ranker so
+// generation and equivalence scoring remain distinct responsibilities.
+const createQuestionVariationAgent = async () => {
+  const cfg = getModelConfig('azure', 'openai-gpt5-mini');
+  return new AzureChatOpenAI({
+    azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    azureOpenAIApiDeploymentName: cfg.name,
+    azureOpenAIApiVersion: '2025-04-01-preview',
+    model: cfg.model,
+    reasoning: cfg.reasoning,
+    temperature: undefined,
+    maxCompletionTokens: cfg.maxTokens,
+    timeout: cfg.timeoutMs,
+  });
+};
+
 // Eval-analysis agent: LLM-only agent for the partner eval-analysis
 // classification and insight passes. Uses the default chat model. Supports 'openai' and 'azure'.
 // The deployment is a GPT-5 model, so this mirrors createAzureOpenAIAgent's
@@ -541,4 +559,4 @@ const createSafetyLLM = async (agentType = 'azure') => {
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createProgramActionAgent, createJudgeLLM, createSafetyLLM };
+export { createClaudeAgent, createCohereAgent, createAzureOpenAIAgent, createContextAgent, createChatAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createQuestionVariationAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent, createEvalAnalysisAgent, createProgramActionAgent, createJudgeLLM, createSafetyLLM };

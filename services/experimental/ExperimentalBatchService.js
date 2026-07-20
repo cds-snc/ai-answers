@@ -66,6 +66,25 @@ const findAnswerInUpdate = (value) => {
     return '';
 };
 
+const findShortCircuitDebugPayload = (value) => {
+    if (!value || typeof value !== 'object') return null;
+    if (Object.prototype.hasOwnProperty.call(value, 'shortCircuitPayload')) {
+        return { shortCircuit: Boolean(value.shortCircuitPayload), payload: value.shortCircuitPayload || null };
+    }
+    if (Object.prototype.hasOwnProperty.call(value, 'shortCircuit')) {
+        if (typeof value.shortCircuit === 'boolean') {
+            return { shortCircuit: value.shortCircuit, payload: value.payload || null };
+        }
+        const nested = findShortCircuitDebugPayload(value.shortCircuit);
+        return nested || { shortCircuit: false, payload: null };
+    }
+    for (const entry of Object.values(value)) {
+        const found = findShortCircuitDebugPayload(entry);
+        if (found) return found;
+    }
+    return null;
+};
+
 const pickExactField = (item = {}, keys = []) => {
     for (const key of keys) {
         const value = item[key];
@@ -346,7 +365,7 @@ class ExperimentalBatchService {
                     referenceRunSelected: Boolean(batchData.config?.baselineRunId)
                 });
             }
-            const validation = analyzerConfig?.validateBatch(finalItems);
+            const validation = analyzerConfig?.validateBatch(finalItems, batchData.config);
             if (validation && !validation.valid) {
                 throw makeError(validation.localeKey, validation.code, 400);
             }
@@ -521,6 +540,8 @@ class ExperimentalBatchService {
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
                 };
 
+                let workflowDebugPayload = null;
+
                 await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
@@ -528,9 +549,12 @@ class ExperimentalBatchService {
                         if (answerText) {
                             item.answer = answerText;
                         }
+                        const debugPayload = findShortCircuitDebugPayload(update);
+                        if (debugPayload) workflowDebugPayload = debugPayload;
                     }
                 });
                 item.chatId = chatId;
+                item.workflowDebugPayload = workflowDebugPayload;
             }
 
             // 2. Analysis Phase (single analyzer)
@@ -553,7 +577,12 @@ class ExperimentalBatchService {
                             referenceAnalysisResults: item.referenceAnalysisResults,
                             referenceMatch: item.referenceMatch,
                             referenceFlagged: item.referenceFlagged,
-                            config: { ...(batch.config.analyzerConfig || {}), aiProvider: batch.config.aiProvider },
+                            workflowDebugPayload: item.workflowDebugPayload,
+                            config: {
+                                ...(batch.config.analyzerConfig || {}),
+                                aiProvider: batch.config.aiProvider,
+                                workflow: batch.config.workflow
+                            },
                             originalData: {
                                 ...(item.originalData || {}),
                                 status: item.status,

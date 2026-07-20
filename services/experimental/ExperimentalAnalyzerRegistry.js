@@ -21,7 +21,7 @@ class ExperimentalAnalyzerRegistry {
                             ...AnalyzerBase.standardOutputColumns,
                             ...(AnalyzerClass.outputColumns || [])
                         ])],
-                        validateBatch: (items) => AnalyzerClass.validateBatch(items),
+                        validateBatch: (items, config) => AnalyzerClass.validateBatch(items, config),
                         concurrency: AnalyzerClass.concurrency, // Optional hint
                         processor: async (input) => {
                             const instance = new AnalyzerClass(input.config);

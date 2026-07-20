@@ -1860,6 +1860,28 @@
       "title": "Ensembles de données expérimentaux",
       "analyze": "Analyser",
       "uploadNew": "Téléverser un nouvel ensemble de données",
+      "uploadButton": "Téléverser",
+      "createButton": "Créer",
+      "createDatasetTitle": "Créer un ensemble de données",
+      "creationMethodLabel": "Méthode de création",
+      "goldenAnswerMethod": "Réponse de référence",
+      "instantAnswerMethod": "Équivalence des réponses instantanées",
+      "createGoldenAnswer": "Créer un ensemble de réponses de référence",
+      "goldenAnswerDescription": "Créez un ensemble de questions et réponses à partir de clavardages ayant reçu une évaluation experte de 100 % pendant la période sélectionnée.",
+      "instantAnswerDescription": "Créez un ensemble d’essai des réponses instantanées à partir des questions du premier tour ayant reçu une évaluation experte de 100 %. La question originale est conservée et le modèle linguistique crée des variantes de formulation strictement équivalentes avec la même réponse de référence.",
+      "occurrencesPerQuestion": "Occurrences par question",
+      "occurrencesPerQuestionHint": "Comprend la question originale. Choisissez une valeur de 1 à 10.",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "loadingGoldenCount": "Décompte des lignes admissibles...",
+      "goldenRowCount": "Lignes à ajouter : {count}",
+      "instantAnswerRowCount": "Questions admissibles du premier tour : {sources}. Lignes à ajouter : {rows}.",
+      "creatingGoldenAnswer": "Création de l’ensemble de données...",
+      "creatingInstantAnswer": "Génération de questions équivalentes et création de l’ensemble de données...",
+      "goldenAnswerSuccess": "L’ensemble de réponses de référence a été créé avec succès.",
+      "goldenAnswerFailed": "Échec de la création de l’ensemble de réponses de référence.",
+      "instantAnswerSuccess": "L’ensemble d’essai des réponses instantanées a été créé avec succès.",
+      "instantAnswerFailed": "Échec de la création de l’ensemble d’essai des réponses instantanées.",
       "hideUpload": "Masquer le téléversement",
       "upload": "Téléverser un ensemble de données",
       "uploading": "Téléversement en cours...",
@@ -2067,6 +2089,8 @@
         "exportChatLogsError": "Échec de l'exportation des journaux de clavardage",
         "error.NO_REFERENCE": "Cet analyseur nécessite une réponse de référence : utilisez un ensemble de données avec une colonne referenceAnswer, ou sélectionnez une exécution de comparaison.",
         "error.NO_REFERENCE_EXPERT_SCORER": "L'évaluateur expert nécessite une réponse de référence pour évaluer : utilisez un ensemble de données avec une colonne referenceAnswer, ou sélectionnez une exécution de comparaison.",
+        "error.NO_REFERENCE_INSTANT_ANSWER": "La validation de la réponse instantanée nécessite une réponse de référence : utilisez un ensemble de données avec une colonne answer ou referenceAnswer.",
+        "error.WORKFLOW_NO_INSTANT_ANSWER": "La validation de la réponse instantanée nécessite un flux de travail comportant une étape de réponse instantanée.",
         "error.NO_ITEMS": "Le lot ne contient aucune ligne à traiter.",
         "error.BAD_REQUEST": "Requête invalide. Veuillez vérifier votre configuration.",
         "error.NOT_FOUND": "Ressource introuvable.",
@@ -2099,6 +2123,10 @@
         "similar-answer": {
           "name": "Réponse similaire",
           "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de comparaison — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse générée est comparée à la réponse approuvée par l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport à une réponse de référence, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
+        },
+        "instant-answer": {
+          "name": "Validation de la réponse instantanée",
+          "description": "Vérifie qu'un flux de travail de réponse instantanée a utilisé son étape de court-circuit et retourné une réponse identique à la référence. Le résultat détaillé comprend la charge utile de débogage de la réponse instantanée."
         }
       }
     },

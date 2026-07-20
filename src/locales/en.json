@@ -1860,6 +1860,28 @@
       "title": "Experimental Datasets",
       "analyze": "Analyze",
       "uploadNew": "Upload New Dataset",
+      "uploadButton": "Upload",
+      "createButton": "Create",
+      "createDatasetTitle": "Create dataset",
+      "creationMethodLabel": "Creation method",
+      "goldenAnswerMethod": "Golden answer",
+      "instantAnswerMethod": "Instant answer equivalence",
+      "createGoldenAnswer": "Create golden answer dataset",
+      "goldenAnswerDescription": "Create a question and answer dataset from chats with a 100% expert evaluation in the selected date range.",
+      "instantAnswerDescription": "Create an instant-answer test dataset from first-turn questions with a 100% expert evaluation. The original question is retained and the language model creates strictly equivalent wording variants with the same golden answer.",
+      "occurrencesPerQuestion": "Occurrences per question",
+      "occurrencesPerQuestionHint": "Includes the original question. Choose from 1 to 10.",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "loadingGoldenCount": "Counting eligible rows...",
+      "goldenRowCount": "Rows to add: {count}",
+      "instantAnswerRowCount": "Eligible first-turn questions: {sources}. Rows to add: {rows}.",
+      "creatingGoldenAnswer": "Creating dataset...",
+      "creatingInstantAnswer": "Generating equivalent questions and creating dataset...",
+      "goldenAnswerSuccess": "Golden answer dataset created successfully.",
+      "goldenAnswerFailed": "Failed to create golden answer dataset.",
+      "instantAnswerSuccess": "Instant answer test dataset created successfully.",
+      "instantAnswerFailed": "Failed to create instant answer test dataset.",
       "hideUpload": "Hide upload",
       "upload": "Upload Dataset",
       "uploading": "Uploading...",
@@ -2067,6 +2089,8 @@
         "exportChatLogsError": "Failed to export chat logs",
       "error.NO_REFERENCE": "This analyzer requires a reference answer: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a referenceAnswer column, or select a comparison run.",
+      "error.NO_REFERENCE_INSTANT_ANSWER": "Instant-answer validation requires a golden reference answer: use a dataset with an answer or referenceAnswer column.",
+      "error.WORKFLOW_NO_INSTANT_ANSWER": "Instant-answer validation requires a workflow with an instant-answer step.",
         "error.NO_ITEMS": "Batch has no rows to process.",
         "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
         "error.NOT_FOUND": "Resource not found.",
@@ -2099,6 +2123,10 @@
         "similar-answer": {
           "name": "Similar answer",
           "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a reference run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a reference capture). Select it as the reference for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+        },
+        "instant-answer": {
+          "name": "Instant-answer validation",
+          "description": "Checks that an instant-answer workflow used its short-circuit step and returned an answer identical to the golden reference. The detailed result includes the instant-answer debugging payload."
         }
       }
     },

@@ -5,9 +5,13 @@ import { extname } from 'node:path';
 import { ExperimentalDataset } from '../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../models/experimentalDatasetRow.js';
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { Interaction } from '../../models/interaction.js';
+import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { Chat } from '../../models/chat.js';
 import { normalizeObjectId } from '../../api/util/db-query.js';
 import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
 import { EXPLICIT_REFERENCE_ANSWER_ALIASES, hasReferenceAnswerColumn } from './datasetColumns.js';
+import QuestionVariationService from './QuestionVariationService.js';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Keep in sync with the production batch upload (BatchService._extractQuestion)
@@ -18,6 +22,13 @@ const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 const CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
+
+// Chat exports sometimes prefix each question with a row/turn number (for
+// example, "12. What is SCIS?"). The number identifies the source row and is
+// not part of the question that should be sent through instant-answer tests.
+const stripQuestionNumber = (question = '') => String(question)
+    .replace(/^\s*\d{1,3}\s*[.)\-:]\s*/, '')
+    .trim();
 
 export class ValidationError extends Error {
     constructor(errors) {
@@ -35,6 +46,253 @@ export class DuplicateError extends Error {
 }
 
 class ExperimentalDatasetService {
+    _buildDateRange(startDate, endDate) {
+        const start = new Date(`${startDate}T00:00:00.000Z`);
+        const end = new Date(`${endDate}T23:59:59.999Z`);
+        if (!startDate || !endDate || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+            throw new Error('A valid date range is required');
+        }
+        return { createdAt: { $gte: start, $lte: end } };
+    }
+
+    async _getGoldenAnswerRows(startDate, endDate) {
+        const dateFilter = this._buildDateRange(startDate, endDate);
+        const perfectFeedback = await ExpertFeedback.find({ totalScore: 100 }).select('_id').lean();
+        const candidateInteractions = await Interaction.find({
+            ...dateFilter,
+            expertFeedback: { $in: perfectFeedback.map(feedback => feedback._id) },
+            question: { $exists: true, $ne: null },
+            answer: { $exists: true, $ne: null }
+        }).select('_id').lean();
+
+        if (candidateInteractions.length === 0) return [];
+
+        const chats = await Chat.find({
+            interactions: { $in: candidateInteractions.map(interaction => interaction._id) }
+        }).select('chatId interactions').lean();
+        const chatInteractionIds = chats.flatMap(chat => chat.interactions || []);
+        const interactions = await Interaction.find({ _id: { $in: chatInteractionIds } })
+            .select('question answer referringUrl expertFeedback createdAt')
+            .populate({ path: 'question', select: 'redactedQuestion' })
+            .populate({ path: 'answer', select: 'content' })
+            .populate({ path: 'expertFeedback', select: 'totalScore' })
+            .lean();
+        const interactionsById = new Map(interactions.map(interaction => [String(interaction._id), interaction]));
+        const candidateInteractionIds = new Set(candidateInteractions.map(interaction => String(interaction._id)));
+        const rows = [];
+
+        for (const chat of chats) {
+            const orderedTurns = (chat.interactions || [])
+                .map(interactionId => interactionsById.get(String(interactionId)))
+                .filter(Boolean);
+            if (orderedTurns.length === 0) continue;
+            const consecutivePerfectTurns = [];
+            for (const turn of orderedTurns) {
+                if (turn.expertFeedback?.totalScore !== 100) break;
+                if (!turn.question?.redactedQuestion || !turn.answer?.content) break;
+                consecutivePerfectTurns.push(turn);
+            }
+            const lastCandidateIndex = consecutivePerfectTurns.reduce(
+                (lastIndex, turn, index) => candidateInteractionIds.has(String(turn._id)) ? index : lastIndex,
+                -1
+            );
+            if (lastCandidateIndex < 0) continue;
+
+            for (const turn of consecutivePerfectTurns.slice(0, lastCandidateIndex + 1)) {
+                rows.push({
+                    chatId: chat.chatId,
+                    question: stripQuestionNumber(turn.question.redactedQuestion),
+                    answer: turn.answer.content,
+                    ...(turn.referringUrl ? { referringUrl: turn.referringUrl } : {})
+                });
+            }
+        }
+
+        return rows;
+    }
+
+    async _getFirstTurnGoldenAnswerRows(startDate, endDate) {
+        const dateFilter = this._buildDateRange(startDate, endDate);
+        const perfectFeedback = await ExpertFeedback.find({ totalScore: 100 }).select('_id').lean();
+        const candidateInteractions = await Interaction.find({
+            ...dateFilter,
+            expertFeedback: { $in: perfectFeedback.map(feedback => feedback._id) },
+            question: { $exists: true, $ne: null },
+            answer: { $exists: true, $ne: null }
+        }).select('_id').lean();
+
+        if (candidateInteractions.length === 0) return [];
+
+        const candidateIds = candidateInteractions.map(interaction => interaction._id);
+        const candidateIdSet = new Set(candidateIds.map(String));
+        const chats = await Chat.find({ interactions: { $in: candidateIds } })
+            .select('chatId interactions')
+            .lean();
+        const firstTurnIds = chats.map(chat => chat.interactions?.[0]).filter(Boolean);
+        const firstTurns = await Interaction.find({ _id: { $in: firstTurnIds } })
+            .select('question answer referringUrl expertFeedback')
+            .populate({ path: 'question', select: 'redactedQuestion' })
+            .populate({ path: 'answer', select: 'content' })
+            .populate({ path: 'expertFeedback', select: 'totalScore' })
+            .lean();
+        const firstTurnById = new Map(firstTurns.map(turn => [String(turn._id), turn]));
+
+        return chats.flatMap(chat => {
+            const firstTurnId = chat.interactions?.[0];
+            const firstTurn = firstTurnById.get(String(firstTurnId));
+            if (
+                !firstTurn
+                || !candidateIdSet.has(String(firstTurnId))
+                || firstTurn.expertFeedback?.totalScore !== 100
+                || !firstTurn.question?.redactedQuestion
+                || !firstTurn.answer?.content
+            ) {
+                return [];
+            }
+
+            return [{
+                chatId: chat.chatId,
+                question: stripQuestionNumber(firstTurn.question.redactedQuestion),
+                answer: firstTurn.answer.content,
+                ...(firstTurn.referringUrl ? { referringUrl: firstTurn.referringUrl } : {})
+            }];
+        });
+    }
+
+    _normalizeOccurrences(value) {
+        const occurrences = Number(value);
+        if (!Number.isInteger(occurrences) || occurrences < 1 || occurrences > 10) {
+            throw new Error('Occurrences per question must be an integer from 1 to 10');
+        }
+        return occurrences;
+    }
+
+    async previewGoldenAnswerDataset(startDate, endDate) {
+        const rows = await this._getGoldenAnswerRows(startDate, endDate);
+        return { rowCount: rows.length };
+    }
+
+    async previewInstantAnswerDataset(startDate, endDate, occurrencesPerQuestion) {
+        const occurrences = this._normalizeOccurrences(occurrencesPerQuestion);
+        const rows = await this._getFirstTurnGoldenAnswerRows(startDate, endDate);
+        return { sourceRowCount: rows.length, rowCount: rows.length * occurrences };
+    }
+
+    async createGoldenAnswerDataset({ startDate, endDate, name, description, method, type, category, userId }) {
+        const rows = await this._getGoldenAnswerRows(startDate, endDate);
+        if (!name || method !== 'golden-answer' || type !== 'qa-pair') {
+            throw new Error('Name, creation method, and question-and-answer dataset type are required');
+        }
+        const datasetName = String(name).trim();
+        const enteredDescription = String(description || '').trim();
+        const dateRangeDescription = `${startDate} to ${endDate}`;
+        const existing = await ExperimentalDataset.findOne({ name: datasetName });
+        if (existing) {
+            throw new DuplicateError(`Dataset "${datasetName}" already exists`);
+        }
+
+        const dataRows = rows;
+
+        const dataset = await ExperimentalDataset.create({
+            name: datasetName,
+            description: enteredDescription
+                ? `${enteredDescription} (${dateRangeDescription})`
+                : dateRangeDescription,
+            type: 'qa-pair',
+            category: String(category || '').trim(),
+            rowCount: dataRows.length,
+            columns: this._inferColumns(dataRows),
+            sourceType: 'upload',
+            contentHash: this._computeContentHash(dataRows),
+            createdBy: userId
+        });
+
+        try {
+            await ExperimentalDatasetRow.insertMany(dataRows.map((data, index) => ({
+                experimentalDataset: dataset._id,
+                rowIndex: index + 1,
+                pairKey: this._buildPairKey(data),
+                data
+            })));
+        } catch (err) {
+            await ExperimentalDataset.findByIdAndDelete(dataset._id);
+            throw err;
+        }
+
+        return { dataset };
+    }
+
+    async createInstantAnswerDataset({
+        startDate,
+        endDate,
+        name,
+        description,
+        method,
+        type,
+        category,
+        occurrencesPerQuestion,
+        userId
+    }) {
+        if (!String(name || '').trim() || method !== 'instant-answer' || type !== 'qa-pair') {
+            throw new Error('Name, creation method, and question-and-answer dataset type are required');
+        }
+        const occurrences = this._normalizeOccurrences(occurrencesPerQuestion);
+        const datasetName = String(name).trim();
+        const existing = await ExperimentalDataset.findOne({
+            name: { $regex: `^${escapeRegex(datasetName)}$`, $options: 'i' }
+        });
+        if (existing) throw new DuplicateError(`Dataset "${datasetName}" already exists`);
+
+        const sourceRows = await this._getFirstTurnGoldenAnswerRows(startDate, endDate);
+        if (sourceRows.length === 0) throw new Error('No eligible first-turn golden answers were found');
+
+        const variantsByRow = occurrences > 1
+            ? await QuestionVariationService.createVariants(sourceRows, occurrences - 1)
+            : sourceRows.map(() => []);
+        const dataRows = sourceRows.flatMap((sourceRow, sourceIndex) => {
+            const questions = [sourceRow.question, ...variantsByRow[sourceIndex]];
+            return questions.map((question, occurrenceIndex) => ({
+                chatId: `${sourceRow.chatId}::instant-answer-${occurrenceIndex + 1}`,
+                sourceChatId: sourceRow.chatId,
+                sourceQuestion: sourceRow.question,
+                variationIndex: occurrenceIndex,
+                question,
+                answer: sourceRow.answer,
+                ...(sourceRow.referringUrl ? { referringUrl: sourceRow.referringUrl } : {})
+            }));
+        });
+
+        const enteredDescription = String(description || '').trim();
+        const dateRangeDescription = `${startDate} to ${endDate}`;
+        const dataset = await ExperimentalDataset.create({
+            name: datasetName,
+            description: enteredDescription
+                ? `${enteredDescription} (${dateRangeDescription})`
+                : dateRangeDescription,
+            type: 'qa-pair',
+            category: String(category || '').trim(),
+            rowCount: dataRows.length,
+            columns: this._inferColumns(dataRows),
+            sourceType: 'upload',
+            contentHash: this._computeContentHash(dataRows),
+            createdBy: userId
+        });
+
+        try {
+            await ExperimentalDatasetRow.insertMany(dataRows.map((data, index) => ({
+                experimentalDataset: dataset._id,
+                rowIndex: index + 1,
+                pairKey: this._buildPairKey(data),
+                data
+            })));
+        } catch (err) {
+            await ExperimentalDataset.findByIdAndDelete(dataset._id);
+            throw err;
+        }
+
+        return { dataset };
+    }
+
     /**
      * Validate uploaded file and create dataset with rows.
      */
@@ -482,7 +740,7 @@ class ExperimentalDatasetService {
             .sort({ rowIndex: 1 })
             .lean();
 
-        const headers = ['chatId', 'question', 'answer', 'redactedAnswer'];
+        const headers = ['chatId', 'question', 'answer'];
         const csvRows = [
             headers,
             ...rows.map((row) => headers.map((header) => row.data?.[header] ?? ''))
