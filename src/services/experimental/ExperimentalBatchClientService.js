@@ -195,6 +195,31 @@ export const ExperimentalBatchClientService = {
         return await res.json();
     },
 
+    async previewGoldenAnswerDataset(startDate, endDate) {
+        const params = new URLSearchParams({ startDate, endDate });
+        const res = await AuthService.fetch(getApiUrl(`experimental-golden-answer-dataset?${params}`));
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to preview golden answer dataset: ${res.status}`);
+        }
+        return await res.json();
+    },
+
+    async createGoldenAnswerDataset({ startDate, endDate, name, description, method, type, category }) {
+        const res = await AuthService.fetch(getApiUrl('experimental-golden-answer-dataset'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ startDate, endDate, name, description, method, type, category })
+        });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const err = new Error(errBody.error || `Failed to create golden answer dataset: ${res.status}`);
+            err.response = { data: errBody };
+            throw err;
+        }
+        return await res.json();
+    },
+
     /**
      * Delete a dataset
      */

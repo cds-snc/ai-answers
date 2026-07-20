@@ -27,6 +27,8 @@ export const ROUTE_SLUGS = {
   database:                { en: 'database',                     fr: 'base-de-donnees' },
   vector:                  { en: 'vector',                       fr: 'vecteur' },
   connectivity:            { en: 'connectivity',                 fr: 'connectivite' },
+  'experimental-datasets': { en: 'experimental/datasets',         fr: 'experimental/ensembles-de-donnees' },
+  'experimental-create-dataset': { en: 'experimental/create-dataset', fr: 'experimental/creer-ensemble-de-donnees' },
 };
 
 /**

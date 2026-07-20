@@ -441,6 +441,7 @@ describe('ExperimentalDatasetService', () => {
             expect(result.dataset.name).toBe('Export Dataset');
             expect(result.csvText.startsWith('\uFEFF')).toBe(true);
             expect(result.csvText).toContain('chatId,question,answer');
+            expect(result.csvText).not.toContain('redactedAnswer');
             expect(result.csvText).toContain('chat-1,First question?,First answer');
             expect(result.csvText).toContain('chat-2,Second question?,');
         });

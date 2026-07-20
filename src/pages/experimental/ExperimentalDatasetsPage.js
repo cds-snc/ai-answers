@@ -3,6 +3,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
+import { getPath } from '../../utils/routes.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -163,7 +164,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
             <div className="my-400">
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
-                    {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadNew')}
+                    {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
+                </GcdsButton>
+                <GcdsButton
+                    buttonRole="secondary"
+                    onClick={() => { window.location.href = getPath('experimental-create-dataset', lang); }}
+                >
+                    {t('experimental.datasets.createButton')}
                 </GcdsButton>
 
                 {showUpload && (
@@ -316,14 +323,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         <div className="d-flex gap-200">
                                             <GcdsButton
                                                 size="small"
-                                                buttonRole={ds.runCount > 0 ? 'secondary' : 'primary'}
+                                                buttonRole="secondary"
                                                 onClick={() => handleViewDataset(ds._id)}
                                             >
                                             {t('experimental.datasets.analyze')}
                                             </GcdsButton>
                                             <GcdsButton
                                                 size="small"
-                                                buttonRole={ds.runCount > 0 ? 'primary' : 'secondary'}
+                                                buttonRole="secondary"
                                                 onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
                                             >
                                                 {t('experimental.datasets.suiteView')}
