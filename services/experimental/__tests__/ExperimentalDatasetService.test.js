@@ -5,6 +5,12 @@ import ExperimentalDatasetService, { ValidationError, DuplicateError } from '../
 import { ExperimentalDataset } from '../../../models/experimentalDataset.js';
 import { ExperimentalDatasetRow } from '../../../models/experimentalDatasetRow.js';
 import { User } from '../../../models/user.js';
+import { Answer } from '../../../models/answer.js';
+import { Chat } from '../../../models/chat.js';
+import { ExpertFeedback } from '../../../models/expertFeedback.js';
+import { Interaction } from '../../../models/interaction.js';
+import { Question } from '../../../models/question.js';
+import QuestionVariationService from '../QuestionVariationService.js';
 
 describe('ExperimentalDatasetService', () => {
     const userId = new mongoose.Types.ObjectId();
@@ -18,6 +24,12 @@ describe('ExperimentalDatasetService', () => {
         await ExperimentalDataset.deleteMany({});
         await ExperimentalDatasetRow.deleteMany({});
         await User.deleteMany({});
+        await Chat.collection.deleteMany({});
+        await Interaction.collection.deleteMany({});
+        await Question.collection.deleteMany({});
+        await Answer.collection.deleteMany({});
+        await ExpertFeedback.collection.deleteMany({});
+        vi.restoreAllMocks();
     });
 
     const createXlsxBuffer = async (data) => {
@@ -40,6 +52,105 @@ describe('ExperimentalDatasetService', () => {
     };
 
     const createCsvBuffer = (text) => Buffer.from(text, 'utf8');
+
+    const createTurn = async ({ question, answer, score, createdAt, referringUrl = '' }) => {
+        const [questionDoc, answerDoc, feedbackDoc] = await Promise.all([
+            Question.create({ redactedQuestion: question }),
+            Answer.create({ content: answer }),
+            ExpertFeedback.create({ totalScore: score })
+        ]);
+        return Interaction.create({
+            question: questionDoc._id,
+            answer: answerDoc._id,
+            expertFeedback: feedbackDoc._id,
+            referringUrl,
+            createdAt,
+            updatedAt: createdAt
+        });
+    };
+
+    describe('instant answer dataset creation', () => {
+        it('previews only first-turn golden answers and applies the requested occurrence count', async () => {
+            const inRange = new Date('2026-06-15T12:00:00.000Z');
+            const firstGolden = await createTurn({
+                question: 'What is SCIS?', answer: 'SCIS is a secure status card.', score: 100, createdAt: inRange
+            });
+            const secondGolden = await createTurn({
+                question: 'Where do I apply?', answer: 'Apply online.', score: 100, createdAt: inRange
+            });
+            await Chat.create({ chatId: 'eligible-chat', interactions: [firstGolden._id, secondGolden._id] });
+
+            const firstImperfect = await createTurn({
+                question: 'Who qualifies?', answer: 'See the criteria.', score: 80, createdAt: inRange
+            });
+            const laterGolden = await createTurn({
+                question: 'What documents?', answer: 'Provide identification.', score: 100, createdAt: inRange
+            });
+            await Chat.create({ chatId: 'ineligible-chat', interactions: [firstImperfect._id, laterGolden._id] });
+
+            const result = await ExperimentalDatasetService.previewInstantAnswerDataset(
+                '2026-06-01', '2026-06-30', 3
+            );
+
+            expect(result).toEqual({ sourceRowCount: 1, rowCount: 3 });
+        });
+
+        it('stores one original and meaning-preserving variants as independent first turns', async () => {
+            const inRange = new Date('2026-06-15T12:00:00.000Z');
+            const firstGolden = await createTurn({
+                question: 'What is SCIS?',
+                answer: 'SCIS is a secure status card.',
+                score: 100,
+                createdAt: inRange,
+                referringUrl: 'https://www.sac-isc.gc.ca/'
+            });
+            const secondGolden = await createTurn({
+                question: 'Where do I apply?', answer: 'Apply online.', score: 100, createdAt: inRange
+            });
+            await Chat.create({ chatId: 'source-chat', interactions: [firstGolden._id, secondGolden._id] });
+            vi.spyOn(QuestionVariationService, 'createVariants').mockResolvedValue([
+                ['Could you explain what SCIS is?']
+            ]);
+
+            const result = await ExperimentalDatasetService.createInstantAnswerDataset({
+                startDate: '2026-06-01',
+                endDate: '2026-06-30',
+                name: 'Instant answer equivalence',
+                description: 'Reranker test',
+                method: 'instant-answer',
+                type: 'qa-pair',
+                category: 'scis',
+                occurrencesPerQuestion: 2,
+                userId
+            });
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id })
+                .sort({ rowIndex: 1 })
+                .lean();
+
+            expect(result.dataset.rowCount).toBe(2);
+            expect(QuestionVariationService.createVariants).toHaveBeenCalledWith(
+                [expect.objectContaining({ question: 'What is SCIS?', answer: 'SCIS is a secure status card.' })],
+                1
+            );
+            expect(rows.map(row => row.data.question)).toEqual([
+                'What is SCIS?',
+                'Could you explain what SCIS is?'
+            ]);
+            expect(rows.map(row => row.data.answer)).toEqual([
+                'SCIS is a secure status card.',
+                'SCIS is a secure status card.'
+            ]);
+            expect(new Set(rows.map(row => row.data.chatId)).size).toBe(2);
+            expect(rows.every(row => row.data.sourceQuestion === 'What is SCIS?')).toBe(true);
+            expect(rows.every(row => row.data.referringUrl === 'https://www.sac-isc.gc.ca/')).toBe(true);
+        });
+
+        it('rejects occurrence counts outside the supported range', async () => {
+            await expect(ExperimentalDatasetService.previewInstantAnswerDataset(
+                '2026-06-01', '2026-06-30', 11
+            )).rejects.toThrow('integer from 1 to 10');
+        });
+    });
 
 
     describe('createFromUpload', () => {

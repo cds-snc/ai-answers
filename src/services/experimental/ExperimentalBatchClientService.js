@@ -220,6 +220,31 @@ export const ExperimentalBatchClientService = {
         return await res.json();
     },
 
+    async previewInstantAnswerDataset(startDate, endDate, occurrencesPerQuestion) {
+        const params = new URLSearchParams({ startDate, endDate, occurrencesPerQuestion: String(occurrencesPerQuestion) });
+        const res = await AuthService.fetch(getApiUrl(`experimental-instant-answer-dataset?${params}`));
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to preview instant answer dataset: ${res.status}`);
+        }
+        return await res.json();
+    },
+
+    async createInstantAnswerDataset(data) {
+        const res = await AuthService.fetch(getApiUrl('experimental-instant-answer-dataset'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const err = new Error(errBody.error || `Failed to create instant answer dataset: ${res.status}`);
+            err.response = { data: errBody };
+            throw err;
+        }
+        return await res.json();
+    },
+
     /**
      * Delete a dataset
      */

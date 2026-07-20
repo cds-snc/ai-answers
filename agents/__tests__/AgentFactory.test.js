@@ -7,7 +7,7 @@ vi.mock('@langchain/openai', () => ({
 }));
 
 // Import AFTER mocking so the mocks are in place when AgentFactory initializes
-const { createSafetyLLM } = await import('../../agents/AgentFactory.js');
+const { createQuestionVariationAgent, createSafetyLLM } = await import('../../agents/AgentFactory.js');
 const { ChatOpenAI, AzureChatOpenAI } = await import('@langchain/openai');
 
 describe('createSafetyLLM', () => {
@@ -55,5 +55,23 @@ describe('createSafetyLLM', () => {
     it('throws for unknown provider', async () => {
         await expect(createSafetyLLM('unknown-provider'))
             .rejects.toThrow('Unknown agent type for safety: unknown-provider');
+    });
+});
+
+describe('createQuestionVariationAgent', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('uses the Azure GPT-5 mini deployment', async () => {
+        await createQuestionVariationAgent();
+
+        expect(AzureChatOpenAI).toHaveBeenCalledTimes(1);
+        expect(ChatOpenAI).not.toHaveBeenCalled();
+        expect(AzureChatOpenAI.mock.calls[0][0]).toEqual(expect.objectContaining({
+            model: 'gpt-5-mini',
+            temperature: undefined,
+            maxCompletionTokens: 4096
+        }));
     });
 });
