@@ -989,6 +989,7 @@
   "workflows": {
     "generic": "Générique",
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
+    "defaultWithLocalModel": "Réponse instantanée avec modèle local ACTIVÉE",
     "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE",
     "genericWithQA": "Contexte de Q-R antérieures ACTIVÉ"
   },

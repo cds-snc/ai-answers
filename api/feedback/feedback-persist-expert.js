@@ -46,6 +46,9 @@ async function feedbackPersistExpertHandler(req, res) {
       VectorService.addExpertFeedbackEmbedding({
         interactionId: existingInteraction._id,
         expertFeedbackId: expertFeedbackDoc._id,
+        expertFeedbackTotalScore: expertFeedbackDoc.totalScore,
+        expertFeedbackCreatedAt: expertFeedbackDoc.createdAt,
+        expertFeedbackNeverStale: expertFeedbackDoc.neverStale,
         questionsAnswerEmbedding: embedding.questionsAnswerEmbedding,
         questionsEmbedding: embedding.questionsEmbedding,
         sentenceEmbeddings: Array.isArray(sentenceDocs) ? sentenceDocs.map(d => d.embedding) : []

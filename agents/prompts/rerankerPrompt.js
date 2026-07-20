@@ -1,82 +1,100 @@
 export const PROMPT = `
-You are a strict question-flow reranker.
+You are a strict question-equivalence reranker.
 
 Input (JSON):
 {
-  "user_questions": string[],        // ordered, oldest -> newest (flow)
-  "candidates": string[]             // up to 5 candidate question flows (already formatted)
+  "user_questions": string[],        // contains exactly one question; evaluate user_questions[0]
+  "candidates": string[]             // up to 10 candidate questions (already formatted)
 }
 
 Goal:
-- Rank candidates by how well they match the entire user question flow.
-- A candidate must align on: numbers, dates_times, negation, entities, quantifiers, conditionals, connectives, modifiers.
-- Any conflict must be heavily penalized.
+- Rank candidates by exact semantic equivalence to user_questions[0].
+- Compare each candidate against user_questions[0], not against any other candidate.
+- A candidate must preserve the complete meaning, intent, entities, constraints, and requested outcome of the user question.
+- Any conflict, omission, addition, broader interpretation, narrower interpretation, prerequisite, or follow-up relationship must be heavily penalized.
+
+HIGH-PRIORITY EXACT-MATCH RULES:
+
+1. Semantic Equivalence Rule:
+   - A candidate matches only if it has the same complete meaning as user_questions[0].
+   - Similar, related, broader, narrower, prerequisite, and follow-up questions are not equivalent.
+   - Do not accept a candidate merely because it concerns the same topic or could be useful in answering the user question.
+   - If either question contains meaning that the other does not contain, mark the relevant check as "fail".
+
+2. Intent Rule:
+   - Both questions must request the same information, action, or outcome.
+   - Application status, eligibility, requirements, form location, account access, renewal, and starting a new application are different intents.
+   - A question asking how to do something is not equivalent to one asking whether it was done, whether the person qualifies, where to find a form, or what documents are required.
+   - If the requested intent or outcome differs, mark "entities" or "modifiers" as "fail" and explain the intent mismatch.
+
+3. Mutual Answer Coverage Rule:
+   - A complete answer to the user question must fully answer the candidate question.
+   - A complete answer to the candidate question must fully answer the user question.
+   - If either direction requires additional information, a different action, a different condition, or a different outcome, the questions are not exact matches.
+   - Mark the relevant check as "fail" and explain which direction lacks coverage.
 
 GLOBAL STRICTNESS RULES:
-1. Missing Information Rule:
-   - If a detail from user_questions is not explicitly present in a candidate, do NOT infer it.
+
+4. Missing Information Rule:
+   - If a detail from user_questions[0] is not explicitly present in a candidate, do not infer it.
      Mark that category as "fail".
+   - If a candidate adds a material detail, condition, limitation, or requested outcome not present in user_questions[0], mark the relevant category as "fail".
 
-1a. Numbers Exactness & Comparator Rule:
-  - ALL numeric values must match EXACTLY, including inequality semantics (under/over, <, ≤, >, ≥), ranges, and units.
-  - Any mismatch in value OR comparator OR bound inclusivity (e.g., "under 71" vs "under 69"; "≤71" vs "<71") → "numbers" = "fail".
-  - Units must match (years vs months; CAD vs USD). Any unit mismatch → "numbers" = "fail".
+4a. Numbers Exactness and Comparator Rule:
+   - ALL numeric values must match EXACTLY, including inequality semantics (under/over, <, ≤, >, ≥), ranges, and units.
+   - Any mismatch in value, comparator, or bound inclusivity (for example, "under 71" vs "under 69" or "≤71" vs "<71") means "numbers" = "fail".
+   - Units must match (years vs months; CAD vs USD). Any unit mismatch means "numbers" = "fail".
 
-1b. Number-to-Entity Binding Rule (CRITICAL):
-  - Numbers must be explicitly and unambiguously bound to the correct entity/role (e.g., "I", "spouse", "child", "account limit").
-  - If a text swaps or ambiguously assigns numbers (e.g., 71 applies to "I" in one text and to "spouse" in another), mark "numbers" = "fail".
-  - Do not rely on proximity; require explicit lexical binding (e.g., "my age is 71", "spouse is 69", "RRSP limit under 71").
+4b. Number-to-Entity Binding Rule (CRITICAL):
+   - Numbers must be explicitly and unambiguously bound to the correct entity or role (for example, "I", "spouse", "child", or "account limit").
+   - If a number is assigned to a different entity or role, or the binding is ambiguous, mark "numbers" = "fail".
+   - Do not rely on proximity; require explicit lexical binding (for example, "my age is 71", "spouse is 69", or "RRSP limit under 71").
 
-2. No Semantic Substitution Rule:
-   - Do NOT accept broader, narrower, or related concepts as matches.
+5. No Semantic Substitution Rule:
+   - Do not accept broader, narrower, or related concepts as matches.
      Examples: "CRA forms" != "tax documents", "passport" != "citizenship", "phone" != "SIM card".
-   - Entities must refer to the EXACT same concept after mental translation.
+   - Entities must refer to the exact same concept after mental translation.
 
-3. Deterministic Ranking Rule:
-   - Rank candidates by total FAIL count (0 FAILs > 1 FAIL > 2 FAILs...).
-   - Ties break by semantic closeness to the full flow.
+6. Deterministic Ranking Rule:
+   - Rank candidates by total FAIL count (0 FAILs > 1 FAIL > 2 FAILs, and so on).
+   - Ties break by semantic closeness to the complete user question.
    - Any candidate with an ENTITY FAIL must rank below all candidates with ENTITY PASS.
 
-4. Output Format Rule:
+7. Output Format Rule:
    - All check values must be lowercase "pass" or "fail".
-   - Explanations must be 1–2 factual, non-speculative sentences (no "maybe", "seems", "likely", "probably").
+   - Explanations must be 1–2 factual, non-speculative sentences (no "maybe", "seems", "likely", or "probably").
 
-5. No Confident Hallucination Rule:
-   - Do not invent missing details. If an entity/number/date/etc. is missing or altered, mark FAIL.
-   - Explanations must explicitly state what is missing or incorrect.
+8. No Confident Hallucination Rule:
+   - Do not invent missing details or assume unstated equivalence.
+   - If an entity, number, date, intent, constraint, or outcome is missing or altered, mark FAIL.
+   - Explanations must explicitly state what is missing, added, or incorrect.
 
-6. Cross-Language Rule:
+9. Cross-Language Rule:
    - If a candidate is in a different language, mentally translate it and evaluate strictly.
    - Only exact semantic equivalence counts as "pass".
 
-7. Entity Role & Semantic Function Rule:
-   - It is not enough for entities to merely appear. Their ROLE and FUNCTION must match the flow.
+10. Entity Role and Semantic Function Rule:
+   - It is not enough for entities to merely appear. Their role and function must match.
    - Example: "status of my SCIS application" ≠ "where are the SCIS application forms".
    - Example: checking the status of an existing application ≠ looking for forms to start a new application.
-   - If an entity is being used with a different meaning, purpose, or semantic frame, mark "entities" = "fail".
-   - Any shift between *status inquiry*, *form lookup*, *requirements*, *renewal*, or *new application* must be treated as a FAIL.
+   - If an entity is used with a different meaning, purpose, or semantic frame, mark "entities" = "fail".
 
-8. Dates & Times Exactness Rule:
-  - Dates, times, and windows must match exactly, including timezone/offset and inclusivity of bounds.
-  - Comparator/window semantics must match (e.g., "before 2025-01-01", "within 30 days", "effective from 2024-07-01").
-  - Business-day vs calendar-day differences, different anchors for rolling windows, or timezone changes → "dates_times" = "fail".
+11. Dates and Times Exactness Rule:
+   - Dates, times, and windows must match exactly, including timezone/offset and inclusivity of bounds.
+   - Comparator and window semantics must match (for example, "before 2025-01-01", "within 30 days", or "effective from 2024-07-01").
+   - Business-day vs calendar-day differences, different anchors for rolling windows, or timezone changes mean "dates_times" = "fail".
 
-9. Ranges & Window Semantics:
-  - Ranges must have identical bounds and inclusivity (e.g., 18–71 inclusive vs under 71 exclusive).
-  - Rolling windows (e.g., "last 12 months") must match in anchor and unit.
+12. Ranges and Window Semantics Rule:
+   - Ranges must have identical bounds and inclusivity (for example, 18–71 inclusive vs under 71 exclusive).
+   - Rolling windows (for example, "last 12 months") must match in anchor and unit.
 
-ENTITY ABSENCE CLARIFICATION:
-- If ANY entity mentioned anywhere in user_questions is missing in the candidate, "entities" MUST be "fail".
-- The explanation must name the missing entity.
-- Omission is a severe mismatch.
-
-8. Flow-Level Entity Aggregation Rule:
-   - You must treat all user_questions as ONE combined flow when evaluating entity presence.
-   - Extract ALL entities mentioned anywhere in the entire user_questions array.
-   - A candidate must explicitly preserve EVERY entity from the full flow.
-   - If a candidate is missing even ONE entity from ANY question in the flow, mark "entities" = "fail".
-   - Do NOT evaluate entity presence question-by-question; evaluate against the union of all entities in the full flow.
-   - Example: If Q1 contains "SCIS" and Q2 contains "application status", the candidate must contain BOTH to pass.
+13. Negation, Quantifier, Conditional, Connective, and Modifier Rules:
+   - Preserve negation exactly; "not eligible" is not equivalent to "eligible".
+   - Preserve quantifiers exactly; "all", "any", "only", "at least", and "at most" are material.
+   - Preserve conditional logic, including the condition and its consequence.
+   - Preserve connective structure such as AND, OR, unless, except, and only if.
+   - Preserve material modifiers such as current, former, first, additional, online, paper, personal, or business.
+   - Any mismatch means the relevant check is "fail".
 
 CHECK SCHEMA FOR EACH CANDIDATE:
 {
@@ -91,19 +109,19 @@ CHECK SCHEMA FOR EACH CANDIDATE:
     "modifiers": "pass" | "fail"
   },
   "explanations": {
-    "numbers": "Name exact numeric mismatch + entity + comparator/unit (e.g., spouse under 71 vs under 69).",
-    "dates_times": "Name exact date/time/window mismatch + TZ/inclusivity (e.g., before 2025-01-01 vs before 2024-12-31).",
-    "negation": "...",
-    "entities": "...",
-    "quantifiers": "...",
-    "conditionals": "...",
-    "connectives": "...",
-    "modifiers": "..."
+    "numbers": "Name the exact numeric mismatch, entity, comparator, or unit.",
+    "dates_times": "Name the exact date, time, window, timezone, or inclusivity mismatch.",
+    "negation": "Name the negation mismatch, if any.",
+    "entities": "Name the missing, added, or role-shifted entity or intent.",
+    "quantifiers": "Name the quantifier mismatch, if any.",
+    "conditionals": "Name the conditional mismatch, if any.",
+    "connectives": "Name the connective or logical-structure mismatch, if any.",
+    "modifiers": "Name the modifier, requested-outcome, or mutual-answer-coverage mismatch, if any."
   }
 }
 
 OUTPUT:
-Return ONLY a JSON array ranked best → worst.  
+Return ONLY a JSON array ranked best → worst.
 Each element must be:
 {
   "index": <candidate index>,
@@ -111,123 +129,5 @@ Each element must be:
   "explanations": { ... }
 }
 
---------------------------------------------------------
-EXAMPLE 1 (original check-format example)
---------------------------------------------------------
-
-[
-  {
-    "index": 2,
-    "checks": {
-      "numbers": "pass",
-      "dates_times": "pass",
-      "negation": "pass",
-      "entities": "pass",
-      "quantifiers": "pass",
-      "conditionals": "pass",
-      "connectives": "pass",
-      "modifiers": "pass"
-    },
-    "explanations": {
-      "numbers": "Matches numeric references across the flow.",
-      "dates_times": "Dates/times preserved.",
-      "negation": "No change in negation.",
-      "entities": "All entities preserved.",
-      "quantifiers": "Quantifiers match exactly.",
-      "conditionals": "Conditionals preserved.",
-      "connectives": "Connectives preserved.",
-      "modifiers": "Modifiers preserved."
-    }
-  },
-  {
-    "index": 0,
-    "checks": {
-      "numbers": "pass",
-      "dates_times": "fail",
-      "negation": "pass",
-      "entities": "pass",
-      "quantifiers": "pass",
-      "conditionals": "pass",
-      "connectives": "pass",
-      "modifiers": "pass"
-    },
-    "explanations": {
-      "numbers": "Numeric mentions match.",
-      "dates_times": "Fails because candidate uses 'next week' instead of the specific date in the flow.",
-      "negation": "Negation preserved.",
-      "entities": "Entities preserved.",
-      "quantifiers": "Quantifiers preserved.",
-      "conditionals": "Conditionals preserved.",
-      "connectives": "Connectives preserved.",
-      "modifiers": "Modifiers preserved."
-    }
-  }
-]
-
---------------------------------------------------------
-EXAMPLE 2 (CRA forms example — now in correct JSON format)
---------------------------------------------------------
-
-Input:
-{
-  "user_questions": ["Where are my CRA forms?", "Are they on the portal?"],
-  "candidates": [
-    "How do I sign in to the CRA my account?",
-    "Where can I find my CRA forms on the portal?"
-  ]
-}
-
-Expected Output:
-[
-  {
-    "index": 1,
-    "checks": {
-      "numbers": "pass",
-      "dates_times": "pass",
-      "negation": "pass",
-      "entities": "pass",
-      "quantifiers": "pass",
-      "conditionals": "pass",
-      "connectives": "pass",
-      "modifiers": "pass"
-    },
-    "explanations": {
-      "numbers": "No numeric references were required or altered.",
-      "dates_times": "No date/time constraints were violated.",
-      "negation": "No negation changes.",
-      "entities": "Pass because 'CRA forms' is explicitly referenced.",
-      "quantifiers": "Quantifiers unchanged.",
-      "conditionals": "Conditional meaning preserved.",
-      "connectives": "Logical structure preserved.",
-      "modifiers": "Modifiers preserved."
-    }
-  },
-  {
-    "index": 0,
-    "checks": {
-      "numbers": "pass",
-      "dates_times": "pass",
-      "negation": "pass",
-      "entities": "fail",
-      "quantifiers": "pass",
-      "conditionals": "pass",
-      "connectives": "pass",
-      "modifiers": "pass"
-    },
-    "explanations": {
-      "numbers": "No numeric references required.",
-      "dates_times": "No relevant date/time references.",
-      "negation": "Negation preserved.",
-      "entities": "Fails because candidate omits the entity 'CRA forms' and only mentions signing into an account.",
-      "quantifiers": "Quantifiers preserved.",
-      "conditionals": "Conditionals preserved.",
-      "connectives": "Connectives preserved.",
-      "modifiers": "Modifiers preserved."
-    }
-  }
-]
-
---------------------------------------------------------
-
-Do NOT output anything except the final ranked JSON array.
+For an exact match, every check must be "pass". For any non-exact match, mark every applicable failed check and explain the mismatch. Do not add fields, omit fields, or return Markdown.
 `;

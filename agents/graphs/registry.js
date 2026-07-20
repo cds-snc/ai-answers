@@ -1,4 +1,8 @@
 const graphLoaders = {
+  DefaultWithLocalModel: async () => {
+    const mod = await import('./DefaultWithLocalModel.js');
+    return mod.defaultWithLocalModelApp;
+  },
   DefaultWithVectorGraph: async () => {
     const mod = await import('./DefaultWithVectorGraph.js');
     return mod.defaultWithVectorGraphApp;

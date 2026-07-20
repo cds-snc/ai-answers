@@ -224,6 +224,7 @@ export class GraphWorkflowHelper {
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
         englishAnswer: englishAnswerText,
+        historySignature: similarShortCircuit.historySignature || similarShortCircuit.answer?.historySignature || null,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -231,6 +232,7 @@ export class GraphWorkflowHelper {
         citationUrl: aiCitationUrl,
       },
       finalCitationUrl: providedCitationUrl,
+      historySignature: similarShortCircuit.historySignature || null,
       context: scContext,
       chatId,
       pageLanguage: lang,
@@ -239,6 +241,10 @@ export class GraphWorkflowHelper {
       // Optional: the matched chat and interaction identifiers (if available)
       instantAnswerChatId: similarShortCircuit.instantAnswerChatId || null,
       instantAnswerInteractionId: similarShortCircuit.instantAnswerInteractionId || null,
+      vectorMatches: similarShortCircuit.vectorMatches || [],
+      nlpCandidates: similarShortCircuit.nlpCandidates || [],
+      llmSelection: similarShortCircuit.llmSelection || null,
+      similarityLatencyMs: similarShortCircuit.similarityLatencyMs ?? null,
     };
   }
 
@@ -254,6 +260,7 @@ export class GraphWorkflowHelper {
       .filter(Boolean);
     const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
 
+    const similarityStartTime = Date.now();
     const similarJson = await SimilarAnswerService.findSimilarAnswer({
       chatId,
       questions,
@@ -264,6 +271,7 @@ export class GraphWorkflowHelper {
       // defaults to expertFeedbackComparison='eq', so this is an exact-match filter.
       requestedRating: 100,
     });
+    const similarityLatencyMs = Date.now() - similarityStartTime;
 
     if (similarJson && similarJson.answer) {
       const answerText = similarJson.answer;
@@ -284,6 +292,7 @@ export class GraphWorkflowHelper {
           paragraphs: [answerText],
           sentences: [answerText],
           englishAnswer: englishAnswerText,
+          historySignature: similarJson.historySignature || similarJson.answer?.historySignature || null,
           instantAnswerChatId: instantAnswerChatId,
           instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
@@ -293,6 +302,13 @@ export class GraphWorkflowHelper {
         question: userMessage,
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
         sourceCitation: similarJson.citation || null,
+        historySignature: similarJson.historySignature || null,
+        instantAnswerChatId,
+        instantAnswerInteractionId,
+        vectorMatches: similarJson.vectorMatches || [],
+        nlpCandidates: similarJson.nlpCandidates || [],
+        llmSelection: similarJson.llmSelection || null,
+        similarityLatencyMs,
       };
     }
 
