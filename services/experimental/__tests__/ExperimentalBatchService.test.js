@@ -578,6 +578,10 @@ describe('ExperimentalBatchService', () => {
             expect(updatedItem.status).toBe('completed');
             expect(updatedItem.answer).toBe('It is 4');
             expect(updatedItem.chatId).toBeDefined();
+            expect(updatedItem.workflowDebugPayload).toEqual({
+                shortCircuit: false,
+                payload: { reason: 'short-circuit-debug-unavailable' }
+            });
             runSpy.mockRestore();
         });
 

@@ -242,7 +242,15 @@ export const SimilarAnswerService = {
         );
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
-            return null;
+            return {
+                debugPayload: {
+                    shortCircuit: false,
+                    reason: 'no-vector-match',
+                    vectorMatches: [],
+                    nlpCandidates: [],
+                    llmSelection: null,
+                },
+            };
         }
 
         const { interactionById } = await loadInteractions(matches);
@@ -255,13 +263,29 @@ export const SimilarAnswerService = {
             .slice(0, MAX_RERANK_CANDIDATES);
         if (!finalCandidates.length) {
             ServerLoggingService.info('No candidate interactions after vector eligibility filters', 'chat-similar-answer');
-            return null;
+            return {
+                debugPayload: {
+                    shortCircuit: false,
+                    reason: 'no-eligible-interaction',
+                    vectorMatches: matches,
+                    nlpCandidates: [],
+                    llmSelection: null,
+                },
+            };
         }
 
         const { candidateQuestions, orderedEntries } = await buildQuestionFlows(finalCandidates);
         if (!candidateQuestions || candidateQuestions.length === 0) {
             ServerLoggingService.info('No candidate questions available after building chat flows', 'chat-similar-answer');
-            return null;
+            return {
+                debugPayload: {
+                    shortCircuit: false,
+                    reason: 'no-candidate-question-flow',
+                    vectorMatches: matches,
+                    nlpCandidates: [],
+                    llmSelection: null,
+                },
+            };
         }
 
         // Clean up trailing whitespace/newline characters from question strings
@@ -281,7 +305,7 @@ export const SimilarAnswerService = {
                 question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
                 answer,
                 similarity: match.similarity ?? null,
-                score: match.score ?? null,
+                expertFeedbackScore: match.expertFeedbackRating ?? match.score ?? null,
             };
         });
         ServerLoggingService.info(`Invoking local comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
@@ -301,6 +325,22 @@ export const SimilarAnswerService = {
             latencyMs: comparisonResult.metadata?.latencyMs
         });
 
+        const nlpCandidates = comparisonResult.results.map(localResult => {
+            const entry = orderedEntries[localResult.index];
+            const interaction = entry?.candidate?.interaction;
+            return {
+                index: localResult.index,
+                chatId: entry?.chatId || null,
+                interactionId: interaction?._id?.toString?.() || null,
+                question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
+                answer: interaction?.answer?.englishAnswer || interaction?.answer?.paragraphs?.join('\n\n') || interaction?.answer?.content || null,
+                questionFlow: entry?.questionFlow || null,
+                similarity: entry?.candidate?.match?.similarity ?? null,
+                localScore: localResult.score ?? null,
+                localRecommendation: localResult.recommendation ?? 'reject',
+            };
+        });
+
         // The local model filters candidates. Send every threshold-passing
         // candidate, in Quora rank order, to the LLM for final ranking.
         const acceptedLocalResults = comparisonResult.results
@@ -309,7 +349,15 @@ export const SimilarAnswerService = {
 
         if (!acceptedLocalResults.length) {
             ServerLoggingService.info('Local comparator produced no accepted match; continuing normal flow', 'chat-similar-answer');
-            return null;
+            return {
+                debugPayload: {
+                    shortCircuit: false,
+                    reason: 'local-model-rejected',
+                    vectorMatches,
+                    nlpCandidates,
+                    llmSelection: null,
+                },
+            };
         }
 
         const llmCandidateQuestions = acceptedLocalResults.map(
@@ -334,7 +382,19 @@ export const SimilarAnswerService = {
                 localScores: acceptedLocalResults.map(result => result.score),
                 llmError: llmResult.metadata?.error || null,
             });
-            return null;
+            return {
+                debugPayload: {
+                    shortCircuit: false,
+                    reason: 'llm-rejected',
+                    vectorMatches,
+                    nlpCandidates,
+                    llmSelection: {
+                        accepted: false,
+                        results: llmResult.results || [],
+                        metadata: llmResult.metadata || {},
+                    },
+                },
+            };
         }
         const topResult = acceptedLocalResults[llmConfirmation.index];
         const topIndex = topResult.index;
@@ -366,21 +426,6 @@ export const SimilarAnswerService = {
             { sender: 'ai', text: formatted.text }
         ]);
 
-        const nlpCandidates = comparisonResult.results.map(localResult => {
-            const entry = orderedEntries[localResult.index];
-            const interaction = entry?.candidate?.interaction;
-            return {
-                index: localResult.index,
-                chatId: entry?.chatId || null,
-                interactionId: interaction?._id?.toString?.() || null,
-                question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
-                answer: interaction?.answer?.englishAnswer || interaction?.answer?.paragraphs?.join('\n\n') || interaction?.answer?.content || null,
-                questionFlow: entry?.questionFlow || null,
-                vectorSimilarity: entry?.candidate?.match?.similarity ?? null,
-                localScore: localResult.score ?? null,
-                localRecommendation: localResult.recommendation ?? 'reject',
-            };
-        });
         const selectedCandidate = nlpCandidates.find(candidate => candidate.index === topIndex) || null;
 
         return {
@@ -398,6 +443,7 @@ export const SimilarAnswerService = {
                 ...selectedCandidate,
                 accepted: true,
                 checks: confirmedChecks,
+                results: llmResult.results || [],
                 metadata: llmResult.metadata || {},
             },
             historySignature

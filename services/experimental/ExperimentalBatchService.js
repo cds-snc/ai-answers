@@ -68,6 +68,9 @@ const findAnswerInUpdate = (value) => {
 
 const findShortCircuitDebugPayload = (value) => {
     if (!value || typeof value !== 'object') return null;
+    if (Object.prototype.hasOwnProperty.call(value, 'shortCircuitDebugPayload')) {
+        return { shortCircuit: false, payload: value.shortCircuitDebugPayload || null };
+    }
     if (Object.prototype.hasOwnProperty.call(value, 'shortCircuitPayload')) {
         return { shortCircuit: Boolean(value.shortCircuitPayload), payload: value.shortCircuitPayload || null };
     }
@@ -554,7 +557,13 @@ class ExperimentalBatchService {
                     }
                 });
                 item.chatId = chatId;
-                item.workflowDebugPayload = workflowDebugPayload;
+                // A workflow without an instant-answer node will not emit this
+                // state, but the analyzer detail must never present an opaque
+                // empty payload. Preserve that distinction explicitly.
+                item.workflowDebugPayload = workflowDebugPayload || {
+                    shortCircuit: false,
+                    payload: { reason: 'short-circuit-debug-unavailable' }
+                };
             }
 
             // 2. Analysis Phase (single analyzer)

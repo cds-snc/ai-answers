@@ -765,21 +765,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(batch.createdAt))}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
-                                        {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
-                                                {t('experimental.analysis.viewResults')}
-                                            </GcdsButton>
-                                        )}
-                                        {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
-                                                {t('experimental.analysis.export')}
-                                            </GcdsButton>
-                                        )}
-                                        {batch.status !== 'processing' && (
-                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>
-                                                {t('experimental.analysis.exportChatLogs')}
-                                            </GcdsButton>
-                                        )}
+                                        <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
+                                            {t('experimental.analysis.viewResults')}
+                                        </GcdsButton>
+                                        <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
+                                            {t('experimental.analysis.export')}
+                                        </GcdsButton>
+                                        <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>
+                                            {t('experimental.analysis.exportChatLogs')}
+                                        </GcdsButton>
                                         {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
                                             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
                                                 {t('experimental.analysis.resume')}
