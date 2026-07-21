@@ -47,8 +47,9 @@ class EvalAnalysisService {
     return data.analysis;
   }
 
-  static async get(analysisId) {
-    const data = await this._request(getApiUrl(`eval-analysis-get?analysisId=${encodeURIComponent(analysisId)}`));
+  static async get(analysisId, { includeRows = false } = {}) {
+    const rowsParam = includeRows ? '&includeRows=true' : '';
+    const data = await this._request(getApiUrl(`eval-analysis-get?analysisId=${encodeURIComponent(analysisId)}${rowsParam}`));
     return data.analysis;
   }
 

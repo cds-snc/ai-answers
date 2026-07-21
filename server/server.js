@@ -34,6 +34,7 @@ import experimentalBatchProgressHandler from '../api/experimental/experimental-b
 import experimentalDatasetUploadHandler from '../api/experimental/experimental-dataset-upload.js';
 import experimentalDatasetListHandler from '../api/experimental/experimental-dataset-list.js';
 import experimentalDatasetDeleteHandler from '../api/experimental/experimental-dataset-delete.js';
+import experimentalDatasetProcessHandler from '../api/experimental/experimental-dataset-process.js';
 import experimentalDatasetRowsHandler from '../api/experimental/experimental-dataset-rows.js';
 import experimentalDatasetExportHandler from '../api/experimental/experimental-dataset-export.js';
 import experimentalGoldenAnswerDatasetHandler from '../api/experimental/experimental-golden-answer-dataset.js';
@@ -329,6 +330,7 @@ app.post('/api/experimental/experimental-golden-answer-dataset', experimentalGol
 app.get('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
+app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
@@ -390,6 +392,8 @@ const PORT = process.env.PORT || 3001;
   try {
     const { default: ExperimentalBatchService } = await import('../services/experimental/ExperimentalBatchService.js');
     await ExperimentalBatchService.initialize();
+    const { default: ExperimentalDatasetService } = await import('../services/experimental/ExperimentalDatasetService.js');
+    await ExperimentalDatasetService.initialize();
 
     await dbConnect();
     console.log("Database service started...");

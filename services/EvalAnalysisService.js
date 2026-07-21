@@ -228,9 +228,11 @@ class EvalAnalysisServiceClass {
         return toClientDoc(doc);
     }
 
-    async getAnalysis(analysisId) {
+    async getAnalysis(analysisId, { includeRows = false } = {}) {
         await dbConnect();
-        const doc = await EvalAnalysis.findById(analysisId).lean();
+        const query = EvalAnalysis.findById(analysisId);
+        if (!includeRows) query.select('-rows');
+        const doc = await query.lean();
         if (!doc) {
             const err = new Error('Analysis not found');
             err.code = 'notFound';

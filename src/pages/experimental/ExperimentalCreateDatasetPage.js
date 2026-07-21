@@ -59,18 +59,21 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
         setMessage(null);
         try {
             const request = { startDate, endDate, name, description, method, type, category };
+            let created;
             if (method === 'instant-answer') {
-                await ExperimentalBatchClientService.createInstantAnswerDataset({
+                created = await ExperimentalBatchClientService.createInstantAnswerDataset({
                     ...request,
                     occurrencesPerQuestion: Number(occurrencesPerQuestion)
                 });
             } else {
-                await ExperimentalBatchClientService.createGoldenAnswerDataset(request);
+                created = await ExperimentalBatchClientService.createGoldenAnswerDataset(request);
             }
             setMessage({
                 type: 'success',
                 text: method === 'instant-answer'
-                    ? t('experimental.datasets.instantAnswerSuccess')
+                    ? created?.dataset?.creationStatus === 'queued'
+                        ? t('experimental.datasets.instantAnswerQueued')
+                        : t('experimental.datasets.instantAnswerSuccess')
                     : t('experimental.datasets.goldenAnswerSuccess')
             });
         } catch (err) {

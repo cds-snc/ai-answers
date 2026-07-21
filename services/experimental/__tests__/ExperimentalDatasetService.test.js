@@ -123,11 +123,20 @@ describe('ExperimentalDatasetService', () => {
                 occurrencesPerQuestion: 2,
                 userId
             });
+            expect(result.dataset.creationStatus).toBe('queued');
+            await ExperimentalDatasetService.processInstantAnswerDataset(result.dataset._id, {
+                startDate: '2026-06-01',
+                endDate: '2026-06-30',
+                occurrencesPerQuestion: 2,
+                runId: result.dataset.creationRunId
+            });
+            const completedDataset = await ExperimentalDataset.findById(result.dataset._id).lean();
             const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id })
                 .sort({ rowIndex: 1 })
                 .lean();
 
-            expect(result.dataset.rowCount).toBe(2);
+            expect(completedDataset.rowCount).toBe(2);
+            expect(completedDataset.creationStatus).toBe('complete');
             expect(QuestionVariationService.createVariants).toHaveBeenCalledWith(
                 [expect.objectContaining({ question: 'What is SCIS?', answer: 'SCIS is a secure status card.' })],
                 1

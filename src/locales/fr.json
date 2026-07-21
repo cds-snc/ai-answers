@@ -1418,6 +1418,8 @@
       "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
       "tooMany": "Trop d'évaluations pour une seule analyse — réduisez la plage de dates jusqu'à {max} ou moins ({count} correspondent actuellement).",
       "runButton": "Lancer l'analyse des évaluations",
+      "viewRunning": "Afficher les résultats actuels",
+      "exportRunning": "Exporter les résultats actuels",
       "error": "L'analyse a échoué. Des résultats partiels peuvent être affichés ci-dessous.",
       "running": {
         "preparing": "Préparation de l'analyse…",
@@ -1448,7 +1450,11 @@
         "excluded": "{count} sans note exclues des statistiques de résultats",
         "unclassified": "{count} n'ont pas pu être classées par programme",
         "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
+        "running": "Cette analyse est toujours en cours ({status}). Les résultats ci-dessous sont partiels.",
         "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
+        "rowsTitle": "Détails des évaluations",
+        "viewRowData": "Afficher toutes les données de la ligne",
+        "noValue": "Non disponible",
         "programActionsTitle": "Résultats par programme et action",
         "colProgramAction": "Programme — action",
         "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
@@ -1471,6 +1477,11 @@
         },
         "evaluatorsTitle": "Évaluateurs",
         "colEvaluator": "Évaluateur",
+        "colQuestion": "Question",
+        "colScore": "Note",
+        "colProgram": "Programme",
+        "colAction": "Action",
+        "colDetails": "Détails",
         "flagged": "À examiner"
       }
     }
@@ -1883,6 +1894,7 @@
       "goldenAnswerSuccess": "L’ensemble de réponses de référence a été créé avec succès.",
       "goldenAnswerFailed": "Échec de la création de l’ensemble de réponses de référence.",
       "instantAnswerSuccess": "L’ensemble d’essai des réponses instantanées a été créé avec succès.",
+      "instantAnswerQueued": "La création de l’ensemble de données de réponses instantanées a été mise en file d’attente. Vous pouvez suivre son état sur la page des ensembles de données.",
       "instantAnswerFailed": "Échec de la création de l’ensemble d’essai des réponses instantanées.",
       "hideUpload": "Masquer le téléversement",
       "upload": "Téléverser un ensemble de données",
@@ -1930,6 +1942,16 @@
         "chatId": { "field": "ID de conversation", "variants": "chatId" }
       },
       "rowCount": "Lignes",
+      "creationStatus": {
+        "title": "État de la création",
+        "queued": "En file d'attente",
+        "processing": "En traitement",
+        "complete": "Terminée",
+        "failed": "Échouée"
+      },
+      "startAgain": "Relancer le traitement",
+      "processing": "Démarrage…",
+      "processFailed": "Échec de la relance du traitement de l’ensemble de données.",
       "created": "Créé le",
       "existing": "Ensembles de données existants",
       "loading": "Chargement des ensembles de données...",

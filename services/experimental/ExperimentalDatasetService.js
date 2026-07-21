@@ -12,6 +12,9 @@ import { normalizeObjectId } from '../../api/util/db-query.js';
 import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
 import { EXPLICIT_REFERENCE_ANSWER_ALIASES, hasReferenceAnswerColumn } from './datasetColumns.js';
 import QuestionVariationService from './QuestionVariationService.js';
+import ExperimentalQueueService from './ExperimentalQueueService.js';
+
+const DATASET_QUEUE_NAME = 'experimental-dataset-processing';
 
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Keep in sync with the production batch upload (BatchService._extractQuestion)
@@ -222,6 +225,18 @@ class ExperimentalDatasetService {
         return { dataset };
     }
 
+    async initialize() {
+        ExperimentalQueueService.registerProcessor(DATASET_QUEUE_NAME, async (job) => {
+            const { datasetId, startDate, endDate, occurrencesPerQuestion, runId } = job.data;
+            return this.processInstantAnswerDataset(datasetId, {
+                startDate,
+                endDate,
+                occurrencesPerQuestion,
+                runId
+            });
+        }, { concurrency: 1 });
+    }
+
     async createInstantAnswerDataset({
         startDate,
         endDate,
@@ -243,27 +258,9 @@ class ExperimentalDatasetService {
         });
         if (existing) throw new DuplicateError(`Dataset "${datasetName}" already exists`);
 
-        const sourceRows = await this._getFirstTurnGoldenAnswerRows(startDate, endDate);
-        if (sourceRows.length === 0) throw new Error('No eligible first-turn golden answers were found');
-
-        const variantsByRow = occurrences > 1
-            ? await QuestionVariationService.createVariants(sourceRows, occurrences - 1)
-            : sourceRows.map(() => []);
-        const dataRows = sourceRows.flatMap((sourceRow, sourceIndex) => {
-            const questions = [sourceRow.question, ...variantsByRow[sourceIndex]];
-            return questions.map((question, occurrenceIndex) => ({
-                chatId: `${sourceRow.chatId}::instant-answer-${occurrenceIndex + 1}`,
-                sourceChatId: sourceRow.chatId,
-                sourceQuestion: sourceRow.question,
-                variationIndex: occurrenceIndex,
-                question,
-                answer: sourceRow.answer,
-                ...(sourceRow.referringUrl ? { referringUrl: sourceRow.referringUrl } : {})
-            }));
-        });
-
         const enteredDescription = String(description || '').trim();
         const dateRangeDescription = `${startDate} to ${endDate}`;
+        const runId = crypto.randomUUID();
         const dataset = await ExperimentalDataset.create({
             name: datasetName,
             description: enteredDescription
@@ -271,26 +268,127 @@ class ExperimentalDatasetService {
                 : dateRangeDescription,
             type: 'qa-pair',
             category: String(category || '').trim(),
-            rowCount: dataRows.length,
-            columns: this._inferColumns(dataRows),
+            rowCount: 0,
+            columns: [],
             sourceType: 'upload',
-            contentHash: this._computeContentHash(dataRows),
-            createdBy: userId
+            createdBy: userId,
+            creationStatus: 'queued',
+            creationConfig: { startDate, endDate, occurrencesPerQuestion: occurrences },
+            creationRunId: runId
         });
 
         try {
+            await ExperimentalQueueService.enqueue(DATASET_QUEUE_NAME, {
+                datasetId: dataset._id.toString(),
+                startDate,
+                endDate,
+                occurrencesPerQuestion: occurrences,
+                runId
+            }, { jobId: `instant-answer-dataset-${dataset._id}-${runId}` });
+        } catch (err) {
+            await ExperimentalDataset.updateOne(
+                { _id: dataset._id },
+                { $set: { creationStatus: 'failed', creationError: err?.message || 'Failed to queue dataset creation' } }
+            );
+            throw err;
+        }
+
+        return { dataset };
+    }
+
+    async queueInstantAnswerDataset(datasetId, { force = false } = {}) {
+        const dataset = await ExperimentalDataset.findById(datasetId);
+        if (!dataset) throw new Error('Dataset not found');
+        if (dataset.creationStatus === 'complete') return { dataset, queued: false };
+        if (dataset.creationStatus === 'processing') {
+            const staleAfterMs = 10 * 60 * 1000;
+            if (Date.now() - new Date(dataset.updatedAt).getTime() < staleAfterMs) {
+                const err = new Error('Dataset is still processing');
+                err.code = 'stillProcessing';
+                throw err;
+            }
+        }
+        const config = dataset.creationConfig || {};
+        const runId = crypto.randomUUID();
+        await ExperimentalDataset.updateOne(
+            { _id: dataset._id },
+            { $set: { creationStatus: 'queued', creationError: '', creationRunId: runId } }
+        );
+        try {
+            await ExperimentalQueueService.enqueue(DATASET_QUEUE_NAME, {
+                datasetId: dataset._id.toString(),
+                ...config,
+                runId
+            }, { jobId: `instant-answer-dataset-${dataset._id}-${runId}` });
+        } catch (err) {
+            await ExperimentalDataset.updateOne(
+                { _id: dataset._id, creationRunId: runId },
+                { $set: { creationStatus: 'failed', creationError: err?.message || 'Failed to queue dataset creation' } }
+            );
+            throw err;
+        }
+        const queued = await ExperimentalDataset.findById(dataset._id).lean();
+        return { dataset: queued, queued: true };
+    }
+
+    async processInstantAnswerDataset(datasetId, { startDate, endDate, occurrencesPerQuestion, runId }) {
+        const dataset = await ExperimentalDataset.findById(datasetId);
+        if (!dataset) throw new Error('Dataset not found');
+        if (dataset.creationStatus === 'complete') return { datasetId, status: 'complete' };
+        if (runId && dataset.creationRunId !== runId) return { datasetId, status: 'stale' };
+
+        await ExperimentalDataset.updateOne(
+            { _id: dataset._id, creationRunId: runId },
+            { $set: { creationStatus: 'processing', creationError: '' } }
+        );
+
+        try {
+            const sourceRows = await this._getFirstTurnGoldenAnswerRows(startDate, endDate);
+            if (sourceRows.length === 0) throw new Error('No eligible first-turn golden answers were found');
+            const occurrences = this._normalizeOccurrences(occurrencesPerQuestion);
+            const variantsByRow = occurrences > 1
+                ? await QuestionVariationService.createVariants(sourceRows, occurrences - 1)
+                : sourceRows.map(() => []);
+            const dataRows = sourceRows.flatMap((sourceRow, sourceIndex) => {
+                const questions = [sourceRow.question, ...variantsByRow[sourceIndex]];
+                return questions.map((question, occurrenceIndex) => ({
+                    chatId: `${sourceRow.chatId}::instant-answer-${occurrenceIndex + 1}`,
+                    sourceChatId: sourceRow.chatId,
+                    sourceQuestion: sourceRow.question,
+                    variationIndex: occurrenceIndex,
+                    question,
+                    answer: sourceRow.answer,
+                    ...(sourceRow.referringUrl ? { referringUrl: sourceRow.referringUrl } : {})
+                }));
+            });
+
+            const current = await ExperimentalDataset.findOne({ _id: dataset._id, creationRunId: runId }).lean();
+            if (!current) return { datasetId, status: 'stale' };
+            await ExperimentalDatasetRow.deleteMany({ experimentalDataset: dataset._id });
             await ExperimentalDatasetRow.insertMany(dataRows.map((data, index) => ({
                 experimentalDataset: dataset._id,
                 rowIndex: index + 1,
                 pairKey: this._buildPairKey(data),
                 data
             })));
+            await ExperimentalDataset.updateOne(
+                { _id: dataset._id, creationRunId: runId },
+                { $set: {
+                    rowCount: dataRows.length,
+                    columns: this._inferColumns(dataRows),
+                    contentHash: this._computeContentHash(dataRows),
+                    creationStatus: 'complete',
+                    creationError: ''
+                } }
+            );
+            return { datasetId, status: 'complete' };
         } catch (err) {
-            await ExperimentalDataset.findByIdAndDelete(dataset._id);
+            await ExperimentalDataset.updateOne(
+                { _id: dataset._id, creationRunId: runId },
+                { $set: { creationStatus: 'failed', creationError: err?.message || 'Dataset creation failed' } }
+            );
             throw err;
         }
-
-        return { dataset };
     }
 
     /**

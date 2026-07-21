@@ -1418,6 +1418,8 @@
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
       "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
       "runButton": "Run eval analysis",
+      "viewRunning": "View current results",
+      "exportRunning": "Export current results",
       "error": "The analysis failed. Partial results may be shown below.",
       "running": {
         "preparing": "Preparing analysis…",
@@ -1448,7 +1450,11 @@
         "excluded": "{count} without a score excluded from score statistics",
         "unclassified": "{count} could not be classified by program",
         "partial": "This analysis did not finish — the results below are partial.",
+        "running": "This analysis is still running ({status}). The results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
+        "rowsTitle": "Evaluation details",
+        "viewRowData": "View all row data",
+        "noValue": "Not available",
         "programActionsTitle": "Scores by program and action",
         "colProgramAction": "Program — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
@@ -1471,6 +1477,11 @@
         },
         "evaluatorsTitle": "Evaluators",
         "colEvaluator": "Evaluator",
+        "colQuestion": "Question",
+        "colScore": "Score",
+        "colProgram": "Program",
+        "colAction": "Action",
+        "colDetails": "Details",
         "flagged": "Review"
       }
     }
@@ -1883,6 +1894,7 @@
       "goldenAnswerSuccess": "Golden answer dataset created successfully.",
       "goldenAnswerFailed": "Failed to create golden answer dataset.",
       "instantAnswerSuccess": "Instant answer test dataset created successfully.",
+      "instantAnswerQueued": "Instant answer dataset creation has been queued. You can monitor its status on the datasets page.",
       "instantAnswerFailed": "Failed to create instant answer test dataset.",
       "hideUpload": "Hide upload",
       "upload": "Upload Dataset",
@@ -1930,6 +1942,16 @@
         "chatId": { "field": "Chat ID", "variants": "chatId" }
       },
       "rowCount": "Rows",
+      "creationStatus": {
+        "title": "Creation status",
+        "queued": "Queued",
+        "processing": "Processing",
+        "complete": "Complete",
+        "failed": "Failed"
+      },
+      "startAgain": "Start processing again",
+      "processing": "Starting...",
+      "processFailed": "Failed to restart dataset processing.",
       "created": "Created",
       "existing": "Existing Datasets",
       "loading": "Loading datasets...",

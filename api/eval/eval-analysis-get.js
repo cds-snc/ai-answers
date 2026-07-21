@@ -15,7 +15,8 @@ async function handler(req, res) {
             return res.status(400).json({ message: 'Missing analysisId' });
         }
         analysisId = requireObjectIdString(analysisId, 'analysisId');
-        const analysis = await EvalAnalysisService.getAnalysis(analysisId);
+        const includeRows = req.query.includeRows === 'true';
+        const analysis = await EvalAnalysisService.getAnalysis(analysisId, { includeRows });
         return res.status(200).json({ analysis });
     } catch (err) {
         try {

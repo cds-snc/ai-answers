@@ -16,6 +16,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtScore = (n) => (typeof n === 'number' ? formatDecimal(n, lang, 1) : '—');
   const pctOrDash = (n) => (n !== null && n !== undefined ? fmtPct(n) : '—');
+  const noValue = t('partnerDashboard.evalAnalysis.report.noValue');
 
   if (!analysis) return null;
   const stats = analysis.stats || null;
@@ -26,6 +27,45 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
 
   const narrative = (text) => (text ? <p style={{ whiteSpace: 'pre-wrap' }}>{text}</p> : null);
+
+  const rowTable = Array.isArray(analysis.rows) && analysis.rows.length > 0 && (
+    <div className="dashboard-section">
+      <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
+              <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
+              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {analysis.rows.map((row) => (
+              <tr key={row.id}>
+                <td style={{ ...cell, minWidth: 280 }}>{row.q || noValue}</td>
+                <td style={cell}>{row.lang === 'fr' ? t('partnerDashboard.evalAnalysis.report.lang.fr') : t('partnerDashboard.evalAnalysis.report.lang.en')}</td>
+                <td style={numCell}>{row.score === null || row.score === undefined ? noValue : fmtN(row.score)}</td>
+                <td style={cell}>{row.program || noValue}</td>
+                <td style={cell}>{row.action || noValue}</td>
+                <td style={{ ...cell, wordBreak: 'break-all' }}>{row.evaluator || noValue}</td>
+                <td style={cell}>
+                  <details>
+                    <summary style={{ cursor: 'pointer' }}>{t('partnerDashboard.evalAnalysis.report.viewRowData')}</summary>
+                    <pre style={{ whiteSpace: 'pre-wrap', maxWidth: 600 }}>{JSON.stringify(row, null, 2)}</pre>
+                  </details>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   // Same review-mode deep link the eval/chat dashboards use for chatIds, in
   // the conversation's own language. Older stored reports have no example.
@@ -82,6 +122,12 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   return (
     <div>
+      {analysis.status !== 'complete' && analysis.status !== 'error' && (
+        <div className="dashboard-warning">
+          <span className="dashboard-warning__icon" aria-hidden="true" />
+          {t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))}
+        </div>
+      )}
       {/* Header: what was analyzed. Plain sections with dashboard-style
           headings — the card border/box chrome is reserved for the stat and
           chart cards elsewhere on the dashboard. */}
@@ -238,6 +284,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </div>
         </div>
       )}
+      {rowTable}
     </div>
   );
 };
