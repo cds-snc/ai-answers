@@ -38,7 +38,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@huggingface/transformers": "3.8.1",
     "aws4fetch": "^1.0.20",
-    "axios": "^1.16.0",
+    "axios": "^1.18.1",
     "bcryptjs": "^3.0.2",
     "bot-detector": "^1.0.5",
     "buffer": "^6.0.3",
