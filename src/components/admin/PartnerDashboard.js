@@ -127,6 +127,20 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   );
   const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
+  // Helpful/not-helpful donut — shared between the "donut only" (10–39 responses)
+  // and "donut + breakdown bar" (40+) layouts so its props don't drift.
+  const satisfactionDonut = (
+    <DonutCard
+      title={t('partnerDashboard.charts.feedbackSplitTitle')}
+      data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+      colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
+      centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
+      centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
+      centreMultiLine
+      lang={lang}
+    />
+  );
+
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
   // Conversation length (sessions broken down by number of questions asked).
@@ -387,35 +401,46 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
 
-      {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
-          Below 10 responses both are replaced by a single placeholder —
-          percentages from tiny samples are misleading. */}
+      {/* Satisfaction — collapsible (defaults closed; the summary carries the
+          headline so the key number shows without expanding). The helpful/not
+          donut shows from 10 responses, but the per-reason breakdown bar only
+          renders at 40+ — its percentages read as noise on a handful of
+          responses. Below 10, a placeholder in place of the whole section. */}
       {pfTotal >= 10 ? (
-        <div className="dashboard-row">
-          <DonutCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
-            centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
-            centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
-            centreMultiLine
-            lang={lang}
-          />
-          <div className="dashboard-chart-wide">
-            <DivergingBarCard
-              title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
-              subtitle={t('partnerDashboard.charts.feedbackBreakdownSubtitle')
-                .replace('{total}', fmtN(pfTotal))}
-              data={feedbackReasonsData}
-              noDataLabel={t('partnerDashboard.charts.noData')}
-              lang={lang}
-            />
-          </div>
-        </div>
+        <details className="dashboard-collapse dashboard-section">
+          <summary className="dashboard-section-title dashboard-collapse__summary">
+            {t('partnerDashboard.charts.satisfactionSummary')
+              .replace('{pct}', fmtPct(satisfactionPct))
+              .replace('{total}', fmtN(pfTotal))}
+          </summary>
+          {/* At 40+ the donut sits bare beside the wide breakdown bar; below 40
+              it stands alone in a half column so it doesn't stretch full width. */}
+          {pfTotal >= 40 ? (
+            <div className="dashboard-row">
+              {satisfactionDonut}
+              <div className="dashboard-chart-wide">
+                <DivergingBarCard
+                  title={t('partnerDashboard.charts.feedbackReasonsTitle')}
+                  subtitle={t('partnerDashboard.charts.feedbackBreakdownSubtitle')
+                    .replace('{total}', fmtN(pfTotal))}
+                  data={feedbackReasonsData}
+                  noDataLabel={t('partnerDashboard.charts.noData')}
+                  lang={lang}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="dashboard-row">
+              <div className="dashboard-col-half">
+                {satisfactionDonut}
+              </div>
+            </div>
+          )}
+        </details>
       ) : (
         <div className="dashboard-section">
           <NoDataCard
-            title={t('partnerDashboard.charts.feedbackBreakdownTitle')}
+            title={t('partnerDashboard.charts.feedbackSectionTitle')}
             message={t('common.notEnoughData')}
           />
         </div>

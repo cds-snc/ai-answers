@@ -731,6 +731,31 @@
   color: #333;
 }
 
+/* Collapsible dashboard section: a <details> whose <summary> reads as a section
+   heading. The summary carries the headline stat so the key figure shows while
+   collapsed; expanding reveals the charts below. */
+.dashboard-collapse__summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-100);
+}
+
+.dashboard-collapse__summary::-webkit-details-marker {
+  display: none;
+}
+
+.dashboard-collapse__summary::before {
+  content: '\25B8'; /* ▸ collapsed */
+  font-size: 0.8em;
+  color: #666;
+}
+
+.dashboard-collapse[open] > .dashboard-collapse__summary::before {
+  content: '\25BE'; /* ▾ expanded */
+}
+
 @media only screen and (width < 48em) {
   .dashboard-section-title {
     font: var(--gcds-font-h4-mobile);

@@ -1,12 +1,10 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
-import { buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
-import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
@@ -106,16 +104,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
     );
   };
 
-  const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
-  const filteredPfTotal = metrics.publicFeedbackTotals?.totalQuestionsWithFeedback || 0;
-
-  // Feedback split into helpful / not helpful, classified by score (not the raw
-  // yes/no click) so notWanted counts as helpful.
-  const feedbackData = useMemo(
-    () => buildFeedbackSplitData(metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t),
-    [metrics.publicFeedbackTotals, metrics.publicFeedbackReasons, t],
-  );
-  const satisfactionPct = filteredPfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / filteredPfTotal) * 100) : null;
 
   // Count of institutions with at least one question in the filtered period.
   const byDepartmentCount = Object.values(metrics.byDepartment || {})
@@ -282,40 +270,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
         </div>
       </div>
 
-      {/* Satisfaction breakdown bar (wide) + user satisfaction donut side by side.
-          Below 10 responses both are replaced by a single placeholder —
-          percentages from tiny samples are misleading. The bars are percentages,
-          so the subtitle carries the response total they're computed from. */}
-      {filteredPfTotal >= 10 ? (
-        <div className="dashboard-row">
-          <DonutCard
-            title={t('publicDashboard.charts.feedbackBreakdownTitle')}
-            data={feedbackData.length > 0 ? feedbackData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
-            colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
-            centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
-            centreLabel={t('publicDashboard.charts.satisfactionCentre').replace('{total}', fmtN(filteredPfTotal))}
-            centreMultiLine
-            lang={lang}
-          />
-          <div className="dashboard-chart-wide">
-            <DivergingBarCard
-              title={t('publicDashboard.charts.feedbackBreakdownTitle')}
-              subtitle={t('publicDashboard.charts.feedbackBreakdownSubtitle')
-                .replace('{total}', fmtN(filteredPfTotal))}
-              data={feedbackReasonsData}
-              noDataLabel={t('publicDashboard.charts.noData')}
-              lang={lang}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="dashboard-section">
-          <NoDataCard
-            title={t('publicDashboard.charts.feedbackBreakdownTitle')}
-            message={t('common.notEnoughData')}
-          />
-        </div>
-      )}
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">
