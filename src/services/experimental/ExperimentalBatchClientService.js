@@ -261,6 +261,18 @@ export const ExperimentalBatchClientService = {
         return await res.json();
     },
 
+    async processDataset(id, force = false) {
+        const suffix = force ? '?force=true' : '';
+        const res = await AuthService.fetch(getApiUrl(`experimental-dataset-process/${encodeURIComponent(id)}${suffix}`), { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const err = new Error(data.error || `Failed to process dataset: ${res.status}`);
+            err.code = data.code;
+            throw err;
+        }
+        return data;
+    },
+
     /**
      * Export a dataset as CSV
      */

@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
+import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
 
 // "Run eval analysis" section at the bottom of the partner dashboard.
 // Disabled until an institution filter is applied; the precheck endpoint
@@ -13,6 +14,7 @@ import EvalAnalysisReport from './EvalAnalysisReport.js';
 const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilters = null }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
+  const [showResults, setShowResults] = useState(false);
   const {
     precheck,
     precheckLoading,
@@ -77,6 +79,36 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
     return t('partnerDashboard.evalAnalysis.error');
   };
 
+  const loadFullAnalysis = async () => {
+    if (!analysis?._id) return;
+    try {
+      setShowResults(true);
+      // The running state is updated by the driver; this loads the complete
+      // current snapshot for viewing/export without advancing the run.
+      await loadAnalysis(analysis._id, { includeRows: true });
+    } catch (e) {
+      console.error('Failed to load current eval analysis:', e);
+    }
+  };
+
+  const exportAnalysis = async () => {
+    if (!analysis?._id) return;
+    try {
+      const full = await EvalAnalysisService.get(analysis._id, { includeRows: true });
+      const blob = new Blob([JSON.stringify(full, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `eval-analysis-${analysis._id}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to export current eval analysis:', e);
+    }
+  };
+
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
 
@@ -127,10 +159,16 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           {t('partnerDashboard.evalAnalysis.runButton')}
         </GcdsButton>
 
-        {running && (
-          <p className="font-size-text-small" role="status" style={{ marginTop: 12 }}>
-            {progressLabel()}
-          </p>
+        {analysis && analysis.status !== 'complete' && analysis.status !== 'error' && (
+          <div style={{ marginTop: 12 }}>
+            {running && <p className="font-size-text-small" role="status">{progressLabel()}</p>}
+            <GcdsButton onClick={loadFullAnalysis} className="hydrated">
+              {t('partnerDashboard.evalAnalysis.viewRunning')}
+            </GcdsButton>
+            <GcdsButton onClick={exportAnalysis} className="hydrated">
+              {t('partnerDashboard.evalAnalysis.exportRunning')}
+            </GcdsButton>
+          </div>
         )}
 
         {runError && (
@@ -191,7 +229,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
       )}
 
       {/* Report (completed run, or partial results after an error) */}
-      {analysis && (analysis.status === 'complete' || analysis.status === 'error') && (
+      {analysis && (showResults || analysis.status === 'complete' || analysis.status === 'error') && (
         <div className="dashboard-section">
           <EvalAnalysisReport analysis={analysis} lang={lang} />
         </div>

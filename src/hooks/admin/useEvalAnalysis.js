@@ -72,7 +72,11 @@ export function useEvalAnalysis(lang = 'en') {
       ) {
         current = await EvalAnalysisService.advance(current._id);
         steps += 1;
-        if (!cancelledRef.current) setAnalysis(current);
+        if (!cancelledRef.current) {
+          // Keep a previously loaded full snapshot visible while the driver
+          // publishes its lighter progress responses.
+          setAnalysis((previous) => current.rows ? current : { ...current, rows: previous?.rows });
+        }
       }
       await refreshList(filters.department);
     } catch (e) {
@@ -91,11 +95,11 @@ export function useEvalAnalysis(lang = 'en') {
   }, []);
 
   // Load a stored past report into the report area (no LLM calls).
-  const loadAnalysis = useCallback(async (analysisId) => {
+  const loadAnalysis = useCallback(async (analysisId, options = {}) => {
     setRunError(null);
     setLoadingAnalysisId(analysisId);
     try {
-      const stored = await EvalAnalysisService.get(analysisId);
+      const stored = await EvalAnalysisService.get(analysisId, options);
       if (!cancelledRef.current) setAnalysis(stored);
     } catch (e) {
       console.error('Failed to load eval analysis:', e);

@@ -6,9 +6,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import ExperimentalDatasetsPage from '../experimental/ExperimentalDatasetsPage.js';
 
-const { mockListDatasets, mockExportDataset } = vi.hoisted(() => ({
+const { mockListDatasets, mockExportDataset, mockProcessDataset } = vi.hoisted(() => ({
     mockListDatasets: vi.fn(),
-    mockExportDataset: vi.fn()
+    mockExportDataset: vi.fn(),
+    mockProcessDataset: vi.fn()
 }));
 
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -20,7 +21,8 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => ({
     ExperimentalBatchClientService: {
         listDatasets: mockListDatasets,
-        exportDataset: mockExportDataset
+        exportDataset: mockExportDataset,
+        processDataset: mockProcessDataset
     }
 }));
 
@@ -48,6 +50,7 @@ describe('ExperimentalDatasetsPage', () => {
     beforeEach(() => {
         mockListDatasets.mockReset().mockResolvedValue({ data: [] });
         mockExportDataset.mockReset().mockResolvedValue(new Blob(['chatId,question,answer\n1,Question,Answer'], { type: 'text/csv' }));
+        mockProcessDataset.mockReset().mockResolvedValue({});
         vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:dataset-export');
         vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
         vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -93,5 +96,27 @@ describe('ExperimentalDatasetsPage', () => {
 
         expect(URL.createObjectURL).toHaveBeenCalled();
         expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    });
+
+    it('keeps processing datasets disabled and places the status action inline', async () => {
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-processing',
+                name: 'Processing dataset',
+                type: 'qa-pair',
+                rowCount: 1,
+                runCount: 0,
+                createdAt: '2026-07-09T00:00:00.000Z',
+                creationStatus: 'processing'
+            }]
+        });
+
+        render(<ExperimentalDatasetsPage lang="en" />);
+
+        const processingButton = await screen.findByRole('button', { name: 'experimental.datasets.processing' });
+        expect(processingButton.disabled).toBe(true);
+        expect(processingButton.closest('.d-flex')).toBeTruthy();
+        fireEvent.click(processingButton);
+        expect(mockProcessDataset).not.toHaveBeenCalled();
     });
 });

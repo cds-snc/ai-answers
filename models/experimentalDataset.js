@@ -17,6 +17,15 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     // category (bias, pii, red-team, safety). Free text.
     category: { type: String, default: '', trim: true, maxLength: 100 },
     rowCount: { type: Number, default: 0 },
+    creationStatus: {
+        type: String,
+        enum: ['complete', 'queued', 'processing', 'failed'],
+        default: 'complete'
+    },
+    creationError: { type: String, default: '' },
+    creationConfig: { type: mongoose.Schema.Types.Mixed, default: null },
+    creationRunId: { type: String, default: '' },
+    creationProgress: { type: mongoose.Schema.Types.Mixed, default: null },
     columns: [{
         name: { type: String, required: true },
         type: { type: String, enum: ['string', 'number', 'boolean', 'json'] }
