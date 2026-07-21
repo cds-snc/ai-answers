@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
-import { getItemVerdict, humanizeFieldName, truncate } from '../../utils/experimental/batchItems.js';
+import { getItemVerdict, humanizeFieldName, truncate, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
 
 const VERDICT_STYLES = {
     pass: { color: '#2e8540' },
@@ -26,11 +26,8 @@ const getAnalyzerColumns = (items) => {
         Object.entries(item.analysisResults || {}).forEach(([analyzerId, result]) => {
             if (!fieldsByAnalyzer.has(analyzerId)) fieldsByAnalyzer.set(analyzerId, new Set());
             const fields = fieldsByAnalyzer.get(analyzerId);
-            if (result && typeof result === 'object' && !Array.isArray(result)) {
-                Object.keys(result).forEach(field => fields.add(field));
-            } else {
-                fields.add('result');
-            }
+            const flattened = flattenAnalyzerValue(result);
+            Object.keys(flattened).forEach(field => fields.add(field));
         });
         Object.keys(item.analysisErrors || {}).forEach((analyzerId) => {
             if (!fieldsByAnalyzer.has(analyzerId)) fieldsByAnalyzer.set(analyzerId, new Set());
@@ -58,7 +55,7 @@ const renderAnalyzerCell = (item, analyzerId, field) => {
     const result = item.analysisResults?.[analyzerId];
     if (result === undefined || result === null) return '—';
     if (field === 'result') return formatAnalyzerValue(result);
-    return formatAnalyzerValue(result?.[field]);
+    return formatAnalyzerValue(flattenAnalyzerValue(result)[field]);
 };
 
 const renderAnalyzerSummary = (item, analyzerId) => {
