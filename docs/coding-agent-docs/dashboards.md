@@ -124,12 +124,28 @@ that same date once the fetch returns (`DashboardFilterBar`'s `dataStartDate`
 prop) so the inputs and the heading always show the same range — the snap changes
 only after a fetch, so it never fights a mid-edit.
 
-**The public dashboard shows no token counts and no harmful card.** Token totals
-(`totalInputTokens`/`totalOutputTokens`) and the expert `harmful` count are
-deliberately absent from its Operations and Safety rows — they read as internal
-cost/moderation detail to a public audience. Both are still fetched in the metric
-bundle and still shown on the partner dashboard; don't "restore" them here for
-symmetry.
+**The public dashboard is a trimmed cut of the partner one.** Several things are
+deliberately absent for a public audience and must not be "restored" for
+symmetry with partner:
+
+- **No token counts and no harmful card** — token totals
+  (`totalInputTokens`/`totalOutputTokens`) and the expert `harmful` count read as
+  internal cost/moderation detail.
+- **No standalone "Operations metrics" section** — the median response-time card
+  moved up beside the conversation-length donut; there is no separate ops heading.
+- **No satisfaction section** — the helpful/not donut and the reasons breakdown
+  bar were removed. The public-feedback metrics are **still fetched** in the
+  bundle (the hook pulls the full set), just not rendered, so re-adding the
+  section later is pure JSX.
+
+All of these remain fetched and are still shown on the partner dashboard.
+
+**Public dashboard section order** (single filtered section, top to bottom): KPI
+row (accuracy donut + questions asked, then expert-evaluated → content issues) →
+top institutions → conversation length + median response time → safety (blocked
+queries). Questions-about-the-questions cluster first; feedback/safety follow.
+Expert-evaluated sits **before** content issues because the issues are identified
+by those evaluators.
 
 ## Metric bundle shape (the important fields)
 
@@ -154,6 +170,10 @@ metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: t
 metrics.topReferrals[]                          // from metrics-referrals (partner only); ranked
                                                 //   [{ url, count }], top 20, normalized page key,
                                                 //   count = distinct CONVERSATIONS (not questions)
+metrics.topPrograms[]                           // from metrics-programs (partner only); ranked
+                                                //   [{ program, count, en, fr, programFr }], per-question
+                                                //   program classification; en/fr split by pageLanguage;
+                                                //   'unknown' = unclassified/low-confidence bucket
 metrics.topCitations[]                          // from metrics-citations (partner only); ranked
                                                 //   [{ url, count }], top 20, normalized page key,
                                                 //   count = QUESTIONS that cited the page
@@ -175,9 +195,11 @@ Nothing else should count at the Chat ID level. If you add a new metric that agg
 Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
 `metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`. Token
 totals come from `metrics-usage.js`; `responseTime` (ms percentiles) from
-`metrics-technical.js`. The public **and** partner **Operations metrics** rows
-read `responseTime.median`/`p95` (shown in seconds); only partner also shows the
-token totals.
+`metrics-technical.js`. Both dashboards surface `responseTime.median`/`p95`
+(shown in seconds): partner has a dedicated **Operations metrics** row that also
+carries the token totals; the public dashboard has **no** ops heading — its
+response-time card sits beside the conversation-length donut, and it shows no
+tokens.
 
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
@@ -191,7 +213,7 @@ come from `src/constants/dashboardColours.js`.
 | `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. |
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
-| `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on both dashboards. |
+| `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on the **partner** dashboard only (the public dashboard no longer renders a satisfaction section). |
 | `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the public dashboard uses a `StatCard` + `HBarCard` instead. Row order from `BLOCK_QUERY_TYPES` (`src/constants/blockedQueryTypes.js`) — the raw per-type rows, **not** the merged public/partner grouping. |
 | `NoDataCard.js` | Placeholder card (title + short note) shown in place of a chart or donut that is below its minimum-sample threshold. Keeps the section's heading on the page instead of letting the card vanish — see [Minimum data thresholds](#layout). Message is always `common.notEnoughData`. |
 | `CountTable.js` | Plain two-column "label / count" table with row dividers, shared by the collapsible list cards. `rows` = `[{ key, label, count, href? }]` — `href` renders the label as a new-tab link. Locale-free (labels passed in resolved). |
@@ -213,7 +235,8 @@ come from `src/constants/dashboardColours.js`.
   count-sorted, stable across date ranges), zero rows dropped. Each row carries
   `positive` (for `DivergingBarCard`'s left/right) **and** `colour` (for plain
   bars). To re-order the satisfaction breakdown, edit `FEEDBACK_REASON_ORDER` in
-  `feedbackBreakdown.js` — it drives both dashboards.
+  `feedbackBreakdown.js`. The reason breakdown now renders on the **partner**
+  dashboard only (public dropped its satisfaction section).
 - Score → positive/negative is defined in `src/constants/UserFeedbackOptions.js`
   (`isPositiveScore`, `POSITIVE_SCORES`, the `positiveAboutAI` flag).
 
@@ -362,6 +385,46 @@ types. Citations live in a separate `citations` collection
   `useDashboardMetrics({ includeCitations: true })`. Tests:
   `__tests__/api.metrics-citations.test.js`.
 
+## Question volume by program (partner dashboard only)
+
+Ranked bar of the per-question program classification (`context.program`), sitting
+directly under the accuracy row (partners asked for it prominently). Opted in via
+`useDashboardMetrics({ includePrograms: true })`.
+
+- **Bars are percentages of all *classified* questions**, not raw counts. The
+  denominator is the classified total across **every** returned row, so the
+  top-N bars intentionally don't sum to 100% once the tail is cut. The raw count
+  and its EN/FR split ride along on each row for the **tooltip** (the bar label is
+  the percentage). This is why the subtitle count (classified only) reads lower
+  than the "Questions asked" KPI — the pipeline counts `normal` answers only.
+- **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`
+  (`[{ program, count, en, fr, programFr }]`). Grouped by `$program` with an
+  `en`/`fr` split by `pageLanguage` (`$cond` sum, mirroring `metrics-usage.js`);
+  `programFr` is the curated French name (empty → English fallback at display).
+  The `'unknown'` sentinel (unclassified / low-confidence) is pulled out of the
+  bars and surfaced in the subtitle so it can't dominate the axis.
+- **Subtitle** carries the classified total + EN/FR split, plus the unclassified
+  count when > 0. All descriptive prose was removed at partner request — keep it
+  terse. Tests: `__tests__/api.metrics-programs.test.js` (covers the shape and the
+  `pageLanguage` split).
+
+## Satisfaction section (partner dashboard only)
+
+Public-feedback satisfaction, in a **collapsible `<details>`** (defaults closed;
+the `<summary>` carries the headline — `Public feedback (satisfaction) – {pct}
+helpful of {total} responses` — so the key number shows while collapsed). The
+public dashboard no longer has this section at all.
+
+- **Two independent gates:** the helpful/not **donut** (`DonutCard`, title
+  `feedbackSplitTitle` "Helpful or not") shows from **10** responses; the
+  per-reason **breakdown bar** (`DivergingBarCard`, title `feedbackReasonsTitle`
+  "Breakdown by reason") only renders at **40+** — its percentages read as noise
+  on a handful of responses. Between 10–39 the expanded panel shows just the donut
+  in a half column; below 10 the whole section is a `NoDataCard` titled
+  `feedbackSectionTitle`.
+- The collapsible summary is styled via `.dashboard-collapse__summary` in
+  `admin.css` (custom ▸/▾ marker, section-title font).
+
 ## Local preview with mock data
 
 The public and partner dashboards can be loaded with realistic placeholder data — no API or backend required. This is useful for layout and locale review without needing real data in the database.
@@ -373,7 +436,7 @@ http://localhost:3000/en/public-dashboard?mock=1
 http://localhost:3000/en/partner-dashboard?mock=1
 ```
 
-No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers all sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth.
+No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers most sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth. (It does **not** include `topPrograms`, so the question-volume-by-program chart is hidden in mock mode — add it to `mockMetrics.js` if you need to preview that section.)
 
 To update the placeholder values (e.g. to stress-test a specific threshold or layout edge case), edit `mockMetrics.js` directly and refresh.
 
@@ -385,7 +448,7 @@ A component left alone in a `dashboard-row` will stretch full width — wrap it 
 Charts default to full width. When a related KPI card or donut sits alongside one, the chart takes the left (wider) column using `dashboard-chart-wide` and the card or donut sits unstyled on the right.
 
 **Minimum data thresholds**
-Charts and donuts don't render when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for the quality bar and the accuracy donut (both dashboards), `>= 10` responses for satisfaction charts and donuts, `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
+Charts and donuts don't render when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for the quality bar and the accuracy donut (both dashboards), `>= 10` responses for the satisfaction donut, **`>= 40` responses for the satisfaction reason-breakdown bar** (partner only — see [Satisfaction section](#satisfaction-section-partner-dashboard-only)), `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
 
 **Below the threshold, render a `NoDataCard`, don't hide the section.** Users read a vanished card as a bug or a broken filter, so every threshold-gated section on the public and partner dashboards swaps in a `NoDataCard` carrying the *same title* plus `common.notEnoughData`. Keep that pattern when adding a gated chart. (The accuracy donut used to collapse the whole KPI row into a flat fallback; it now always occupies its half so the row keeps its shape.)
 
