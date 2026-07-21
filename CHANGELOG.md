@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.167.0](https://github.com/cds-snc/ai-answers/compare/v1.166.0...v1.167.0) (2026-07-21)
+
+
+### Features
+
+* Enhance eval analysis functionality with dataset processing and… ([d760b8f](https://github.com/cds-snc/ai-answers/commit/d760b8f2006ee1d8348209ea68cf89ad895718db))
+
 ## [1.166.0](https://github.com/cds-snc/ai-answers/compare/v1.165.0...v1.166.0) (2026-07-21)
 
 
