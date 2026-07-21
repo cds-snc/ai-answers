@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
@@ -13,6 +13,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [exportingDatasetId, setExportingDatasetId] = useState(null);
     const [message, setMessage] = useState(null);
     const [processingDatasetId, setProcessingDatasetId] = useState(null);
+    const processingDatasetRef = useRef(null);
 
     // Upload form state
     const [newName, setNewName] = useState('');
@@ -36,7 +37,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             setDatasets(result.data);
             if (result.executionMode === 'lambda') {
                 const active = (result.data || []).find(ds => ['queued', 'processing'].includes(ds.creationStatus));
-                if (active && !processingDatasetId) {
+                if (active && !processingDatasetRef.current) {
                     await handleProcessDataset(active, false, false);
                 }
             }
@@ -145,14 +146,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     };
 
     const handleProcessDataset = async (dataset, showMessage = true, refresh = true) => {
+        if (processingDatasetRef.current === dataset._id) return;
+        processingDatasetRef.current = dataset._id;
         setProcessingDatasetId(dataset._id);
         try {
             await ExperimentalBatchClientService.processDataset(dataset._id, dataset.creationStatus === 'processing');
             if (refresh) await fetchDatasets(false);
         } catch (err) {
-            console.error('Process dataset error:', err);
-            if (showMessage) setMessage({ type: 'error', text: err.message || t('experimental.datasets.processFailed') });
+            const alreadyProcessing = err.code === 'stillProcessing' || err.status === 409;
+            if (!alreadyProcessing) {
+                console.error('Process dataset error:', err);
+                if (showMessage) setMessage({ type: 'error', text: err.message || t('experimental.datasets.processFailed') });
+            }
         } finally {
+            processingDatasetRef.current = null;
             setProcessingDatasetId(null);
         }
     };
@@ -352,19 +359,19 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     </td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
-                                        {ds.creationStatus && ds.creationStatus !== 'complete' && (
+                                        <div className="d-flex gap-200">
+                                            {ds.creationStatus && ds.creationStatus !== 'complete' && (
                                             <GcdsButton
                                                 size="small"
                                                 buttonRole="secondary"
                                                 onClick={() => handleProcessDataset(ds)}
-                                                disabled={processingDatasetId === ds._id}
+                                                disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}
                                             >
-                                                {processingDatasetId === ds._id
+                                                    {processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus)
                                                     ? t('experimental.datasets.processing')
                                                     : t('experimental.datasets.startAgain')}
                                             </GcdsButton>
                                         )}
-                                        <div className="d-flex gap-200">
                                             <GcdsButton
                                                 size="small"
                                                 buttonRole="secondary"
