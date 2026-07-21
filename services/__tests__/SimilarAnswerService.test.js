@@ -162,7 +162,7 @@ describe('SimilarAnswerService', () => {
     });
 
 
-    it('returns null when ranker yields no usable result', async () => {
+    it('returns all debug stages when the final ranker yields no usable result', async () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValueOnce({ results: [] });
 
         const params = {
@@ -173,10 +173,16 @@ describe('SimilarAnswerService', () => {
         };
 
         const result = await SimilarAnswerService.findSimilarAnswer(params);
-        expect(result).toBeNull();
+        expect(result?.debugPayload).toEqual(expect.objectContaining({
+            shortCircuit: false,
+            reason: 'llm-rejected',
+            vectorMatches: expect.any(Array),
+            nlpCandidates: expect.any(Array),
+            llmSelection: expect.objectContaining({ accepted: false, results: [] }),
+        }));
     });
 
-    it('falls back when LLM confirmation rejects the local-model candidate', async () => {
+    it('returns all debug stages when LLM confirmation rejects the local-model candidate', async () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValueOnce({
             results: [{ index: 0, checks: { numbers: 'fail' } }]
         });
@@ -185,7 +191,37 @@ describe('SimilarAnswerService', () => {
             questions: ['What is SCIS?'], selectedAI: 'openai', pageLanguage: 'en', chatId: 'test-chat'
         });
 
-        expect(result).toBeNull();
+        expect(result?.debugPayload).toEqual(expect.objectContaining({
+            shortCircuit: false,
+            reason: 'llm-rejected',
+            vectorMatches: expect.any(Array),
+            nlpCandidates: expect.any(Array),
+            llmSelection: expect.objectContaining({
+                accepted: false,
+                results: [{ index: 0, checks: { numbers: 'fail' }, recommendation: 'reject', score: 0 }],
+            }),
+        }));
+    });
+
+    it('returns vector and local-model debug when the local model rejects every candidate', async () => {
+        quoraCompareMock.mockResolvedValueOnce({
+            results: [{ index: 0, score: 0.2, recommendation: 'reject' }],
+            method: 'quora-crossencoder',
+            metadata: { latencyMs: 12 }
+        });
+
+        const result = await SimilarAnswerService.findSimilarAnswer({
+            questions: ['What is SCIS?'], selectedAI: 'openai', pageLanguage: 'en', chatId: 'test-chat'
+        });
+
+        expect(result?.debugPayload).toEqual(expect.objectContaining({
+            shortCircuit: false,
+            reason: 'local-model-rejected',
+            vectorMatches: expect.any(Array),
+            nlpCandidates: [expect.objectContaining({ localRecommendation: 'reject', localScore: 0.2 })],
+            llmSelection: null,
+        }));
+        expect(AgentOrchestratorService.invokeWithStrategy).not.toHaveBeenCalled();
     });
 
     it('sends every threshold-passing Quora candidate to the LLM in Quora rank order', async () => {

@@ -68,6 +68,9 @@ const findAnswerInUpdate = (value) => {
 
 const findShortCircuitDebugPayload = (value) => {
     if (!value || typeof value !== 'object') return null;
+    if (Object.prototype.hasOwnProperty.call(value, 'shortCircuitDebugPayload')) {
+        return { shortCircuit: false, payload: value.shortCircuitDebugPayload || null };
+    }
     if (Object.prototype.hasOwnProperty.call(value, 'shortCircuitPayload')) {
         return { shortCircuit: Boolean(value.shortCircuitPayload), payload: value.shortCircuitPayload || null };
     }

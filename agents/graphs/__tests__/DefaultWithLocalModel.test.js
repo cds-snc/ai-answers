@@ -40,4 +40,29 @@ describe('DefaultWithLocalModel workflow', () => {
     expect(helper.checkSimilarAnswer).not.toHaveBeenCalled();
     expect(helper.deriveContext).toHaveBeenCalled();
   });
+
+  it('carries rejected short-circuit debug data into the normal answer flow', async () => {
+    helper.checkSimilarAnswer.mockResolvedValue({
+      debugPayload: {
+        shortCircuit: false,
+        reason: 'llm-rejected',
+        vectorMatches: [{ interactionId: 'vector-1' }],
+        nlpCandidates: [{ interactionId: 'nlp-1' }],
+        llmSelection: { accepted: false, results: [{ recommendation: 'reject' }] },
+      },
+    });
+
+    const { defaultWithLocalModelApp } = await import('../DefaultWithLocalModel.js');
+    const result = await defaultWithLocalModelApp.invoke({
+      chatId: 'chat', userMessage: 'question', conversationHistory: [], lang: 'en', selectedAI: 'openai'
+    });
+
+    expect(result.shortCircuitDebugPayload).toEqual(expect.objectContaining({
+      reason: 'llm-rejected',
+      vectorMatches: expect.any(Array),
+      nlpCandidates: expect.any(Array),
+      llmSelection: expect.objectContaining({ accepted: false }),
+    }));
+    expect(result.result.answer.content).toBe('generated');
+  });
 });

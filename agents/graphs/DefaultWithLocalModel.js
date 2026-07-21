@@ -19,7 +19,7 @@ const GraphState = Annotation.Root({
   lang: Annotation(), department: Annotation(), referringUrl: Annotation(), selectedAI: Annotation(),
   translationF: Annotation(), searchProvider: Annotation(), overrideUserId: Annotation(), startTime: Annotation(),
   redactedText: Annotation(), translationData: Annotation(), cleanedHistory: Annotation(), context: Annotation(),
-  usedExistingContext: Annotation(), shortCircuitPayload: Annotation(), answer: Annotation(),
+  usedExistingContext: Annotation(), shortCircuitPayload: Annotation(), shortCircuitDebugPayload: Annotation(), answer: Annotation(),
   finalCitationUrl: Annotation(), status: Annotation(), result: Annotation(),
 });
 const graph = new StateGraph(GraphState);
@@ -67,11 +67,20 @@ graph.addNode('shortCircuit', async (state) => {
     chatId: state.chatId, userMessage: state.userMessage, conversationHistory: [], selectedAI: state.selectedAI,
     lang: state.lang, detectedLang: state.translationData?.originalLanguage || state.lang, searchProvider: state.searchProvider,
   });
-  if (!similar) {
-    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
-    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, reason: 'no-confirmed-match' });
+  if (!similar?.answer) {
+    const out = {
+      cleanedHistory,
+      shortCircuitDebugPayload: similar?.debugPayload || null,
+      status: WorkflowStatus.BUILDING_CONTEXT,
+    };
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, {
+      shortCircuit: false,
+      reason: similar?.debugPayload?.reason || 'no-confirmed-match',
+      payload: similar?.debugPayload || null,
+    });
     return out;
   }
+
 
   const payload = workflow.buildShortCircuitPayload({
     similarShortCircuit: similar, startTime: state.startTime, endTime: Date.now(), translationData: state.translationData,

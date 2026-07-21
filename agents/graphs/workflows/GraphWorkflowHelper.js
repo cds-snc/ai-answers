@@ -312,6 +312,10 @@ export class GraphWorkflowHelper {
       };
     }
 
+    if (similarJson?.debugPayload) {
+      return { debugPayload: { ...similarJson.debugPayload, similarityLatencyMs } };
+    }
+
     return null;
   }
 

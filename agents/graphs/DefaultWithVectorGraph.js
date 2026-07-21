@@ -34,7 +34,7 @@ const GraphState = Annotation.Root({
   cleanedHistory: Annotation(),
   context: Annotation(),
   usedExistingContext: Annotation(),
-  shortCircuitPayload: Annotation(),
+  shortCircuitPayload: Annotation(), shortCircuitDebugPayload: Annotation(),
   answer: Annotation(),
   finalCitationUrl: Annotation(),
   status: Annotation(),
@@ -205,7 +205,7 @@ graph.addNode('shortCircuit', async (state) => {
     searchProvider: state.searchProvider,
   });
 
-  if (similar) {
+  if (similar?.answer) {
     const payload = workflow.buildShortCircuitPayload({
       similarShortCircuit: similar,
       startTime: state.startTime,
@@ -239,9 +239,17 @@ graph.addNode('shortCircuit', async (state) => {
     return out;
   }
 
-  const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
+  const out = {
+    cleanedHistory,
+    shortCircuitDebugPayload: similar?.debugPayload || null,
+    status: WorkflowStatus.BUILDING_CONTEXT,
+  };
   // Emit output log for shortCircuit node when no short circuit detected
-  logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false });
+  logGraphEvent('info', 'node:shortCircuit output', state.chatId, {
+    shortCircuit: false,
+    reason: similar?.debugPayload?.reason || 'no-confirmed-match',
+    payload: similar?.debugPayload || null,
+  });
   return out;
 });
 
