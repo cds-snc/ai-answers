@@ -190,8 +190,15 @@ graph.addNode('shortCircuit', async (state) => {
     logGraphEvent('info', 'skipping shortCircuit similar-answer because prior AI reply exists in original conversation history', state.chatId, {
       hasAIReply,
     });
-    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
-    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true });
+    const shortCircuitDebugPayload = {
+      shortCircuit: false,
+      reason: 'conversation-history-present',
+      vectorMatches: [],
+      nlpCandidates: [],
+      llmSelection: null,
+    };
+    const out = { cleanedHistory, shortCircuitDebugPayload, status: WorkflowStatus.BUILDING_CONTEXT };
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true, payload: shortCircuitDebugPayload });
     return out;
   }
 

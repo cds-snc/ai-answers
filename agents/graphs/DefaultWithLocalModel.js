@@ -59,8 +59,15 @@ graph.addNode('shortCircuit', async (state) => {
   const cleanedHistory = (state.conversationHistory || []).filter(message => message && !message.error);
   logGraphEvent('info', 'node:shortCircuit input', state.chatId, { userMessage: state.userMessage, historyCount: cleanedHistory.length, language: state.lang });
   if (cleanedHistory.length > 0) {
-    const out = { cleanedHistory, status: WorkflowStatus.BUILDING_CONTEXT };
-    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true, reason: 'conversation-history-present' });
+    const shortCircuitDebugPayload = {
+      shortCircuit: false,
+      reason: 'conversation-history-present',
+      vectorMatches: [],
+      nlpCandidates: [],
+      llmSelection: null,
+    };
+    const out = { cleanedHistory, shortCircuitDebugPayload, status: WorkflowStatus.BUILDING_CONTEXT };
+    logGraphEvent('info', 'node:shortCircuit output', state.chatId, { shortCircuit: false, skipped: true, payload: shortCircuitDebugPayload });
     return out;
   }
   const similar = await workflow.checkSimilarAnswer({

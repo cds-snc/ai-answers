@@ -36,9 +36,16 @@ describe('DefaultWithLocalModel workflow', () => {
 
   it('uses Generic behavior when there is prior history', async () => {
     const { defaultWithLocalModelApp } = await import('../DefaultWithLocalModel.js');
-    await defaultWithLocalModelApp.invoke({ chatId: 'chat', userMessage: 'follow up', conversationHistory: [{ sender: 'user', text: 'earlier' }], lang: 'en', selectedAI: 'openai' });
+    const result = await defaultWithLocalModelApp.invoke({ chatId: 'chat', userMessage: 'follow up', conversationHistory: [{ sender: 'user', text: 'earlier' }], lang: 'en', selectedAI: 'openai' });
     expect(helper.checkSimilarAnswer).not.toHaveBeenCalled();
     expect(helper.deriveContext).toHaveBeenCalled();
+    expect(result.shortCircuitDebugPayload).toEqual({
+      shortCircuit: false,
+      reason: 'conversation-history-present',
+      vectorMatches: [],
+      nlpCandidates: [],
+      llmSelection: null,
+    });
   });
 
   it('carries rejected short-circuit debug data into the normal answer flow', async () => {
