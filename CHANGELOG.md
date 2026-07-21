@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.166.0](https://github.com/cds-snc/ai-answers/compare/v1.165.0...v1.166.0) (2026-07-21)
+
+
+### Features
+
+* Enhance rate limiting for authenticated users with configurable… ([2802070](https://github.com/cds-snc/ai-answers/commit/2802070c10d968e9248fb3718b94a6b17dde6851))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.16.0 to 1.18.1 ([66c38a4](https://github.com/cds-snc/ai-answers/commit/66c38a4aa2992b05550d2366c22b4e06d7bdd59d))
+* **deps:** bump body-parser from 1.20.5 to 1.20.6 ([ffd2f3a](https://github.com/cds-snc/ai-answers/commit/ffd2f3a2a93c295508daf7cd8ab45479dd9a0c8d))
+* **deps:** bump body-parser from 1.20.5 to 1.20.6 ([ff51630](https://github.com/cds-snc/ai-answers/commit/ff5163094d3bd77a02f0297f83ecdae606a5736e))
+* **deps:** bump shell-quote and concurrently ([7e82849](https://github.com/cds-snc/ai-answers/commit/7e8284988c93098774af4f713737138e991981c1))
+* **deps:** bump shell-quote and concurrently ([ac0af33](https://github.com/cds-snc/ai-answers/commit/ac0af33216bd6ceb76b54d7d2a9ea854569ce3ce))
+
 ## [1.165.0](https://github.com/cds-snc/ai-answers/compare/v1.164.0...v1.165.0) (2026-07-20)
 
 
