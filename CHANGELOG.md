@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.168.0](https://github.com/cds-snc/ai-answers/compare/v1.167.0...v1.168.0) (2026-07-21)
+
+
+### Features
+
+* add flattenAnalyzerValue utility to handle nested analyzer outputs and create corresponding tests ([e68fe6a](https://github.com/cds-snc/ai-answers/commit/e68fe6a47bb0f6c3ed31510405292333f0e471fe))
+* add shortCircuitDebugPayload to enhance debugging information in workflows ([a136fc9](https://github.com/cds-snc/ai-answers/commit/a136fc916e8fe169e5c7df3f2bc137bc2561fbe4))
+* enhance short-circuit handling with detailed debug payloads across workflows ([4a7bb31](https://github.com/cds-snc/ai-answers/commit/4a7bb31bebe1aa59984d2455a7180bd09804b8d9))
+* update ExperimentalAnalysisPage to show export and view results buttons for all batches ([4ddd3e5](https://github.com/cds-snc/ai-answers/commit/4ddd3e5fc8b7ab83931587d0db0722ee37fc86bb))
+* update SimilarAnswerService to rename score to expertFeedbackScore and vectorSimilarity for clarity ([6b90ff1](https://github.com/cds-snc/ai-answers/commit/6b90ff1e0382cf150a0bea468bcc172c4ae0552c))
+
 ## [1.167.0](https://github.com/cds-snc/ai-answers/compare/v1.166.0...v1.167.0) (2026-07-21)
 
 
