@@ -25,6 +25,7 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
     creationError: { type: String, default: '' },
     creationConfig: { type: mongoose.Schema.Types.Mixed, default: null },
     creationRunId: { type: String, default: '' },
+    creationProgress: { type: mongoose.Schema.Types.Mixed, default: null },
     columns: [{
         name: { type: String, required: true },
         type: { type: String, enum: ['string', 'number', 'boolean', 'json'] }

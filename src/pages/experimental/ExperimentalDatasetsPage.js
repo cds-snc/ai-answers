@@ -24,20 +24,26 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [showUpload, setShowUpload] = useState(false);
 
     useEffect(() => {
-        fetchDatasets();
-        const refreshTimer = window.setInterval(fetchDatasets, 5000);
+        fetchDatasets(true);
+        const refreshTimer = window.setInterval(() => fetchDatasets(false), 5000);
         return () => window.clearInterval(refreshTimer);
     }, []);
 
-    const fetchDatasets = async () => {
-        setLoading(true);
+    const fetchDatasets = async (showLoading = false) => {
+        if (showLoading) setLoading(true);
         try {
             const result = await ExperimentalBatchClientService.listDatasets();
             setDatasets(result.data);
+            if (result.executionMode === 'lambda') {
+                const active = (result.data || []).find(ds => ['queued', 'processing'].includes(ds.creationStatus));
+                if (active && !processingDatasetId) {
+                    await handleProcessDataset(active, false, false);
+                }
+            }
         } catch (err) {
             console.error(err);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 
@@ -138,14 +144,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleProcessDataset = async (dataset) => {
+    const handleProcessDataset = async (dataset, showMessage = true, refresh = true) => {
         setProcessingDatasetId(dataset._id);
         try {
             await ExperimentalBatchClientService.processDataset(dataset._id, dataset.creationStatus === 'processing');
-            await fetchDatasets();
+            if (refresh) await fetchDatasets(false);
         } catch (err) {
             console.error('Process dataset error:', err);
-            setMessage({ type: 'error', text: err.message || t('experimental.datasets.processFailed') });
+            if (showMessage) setMessage({ type: 'error', text: err.message || t('experimental.datasets.processFailed') });
         } finally {
             setProcessingDatasetId(null);
         }
