@@ -305,7 +305,7 @@ export const SimilarAnswerService = {
                 question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
                 answer,
                 similarity: match.similarity ?? null,
-                score: match.score ?? null,
+                expertFeedbackScore: match.expertFeedbackRating ?? match.score ?? null,
             };
         });
         ServerLoggingService.info(`Invoking local comparator with ${sanitizedCandidateQuestions.length} candidates`, chatId, {
@@ -335,7 +335,7 @@ export const SimilarAnswerService = {
                 question: interaction?.question?.englishQuestion || interaction?.question?.content || null,
                 answer: interaction?.answer?.englishAnswer || interaction?.answer?.paragraphs?.join('\n\n') || interaction?.answer?.content || null,
                 questionFlow: entry?.questionFlow || null,
-                vectorSimilarity: entry?.candidate?.match?.similarity ?? null,
+                similarity: entry?.candidate?.match?.similarity ?? null,
                 localScore: localResult.score ?? null,
                 localRecommendation: localResult.recommendation ?? 'reject',
             };
