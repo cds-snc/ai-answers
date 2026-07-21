@@ -51,7 +51,7 @@ vi.mock('../../services/SettingsService.js', () => ({
   },
 }));
 
-import { initializeRateLimiter, rateLimiterMiddleware } from '../rate-limiter.js';
+import { initializeRateLimiter, rateLimiterMiddleware, rateLimiters } from '../rate-limiter.js';
 
 function createResponse() {
   const res = new EventEmitter();
@@ -95,7 +95,7 @@ describe('rate limiter key selection', () => {
     expect(req.rateLimiterSnapshot).toMatchObject({ authenticated: false, keyType: 'visitor' });
   });
 
-  it('bypasses rate limiting for authenticated requests', async () => {
+  it('rate limits authenticated requests by session', async () => {
     await initializeRateLimiter();
 
     const req = {
@@ -112,9 +112,10 @@ describe('rate limiter key selection', () => {
 
     await rateLimiterMiddleware(req, res, next);
 
-    expect(consume).not.toHaveBeenCalled();
+    expect(consume).toHaveBeenCalledWith('auth:session-456');
     expect(next).toHaveBeenCalledTimes(1);
-    expect(req.rateLimiterSnapshot).toBeUndefined();
+    expect(req.rateLimiterSnapshot).toMatchObject({ authenticated: true, keyType: 'auth' });
+    expect(rateLimiters.authenticated).toMatchObject({ points: 300, duration: 60 });
   });
 
   it('can initialize Redis-backed limiters', async () => {

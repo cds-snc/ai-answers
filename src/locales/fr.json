@@ -1093,7 +1093,9 @@
       },
       "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
       "rateLimitCapacity": "Capacité du quota (requêtes)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)"
+      "rateLimitRefill": "Recharge du quota (requêtes/min)",
+      "authenticatedRateLimitCapacity": "Capacité du quota des utilisateurs authentifiés (requêtes)",
+      "authenticatedRateLimitRefill": "Recharge du quota des utilisateurs authentifiés (requêtes/min)"
     },
     "redaction": {
       "title": "Paramètres de rédaction",

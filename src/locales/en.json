@@ -1093,7 +1093,9 @@
       },
       "singleAnonymousChatRunEnabled": "Limit anonymous users to one active answer at a time",
       "rateLimitCapacity": "Rate limit capacity (requests)",
-      "rateLimitRefill": "Rate limit refill (requests per min)"
+      "rateLimitRefill": "Rate limit refill (requests per min)",
+      "authenticatedRateLimitCapacity": "Authenticated-user rate limit capacity (requests)",
+      "authenticatedRateLimitRefill": "Authenticated-user rate limit refill (requests per min)"
     },
     "redaction": {
       "title": "Redaction settings",

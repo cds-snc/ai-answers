@@ -24,6 +24,8 @@ const SETTING_DEFAULTS = {
   'connectivity.simulation.search': 'false',
   'connectivity.simulation.llm': 'false',
   'session.singleAnonymousChatRunEnabled': 'true',
+  'session.authenticatedRateLimitCapacity': '300',
+  'session.authenticatedRateLimitRefillPerSec': '300',
 };
 
 const EMPTY_ALLOWED_SETTINGS = new Set([
