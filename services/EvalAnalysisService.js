@@ -14,7 +14,8 @@ import {
     evalAnalysisClassifyStrategy
 } from '../agents/strategies/evalAnalysisClassifyStrategy.js';
 import { evalAnalysisInsightsStrategy } from '../agents/strategies/evalAnalysisInsightsStrategy.js';
-import { PROGRAM_SEEDS_BY_DEPARTMENT, ACTION_SEEDS, OTHER_LABEL } from '../api/data/programActionSeeds.js';
+import { ACTION_SEEDS, OTHER_LABEL } from '../api/data/programActionSeeds.js';
+import { getSeedPrograms } from '../api/data/programSeedsLoader.js';
 import ServerLoggingService from './ServerLoggingService.js';
 
 // Volume guardrails (also enforced client-side from the precheck endpoint).
@@ -271,7 +272,7 @@ class EvalAnalysisServiceClass {
             evalAnalysisProgramsStrategy,
             {
                 department: doc.department,
-                seedPrograms: PROGRAM_SEEDS_BY_DEPARTMENT[doc.department] || [],
+                seedPrograms: getSeedPrograms(doc.department),
                 sampleRows: sampleRows(rows, PROGRAM_SAMPLE_SIZE)
             },
             chatId

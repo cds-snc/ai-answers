@@ -381,7 +381,7 @@
       "dataAnalysis": "Data Analysis",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
-      "execDashboard": "Executive dashboard",
+      "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
       "technicalMetrics": "View technical metrics",
       "publicEval": "Evaluate a public chat",
@@ -1128,7 +1128,8 @@
     "on": "On",
     "off": "Off",
     "na": "N/A",
-    "noDataForFilters": "No data found for the selected filters."
+    "noDataForFilters": "No data found for the selected filters.",
+    "notEnoughData": "Not enough data available for the filters selected."
   },
   "eval": {
     "metric": "Metric",
@@ -1267,8 +1268,6 @@
     "downloadedPagesTitle": "Downloaded pages"
   },
   "dashboardFilter": {
-    "department": "By partner institution",
-    "allPartners": "All partners",
     "dateRange": "Date range",
     "last30": "Last 30 days",
     "currentQuarter": "Current quarter",
@@ -1301,12 +1300,13 @@
       "profanity": "Profanity",
       "piStage1": "Private information: programmatic",
       "piStage2": "Private information: AI detection",
+      "privateDetails": "Private details",
       "azureGuardrail": "Azure guardrails",
       "unsupportedLanguage": "Unsupported language"
     }
   },
-  "execDashboard": {
-    "title": "AI Answers Executive dashboard",
+  "publicDashboard": {
+    "title": "AI Answers Public dashboard",
     "description": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",
     "error": "Failed to load data. Please try again.",
@@ -1317,26 +1317,29 @@
       "questionsAsked": "Questions asked",
       "questionsSub": "EN: {en} · FR: {fr}",
       "partnerCount": "Institutions with questions",
-      "harmful": "Harmful",
-      "harmfulSub": "EN: {en} · FR: {fr}"
+      "contentIssues": "Content issues",
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
       "accuracyDonutTitle": "Answer accuracy",
       "accuracyCentre": "accuracy",
+      "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
       "hasError": "Has answer error",
-      "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
+      "engagementTitle": "Conversation length",
+      "engagementSubtitle": "How many questions users ask per conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3+ questions",
       "departmentsTitle": "Top institutions by question volume",
       "noData": "No data"
     },
     "ops": {
-      "title": "Operations metrics",
       "medianResponseTime": "Median response time",
       "responseTimeValue": "{n} s",
-      "responseTimeSub": "P95: {p95} s",
-      "inputTokens": "Total input tokens",
-      "outputTokens": "Total output tokens",
-      "tokensSub": "EN: {en} · FR: {fr}"
+      "responseTimeSub": "P95: {p95} s"
     },
     "safety": {
       "title": "Safety metrics"
@@ -1351,8 +1354,6 @@
       "questionsSub": "EN: {en} · FR: {fr}",
       "evaluated": "Expert evaluated",
       "evaluatedSub": "{pct} of questions",
-      "accuracyRate": "Accuracy rate",
-      "accuracySub": "EN: {en} · FR: {fr}",
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
@@ -1360,9 +1361,18 @@
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
+      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyCentre": "accuracy",
+      "accuracyByLang": "EN: {en} · FR: {fr}",
+      "accurate": "Accurate",
+      "hasError": "Has answer error",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionCentre": "of {total} responses",
-      "feedbackBreakdownTitle": "Satisfaction (helpful or not) breakdown",
+      "satisfactionSummary": "Public feedback (satisfaction) – {pct} helpful of {total} responses",
+      "feedbackSectionTitle": "Public feedback (satisfaction)",
+      "feedbackSplitTitle": "Helpful or not",
+      "feedbackReasonsTitle": "Breakdown by reason",
+      "feedbackBreakdownSubtitle": "Based on {total} public feedback responses",
       "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
       "questions": "questions",
@@ -1386,8 +1396,10 @@
     },
     "programs": {
       "title": "Question volume by program",
-      "subtitle": "Questions grouped by the government program the user was asking about, counted by question. Only questions asked after program tagging launched are classified.",
-      "unknown": "Unknown"
+      "subtitle": "{total} classified questions · EN: {en} · FR: {fr}",
+      "unclassifiedNote": "{count} not yet classified",
+      "tooltipCount": "{count} questions",
+      "tooltipLang": "EN: {en} · FR: {fr}"
     },
     "referrals": {
       "title": "Top referral pages",

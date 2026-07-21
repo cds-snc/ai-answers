@@ -1,7 +1,13 @@
 # Per-question program & action classification
 
-**Status:** implementing (July 2026)
+**Status:** shipped (July 2026, merged to `main`). EN-first MVP per the plan below;
+FR display and the "later phases" remain outstanding.
 **Owner:** Lisa Fast
+
+Post-ship tuning of the partner "Question volume by program" card: real programs
+are capped at the top 10 (client-side; the API still returns `MAX_PROGRAMS`), and
+the `unknown`/unclassified bucket was moved out of the bars into the subtitle so
+it no longer dominates the axis.
 
 ## Problem
 
@@ -41,6 +47,16 @@ by per-question scoping.
    insurance - regular benefits"). Mitigation: the prompt instructs exact reuse
    of seed names when they fit; drift is visible in the volume card, and a
    normalization pass can be added later if it proves to be a problem.
+   *Update (post-ship):* the seed vocabulary is moving to a curated,
+   partner-editable EN/FR Markdown table per department at
+   `agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md`,
+   loaded by `api/data/programSeedsLoader.js` (`getSeedPrograms`, with an
+   EN→FR map via `getProgramNameMap` for future French display). CRA-ARC has
+   migrated; departments without a file fall back to the arrays in
+   `programActionSeeds.js`. Curation is the drift mitigation. There is **no**
+   runtime write-back to these files (ECS filesystem is ephemeral) — emergent
+   names already land in `Context.program`, so a later DB→file reconcile/review
+   step can promote good ones into the curated list.
 2. **Shared action seeds.** `api/data/programActionSeeds.js` is also the
    eval-analysis vocabulary; the account-action additions (Recover account,
    Use MFA) appear there too. This is intentional — one vocabulary.
@@ -147,5 +163,81 @@ classification time. Decision deferred until the EN MVP has real data.
   program (partner dashboard)
 - Program/action filters in `FilterPanel` (scan chats by program area)
 - Exec dashboard volume-by-program view
-- FR display of program/action values (above)
-- Possible normalization pass if program-name drift shows up in the data
+- FR display of program values — **shipped** (option 1: curated EN/FR `.md`,
+  merged map served as `programFr`, English fallback). FR display of *action*
+  values is still outstanding.
+- Program-name normalization (drift) — see the dedicated section below.
+
+## Program-name normalization (drift)
+
+**Status:** not started. First real evidence of drift observed (July 2026):
+the classifier stored `Registered retirement saving plan (RRSP)` (singular
+"saving") against the curated `Registered retirement savings plan (RRSP)`, and a
+retired program name (`Canada Carbon Rebate`) appeared as its own bucket. Both
+show as separate bars and neither maps to a French name, because both the
+volume-chart grouping and the EN→FR lookup are **exact-string** matches on the
+stored `context.program` value.
+
+### Why it happens
+
+Program naming is open (seed-guided, not a closed list — a deliberate decision,
+see the Decisions table). The classifier is instructed to reuse a seed name
+verbatim when one fits, but nothing enforces it, so it emits near-duplicates
+(case / whitespace / punctuation / singular-plural / abbreviation variants) and
+names for programs not in the curated list (new, renamed, or retired). The
+curated `.md` per department is the intended mitigation, but it only helps
+questions the model chooses to snap to it.
+
+### Data contract (what's fixed today)
+
+- `context.program` stores a **canonical English** string, or `''` (never
+  classified) / `'unknown'` (ran, not confident). Non-normal answers are never
+  classified (see the answer-type gate).
+- The curated list per department (`context-<dept>/<dept>-programs.md`, EN|FR)
+  is the source of truth for **canonical** names + their French display value.
+- Both the volume chart (`metrics-programs.js`) and FR display key off the
+  **exact** stored string. Any normalization must reconcile a stored variant to
+  a canonical name; it must **not** mutate history blindly (a wrong merge is
+  hard to undo).
+
+### Approach options (decision needed)
+
+| Option | What it does | Good for | Cost / risk |
+|--------|--------------|----------|-------------|
+| A. **Alias table** | Hand-maintained `variant → canonical` map, applied at read time | Known, recurring variants | Cheap, exact, auditable; doesn't scale to the long tail; manual |
+| B. **Deterministic normalize + match** | Coalesce on a normalized key (trim, lowercase, collapse whitespace/punctuation, singular↔plural) when comparing stored→canonical | Typos & formatting variants ("saving"/"savings") | Cheap, no LLM; risk of false merges (two real programs with near-identical names); English-only heuristics |
+| C. **LLM reconcile pass** | Batch job: given the curated list + the distinct stored names, map each unmapped variant → a canonical name or flag "genuinely new" | Semantic variants ("EI regular benefits" vs the canonical) | Handles the hard cases; token cost; **must** be reviewed, not auto-applied |
+| D. **Review surface** | Admin/partner UI lists stored program names not in the curated `.md`, with counts; a human promotes → curated name, merges, or adds a new program | Curation + catching new programs | Safest (human-in-loop); most build effort |
+
+These compose: the likely shape is **B applied at read time** (so the chart and
+FR map coalesce obvious variants immediately, no data migration), plus a
+**D-style review list** feeding the curated `.md` for the rest, with **C**
+reserved only if semantic drift dominates once we can measure it.
+
+### Where it runs / write-back
+
+- Read-time coalescing (A/B) lives next to `getAllProgramNameMap` /
+  `metrics-programs.js` — it changes display only, never the stored value.
+- Promotion (D) writes to the curated **`.md` in the repo** via normal
+  edit/PR review — **not** a runtime file write (ECS filesystem is ephemeral;
+  see the shared-loader note). The DB (`context.program`) is the discovery feed,
+  the `.md` is the curated truth.
+- Rewriting stored `context.program` values (a true migration) is a separate,
+  later step and should only follow a reviewed mapping — reserve it for when a
+  canonical rename must apply retroactively.
+
+### First step before building
+
+A read-only audit query over staging/prod: distinct `context.program` values
+with counts, split into (a) exact matches to a curated name, (b) close variants
+of a curated name, (c) no curated match. That sizing decides whether drift is a
+handful of aliases (→ A) or a long tail (→ B + D), and whether C is worth it.
+
+### Open decisions
+
+- Coalesce at **read time** (display-only, reversible) vs **migrate** stored
+  values (retroactive, riskier)? Recommend read-time first.
+- Singular/plural and punctuation folding in B: acceptable, or too aggressive
+  for GC program names that differ by a single word? Needs the audit data.
+- Who curates the review list (D) — CDS only, or partners for their own
+  department, mirroring the `.md` edit model?

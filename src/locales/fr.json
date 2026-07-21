@@ -381,7 +381,7 @@
       "dataAnalysis": "Analyse de données",
       "evalDashboard": "Tableau de bord des évaluations",
       "metrics": "Voir les métriques de performance",
-      "execDashboard": "Tableau de bord exécutif",
+      "publicDashboard": "Tableau de bord public",
       "partnerDashboard": "Tableau de bord partenaire",
       "technicalMetrics": "Voir les métriques techniques",
       "publicEval": "Évaluer un chat public",
@@ -1128,7 +1128,8 @@
     "on": "Activé",
     "off": "Désactivé",
     "na": "S.O.",
-    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés."
+    "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
+    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés."
   },
   "eval": {
     "metric": "Métrique",
@@ -1267,8 +1268,6 @@
     "runEvaluation": "Lancer l'évaluation"
   },
   "dashboardFilter": {
-    "department": "Par institution partenaire",
-    "allPartners": "Tous les partenaires",
     "dateRange": "Plage de dates",
     "last30": "30 derniers jours",
     "currentQuarter": "Trimestre en cours",
@@ -1301,12 +1300,13 @@
       "profanity": "Grossièretés",
       "piStage1": "Renseignements personnels : par programme",
       "piStage2": "Renseignements personnels : détection par IA",
+      "privateDetails": "Renseignements personnels",
       "azureGuardrail": "Mesures de protection Azure",
       "unsupportedLanguage": "Langue non prise en charge"
     }
   },
-  "execDashboard": {
-    "title": "Tableau de bord exécutif Réponses IA",
+  "publicDashboard": {
+    "title": "Tableau de bord public Réponses IA",
     "description": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
     "overviewTitle": "Aperçu",
     "error": "Échec du chargement des données. Veuillez réessayer.",
@@ -1317,26 +1317,29 @@
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
       "partnerCount": "Institutions avec des questions",
-      "harmful": "Nuisible",
-      "harmfulSub": "EN : {en} · FR : {fr}"
+      "contentIssues": "Problèmes de contenu",
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
     },
     "charts": {
       "accuracyDonutTitle": "Exactitude des réponses",
       "accuracyCentre": "précision",
+      "accuracyByLang": "EN : {en} · FR : {fr}",
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
-      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "engagementTitle": "Longueur des conversations",
+      "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "questions": "questions",
+      "conversations": "conversations",
+      "singleQuestion": "1 question",
+      "twoQuestions": "2 questions",
+      "threeQuestions": "3 questions et plus",
       "departmentsTitle": "Principales institutions par volume de questions",
       "noData": "Aucune donnée"
     },
     "ops": {
-      "title": "Mesures opérationnelles",
       "medianResponseTime": "Temps de réponse médian",
       "responseTimeValue": "{n} s",
-      "responseTimeSub": "P95 : {p95} s",
-      "inputTokens": "Total des jetons d'entrée",
-      "outputTokens": "Total des jetons de sortie",
-      "tokensSub": "EN : {en} · FR : {fr}"
+      "responseTimeSub": "P95 : {p95} s"
     },
     "safety": {
       "title": "Mesures de sécurité"
@@ -1351,8 +1354,6 @@
       "questionsSub": "EN : {en} · FR : {fr}",
       "evaluated": "Évaluées par des experts",
       "evaluatedSub": "{pct} des questions",
-      "accuracyRate": "Taux d'exactitude",
-      "accuracySub": "EN : {en} · FR : {fr}",
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}",
       "contentIssues": "Problèmes de contenu",
@@ -1360,9 +1361,18 @@
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
+      "accuracyDonutTitle": "Exactitude des réponses",
+      "accuracyCentre": "précision",
+      "accuracyByLang": "EN : {en} · FR : {fr}",
+      "accurate": "Exactes",
+      "hasError": "Contient une erreur",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionCentre": "sur {total} réponses",
-      "feedbackBreakdownTitle": "Répartition de la satisfaction (utile ou non)",
+      "satisfactionSummary": "Rétroaction du public (satisfaction) – {pct} utiles sur {total} réponses",
+      "feedbackSectionTitle": "Rétroaction du public (satisfaction)",
+      "feedbackSplitTitle": "Utile ou non",
+      "feedbackReasonsTitle": "Répartition par motif",
+      "feedbackBreakdownSubtitle": "Basé sur {total} réponses de rétroaction du public",
       "engagementTitle": "Longueur des conversations",
       "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
       "questions": "questions",
@@ -1386,8 +1396,10 @@
     },
     "programs": {
       "title": "Volume de questions par programme",
-      "subtitle": "Questions regroupées selon le programme gouvernemental visé par la question de l'utilisateur, calculé par question. Seules les questions posées après le lancement du marquage par programme sont classées.",
-      "unknown": "Inconnu"
+      "subtitle": "{total} questions classées · EN : {en} · FR : {fr}",
+      "unclassifiedNote": "{count} non classées",
+      "tooltipCount": "{count} questions",
+      "tooltipLang": "EN : {en} · FR : {fr}"
     },
     "referrals": {
       "title": "Principales pages référentes",

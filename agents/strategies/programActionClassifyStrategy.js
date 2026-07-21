@@ -5,24 +5,14 @@
 // through the prompt-tuning process. It lives here (not in agents/prompts/)
 // because it is analysis tooling, not part of the answer pipeline — but the
 // wording should still be reviewed by Lisa Fast or Ryan Hyma before shipping.
+// The program-naming / URL / account rules are shared with the eval-analysis
+// classifier via programClassificationGuidance.js.
 
-// Shared JSON extraction: strip code fences, then take the outermost JSON
-// object so stray prose around the payload doesn't break parsing.
-const extractJson = (content) => {
-  let text = (content || '').replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  const candidate = start !== -1 && end !== -1 && end > start ? text.slice(start, end + 1) : text;
-  try {
-    return { parsed: JSON.parse(candidate), raw: text };
-  } catch (e) {
-    return { parsed: null, raw: text };
-  }
-};
+import { PROGRAM_NAMING_RULE, URL_EVIDENCE_RULE, ACCOUNT_RULE, extractJson } from './programClassificationGuidance.js';
 
 const CLASSIFY_PROMPT = `You are tagging a question asked to a Government of Canada AI assistant with the task the user was trying to accomplish, so review teams can break volume and quality down by program area. Two independent tags:
 
-PROGRAM — which government program the task concerns. Name it using the official Government of Canada program name, in English, concise (max 6 words). When it matches an entry in seed_programs, reuse that exact name — consistent naming across questions is the point. Name it the way the government names programs, not the way canada.ca organizes pages (good: "Canada child benefit", "Business Number (BN)"; bad: "Individual income tax and payments" — a page title, not a program). Users sometimes mix programs up, so the answer text and citation URL are strong evidence of the true program; weigh them alongside the question — but never use a page title as the name. Name an account (e.g. "CRA Account", "My Service Canada Account", "IRCC account") as the program ONLY when the task is using the account itself — signing in, registering, recovering a password, multi-factor authentication, being locked out. A question about a program seen inside an account gets the program itself.
+PROGRAM — which government program the task concerns. Name it using the official Government of Canada program name, in English, concise (max 6 words). When it matches an entry in seed_programs, reuse that exact name — consistent naming across questions is the point. ${PROGRAM_NAMING_RULE} ${URL_EVIDENCE_RULE} ${ACCOUNT_RULE}
 
 ACTION — what the user wanted to do. Pick the single best fit from the provided actions list (synonyms show phrasing variants).
 
