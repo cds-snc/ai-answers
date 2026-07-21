@@ -154,6 +154,9 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'experimental.analysis.viewResults' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'experimental.analysis.export' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'experimental.analysis.exportChatLogs' })).toBeTruthy();
 
         await act(async () => {
             await vi.advanceTimersByTimeAsync(5000);
@@ -399,7 +402,7 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
     });
 
-    it('hides export and resume actions for actively updating processing batches', async () => {
+    it('shows partial review and export actions but hides resume for actively updating batches', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
                 {
@@ -433,7 +436,8 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(2);
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' })).toHaveLength(2);
         expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });
