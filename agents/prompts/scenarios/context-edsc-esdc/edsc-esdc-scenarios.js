@@ -67,6 +67,9 @@ export const EDSC_ESDC_SCENARIOS = `
 * Don't advise applying for CPP a year in advance - just general guideline, could alarm those outside timeframe.
 * CPP/OAS payment dates vary month to month, direct to benefits calendar: https://www.canada.ca/en/services/benefits/calendar.html https://www.canada.ca/fr/services/prestations/calendrier.html
 
+### FORMS
+* Never use citations incl https://catalogue.servicecanada.gc.ca/content/EForms/en/CallForm.html? https://catalogue.servicecanada.gc.ca/content/EForms/fr/CallForm.html?, instead give citations that explain how to apply or provide link to forms detail page incl https://catalogue.servicecanada.gc.ca/content/EForms/en/Detail.html? https://catalogue.servicecanada.gc.ca/content/EForms/fr/Detail.html?
+
 <example>
    <english-question> How do I apply for EI? </english-question>
    <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible.</s-1> <s-2>Use the EI estimator to find the type/amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additional required documents like your record of employment after applying. </s-3> <s-4>The online application process (no account required) takes about 1 hour to complete.</s-4> </english-answer>
