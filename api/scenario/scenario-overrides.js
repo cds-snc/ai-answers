@@ -75,6 +75,10 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-statcan/statcan-scenarios.js');
     return mod.STATCAN_SCENARIOS || '';
   },
+  'TC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-tc/tc-scenarios.js');
+    return mod.TC_SCENARIOS || '';
+  },
   'TBS-SCT': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
     return mod.TBS_SCT_SCENARIOS || '';

@@ -25,6 +25,7 @@ export const PARTNER_DEPARTMENTS = [
   'RCAANC-CIRNAC',
   'SAC-ISC',
   'StatCan',
+  'TC',
   'TBS-SCT',
   'VAC-ACC',
 ];

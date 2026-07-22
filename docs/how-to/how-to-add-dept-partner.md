@@ -32,6 +32,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `StatCan` | Statistics Canada | Statistique Canada |
+| `TC` | Transport Canada | Transports Canada |
 | `TBS-SCT` | Treasury Board of Canada Secretariat | Secrétariat du Conseil du Trésor du Canada |
 | `VAC-ACC` | Veterans Affairs Canada | Anciens Combattants Canada |
 
@@ -42,7 +43,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | # | File | What to Update |
 |---|------|-----------------|
 | 1 | **NEW FILE** `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` | Create with export constant (e.g., `CBSA_ASFC_SCENARIOS`) containing department-specific instructions |
-| 2 | `FilterPanel.js` | Add department to `departmentOptions` array using `abbrKey` |
+| 2 | `src/constants/partnerDepartments.js` | Add department to `PARTNER_DEPARTMENTS` array using `abbrKey` (single source of truth for FilterPanel + dashboards) |
 | 3 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
 | 4 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
 | 5 | `how-to-add-dept-partner.md` | Add department to "Current Departments" table |
@@ -88,17 +89,17 @@ Example for CBSA:
 export const CBSA_ASFC_SCENARIOS = ``;
 ```
 
-### Step 2: Update `FilterPanel.js`
+### Step 2: Update `PARTNER_DEPARTMENTS`
 
-Add to `departmentOptions` array (around line 89) in **alphabetical order**:
+Add the `abbrKey` to the `PARTNER_DEPARTMENTS` array in `src/constants/partnerDepartments.js` in **alphabetical order**. This constant is the single source of truth for partner department dropdowns across the app (`FilterPanel.js`, exec/partner dashboards) — do not edit `FilterPanel.js` directly.
 
 ```javascript
-{ value: '{ABBR_KEY}', label: '{ABBR_KEY}' }
+'{ABBR_KEY}',
 ```
 
 Example for CBSA:
 ```javascript
-{ value: 'CBSA-ASFC', label: 'CBSA-ASFC' }
+'CBSA-ASFC',
 ```
 
 ### Step 3: Update `scenario-overrides.js`
@@ -177,7 +178,7 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`FilterPanel.js`:** add only the canonical `abbrKey` as a filter option — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
+5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add only the canonical `abbrKey` — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
 6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
@@ -187,7 +188,7 @@ Current aliases:
 
 - [ ] Look up `abbrKey` in `departments_EN.js` or `departments_FR.js`
 - [ ] Create `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` with empty export
-- [ ] Add to `departmentOptions` in `FilterPanel.js` (alphabetically)
+- [ ] Add to `PARTNER_DEPARTMENTS` in `src/constants/partnerDepartments.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Update "Current Departments" table in this document (alphabetically)
