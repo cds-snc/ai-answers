@@ -1,4 +1,4 @@
-# AI Answers System Card
+# AI Answers system card
 
 **Version**: 1.2
 **Date**: July 2026
@@ -8,20 +8,20 @@
 **Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
 
 ## On this page
-- [Executive Summary](#executive-summary)
-- [Current Status](#current-status)
-- [System Purpose and Scope](#system-purpose-and-scope)
-- [Technical Architecture](#technical-architecture)
-- [Risk Assessment and Safety Measures](#risk-assessment-and-safety-measures)
-- [Performance and Evaluation](#performance-and-evaluation)
-- [Limitations and Constraints](#limitations-and-constraints)
-- [Administrative Features and Management](#administrative-features-and-management)
-- [Deployment and Infrastructure](#deployment-and-infrastructure)
-- [Responsible AI Principles and Governance](#responsible-ai-principles-and-governance)
-- [Future Development](#future-development)
-- [Contact and Support](#contact-and-support)
+- [Executive summary](#executive-summary)
+- [Current status](#current-status)
+- [System purpose and scope](#system-purpose-and-scope)
+- [Technical architecture](#technical-architecture)
+- [Risk assessment and safety measures](#risk-assessment-and-safety-measures)
+- [Performance and evaluation](#performance-and-evaluation)
+- [Limitations and constraints](#limitations-and-constraints)
+- [Administrative features and management](#administrative-features-and-management)
+- [Deployment and infrastructure](#deployment-and-infrastructure)
+- [Responsible AI principles and governance](#responsible-ai-principles-and-governance)
+- [Future development](#future-development)
+- [Contact and support](#contact-and-support)
 
-## Executive Summary
+## Executive summary
 
 AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions sourced from the entire federal government online ecosystem. The system is built with usability, privacy, and accuracy as core principles. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel later answers and to fuel automated AI evaluations.  An extensive Admin interface supports evaluation, metrics, user management, and settings.
 
@@ -42,36 +42,36 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 </details>
 
-## Current Status
+## Current status
 - **Environment**: Beta-testing on Canada.ca paused after the last of four public trials ended in February 2026.
 - **Trial results**: [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - **Production**: https://ai-answers.alpha.canada.ca (no public access - available within GC network only)
 - **Platform**: Federal institution partners can add scenario prompts, agentic tools, and files to meet specific needs, [view prompts a
 nd partner institution prompt example](docs/agents-prompts/system-prompt-documentation.md)
 
-## System Purpose and Scope
+## System purpose and scope
 
-### Primary Function
+### Primary function
 - Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
 - Models a conversation with a call centre agent - [brief answers for better service](docs/pdf/short-ai-answers-en.pdf)
 
-### Target Users
+### Target users
 - Anyone visiting Canada.ca or federal websites
 
-### Content Scope
+### Content scope
 - **In scope**: Government of Canada services, programs, benefits, regulations, and official public information
 - **Sources**: Canada.ca, gc.ca, and federal organization domains
 - **Out of scope**: Provincial/territorial/municipal services, personal/legal advice, non-government topics
 
-### Language Support
+### Language support
 - Full bilingual support (English/French pages, including Admin) for Official language compliance
 - Users can ask questions in most languages and receive answers in the same language they asked
 
-## Technical Architecture
+## Technical architecture
 
-### System Components
+### System components
 1. **Frontend**: React-based chat interface 
 2. **Backend**: Node.js with LangGraph state machine orchestration
 3. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models (e.g. Cohere, Anthropic) through Amazon Bedrock if deployed/procured
@@ -80,14 +80,14 @@ nd partner institution prompt example](docs/agents-prompts/system-prompt-documen
 
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
-### AI Model Details
+### AI model details
 - **Current production models**: Azure OpenAI GPT-5.1 family (cutover March 18,2026 from GPT 4.1); evaluation agents use GPT-4.1-mini
 - **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step or service to the appropriate model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini) for cost and speed, while context generation and answer generation use the full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
 - **Temperature**: 0 (deterministic responses), reasoning low
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude, plans in place to deploy more models, including Cohere, via AWS Bedrock
 
-### Agentic Capabilities
+### Agentic capabilities
 - **Tool usage**: AI can autonomously choose to use specialized tools to enhance responses during answer generation
 - **downloadWebPage tool**: Critical for accuracy - downloads and reads web pages to verify current information, especially for:
   - New or updated government pages
@@ -97,7 +97,7 @@ nd partner institution prompt example](docs/agents-prompts/system-prompt-documen
 - **Context generation**: Derives fresh context for **every question**, including follow-on questions, to ensure accurate Institution identification and relevant content
 - **OpenGov API tool**: Uses OpenGov API to find open datasets for data-oriened questions 
 
-### Pipeline Flow (LangGraph State Machine)
+### Pipeline flow (LangGraph state machine)
 The system uses a **multi-step LangGraph pipeline** that orchestrates all processing server-side. Multiple graph variants exist with different capabilities (e.g. vector short-circuit, eval-informed answers, reasoning models). Not all steps run in every variant.
 
 
@@ -118,9 +118,9 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
-## Risk Assessment and Safety Measures
+## Risk assessment and safety measures
 
-### Potential Harms and Mitigation Strategies
+### Potential harms and mitigation strategies
 
 #### **Information accuracy risks**
 **Potential harms:**
@@ -208,9 +208,9 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Outage setting**: Turn system off and show outage message via Admin panel
 - **Automated health monitoring**: A background monitor continuously probes the system's core dependencies (database, search, and AI model). When a dependency fails repeatedly within a short rolling window, the monitor sends an alert email to the operations team and — if auto-disable is enabled — automatically sets the site to unavailable so users see the outage message instead of failing responses. Polling speeds up while failures are being confirmed and backs off once the dependency recovers, and the site returns to available automatically when the failures clear.
 
-## Performance and Evaluation
+## Performance and evaluation
 
-### Response Quality
+### Response quality
 - **Length**: Maximum 4 sentences per answer for clarity, reduce risk of hallucination
 - **Style**: Plain language matching Canada.ca standards
 - **Accuracy**: Sourced exclusively from federal public content, aided by expert evaluations of similar questions
@@ -218,21 +218,21 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 - **Institution-specific**: Partnering institutions can provide prompt scenarios to address specific communications needs, such as sending particular questions to a wizard rather than attempting to answer, or overcoming out-dated content issues by directing to most recent content. Can add API tools and additional content files (e.g. ISC contact details file pulled from 32+ pages across ISC site)
 
 ### Evaluation infrastructure for human experts from partner institutions
-- **Innovative Expert Evaluation System**: 
-  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
-  - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
-  - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
-  - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
-  - **Weighted Total Score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
+- **Innovative expert evaluation system**: 
+  - **In-app evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
+  - **Flexible evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
+  - **Sentence-level scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
+  - **Citation rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
+  - **Weighted total score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
   - **AI evals**: Expert evals saved as embeddings that enable automated AI evaluations for similar questions
   - **Evaluation-informed answers**: Expert evaluations are injected into similar question context to prevent errors, improve consistency — see [Using evaluations to improve answers](#using-evaluations-to-improve-answers) below for current status
   - **Eval analysis engine**: produces AI analysis report of evaluation patterns, cluster analysis with examples, break outs by evaluator and language (FR/EN)
   - **Sampling rate**: Target sample size for trial accuracy evaluations is for 25% of all answers evaluated for a specific institution. Within two months of a full launch for a specific institution, expert evaluation sample sizes may decrease to 10% if AI evals contribute the other 15%. So the target is always 25% of answers to be evaluated - we expect the mix of human to AI evaluations to change over time.
-- **Separate Public User Feedback**: 
-  - **Simple Interface**: "Was this helpful?" with Yes/No options for all users
-  - **Detailed Follow-up**: Single question asking why they clicked Yes or No with specific reason options
-  - **Positive Reasons**: No call needed, no visit needed, saved time, other
-  - **Negative Reasons**: Irrelevant, confusing, not detailed enough, link didn't work, not what they wanted, other
+- **Separate public user feedback**: 
+  - **Simple interface**: "Was this helpful?" with Yes/No options for all users
+  - **Detailed follow-up**: Single question asking why they clicked Yes or No with specific reason options
+  - **Positive reasons**: No call needed, no visit needed, saved time, other
+  - **Negative reasons**: Irrelevant, confusing, not detailed enough, link didn't work, not what they wanted, other
 
 ### Using evaluations to improve answers
 
@@ -245,144 +245,144 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 
 **For full technical detail, see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
-### Current Performance
-- **Response Time**: Target is 6 to 14 seconds depending on complexity. Length of downloaded pages contributes to longer response delays. Users are shown progress messages for each step. 
+### Current performance
+- **Response time**: Target is 6 to 14 seconds depending on complexity. Length of downloaded pages contributes to longer response delays. Users are shown progress messages for each step. 
 - **Accuracy**: Target accuracy rate is greater than 90% of answers in a sample. Across public trials in 2025, an accuracy rate of 96% was achieved. [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - **Uptime**: High. 
 
-### Continuous Monitoring and security
+### Continuous monitoring and security
 
-#### **Real-time Monitoring**
-- **API Connectivity**: Production environment monitoring and email alerts are in place for outages across the database, AI model(s) and search API. 
+#### **Real-time monitoring**
+- **API connectivity**: Production environment monitoring and email alerts are in place for outages across the database, AI model(s) and search API. 
 - **Session monitoring**: Live sessions by chat ID, errors, time frame, latency
-- **User Feedback**: Continuous collection of public feedback
-- **Safety Metrics**: Monitoring of blocked queries
+- **User feedback**: Continuous collection of public feedback
+- **Safety metrics**: Monitoring of blocked queries
 
-### Known Issues
-- **Institution Detection**: May occasionally misidentify institution associated with a particular question, prompt is constantly refined
-- **Citation Accuracy**: URLs in institutional scenario prompts may become outdated if not consistently maintained
+### Known issues
+- **Institution detection**: May occasionally misidentify institution associated with a particular question, prompt is constantly refined
+- **Citation accuracy**: URLs in institutional scenario prompts may become outdated if not consistently maintained
 - **Inaccurate responses**: System tends to respond even when search results and known urls are poor - model upgrades will improve this
 
-### Incident Response and Reporting
-- **Incident Classification**: Clear categorization of incidents by severity and impact
-- **Response Procedures**: Documented procedures for handling safety, privacy, or accuracy incidents
-- **Reporting Mechanisms**: Multiple channels for reporting issues (GitHub, admin dashboard, direct contact)
-- **Escalation Process**: Clear escalation paths for critical incidents
-- **Post-Incident Review**: Systematic review and improvement process after incidents
+### Incident response and reporting
+- **Incident classification**: Clear categorization of incidents by severity and impact
+- **Response procedures**: Documented procedures for handling safety, privacy, or accuracy incidents
+- **Reporting mechanisms**: Multiple channels for reporting issues (GitHub, admin dashboard, direct contact)
+- **Escalation process**: Clear escalation paths for critical incidents
+- **Post-incident review**: Systematic review and improvement process after incidents
 - **Transparency**: Public reporting of significant incidents and lessons learned
 
-## Administrative Features and Management
+## Administrative features and management
 
-### User Roles and Access Control
-- **Admin Users**: Full system access including user management, database operations, and system configuration
-- **Partner Users**: Access to suite of evaluation tools and reports to score sentences and citation for chat responses, batch processing, and performance metrics
-- **Role-Based UI**: Different interfaces and capabilities based on user permissions
+### User roles and access control
+- **Admin users**: Full system access including user management, database operations, and system configuration
+- **Partner users**: Access to suite of evaluation tools and reports to score sentences and citation for chat responses, batch processing, and performance metrics
+- **Role-based UI**: Different interfaces and capabilities based on user permissions
 - **Authentication**: Secure login system with role-based route protection
 
 ### Administrator functionality
 
-#### **User Management**
+#### **User management**
 - Create, edit, and delete user accounts
 - Manage user roles (admin/partner) and account status (active/inactive)
 - View user creation dates and activity
 - Bulk user operations with confirmation dialogs
 
-#### **Batch Processing and dataset comparison system**
-- **Batch Creation**: Upload CSV files with questions for bulk AI evaluation
-- **Batch Monitoring**: Track running, completed, and failed batch operations
-- **Batch Management**: Cancel running batches, download results in CSV/Excel format
-- **Context Derivation**: Automatic context generation for questions without provided context
+#### **Batch processing and dataset comparison system**
+- **Batch creation**: Upload CSV files with questions for bulk AI evaluation
+- **Batch monitoring**: Track running, completed, and failed batch operations
+- **Batch management**: Cancel running batches, download results in CSV/Excel format
+- **Context derivation**: Automatic context generation for questions without provided context
 - **Workflow selection**: Process batches with differnt workflow settings
 - **Compare results across trials**: Compare results of multiple trials for a question dataset to reference answers or across a set
 
-#### **Evaluation Tools**
-- **Expert Evaluation Interface**: Experts can evaluate questions within the app interface or assess existing user conversations by chat ID
-- **In-App Evaluation**: Same interface users experience, ensuring evaluators understand the actual user experience
-- **Flexible Input**: Enter custom questions or reference chat IDs for evaluation
-- **Automated Evaluation**: Generate AI evaluations based on expert feedback patterns
-- **Evaluation Regeneration**: Rebuild all evaluations with updated criteria
-- **Progress Tracking**: Real-time monitoring of evaluation processing with batch statistics
+#### **Evaluation tools**
+- **Expert evaluation interface**: Experts can evaluate questions within the app interface or assess existing user conversations by chat ID
+- **In-app evaluation**: Same interface users experience, ensuring evaluators understand the actual user experience
+- **Flexible input**: Enter custom questions or reference chat IDs for evaluation
+- **Automated evaluation**: Generate AI evaluations based on expert feedback patterns
+- **Evaluation regeneration**: Rebuild all evaluations with updated criteria
+- **Progress tracking**: Real-time monitoring of evaluation processing with batch statistics
 - *For detailed scoring methodologies and evaluation framework, see Performance and Evaluation section.*
 
-#### **Database Management**
-- **Data Export**: Export entire database or specific collections with date filtering
-- **Data Import**: Bulk import data with chunked upload support for large datasets
-- **Table Statistics**: View record counts across all database collections
-- **Index Management**: Drop and rebuild database indexes for performance optimization
-- **System Maintenance**: Repair timestamps, migrate data structures, clean system logs
+#### **Database management**
+- **Data export**: Export entire database or specific collections with date filtering
+- **Data import**: Bulk import data with chunked upload support for large datasets
+- **Table statistics**: View record counts across all database collections
+- **Index management**: Drop and rebuild database indexes for performance optimization
+- **System maintenance**: Repair timestamps, migrate data structures, clean system logs
 
-#### **Conversation Monitoring**
-- **Chat Logs Dashboard**: View recent chat interactions with export capabilities
+#### **Conversation monitoring**
+- **Chat logs dashboard**: View recent chat interactions with export capabilities
 - **Metrics report**: Comprehensive performance analytics including:
   - Total conversations and interactions
   - Language breakdown (English/French)
   - AI-scored accuracy metrics
   - User feedback analysis
   - Public feedback reasons and scores
-- **Real-time Partner and Public reports**: Visual representation of system performance with bar charts and pie charts per partner needs
-- **Data Export**: Download metrics in JSON, CSV, and Excel formats
+- **Real-time partner and public reports**: Visual representation of system performance with bar charts and pie charts per partner needs
+- **Data export**: Download metrics in JSON, CSV, and Excel formats
 
-#### **System Configuration**
-- **Service Status**: Toggle system availability (available/unavailable)
-- **Settings Management**: Configure system-wide settings and parameters
+#### **System configuration**
+- **Service status**: Toggle system availability (available/unavailable)
+- **Settings management**: Configure system-wide settings and parameters
 
-## Deployment and Infrastructure
+## Deployment and infrastructure
 
-### Environment Configuration
-- **Production Environment**:
+### Environment configuration
+- **Production environment**:
   - **URL**: https://ai-answers.alpha.canada.ca
   - **Infrastructure**: AWS ECS with auto-scaling
   - **Database**: AWS DocumentDB with automated backups
-  - **AI Services**: Azure OpenAI GPT 4.0, 5.1 family of models - plans to add Cohere and Anthropic
+  - **AI services**: Azure OpenAI GPT 4.0, 5.1 family of models - plans to add Cohere and Anthropic
   - **Monitoring**: CloudWatch metrics and logging
   - **Platform**: Institutions can add prompt scenarios to meet specific needs
 
 ### Security
 - **HTTPS**: All communications encrypted
-- **API Security**: Rate limiting and authentication
-- **Data Protection**: Encryption at rest and in transit
-- **Access Control**: Role-based permissions
+- **API security**: Rate limiting and authentication
+- **Data protection**: Encryption at rest and in transit
+- **Access control**: Role-based permissions
 
 ### Compliance
-- **Official Languages**: Compliant with Canadian official languages requirements
+- **Official languages**: Compliant with Canadian official languages requirements
 - **Accessibility**: WCAG 2.1 AA compliance
 - **Privacy**: no personal identifying information is stored - questions with personal details are blocked/rejected
-- **Government Standards**: Canada.ca design compliance
+- **Government standards**: Canada.ca design compliance
 
-## Responsible AI Principles and Governance
+## Responsible AI principles and governance
 
-### Core Principles
-- **Accuracy First**: All responses must be accurate and verifiable through official government sources
-- **Accessibility for All**: Full compliance with accessibility standards and inclusive design
+### Core principles
+- **Accuracy first**: All responses must be accurate and verifiable through official government sources
+- **Accessibility for all**: Full compliance with accessibility standards and inclusive design
 - **Transparency**: Clear documentation of system capabilities, limitations, and decision-making processes
 - **Accountability**: Continuous monitoring and evaluation with human oversight
 - **Safety**: Inclusive unbiased responses across all groups measured by expert evaluation
 
-### Ethical Considerations
-- **Public Service Mandate**: System designed exclusively for public service, not commercial purposes
-- **User Autonomy**: Users maintain control over their interactions and can choose not to use the service
-- **Benefit Maximization**: Focus on providing maximum benefit to Canadian citizens and residents
-- **Harm Minimization**: Comprehensive safety measures to prevent any potential harms
-- **Cultural Sensitivity**: Respect for Canada's diverse population and official languages
+### Ethical considerations
+- **Public service mandate**: System designed exclusively for public service, not commercial purposes
+- **User autonomy**: Users maintain control over their interactions and can choose not to use the service
+- **Benefit maximization**: Focus on providing maximum benefit to Canadian citizens and residents
+- **Harm minimization**: Comprehensive safety measures to prevent any potential harms
+- **Cultural sensitivity**: Respect for Canada's diverse population and official languages
 
-## Future Development
+## Future development
 
-### Planned Improvements
-- **Additional Languages**: Support for Indigenous languages
+### Planned improvements
+- **Additional languages**: Support for Indigenous languages
 - **Additional institutional partners**: add specific dept prompt layer and expert evaluations
 - **Agentic tools**: add tools for institutional agents to use to support AI assistance beyond chat
 
-## Contact and Support
+## Contact and support
 
-### Technical Support
+### Technical support
 - **Issues**: GitHub repository for bug reports and feature requests
 - **Documentation**: Comprehensive README and API documentation
 - **Monitoring**: Real-time system status monitoring
 
-### Contact and Reporting
-- **Technical Issues**: GitHub repository for bug reports and feature requests
-- **Safety Concerns**: Direct contact through product email
-- **General Feedback**: Multiple feedback mechanisms for different user types
+### Contact and reporting
+- **Technical issues**: GitHub repository for bug reports and feature requests
+- **Safety concerns**: Direct contact through product email
+- **General feedback**: Multiple feedback mechanisms for different user types
 
 ---
 
