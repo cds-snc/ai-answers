@@ -14,7 +14,6 @@
 - [Technical architecture](#technical-architecture)
 - [Risk assessment and safety measures](#risk-assessment-and-safety-measures)
 - [Performance and evaluation](#performance-and-evaluation)
-- [Limitations and constraints](#limitations-and-constraints)
 - [Administrative features and management](#administrative-features-and-management)
 - [Deployment and infrastructure](#deployment-and-infrastructure)
 - [Responsible AI principles and governance](#responsible-ai-principles-and-governance)
