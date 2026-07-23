@@ -869,6 +869,8 @@ const FilterPanel = ({
         </div>
 
         {/* Row 2: advanced filters */}
+        {showAdvancedSection && (
+        <>
         <p className="filter-advanced-title">{t('admin.filters.advancedTitle')}</p>
         <details
           className="filter-advanced-details details-form"
@@ -920,6 +922,7 @@ const FilterPanel = ({
                     <label htmlFor="evalLogic-or">{t('admin.filters.evalLogicOr')}</label>
                   </div>
                 </div>
+                </>
               )}
             </div>
 
@@ -989,6 +992,8 @@ const FilterPanel = ({
             </div>
           </div>
         </details>
+        </>
+        )}
 
         <div className="filter-actions">
           <button

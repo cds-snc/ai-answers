@@ -190,14 +190,31 @@ describe('FilterPanel', () => {
     expect(removeButton.getAttribute('aria-label')).not.toBe('Remove filter');
   });
 
-  it('shows the AND/OR eval-logic toggle by default, hides it when showEvalLogic is false', async () => {
-    const { getByLabelText, queryByLabelText, unmount } = renderPanel();
+  it('shows the AND/OR eval-logic toggle and its label by default, hides both when showEvalLogic is false', async () => {
+    const { getByLabelText, queryByLabelText, queryByText, unmount } = renderPanel();
     await waitFor(() => getByLabelText('Date range (24-hour)'));
     expect(queryByLabelText('Combine partner and AI evaluation filters')).not.toBeNull();
+    expect(queryByText('Partner eval and AI eval match')).not.toBeNull();
     unmount();
 
-    const { getByLabelText: getByLabelText2, queryByLabelText: queryByLabelText2 } = renderPanel({ showEvalLogic: false });
+    const { getByLabelText: getByLabelText2, queryByLabelText: queryByLabelText2, queryByText: queryByText2 } = renderPanel({ showEvalLogic: false });
     await waitFor(() => getByLabelText2('Date range (24-hour)'));
     expect(queryByLabelText2('Combine partner and AI evaluation filters')).toBeNull();
+    // The label used to render unconditionally even with the radios hidden.
+    expect(queryByText2('Partner eval and AI eval match')).toBeNull();
+  });
+
+  it('shows the whole "More filters" section by default, hides it when showAdvancedSection is false', async () => {
+    const { getByLabelText, queryByText, unmount } = renderPanel();
+    await waitFor(() => getByLabelText('Date range (24-hour)'));
+    expect(queryByText('More filters')).not.toBeNull();
+    expect(queryByText('Answer Type')).not.toBeNull();
+    unmount();
+
+    const { getByLabelText: getByLabelText2, queryByText: queryByText2 } = renderPanel({ showAdvancedSection: false });
+    await waitFor(() => getByLabelText2('Date range (24-hour)'));
+    expect(queryByText2('More filters')).toBeNull();
+    expect(queryByText2('Answer Type')).toBeNull();
+    expect(queryByText2('Partner Evaluation')).toBeNull();
   });
 });

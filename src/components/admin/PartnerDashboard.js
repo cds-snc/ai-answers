@@ -246,9 +246,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   return (
     <div>
       <div className="mb-100">
-        {/* TODO: Advanced filters (answer type, partner eval, AI eval, URL) are passed to the
-            API and filter the aggregate data, but PartnerDashboard has no charts that surface
-            those breakdowns. Either hide the advanced section or add corresponding chart sections. */}
         <FilterPanel
           lang={lang}
           onApplyFilters={handleApplyFilters}
@@ -262,16 +259,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}
           hasAppliedFilters={hasUserApplied}
-          // This dashboard's filters go through metrics-common.js's
-          // parseRequestFilters, not the shared getChatFilterConditions —
-          // partnerEval/aiEval are pushed as two separate sequential $match
-          // pipeline stages there, not a combinable condition array, and
-          // "Content issue" isn't wired into that filter path at all (even
-          // though metrics-expert-feedback.js already computes the same
-          // boolean for its own chart). Hidden here rather than offering a
-          // choice that would silently match nothing. See FilterPanel's own
-          // showEvalLogic prop comment.
-          showEvalLogic={false}
+          // The "More filters" section (URL, answer type, partner eval, AI
+          // eval, and — since they live inside it — the AND/OR toggle and
+          // Content issue checkbox) is hidden entirely: this dashboard has
+          // no charts that break results down by those categories, so
+          // applying one would just silently shrink every number with no
+          // visible way to tell why. See the former TODO this replaced
+          // (commit 32ff2262) and FilterPanel's own prop comments.
+          showAdvancedSection={false}
         />
       </div>
 
