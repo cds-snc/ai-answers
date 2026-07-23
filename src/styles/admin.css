@@ -621,6 +621,10 @@
   font-weight: 500;
 }
 
+.label + .label {
+  margin-left: var(--gcds-spacing-50);
+}
+
 .department-feedback-wrapper {
   background-color: var(--gcds-color-grayscale-50);
   border-left: 6px solid var(--gcds-color-grayscale-400);
@@ -697,6 +701,18 @@
   background-color: var(--gcds-color-red-100);
   color: var(--gcds-color-red-700);
   border: 1px solid var(--gcds-color-red-500);
+}
+
+/* Content issue (amber) — an independent per-sentence tag, not part of the
+   correct/needsImprovement/error score scale above, so it gets its own
+   colour rather than reusing one of those. GC DS has no light-orange token
+   pairing (only --gcds-color-orange-700), so this follows the same
+   hardcoded-pair convention already used for .label.admin/.clarifying-
+   question/.not-gc/.pt-muni above; #e65100 matches the "orange" state
+   colour already used elsewhere in this file (stat-card/donut values). */
+.label.hasContentIssue {
+  background-color: #FFE0B2;
+  color: #e65100;
 }
 
 /* Table summary stats */
@@ -1427,6 +1443,16 @@
   font-size: 14px;
   font-family: 'Noto Sans', sans-serif;
   line-height: 1.4;
+}
+
+/* AND/OR eval-logic connector — white with a light grey outline, distinct
+   from both the blue "info" pills (means "at default") and the grey
+   closable ones (an active filter), since this is an operator relating
+   the two eval pills rather than a filter state of its own. */
+.filter-pill--connector {
+  background: #fff;
+  border: 1px solid var(--gcds-border-default);
+  color: var(--gcds-text-primary);
 }
 
 .filter-pill--info {

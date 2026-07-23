@@ -381,6 +381,9 @@ async function chatDashboardHandler(req, res) {
         },
         aiEvals: {
           $addToSet: '$interactions.aiEval'
+        },
+        partnerHasContentIssues: {
+          $addToSet: '$interactions.partnerHasContentIssue'
         }
       }
     });
@@ -510,6 +513,10 @@ async function chatDashboardHandler(req, res) {
             else: 'public'
           }
         },
+        // True if any interaction on this chat was flagged for a content
+        // issue — independent of partnerEval's score category above, so a
+        // chat can be "correct" and still show this badge.
+        partnerHasContentIssue: { $in: [true, '$partnerHasContentIssues'] },
         pageLanguage: 1
       }
     });
@@ -575,6 +582,7 @@ async function chatDashboardHandler(req, res) {
       answerType: chat.answerType || '',
       partnerEval: chat.partnerEval || '',
       aiEval: chat.aiEval || '',
+      partnerHasContentIssue: !!chat.partnerHasContentIssue,
       userType: chat.userType || 'public',
       interactionCount: chat.interactionCount || 0,
       redactedQuestion: chat.redactedQuestion || ''

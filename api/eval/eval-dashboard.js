@@ -377,6 +377,7 @@ async function evalDashboardHandler(req, res) {
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
+        partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
         // Only consider expert feedback attached directly to the interaction
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
@@ -499,6 +500,7 @@ async function evalDashboardHandler(req, res) {
       hasExpertEval: !!r.hasExpertEval,
       partnerEval: r.partnerEval || '',
       aiEval: r.aiEval || '',
+      partnerHasContentIssue: !!r.partnerHasContentIssue,
       expertEmail: r.expertEmail || '',
       creatorEmail: r.creatorEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
