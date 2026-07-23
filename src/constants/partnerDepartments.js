@@ -21,7 +21,6 @@ export const PARTNER_DEPARTMENTS = [
   'JUS',
   'NRCan-RNCan',
   'PHAC-ASPC',
-  'PSPC-SPAC',
   'RCAANC-CIRNAC',
   'SAC-ISC',
   'StatCan',
