@@ -302,11 +302,10 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </>
       )}
 
-      {/* Referenced by the "Showing:*" link in DashboardFilterBar's pills row —
+      {/* Referenced by the footnote marker in PublicDashboardPage's h1 —
           states the userType=public restriction baked into fetchPublicMetrics
-          above, now that the page header states it as a pill rather than an
-          intro paragraph. Always rendered (not gated on loading/error) since
-          the link that points here is always present too.
+          above. Always rendered (not gated on loading/error) since the link
+          that points here is always present too.
           WET-BOEW's standard footnote pattern (GCWeb's wb-fnote, not shipped
           by GC DS — reproduced in admin.css): the marker box doubles as the
           "return to referrer" link, so there's no separate visible number. */}
