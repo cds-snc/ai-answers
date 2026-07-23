@@ -156,7 +156,13 @@ const DEFAULT_HEADER_ORDER = [
     'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
-    'context.qaMatches',
+    ...Array.from({ length: 3 }, (_, index) => [
+        `context.qaMatches.${index}.chatId`,
+        `context.qaMatches.${index}.interactionId`,
+        `context.qaMatches.${index}.similarity`,
+        `context.qaMatches.${index}.questionText`,
+        `context.qaMatches.${index}.answerText`,
+    ]).flat(),
     'autoEval.expertFeedback.totalScore',
     'answer.tools.count',
     'answer.tools.0',
@@ -223,6 +229,20 @@ const buildToolColumns = (tools) => {
         const tool = arr[i];
         cols[`answer.tools.${i}`] = tool ? serializeToolForExport(tool, ['status']) : '';
         cols[`answer.tools.${i}.status`] = tool?.status || '';
+    }
+    return cols;
+};
+
+const buildQaMatchColumns = (matches) => {
+    const arr = Array.isArray(matches) ? matches : [];
+    const cols = {};
+    for (let i = 0; i < 3; i++) {
+        const match = arr[i] || {};
+        cols[`context.qaMatches.${i}.chatId`] = match.chatId || '';
+        cols[`context.qaMatches.${i}.interactionId`] = match.interactionId || '';
+        cols[`context.qaMatches.${i}.similarity`] = match.similarity ?? '';
+        cols[`context.qaMatches.${i}.questionText`] = match.questionText || '';
+        cols[`context.qaMatches.${i}.answerText`] = match.answerText || '';
     }
     return cols;
 };
@@ -308,6 +328,7 @@ function flattenInteraction(chat, interaction, view) {
 
     const toolColumns = buildToolColumns(get(interaction, 'answer.tools', []));
     const qaMatches = get(interaction, 'context.qaMatches', []);
+    const qaMatchColumns = buildQaMatchColumns(qaMatches);
 
     // Explicit Default View Construction
     if (viewDef.mode === 'explicit') {
@@ -389,7 +410,7 @@ function flattenInteraction(chat, interaction, view) {
             // Context search results might be array/object, flatten or stringify? Default behavior is usually stringify for cells if object.
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
             'context.translatedQuestion': get(interaction, 'context.translatedQuestion'),
-            'context.qaMatches': Array.isArray(qaMatches) && qaMatches.length > 0 ? JSON.stringify(qaMatches) : '',
+            ...qaMatchColumns,
 
             'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore'),
 

@@ -122,11 +122,11 @@ describe('chat-export-logs API', () => {
         expect(row['context.searchQuery']).toBe('test query content');
         expect(row).toHaveProperty('appVersion');
         expect(row.appVersion).toBe('v-interaction-version');
-        expect(JSON.parse(row['context.qaMatches'])).toEqual([expect.objectContaining({
-            chatId: 'used-chat',
-            interactionId: 'used-interaction',
-            similarity: 0.91
-        })]);
+        expect(row['context.qaMatches.0.chatId']).toBe('used-chat');
+        expect(row['context.qaMatches.0.interactionId']).toBe('used-interaction');
+        expect(row['context.qaMatches.0.similarity']).toBe(0.91);
+        expect(row['context.qaMatches.0.questionText']).toBe('Used question');
+        expect(row['context.qaMatches.0.answerText']).toBe('Used answer');
     });
 
     it('should include context.searchQuery in the tools view export', async () => {
@@ -246,6 +246,8 @@ describe('chat-export-logs API', () => {
 
         await handler(req, res);
 
-        expect(res.json.mock.calls[0][0][0]['context.qaMatches']).toBe('');
+        const row = res.json.mock.calls[0][0][0];
+        expect(row['context.qaMatches.0.chatId']).toBe('');
+        expect(row['context.qaMatches.0.answerText']).toBe('');
     });
 });
