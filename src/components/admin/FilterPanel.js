@@ -21,12 +21,28 @@ const FilterPanel = ({
   filterLoading = false,
   filterError = null,
   filterResultCount = null,
-  hasAppliedFilters = false
+  hasAppliedFilters = false,
+  // Partner/Metrics dashboards go through metrics-common.js's
+  // parseRequestFilters, which pushes partnerEval/aiEval as two separate
+  // sequential $match pipeline stages rather than a combinable condition —
+  // neither the AND/OR evalLogic toggle nor the "Content issue" pseudo-
+  // category are wired up there yet, so both are hidden rather than
+  // offering a choice that silently matches nothing. Chat/Eval/AutoEval
+  // (via the shared getChatFilterConditions) support both and keep the
+  // default.
+  showEvalLogic = true,
+  // Hides the whole "More filters" section (URL, answer type, partner
+  // eval, AI eval) — for a dashboard whose charts don't break results down
+  // by those categories, applying one just silently shrinks every number
+  // with no visible way to tell why (see PartnerDashboard's own comment).
+  showAdvancedSection = true
 }) => {
   const { t } = useTranslations(lang);
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  // Drives aria-expanded on the date-range trigger input.
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   // Set to true by handleClear so the auto-close effect doesn't immediately
   // re-close the panel after the clear re-fetch completes.
   const skipNextAutoClose = useRef(false);
@@ -107,6 +123,10 @@ const FilterPanel = ({
   const [answerType, setAnswerType] = useState([]);
   const [partnerEval, setPartnerEval] = useState([]);
   const [aiEval, setAiEval] = useState([]);
+  // How partnerEval and aiEval combine when both have a selection — only
+  // matters once both are non-empty; harmless otherwise. Defaults to 'and'
+  // to preserve existing filter behaviour for anyone who never touches it.
+  const [evalLogic, setEvalLogic] = useState('and');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Tracks what has actually been applied — drives the pill display.
@@ -127,7 +147,8 @@ const FilterPanel = ({
         userType: defaultUserType,
         answerType: 'all',
         partnerEval: 'all',
-        aiEval: 'all'
+        aiEval: 'all',
+        evalLogic: 'and'
       };
       onApplyFilters(defaultFilters);
       setAppliedFilters(defaultFilters);
@@ -205,6 +226,235 @@ const FilterPanel = ({
       }
     });
 
+    // --- Keyboard accessibility patch for the daterangepicker plugin ---
+    // The plugin only wires up mouse interaction for its calendar grid and
+    // preset list (mousedown/click, no tabindex or keydown support), and its
+    // own keydown handler closes the popup on Tab or Enter — which would
+    // otherwise make the whole widget unusable without a mouse (WCAG 2.1.1).
+    // We drop that handler and layer roving-tabindex keyboard navigation,
+    // labelling, and focus management on top instead.
+    $picker.off('keydown.daterangepicker');
+
+    const container = instance.container;
+
+    // Focus the trigger input without letting the plugin's own
+    // focus.daterangepicker handler immediately reopen the popup.
+    const refocusInput = () => {
+      $picker.off('focus.daterangepicker');
+      dateRangePickerRef.current.focus();
+      $picker.on('focus.daterangepicker', $.proxy(instance.show, instance));
+    };
+
+    const hideAndRefocus = () => {
+      instance.hide();
+      refocusInput();
+    };
+
+    // Keeps exactly one cell per rendered calendar tabbable (roving
+    // tabindex), and gives every cell/nav control the name/role a keyboard
+    // or screen-reader user needs. Re-run after every re-render, since the
+    // plugin replaces the whole calendar-table innerHTML on month nav, date
+    // selection, or range selection.
+    const setupCalendarA11y = () => {
+      container.find('td.available').attr('tabindex', '-1');
+      container.find('.drp-calendar').each(function (sideIndex, calEl) {
+        const $cal = $(calEl);
+        const side = $cal.hasClass('left') ? 'left' : 'right';
+        const calendarDates = (side === 'left' ? instance.leftCalendar : instance.rightCalendar).calendar;
+
+        $cal.find('td[data-title]').each(function () {
+          const $cell = $(this);
+          const match = /^r(\d+)c(\d+)$/.exec($cell.attr('data-title') || '');
+          if (!match || !calendarDates) return;
+          const row = parseInt(match[1], 10);
+          const col = parseInt(match[2], 10);
+          const cellDate = calendarDates[row] && calendarDates[row][col];
+          if (!cellDate) return;
+          $cell.attr({
+            role: 'gridcell',
+            'aria-label': cellDate.clone().locale(isFrench ? 'fr' : 'en').format('LL'),
+            'aria-selected': $cell.hasClass('active') ? 'true' : 'false'
+          });
+        });
+
+        const $target = $cal.find('td.available.active').first().length
+          ? $cal.find('td.available.active').first()
+          : ($cal.find('td.available.today').first().length
+            ? $cal.find('td.available.today').first()
+            : $cal.find('td.available').first());
+        $target.attr('tabindex', '0');
+      });
+
+      container.find('.ranges li').attr({ tabindex: '0', role: 'button' });
+      container.find('th.prev').attr({
+        tabindex: '0',
+        role: 'button',
+        'aria-label': t('admin.filters.previousMonth')
+      });
+      container.find('th.next').attr({
+        tabindex: '0',
+        role: 'button',
+        'aria-label': t('admin.filters.nextMonth')
+      });
+
+      // Selecting a date (keyboard or mouse, since cells are now focusable)
+      // replaces the calendar's innerHTML, which detaches the focused cell
+      // and silently drops focus to <body> mid-interaction. Recover it onto
+      // the newly-rendered roving cell so the popup doesn't look like it
+      // lost focus — restricted to while the popup is actually open, so
+      // this never fires on the initial (hidden) render.
+      if (instance.isShowing && document.activeElement === document.body) {
+        const $roving = container.find('td.available[tabindex="0"]').first();
+        if ($roving.length) $roving.trigger('focus');
+      }
+    };
+    setupCalendarA11y();
+
+    const gridObserver = new MutationObserver(setupCalendarA11y);
+    container.find('.calendar-table').each(function () {
+      gridObserver.observe(this, { childList: true });
+    });
+
+    // Close the popup once focus genuinely leaves it (e.g. Tab to the next
+    // field) — the plugin used to do this itself via the keydown handler we
+    // removed above, but that handler closed on every Tab, including a Tab
+    // meant to move *into* the popup. This instead only closes when focus
+    // lands somewhere outside both the trigger input and the popup.
+    const isInsidePickerOrInput = (el) =>
+      !!el && (el === dateRangePickerRef.current || (container[0] && container[0].contains(el)));
+
+    const closeIfFocusLeavesPicker = (e) => {
+      if (!instance.isShowing) return;
+      const next = e.relatedTarget;
+      if (next !== undefined) {
+        if (!isInsidePickerOrInput(next)) instance.hide();
+        return;
+      }
+      // Some browsers omit relatedTarget on focusout (e.g. when a focused
+      // element is removed from the DOM by a calendar re-render) — re-check
+      // on the next tick. The MutationObserver above runs first (a
+      // microtask, ahead of this macrotask) and will have already recovered
+      // focus into the popup if that's what happened, so this only fires
+      // for a genuine external focus loss.
+      setTimeout(() => {
+        if (!isInsidePickerOrInput(document.activeElement)) instance.hide();
+      }, 0);
+    };
+
+    $picker.on('focusout.daterangepicker-a11y', closeIfFocusLeavesPicker);
+    container.on('focusout.daterangepicker-a11y', closeIfFocusLeavesPicker);
+
+    // Moves focus to the cell at (row, col) within a given calendar side,
+    // if an available one exists there.
+    const moveToCell = ($cal, row, col) => {
+      const $cell = $cal.find(`td[data-title="r${row}c${col}"]`);
+      if ($cell.length && $cell.hasClass('available')) {
+        container.find('td.available[tabindex="0"]').attr('tabindex', '-1');
+        $cell.attr('tabindex', '0').trigger('focus');
+        return true;
+      }
+      return false;
+    };
+
+    container.on('keydown.daterangepicker-a11y', 'td.available', function (e) {
+      const $cell = $(this);
+      const $cal = $cell.closest('.drp-calendar');
+      const match = /^r(\d+)c(\d+)$/.exec($cell.attr('data-title') || '');
+      const row = match ? parseInt(match[1], 10) : null;
+      const col = match ? parseInt(match[2], 10) : null;
+      if (row === null) return;
+
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          $cell.trigger('mousedown');
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (!moveToCell($cal, row, col + 1)) {
+            const $other = $cal.hasClass('left') ? container.find('.drp-calendar.right') : null;
+            if ($other && $other.length) moveToCell($other, row, 0);
+          }
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (!moveToCell($cal, row, col - 1)) {
+            const $other = $cal.hasClass('right') ? container.find('.drp-calendar.left') : null;
+            if ($other && $other.length) moveToCell($other, row, 6);
+          }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          moveToCell($cal, row + 1, col);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          moveToCell($cal, row - 1, col);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          hideAndRefocus();
+          break;
+        default:
+          break;
+      }
+    });
+
+    container.on('keydown.daterangepicker-a11y', '.ranges li', function (e) {
+      const $li = $(this);
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          $li.trigger('click');
+          break;
+        case 'ArrowDown': {
+          e.preventDefault();
+          const $next = $li.next('li');
+          if ($next.length) $next.trigger('focus');
+          break;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          const $prev = $li.prev('li');
+          if ($prev.length) $prev.trigger('focus');
+          break;
+        }
+        case 'Escape':
+          e.preventDefault();
+          hideAndRefocus();
+          break;
+        default:
+          break;
+      }
+    });
+
+    container.on('keydown.daterangepicker-a11y', 'th.prev, th.next', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        $(this).trigger('click');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        hideAndRefocus();
+      }
+    });
+
+    $picker.on('show.daterangepicker', () => setIsDatePickerOpen(true));
+    // Return focus to the trigger input on close, but only when focus was
+    // still inside the popup (Escape, Apply, Cancel via keyboard) or lost to
+    // <body> — not when the user dismissed it by clicking another control,
+    // which should keep the focus they just placed.
+    $picker.on('hide.daterangepicker', () => {
+      setIsDatePickerOpen(false);
+      const active = document.activeElement;
+      const focusWasInsidePicker = active && container[0] && container[0].contains(active);
+      const focusWasLost = !active || active === document.body;
+      if (focusWasInsidePicker || focusWasLost) {
+        refocusInput();
+      }
+    });
+
     // Handle date selection - convert moment to local time string
     $picker.on('apply.daterangepicker', function (ev, picker) {
       pendingStartRef.current = null;
@@ -251,10 +501,17 @@ const FilterPanel = ({
 
     // Cleanup
     return () => {
+      gridObserver.disconnect();
+      container.off('keydown.daterangepicker-a11y');
+      container.off('focusout.daterangepicker-a11y');
+      $picker.off('focusout.daterangepicker-a11y');
       if ($picker.data('daterangepicker')) {
         $picker.off('apply.daterangepicker');
         $picker.off('cancel.daterangepicker');
         $picker.off('outsideClick.daterangepicker');
+        $picker.off('show.daterangepicker');
+        $picker.off('hide.daterangepicker');
+        $picker.off('focus.daterangepicker');
         $picker.data('daterangepicker').remove();
         dateRangePickerInstance.current = null;
       }
@@ -311,14 +568,27 @@ const FilterPanel = ({
   ];
 
   // Partner evaluation options
+  // Ordered to match ExpertFeedbackComponent's actual per-sentence flow:
+  // Correct / Needs improvement / Incorrect, then Content issue, then
+  // Harmful (shown only when Incorrect) — repeated per sentence. Citation
+  // rating is its own section evaluated after all sentences, so it comes
+  // last here too.
   const partnerEvalOptions = [
     { value: 'all', label: t('admin.filters.allPartnerEvals') },
     { value: 'noEval', label: t('admin.filters.noEvaluation') },
     { value: 'correct', label: t('admin.filters.evalCorrect') },
     { value: 'needsImprovement', label: t('admin.filters.evalNeedsImprovement') },
     { value: 'hasError', label: t('admin.filters.evalHasError') },
-    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') },
-    { value: 'harmful', label: t('admin.filters.evalHarmful') }
+    // Independent of the score category above — a partner/admin tags this
+    // per-sentence during evaluation, so an answer can be e.g. "correct"
+    // and still have a content issue flagged. Reuses showEvalLogic since
+    // both this and evalLogic depend on getChatFilterConditions, which
+    // Partner/Metrics dashboards don't go through (see FilterPanel's own
+    // showEvalLogic prop comment) — selecting it there would silently match
+    // nothing rather than actually filter.
+    ...(showEvalLogic ? [{ value: 'hasContentIssue', label: t('admin.filters.evalHasContentIssue') }] : []),
+    { value: 'harmful', label: t('admin.filters.evalHarmful') },
+    { value: 'hasCitationError', label: t('admin.filters.evalHasCitationError') }
   ];
 
   // AI evaluation options
@@ -360,7 +630,8 @@ const FilterPanel = ({
       userType,
       answerType: answerType.length > 0 ? answerType.join(',') : 'all',
       partnerEval: partnerEval.length > 0 ? partnerEval.join(',') : 'all',
-      aiEval: aiEval.length > 0 ? aiEval.join(',') : 'all'
+      aiEval: aiEval.length > 0 ? aiEval.join(',') : 'all',
+      evalLogic
     };
 
     setAppliedFilters(filters);
@@ -377,6 +648,7 @@ const FilterPanel = ({
     setAnswerType([]);
     setPartnerEval([]);
     setAiEval([]);
+    setEvalLogic('and');
     setShowAdvancedFilters(false);
 
     // Update daterangepicker
@@ -401,7 +673,8 @@ const FilterPanel = ({
       userType: defaultUserType,
       answerType: 'all',
       partnerEval: 'all',
-      aiEval: 'all'
+      aiEval: 'all',
+      evalLogic: 'and'
     };
 
     setAppliedFilters(null);
@@ -552,6 +825,8 @@ const FilterPanel = ({
               id="dateRangePicker"
               className="filter-input"
               readOnly
+              aria-haspopup="dialog"
+              aria-expanded={isDatePickerOpen}
               style={{ backgroundColor: 'white', cursor: 'pointer' }}
             />
           </div>
@@ -596,7 +871,7 @@ const FilterPanel = ({
         {/* Row 2: advanced filters */}
         <p className="filter-advanced-title">{t('admin.filters.advancedTitle')}</p>
         <details
-          className="filter-advanced-details"
+          className="filter-advanced-details details-form"
           open={showAdvancedFilters}
           onToggle={(e) => { e.stopPropagation(); setShowAdvancedFilters(e.target.open); }}
         >
@@ -632,67 +907,86 @@ const FilterPanel = ({
                   className="filter-input"
                 />
               </div>
+              {showEvalLogic && (
+                <>
+                <p className="filter-advanced-title">{t('admin.filters.evalPairTitle')}</p>
+                <div className="gc-chckbxrdio sm filter-eval-logic" role="radiogroup" aria-label={t('admin.filters.evalLogicGroupLabel')}>
+                  <div className="radio">
+                    <input type="radio" name="evalLogic" id="evalLogic-and" checked={evalLogic === 'and'} onChange={() => setEvalLogic('and')} />
+                    <label htmlFor="evalLogic-and">{t('admin.filters.evalLogicAnd')}</label>
+                  </div>
+                  <div className="radio">
+                    <input type="radio" name="evalLogic" id="evalLogic-or" checked={evalLogic === 'or'} onChange={() => setEvalLogic('or')} />
+                    <label htmlFor="evalLogic-or">{t('admin.filters.evalLogicOr')}</label>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Answer type column */}
-            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
+            <details className="filter-checkbox-details details-form" open onToggle={(e) => e.stopPropagation()}>
               <summary className="filter-label">
                 {t('admin.filters.answerType') || 'Answer Type'}
                 {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
               </summary>
-              <div className="filter-checkbox-group">
-                <label className="filter-checkbox-label">
-                  <input type="checkbox" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} className="filter-checkbox" />
-                  {t('admin.filters.allAnswerTypes') || 'All'}
-                </label>
+              <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.answerType')}>
+                <div className="checkbox">
+                  <input type="checkbox" id="answerType-all" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} />
+                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes') || 'All'}</label>
+                </div>
                 {answerTypeOptions.filter(o => o.value !== 'all').map(option => (
-                  <label key={option.value} className="filter-checkbox-label">
-                    <input type="checkbox" value={option.value} checked={answerType.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAnswerType([...answerType, option.value]); } else { setAnswerType(answerType.filter(v => v !== option.value)); } }} className="filter-checkbox" />
-                    {option.label}
-                  </label>
+                  <div className="checkbox" key={option.value}>
+                    <input type="checkbox" id={`answerType-${option.value}`} value={option.value} checked={answerType.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAnswerType([...answerType, option.value]); } else { setAnswerType(answerType.filter(v => v !== option.value)); } }} />
+                    <label htmlFor={`answerType-${option.value}`}>{option.label}</label>
+                  </div>
                 ))}
-              </div>
+              </fieldset>
             </details>
 
-            {/* Partner eval column */}
-            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
-              <summary className="filter-label">
-                {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
-              </summary>
-              <div className="filter-checkbox-group">
-                <label className="filter-checkbox-label">
-                  <input type="checkbox" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} className="filter-checkbox" />
-                  {t('admin.filters.allPartnerEvals') || 'All'}
-                </label>
-                {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
-                  <label key={option.value} className="filter-checkbox-label">
-                    <input type="checkbox" value={option.value} checked={partnerEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setPartnerEval([...partnerEval, option.value]); } else { setPartnerEval(partnerEval.filter(v => v !== option.value)); } }} className="filter-checkbox" />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </details>
+            {/* Partner eval + AI eval are boxed individually, side by side,
+                with an AND/OR toggle spanning both underneath — controls how
+                the two filters combine when both have a selection. */}
+            <div className="filter-column">
+              <div className="filter-eval-pair">
+                <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
+                  <summary className="filter-label">
+                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                  </summary>
+                  <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.partnerEval')}>
+                    <div className="checkbox">
+                      <input type="checkbox" id="partnerEval-all" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} />
+                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals') || 'All'}</label>
+                    </div>
+                    {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
+                      <div className="checkbox" key={option.value}>
+                        <input type="checkbox" id={`partnerEval-${option.value}`} value={option.value} checked={partnerEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setPartnerEval([...partnerEval, option.value]); } else { setPartnerEval(partnerEval.filter(v => v !== option.value)); } }} />
+                        <label htmlFor={`partnerEval-${option.value}`}>{option.label}</label>
+                      </div>
+                    ))}
+                  </fieldset>
+                </details>
 
-            {/* AI eval column */}
-            <details className="filter-checkbox-details" open onToggle={(e) => e.stopPropagation()}>
-              <summary className="filter-label">
-                {t('admin.filters.aiEval') || 'AI Evaluation'}
-                {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
-              </summary>
-              <div className="filter-checkbox-group">
-                <label className="filter-checkbox-label">
-                  <input type="checkbox" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} className="filter-checkbox" />
-                  {t('admin.filters.allAiEvals') || 'All'}
-                </label>
-                {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
-                  <label key={option.value} className="filter-checkbox-label">
-                    <input type="checkbox" value={option.value} checked={aiEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAiEval([...aiEval, option.value]); } else { setAiEval(aiEval.filter(v => v !== option.value)); } }} className="filter-checkbox" />
-                    {option.label}
-                  </label>
-                ))}
+                <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
+                  <summary className="filter-label">
+                    {t('admin.filters.aiEval') || 'AI Evaluation'}
+                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                  </summary>
+                  <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.aiEval')}>
+                    <div className="checkbox">
+                      <input type="checkbox" id="aiEval-all" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} />
+                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals') || 'All'}</label>
+                    </div>
+                    {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
+                      <div className="checkbox" key={option.value}>
+                        <input type="checkbox" id={`aiEval-${option.value}`} value={option.value} checked={aiEval.includes(option.value)} onChange={(e) => { if (e.target.checked) { setAiEval([...aiEval, option.value]); } else { setAiEval(aiEval.filter(v => v !== option.value)); } }} />
+                        <label htmlFor={`aiEval-${option.value}`}>{option.label}</label>
+                      </div>
+                    ))}
+                  </fieldset>
+                </details>
               </div>
-            </details>
+            </div>
           </div>
         </details>
 
@@ -730,7 +1024,7 @@ const FilterPanel = ({
                 type="button"
                 className="filter-pill__close"
                 onClick={() => removeFilter(pill.key, pill.value)}
-                aria-label={t('dashboardFilter.removeFilter')}
+                aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
               >
                 ×
               </button>

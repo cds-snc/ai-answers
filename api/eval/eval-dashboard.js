@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -61,7 +61,8 @@ async function evalDashboardHandler(req, res) {
       userType = 'all',
       answerType = '',
       partnerEval = '',
-      aiEval = ''
+      aiEval = '',
+      evalLogic = 'and'
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
@@ -304,7 +305,8 @@ async function evalDashboardHandler(req, res) {
     pipeline.push({
       $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackData'),
-        'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackData')
+        'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackData'),
+        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$expertFeedbackData')
       }
     });
 
@@ -344,7 +346,8 @@ async function evalDashboardHandler(req, res) {
       userType,
       answerType,
       partnerEval,
-      aiEval
+      aiEval,
+      evalLogic
     }, { basePath: 'interactions', userField: 'user' });
     if (sharedFilters.length) {
       andFilters.push(...sharedFilters);

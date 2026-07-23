@@ -700,6 +700,17 @@ label.expert-citation-url {
   line-height: 1em;
 }
 
+/* .sm: 25% smaller than .md (0.75x each of .md's own pixel values, not the
+   base/large variant's) — used where the MD box reads too large, e.g.
+   FilterPanel's compact checkbox groups. Adds a new size step; never edits
+   the existing base or .md rules other components already rely on. */
+.gc-chckbxrdio.sm .checkbox,
+.gc-chckbxrdio.sm .radio {
+  margin-top: var(--gcds-spacing-25);
+  margin-bottom: var(--gcds-spacing-25);
+  line-height: 1em;
+}
+
 .checkbox.disabled label,
 .radio.disabled label,
 fieldset[disabled] .checkbox label,
@@ -807,6 +818,12 @@ fieldset.gc-chckbxrdio {
   margin-left: 26px;
 }
 
+.gc-chckbxrdio.sm input[type="checkbox"] + label,
+.gc-chckbxrdio.sm input[type="radio"] + label {
+  margin-left: 19.5px;
+  font-size: 16px;
+}
+
 .gc-chckbxrdio input[type="checkbox"] + label::before,
 .gc-chckbxrdio input[type="radio"] + label::before {
   border: 13px solid #fff;
@@ -826,6 +843,14 @@ fieldset.gc-chckbxrdio {
   border: 8px solid #fff;
   height: 14px;
   width: 14px;
+}
+
+.gc-chckbxrdio.sm input[type="checkbox"] + label::before,
+.gc-chckbxrdio.sm input[type="radio"] + label::before {
+  border: 6px solid #fff;
+  height: 10.5px;
+  width: 10.5px;
+  top: 1.5px;
 }
 
 .gc-chckbxrdio input[type="checkbox"] + label:hover::before,
@@ -906,6 +931,14 @@ fieldset.gc-chckbxrdio {
   height: 18px;
   left: 9px;
   width: 8px;
+}
+
+.gc-chckbxrdio.sm input[type="checkbox"]:checked + label::after {
+  border-width: 0 3px 3px 0;
+  height: 13.5px;
+  left: 6.75px;
+  top: 3px;
+  width: 6px;
 }
 
 .gc-chckbxrdio input[type="checkbox"]:checked + label::after {

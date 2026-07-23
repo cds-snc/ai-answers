@@ -262,6 +262,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}
           hasAppliedFilters={hasUserApplied}
+          // This dashboard's filters go through metrics-common.js's
+          // parseRequestFilters, not the shared getChatFilterConditions —
+          // partnerEval/aiEval are pushed as two separate sequential $match
+          // pipeline stages there, not a combinable condition array, and
+          // "Content issue" isn't wired into that filter path at all (even
+          // though metrics-expert-feedback.js already computes the same
+          // boolean for its own chart). Hidden here rather than offering a
+          // choice that would silently match nothing. See FilterPanel's own
+          // showEvalLogic prop comment.
+          showEvalLogic={false}
         />
       </div>
 

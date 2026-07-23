@@ -6,7 +6,7 @@ import {
     authMiddleware,
     withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
 import { requireObjectIdString, requireString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
@@ -454,7 +454,7 @@ export async function chatExportHandler(req, res) {
         await dbConnect();
         const {
             startDate, endDate,
-            department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
+            department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval, evalLogic,
             timezoneOffsetMinutes,
             view = 'default',
             format = 'xlsx'
@@ -654,12 +654,13 @@ export async function chatExportHandler(req, res) {
             pipeline.push({
                 $addFields: {
                     'interactions.partnerEval': getPartnerEvalAggregationExpression(),
-                    'interactions.aiEval': getAiEvalAggregationExpression()
+                    'interactions.aiEval': getAiEvalAggregationExpression(),
+                    'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression()
                 }
             });
 
             // Filtering Logic - now includes all conditions including partnerEval and aiEval
-            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval }, { skipUserCondition: true });
+            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval, evalLogic }, { skipUserCondition: true });
             if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
             // Reconstruct Chat Object Structure
