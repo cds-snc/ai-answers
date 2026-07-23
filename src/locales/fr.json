@@ -661,6 +661,7 @@
       "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates (24 heures)",
+      "dateRangePickerDialog": "Calendrier de plage de dates",
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
       "urlEn": "URL de référence (EN)",
@@ -1283,6 +1284,10 @@
     "startDate": "Date de début",
     "endDate": "Date de fin",
     "showing": "Résultats :",
+    "footnoteRefSrPrefix": "Note de bas de page ",
+    "footnotesHeading": "Notes de bas de page",
+    "footnoteReturnSrPrefix": "Retour à la référence de la note de bas de page ",
+    "footnoteReturnSrSuffix": "",
     "removeFilter": "Supprimer le filtre",
     "apply": "Appliquer",
     "loading": "Chargement..."
@@ -1314,7 +1319,8 @@
   },
   "publicDashboard": {
     "title": "Tableau de bord public Réponses IA",
-    "description": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
+    "usersOnlyPill": "Utilisateurs du public seulement",
+    "footnote": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
     "overviewTitle": "Aperçu",
     "error": "Échec du chargement des données. Veuillez réessayer.",
     "noData": "Aucune donnée trouvée pour la plage de dates sélectionnée.",

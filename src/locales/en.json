@@ -661,6 +661,7 @@
       "apply": "Apply",
       "loading": "Loading...",
       "dateRange": "Date range (24-hour)",
+      "dateRangePickerDialog": "Date range calendar",
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
       "urlEn": "Referring URL (EN)",
@@ -1283,6 +1284,10 @@
     "startDate": "Start date",
     "endDate": "End date",
     "showing": "Showing:",
+    "footnoteRefSrPrefix": "Footnote ",
+    "footnotesHeading": "Footnotes",
+    "footnoteReturnSrPrefix": "Return to footnote ",
+    "footnoteReturnSrSuffix": " referrer",
     "removeFilter": "Remove filter",
     "apply": "Apply",
     "loading": "Loading..."
@@ -1314,7 +1319,8 @@
   },
   "publicDashboard": {
     "title": "AI Answers Public dashboard",
-    "description": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
+    "usersOnlyPill": "Public users only",
+    "footnote": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",
     "error": "Failed to load data. Please try again.",
     "noData": "No data found for the selected date range.",

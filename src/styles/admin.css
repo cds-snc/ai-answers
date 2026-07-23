@@ -834,6 +834,103 @@
   color: #333;
 }
 
+/* WET-BOEW's standard footnote pattern (GCWeb's wb-fnote/fn-lnk/fn-rtn),
+   not shipped by GC DS, reproduced here at a smaller scale. */
+.fn-lnk,
+.fn-rtn a {
+  display: inline-block;
+  padding: 1px 8px 2px;
+  background-color: var(--gcds-disabled-background);
+  border: 1px solid var(--gcds-border-default);
+  border-radius: 2px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--gcds-text-primary) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--gcds-text-primary) !important;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fn-lnk {
+  margin-left: var(--gcds-spacing-100);
+}
+
+/* A selector containing :visited is required here, or the browser falls
+   back to its own default visited colour regardless of the base rule above. */
+.fn-lnk:visited,
+.fn-rtn a:visited {
+  color: var(--gcds-text-primary) !important;
+  text-decoration-color: var(--gcds-text-primary) !important;
+}
+
+.fn-lnk:hover,
+.fn-lnk:focus,
+.fn-rtn a:hover,
+.fn-rtn a:focus,
+.fn-lnk:visited:hover,
+.fn-lnk:visited:focus,
+.fn-rtn a:visited:hover,
+.fn-rtn a:visited:focus {
+  color: var(--gcds-bg-white) !important;
+  text-decoration-color: var(--gcds-bg-white) !important;
+}
+
+.fn-lnk:hover,
+.fn-rtn a:hover,
+.fn-lnk:visited:hover,
+.fn-rtn a:visited:hover {
+  background-color: var(--gcds-disabled-text);
+  border-color: var(--gcds-disabled-text);
+}
+
+.fn-lnk:focus,
+.fn-rtn a:focus,
+.fn-lnk:visited:focus,
+.fn-rtn a:visited:focus {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+}
+
+/* The footnote body text (not this wrapper, not the h2 heading) gets
+   .font-size-text-xsm-nr (global.css) applied directly in JSX — 16px,
+   non-responsive (stays 16px on mobile rather than shrinking). */
+.wb-fnote {
+  border-top: 1px solid var(--gcds-color-grayscale-100);
+  border-bottom: 1px solid var(--gcds-color-grayscale-100);
+  margin: var(--gcds-spacing-400) 0 var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200) 0;
+  text-align: left;
+}
+
+.wb-fnote h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 var(--gcds-spacing-150);
+  color: var(--gcds-text-primary);
+}
+
+.wb-fnote dl {
+  margin: 0;
+}
+
+.wb-fnote dd {
+  position: relative;
+  margin: 0;
+  padding-left: 36px;
+}
+
+.wb-fnote dd p:first-child {
+  margin: 0 0 4px;
+}
+
+.fn-rtn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+}
+
 /* Collapsible dashboard section: a <details> whose <summary> reads as a section
    heading. The summary carries the headline stat so the key figure shows while
    collapsed; expanding reveals the charts below. */

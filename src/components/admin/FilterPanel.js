@@ -218,6 +218,15 @@ const FilterPanel = ({
     // If only a start was clicked (endDate is null), save it so outsideClick can
     // apply it as a same-day range instead of reverting.
     const instance = dateRangePickerInstance.current;
+
+    // The trigger input declares aria-haspopup="dialog" — give the popup
+    // itself the matching role/name so a screen reader user who reaches it
+    // is actually told they've entered a dialog, not a bare unlabelled div.
+    instance.container.attr({
+      role: 'dialog',
+      'aria-label': t('admin.filters.dateRangePickerDialog')
+    });
+
     instance.container.on('mouseup.singleclick', 'td.available', function () {
       if (!instance.endDate) {
         pendingStartRef.current = instance.startDate ? instance.startDate.clone() : null;
@@ -256,6 +265,16 @@ const FilterPanel = ({
     // plugin replaces the whole calendar-table innerHTML on month nav, date
     // selection, or range selection.
     const setupCalendarA11y = () => {
+      // role="gridcell" below requires an ancestor with role="row" inside
+      // an element with role="grid"/"treegrid" (WAI-ARIA required-context
+      // rule) — the plugin's markup is a plain <table><tr><td> with no
+      // roles of its own, so without this the gridcell roles have no valid
+      // owning context and assistive tech may not expose grid semantics
+      // (row/column position) at all. Re-applied every call since the
+      // plugin replaces the whole <table> on every render.
+      container.find('.calendar-table table').attr('role', 'grid');
+      container.find('.calendar-table table tr').attr('role', 'row');
+
       container.find('td.available').attr('tabindex', '-1');
       container.find('.drp-calendar').each(function (sideIndex, calEl) {
         const $cal = $(calEl);
@@ -425,6 +444,20 @@ const FilterPanel = ({
           e.preventDefault();
           hideAndRefocus();
           break;
+        case 'Tab':
+          // The popup is appended to <body> (outside the trigger input's
+          // place in the DOM), so the browser's native Shift+Tab from the
+          // very first focusable control in here can't find its way back to
+          // the input — it'd instead jump to whatever precedes the popup at
+          // the end of <body>. Only handle it on the first li (Shift+Tab
+          // deeper inside is normal reverse navigation between controls).
+          // Same close-and-return behaviour as Escape, just triggered by a
+          // different key.
+          if (e.shiftKey && $li.is(container.find('.ranges li').first())) {
+            e.preventDefault();
+            hideAndRefocus();
+          }
+          break;
         default:
           break;
       }
@@ -440,7 +473,31 @@ const FilterPanel = ({
       }
     });
 
-    $picker.on('show.daterangepicker', () => setIsDatePickerOpen(true));
+    // Same DOM-detachment problem as the Shift+Tab case above, but for
+    // forward Tab off the *last* control (Cancel or Apply — Apply is
+    // disabled, and so unreachable by Tab, until a full range is picked).
+    // Same close-and-return fix as Escape: the user lands back on the
+    // trigger input and can Tab again from there to keep moving forward
+    // through the form, now that the popup isn't in the way.
+    container.on('keydown.daterangepicker-a11y', '.cancelBtn, .applyBtn', function (e) {
+      if (e.key !== 'Tab' || e.shiftKey) return;
+      const $lastEnabled = container.find('.cancelBtn, .applyBtn').not(':disabled').last();
+      if ($lastEnabled.is(this)) {
+        e.preventDefault();
+        hideAndRefocus();
+      }
+    });
+
+    $picker.on('show.daterangepicker', () => {
+      setIsDatePickerOpen(true);
+      // Same reason as the Tab handling above: the popup lives at the end
+      // of <body>, so a keyboard user can never Tab into it from the input
+      // — nothing puts focus inside it otherwise. Land on the first control
+      // (top of the preset list, matching the popup's actual visual/DOM
+      // order) whenever it opens, whether that's via a keyboard focus or a
+      // mouse click on the (read-only) input.
+      container.find('.ranges li').first().trigger('focus');
+    });
     // Return focus to the trigger input on close, but only when focus was
     // still inside the popup (Escape, Apply, Cancel via keyboard) or lost to
     // <body> — not when the user dismissed it by clicking another control,
