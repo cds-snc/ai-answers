@@ -1273,7 +1273,12 @@
     "agentSelectedIndex": "Agent selected index",
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
-    "downloadedPagesTitle": "Downloaded pages"
+    "downloadedPagesTitle": "Downloaded pages",
+    "usedQaChatsTitle": "Past Q&A used",
+    "chatId": "Chat ID",
+    "interactionId": "Interaction ID",
+    "question": "Question",
+    "answer": "Answer"
   },
   "dashboardFilter": {
     "dateRange": "Date range",

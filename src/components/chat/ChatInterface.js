@@ -5,6 +5,7 @@ import ChatOptions from "./ChatOptions.js";
 import ExpertFeedbackPanel from "./review/ExpertFeedbackPanel.js";
 import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
 import DownloadPanel from "./review/DownloadPanel.js";
+import UsedChatsPanel from "./review/UsedChatsPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
 import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
@@ -743,6 +744,7 @@ const ChatInterface = ({
                               answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                             />
                             <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                            <UsedChatsPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                             <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                           </div>
                         </div>

@@ -1273,7 +1273,12 @@
     "modifiers": "Modificateurs",
     "reEvaluate": "Réévaluer",
     "deleteEvaluation": "Supprimer l'évaluation",
-    "runEvaluation": "Lancer l'évaluation"
+    "runEvaluation": "Lancer l'évaluation",
+    "usedQaChatsTitle": "Questions et réponses antérieures utilisées",
+    "chatId": "ID de chat",
+    "interactionId": "ID d'interaction",
+    "question": "Question",
+    "answer": "Réponse"
   },
   "dashboardFilter": {
     "dateRange": "Plage de dates",

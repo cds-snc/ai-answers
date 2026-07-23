@@ -169,11 +169,15 @@ graph.addNode('similarQuestions', async (state) => {
     await ServerLoggingService.warn('similarQuestions node failed', state.chatId, err);
   }
 
-  const out = {
-    context: { ...state.context, similarQuestions },
-  };
   const preThresholdRecords = Array.isArray(similarQuestionsDebug?.preThresholdRecords) ? similarQuestionsDebug.preThresholdRecords : [];
   const matchedRecords = Array.isArray(similarQuestionsDebug?.matchedRecords) ? similarQuestionsDebug.matchedRecords : [];
+  const qaMatches = matchedRecords.map(({ chatId, interactionId, similarity, questionText, answerText }) => ({
+    chatId,
+    interactionId,
+    similarity,
+    questionText,
+    answerText,
+  }));
   logGraphEvent('info', 'node:similarQuestions output', state.chatId, {
     hasSimilar: !!similarQuestions,
     similarQuestionsLength: typeof similarQuestions === 'string' ? similarQuestions.length : 0,
@@ -184,7 +188,13 @@ graph.addNode('similarQuestions', async (state) => {
     preThresholdChatIds: preThresholdRecords.map((record) => record.chatId).filter(Boolean),
     preThresholdRecords,
   });
-  return out;
+  return {
+    context: {
+      ...state.context,
+      similarQuestions,
+      ...(qaMatches.length > 0 ? { qaMatches } : {}),
+    },
+  };
 });
 
 graph.addNode('answerNode', async (state) => {
