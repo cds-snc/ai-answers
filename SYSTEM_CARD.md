@@ -22,7 +22,9 @@
 
 ## Executive summary
 
-AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions sourced from the entire federal government online ecosystem. The system is built with usability, privacy, and accuracy as core principles. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel later answers and to fuel automated AI evaluations.  An extensive Admin interface supports evaluation, metrics, user management, and settings.
+AI Answers is a specialized AI chat agent platform designed for Government of Canada websites. It provides accurate, brief answers to user questions sourced from the entire federal government online ecosystem. The system is built with usability, privacy, and accuracy as core principles. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel later answers and to fuel automated AI evaluations. Trials in 2025 reported an accuracy rate of 96% as evaluated by experts from 7 partnering institutions. An extensive Admin interface supports evaluation, metrics, user management, and settings.
+
+- **Trial results**: [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 
 ![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
 
@@ -44,9 +46,8 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 ## Current status
 - **Environment**: Beta-testing on Canada.ca paused after the last of four public trials ended in February 2026.
 - **Trial results**: [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
-- **Production**: https://ai-answers.alpha.canada.ca (no public access - available within GC network only)
-- **Platform**: Federal institution partners can add scenario prompts, agentic tools, and files to meet specific needs, [view prompts a
-nd partner institution prompt example](docs/agents-prompts/system-prompt-documentation.md)
+- **Production**: https://ai-answers.alpha.canada.ca (no public access after February 2026 - available within GC network only)
+- **Institution partners**: Federal institution partners evaluate answers for accuracy, and can add scenario prompts, agentic tools to use APIs, and files to meet specific needs. [View current list of partner institutions](src/constants/partnerDepartments.js)
 
 ## System purpose and scope
 
@@ -380,7 +381,7 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 
 ### Contact and reporting
 - **Technical issues**: GitHub repository for bug reports and feature requests
-- **Safety concerns**: Direct contact through product email
+- **Safety concerns**: Direct contact through product email address RIA-AIA at servicecanada.gc.ca
 - **General feedback**: Multiple feedback mechanisms for different user types
 
 ---

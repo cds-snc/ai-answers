@@ -22,7 +22,9 @@
 
 ## Résumé exécutif
 
-Réponses IA est une plateforme d'agent conversationnel IA spécialisée conçue pour les sites Web du gouvernement du Canada. Elle fournit des réponses précises et brèves aux questions des utilisateurs, tirées de l'ensemble de l'écosystème en ligne du gouvernement fédéral. Le système est construit avec la convivialité, la protection de la vie privée et l'exactitude comme principes fondamentaux. Réponses IA est indépendant du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les réponses ultérieures et les évaluations IA automatisées. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres.
+Réponses IA est une plateforme d'agent conversationnel IA spécialisée conçue pour les sites Web du gouvernement du Canada. Elle fournit des réponses précises et brèves aux questions des utilisateurs, tirées de l'ensemble de l'écosystème en ligne du gouvernement fédéral. Le système est construit avec la convivialité, la protection de la vie privée et l'exactitude comme principes fondamentaux. Réponses IA est indépendant du modèle, avec un système d'évaluation innovant qui utilise des évaluations détaillées d'experts humains pour alimenter les réponses ultérieures et les évaluations IA automatisées. Les essais menés en 2025 ont rapporté un taux d'exactitude de 96 % évalué par des experts de 7 institutions partenaires. Une interface d'administration complète prend en charge l'évaluation, les métriques, la gestion des utilisateurs et les paramètres.
+
+- **Résultats des essais** : [Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)
 
 ![Diagramme de l'architecture du système Réponses IA](docs/images/system_diagram_v2_FR.jpg)
 
@@ -44,8 +46,8 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 ## État actuel
 - **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des quatre essais publics en février 2026.
 - **Résultats des essais** : [Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)
-- **Production** : https://reponses-ia.alpha.canada.ca (aucun accès public - disponible uniquement au sein du réseau du GC)
-- **Plateforme** : Les partenaires d'institutions fédérales peuvent ajouter des scénarios d'invite, des outils agentiques et des fichiers pour répondre à des besoins spécifiques, [voir les invites et un exemple d'invite d'institution partenaire](docs/agents-prompts/system-prompt-documentation.md)
+- **Production** : https://reponses-ia.alpha.canada.ca (aucun accès public après février 2026 - disponible uniquement au sein du réseau du GC)
+- **Partenaires institutionnels** : Les partenaires d'institutions fédérales évaluent l'exactitude des réponses et peuvent ajouter des scénarios d'invite, des outils agentiques pour utiliser des API et des fichiers pour répondre à des besoins spécifiques. [Voir la liste actuelle des institutions partenaires](src/constants/partnerDepartments.js)
 
 ## Objectif et portée du système
 
@@ -379,7 +381,7 @@ Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sél
 
 ### Contact et signalement
 - **Problèmes techniques** : Dépôt GitHub pour les rapports de bogues et les demandes de fonctionnalités
-- **Préoccupations de sécurité** : Contact direct par le courriel du produit
+- **Préoccupations de sécurité** : Contact direct par le courriel du produit RIA-AIA at servicecanada.gc.ca
 - **Commentaires généraux** : Mécanismes de commentaires multiples pour différents types d'utilisateurs
 
 ---
