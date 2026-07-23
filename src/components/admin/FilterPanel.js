@@ -736,6 +736,11 @@ const FilterPanel = ({
   // Build pills from applied state.
   // Blue info pills (no ×) show the current state for always-present filters.
   // Grey closable pills (×) show when a filter differs from its default.
+  // French requires a space before ':' (e.g. "Utilisateurs : Tous"); English
+  // doesn't. Centralizes that rule for every "Label: value" pill built here,
+  // rather than hardcoding ':' at each call site.
+  const formatPillLabel = (label, value) => (lang === 'fr' ? `${label} : ${value}` : `${label}: ${value}`);
+
   const buildPills = () => {
     if (!appliedFilters) return [];
     const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
@@ -757,7 +762,7 @@ const FilterPanel = ({
 
     const userIsDefault = !appliedFilters.userType || appliedFilters.userType === defaultUserType;
     if (userIsDefault) {
-      pills.push({ key: 'usersAll', label: `${t('admin.filters.users')}: ${t('admin.filters.allUsers')}`, info: true });
+      pills.push({ key: 'usersAll', label: formatPillLabel(t('admin.filters.users'), t('admin.filters.allUsers')), info: true });
     } else {
       const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
       pills.push({ key: 'userType', label: userOpt ? userOpt.label : appliedFilters.userType });
@@ -773,8 +778,8 @@ const FilterPanel = ({
     if (advancedDefault) {
       pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), info: true });
     } else {
-      if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: `${t('admin.filters.urlEn')}: ${appliedFilters.urlEn}` });
-      if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: `${t('admin.filters.urlFr')}: ${appliedFilters.urlFr}` });
+      if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: formatPillLabel(t('admin.filters.urlEn'), appliedFilters.urlEn) });
+      if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: formatPillLabel(t('admin.filters.urlFr'), appliedFilters.urlFr) });
       if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
         appliedFilters.answerType.split(',').forEach(val => {
           const opt = answerTypeOptions.find(o => o.value === val);
@@ -784,13 +789,13 @@ const FilterPanel = ({
       if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
         appliedFilters.partnerEval.split(',').forEach(val => {
           const opt = partnerEvalOptions.find(o => o.value === val);
-          pills.push({ key: 'partnerEval', value: val, label: `${t('admin.filters.partnerEval')}: ${opt ? opt.label : val}` });
+          pills.push({ key: 'partnerEval', value: val, label: formatPillLabel(t('admin.filters.partnerEval'), opt ? opt.label : val) });
         });
       }
       if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
         appliedFilters.aiEval.split(',').forEach(val => {
           const opt = aiEvalOptions.find(o => o.value === val);
-          pills.push({ key: 'aiEval', value: val, label: `${t('admin.filters.aiEval')}: ${opt ? opt.label : val}` });
+          pills.push({ key: 'aiEval', value: val, label: formatPillLabel(t('admin.filters.aiEval'), opt ? opt.label : val) });
         });
       }
     }

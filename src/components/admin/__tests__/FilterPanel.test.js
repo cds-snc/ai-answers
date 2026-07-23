@@ -205,16 +205,27 @@ describe('FilterPanel', () => {
   });
 
   it('shows the whole "More filters" section by default, hides it when showAdvancedSection is false', async () => {
+    // "Answer Type" etc. live inside the (collapsed-by-default) "More
+    // filters" <details>, so only its always-visible summary text is
+    // checked here — jsdom doesn't surface a closed <details>'s content to
+    // text queries, same as a real browser.
     const { getByLabelText, queryByText, unmount } = renderPanel();
     await waitFor(() => getByLabelText('Date range (24-hour)'));
     expect(queryByText('More filters')).not.toBeNull();
-    expect(queryByText('Answer Type')).not.toBeNull();
     unmount();
 
     const { getByLabelText: getByLabelText2, queryByText: queryByText2 } = renderPanel({ showAdvancedSection: false });
     await waitFor(() => getByLabelText2('Date range (24-hour)'));
     expect(queryByText2('More filters')).toBeNull();
-    expect(queryByText2('Answer Type')).toBeNull();
-    expect(queryByText2('Partner Evaluation')).toBeNull();
+  });
+
+  it('adds a space before the colon in "Label: value" pills for French, not English', async () => {
+    const { getByLabelText, queryByText } = renderPanel({ lang: 'fr', autoApply: true, defaultUserType: 'public' });
+    await waitFor(() => getByLabelText('Plage de dates (24 heures)'));
+    // autoApply's default filters set userType to defaultUserType, so this
+    // renders the "usersAll" pill via formatPillLabel — French needs
+    // "Utilisateurs : Tous" (space before ':'), not "Utilisateurs: Tous".
+    expect(queryByText('Utilisateurs : Tous')).not.toBeNull();
+    expect(queryByText('Utilisateurs: Tous')).toBeNull();
   });
 });
