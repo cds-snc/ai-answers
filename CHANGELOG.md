@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.169.0](https://github.com/cds-snc/ai-answers/compare/v1.168.0...v1.169.0) (2026-07-23)
+
+
+### Features
+
+* add content issue filter and and/or eval-logic combination ([2750540](https://github.com/cds-snc/ai-answers/commit/2750540df2381438e26782866cde79e0541348e1))
+* add Transport Canada as a partner ([f3c050b](https://github.com/cds-snc/ai-answers/commit/f3c050b6b74e287d6a7fa52cc8f453ab49f32ec3))
+* and / or pills, content issue badge ([a13ab12](https://github.com/cds-snc/ai-answers/commit/a13ab122fcbcb3dbc2ebc15093e18e85ce8ef843))
+* and / or pills, content issue badge ([0b0ec9a](https://github.com/cds-snc/ai-answers/commit/0b0ec9a425280e2d1679aa34045e299042533240))
+
+
+### Bug Fixes
+
+* darken content-issue badge text to meet WCAG AA contrast ([1fab99e](https://github.com/cds-snc/ai-answers/commit/1fab99ec396bd6136c1d06765f1485d5b0b09588))
+* filter panel accessibility and functions ([131e9ee](https://github.com/cds-snc/ai-answers/commit/131e9ee36caa554870518c470270d2c2a8fd62d8))
+* filter panel accessibility and functions ([e08fb7c](https://github.com/cds-snc/ai-answers/commit/e08fb7c528c7c0b820923a82bde53d4f923daa98))
+* final tweaks ([3acb195](https://github.com/cds-snc/ai-answers/commit/3acb195c943dcf0194727c5356d5c00387d0ff63))
+* formatting for french ([a8724fd](https://github.com/cds-snc/ai-answers/commit/a8724fda7bf6eb481ff39d3835350913c31a12e6))
+* remove PSPC from partner list ([2d75a9e](https://github.com/cds-snc/ai-answers/commit/2d75a9ea19bde95b49c1e586f287973f1b7fc3d8))
+* revise EN system card ([9adf4e0](https://github.com/cds-snc/ai-answers/commit/9adf4e0242e00a5af8c35bae8eaf9dfe850d8e79))
+* sentence case ([49bdab0](https://github.com/cds-snc/ai-answers/commit/49bdab05a6dfda4bfd6c65dca217ee234a345103))
+* show advanced only on relevant pages ([2f61117](https://github.com/cds-snc/ai-answers/commit/2f61117e99d81c22f8bc9679e3541d9c1b8ebf12))
+* update FR to match ([4d01d9b](https://github.com/cds-snc/ai-answers/commit/4d01d9bb4969e81fc1f213c0bcb59b182e9cb641))
+* update to citation issue ([06cb4ec](https://github.com/cds-snc/ai-answers/commit/06cb4ec9b0c21f35717673554e947854eb234036))
+* update to citation issue ([39627aa](https://github.com/cds-snc/ai-answers/commit/39627aa8af0de9041dfa0c775cdfdda5395fed45))
+
 ## [1.168.0](https://github.com/cds-snc/ai-answers/compare/v1.167.0...v1.168.0) (2026-07-21)
 
 
