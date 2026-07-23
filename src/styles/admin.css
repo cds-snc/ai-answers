@@ -708,11 +708,14 @@
    colour rather than reusing one of those. GC DS has no light-orange token
    pairing (only --gcds-color-orange-700), so this follows the same
    hardcoded-pair convention already used for .label.admin/.clarifying-
-   question/.not-gc/.pt-muni above; #e65100 matches the "orange" state
-   colour already used elsewhere in this file (stat-card/donut values). */
+   question/.not-gc/.pt-muni above. #e65100 (used elsewhere in this file for
+   stat-card/donut values on a plain background) only reaches 2.99:1 against
+   this chip's #FFE0B2 fill — below the 4.5:1 WCAG AA minimum for this text
+   size, and lightening the fill further can't fix it (pure white still
+   caps at 3.79:1). #a13900 keeps the same amber family and clears 5.34:1. */
 .label.hasContentIssue {
   background-color: #FFE0B2;
-  color: #e65100;
+  color: #a13900;
 }
 
 /* Table summary stats */
