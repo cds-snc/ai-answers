@@ -138,7 +138,11 @@
   padding: 0;
   margin: 0;
   background: white;
-  border: 1px solid #e5e7eb;
+  /* Colour matches GC DS's input border (--gcds-input-default-text), same as
+     .details-form, so this reads as part of the same form language as the
+     batches page's GcdsInput fields. Radius/shadow stay as this panel's own
+     card treatment, not the plain .details-form look. */
+  border: 1px solid var(--gcds-input-default-text);
   border-radius: 8px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
@@ -156,12 +160,18 @@
   width: 100%;
   box-sizing: border-box;
   background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  /* .filter-panel[open] already draws a full border around the whole panel
+     — without this, the summary's own top/left/right border (inherited from
+     the generic details summary rule in global.css) would double up against
+     it, making those edges look thicker than the bottom. */
+  border: none;
   cursor: pointer;
   font-weight: 600;
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
-  color: #374151;
+  /* currentColor, so the expand/collapse chevron (global.css
+     details > summary::before) inherits this same dark colour. */
+  color: var(--gcds-input-default-text);
   border-radius: 8px 8px 0 0;
   padding: 0.5rem 0.75rem;
   list-style: none;
@@ -244,12 +254,41 @@
   margin: 0.75rem 0 0.25rem;
 }
 
+/* URL column, Answer type, then the Partner/AI eval pair — the pair takes
+   two columns' worth of width since it holds two boxed fieldsets plus the
+   AND/OR connector between them, all side by side with Answer type. */
 .filter-advanced-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 2fr;
+  /* Without this, grid's default align-items: stretch makes every column
+     match the row's tallest item instead of each sizing to its own content. */
+  align-items: start;
   gap: 0.75rem;
   padding-top: 0.5rem;
   padding-bottom: 1rem;
+}
+
+/* Partner eval box, AND/OR, AI eval box — side by side in one row, the
+   AND/OR control sitting directly between the two it connects. */
+.filter-eval-pair {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.filter-eval-box {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* And/Or stacked vertically (radio group), sitting under its own label in
+   the URL column now — not between the Partner/AI eval boxes anymore. No
+   box around it; the label above already identifies the group. */
+.filter-eval-logic {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gcds-spacing-25);
 }
 
 .filter-row {
@@ -274,22 +313,45 @@
   position: relative;
 }
 
+/* Border colour/width/radius and focus state mirror GcdsInput/GcdsSelect's
+   own shadow-DOM styling (gcds-input.css) so these plain HTML fields read as
+   part of the same GC DS form language as the batches page's GcdsInput
+   fields, even though the daterangepicker/multi-select needs here rule out
+   using the real web components directly. */
 .filter-input,
 .filter-select {
   width: 100%;
   padding: 0.3rem 0.625rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: var(--gcds-input-border-width) solid var(--gcds-input-default-text);
+  border-radius: var(--gcds-input-border-radius);
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, outline 0.15s ease-in-out;
+}
+
+/* Native <select> arrows render faint/OS-styled and can't be recoloured via
+   `color` alone in Chrome/Safari. Replace it with the exact SVG GcdsSelect
+   itself uses (gcds-select.css) — a 2px stroke in currentColor — so the
+   arrow is dark and clearly visible, and stays in sync with the border
+   colour above if that token ever changes. */
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: var(--gcds-select-default-text);
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml;utf8,<svg width='16' height='10' viewBox='0 0 16 10' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M0.799988 0.900024L7.79999 7.90003L14.8 0.900024' stroke='currentColor' stroke-width='2'/></svg>");
+  background-position-x: var(--gcds-select-arrow-position-x);
+  background-position-y: 50%;
+  background-repeat: no-repeat;
 }
 
 .filter-input:focus,
 .filter-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--gcds-input-focus-border);
+  box-shadow: var(--gcds-input-focus-box-shadow);
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
+  outline-offset: var(--gcds-input-border-width);
 }
 
 .filter-advanced-details {
@@ -297,10 +359,36 @@
   font-family: 'Noto Sans', sans-serif;
 }
 
+/* Overrides .details-form[open]'s dark border colour (global.css, shared
+   with BatchUpload's own advanced section) back to the original light grey
+   for "More filters" and the Answer type/Partner eval/AI eval boxes —
+   admin.css loads after global.css, so this wins at equal specificity
+   without touching the shared rule. */
+.filter-advanced-details[open],
+.filter-checkbox-details[open] {
+  border-color: #ddd;
+}
+
+/* Same doubled-border fix as .filter-advanced-summary below, for these
+   three boxes' own summaries. */
+.filter-checkbox-details[open] > summary {
+  border: none;
+}
+
 .filter-advanced-summary {
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
   cursor: pointer;
+}
+
+/* Closed: keep the full box border from .details-form summary (global.css)
+   — the <details> itself has no border of its own then. Open: the <details>
+   draws its own full border around the whole revealed box, so the summary's
+   top/left/right edges would otherwise double up against it (thicker than
+   the bottom, which never touched the wrapper's border to begin with).
+   Drop all four of the summary's own sides once open. */
+.filter-advanced-details[open] > .filter-advanced-summary {
+  border: none;
 }
 
 /* Quick set buttons styling */
@@ -327,8 +415,8 @@
 }
 
 .filter-radio-item input[type="radio"]:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
 }
 
 .filter-radio-item span {
@@ -385,6 +473,19 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   overflow: hidden;
+}
+
+/* Visible focus indicator for the daterangepicker plugin's calendar cells,
+   preset list, and month-nav controls — the library ships mouse-only
+   styling, so keyboard focus (added in FilterPanel.js) is otherwise
+   invisible. The plugin appends its container to <body>, outside
+   .filter-panel, so these rules target its own root class instead. */
+.daterangepicker td.available:focus-visible,
+.daterangepicker .ranges li:focus-visible,
+.daterangepicker th.prev:focus-visible,
+.daterangepicker th.next:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: -2px;
 }
 
 .filter-actions {
@@ -480,6 +581,10 @@
   .filter-advanced-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+
+  .filter-eval-pair {
+    flex-direction: column;
   }
 
   .filter-actions {
@@ -606,23 +711,21 @@
   font-size: 14px;
 }
 
+/* Answer type / Partner evaluation / AI evaluation are collapsible
+   <details className="filter-checkbox-details details-form">, styled the
+   same way as "More filters" (.details-form, global.css) — no CSS of its
+   own needed here, it's a marker class only. The checkboxes inside are a
+   real <fieldset className="gc-chckbxrdio sm filter-checkbox-group">
+   (global.css) — reset the browser's default fieldset border/padding/margin
+   so it doesn't draw a second box nested inside the details' own border. */
 .filter-checkbox-group {
   display: flex;
   flex-direction: column;
   gap: var(--gcds-spacing-100);
-}
-
-.filter-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: var(--gcds-spacing-100);
-  font-size: 16px;
-  font-family: 'Noto Sans', sans-serif;
-  cursor: pointer;
-}
-
-.filter-checkbox {
-  cursor: pointer;
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
 }
 
 /* Shared radio toggle UI — used in ChatOptions and BatchUpload (both auth-gated) */
@@ -729,6 +832,103 @@
   font: var(--gcds-font-h4);
   margin: 0 0 var(--gcds-spacing-150);
   color: #333;
+}
+
+/* WET-BOEW's standard footnote pattern (GCWeb's wb-fnote/fn-lnk/fn-rtn),
+   not shipped by GC DS, reproduced here at a smaller scale. */
+.fn-lnk,
+.fn-rtn a {
+  display: inline-block;
+  padding: 1px 8px 2px;
+  background-color: var(--gcds-disabled-background);
+  border: 1px solid var(--gcds-border-default);
+  border-radius: 2px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--gcds-text-primary) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--gcds-text-primary) !important;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fn-lnk {
+  margin-left: var(--gcds-spacing-100);
+}
+
+/* A selector containing :visited is required here, or the browser falls
+   back to its own default visited colour regardless of the base rule above. */
+.fn-lnk:visited,
+.fn-rtn a:visited {
+  color: var(--gcds-text-primary) !important;
+  text-decoration-color: var(--gcds-text-primary) !important;
+}
+
+.fn-lnk:hover,
+.fn-lnk:focus,
+.fn-rtn a:hover,
+.fn-rtn a:focus,
+.fn-lnk:visited:hover,
+.fn-lnk:visited:focus,
+.fn-rtn a:visited:hover,
+.fn-rtn a:visited:focus {
+  color: var(--gcds-bg-white) !important;
+  text-decoration-color: var(--gcds-bg-white) !important;
+}
+
+.fn-lnk:hover,
+.fn-rtn a:hover,
+.fn-lnk:visited:hover,
+.fn-rtn a:visited:hover {
+  background-color: var(--gcds-disabled-text);
+  border-color: var(--gcds-disabled-text);
+}
+
+.fn-lnk:focus,
+.fn-rtn a:focus,
+.fn-lnk:visited:focus,
+.fn-rtn a:visited:focus {
+  background-color: var(--gcds-focus-background);
+  border-color: var(--gcds-focus-background);
+}
+
+/* The footnote body text (not this wrapper, not the h2 heading) gets
+   .font-size-text-xsm-nr (global.css) applied directly in JSX — 16px,
+   non-responsive (stays 16px on mobile rather than shrinking). */
+.wb-fnote {
+  border-top: 1px solid var(--gcds-color-grayscale-100);
+  border-bottom: 1px solid var(--gcds-color-grayscale-100);
+  margin: var(--gcds-spacing-400) 0 var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200) 0;
+  text-align: left;
+}
+
+.wb-fnote h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 var(--gcds-spacing-150);
+  color: var(--gcds-text-primary);
+}
+
+.wb-fnote dl {
+  margin: 0;
+}
+
+.wb-fnote dd {
+  position: relative;
+  margin: 0;
+  padding-left: 36px;
+}
+
+.wb-fnote dd p:first-child {
+  margin: 0 0 4px;
+}
+
+.fn-rtn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
 }
 
 /* Collapsible dashboard section: a <details> whose <summary> reads as a section

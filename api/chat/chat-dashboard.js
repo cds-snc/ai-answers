@@ -2,7 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getChatFilterConditions } from '../util/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -73,6 +73,7 @@ async function chatDashboardHandler(req, res) {
       answerType = '',
       partnerEval = '',
       aiEval = '',
+      evalLogic = 'and',
       startDate,
       endDate,
       limit: limitParam,
@@ -299,7 +300,8 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression('$interactions.expertFeedbackData'),
-        'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData')
+        'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData'),
+        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$interactions.expertFeedbackData')
       }
     });
 
@@ -340,7 +342,7 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({ $project: { creator: 0 } });
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval };
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {

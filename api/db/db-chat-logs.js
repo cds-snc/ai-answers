@@ -9,7 +9,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -72,7 +72,7 @@ async function chatLogsHandler(req, res) {
     await dbConnect();
     const {
       startDate, endDate,
-      department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval,
+      department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval, evalLogic,
       timezoneOffsetMinutes,
       limit = 100, lastId,
     } = req.query;
@@ -310,7 +310,8 @@ async function chatLogsHandler(req, res) {
       pipeline.push({
         $addFields: {
           'interactions.partnerEval': getPartnerEvalAggregationExpression(),
-          'interactions.aiEval': getAiEvalAggregationExpression()
+          'interactions.aiEval': getAiEvalAggregationExpression(),
+          'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression()
         }
       });
 
@@ -323,7 +324,8 @@ async function chatLogsHandler(req, res) {
         userType,
         answerType,
         partnerEval,
-        aiEval
+        aiEval,
+        evalLogic
       });
 
       if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });

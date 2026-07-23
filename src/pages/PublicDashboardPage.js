@@ -9,9 +9,19 @@ const PublicDashboardPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-200">{t('publicDashboard.title')}</h1>
-
-      <GcdsText className="mb-400">{t('publicDashboard.description')}</GcdsText>
+      <h1 className="mb-400">
+        {t('publicDashboard.title')}
+        {/* WET-BOEW's standard footnote-reference pattern (GCWeb's
+            wb-fnote/fn-lnk, not shipped by GC DS — reproduced in admin.css).
+            Scoped to the h1 rather than a section heading since the caveat
+            it links to (public-users-only data) applies to the whole page,
+            not just one section below it. */}
+        <sup id="public-dashboard-fnref">
+          <a className="fn-lnk" href="#public-dashboard-footnote">
+            <span className="wb-inv">{t('dashboardFilter.footnoteRefSrPrefix')}</span>1
+          </a>
+        </sup>
+      </h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>

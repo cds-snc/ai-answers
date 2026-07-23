@@ -187,6 +187,36 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
   };
 }
 
+// Content issue is a separate tag partners/admins can check per-sentence
+// during evaluation (sentenceNContentIssue) — independent of the score-
+// derived category above (a "correct" answer can still be flagged), so it's
+// its own boolean field rather than another category value. Mirrors the
+// hasContentIssue expression in metrics-expert-feedback.js. Expert/partner
+// only — there's no AI-eval equivalent of this tag.
+export function getPartnerContentIssueAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
+  return {
+    $cond: {
+      if: { $eq: [{ $ifNull: [feedbackPath, null] }, null] },
+      then: false,
+      else: {
+        $let: {
+          vars: {
+            ef: { $ifNull: [feedbackPath, null] }
+          },
+          in: {
+            $or: [
+              { $eq: ['$$ef.sentence1ContentIssue', true] },
+              { $eq: ['$$ef.sentence2ContentIssue', true] },
+              { $eq: ['$$ef.sentence3ContentIssue', true] },
+              { $eq: ['$$ef.sentence4ContentIssue', true] }
+            ]
+          }
+        }
+      }
+    }
+  };
+}
+
 export function getAiEvalAggregationExpression(feedbackPath = '$interactions.autoEval.expertFeedback') {
   return {
     $let: {
@@ -385,46 +415,51 @@ export function getChatFilterConditions(filters, options = {}) {
     }
   }
 
-  // partnerEval - support multi-select via comma-separated values
-  if (filters.partnerEval && filters.partnerEval !== 'all') {
-    const categories = filters.partnerEval.split(',').map(c => c.trim()).filter(Boolean);
+  // partnerEval/aiEval - support multi-select via comma-separated values.
+  // Builds the same shape as the previous inline blocks; extracted so both
+  // fields can be combined via evalLogic below instead of always being
+  // pushed as separate (implicitly ANDed) top-level conditions. Each
+  // selected pseudo-category (noEval, and — partnerEval only —
+  // hasContentIssue) becomes its own OR-branch alongside the real category
+  // match, since a row can match on score category and/or either tag
+  // independently of the others.
+  const buildEvalCondition = (rawValue, field) => {
+    if (!rawValue || rawValue === 'all') return null;
+    const categories = rawValue.split(',').map(c => c.trim()).filter(Boolean);
     const hasNoEval = categories.includes('noEval');
-    const evalCategories = categories.filter(c => c !== 'noEval');
-    const noEvalCondition = { $or: [{ [withPath('partnerEval')]: null }, { [withPath('partnerEval')]: '' }] };
+    const hasContentIssue = field === 'partnerEval' && categories.includes('hasContentIssue');
+    const evalCategories = categories.filter(c => c !== 'noEval' && c !== 'hasContentIssue');
 
-    if (hasNoEval && evalCategories.length === 0) {
-      conditions.push(noEvalCondition);
-    } else if (hasNoEval && evalCategories.length > 0) {
-      const evalMatch = evalCategories.length === 1
-        ? { [withPath('partnerEval')]: evalCategories[0] }
-        : { [withPath('partnerEval')]: { $in: evalCategories } };
-      conditions.push({ $or: [noEvalCondition, evalMatch] });
-    } else if (evalCategories.length === 1) {
-      conditions.push({ [withPath('partnerEval')]: evalCategories[0] });
-    } else if (evalCategories.length > 1) {
-      conditions.push({ [withPath('partnerEval')]: { $in: evalCategories } });
+    const branches = [];
+    if (hasNoEval) {
+      branches.push({ $or: [{ [withPath(field)]: null }, { [withPath(field)]: '' }] });
     }
-  }
-
-  // aiEval - support multi-select via comma-separated values
-  if (filters.aiEval && filters.aiEval !== 'all') {
-    const categories = filters.aiEval.split(',').map(c => c.trim()).filter(Boolean);
-    const hasNoEval = categories.includes('noEval');
-    const evalCategories = categories.filter(c => c !== 'noEval');
-    const noEvalCondition = { $or: [{ [withPath('aiEval')]: null }, { [withPath('aiEval')]: '' }] };
-
-    if (hasNoEval && evalCategories.length === 0) {
-      conditions.push(noEvalCondition);
-    } else if (hasNoEval && evalCategories.length > 0) {
-      const evalMatch = evalCategories.length === 1
-        ? { [withPath('aiEval')]: evalCategories[0] }
-        : { [withPath('aiEval')]: { $in: evalCategories } };
-      conditions.push({ $or: [noEvalCondition, evalMatch] });
-    } else if (evalCategories.length === 1) {
-      conditions.push({ [withPath('aiEval')]: evalCategories[0] });
-    } else if (evalCategories.length > 1) {
-      conditions.push({ [withPath('aiEval')]: { $in: evalCategories } });
+    if (hasContentIssue) {
+      branches.push({ [withPath('partnerHasContentIssue')]: true });
     }
+    if (evalCategories.length === 1) {
+      branches.push({ [withPath(field)]: evalCategories[0] });
+    } else if (evalCategories.length > 1) {
+      branches.push({ [withPath(field)]: { $in: evalCategories } });
+    }
+
+    if (branches.length === 0) return null;
+    if (branches.length === 1) return branches[0];
+    return { $or: branches };
+  };
+
+  const partnerEvalCondition = buildEvalCondition(filters.partnerEval, 'partnerEval');
+  const aiEvalCondition = buildEvalCondition(filters.aiEval, 'aiEval');
+
+  // evalLogic only changes anything when BOTH filters are active: 'or' means
+  // a row matching either one qualifies, combined into a single condition.
+  // Default ('and', or either filter alone) keeps the original behaviour —
+  // both pushed as separate conditions, implicitly ANDed by the caller.
+  if (partnerEvalCondition && aiEvalCondition && filters.evalLogic === 'or') {
+    conditions.push({ $or: [partnerEvalCondition, aiEvalCondition] });
+  } else {
+    if (partnerEvalCondition) conditions.push(partnerEvalCondition);
+    if (aiEvalCondition) conditions.push(aiEvalCondition);
   }
 
   return conditions;
