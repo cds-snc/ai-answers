@@ -694,6 +694,8 @@
       "evalHasContentIssue": "Content issue",
       "evalLogicAnd": "Both (and)",
       "evalLogicOr": "Either (or)",
+      "evalLogicPillAnd": "and",
+      "evalLogicPillOr": "or",
       "evalLogicGroupLabel": "Combine partner and AI evaluation filters",
       "advancedTitle": "Advanced filters",
       "advancedAll": "Advanced: All",
@@ -786,7 +788,8 @@
           "noMatch": "no match",
           "fallback": "fallback",
           "incorrect": "incorrect"
-        }
+        },
+        "contentIssue": "content issue"
       },
       "departmentMore": "+{count} more"
     },

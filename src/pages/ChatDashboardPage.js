@@ -265,10 +265,20 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'),
       data: 'partnerEval',
-      render: (value) => {
-        if (!value) return '';
-        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
+      render: (value, type, row) => {
+        let html = '';
+        if (value) {
+          const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
+          html += `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
+        }
+        // Independent of the score category above — a chat can be "correct"
+        // and still have a content issue flagged, so this is a second badge
+        // rather than another branch of the same category.
+        if (row && row.partnerHasContentIssue) {
+          const contentIssueLabel = t('admin.chatDashboard.labels.contentIssue');
+          html += `<span class="label hasContentIssue">${escapeHtmlAttribute(contentIssueLabel)}</span>`;
+        }
+        return html;
       }
     },
     {

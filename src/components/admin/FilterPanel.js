@@ -843,17 +843,47 @@ const FilterPanel = ({
           pills.push({ key: 'answerType', value: val, label: opt ? opt.label : val });
         });
       }
-      if (appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all') {
+      // Once we're in this branch, at least one advanced filter has been
+      // customized — so partnerEval/aiEval each get a pill regardless of
+      // whether that particular one is still at its default. Omitting the
+      // still-default one entirely (as urlEn/urlFr/answerType do above)
+      // would be ambiguous here: with only e.g. "Partner evaluation:
+      // Correct" showing, there'd be no way to tell "AI eval is
+      // deliberately unfiltered" apart from "AI eval isn't customizable at
+      // all" — and it also hides half of what the AND/OR toggle below is
+      // actually combining.
+      const partnerEvalHasSelection = appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all';
+      const aiEvalHasSelection = appliedFilters.aiEval && appliedFilters.aiEval !== 'all';
+      if (partnerEvalHasSelection) {
         appliedFilters.partnerEval.split(',').forEach(val => {
           const opt = partnerEvalOptions.find(o => o.value === val);
           pills.push({ key: 'partnerEval', value: val, label: formatPillLabel(t('admin.filters.partnerEval'), opt ? opt.label : val) });
         });
+      } else {
+        pills.push({ key: 'partnerEvalAll', label: formatPillLabel(t('admin.filters.partnerEval'), t('admin.filters.allPartnerEvals')), info: true });
       }
-      if (appliedFilters.aiEval && appliedFilters.aiEval !== 'all') {
+      // AND/OR connector pill — only meaningful once both partnerEval and
+      // aiEval have a real selection (evalLogic is a no-op otherwise: an
+      // 'all' side imposes no match condition for either logic to combine
+      // with), and only where evalLogic is actually wired up (see
+      // showEvalLogic prop comment). Always sits between the two groups'
+      // pills so the combining logic reads in place, not just in the
+      // "More filters" radio toggle that set it.
+      if (showEvalLogic && partnerEvalHasSelection && aiEvalHasSelection) {
+        const logicLabel = appliedFilters.evalLogic === 'or' ? t('admin.filters.evalLogicPillOr') : t('admin.filters.evalLogicPillAnd');
+        // Own pill style (white, light grey outline) — distinct from both
+        // the blue "info" pills (which mean "at default") and the grey
+        // closable ones (an active filter), since this is neither: it's an
+        // operator relating the two eval pills, not a filter state itself.
+        pills.push({ key: 'evalLogic', label: logicLabel, info: true, connector: true });
+      }
+      if (aiEvalHasSelection) {
         appliedFilters.aiEval.split(',').forEach(val => {
           const opt = aiEvalOptions.find(o => o.value === val);
           pills.push({ key: 'aiEval', value: val, label: formatPillLabel(t('admin.filters.aiEval'), opt ? opt.label : val) });
         });
+      } else {
+        pills.push({ key: 'aiEvalAll', label: formatPillLabel(t('admin.filters.aiEval'), t('admin.filters.allAiEvals')), info: true });
       }
     }
 
@@ -1083,7 +1113,7 @@ const FilterPanel = ({
         {pills.map(pill => (
           <span
             key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
-            className={`filter-pill${pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
+            className={`filter-pill${pill.connector ? ' filter-pill--connector' : pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
           >
             {pill.label}
             {!pill.info && (

@@ -694,6 +694,8 @@
       "evalHasContentIssue": "Problème de contenu",
       "evalLogicAnd": "Les deux (et)",
       "evalLogicOr": "L'un ou l'autre (ou)",
+      "evalLogicPillAnd": "et",
+      "evalLogicPillOr": "ou",
       "evalLogicGroupLabel": "Combiner les filtres d'évaluation partenaire et IA",
       "advancedTitle": "Filtres avancés",
       "advancedAll": "Avancé : Tous",
@@ -785,7 +787,8 @@
           "noMatch": "aucune correspondance",
           "fallback": "repli",
           "incorrect": "incorrect"
-        }
+        },
+        "contentIssue": "problème de contenu"
       },
       "departmentMore": "+{count} de plus",
       "columnFilterPlaceholder": "Filtrer"
