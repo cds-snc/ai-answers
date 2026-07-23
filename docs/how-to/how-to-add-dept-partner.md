@@ -28,10 +28,10 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `JUS` | Justice Canada (Department of) | Justice Canada, Ministère de la |
 | `NRCan-RNCan` | Natural Resources Canada | Ressources naturelles Canada |
 | `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
-| `PSPC-SPAC` | Public Services and Procurement Canada | Services publics et Approvisionnement Canada |
 | `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `StatCan` | Statistics Canada | Statistique Canada |
+| `TC` | Transport Canada | Transports Canada |
 | `TBS-SCT` | Treasury Board of Canada Secretariat | Secrétariat du Conseil du Trésor du Canada |
 | `VAC-ACC` | Veterans Affairs Canada | Anciens Combattants Canada |
 
@@ -42,7 +42,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | # | File | What to Update |
 |---|------|-----------------|
 | 1 | **NEW FILE** `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` | Create with export constant (e.g., `CBSA_ASFC_SCENARIOS`) containing department-specific instructions |
-| 2 | `FilterPanel.js` | Add department to `departmentOptions` array using `abbrKey` |
+| 2 | `src/constants/partnerDepartments.js` | Add department to `PARTNER_DEPARTMENTS` array using `abbrKey` (single source of truth for FilterPanel + dashboards) |
 | 3 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
 | 4 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
 | 5 | `how-to-add-dept-partner.md` | Add department to "Current Departments" table |
@@ -88,17 +88,17 @@ Example for CBSA:
 export const CBSA_ASFC_SCENARIOS = ``;
 ```
 
-### Step 2: Update `FilterPanel.js`
+### Step 2: Update `PARTNER_DEPARTMENTS`
 
-Add to `departmentOptions` array (around line 89) in **alphabetical order**:
+Add the `abbrKey` to the `PARTNER_DEPARTMENTS` array in `src/constants/partnerDepartments.js` in **alphabetical order**. This constant is the single source of truth for partner department dropdowns across the app (`FilterPanel.js`, exec/partner dashboards) — do not edit `FilterPanel.js` directly.
 
 ```javascript
-{ value: '{ABBR_KEY}', label: '{ABBR_KEY}' }
+'{ABBR_KEY}',
 ```
 
 Example for CBSA:
 ```javascript
-{ value: 'CBSA-ASFC', label: 'CBSA-ASFC' }
+'CBSA-ASFC',
 ```
 
 ### Step 3: Update `scenario-overrides.js`
@@ -177,7 +177,7 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`FilterPanel.js`:** add only the canonical `abbrKey` as a filter option — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
+5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add only the canonical `abbrKey` — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
 6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
@@ -187,7 +187,7 @@ Current aliases:
 
 - [ ] Look up `abbrKey` in `departments_EN.js` or `departments_FR.js`
 - [ ] Create `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` with empty export
-- [ ] Add to `departmentOptions` in `FilterPanel.js` (alphabetically)
+- [ ] Add to `PARTNER_DEPARTMENTS` in `src/constants/partnerDepartments.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Update "Current Departments" table in this document (alphabetically)
@@ -195,3 +195,48 @@ Current aliases:
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
 - [ ] Test scenario override for department
+
+---
+
+## Removing a Department as a Partner
+
+Removing a partner (e.g. an institution that decided not to join, or is pausing participation) means **reversing only the partner-specific steps** from "Files to Update When Adding a Department". It does **not** remove the institution from the Government of Canada.
+
+**⚠️ CRITICAL — what to KEEP:** A partner `abbrKey` is also a real federal department that the context service can still match to any question. Do **not** touch:
+- **`departments_EN.js` / `departments_FR.js`** — the `abbrKey` stays; it remains a valid department for context matching.
+- **`contextSystemPrompt.js`** — topic→department routing hints (e.g. "Public service pay system → PSPC-SPAC") stay. The department may still administer those topics regardless of partner status, and this is a maintainer-tuned prompt file.
+- **`usePageParam.js`, other scenario files** — any incidental mentions (e.g. a contact email in another department's scenario) are unrelated to partner status.
+
+**Why deleting the scenario file is safe:** `systemPrompt.js` wraps the dynamic scenario import in a try/catch. If the context service matches the (still-valid) `abbrKey` but no scenario file exists, it logs `no-department-scenarios` and loads an empty scenario — the question is still answered with general GC handling.
+
+### Files to Update When Removing a Partner
+
+| # | File | What to Update |
+|---|------|-----------------|
+| 1 | `/agents/prompts/scenarios/context-{slug}/` | **Delete** the scenario file and its directory |
+| 2 | `src/constants/partnerDepartments.js` | Remove the `abbrKey` from `PARTNER_DEPARTMENTS` |
+| 3 | `api/scenario/scenario-overrides.js` | Remove the `abbrKey` entry from `SUPPORTED_DEPARTMENTS` |
+| 4 | `src/pages/ScenarioOverridesPage.js` | Remove the `abbrKey` from the `SUPPORTED_DEPARTMENTS` array |
+| 5 | `how-to-add-dept-partner.md` | Remove the row from the "Current Departments" table |
+| 6 | `scripts/generate-system-prompt-documentation.js` | Remove the `abbrKey` entry from `getDepartmentDisplayName` (if present) — leave the topic-routing lines |
+| 7 | System prompt docs | Run `node scripts/generate-system-prompt-documentation.js` to regenerate |
+
+### Shared-scenario partners
+
+If the partner is part of a shared-scenario group (see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)):
+- **Removing an alias member** (a non-canonical `abbrKey`): remove only its entry from `SCENARIO_ALIASES` in `scenario-aliases.js`. Do not delete the canonical scenario file, which other members still use.
+- **Removing the canonical department**: reassign or remove the whole group. Do not orphan aliases that still map to the deleted canonical `abbrKey` — update or delete those alias entries too.
+
+### Checklist for Removing a Partner
+
+- [ ] Delete `/agents/prompts/scenarios/context-{slug}/`
+- [ ] Remove `abbrKey` from `PARTNER_DEPARTMENTS` in `src/constants/partnerDepartments.js`
+- [ ] Remove `abbrKey` entry from `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js`
+- [ ] Remove `abbrKey` from `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js`
+- [ ] Remove the row from the "Current Departments" table in this document
+- [ ] Remove the `getDepartmentDisplayName` entry in the generator script (if present)
+- [ ] Handle `scenario-aliases.js` if the partner is part of a shared-scenario group
+- [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
+- [ ] Confirm no dangling references: `grep -rn "context-{slug}\|{UPPER_KEY}_SCENARIOS" --include="*.js" --include="*.md" .`
+- [ ] Leave `departments_EN.js`, `departments_FR.js`, and `contextSystemPrompt.js` routing intact
+- [ ] Note: any per-department scenario overrides stored in the database (keyed by `departmentKey`) become orphaned but harmless

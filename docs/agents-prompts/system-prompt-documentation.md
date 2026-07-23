@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-07-17
+**Generated:** 2026-07-23
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -462,10 +462,10 @@ Page Language: en
 - [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with the seven Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), Canadian Northern Economic Development Agency (CanNor), Federal Economic Development Agency for Southern Ontario (FedDev Ontario), Federal Economic Development Agency for Northern Ontario (FedNor), Pacific Economic Development Canada (PacifiCan), and Prairies Economic Development Canada (PrairiesCan)
 - [`context-jus/`](../../agents/prompts/scenarios/context-jus/) - Department of Justice Canada (JUS)
 - [`context-nrcan-rncan/`](../../agents/prompts/scenarios/context-nrcan-rncan/) - Natural Resources Canada (NRCAN-RNCAN)
-- [`context-pspc-spac/`](../../agents/prompts/scenarios/context-pspc-spac/) - Public Services and Procurement Canada (PSPC-SPAC)
 - [`context-sac-isc/`](../../agents/prompts/scenarios/context-sac-isc/) - Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)
 - [`context-statcan/`](../../agents/prompts/scenarios/context-statcan/) - Statistics Canada (STATCAN)
 - [`context-tbs-sct/`](../../agents/prompts/scenarios/context-tbs-sct/) - Treasury Board Secretariat (TBS-SCT)
+- [`context-tc/`](../../agents/prompts/scenarios/context-tc/) - TC
 - [`context-vac-acc/`](../../agents/prompts/scenarios/context-vac-acc/) - Veterans Affairs Canada (VAC-ACC)
 
 **Note:** This is a growing list as new departments become partners and their scenario files are added to the system. The example below uses **EDSC-ESDC** as the department. Partner scenario file contents are **not reproduced in this document** — they are maintained directly by departments and change frequently, so the document links to them (in the list above) instead of embedding their text. If a different department had been matched (or no scenario file existed for that department), the Answer Generation prompt would point to a different file or omit that section entirely.
@@ -615,7 +615,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Friday, July 17, 2026.
+Today is Thursday, July 23, 2026.
 
 ## Official language context:
 <page-language>English</page-language>

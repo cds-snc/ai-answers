@@ -63,10 +63,6 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-nrcan-rncan/nrcan-rncan-scenarios.js');
     return mod.NRCAN_RNCAN_SCENARIOS || '';
   },
-  'PSPC-SPAC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-pspc-spac/pspc-spac-scenarios.js');
-    return mod.PSPC_SPAC_SCENARIOS || '';
-  },
   'SAC-ISC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-sac-isc/sac-isc-scenarios.js');
     return mod.SAC_ISC_SCENARIOS || '';
@@ -74,6 +70,10 @@ const SUPPORTED_DEPARTMENTS = {
   'StatCan': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-statcan/statcan-scenarios.js');
     return mod.STATCAN_SCENARIOS || '';
+  },
+  'TC': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-tc/tc-scenarios.js');
+    return mod.TC_SCENARIOS || '';
   },
   'TBS-SCT': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');

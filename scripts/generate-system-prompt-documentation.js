@@ -70,7 +70,6 @@ function getDepartmentDisplayName(contextCode) {
     'FIN': 'Department of Finance Canada (FIN)',
     'HC-SC': 'Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)',
     'IRCC': 'Immigration, Refugees and Citizenship Canada (IRCC)',
-    'PSPC-SPAC': 'Public Services and Procurement Canada (PSPC-SPAC)',
     'SAC-ISC': 'Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)',
     'TBS-SCT': 'Treasury Board Secretariat (TBS-SCT)',
     'ECCC': 'Environment and Climate Change Canada (ECCC)',
