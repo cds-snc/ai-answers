@@ -238,6 +238,32 @@ describe('InteractionPersistenceService', () => {
         expect(ctx.searchResults).toBe('[{"title":"Benefits"}]');
     });
 
+    it('persists Q&A matches without generated subdocument ids', async () => {
+        initialPayload.context.qaMatches = [{
+            chatId: 'used-chat',
+            interactionId: 'used-interaction',
+            similarity: 0.91,
+            questionText: 'Used question',
+            answerText: 'Used answer',
+        }];
+
+        await InteractionPersistenceService.persistInteraction(initialPayload, user);
+
+        const { interaction } = await trackCreatedDocuments(
+            initialPayload.chatId,
+            initialPayload.userMessageId,
+        );
+        const ctx = await Context.findById(interaction.context._id).lean();
+
+        expect(ctx.qaMatches).toEqual([{
+            chatId: 'used-chat',
+            interactionId: 'used-interaction',
+            similarity: 0.91,
+            questionText: 'Used question',
+            answerText: 'Used answer',
+        }]);
+    });
+
     it('should handle missing optional fields', async () => {
         delete initialPayload.answer.tools;
         delete initialPayload.answer.sentences;

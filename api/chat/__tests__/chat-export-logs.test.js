@@ -66,7 +66,14 @@ describe('chat-export-logs API', () => {
                         appVersion: 'v-interaction-version',
                         context: {
                             searchQuery: 'test query content',
-                            searchResults: '[]'
+                            searchResults: '[]',
+                            qaMatches: [{
+                                chatId: 'used-chat',
+                                interactionId: 'used-interaction',
+                                similarity: 0.91,
+                                questionText: 'Used question',
+                                answerText: 'Used answer'
+                            }]
                         },
                         answer: { content: 'ans' },
                         question: { question: 'q' },
@@ -115,6 +122,11 @@ describe('chat-export-logs API', () => {
         expect(row['context.searchQuery']).toBe('test query content');
         expect(row).toHaveProperty('appVersion');
         expect(row.appVersion).toBe('v-interaction-version');
+        expect(JSON.parse(row['context.qaMatches'])).toEqual([expect.objectContaining({
+            chatId: 'used-chat',
+            interactionId: 'used-interaction',
+            similarity: 0.91
+        })]);
     });
 
     it('should include context.searchQuery in the tools view export', async () => {
@@ -209,5 +221,31 @@ describe('chat-export-logs API', () => {
         expect(res.json).toHaveBeenCalled();
         const responseData = res.json.mock.calls[0][0];
         expect(responseData.map((row) => row.chatId)).toEqual(['chat-b', 'chat-a']);
+    });
+
+    it('exports an empty Q&A matches field when no matches were persisted', async () => {
+        req.query.format = 'json';
+        const mockChats = [{
+            chatId: 'no-qa-matches',
+            interactions: [{
+                interactionId: 'i3',
+                context: { searchQuery: 'query' },
+                answer: { content: 'answer' },
+                question: { question: 'question' },
+                expertFeedback: {},
+                publicFeedback: {},
+                autoEval: { expertFeedback: { totalScore: 1 } }
+            }]
+        }];
+
+        Chat.find.mockReturnValue({
+            populate: vi.fn().mockReturnValue({
+                lean: vi.fn().mockResolvedValue(mockChats)
+            })
+        });
+
+        await handler(req, res);
+
+        expect(res.json.mock.calls[0][0][0]['context.qaMatches']).toBe('');
     });
 });

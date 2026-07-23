@@ -156,6 +156,7 @@ const DEFAULT_HEADER_ORDER = [
     'context.searchQuery',
     'context.searchResults',
     'context.translatedQuestion',
+    'context.qaMatches',
     'autoEval.expertFeedback.totalScore',
     'answer.tools.count',
     'answer.tools.0',
@@ -306,6 +307,7 @@ function flattenInteraction(chat, interaction, view) {
     const sentence4 = sentences[3] || '';
 
     const toolColumns = buildToolColumns(get(interaction, 'answer.tools', []));
+    const qaMatches = get(interaction, 'context.qaMatches', []);
 
     // Explicit Default View Construction
     if (viewDef.mode === 'explicit') {
@@ -387,6 +389,7 @@ function flattenInteraction(chat, interaction, view) {
             // Context search results might be array/object, flatten or stringify? Default behavior is usually stringify for cells if object.
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
             'context.translatedQuestion': get(interaction, 'context.translatedQuestion'),
+            'context.qaMatches': Array.isArray(qaMatches) && qaMatches.length > 0 ? JSON.stringify(qaMatches) : '',
 
             'autoEval.expertFeedback.totalScore': get(interaction, 'autoEval.expertFeedback.totalScore'),
 

@@ -20,6 +20,18 @@ const contextSchema = new Schema({
     searchQuery: { type: String, required: false, default: '' },
     translatedQuestion: { type: String, required: false, default: '' },
     originalLang: { type: String, required: false, default: '' },
+    qaMatches: {
+        type: [{
+            chatId: { type: String, required: false },
+            interactionId: { type: String, required: false },
+            similarity: { type: Number, required: false },
+            questionText: { type: String, required: false },
+            answerText: { type: String, required: false },
+            _id: false,
+        }],
+        required: false,
+        default: undefined,
+    },
 }, {
     timestamps: true, versionKey: false,
     id: false,
