@@ -25,7 +25,7 @@ const METADATA_UNSET = {
 
 // Keep enough work in flight to hide DocumentDB round-trip latency without
 // turning a maintenance operation into an unbounded write burst.
-const BACKFILL_CONCURRENCY = 8;
+const BACKFILL_CONCURRENCY = 4;
 
 async function mapWithConcurrency(items, concurrency, mapper) {
   const results = new Array(items.length);
@@ -393,21 +393,23 @@ class EmbeddingMetadataService {
       ])
       .lean();
 
-    // Resolve page languages once per batch instead of issuing one Chat query
-    // for every interaction. Chat.interactions is indexed for this lookup.
+    // Resolve page languages through the embedding's indexed chatId reference.
+    // Avoid reverse-scanning Chat.interactions, which is expensive on DocumentDB
+    // and can return very large interaction arrays.
     const interactionIds = interactions.map(({ _id }) => _id).filter(Boolean);
-    const chats = interactionIds.length
-      ? await Chat.find({ interactions: { $in: interactionIds } })
-        .select('pageLanguage interactions')
+    const embeddingChatLinks = interactionIds.length
+      ? await Embedding.find({ interactionId: { $in: interactionIds } })
+        .select('interactionId chatId')
+        .populate({ path: 'chatId', select: 'pageLanguage' })
         .lean()
       : [];
-    const pageLanguagesByInteractionId = new Map();
-    for (const chat of chats) {
-      for (const interactionId of chat.interactions || []) {
-        const key = toIdString(interactionId);
-        if (!pageLanguagesByInteractionId.has(key)) {
-          pageLanguagesByInteractionId.set(key, chat.pageLanguage || null);
-        }
+    const pageLanguagesByInteractionId = new Map(
+      interactionIds.map((interactionId) => [toIdString(interactionId), null])
+    );
+    for (const embedding of embeddingChatLinks) {
+      const key = toIdString(embedding.interactionId);
+      if (pageLanguagesByInteractionId.has(key) && embedding.chatId && typeof embedding.chatId === 'object') {
+        pageLanguagesByInteractionId.set(key, embedding.chatId.pageLanguage || null);
       }
     }
 
@@ -420,9 +422,7 @@ class EmbeddingMetadataService {
     const results = await mapWithConcurrency(interactions, BACKFILL_CONCURRENCY, (interaction) =>
       this.syncForInteraction(interaction, null, {
         onlyMissingMetadata: phase === 'missing',
-        ...(pageLanguagesByInteractionId.has(toIdString(interaction._id))
-          ? { pageLanguageOverride: pageLanguagesByInteractionId.get(toIdString(interaction._id)) }
-          : {}),
+        pageLanguageOverride: pageLanguagesByInteractionId.get(toIdString(interaction._id)) ?? null,
       })
     );
 

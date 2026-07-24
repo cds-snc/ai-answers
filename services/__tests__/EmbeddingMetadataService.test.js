@@ -84,6 +84,13 @@ describe('EmbeddingMetadataService', () => {
     mockInteractionFindById.mockReset();
     mockInteractionCountDocuments.mockReset();
     mockExpertFeedbackFindById.mockReset();
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => [],
+        }),
+      }),
+    });
     mockChatFind.mockReturnValue({
       select: () => ({
         lean: async () => [],
@@ -187,7 +194,7 @@ describe('EmbeddingMetadataService', () => {
     }));
   });
 
-  it('resolves page languages once per batch instead of once per interaction', async () => {
+  it('resolves page languages through embedding chat ids without reverse-scanning chats', async () => {
     const interactionIds = [
       '507f1f77bcf86cd799439011',
       '507f1f77bcf86cd799439013',
@@ -201,12 +208,17 @@ describe('EmbeddingMetadataService', () => {
       },
       question: { language: 'en' },
     })));
-    mockChatFind.mockReturnValue({
+    mockEmbeddingFind.mockReturnValue({
       select: () => ({
-        lean: async () => [{
-          pageLanguage: 'fr',
-          interactions: interactionIds,
-        }],
+        populate: () => ({
+          lean: async () => interactionIds.map((interactionId, index) => ({
+            interactionId,
+            chatId: {
+              _id: `507f1f77bcf86cd79943902${index + 1}`,
+              pageLanguage: 'fr',
+            },
+          })),
+        }),
       }),
     });
     mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
@@ -217,11 +229,35 @@ describe('EmbeddingMetadataService', () => {
       includeDetails: true,
     });
 
-    expect(mockChatFind).toHaveBeenCalledWith({ interactions: { $in: interactionIds } });
+    expect(mockEmbeddingFind).toHaveBeenCalledWith({ interactionId: { $in: interactionIds } });
+    expect(mockChatFind).not.toHaveBeenCalled();
     expect(mockChatFindOne).not.toHaveBeenCalled();
     expect(mockUpdateMany).toHaveBeenCalledTimes(2);
     expect(mockUpdateMany.mock.calls[0][1].$set.pageLanguage).toBe('fr');
     expect(result).toEqual(expect.objectContaining({ processed: 2, updated: 2 }));
+  });
+
+  it('does not reverse-scan chats when an interaction has no embedding', async () => {
+    const interactionId = '507f1f77bcf86cd799439011';
+    mockInteractionFindResult([{
+      _id: interactionId,
+      expertFeedback: {
+        _id: '507f1f77bcf86cd799439012',
+        totalScore: 100,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      },
+      question: { language: 'en' },
+    }]);
+    mockUpdateMany.mockResolvedValue({ matchedCount: 0, modifiedCount: 0 });
+
+    await EmbeddingMetadataService.backfillBatch({
+      phase: 'interactions',
+      limit: 1,
+    });
+
+    expect(mockEmbeddingFind).toHaveBeenCalledWith({ interactionId: { $in: [interactionId] } });
+    expect(mockChatFind).not.toHaveBeenCalled();
+    expect(mockChatFindOne).not.toHaveBeenCalled();
   });
 
   it('reports whether embedding metadata matches linked feedback', async () => {
@@ -257,9 +293,17 @@ describe('EmbeddingMetadataService', () => {
         createdAt: new Date('2024-01-01T00:00:00Z'),
       }),
     });
-    mockChatFindOne.mockReturnValue({
+    mockEmbeddingFind.mockReturnValue({
       select: () => ({
-        lean: async () => ({ pageLanguage: 'fr' }),
+        populate: () => ({
+          lean: async () => [{
+            interactionId: interaction._id,
+            chatId: {
+              _id: '507f1f77bcf86cd799439021',
+              pageLanguage: 'fr',
+            },
+          }],
+        }),
       }),
     });
     mockUpdateMany.mockResolvedValue({ matchedCount: 2, modifiedCount: 2 });
