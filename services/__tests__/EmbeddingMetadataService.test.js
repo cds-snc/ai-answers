@@ -5,6 +5,7 @@ const {
   mockUpdateMany,
   mockEmbeddingAggregate,
   mockEmbeddingFind,
+  mockChatFind,
   mockChatFindOne,
   mockInteractionFind,
   mockInteractionFindById,
@@ -14,6 +15,7 @@ const {
   mockUpdateMany: vi.fn(),
   mockEmbeddingAggregate: vi.fn(),
   mockEmbeddingFind: vi.fn(),
+  mockChatFind: vi.fn(),
   mockChatFindOne: vi.fn(),
   mockInteractionFind: vi.fn(),
   mockInteractionFindById: vi.fn(),
@@ -26,7 +28,7 @@ vi.mock('../../api/db/db-connect.js', () => ({
 }));
 
 vi.mock('../../models/chat.js', () => ({
-  Chat: { findOne: mockChatFindOne },
+  Chat: { find: mockChatFind, findOne: mockChatFindOne },
 }));
 
 vi.mock('../../models/interaction.js', () => ({
@@ -76,11 +78,17 @@ describe('EmbeddingMetadataService', () => {
     mockUpdateMany.mockReset();
     mockEmbeddingAggregate.mockReset();
     mockEmbeddingFind.mockReset();
+    mockChatFind.mockReset();
     mockChatFindOne.mockReset();
     mockInteractionFind.mockReset();
     mockInteractionFindById.mockReset();
     mockInteractionCountDocuments.mockReset();
     mockExpertFeedbackFindById.mockReset();
+    mockChatFind.mockReturnValue({
+      select: () => ({
+        lean: async () => [],
+      }),
+    });
   });
 
   it('stores both pageLanguage and interactionLanguage when syncing metadata', async () => {
@@ -177,6 +185,43 @@ describe('EmbeddingMetadataService', () => {
       reason: 'allMetadataReset',
       modifiedCount: 7,
     }));
+  });
+
+  it('resolves page languages once per batch instead of once per interaction', async () => {
+    const interactionIds = [
+      '507f1f77bcf86cd799439011',
+      '507f1f77bcf86cd799439013',
+    ];
+    mockInteractionFindResult(interactionIds.map((id, index) => ({
+      _id: id,
+      expertFeedback: {
+        _id: `507f1f77bcf86cd79943901${index + 2}`,
+        totalScore: 100,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      },
+      question: { language: 'en' },
+    })));
+    mockChatFind.mockReturnValue({
+      select: () => ({
+        lean: async () => [{
+          pageLanguage: 'fr',
+          interactions: interactionIds,
+        }],
+      }),
+    });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    const result = await EmbeddingMetadataService.backfillBatch({
+      phase: 'interactions',
+      limit: 2,
+      includeDetails: true,
+    });
+
+    expect(mockChatFind).toHaveBeenCalledWith({ interactions: { $in: interactionIds } });
+    expect(mockChatFindOne).not.toHaveBeenCalled();
+    expect(mockUpdateMany).toHaveBeenCalledTimes(2);
+    expect(mockUpdateMany.mock.calls[0][1].$set.pageLanguage).toBe('fr');
+    expect(result).toEqual(expect.objectContaining({ processed: 2, updated: 2 }));
   });
 
   it('reports whether embedding metadata matches linked feedback', async () => {
