@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.170.2](https://github.com/cds-snc/ai-answers/compare/v1.170.1...v1.170.2) (2026-07-24)
+
+
+### Code Refactoring
+
+* optimize backfill logic to use hasMore flag instead of rema… ([d6fc3a0](https://github.com/cds-snc/ai-answers/commit/d6fc3a0e1a8120c2b9491c6ea75765ce2dd25492))
+
 ## [1.170.1](https://github.com/cds-snc/ai-answers/compare/v1.170.0...v1.170.1) (2026-07-24)
 
 
