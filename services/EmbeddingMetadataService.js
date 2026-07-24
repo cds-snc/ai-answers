@@ -330,16 +330,14 @@ class EmbeddingMetadataService {
   async backfillBatch({ lastProcessedId = null, limit = 100, includeDetails = false, phase = 'clear' } = {}) {
     if (phase === 'clear') {
       const clearResult = await this.clearAllMetadata();
-      const remaining = await Interaction.countDocuments({
-        expertFeedback: { $exists: true, $ne: null },
-      });
       return {
         phase: 'interactions',
         processed: clearResult.matchedCount || 0,
         updated: 0,
         cleared: clearResult.modifiedCount || 0,
         skipped: 0,
-        remaining,
+        remaining: null,
+        hasMore: true,
         lastProcessedId: null,
         ...(includeDetails ? {
           batchRecords: [{
@@ -422,18 +420,18 @@ class EmbeddingMetadataService {
       }
     }
 
-    const remainingQuery = {
-      expertFeedback: { $exists: true, $ne: null },
-      ...(lastId ? { _id: { $gt: lastId } } : {}),
-    };
-    const remaining = await Interaction.countDocuments(remainingQuery);
+    // Avoid a collection-wide count on every page. A full page means there
+    // may be another page; the client will make one final empty request when
+    // the total happens to be an exact multiple of the batch size.
+    const hasMore = interactions.length === limit;
     return {
       phase,
       processed: interactions.length,
       updated,
       cleared,
       skipped,
-      remaining,
+      remaining: null,
+      hasMore,
       lastProcessedId: lastId,
       ...(includeDetails ? { batchRecords } : {}),
     };
