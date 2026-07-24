@@ -345,13 +345,16 @@ const FilterPanel = ({
     const closeIfFocusLeavesPicker = (e) => {
       if (!instance.isShowing) return;
       const next = e.relatedTarget;
-      if (next !== undefined) {
+      // Browsers report "nothing to focus next" as null, not undefined (e.g.
+      // when a focused element is removed from the DOM by a calendar
+      // re-render) — treat both the same instead of only checking undefined,
+      // otherwise a null relatedTarget was wrongly closing the popup
+      // immediately, before the recovery path below ever ran.
+      if (next != null) {
         if (!isInsidePickerOrInput(next)) instance.hide();
         return;
       }
-      // Some browsers omit relatedTarget on focusout (e.g. when a focused
-      // element is removed from the DOM by a calendar re-render) — re-check
-      // on the next tick. The MutationObserver above runs first (a
+      // Re-check on the next tick. The MutationObserver above runs first (a
       // microtask, ahead of this macrotask) and will have already recovered
       // focus into the popup if that's what happened, so this only fires
       // for a genuine external focus loss.
