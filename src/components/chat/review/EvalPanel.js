@@ -121,7 +121,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
 
   if (!message) return null;
 
-  const evalObj = data || message.interaction?.eval || message.eval || null;
+  const evalObj = data || message.interaction?.autoEval || message.autoEval || null;
   const sentenceTrace = Array.isArray(evalObj?.sentenceMatchTrace) ? evalObj.sentenceMatchTrace : [];
   const sim = evalObj?.similarityScores || {};
   const noMatch = evalObj?.hasMatches === false;
