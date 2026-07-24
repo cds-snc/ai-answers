@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.170.1](https://github.com/cds-snc/ai-answers/compare/v1.170.0...v1.170.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* date range picker closing immediately when selecting a date ([00e290b](https://github.com/cds-snc/ai-answers/commit/00e290bfc89c7fc3870380fa275f21078a63c5d9))
+* focus out bug ([591ccbf](https://github.com/cds-snc/ai-answers/commit/591ccbf9e616af9ec1899f135df9723117e11f5c))
+
 ## [1.170.0](https://github.com/cds-snc/ai-answers/compare/v1.169.0...v1.170.0) (2026-07-24)
 
 
