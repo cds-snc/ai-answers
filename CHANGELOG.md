@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.171.0](https://github.com/cds-snc/ai-answers/compare/v1.170.2...v1.171.0) (2026-07-24)
+
+
+### Features
+
+* enhance metadata backfill with concurrency and page language re… ([f9b306e](https://github.com/cds-snc/ai-answers/commit/f9b306e617103768b8403fc224dcaefd44663582))
+* enhance metadata backfill with concurrency and page language resolution ([ad46b8b](https://github.com/cds-snc/ai-answers/commit/ad46b8b6bb06235f6dc33fd16cfce4193b02b0e2))
+
+
+### Bug Fixes
+
+* AI eval panel hidden even when an evaluation exists ([ba44677](https://github.com/cds-snc/ai-answers/commit/ba4467729df77e5e887bac7ae57fcd9b312d0f80))
+* AI eval panel hidden even when an evaluation exists ([cfe1cd3](https://github.com/cds-snc/ai-answers/commit/cfe1cd36f6af5e190cd33f7e0fcbd96a140e50f2))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump mongoose from 8.22.1 to 8.24.1 ([d00bd3d](https://github.com/cds-snc/ai-answers/commit/d00bd3df61f1536af6ab4dc0559273c1900af321))
+* **deps:** bump mongoose from 8.22.1 to 8.24.1 ([e3ab884](https://github.com/cds-snc/ai-answers/commit/e3ab88477d495d1be6b0b9e9c309dc13ad2f0462))
+* **deps:** bump postcss from 8.5.15 to 8.5.22 ([3c72492](https://github.com/cds-snc/ai-answers/commit/3c7249286841731cf00038517f4fe1124e7e3749))
+* **deps:** bump postcss from 8.5.15 to 8.5.22 ([eb57e33](https://github.com/cds-snc/ai-answers/commit/eb57e33ae318806c1c0c88fcf71e7bd49476d737))
+* **deps:** bump tar from 7.5.20 to 7.5.22 ([bb40248](https://github.com/cds-snc/ai-answers/commit/bb4024879f18ecc207636d58350f22ef20b09bc5))
+* **deps:** bump tar from 7.5.20 to 7.5.22 ([1389f39](https://github.com/cds-snc/ai-answers/commit/1389f39e1f83e296f59e457e67e771ffa74fbf39))
+
 ## [1.170.2](https://github.com/cds-snc/ai-answers/compare/v1.170.1...v1.170.2) (2026-07-24)
 
 
