@@ -160,6 +160,7 @@ const DEFAULT_HEADER_ORDER = [
         `context.qaMatches.${index}.chatId`,
         `context.qaMatches.${index}.interactionId`,
         `context.qaMatches.${index}.similarity`,
+        `context.qaMatches.${index}.totalScore`,
         `context.qaMatches.${index}.questionText`,
         `context.qaMatches.${index}.answerText`,
     ]).flat(),
@@ -241,6 +242,7 @@ const buildQaMatchColumns = (matches) => {
         cols[`context.qaMatches.${i}.chatId`] = match.chatId || '';
         cols[`context.qaMatches.${i}.interactionId`] = match.interactionId || '';
         cols[`context.qaMatches.${i}.similarity`] = match.similarity ?? '';
+        cols[`context.qaMatches.${i}.totalScore`] = match.totalScore ?? '';
         cols[`context.qaMatches.${i}.questionText`] = match.questionText || '';
         cols[`context.qaMatches.${i}.answerText`] = match.answerText || '';
     }

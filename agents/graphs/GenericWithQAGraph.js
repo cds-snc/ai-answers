@@ -171,10 +171,11 @@ graph.addNode('similarQuestions', async (state) => {
 
   const preThresholdRecords = Array.isArray(similarQuestionsDebug?.preThresholdRecords) ? similarQuestionsDebug.preThresholdRecords : [];
   const matchedRecords = Array.isArray(similarQuestionsDebug?.matchedRecords) ? similarQuestionsDebug.matchedRecords : [];
-  const qaMatches = matchedRecords.map(({ chatId, interactionId, similarity, questionText, answerText }) => ({
+  const qaMatches = matchedRecords.map(({ chatId, interactionId, similarity, totalScore, questionText, answerText }) => ({
     chatId,
     interactionId,
     similarity,
+    totalScore,
     questionText,
     answerText,
   }));

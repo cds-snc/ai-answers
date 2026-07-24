@@ -71,6 +71,7 @@ describe('chat-export-logs API', () => {
                                 chatId: 'used-chat',
                                 interactionId: 'used-interaction',
                                 similarity: 0.91,
+                                totalScore: 80,
                                 questionText: 'Used question',
                                 answerText: 'Used answer'
                             }]
@@ -125,6 +126,7 @@ describe('chat-export-logs API', () => {
         expect(row['context.qaMatches.0.chatId']).toBe('used-chat');
         expect(row['context.qaMatches.0.interactionId']).toBe('used-interaction');
         expect(row['context.qaMatches.0.similarity']).toBe(0.91);
+        expect(row['context.qaMatches.0.totalScore']).toBe(80);
         expect(row['context.qaMatches.0.questionText']).toBe('Used question');
         expect(row['context.qaMatches.0.answerText']).toBe('Used answer');
     });

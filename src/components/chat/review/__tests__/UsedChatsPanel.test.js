@@ -7,10 +7,7 @@ import UsedChatsPanel from '../UsedChatsPanel.js';
 const translations = {
     'reviewPanels.usedQaChatsTitle': 'Past Q&A used',
     'reviewPanels.chatId': 'Chat ID',
-    'reviewPanels.interactionId': 'Interaction ID',
-    'reviewPanels.question': 'Question',
-    'reviewPanels.answer': 'Answer',
-    'reviewPanels.similarity': 'Similarity',
+    'reviewPanels.totalScore': 'Total score',
     'homepage.expertRating.answerNumberLabel': 'Answer {number}',
     'homepage.expertRating.labelWithAnswer': '{label}: {answer}',
 };
@@ -21,18 +18,18 @@ describe('UsedChatsPanel', () => {
         render(<UsedChatsPanel
             t={t}
             answerNumber={1}
+            lang="fr"
             message={{ interaction: { context: { qaMatches: [{
-                chatId: 'chat-1', interactionId: 'interaction-1', similarity: 0.91,
+                chatId: 'chat-1', interactionId: 'interaction-1', similarity: 0.91, totalScore: 80,
                 questionText: 'Past question', answerText: 'Past answer',
             }] } } }}
         />);
 
         expect(screen.getByText('Past Q&A used: Answer 1')).not.toBeNull();
-        expect(screen.getByText('chat-1')).not.toBeNull();
-        expect(screen.getByText('interaction-1')).not.toBeNull();
-        expect(screen.getByText('Past question')).not.toBeNull();
-        expect(screen.getByText('Past answer')).not.toBeNull();
-        expect(screen.getByText('0.91')).not.toBeNull();
+        const chatLink = screen.getByText('chat-1');
+        expect(chatLink).not.toBeNull();
+        expect(chatLink.closest('a').getAttribute('href')).toBe('/fr?chat=chat-1&review=1');
+        expect(screen.getByText('80')).not.toBeNull();
     });
 
     it('renders nothing when no Q&A matches were persisted', () => {

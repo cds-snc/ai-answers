@@ -243,6 +243,7 @@ describe('InteractionPersistenceService', () => {
             chatId: 'used-chat',
             interactionId: 'used-interaction',
             similarity: 0.91,
+            totalScore: 80,
             questionText: 'Used question',
             answerText: 'Used answer',
         }];
@@ -259,6 +260,7 @@ describe('InteractionPersistenceService', () => {
             chatId: 'used-chat',
             interactionId: 'used-interaction',
             similarity: 0.91,
+            totalScore: 80,
             questionText: 'Used question',
             answerText: 'Used answer',
         }]);

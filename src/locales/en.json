@@ -1275,10 +1275,7 @@
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages",
     "usedQaChatsTitle": "Past Q&A used",
-    "chatId": "Chat ID",
-    "interactionId": "Interaction ID",
-    "question": "Question",
-    "answer": "Answer"
+    "chatId": "Chat ID"
   },
   "dashboardFilter": {
     "dateRange": "Date range",

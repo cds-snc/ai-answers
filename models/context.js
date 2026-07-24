@@ -25,6 +25,7 @@ const contextSchema = new Schema({
             chatId: { type: String, required: false },
             interactionId: { type: String, required: false },
             similarity: { type: Number, required: false },
+            totalScore: { type: Number, required: false },
             questionText: { type: String, required: false },
             answerText: { type: String, required: false },
             _id: false,

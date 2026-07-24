@@ -744,7 +744,7 @@ const ChatInterface = ({
                               answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                             />
                             <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
-                            <UsedChatsPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                            <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                             <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                           </div>
                         </div>

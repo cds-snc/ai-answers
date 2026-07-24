@@ -46,6 +46,7 @@ describe('GenericWithQAGraph Workflow', () => {
             chatId: 'used-chat',
             interactionId: 'used-interaction',
             similarity: 0.91,
+            totalScore: 80,
             questionText: 'Used question',
             answerText: 'Used answer',
             thresholdPassed: true,
@@ -67,6 +68,7 @@ describe('GenericWithQAGraph Workflow', () => {
             context: expect.objectContaining({
                 qaMatches: [expect.objectContaining({
                     chatId: 'used-chat', interactionId: 'used-interaction', similarity: 0.91,
+                    totalScore: 80,
                     questionText: 'Used question', answerText: 'Used answer',
                 })],
             }),
