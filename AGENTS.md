@@ -5,6 +5,21 @@
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
 - **CSS/styling**: See [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md) for all CSS and visual style rules.
 
+## Commit messages and releases
+
+Release Please runs on pushes to `main` and uses Conventional Commit prefixes
+from the commit message. When creating a commit, use one of the configured
+prefixes:
+
+`feat`, `feature`, `fix`, `perf`, `revert`, `docs`, `style`, `chore`,
+`refactor`, `test`, `build`, or `ci`.
+
+For example: `feat: add metadata backfill pagination` or
+`fix: prevent backfill timeout`. Branch names and pull request comments do not
+trigger releases. The generated release pull request uses the branch
+`release-please--branches--main` and a title such as
+`chore: AI Answers release v1.171.0`.
+
 ## Do not edit prompts during unrelated coding work
 
 Prompt files in `agents/prompts/` — the system prompt, `agenticBase.js`,
@@ -151,6 +166,15 @@ Before starting work, read the relevant reference doc:
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)
 
 ## Database query safety
+
+### AWS DocumentDB compatibility
+
+Production uses **AWS DocumentDB 8**, which exposes a MongoDB-compatible API but is not a full MongoDB implementation. When changing database queries or persistence code:
+
+- Do not assume that every MongoDB operator, aggregation stage, index behavior, bulk-operation behavior, or transaction semantic is supported identically by DocumentDB.
+- Prefer query shapes and features documented as supported by DocumentDB 8, and validate important or new queries with DocumentDB's `explain("executionStats")` rather than relying only on local MongoDB tests.
+- Account for DocumentDB network round-trip costs: batch reads and writes where practical, avoid unbounded per-record database calls, and use bounded concurrency for maintenance jobs.
+- Verify that required indexes exist in the deployed DocumentDB cluster; Mongoose schema declarations alone do not prove that production indexes are present.
 
 When building Mongo/Mongoose queries from request data or other user-controlled input, normalize the value before placing it in a query predicate. Do not rely on Mongoose casting or filter sanitization to prove the query is safe for CodeQL.
 

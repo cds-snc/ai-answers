@@ -23,6 +23,27 @@ const METADATA_UNSET = {
   interactionLanguage: '',
 };
 
+// Keep enough work in flight to hide DocumentDB round-trip latency without
+// turning a maintenance operation into an unbounded write burst.
+const BACKFILL_CONCURRENCY = 8;
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
 function isAutoEvalFeedback(feedback) {
   if (!feedback || typeof feedback !== 'object') return false;
   return String(feedback.type || '').trim().toLowerCase() === 'ai';
@@ -135,6 +156,7 @@ class EmbeddingMetadataService {
     embeddingId = null,
     updateScope = 'interaction',
     onlyMissingMetadata = false,
+    pageLanguageOverride,
   } = {}) {
     const interactionId = normalizeObjectId(interactionOrId);
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
@@ -199,7 +221,9 @@ class EmbeddingMetadataService {
       };
     }
 
-    const pageLanguage = await getPageLanguage(interaction._id);
+    const pageLanguage = pageLanguageOverride !== undefined
+      ? pageLanguageOverride
+      : await getPageLanguage(interaction._id);
     const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
     const metadata = feedbackMetadata(feedback);
     let updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
@@ -363,8 +387,29 @@ class EmbeddingMetadataService {
       .sort({ _id: 1 })
       .limit(limit)
       .select('_id expertFeedback question')
-      .populate({ path: 'question', select: 'language' })
+      .populate([
+        { path: 'expertFeedback', select: 'totalScore type neverStale createdAt' },
+        { path: 'question', select: 'language' },
+      ])
       .lean();
+
+    // Resolve page languages once per batch instead of issuing one Chat query
+    // for every interaction. Chat.interactions is indexed for this lookup.
+    const interactionIds = interactions.map(({ _id }) => _id).filter(Boolean);
+    const chats = interactionIds.length
+      ? await Chat.find({ interactions: { $in: interactionIds } })
+        .select('pageLanguage interactions')
+        .lean()
+      : [];
+    const pageLanguagesByInteractionId = new Map();
+    for (const chat of chats) {
+      for (const interactionId of chat.interactions || []) {
+        const key = toIdString(interactionId);
+        if (!pageLanguagesByInteractionId.has(key)) {
+          pageLanguagesByInteractionId.set(key, chat.pageLanguage || null);
+        }
+      }
+    }
 
     let updated = 0;
     let cleared = 0;
@@ -372,9 +417,18 @@ class EmbeddingMetadataService {
     let lastId = lastProcessedId || null;
     const batchRecords = [];
 
-    for (const interaction of interactions) {
+    const results = await mapWithConcurrency(interactions, BACKFILL_CONCURRENCY, (interaction) =>
+      this.syncForInteraction(interaction, null, {
+        onlyMissingMetadata: phase === 'missing',
+        ...(pageLanguagesByInteractionId.has(toIdString(interaction._id))
+          ? { pageLanguageOverride: pageLanguagesByInteractionId.get(toIdString(interaction._id)) }
+          : {}),
+      })
+    );
+
+    for (const [index, interaction] of interactions.entries()) {
       lastId = interaction._id.toString();
-      const result = await this.syncForInteraction(interaction, null, { onlyMissingMetadata: phase === 'missing' });
+      const result = results[index];
       if (result.skippedReason) {
         skipped += 1;
         if (includeDetails) {
