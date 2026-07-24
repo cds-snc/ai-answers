@@ -259,6 +259,18 @@ const FilterPanel = ({
       refocusInput();
     };
 
+    // Focuses the currently-tabbable calendar cell, if the popup is open.
+    // Used both right after a re-render (see setupCalendarA11y below) and
+    // as a fallback from closeIfFocusLeavesPicker once a focusout has fully
+    // resolved — see the comment there for why both call sites exist.
+    const focusRovingCell = () => {
+      if (!instance.isShowing) return false;
+      const $roving = container.find('td.available[tabindex="0"]').first();
+      if (!$roving.length) return false;
+      $roving.trigger('focus');
+      return true;
+    };
+
     // Keeps exactly one cell per rendered calendar tabbable (roving
     // tabindex), and gives every cell/nav control the name/role a keyboard
     // or screen-reader user needs. Re-run after every re-render, since the
@@ -322,9 +334,17 @@ const FilterPanel = ({
       // the newly-rendered roving cell so the popup doesn't look like it
       // lost focus — restricted to while the popup is actually open, so
       // this never fires on the initial (hidden) render.
-      if (instance.isShowing && document.activeElement === document.body) {
-        const $roving = container.find('td.available[tabindex="0"]').first();
-        if ($roving.length) $roving.trigger('focus');
+      //
+      // This is a best-effort attempt, not a guarantee: this MutationObserver
+      // callback can run *before* the browser has actually finished moving
+      // focus off the removed cell (observed in real testing — the browser
+      // defers its own blur/focus-shift default action until after pending
+      // microtasks flush, so this callback sometimes sees the *old*
+      // activeElement, not <body>, and skips the recovery below). When that
+      // happens, closeIfFocusLeavesPicker's deferred check is what actually
+      // recovers focus, once the blur has genuinely completed.
+      if (document.activeElement === document.body) {
+        focusRovingCell();
       }
     };
     setupCalendarA11y();
@@ -345,18 +365,27 @@ const FilterPanel = ({
     const closeIfFocusLeavesPicker = (e) => {
       if (!instance.isShowing) return;
       const next = e.relatedTarget;
-      if (next !== undefined) {
+      // Browsers report "nothing to focus next" as null, not undefined (e.g.
+      // when a focused element is removed from the DOM by a calendar
+      // re-render) — treat both the same instead of only checking undefined,
+      // otherwise a null relatedTarget was wrongly closing the popup
+      // immediately, before the recovery path below ever ran.
+      if (next != null) {
         if (!isInsidePickerOrInput(next)) instance.hide();
         return;
       }
-      // Some browsers omit relatedTarget on focusout (e.g. when a focused
-      // element is removed from the DOM by a calendar re-render) — re-check
-      // on the next tick. The MutationObserver above runs first (a
-      // microtask, ahead of this macrotask) and will have already recovered
-      // focus into the popup if that's what happened, so this only fires
-      // for a genuine external focus loss.
+      // Re-check on the next tick, once the browser has genuinely finished
+      // moving focus. setupCalendarA11y's MutationObserver *also* tries to
+      // recover focus, but it can run before the browser's own blur/focus
+      // default action has actually completed (confirmed in real-browser
+      // testing — activeElement was still the old focused element when that
+      // callback ran, not <body>, so its recovery check no-opped). By this
+      // point the blur is guaranteed to be done, so retry the same recovery
+      // here as the actual source of truth, before deciding to hide.
       setTimeout(() => {
-        if (!isInsidePickerOrInput(document.activeElement)) instance.hide();
+        if (isInsidePickerOrInput(document.activeElement)) return;
+        if (focusRovingCell() && isInsidePickerOrInput(document.activeElement)) return;
+        instance.hide();
       }, 0);
     };
 
