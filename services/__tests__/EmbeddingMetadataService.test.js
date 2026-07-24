@@ -158,7 +158,8 @@ describe('EmbeddingMetadataService', () => {
       updated: 0,
       cleared: 7,
       skipped: 0,
-      remaining: 3,
+      remaining: null,
+      hasMore: true,
       lastProcessedId: null,
     }));
     expect(mockUpdateMany).toHaveBeenCalledWith(
@@ -231,7 +232,8 @@ describe('EmbeddingMetadataService', () => {
       updated: 1,
       cleared: 0,
       skipped: 0,
-      remaining: 0,
+      remaining: null,
+      hasMore: true,
       lastProcessedId: '507f1f77bcf86cd799439011',
     }));
     expect(mockInteractionFind).toHaveBeenCalledWith({

@@ -79,7 +79,8 @@ const VectorPage = ({ lang = 'en' }) => {
       const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
       if (!savedProgress) return;
       const parsedProgress = JSON.parse(savedProgress);
-      if ((parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing') && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
+      if ((parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing')
+        && (parsedProgress.hasMore === true || (typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0))) {
         setMetadataProgress(parsedProgress);
       } else {
         window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
@@ -120,6 +121,7 @@ const VectorPage = ({ lang = 'en' }) => {
       if (typeof result.remaining === 'number') {
         setEmbeddingProgress({
           remaining: result.remaining,
+          hasMore: result.hasMore === true,
           lastProcessedId: result.lastProcessedId
         });
         // Only continue processing if there are actually items remaining
@@ -194,8 +196,9 @@ const VectorPage = ({ lang = 'en' }) => {
       cleared: initialProgress?.cleared || 0,
       skipped: initialProgress?.skipped || 0,
     };
+    let shouldContinue = true;
     try {
-      while (true) {
+      while (shouldContinue) {
         const result = await VectorService.backfillMetadata({
           lastProcessedId: nextLastId,
           limit: parsedBatchSize,
@@ -214,6 +217,7 @@ const VectorPage = ({ lang = 'en' }) => {
           cleared: cumulative.cleared,
           skipped: cumulative.skipped,
           remaining: result.remaining,
+          hasMore: result.hasMore === true,
           lastProcessedId: result.lastProcessedId,
           phase: result.phase,
         });
@@ -227,14 +231,17 @@ const VectorPage = ({ lang = 'en' }) => {
           lastProcessedId: result.lastProcessedId,
           phase: result.phase,
         };
-        if (result.remaining > 0) {
+        if (result.hasMore === true) {
           window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(progressSnapshot));
         } else {
           window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
         }
         nextLastId = result.lastProcessedId || nextLastId;
         nextPhase = result.phase || nextPhase;
-        if (result.remaining <= 0 || stopMetadataBackfillRef.current) break;
+        if (result.hasMore !== true || stopMetadataBackfillRef.current) {
+          shouldContinue = false;
+          break;
+        }
         await new Promise(resolve => setTimeout(resolve, METADATA_BACKFILL_DELAY_MS));
       }
     } catch (err) {
@@ -338,8 +345,7 @@ const VectorPage = ({ lang = 'en' }) => {
 
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
   const hasMetadataBackfillResume = (metadataProgress?.phase === 'interactions' || metadataProgress?.phase === 'missing')
-    && typeof metadataProgress.remaining === 'number'
-    && metadataProgress.remaining > 0;
+    && (metadataProgress.hasMore === true || (typeof metadataProgress.remaining === 'number' && metadataProgress.remaining > 0));
   const loadedDocdb8Results = docdb8ProbeDefinitions
     .map(({ key, label }) => ({
       key,
@@ -518,7 +524,9 @@ const VectorPage = ({ lang = 'en' }) => {
           <div className="mb-200">
             <p>
               <span>{t('vector.metadataProcessed')}: {fmtN(metadataProgress.processed)}</span>
-              <span> {t('vector.remaining')}: {fmtN(metadataProgress.remaining)}</span>
+              {typeof metadataProgress.remaining === 'number' && (
+                <span> {t('vector.remaining')}: {fmtN(metadataProgress.remaining)}</span>
+              )}
               {metadataProgress?.lastProcessedId && (
                 <span>
                   {' '}
