@@ -3,6 +3,7 @@ import EmbeddingMetadataService from '../EmbeddingMetadataService.js';
 
 const {
   mockUpdateMany,
+  mockEmbeddingAggregate,
   mockEmbeddingFind,
   mockChatFindOne,
   mockInteractionFind,
@@ -11,6 +12,7 @@ const {
   mockExpertFeedbackFindById,
 } = vi.hoisted(() => ({
   mockUpdateMany: vi.fn(),
+  mockEmbeddingAggregate: vi.fn(),
   mockEmbeddingFind: vi.fn(),
   mockChatFindOne: vi.fn(),
   mockInteractionFind: vi.fn(),
@@ -38,6 +40,7 @@ vi.mock('../../models/interaction.js', () => ({
 vi.mock('../../models/embedding.js', () => ({
   Embedding: {
     updateMany: mockUpdateMany,
+    aggregate: mockEmbeddingAggregate,
     find: mockEmbeddingFind,
   },
 }));
@@ -71,6 +74,7 @@ function mockObjectId(id) {
 describe('EmbeddingMetadataService', () => {
   beforeEach(() => {
     mockUpdateMany.mockReset();
+    mockEmbeddingAggregate.mockReset();
     mockEmbeddingFind.mockReset();
     mockChatFindOne.mockReset();
     mockInteractionFind.mockReset();
@@ -172,6 +176,24 @@ describe('EmbeddingMetadataService', () => {
       reason: 'allMetadataReset',
       modifiedCount: 7,
     }));
+  });
+
+  it('reports whether embedding metadata matches linked feedback', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([{
+      totalEmbeddings: 12,
+      recordsRequiringMetadata: 5,
+      recordsWithMetadata: 10,
+      recordsMissingMetadata: 2,
+    }]);
+
+    await expect(EmbeddingMetadataService.getBackfillStatus()).resolves.toEqual(expect.objectContaining({
+      complete: false,
+      totalEmbeddings: 12,
+      recordsRequiringMetadata: 5,
+      recordsWithMetadata: 10,
+      recordsMissingMetadata: 2,
+    }));
+    expect(mockEmbeddingAggregate).toHaveBeenCalledTimes(1);
   });
 
   it('resumes backfill by paging interactions with attached expert feedback using _id', async () => {

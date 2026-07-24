@@ -258,6 +258,15 @@ class DataStoreService {
     }
   }
 
+  static async repairQaMatchScores() {
+    const response = await AuthService.fetch(getApiUrl('db-repair-qa-match-scores'), { method: 'POST' });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to repair QA match scores');
+    }
+    return await response.json();
+  }
+
   static async getPublicEvalList() {
     try {
       const response = await AuthService.fetch(getApiUrl('db-public-eval-list'));

@@ -213,6 +213,7 @@ class QuestionAnswerService {
             chatId,
             similarity: hit.similarity ?? null,
             cosineSimilarity: hit.similarity ?? null,
+            totalScore,
             questionText,
             answerText,
             thresholdPassed: true,

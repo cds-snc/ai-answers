@@ -134,6 +134,7 @@ class EmbeddingMetadataService {
     clearWhenMissingFeedback = true,
     embeddingId = null,
     updateScope = 'interaction',
+    onlyMissingMetadata = false,
   } = {}) {
     const interactionId = normalizeObjectId(interactionOrId);
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
@@ -201,7 +202,18 @@ class EmbeddingMetadataService {
     const pageLanguage = await getPageLanguage(interaction._id);
     const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
     const metadata = feedbackMetadata(feedback);
-    const updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
+    let updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
+    if (onlyMissingMetadata) {
+      updateFilter = {
+        $and: [
+          updateFilter,
+          { $or: Object.keys(METADATA_UNSET).flatMap((field) => [
+            { [field]: { $exists: false } },
+            { [field]: null },
+          ]) },
+        ],
+      };
+    }
     const update = {
       ...metadata,
       interactionId: interaction._id,
@@ -249,8 +261,74 @@ class EmbeddingMetadataService {
     return Embedding.updateMany({}, { $unset: METADATA_UNSET });
   }
 
+  async getBackfillStatus() {
+    const [summary = {}] = await Embedding.aggregate([
+      {
+        $lookup: {
+          from: 'interactions',
+          localField: 'interactionId',
+          foreignField: '_id',
+          as: 'interaction',
+        },
+      },
+      { $unwind: { path: '$interaction', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'expertfeedbacks',
+          localField: 'interaction.expertFeedback',
+          foreignField: '_id',
+          as: 'feedback',
+        },
+      },
+      { $unwind: { path: '$feedback', preserveNullAndEmptyArrays: true } },
+      {
+        $set: {
+          requiresMetadata: {
+            $and: [
+              { $ne: [{ $ifNull: ['$feedback._id', null] }, null] },
+              { $ne: [{ $ifNull: ['$feedback.type', ''] }, 'ai'] },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalEmbeddings: { $sum: 1 },
+          recordsRequiringMetadata: { $sum: { $cond: ['$requiresMetadata', 1, 0] } },
+          recordsWithMetadata: {
+            $sum: { $cond: [{ $ne: [{ $ifNull: ['$expertFeedbackId', null] }, null] }, 1, 0] },
+          },
+          recordsMissingMetadata: {
+            $sum: {
+              $cond: [
+                { $and: ['$requiresMetadata', { $eq: [{ $ifNull: ['$expertFeedbackId', null] }, null] }] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const totalEmbeddings = summary.totalEmbeddings || 0;
+    const recordsRequiringMetadata = summary.recordsRequiringMetadata || 0;
+    const recordsWithMetadata = summary.recordsWithMetadata || 0;
+    const recordsMissingMetadata = summary.recordsMissingMetadata || 0;
+
+    return {
+      complete: recordsMissingMetadata === 0,
+      checkedAt: new Date().toISOString(),
+      totalEmbeddings,
+      recordsRequiringMetadata,
+      recordsWithMetadata,
+      recordsMissingMetadata,
+    };
+  }
+
   async backfillBatch({ lastProcessedId = null, limit = 100, includeDetails = false, phase = 'clear' } = {}) {
-    if (phase !== 'interactions') {
+    if (phase === 'clear') {
       const clearResult = await this.clearAllMetadata();
       const remaining = await Interaction.countDocuments({
         expertFeedback: { $exists: true, $ne: null },
@@ -298,7 +376,7 @@ class EmbeddingMetadataService {
 
     for (const interaction of interactions) {
       lastId = interaction._id.toString();
-      const result = await this.syncForInteraction(interaction);
+      const result = await this.syncForInteraction(interaction, null, { onlyMissingMetadata: phase === 'missing' });
       if (result.skippedReason) {
         skipped += 1;
         if (includeDetails) {
@@ -350,7 +428,7 @@ class EmbeddingMetadataService {
     };
     const remaining = await Interaction.countDocuments(remainingQuery);
     return {
-      phase: 'interactions',
+      phase,
       processed: interactions.length,
       updated,
       cleared,

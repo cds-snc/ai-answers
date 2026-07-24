@@ -484,6 +484,12 @@
       "repairExpertFeedbackTitle": "Repair expert feedback types",
       "repairExpertFeedbackDescription": "Set the \"type\" field to \"expert\" for expert feedback records that have missing or empty type fields. Records with \"public\" or \"ai\" types will be left unchanged.",
       "repairExpertFeedbackButton": "Repair expert feedback types",
+      "repairQaMatchScoresTitle": "Repair QA match scores",
+      "repairQaMatchScoresDescription": "Populate total scores in the QA chats used review data from their linked expert evaluations.",
+      "repairQaMatchScoresButton": "Repair QA match scores",
+      "repairQaMatchScoresConfirm": "Populate missing QA match scores now?",
+      "repairQaMatchScoresSuccess": "QA match scores repaired. Updated: {updated}; matches checked: {matches}.",
+      "repairQaMatchScoresError": "Repair QA match scores failed: {error}",
       "migratePublicFeedbackTitle": "Migrate public feedback",
       "migratePublicFeedbackDescription": "Move all public feedback from the expert feedback collection to the new public feedback collection.",
       "migratePublicFeedbackButton": "Migrate public feedback",
@@ -1276,7 +1282,9 @@
     "agentSelectedIndex": "Agent selected index",
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
-    "downloadedPagesTitle": "Downloaded pages"
+    "downloadedPagesTitle": "Downloaded pages",
+    "usedQaChatsTitle": "Past Q&A used",
+    "chatId": "Chat ID"
   },
   "dashboardFilter": {
     "dateRange": "Date range",
@@ -1668,6 +1676,10 @@
     "metadataBatchSizeHelp": "Use a value between 1 and 500. Smaller batches can be more stable in preview.",
     "metadataBatchSizeInvalid": "Batch size must be a whole number between 1 and 500.",
     "startMetadataBackfill": "Start metadata backfill",
+    "backfillEmptyMetadata": "Backfill empty metadata",
+    "clearMetadata": "Clear metadata",
+    "metadataClearSuccess": "Embedding metadata was cleared.",
+    "metadataClearFailed": "Failed to clear embedding metadata.",
     "resumeMetadataBackfill": "Resume metadata backfill",
     "restartMetadataBackfill": "Restart metadata backfill",
     "stopMetadataBackfill": "Stop metadata backfill",
@@ -1708,6 +1720,19 @@
         "allMetadataReset": "All metadata reset",
         "unknown": "Unknown"
       }
+    },
+    "metadataStatus": {
+      "title": "Embedding metadata status",
+      "description": "Check whether embeddings are missing backfill metadata.",
+      "check": "Check metadata status",
+      "loading": "Checking metadata status...",
+      "failed": "Failed to check embedding metadata status.",
+      "complete": "No records are missing backfill metadata.",
+      "incomplete": "Some records are missing backfill metadata.",
+      "totalEmbeddings": "Total embeddings",
+      "recordsRequiringMetadata": "Records requiring metadata",
+      "recordsWithMetadata": "Records with metadata",
+      "recordsMissingMetadata": "Records missing metadata"
     },
     "metadataLookup": {
       "title": "Embedding metadata lookup",

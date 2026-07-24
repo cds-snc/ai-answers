@@ -99,6 +99,7 @@ import programMetricsHandler from '../api/metrics/metrics-programs.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
+import dbRepairQaMatchScoresHandler from '../api/db/db-repair-qa-match-scores.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
 import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
@@ -107,6 +108,8 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadata.js';
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
+import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
+import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
@@ -278,7 +281,9 @@ app.get(/.*/, (req, res, next) => {
 
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
+app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
+app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);
@@ -375,6 +380,7 @@ app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
+app.post('/api/db/db-repair-qa-match-scores', dbRepairQaMatchScoresHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
 
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);

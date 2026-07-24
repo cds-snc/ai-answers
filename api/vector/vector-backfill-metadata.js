@@ -26,7 +26,7 @@ async function vectorBackfillMetadataHandler(req, res) {
       lastProcessedId: normalizedLastProcessedId,
       limit: boundedLimit,
       includeDetails: includeDetails === true || includeDetails === 'true',
-      phase: phase === 'interactions' ? 'interactions' : 'clear',
+      phase: phase === 'interactions' || phase === 'missing' ? phase : 'clear',
     });
 
     return res.status(200).json(result);

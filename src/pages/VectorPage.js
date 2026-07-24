@@ -69,6 +69,9 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataLookupResult, setMetadataLookupResult] = useState(null);
   const [metadataLookupLoading, setMetadataLookupLoading] = useState(false);
   const [metadataLookupError, setMetadataLookupError] = useState(null);
+  const [metadataStatus, setMetadataStatus] = useState(null);
+  const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
+  const [metadataStatusError, setMetadataStatusError] = useState(null);
   const stopMetadataBackfillRef = useRef(false);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ const VectorPage = ({ lang = 'en' }) => {
       const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
       if (!savedProgress) return;
       const parsedProgress = JSON.parse(savedProgress);
-      if (parsedProgress?.phase === 'interactions' && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
+      if ((parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing') && typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0) {
         setMetadataProgress(parsedProgress);
       } else {
         window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
@@ -247,19 +250,34 @@ const VectorPage = ({ lang = 'en' }) => {
     setStopMetadataBackfill(true);
   };
 
+  const handleBackfillEmptyMetadata = () => {
+    window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
+    setMetadataProgress(null);
+    setMetadataBatchRecords([]);
+    handleBackfillMetadata(null, 'missing', null);
+  };
+
+  const handleClearMetadata = async () => {
+    if (isBackfillingMetadata) return;
+    try {
+      await VectorService.clearMetadata();
+      window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
+      setMetadataProgress(null);
+      setMetadataBatchRecords([]);
+      setMetadataStatus(null);
+      alert(t('vector.metadataClearSuccess'));
+    } catch (err) {
+      console.error('Error clearing embedding metadata:', err);
+      alert(t('vector.metadataClearFailed'));
+    }
+  };
+
   const handleResumeMetadataBackfill = () => {
     handleBackfillMetadata(
       metadataProgress?.lastProcessedId || null,
       metadataProgress?.phase || 'interactions',
       metadataProgress
     );
-  };
-
-  const handleRestartMetadataBackfill = () => {
-    window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
-    setMetadataProgress(null);
-    setMetadataBatchRecords([]);
-    handleBackfillMetadata(null, 'clear', null);
   };
 
   const handleRunDocdb8CapabilityTest = async (probe) => {
@@ -304,8 +322,22 @@ const VectorPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleMetadataStatus = async () => {
+    setMetadataStatusLoading(true);
+    setMetadataStatusError(null);
+    try {
+      setMetadataStatus(await VectorService.getMetadataStatus());
+    } catch (err) {
+      console.error('Error checking embedding metadata status:', err);
+      setMetadataStatus(null);
+      setMetadataStatusError(t('vector.metadataStatus.failed'));
+    } finally {
+      setMetadataStatusLoading(false);
+    }
+  };
+
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
-  const hasMetadataBackfillResume = metadataProgress?.phase === 'interactions'
+  const hasMetadataBackfillResume = (metadataProgress?.phase === 'interactions' || metadataProgress?.phase === 'missing')
     && typeof metadataProgress.remaining === 'number'
     && metadataProgress.remaining > 0;
   const loadedDocdb8Results = docdb8ProbeDefinitions
@@ -464,22 +496,15 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <div className="button-group">
           <GcdsButton
-            onClick={hasMetadataBackfillResume ? handleResumeMetadataBackfill : handleRestartMetadataBackfill}
+            onClick={hasMetadataBackfillResume ? handleResumeMetadataBackfill : handleBackfillEmptyMetadata}
             disabled={isBackfillingMetadata}
             className="mb-200 mr-200"
           >
-            {hasMetadataBackfillResume ? t('vector.resumeMetadataBackfill') : t('vector.startMetadataBackfill')}
+            {hasMetadataBackfillResume ? t('vector.resumeMetadataBackfill') : t('vector.backfillEmptyMetadata')}
           </GcdsButton>
-          {hasMetadataBackfillResume && (
-            <GcdsButton
-              onClick={handleRestartMetadataBackfill}
-              disabled={isBackfillingMetadata}
-              buttonRole="secondary"
-              className="mb-200 mr-200"
-            >
-              {t('vector.restartMetadataBackfill')}
-            </GcdsButton>
-          )}
+          <GcdsButton onClick={handleClearMetadata} disabled={isBackfillingMetadata} buttonRole="secondary" className="mb-200 mr-200">
+            {t('vector.clearMetadata')}
+          </GcdsButton>
           <GcdsButton
             onClick={handleStopMetadataBackfill}
             disabled={!isBackfillingMetadata}
@@ -556,6 +581,28 @@ const VectorPage = ({ lang = 'en' }) => {
                     <td>{fmtN(record.modifiedCount ?? 0)}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <hr className="mb-400" />
+        <h2>{t('vector.metadataStatus.title')}</h2>
+        <GcdsText>{t('vector.metadataStatus.description')}</GcdsText>
+        <div className="mb-200">
+          <GcdsButton onClick={handleMetadataStatus} disabled={metadataStatusLoading} className="mb-200 mr-200">
+            {metadataStatusLoading ? t('vector.metadataStatus.loading') : t('vector.metadataStatus.check')}
+          </GcdsButton>
+        </div>
+        {metadataStatusError && <div className="error-message">{metadataStatusError}</div>}
+        {metadataStatus && (
+          <div className="mb-400">
+            <p><strong>{metadataStatus.complete ? t('vector.metadataStatus.complete') : t('vector.metadataStatus.incomplete')}</strong></p>
+            <table>
+              <tbody>
+                <tr><th>{t('vector.metadataStatus.totalEmbeddings')}</th><td>{fmtN(metadataStatus.totalEmbeddings)}</td></tr>
+                <tr><th>{t('vector.metadataStatus.recordsRequiringMetadata')}</th><td>{fmtN(metadataStatus.recordsRequiringMetadata)}</td></tr>
+                <tr><th>{t('vector.metadataStatus.recordsWithMetadata')}</th><td>{fmtN(metadataStatus.recordsWithMetadata)}</td></tr>
+                <tr><th>{t('vector.metadataStatus.recordsMissingMetadata')}</th><td>{fmtN(metadataStatus.recordsMissingMetadata)}</td></tr>
               </tbody>
             </table>
           </div>

@@ -188,6 +188,7 @@ describe('QuestionAnswerService', () => {
             interactionId: 'i1',
             chatId: 'chat-1',
             similarity: 0.91,
+            totalScore: 80,
             questionText: 'Matched Q?',
           }),
         ],
