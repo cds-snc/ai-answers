@@ -26,6 +26,7 @@ const DatabasePage = ({ lang }) => {
   const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
+  const [isRepairingQaMatchScores, setIsRepairingQaMatchScores] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
   const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
@@ -421,6 +422,20 @@ const DatabasePage = ({ lang }) => {
       setMessage(t('admin.database.repairExpertFeedbackError').replace('{error}', error.message));
     } finally {
       setIsRepairingExpertFeedback(false);
+    }
+  };
+
+  const handleRepairQaMatchScores = async () => {
+    if (!window.confirm(t('admin.database.repairQaMatchScoresConfirm'))) return;
+    setIsRepairingQaMatchScores(true);
+    setMessage('');
+    try {
+      const result = await DataStoreService.repairQaMatchScores();
+      setMessage(t('admin.database.repairQaMatchScoresSuccess').replace('{updated}', result.stats.updated).replace('{matches}', result.stats.matches));
+    } catch (error) {
+      setMessage(t('admin.database.repairQaMatchScoresError').replace('{error}', error.message));
+    } finally {
+      setIsRepairingQaMatchScores(false);
     }
   };
 
@@ -896,6 +911,14 @@ const DatabasePage = ({ lang }) => {
           className="mb-200"
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{t('admin.database.repairQaMatchScoresTitle')}</GcdsHeading>
+        <GcdsText>{t('admin.database.repairQaMatchScoresDescription')}</GcdsText>
+        <GcdsButton onClick={handleRepairQaMatchScores} disabled={isRepairingQaMatchScores} buttonRole="secondary" className="mb-200">
+          {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
       </div>
 
