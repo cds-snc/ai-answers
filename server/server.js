@@ -107,6 +107,8 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadata.js';
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
+import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
+import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
@@ -278,7 +280,9 @@ app.get(/.*/, (req, res, next) => {
 
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
+app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
+app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);

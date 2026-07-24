@@ -37,6 +37,18 @@ const VectorService = {
     return await response.json();
   },
 
+  async getMetadataStatus() {
+    const response = await AuthService.fetch(getApiUrl('vector-metadata-status'));
+    if (!response.ok) throw new Error('Failed to check embedding metadata status');
+    return await response.json();
+  },
+
+  async clearMetadata() {
+    const response = await AuthService.fetch(getApiUrl('vector-metadata-clear'), { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to clear embedding metadata');
+    return await response.json();
+  },
+
   async runDocdb8CapabilityTest(probe) {
     const query = probe ? `?probe=${encodeURIComponent(probe)}` : '';
     const response = await AuthService.fetch(getApiUrl(`vector-docdb8-capability-test${query}`));

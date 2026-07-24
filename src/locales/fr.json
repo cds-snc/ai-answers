@@ -1667,6 +1667,10 @@
     "metadataBatchSizeHelp": "Utilisez une valeur entre 1 et 500. Les petits lots peuvent être plus stables en prévisualisation.",
     "metadataBatchSizeInvalid": "La taille du lot doit être un nombre entier entre 1 et 500.",
     "startMetadataBackfill": "Démarrer le remplissage des métadonnées",
+    "backfillEmptyMetadata": "Remplir les métadonnées manquantes",
+    "clearMetadata": "Effacer les métadonnées",
+    "metadataClearSuccess": "Les métadonnées des incorporations ont été effacées.",
+    "metadataClearFailed": "Impossible d’effacer les métadonnées des incorporations.",
     "resumeMetadataBackfill": "Reprendre le remplissage des métadonnées",
     "restartMetadataBackfill": "Redémarrer le remplissage des métadonnées",
     "stopMetadataBackfill": "Arrêter le remplissage des métadonnées",
@@ -1707,6 +1711,19 @@
         "allMetadataReset": "Toutes les métadonnées réinitialisées",
         "unknown": "Inconnu"
       }
+    },
+    "metadataStatus": {
+      "title": "État des métadonnées des incorporations",
+      "description": "Vérifiez si des incorporations n’ont pas les métadonnées de remplissage.",
+      "check": "Vérifier l’état des métadonnées",
+      "loading": "Vérification de l’état des métadonnées...",
+      "failed": "Échec de la vérification de l’état des métadonnées des incorporations.",
+      "complete": "Aucun enregistrement ne manque de métadonnées de remplissage.",
+      "incomplete": "Certains enregistrements n’ont pas les métadonnées de remplissage.",
+      "totalEmbeddings": "Nombre total d’incorporations",
+      "recordsRequiringMetadata": "Enregistrements nécessitant des métadonnées",
+      "recordsWithMetadata": "Enregistrements avec métadonnées",
+      "recordsMissingMetadata": "Enregistrements sans métadonnées"
     },
     "metadataLookup": {
       "title": "Recherche des métadonnées des incorporations",

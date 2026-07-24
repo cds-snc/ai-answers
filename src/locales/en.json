@@ -1667,6 +1667,10 @@
     "metadataBatchSizeHelp": "Use a value between 1 and 500. Smaller batches can be more stable in preview.",
     "metadataBatchSizeInvalid": "Batch size must be a whole number between 1 and 500.",
     "startMetadataBackfill": "Start metadata backfill",
+    "backfillEmptyMetadata": "Backfill empty metadata",
+    "clearMetadata": "Clear metadata",
+    "metadataClearSuccess": "Embedding metadata was cleared.",
+    "metadataClearFailed": "Failed to clear embedding metadata.",
     "resumeMetadataBackfill": "Resume metadata backfill",
     "restartMetadataBackfill": "Restart metadata backfill",
     "stopMetadataBackfill": "Stop metadata backfill",
@@ -1707,6 +1711,19 @@
         "allMetadataReset": "All metadata reset",
         "unknown": "Unknown"
       }
+    },
+    "metadataStatus": {
+      "title": "Embedding metadata status",
+      "description": "Check whether embeddings are missing backfill metadata.",
+      "check": "Check metadata status",
+      "loading": "Checking metadata status...",
+      "failed": "Failed to check embedding metadata status.",
+      "complete": "No records are missing backfill metadata.",
+      "incomplete": "Some records are missing backfill metadata.",
+      "totalEmbeddings": "Total embeddings",
+      "recordsRequiringMetadata": "Records requiring metadata",
+      "recordsWithMetadata": "Records with metadata",
+      "recordsMissingMetadata": "Records missing metadata"
     },
     "metadataLookup": {
       "title": "Embedding metadata lookup",
