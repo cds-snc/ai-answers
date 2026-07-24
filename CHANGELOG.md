@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.170.0](https://github.com/cds-snc/ai-answers/compare/v1.169.0...v1.170.0) (2026-07-24)
+
+
+### Features
+
+* add metadata status and clear functionality with corresponding API endpoints and UI integration ([b9d9883](https://github.com/cds-snc/ai-answers/commit/b9d9883b87432cd5eb8e1f50867243d9e99e9a88))
+* add totalScore to QA matches and update related components and tests ([9d4d1c7](https://github.com/cds-snc/ai-answers/commit/9d4d1c773cb42dc9291e56f9842d8b1587d6d83d))
+* implement Q&A matches tracking and display in chat logs and UI ([a2f0483](https://github.com/cds-snc/ai-answers/commit/a2f0483143f0f0b17f2e7974d7ac2dbd6423e927))
+* implement QA match scores repair functionality with UI integration ([fc7b2f3](https://github.com/cds-snc/ai-answers/commit/fc7b2f37524b0922d56ef2c467158a95ee4e9efe))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump react-router and react-router-dom ([40ae417](https://github.com/cds-snc/ai-answers/commit/40ae41727eb933086b6b6a375b8867d826869a61))
+* **deps:** bump react-router and react-router-dom ([463b414](https://github.com/cds-snc/ai-answers/commit/463b414f815b236eb6a10cb7723c69bead6302ac))
+
 ## [1.169.0](https://github.com/cds-snc/ai-answers/compare/v1.168.0...v1.169.0) (2026-07-23)
 
 
