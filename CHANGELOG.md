@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.172.0](https://github.com/cds-snc/ai-answers/compare/v1.171.1...v1.172.0) (2026-07-28)
+
+
+### Features
+
+* enhance metadata backfill process with configurable concurrency and cursor source ([3b4fc21](https://github.com/cds-snc/ai-answers/commit/3b4fc210724e36605c0313ca8560c38fc930950e))
+* enhance metadata backfill process with configurable concurrency… ([7961a80](https://github.com/cds-snc/ai-answers/commit/7961a80a3dc9e8a6fd202acbaae799f7d1e6e1f1))
+
 ## [1.171.1](https://github.com/cds-snc/ai-answers/compare/v1.171.0...v1.171.1) (2026-07-28)
 
 
