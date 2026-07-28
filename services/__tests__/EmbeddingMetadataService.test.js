@@ -10,6 +10,7 @@ const {
   mockInteractionFind,
   mockInteractionFindById,
   mockInteractionCountDocuments,
+  mockExpertFeedbackFind,
   mockExpertFeedbackFindById,
 } = vi.hoisted(() => ({
   mockUpdateMany: vi.fn(),
@@ -20,6 +21,7 @@ const {
   mockInteractionFind: vi.fn(),
   mockInteractionFindById: vi.fn(),
   mockInteractionCountDocuments: vi.fn(),
+  mockExpertFeedbackFind: vi.fn(),
   mockExpertFeedbackFindById: vi.fn(),
 }));
 
@@ -48,21 +50,32 @@ vi.mock('../../models/embedding.js', () => ({
 }));
 
 vi.mock('../../models/expertFeedback.js', () => ({
-  ExpertFeedback: { findById: mockExpertFeedbackFindById },
+  ExpertFeedback: { find: mockExpertFeedbackFind, findById: mockExpertFeedbackFindById },
 }));
 
-function mockInteractionFindResult(interactions) {
-  mockInteractionFind.mockReturnValue({
+function mockExpertFeedbackFindResult(feedbacks) {
+  mockExpertFeedbackFind.mockReturnValue({
     sort: () => ({
       limit: () => ({
         select: () => ({
-          populate: () => ({
-            lean: async () => interactions,
-          }),
+          lean: async () => feedbacks,
         }),
       }),
     }),
   });
+}
+
+function mockInteractionFindResult(interactions) {
+  mockInteractionFind.mockReturnValue({
+    select: () => ({
+      populate: () => ({
+        lean: async () => interactions,
+      }),
+    }),
+  });
+  mockExpertFeedbackFindResult(interactions
+    .map(({ expertFeedback }) => expertFeedback)
+    .filter((feedback) => feedback && typeof feedback === 'object' && feedback._id));
 }
 
 function mockObjectId(id) {
@@ -83,7 +96,9 @@ describe('EmbeddingMetadataService', () => {
     mockInteractionFind.mockReset();
     mockInteractionFindById.mockReset();
     mockInteractionCountDocuments.mockReset();
+    mockExpertFeedbackFind.mockReset();
     mockExpertFeedbackFindById.mockReset();
+    mockExpertFeedbackFindResult([]);
     mockEmbeddingFind.mockReturnValue({
       select: () => ({
         populate: () => ({
@@ -278,7 +293,7 @@ describe('EmbeddingMetadataService', () => {
     expect(mockEmbeddingAggregate).toHaveBeenCalledTimes(1);
   });
 
-  it('resumes backfill by paging interactions with attached expert feedback using _id', async () => {
+  it('pages from expert feedback ids and resolves attached interactions', async () => {
     const interaction = {
       _id: '507f1f77bcf86cd799439011',
       interactionId: '1',
@@ -286,13 +301,11 @@ describe('EmbeddingMetadataService', () => {
       question: { language: 'eng' },
     };
     mockInteractionFindResult([interaction]);
-    mockExpertFeedbackFindById.mockReturnValue({
-      lean: async () => ({
-        _id: '507f1f77bcf86cd799439012',
-        totalScore: 90,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-      }),
-    });
+    mockExpertFeedbackFindResult([{
+      _id: '507f1f77bcf86cd799439012',
+      totalScore: 90,
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+    }]);
     mockEmbeddingFind.mockReturnValue({
       select: () => ({
         populate: () => ({
@@ -323,10 +336,11 @@ describe('EmbeddingMetadataService', () => {
       skipped: 0,
       remaining: null,
       hasMore: true,
-      lastProcessedId: '507f1f77bcf86cd799439011',
+      lastProcessedId: '507f1f77bcf86cd799439012',
+      cursorSource: 'expertFeedback',
     }));
     expect(mockInteractionFind).toHaveBeenCalledWith({
-      expertFeedback: { $exists: true, $ne: null },
+      expertFeedback: { $in: ['507f1f77bcf86cd799439012'] },
     });
     expect(mockUpdateMany).toHaveBeenCalledWith(
       { interactionId: '507f1f77bcf86cd799439011' },
@@ -349,20 +363,18 @@ describe('EmbeddingMetadataService', () => {
     }));
   });
 
-  it('loads the expert feedback document when backfill receives only an object id', async () => {
+  it('uses the paged expert feedback document when interactions only contain an object id', async () => {
     const interaction = {
       _id: '507f1f77bcf86cd799439011',
       expertFeedback: mockObjectId('507f1f77bcf86cd799439012'),
       question: { language: 'en' },
     };
     mockInteractionFindResult([interaction]);
-    mockExpertFeedbackFindById.mockReturnValue({
-      lean: async () => ({
-        _id: '507f1f77bcf86cd799439012',
-        totalScore: 100,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-      }),
-    });
+    mockExpertFeedbackFindResult([{
+      _id: '507f1f77bcf86cd799439012',
+      totalScore: 100,
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+    }]);
     mockChatFindOne.mockReturnValue({
       select: () => ({
         lean: async () => ({ pageLanguage: 'en' }),
@@ -376,7 +388,7 @@ describe('EmbeddingMetadataService', () => {
       limit: 1,
     });
 
-    expect(mockExpertFeedbackFindById).toHaveBeenCalledWith('507f1f77bcf86cd799439012');
+    expect(mockExpertFeedbackFindById).not.toHaveBeenCalled();
     expect(result.updated).toBe(1);
     expect(mockUpdateMany).toHaveBeenCalledWith(
       { interactionId: '507f1f77bcf86cd799439011' },
@@ -389,7 +401,7 @@ describe('EmbeddingMetadataService', () => {
     );
   });
 
-  it('continues interaction backfill from the saved _id without clearing again', async () => {
+  it('continues feedback-first backfill from the saved cursor without clearing again', async () => {
     mockInteractionFindResult([]);
     mockInteractionCountDocuments.mockResolvedValue(0);
 
@@ -399,10 +411,8 @@ describe('EmbeddingMetadataService', () => {
       limit: 5,
     });
 
-    expect(mockInteractionFind).toHaveBeenCalledWith({
-      expertFeedback: { $exists: true, $ne: null },
-      _id: { $gt: '507f1f77bcf86cd799439011' },
-    });
+    expect(mockExpertFeedbackFind).toHaveBeenCalledWith({ _id: { $gt: '507f1f77bcf86cd799439011' } });
+    expect(mockInteractionFind).not.toHaveBeenCalled();
     expect(mockUpdateMany).not.toHaveBeenCalled();
   });
 
@@ -413,13 +423,11 @@ describe('EmbeddingMetadataService', () => {
       question: { language: 'en' },
     };
     mockInteractionFindResult([interaction]);
-    mockExpertFeedbackFindById.mockReturnValue({
-      lean: async () => ({
-        _id: '507f1f77bcf86cd799439012',
-        type: 'ai',
-        totalScore: 100,
-      }),
-    });
+    mockExpertFeedbackFindResult([{
+      _id: '507f1f77bcf86cd799439012',
+      type: 'ai',
+      totalScore: 100,
+    }]);
     mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
     mockInteractionCountDocuments.mockResolvedValue(0);
 
