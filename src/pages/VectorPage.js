@@ -7,7 +7,6 @@ import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 
-const METADATA_BACKFILL_DELAY_MS = 500;
 const METADATA_BACKFILL_PROGRESS_KEY = 'vectorMetadataBackfillProgress';
 
 const getDocdb8ProbeDefinitions = (t) => ([
@@ -79,7 +78,8 @@ const VectorPage = ({ lang = 'en' }) => {
       const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
       if (!savedProgress) return;
       const parsedProgress = JSON.parse(savedProgress);
-      if ((parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing')
+      if (parsedProgress?.cursorSource === 'expertFeedback'
+        && (parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing')
         && (parsedProgress.hasMore === true || (typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0))) {
         setMetadataProgress(parsedProgress);
       } else {
@@ -220,6 +220,7 @@ const VectorPage = ({ lang = 'en' }) => {
           hasMore: result.hasMore === true,
           lastProcessedId: result.lastProcessedId,
           phase: result.phase,
+          cursorSource: result.cursorSource,
         });
         setMetadataBatchRecords(Array.isArray(result.batchRecords) ? result.batchRecords : []);
         const progressSnapshot = {
@@ -230,6 +231,7 @@ const VectorPage = ({ lang = 'en' }) => {
           remaining: result.remaining,
           lastProcessedId: result.lastProcessedId,
           phase: result.phase,
+          cursorSource: result.cursorSource,
         };
         if (result.hasMore === true) {
           window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(progressSnapshot));
@@ -242,7 +244,6 @@ const VectorPage = ({ lang = 'en' }) => {
           shouldContinue = false;
           break;
         }
-        await new Promise(resolve => setTimeout(resolve, METADATA_BACKFILL_DELAY_MS));
       }
     } catch (err) {
       console.error('Error backfilling embedding metadata:', err);
@@ -344,7 +345,8 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
-  const hasMetadataBackfillResume = (metadataProgress?.phase === 'interactions' || metadataProgress?.phase === 'missing')
+  const hasMetadataBackfillResume = metadataProgress?.cursorSource === 'expertFeedback'
+    && (metadataProgress?.phase === 'interactions' || metadataProgress?.phase === 'missing')
     && (metadataProgress.hasMore === true || (typeof metadataProgress.remaining === 'number' && metadataProgress.remaining > 0));
   const loadedDocdb8Results = docdb8ProbeDefinitions
     .map(({ key, label }) => ({

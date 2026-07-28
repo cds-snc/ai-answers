@@ -24,8 +24,16 @@ const METADATA_UNSET = {
 };
 
 // Keep enough work in flight to hide DocumentDB round-trip latency without
-// turning a maintenance operation into an unbounded write burst.
-const BACKFILL_CONCURRENCY = 4;
+// turning a maintenance operation into an unbounded write burst. This is
+// intentionally configurable because the work is I/O-bound, not CPU-bound.
+const configuredBackfillConcurrency = Number.parseInt(
+  process.env.EMBEDDING_METADATA_BACKFILL_CONCURRENCY,
+  10
+);
+const BACKFILL_CONCURRENCY = Number.isFinite(configuredBackfillConcurrency)
+  ? Math.max(1, Math.min(configuredBackfillConcurrency, 16))
+  : 4;
+const BACKFILL_CURSOR_SOURCE = 'expertFeedback';
 
 async function mapWithConcurrency(items, concurrency, mapper) {
   const results = new Array(items.length);
@@ -356,6 +364,7 @@ class EmbeddingMetadataService {
       const clearResult = await this.clearAllMetadata();
       return {
         phase: 'interactions',
+        cursorSource: BACKFILL_CURSOR_SOURCE,
         processed: clearResult.matchedCount || 0,
         updated: 0,
         cleared: clearResult.modifiedCount || 0,
@@ -379,24 +388,37 @@ class EmbeddingMetadataService {
     }
 
     lastProcessedId = normalizeObjectId(lastProcessedId);
-    const query = {
-      expertFeedback: { $exists: true, $ne: null },
+    const feedbackQuery = {
       ...(lastProcessedId ? { _id: { $gt: lastProcessedId } } : {}),
     };
-    const interactions = await Interaction.find(query)
+    // Page from ExpertFeedback rather than Interaction. Interactions with expert
+    // feedback are sparse in production, so filtering them while sorting by the
+    // Interaction _id can scan a large part of the collection for every page.
+    // Both reads below are served by their leading ObjectId indexes.
+    const feedbacks = await ExpertFeedback.find(feedbackQuery)
       .sort({ _id: 1 })
       .limit(limit)
-      .select('_id expertFeedback question')
-      .populate([
-        { path: 'expertFeedback', select: 'totalScore type neverStale createdAt' },
-        { path: 'question', select: 'language' },
-      ])
+      .select('_id totalScore type neverStale createdAt')
       .lean();
+    const feedbackIds = feedbacks.map(({ _id }) => _id).filter(Boolean);
+    const interactions = feedbackIds.length
+      ? await Interaction.find({ expertFeedback: { $in: feedbackIds } })
+        .select('_id expertFeedback question')
+        .populate({ path: 'question', select: 'language' })
+        .lean()
+      : [];
+    const feedbackById = new Map(
+      feedbacks.map((feedback) => [toIdString(feedback._id), feedback])
+    );
+    const interactionsWithFeedback = interactions.map((interaction) => ({
+      ...interaction,
+      expertFeedback: feedbackById.get(toIdString(interaction.expertFeedback)) || interaction.expertFeedback,
+    }));
 
     // Resolve page languages through the embedding's indexed chatId reference.
     // Avoid reverse-scanning Chat.interactions, which is expensive on DocumentDB
     // and can return very large interaction arrays.
-    const interactionIds = interactions.map(({ _id }) => _id).filter(Boolean);
+    const interactionIds = interactionsWithFeedback.map(({ _id }) => _id).filter(Boolean);
     const embeddingChatLinks = interactionIds.length
       ? await Embedding.find({ interactionId: { $in: interactionIds } })
         .select('interactionId chatId')
@@ -419,15 +441,14 @@ class EmbeddingMetadataService {
     let lastId = lastProcessedId || null;
     const batchRecords = [];
 
-    const results = await mapWithConcurrency(interactions, BACKFILL_CONCURRENCY, (interaction) =>
+    const results = await mapWithConcurrency(interactionsWithFeedback, BACKFILL_CONCURRENCY, (interaction) =>
       this.syncForInteraction(interaction, null, {
         onlyMissingMetadata: phase === 'missing',
         pageLanguageOverride: pageLanguagesByInteractionId.get(toIdString(interaction._id)) ?? null,
       })
     );
 
-    for (const [index, interaction] of interactions.entries()) {
-      lastId = interaction._id.toString();
+    for (const [index, interaction] of interactionsWithFeedback.entries()) {
       const result = results[index];
       if (result.skippedReason) {
         skipped += 1;
@@ -477,9 +498,11 @@ class EmbeddingMetadataService {
     // Avoid a collection-wide count on every page. A full page means there
     // may be another page; the client will make one final empty request when
     // the total happens to be an exact multiple of the batch size.
-    const hasMore = interactions.length === limit;
+    lastId = feedbacks.length ? feedbacks[feedbacks.length - 1]._id.toString() : lastId;
+    const hasMore = feedbacks.length === limit;
     return {
       phase,
+      cursorSource: BACKFILL_CURSOR_SOURCE,
       processed: interactions.length,
       updated,
       cleared,
