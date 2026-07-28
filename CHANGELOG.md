@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.171.1](https://github.com/cds-snc/ai-answers/compare/v1.171.0...v1.171.1) (2026-07-28)
+
+
+### Code Refactoring
+
+* optimize page language resolution in metadata backfill process ([30576ef](https://github.com/cds-snc/ai-answers/commit/30576ef5245373dc400b05082ad13db6660590d1))
+* optimize page language resolution in metadata backfill process ([2765ccb](https://github.com/cds-snc/ai-answers/commit/2765ccb289247322fc05cdfaee4c6c5160ad4f8b))
+
 ## [1.171.0](https://github.com/cds-snc/ai-answers/compare/v1.170.2...v1.171.0) (2026-07-24)
 
 
