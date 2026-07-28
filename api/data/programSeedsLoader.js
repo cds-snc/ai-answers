@@ -60,7 +60,10 @@ function load(abbrKey) {
 
   let entry;
   if (programs && programs.length > 0) {
-    entry = { programs, enToFr: new Map(programs.map((p) => [p.en, p.fr])) };
+    // Only real EN→FR pairs go in the map — draft files ship with a blank
+    // Français column, and an en→'' entry would clobber the English fallback
+    // for any consumer that localizes a program name.
+    entry = { programs, enToFr: new Map(programs.filter((p) => p.fr).map((p) => [p.en, p.fr])) };
   } else {
     const fallback = (PROGRAM_SEEDS_BY_DEPARTMENT[resolveScenarioKey(abbrKey)] || PROGRAM_SEEDS_BY_DEPARTMENT[abbrKey] || [])
       .map((en) => ({ en, fr: '' }));

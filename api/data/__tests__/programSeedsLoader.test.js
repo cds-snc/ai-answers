@@ -51,18 +51,34 @@ describe('getSeedPrograms / getProgramNameMap — CRA from the .md file', () => 
   });
 });
 
-describe('getSeedPrograms — fallback for departments without a .md file', () => {
-  it('falls back to the legacy hardcoded seeds (EDSC-ESDC)', () => {
+describe('getSeedPrograms / getProgramNameMap — EDSC-ESDC now curated from .md', () => {
+  it('loads EDSC-ESDC programs from its curated .md file', () => {
     const programs = getSeedPrograms('EDSC-ESDC');
     expect(programs).toContain('Canada Pension Plan');
+    expect(programs).toContain('Old Age Security');
   });
 
+  it('has an empty French map while the EDSC-ESDC .md Français column is unfilled', () => {
+    // Draft .md files ship with a blank Français column; only real EN→FR pairs
+    // populate the map, so it stays empty until French names are added.
+    expect(getProgramNameMap('EDSC-ESDC').size).toBe(0);
+  });
+});
+
+describe('getSeedPrograms — aliased departments resolve to the primary .md', () => {
+  it('resolves PHAC-ASPC to the shared HC-SC program list', () => {
+    const programs = getSeedPrograms('PHAC-ASPC');
+    expect(programs).toContain('COVID-19 public health guidance');
+  });
+});
+
+describe('getSeedPrograms — empty cases', () => {
   it('returns an empty list for an unknown department', () => {
     expect(getSeedPrograms('NOT-A-DEPT')).toEqual([]);
   });
 
-  it('has no French map when falling back to legacy seeds', () => {
-    expect(getProgramNameMap('EDSC-ESDC').size).toBe(0);
+  it('returns an empty list for a stub department whose .md has no program rows', () => {
+    expect(getSeedPrograms('FIN')).toEqual([]);
   });
 });
 
