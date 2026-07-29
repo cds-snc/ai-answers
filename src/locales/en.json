@@ -2000,7 +2000,8 @@
         "queued": "Queued",
         "processing": "Processing",
         "complete": "Complete",
-        "failed": "Failed"
+        "failed": "Failed",
+        "skippedSourceRows": "{count} source questions were skipped because question variations could not be generated."
       },
       "startAgain": "Start processing again",
       "processing": "Starting...",

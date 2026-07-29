@@ -154,6 +154,48 @@ describe('ExperimentalDatasetService', () => {
             expect(rows.every(row => row.data.referringUrl === 'https://www.sac-isc.gc.ca/')).toBe(true);
         });
 
+        it('completes while omitting a source row whose variations remain invalid', async () => {
+            const inRange = new Date('2026-06-15T12:00:00.000Z');
+            const firstGolden = await createTurn({
+                question: 'What is SCIS?', answer: 'SCIS is a secure status card.', score: 100, createdAt: inRange
+            });
+            const secondGolden = await createTurn({
+                question: 'Where do I apply?', answer: 'Apply online.', score: 100, createdAt: inRange
+            });
+            await Chat.create([
+                { chatId: 'partial-valid-chat', interactions: [firstGolden._id] },
+                { chatId: 'partial-skipped-chat', interactions: [secondGolden._id] }
+            ]);
+            vi.spyOn(QuestionVariationService, 'createVariants').mockImplementation(async (sourceRows) => sourceRows.map(row => (
+                row.question === 'What is SCIS?' ? ['Could you explain what SCIS is?'] : null
+            )));
+
+            const result = await ExperimentalDatasetService.createInstantAnswerDataset({
+                startDate: '2026-06-01',
+                endDate: '2026-06-30',
+                name: 'Partial instant answer dataset',
+                description: 'Skips invalid rows',
+                method: 'instant-answer',
+                type: 'qa-pair',
+                category: 'scis',
+                occurrencesPerQuestion: 2,
+                userId
+            });
+            await ExperimentalDatasetService.processInstantAnswerDataset(result.dataset._id, {
+                startDate: '2026-06-01',
+                endDate: '2026-06-30',
+                occurrencesPerQuestion: 2,
+                runId: result.dataset.creationRunId
+            });
+
+            const completedDataset = await ExperimentalDataset.findById(result.dataset._id).lean();
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id }).lean();
+            expect(completedDataset.creationStatus).toBe('complete');
+            expect(completedDataset.rowCount).toBe(2);
+            expect(completedDataset.creationSkippedSourceRows).toBe(1);
+            expect(rows.every(row => row.data.sourceQuestion === 'What is SCIS?')).toBe(true);
+        });
+
         it('rejects occurrence counts outside the supported range', async () => {
             await expect(ExperimentalDatasetService.previewInstantAnswerDataset(
                 '2026-06-01', '2026-06-30', 11

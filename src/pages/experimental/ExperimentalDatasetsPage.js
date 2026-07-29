@@ -351,6 +351,12 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         {ds.creationStatus === 'failed' && ds.creationError && (
                                             <div className="font-size-text-xsm-nr">{ds.creationError}</div>
                                         )}
+                                        {ds.creationStatus === 'complete' && ds.creationSkippedSourceRows > 0 && (
+                                            <div className="font-size-text-xsm-nr">
+                                                {t('experimental.datasets.creationStatus.skippedSourceRows')
+                                                    .replace('{count}', formatNumber(ds.creationSkippedSourceRows, lang))}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="p-200">
                                         {ds.runCount > 0

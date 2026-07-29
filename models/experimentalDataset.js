@@ -23,6 +23,7 @@ const ExperimentalDatasetSchema = new mongoose.Schema({
         default: 'complete'
     },
     creationError: { type: String, default: '' },
+    creationSkippedSourceRows: { type: Number, default: 0 },
     creationConfig: { type: mongoose.Schema.Types.Mixed, default: null },
     creationRunId: { type: String, default: '' },
     creationProgress: { type: mongoose.Schema.Types.Mixed, default: null },

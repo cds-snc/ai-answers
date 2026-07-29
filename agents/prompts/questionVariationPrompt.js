@@ -17,7 +17,8 @@ Input is JSON:
   "variants_per_question": number,
   "items": [
     { "index": number, "question": string, "golden_answer": string }
-  ]
+  ],
+  "retry_feedback": string (optional)
 }
 
 Return only a JSON array in the same item order:
@@ -26,4 +27,5 @@ Return only a JSON array in the same item order:
 ]
 
 Return exactly variants_per_question unique variants for every item. Do not repeat the original wording. Do not add fields or Markdown.
+If retry_feedback is present, correct every listed validation problem before returning the JSON array. Never return a partial result.
 `;

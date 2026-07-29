@@ -119,4 +119,23 @@ describe('ExperimentalDatasetsPage', () => {
         fireEvent.click(processingButton);
         expect(mockProcessDataset).not.toHaveBeenCalled();
     });
+
+    it('shows the number of source rows skipped during completed dataset creation', async () => {
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-partial',
+                name: 'Partial dataset',
+                type: 'qa-pair',
+                rowCount: 2,
+                runCount: 0,
+                createdAt: '2026-07-09T00:00:00.000Z',
+                creationStatus: 'complete',
+                creationSkippedSourceRows: 1
+            }]
+        });
+
+        render(<ExperimentalDatasetsPage lang="en" />);
+
+        expect(await screen.findByText('experimental.datasets.creationStatus.skippedSourceRows')).toBeTruthy();
+    });
 });
