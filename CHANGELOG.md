@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.173.0](https://github.com/cds-snc/ai-answers/compare/v1.172.0...v1.173.0) (2026-07-29)
+
+
+### Features
+
+* implement embedding metadata backfill job service and API endpo… ([58823a5](https://github.com/cds-snc/ai-answers/commit/58823a581f4d0aab5f772732759af00ae5b0a4c6))
+* implement embedding metadata backfill job service and API endpoints ([04ba719](https://github.com/cds-snc/ai-answers/commit/04ba71940c3ddcd5d9d56fb399580875b7ad4b7d))
+
 ## [1.172.0](https://github.com/cds-snc/ai-answers/compare/v1.171.1...v1.172.0) (2026-07-28)
 
 
