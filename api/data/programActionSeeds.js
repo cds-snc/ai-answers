@@ -10,52 +10,15 @@
 // abbrKey (see agents/prompts/scenarios/departments_EN.js — never invent new
 // abbrKeys); the action list is global across departments.
 //
-// MIGRATING TO PER-DEPARTMENT MARKDOWN: departments are moving to a curated,
-// partner-editable EN/FR list at
+// PER-DEPARTMENT MARKDOWN IS NOW THE SOURCE OF TRUTH: each department's programs
+// live in a curated, partner-editable EN/FR list at
 //   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md
-// loaded via programSeedsLoader.js (getSeedPrograms), which falls back to the
-// arrays below for any department without a file yet. CRA-ARC has migrated and
-// is intentionally no longer listed here — its .md is the source of truth.
+// loaded via programSeedsLoader.js (getSeedPrograms). Every department that had
+// harvested programs has migrated to its .md, so this map is now empty; it is
+// kept only as the loader's fallback for any department that has neither a .md
+// file nor yet-harvested programs (the loader returns [] in that case).
 
-export const PROGRAM_SEEDS_BY_DEPARTMENT = {
-    'EDSC-ESDC': [
-        'Canada Disability Benefit',
-        'Canadian Dental Care Plan',
-        'Canada Education Savings Grant',
-        'Canada Pension Plan',
-        "CPP children's benefit",
-        'CPP disability benefits',
-        'CPP death benefit',
-        'Canada Student Grants and Canada Student Loans',
-        'Social Insurance Number',
-        'Employment insurance - regular benefits',
-        'Employment insurance - sickness benefits',
-        'Employment insurance - maternity and parental benefits',
-        'Employment insurance - Caregiving benefits',
-        'Employment insurance - Fishing benefits',
-        'Employment insurance - Benefits for self-employed',
-        'My Service Canada Account',
-        'Old Age Security'
-    ],
-    'TBS-SCT': [
-        'Early Retirement Incentive'
-    ],
-    IRCC: [
-        'Adult passport',
-        'Child passport',
-        'Electronic travel authorization (eTA)',
-        'Visitor visa',
-        'Study permit',
-        'Work permit',
-        'Immigrate - general',
-        'Immigration - express entry',
-        'Immigration - provincial nominee',
-        'Refugee protection',
-        'Permanent Residency',
-        'Citizenship',
-        'IRCC account'
-    ]
-};
+export const PROGRAM_SEEDS_BY_DEPARTMENT = {};
 
 // Global action vocabulary: what the user is trying to DO with a program.
 // `synonyms` help the classifier recognize phrasing variants.

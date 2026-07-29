@@ -6,13 +6,10 @@ import {
     getPartnerEvalAggregationExpression,
     getAiEvalAggregationExpression
 } from '../api/util/chat-filters.js';
-import { toCompactRow, computeStats, buildCrossTab } from './evalAnalysisStats.js';
+import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification } from './evalAnalysisStats.js';
 import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createEvalAnalysisAgent } from '../agents/AgentFactory.js';
-import {
-    evalAnalysisProgramsStrategy,
-    evalAnalysisClassifyStrategy
-} from '../agents/strategies/evalAnalysisClassifyStrategy.js';
+import { evalAnalysisClassifyStrategy } from '../agents/strategies/evalAnalysisClassifyStrategy.js';
 import { evalAnalysisInsightsStrategy } from '../agents/strategies/evalAnalysisInsightsStrategy.js';
 import { ACTION_SEEDS, OTHER_LABEL } from '../api/data/programActionSeeds.js';
 import { getSeedPrograms } from '../api/data/programSeedsLoader.js';
@@ -25,7 +22,6 @@ export const MIN_EVALS = 20;
 export const MAX_EVALS = 200;
 
 const CLASSIFY_CHUNK_SIZE = 20;
-const PROGRAM_SAMPLE_SIZE = 80;
 
 const parseDateRange = (filters = {}) => {
     const start = filters.startDate ? new Date(filters.startDate) : null;
@@ -58,7 +54,16 @@ function buildPipeline(filters = {}, { countOnly = false } = {}) {
     pipeline.push({ $match: { expertFeedbackDoc: { $ne: null } } });
 
     pipeline.push({ $lookup: { from: 'contexts', localField: 'interactions.context', foreignField: '_id', as: 'contextDocs' } });
-    pipeline.push({ $addFields: { 'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDocs.department', 0] }, ''] } } });
+    // department drives filtering; program/action are the per-question
+    // classifier's stored tags, reused so the analysis doesn't re-classify what
+    // the pipeline already tagged (see rowNeedsClassification).
+    pipeline.push({
+        $addFields: {
+            'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDocs.department', 0] }, ''] },
+            'interactions.program': { $ifNull: [{ $arrayElemAt: ['$contextDocs.program', 0] }, ''] },
+            'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDocs.action', 0] }, ''] }
+        }
+    });
 
     pipeline.push({ $lookup: { from: 'answers', localField: 'interactions.answer', foreignField: '_id', as: 'answerDocs' } });
     pipeline.push({
@@ -99,6 +104,9 @@ function buildPipeline(filters = {}, { countOnly = false } = {}) {
             createdAt: '$interactions.createdAt',
             referringUrl: '$interactions.referringUrl',
             department: '$interactions.department',
+            program: '$interactions.program',
+            action: '$interactions.action',
+            answerType: '$interactions.answerType',
             question: { $ifNull: [{ $arrayElemAt: ['$questionDocs.redactedQuestion', 0] }, ''] },
             citationUrl: {
                 $ifNull: [
@@ -123,14 +131,6 @@ const invoke = (strategy, request, chatId) =>
         createAgentFn: (agentType, cid) => createEvalAnalysisAgent(agentType, cid),
         strategy
     });
-
-// Evenly spread sample so the program proposal sees the full date range, not
-// just the earliest questions.
-const sampleRows = (rows, size) => {
-    if (rows.length <= size) return rows;
-    const step = rows.length / size;
-    return Array.from({ length: size }, (_, i) => rows[Math.floor(i * step)]);
-};
 
 const slimRowForInsights = (r) => ({
     q: r.q,
@@ -269,23 +269,17 @@ class EvalAnalysisServiceClass {
         }
         const stats = computeStats(rows);
 
-        const chatId = `eval-analysis-${doc._id}`;
-        const proposal = await invoke(
-            evalAnalysisProgramsStrategy,
-            {
-                department: doc.department,
-                seedPrograms: getSeedPrograms(doc.department),
-                sampleRows: sampleRows(rows, PROGRAM_SAMPLE_SIZE)
-            },
-            chatId
-        );
-        if (!proposal?.programs?.length) {
-            throw new Error('Program proposal did not return a usable program list');
-        }
+        // Classification vocabulary for the fallback step is the department's
+        // curated seed list (the same names the per-question classifier and the
+        // partner dashboard use), plus any program names already stored on rows
+        // in this run — so a fallback row snaps to the same bucket as a
+        // pre-classified one instead of a fresh emergent set. No LLM proposal.
+        const storedPrograms = rows.map((r) => r.program).filter(Boolean);
+        const programs = Array.from(new Set([...getSeedPrograms(doc.department), ...storedPrograms]));
 
         const scalars = {
             stats,
-            programs: proposal.programs,
+            programs,
             evalCount: rows.length,
             excludedCount: stats.excludedCount,
             progress: { classified: 0, total: rows.length },
@@ -310,12 +304,19 @@ class EvalAnalysisServiceClass {
             chunk = chunkDoc?.rows || [];
         }
 
+        // Only rows the pipeline did not already tag AND whose answer type is a
+        // real GC answer attempt reach the LLM (see rowNeedsClassification):
+        // pre-classified rows keep their stored program/action, and non-normal
+        // turns (not-gc / pt-muni / clarifying-question) stay unclassified
+        // rather than being force-fit into a program group.
+        //
         // Row tag updates as targeted dotted-path $set deltas (rows.<i>.program)
-        // so only the ~20 changed rows are written, not the whole Mixed array.
+        // so only the changed rows are written, not the whole Mixed array.
         const rowSets = {};
-        if (chunk.length > 0) {
+        const toClassify = chunk.filter(rowNeedsClassification);
+        if (toClassify.length > 0) {
             const chatId = `eval-analysis-${doc._id}`;
-            const request = { programs: doc.programs, actions: ACTION_SEEDS, rows: chunk };
+            const request = { programs: doc.programs, actions: ACTION_SEEDS, rows: toClassify };
             let assignments = null;
             try {
                 assignments = (await invoke(evalAnalysisClassifyStrategy, request, chatId))?.assignments;
@@ -333,10 +334,11 @@ class EvalAnalysisServiceClass {
                 }
             }
             if (assignments) {
-                const validPrograms = new Set([...doc.programs, OTHER_LABEL]);
+                const validPrograms = new Set([...(doc.programs || []), OTHER_LABEL]);
                 const validActions = new Set([...ACTION_SEEDS.map((a) => a.action), OTHER_LABEL]);
                 const byId = new Map(assignments.map((a) => [a.id, a]));
                 chunk.forEach((row, i) => {
+                    if (!rowNeedsClassification(row)) return;
                     const a = byId.get(row.id);
                     if (!a) return;
                     rowSets[`rows.${offset + i}.program`] = validPrograms.has(a.program) ? a.program : OTHER_LABEL;

@@ -52,9 +52,7 @@ Pour des informations détaillées sur le fonctionnement de Réponses IA, nos me
 - [État actuel](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#état-actuel)
 - [Objectif et portée du système](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#objectif-et-portée-du-système)
 - [Architecture technique](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#architecture-technique)
-- [Évaluation des risques et mesures de sécurité](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#évaluation-des-risques-et-mesures-de-sécurité)
 - [Performance et évaluation](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#performance-et-évaluation)
-- [Limitations et contraintes](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#limitations-et-contraintes)
 - [Principes d'IA responsable et gouvernance](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#principes-dia-responsable-et-gouvernance)
 
 ## Contactez-nous

@@ -1,50 +1,13 @@
-// Strategies for the partner eval-analysis program classification (Tier 2).
+// Strategy for the partner eval-analysis program classification (Tier 2).
 //
 // NOTE FOR PROMPT MAINTAINERS: the prompt text below is new and has not been
 // through the prompt-tuning process. It lives here (not in agents/prompts/)
 // because it is analysis tooling, not part of the answer pipeline — but the
 // wording should still be reviewed by Lisa Fast or Ryan Hyma before shipping.
-// The program-naming / URL / account rules are shared with the per-question
-// classifier via programClassificationGuidance.js.
+// The URL / account rules are shared with the per-question classifier via
+// programClassificationGuidance.js.
 
-import { PROGRAM_NAMING_RULE, URL_EVIDENCE_RULE, ACCOUNT_RULE, extractJson } from './programClassificationGuidance.js';
-
-const PROGRAM_PROPOSAL_PROMPT = `You are analyzing questions asked to a Government of Canada AI assistant so a team of expert evaluators can spot patterns by program.
-
-Propose a set of program groups that partitions the sample questions by the government program (or subject) users were asking about. Name the program, not the activity: a separate pass tags what the user was trying to do (apply, sign in, change contact information…), so "Canada child benefit" is right and "Updating address with CRA" is wrong — the action half would be redundant. Aim for groups specific enough that score differences between them are actionable (a named program or subject — not "general inquiries"), but broad enough that most groups will collect several questions. 5-15 groups is the useful range. The seed vocabulary shows the granularity wanted; when a seed name fits the sample, use it verbatim, but derive groups from the questions themselves — do not include seed entries nothing was asked about. ${PROGRAM_NAMING_RULE} ${URL_EVIDENCE_RULE} ${ACCOUNT_RULE}
-
-Respond with ONLY a JSON object: {"programs": ["...", "..."]}. Program group names in English, max 6 words each.`;
-
-// request: { department, seedPrograms: string[], sampleRows: [{ q, cite, ref }] }
-export const evalAnalysisProgramsStrategy = {
-  buildMessages: (request = {}) => {
-    const { department = '', seedPrograms = [], sampleRows = [] } = request;
-    return [
-      { role: 'system', content: PROGRAM_PROPOSAL_PROMPT },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          department,
-          seed_vocabulary: seedPrograms,
-          sample_questions: sampleRows.map((r) => ({ question: r.q, citation_url: r.cite, referring_url: r.ref }))
-        })
-      }
-    ];
-  },
-  parse: (normalized) => {
-    const { parsed, raw } = extractJson(normalized?.content, '{', '}');
-    const programs = Array.isArray(parsed?.programs)
-      ? parsed.programs.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim())
-      : null;
-    return {
-      programs,
-      raw,
-      model: normalized.model,
-      inputTokens: normalized.inputTokens,
-      outputTokens: normalized.outputTokens
-    };
-  }
-};
+import { URL_EVIDENCE_RULE, ACCOUNT_RULE, extractJson } from './programClassificationGuidance.js';
 
 const CLASSIFY_PROMPT = `You are tagging questions asked to a Government of Canada AI assistant so evaluators can cross-tabulate expert scores by program and by what the user was trying to do.
 

@@ -85,6 +85,18 @@ New stats this feature computes (input to the report + the insight pass):
 
 ### Tier 2 — LLM program classification (chunked)
 
+> **Updated (July 2026) — now prefers stored values.** This tier was written
+> before the per-question program/action classifier existed. It now **reuses the
+> stored `context.program`/`context.action`** for every row that has them, and
+> only falls back to the LLM for rows still lacking a program **whose answer type
+> is normal** (non-normal turns — not-gc / pt-muni / clarifying-question — carry
+> no GC program and stay unclassified). The fallback classifies against the
+> department's **curated seed list** (`getSeedPrograms`) plus program names
+> already present in the run — the emergent program-proposal call was removed. No
+> write-back to `context`. See
+> [program-action-classification.md → Phase 2 §5](./program-action-classification.md#5-rationalize-with-the-eval-analysis-tier-2-decided-july-2026).
+> The description below is the original design, kept for context.
+
 Tag each evaluated Q&A with an **emergent program group** and an **action**
 (Apply, Check status, Pay, Sign in, …). Inputs per row: question, answer (first
 sentence or two), **citationUrl and referringUrl** (strong program clues).

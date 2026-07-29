@@ -7,8 +7,24 @@
 
 import { deriveExpertFeedbackCategory } from '../api/util/chat-filters.js';
 import { OTHER_LABEL } from '../api/data/programActionSeeds.js';
+import { NON_CLASSIFIABLE_ANSWER_TYPES } from '../api/util/answerTypes.js';
 
 const SENTENCE_NUMBERS = [1, 2, 3, 4];
+
+// A stored program/action value is reusable only when it is a real program
+// name — '' (never classified) and 'unknown' (classifier ran, not confident)
+// both mean "no usable program" and are normalized to null.
+const reusableValue = (value) => {
+    const str = typeof value === 'string' ? value.trim() : '';
+    return str && str.toLowerCase() !== 'unknown' ? str : null;
+};
+
+// A row reaches the fallback classifier only when it has no reusable program
+// from the per-question classifier AND its answer type is a real GC answer
+// attempt. Non-normal turns (not-gc / pt-muni / clarifying-question) carry no
+// program, so they stay unclassified instead of being force-fit into a group.
+export const rowNeedsClassification = (row = {}) =>
+    !row.program && !NON_CLASSIFIABLE_ANSWER_TYPES.has(row.answerType || '');
 
 // An evaluator's perfect-rate must differ from the rest of the group by more
 // than this many percentage points (with at least MIN_EVALS_FOR_FLAG evals)
@@ -58,8 +74,13 @@ export function toCompactRow(aggRow) {
         improve: truncate(ef.answerImprovement, 400),
         evaluator: ef.expertEmail || '',
         createdAt: aggRow.createdAt ? new Date(aggRow.createdAt).toISOString() : null,
-        program: null,
-        action: null
+        // Answer type drives the classification gate (rowNeedsClassification).
+        answerType: typeof aggRow.answerType === 'string' ? aggRow.answerType : '',
+        // Reuse the per-question classifier's stored program/action so the
+        // report groups the same way the partner dashboard does; the fallback
+        // classifier fills only the rows still left null here.
+        program: reusableValue(aggRow.program),
+        action: reusableValue(aggRow.action)
     };
 }
 

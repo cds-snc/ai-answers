@@ -214,6 +214,10 @@ FR map coalesce obvious variants immediately, no data migration), plus a
 **D-style review list** feeding the curated `.md` for the rest, with **C**
 reserved only if semantic drift dominates once we can measure it.
 
+> **See also Phase 2 below** — rolling curated `.md` lists to all partners is the
+> **source-side** version of this mitigation (fix the seed vocabulary so the
+> classifier snaps to canonical names), complementary to read-time coalescing.
+
 ### Where it runs / write-back
 
 - Read-time coalescing (A/B) lives next to `getAllProgramNameMap` /
@@ -241,3 +245,140 @@ handful of aliases (→ A) or a long tail (→ B + D), and whether C is worth it
   for GC program names that differ by a single word? Needs the audit data.
 - Who curates the review list (D) — CDS only, or partners for their own
   department, mirroring the `.md` edit model?
+
+## Phase 2 — curated program lists for all partners + eval-analysis rationalization
+
+**Status:** planned (July 2026). **Owner:** Lisa Fast.
+
+Phase 1 migrated only CRA-ARC to a curated `.md`. Phase 2 rolls a curated program
+list to **every partner that has a scenario folder**, seeded from a cleaned
+version of the auto-harvested draft (`.../CDS/AI/programs-by-dept-draft.csv` — a
+dump of the `context.program` values the classifier has emitted over the last few
+weeks), and rationalizes the two places programs/actions get produced (this
+classifier vs. the eval-analysis Tier-2). Curating the seed vocabulary at the
+source is the drift mitigation from the section above, applied before the fact.
+
+### 1. Rollout target
+
+One `context-<dept>/<dept>-programs.md` per partner folder, same format as
+`cra-arc-programs.md` (English | Français, curated header, one program per row).
+The draft covers 13 departments: BAC-LAC, CEO-BEC, DND-MDN, ECCC, EDSC-ESDC,
+HC-SC, IRCC, ISED-ISDE, PHAC-ASPC, SAC-ISC, STATCAN, TBS-SCT, TC.
+
+- **Aliased departments share the primary's file.** `PHAC-ASPC` has no scenario
+  folder — it resolves to `HC-SC` via `resolveScenarioKey`, and the loader keys
+  the file off the *resolved* abbrKey. So PHAC-ASPC programs are **merged into
+  `hc-sc-programs.md`**, not given their own file. Same rule for every other
+  aliased abbrKey (Defence portfolio → DND-MDN, RCAANC → SAC-ISC, RDAs →
+  ISED-ISDE): curate at the primary folder. Net: 13 draft departments → **12
+  files** (PHAC folds into HC-SC).
+- Scenario folders with no draft data yet (AAFC-AAC, CBSA-ASFC, CDS-SNC, FIN,
+  JUS, NRCAN-RNCAN, VAC-ACC) keep falling back to model knowledge until they
+  accrue data — no empty files.
+
+### 2. CSV cleanup rules (draft → curated)
+
+The harvest is raw classifier output and has three recurring defects. Apply
+before writing each `.md`:
+
+- **Department-name-as-program → drop it.** The classifier sometimes emitted the
+  department's own name as the "program"; that carries no granularity — remove
+  the row (the question then buckets as `unknown`/empty, which is correct).
+  Examples to drop: "Environment and Climate Change Canada", "Health Canada",
+  "Public Health Agency of Canada", "Statistics Canada" / "Statistics Canada
+  surveys", "Indigenous Services Canada", "Treasury Board of Canada Secretariat",
+  plus placeholder rows like "AI Answers" / "Canada.ca guidance" (CEO-BEC).
+- **Strip the `Canadian Armed Forces` / `CAF` prefix (DND).** The harvest
+  prepended the organization onto dozens of DND rows ("Canadian Armed Forces
+  release process", "CAF Transition Services"), which is duplicative and makes
+  names hard to parse. Strip the prefix and merge the sprawling
+  release/transition/pay/benefits variants down to a small set of canonical
+  programs. Stripping is safe here — the DND partners review their own file, and
+  program names don't have to be unique across departments.
+- **Dedupe variants/typos → one canonical name.** The whole point of the seed
+  file is one name per program. Collapse case / punctuation / abbreviation /
+  singular-plural / typo variants. Examples: "Consumer Price Index" +
+  "Consumer Price Index (CPI)"; "Census" + "Census of Population" + "Statistics
+  Canada Census" + "2021 Census of Population"; "Pleasure Craft Licence" +
+  "(PCL)" + "Pleasure Craft Licensing"; "Pleasure Craft Operator Card" +
+  "(PCOC)"; "Pensioners Dental Services Plan" + "Pensioners' Dental Services
+  Plan"; "Public Service Pension" + "Public Service Pension Plan"; typos
+  "Geneology" → "Genealogy", "Canada Dentall Care Plan" → "Canada Dental Care
+  Plan".
+
+**Programs need not be unique across departments.** Each partner curates its
+**own** file, so a genuinely shared program (e.g. Public Service Health Care Plan
+/ Pension Plan / Dental Care Plan) may legitimately appear in several department
+files, and there is no requirement to coordinate identical wording across them.
+Cleanup is only ever *within* a file: strip the department's own name and dedupe
+that file's variants.
+
+### 3. French names
+
+Draft `.md` files land with the **English column populated** from the cleaned
+harvest and the **Français column blank**. The loader tolerates an empty FR cell
+(`getSeedPrograms` uses `.en`; `getAllProgramNameMap` skips en-only rows) — so an
+EN-only draft is strictly better than today's English-only fallback arrays, with
+no FR regression. Official French program names are filled in afterward by Lisa /
+partners, same edit model as CRA-ARC. Do **not** machine-generate official GC
+program names (consistent with the EN-first MVP).
+
+### 4. Retire the legacy seed arrays
+
+`programActionSeeds.js` still hardcodes program arrays for **EDSC-ESDC**,
+**IRCC**, and **TBS-SCT** (one entry). Once each has a curated `.md`, remove its
+array from `PROGRAM_SEEDS_BY_DEPARTMENT` (mirroring how CRA-ARC was removed) so
+the `.md` is the single source of truth and the two can't diverge. The draft
+`.md` for those three should **merge** the existing array entries with the
+cleaned harvest — the arrays hold curated names the harvest may miss (EI
+sub-benefit breakdowns, IRCC `Study permit` / `Citizenship`, etc.). `ACTION_SEEDS`
+and `OTHER_LABEL` stay in `programActionSeeds.js` — actions remain a global,
+non-department list.
+
+### 5. Rationalize with the eval-analysis Tier-2 (decided July 2026)
+
+`partner-eval-analysis.md` predates this classifier, so its Tier-2 runs its own
+two-pass emergent program/action grouping — which now double-classifies every
+recent normal question (those already carry `context.program`/`context.action`).
+
+Decision: **read stored, keep Tier-2 as a fallback.**
+
+- Eval-analysis uses the stored `context.program` / `context.action` when
+  present — so recent rows bucket **identically to the partner volume card** (one
+  curated taxonomy). No re-classification of already-tagged rows.
+- For rows still at `''` (historical, or a failed classify call), Tier-2 runs as
+  before to fill the gap **for that report only** — it does **not** write back to
+  `context.program` (see below). When it falls back it should classify against the
+  **curated seed lists** (`programSeedsLoader.getSeedPrograms` for the row's
+  department) rather than proposing a fresh emergent set, so a historical CPP row
+  and a recent CPP row land in the same bucket.
+- **Gate the fallback on answer type — only classify `normal`-type rows.**
+  Non-normal answers (`not-gc`, `pt-muni`, `clarifying-question`) carry no GC
+  program and must be skipped, exactly as the per-question classifier does via
+  `NON_CLASSIFIABLE_ANSWER_TYPES` (`api/util/answerTypes.js`). **This is a bug in
+  the current eval-analysis:** `EvalAnalysisService` already projects
+  `interactions.answerType` (row fetch) but never filters on it, so today it
+  classifies clarifying-question / not-gc / pt-muni rows too. Reuse the shared
+  `NON_CLASSIFIABLE_ANSWER_TYPES` set so both paths gate identically — don't
+  reimplement the type list.
+- **No backfill** (decided): historical interactions are not re-run through the
+  classifier. Dashboards read stored values only, so pre-feature rows stay in the
+  existing `unknown`/empty bucket and coverage improves organically as new
+  questions arrive. Revisit only if the historical gap proves to matter.
+
+Net effect: one canonical program/action vocabulary (curated `.md` +
+`ACTION_SEEDS`), produced once by the classifier for new questions and reused
+everywhere; the eval-analysis Tier-2 shrinks to a gap-filler for old data. The
+`partner-eval-analysis.md` Tier-2 section should get a pointer back here noting it
+now prefers stored values.
+
+### Open items for the walkthrough
+
+- The initial draft I generate is a **first cut** for partners to curate; I'll
+  pick a reasonable canonical name per merged cluster (esp. the DND
+  release/transition/pay family and the STATCAN census/CPI/survey clusters), and
+  partners refine their own file afterward.
+- Whether to seed FR for the highest-volume programs in the same PR or defer all
+  FR to a follow-up.
+- Confirm which of the seven data-less scenario folders (if any) you want stubbed
+  now vs. left on model-knowledge fallback.
