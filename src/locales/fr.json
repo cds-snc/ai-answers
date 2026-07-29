@@ -2000,7 +2000,8 @@
         "queued": "En file d'attente",
         "processing": "En traitement",
         "complete": "Terminée",
-        "failed": "Échouée"
+        "failed": "Échouée",
+        "skippedSourceRows": "{count} questions sources ont été ignorées parce que les variantes de question n’ont pas pu être générées."
       },
       "startAgain": "Relancer le traitement",
       "processing": "Démarrage…",

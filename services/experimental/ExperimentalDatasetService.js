@@ -331,7 +331,7 @@ class ExperimentalDatasetService {
         const runId = crypto.randomUUID();
         await ExperimentalDataset.updateOne(
             { _id: dataset._id },
-            { $set: { creationStatus: 'queued', creationError: '', creationRunId: runId } }
+            { $set: { creationStatus: 'queued', creationError: '', creationSkippedSourceRows: 0, creationRunId: runId } }
         );
         try {
             await ExperimentalQueueService.enqueue(DATASET_QUEUE_NAME, {
@@ -358,7 +358,7 @@ class ExperimentalDatasetService {
 
         await ExperimentalDataset.updateOne(
             { _id: dataset._id, creationRunId: runId },
-            { $set: { creationStatus: 'processing', creationError: '' } }
+            { $set: { creationStatus: 'processing', creationError: '', creationSkippedSourceRows: 0 } }
         );
 
         try {
@@ -387,8 +387,14 @@ class ExperimentalDatasetService {
             }
             if (offset < sourceRows.length) return { datasetId, status: 'processing', offset, total: sourceRows.length };
 
+            const skippedSourceRowCount = variantsByRow.filter(rowVariants => rowVariants === null).length;
             const dataRows = sourceRows.flatMap((sourceRow, sourceIndex) => {
-                const questions = [sourceRow.question, ...(variantsByRow[sourceIndex] || [])];
+                const rowVariants = variantsByRow[sourceIndex];
+                if (rowVariants === null) {
+                    console.warn(`Skipping instant-answer dataset source row ${sourceIndex + 1} after question variation retries`);
+                    return [];
+                }
+                const questions = [sourceRow.question, ...(rowVariants || [])];
                 return questions.map((question, occurrenceIndex) => ({
                     chatId: `${sourceRow.chatId}::instant-answer-${occurrenceIndex + 1}`,
                     sourceChatId: sourceRow.chatId,
@@ -417,10 +423,11 @@ class ExperimentalDatasetService {
                     contentHash: this._computeContentHash(dataRows),
                     creationStatus: 'complete',
                     creationError: '',
+                    creationSkippedSourceRows: skippedSourceRowCount,
                     creationProgress: null
                 } }
             );
-            return { datasetId, status: 'complete' };
+            return { datasetId, status: 'complete', skippedSourceRowCount };
         } catch (err) {
             await ExperimentalDataset.updateOne(
                 { _id: dataset._id, creationRunId: runId },
