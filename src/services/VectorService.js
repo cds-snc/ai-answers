@@ -32,11 +32,16 @@ const VectorService = {
     return await response.json();
   },
 
-  async startMetadataBackfillJob({ phase = 'missing', resumeJobId = null, delaySeconds = 5 } = {}) {
+  async startMetadataBackfillJob({
+    phase = 'missing',
+    resumeJobId = null,
+    restartJobId = null,
+    delaySeconds = 5,
+  } = {}) {
     const response = await AuthService.fetch(getApiUrl('vector-metadata-backfill-job'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phase, resumeJobId, delaySeconds }),
+      body: JSON.stringify({ phase, resumeJobId, restartJobId, delaySeconds }),
     });
     if (!response.ok) throw new Error('Failed to start embedding metadata backfill job');
     return await response.json();
