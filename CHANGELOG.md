@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.176.0](https://github.com/cds-snc/ai-answers/compare/v1.175.0...v1.176.0) (2026-07-29)
+
+
+### Features
+
+* add program files - tested on preview with batch and eval ([0cc37eb](https://github.com/cds-snc/ai-answers/commit/0cc37eb9edf2a30bf06efb566699268a611272c7))
+
 ## [1.175.0](https://github.com/cds-snc/ai-answers/compare/v1.174.0...v1.175.0) (2026-07-29)
 
 
