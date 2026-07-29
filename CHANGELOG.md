@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.174.0](https://github.com/cds-snc/ai-answers/compare/v1.173.0...v1.174.0) (2026-07-29)
+
+
+### Features
+
+* add support for restarting metadata backfill jobs and enhance b… ([b68711b](https://github.com/cds-snc/ai-answers/commit/b68711b2353b306f83a4a442ef067cf0a5a44c7b))
+* add support for restarting metadata backfill jobs and enhance backfill process with new parameters ([033fea4](https://github.com/cds-snc/ai-answers/commit/033fea478e4c8786474c6f31d1dbb5b822d97fc5))
+
 ## [1.173.0](https://github.com/cds-snc/ai-answers/compare/v1.172.0...v1.173.0) (2026-07-29)
 
 
