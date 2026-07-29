@@ -115,6 +115,8 @@ const DEFAULT_HEADER_ORDER = [
     'redactedQuestion',
     'aiService',
     'context.department',
+    'context.program',
+    'context.action',
     'citationUrl',
     'englishAnswer',
     'answer',
@@ -408,6 +410,11 @@ function flattenInteraction(chat, interaction, view) {
             'expertFeedback.updatedAt': get(interaction, 'expertFeedback.updatedAt') ? new Date(get(interaction, 'expertFeedback.updatedAt')).toISOString() : '',
 
             'context.department': get(interaction, 'context.department'),
+            // Per-question program/action classification (see
+            // docs/plans/program-action-classification.md). Set explicitly so
+            // the columns export even when the value is the default ''.
+            'context.program': get(interaction, 'context.program'),
+            'context.action': get(interaction, 'context.action'),
             'context.searchQuery': get(interaction, 'context.searchQuery'),
             // Context search results might be array/object, flatten or stringify? Default behavior is usually stringify for cells if object.
             'context.searchResults': JSON.stringify(get(interaction, 'context.searchResults', '')),
