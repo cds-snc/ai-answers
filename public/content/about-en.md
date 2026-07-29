@@ -52,9 +52,7 @@ For detailed information about how AI Answers works, our safety measures, evalua
 - [Current status](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#current-status)
 - [System purpose and scope](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#system-purpose-and-scope)
 - [Technical architecture](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#technical-architecture)
-- [Risk assessment and safety measures](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#risk-assessment-and-safety-measures)
 - [Performance and evaluation](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#performance-and-evaluation)
-- [Limitations and constraints](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#limitations-and-constraints)
 - [Responsible AI principles and governance](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#responsible-ai-principles-and-governance)
 
 ## Contact us
