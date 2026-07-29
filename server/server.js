@@ -110,6 +110,7 @@ import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadat
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
 import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
 import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
+import vectorMetadataBackfillJobHandler from '../api/vector/vector-metadata-backfill-job.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
@@ -284,6 +285,9 @@ app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
 app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
 app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
+app.get('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
+app.post('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
+app.delete('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);
@@ -403,6 +407,14 @@ const PORT = process.env.PORT || 3001;
 
     await dbConnect();
     console.log("Database service started...");
+
+    const { default: EmbeddingMetadataBackfillJobService } = await import('../services/EmbeddingMetadataBackfillJobService.js');
+    try {
+      await EmbeddingMetadataBackfillJobService.initialize();
+      console.log("Embedding metadata backfill worker started...");
+    } catch (error) {
+      console.error("Embedding metadata backfill worker failed to initialize:", error);
+    }
 
     await SettingsService.loadAll();
     console.log("Settings service started...");

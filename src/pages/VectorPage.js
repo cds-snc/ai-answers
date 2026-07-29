@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsLink, GcdsDetails } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -7,7 +7,23 @@ import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 
-const METADATA_BACKFILL_PROGRESS_KEY = 'vectorMetadataBackfillProgress';
+const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
+
+const metadataProgressFromJob = (job) => job ? ({
+  jobId: job.id,
+  status: job.status,
+  processed: job.processed || 0,
+  updated: job.updated || 0,
+  cleared: job.cleared || 0,
+  skipped: job.skipped || 0,
+  remaining: null,
+  hasMore: ACTIVE_METADATA_JOB_STATUSES.has(job.status),
+  lastProcessedId: job.lastProcessedId,
+  phase: job.phase,
+  cursorSource: job.cursorSource,
+  delayMs: job.delayMs || 0,
+  error: job.error || null,
+}) : null;
 
 const getDocdb8ProbeDefinitions = (t) => ([
   {
@@ -60,7 +76,7 @@ const VectorPage = ({ lang = 'en' }) => {
   const [isRegeneratingEmbeddings, setIsRegeneratingEmbeddings] = useState(false);
   const [provider, setProvider] = useState('openai');
   const [metadataProgress, setMetadataProgress] = useState(null);
-  const [metadataBatchSizeInput, setMetadataBatchSizeInput] = useState('100');
+  const [metadataDelaySecondsInput, setMetadataDelaySecondsInput] = useState('5');
   const [metadataBatchRecords, setMetadataBatchRecords] = useState([]);
   const [isBackfillingMetadata, setIsBackfillingMetadata] = useState(false);
   const [stopMetadataBackfill, setStopMetadataBackfill] = useState(false);
@@ -71,23 +87,29 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
   const [metadataStatusError, setMetadataStatusError] = useState(null);
-  const stopMetadataBackfillRef = useRef(false);
-
   useEffect(() => {
-    try {
-      const savedProgress = window.localStorage.getItem(METADATA_BACKFILL_PROGRESS_KEY);
-      if (!savedProgress) return;
-      const parsedProgress = JSON.parse(savedProgress);
-      if (parsedProgress?.cursorSource === 'expertFeedback'
-        && (parsedProgress?.phase === 'interactions' || parsedProgress?.phase === 'missing')
-        && (parsedProgress.hasMore === true || (typeof parsedProgress.remaining === 'number' && parsedProgress.remaining > 0))) {
-        setMetadataProgress(parsedProgress);
-      } else {
-        window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const { job } = await VectorService.getMetadataBackfillJob();
+        if (cancelled || !job) return;
+        setMetadataProgress(metadataProgressFromJob(job));
+        setMetadataBatchRecords(job.latestBatchRecords || []);
+        setIsBackfillingMetadata(ACTIVE_METADATA_JOB_STATUSES.has(job.status));
+        setStopMetadataBackfill(job.status === 'stopped');
+        if (ACTIVE_METADATA_JOB_STATUSES.has(job.status)) {
+          setMetadataDelaySecondsInput(String((job.delayMs || 0) / 1000));
+        }
+      } catch (err) {
+        if (!cancelled) console.error('Error polling embedding metadata backfill job:', err);
       }
-    } catch (err) {
-      console.error('Error loading metadata backfill progress:', err);
-    }
+    };
+    poll();
+    const pollTimer = window.setInterval(poll, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(pollTimer);
+    };
   }, []);
 
   // Fetch vector stats using VectorService
@@ -172,104 +194,55 @@ const VectorPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleBackfillMetadata = async (
-    lastId = metadataProgress?.lastProcessedId || null,
-    phase = metadataProgress?.phase || 'clear',
-    initialProgress = metadataProgress
-  ) => {
+  const handleBackfillMetadata = async (resumeJobId = null) => {
     if (isBackfillingMetadata) return;
-    const parsedBatchSize = Number.parseInt(metadataBatchSizeInput, 10);
-    if (!Number.isFinite(parsedBatchSize) || parsedBatchSize < 1 || parsedBatchSize > 500) {
-      alert(t('vector.metadataBatchSizeInvalid'));
+    const delaySeconds = Number(metadataDelaySecondsInput);
+    if (!Number.isFinite(delaySeconds) || delaySeconds < 0 || delaySeconds > 300) {
+      alert(t('vector.metadataDelayInvalid'));
       return;
     }
 
     setIsBackfillingMetadata(true);
     setStopMetadataBackfill(false);
-    stopMetadataBackfillRef.current = false;
-    let nextLastId = lastId;
-    let nextPhase = phase;
-    // cumulative counters across batches (initialize from any saved progress)
-    const cumulative = {
-      processed: initialProgress?.processed || 0,
-      updated: initialProgress?.updated || 0,
-      cleared: initialProgress?.cleared || 0,
-      skipped: initialProgress?.skipped || 0,
-    };
-    let shouldContinue = true;
     try {
-      while (shouldContinue) {
-        const result = await VectorService.backfillMetadata({
-          lastProcessedId: nextLastId,
-          limit: parsedBatchSize,
-          includeDetails: true,
-          phase: nextPhase,
-        });
-        // accumulate totals so UI shows cumulative progress across the run
-        cumulative.processed += result.processed || 0;
-        cumulative.updated += result.updated || 0;
-        cumulative.cleared += result.cleared || 0;
-        cumulative.skipped += result.skipped || 0;
-
-        setMetadataProgress({
-          processed: cumulative.processed,
-          updated: cumulative.updated,
-          cleared: cumulative.cleared,
-          skipped: cumulative.skipped,
-          remaining: result.remaining,
-          hasMore: result.hasMore === true,
-          lastProcessedId: result.lastProcessedId,
-          phase: result.phase,
-          cursorSource: result.cursorSource,
-        });
-        setMetadataBatchRecords(Array.isArray(result.batchRecords) ? result.batchRecords : []);
-        const progressSnapshot = {
-          processed: cumulative.processed,
-          updated: cumulative.updated,
-          cleared: cumulative.cleared,
-          skipped: cumulative.skipped,
-          remaining: result.remaining,
-          lastProcessedId: result.lastProcessedId,
-          phase: result.phase,
-          cursorSource: result.cursorSource,
-        };
-        if (result.hasMore === true) {
-          window.localStorage.setItem(METADATA_BACKFILL_PROGRESS_KEY, JSON.stringify(progressSnapshot));
-        } else {
-          window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
-        }
-        nextLastId = result.lastProcessedId || nextLastId;
-        nextPhase = result.phase || nextPhase;
-        if (result.hasMore !== true || stopMetadataBackfillRef.current) {
-          shouldContinue = false;
-          break;
-        }
-      }
+      const { job } = await VectorService.startMetadataBackfillJob({
+        phase: 'missing',
+        resumeJobId,
+        delaySeconds,
+      });
+      setMetadataProgress(metadataProgressFromJob(job));
+      setMetadataBatchRecords(job?.latestBatchRecords || []);
     } catch (err) {
       console.error('Error backfilling embedding metadata:', err);
       alert(t('vector.metadataBackfillFailed'));
-    } finally {
       setIsBackfillingMetadata(false);
     }
   };
 
-  const handleStopMetadataBackfill = () => {
-    stopMetadataBackfillRef.current = true;
-    setStopMetadataBackfill(true);
+  const handleStopMetadataBackfill = async () => {
+    try {
+      const { job } = await VectorService.stopMetadataBackfillJob(metadataProgress?.jobId);
+      if (job) {
+        setMetadataProgress(metadataProgressFromJob(job));
+        setIsBackfillingMetadata(ACTIVE_METADATA_JOB_STATUSES.has(job.status));
+      }
+      setStopMetadataBackfill(true);
+    } catch (err) {
+      console.error('Error stopping embedding metadata backfill:', err);
+      alert(t('vector.metadataBackfillFailed'));
+    }
   };
 
   const handleBackfillEmptyMetadata = () => {
-    window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
     setMetadataProgress(null);
     setMetadataBatchRecords([]);
-    handleBackfillMetadata(null, 'missing', null);
+    handleBackfillMetadata();
   };
 
   const handleClearMetadata = async () => {
     if (isBackfillingMetadata) return;
     try {
       await VectorService.clearMetadata();
-      window.localStorage.removeItem(METADATA_BACKFILL_PROGRESS_KEY);
       setMetadataProgress(null);
       setMetadataBatchRecords([]);
       setMetadataStatus(null);
@@ -281,11 +254,7 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const handleResumeMetadataBackfill = () => {
-    handleBackfillMetadata(
-      metadataProgress?.lastProcessedId || null,
-      metadataProgress?.phase || 'interactions',
-      metadataProgress
-    );
+    handleBackfillMetadata(metadataProgress?.jobId || null);
   };
 
   const handleRunDocdb8CapabilityTest = async (probe) => {
@@ -345,9 +314,8 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
-  const hasMetadataBackfillResume = metadataProgress?.cursorSource === 'expertFeedback'
-    && (metadataProgress?.phase === 'interactions' || metadataProgress?.phase === 'missing')
-    && (metadataProgress.hasMore === true || (typeof metadataProgress.remaining === 'number' && metadataProgress.remaining > 0));
+  const hasMetadataBackfillResume = ['stopped', 'failed'].includes(metadataProgress?.status)
+    && Boolean(metadataProgress?.jobId);
   const loadedDocdb8Results = docdb8ProbeDefinitions
     .map(({ key, label }) => ({
       key,
@@ -483,23 +451,23 @@ const VectorPage = ({ lang = 'en' }) => {
           {t('vector.metadataBackfillDescription')}
         </GcdsText>
         <div className="mb-200">
-          <label htmlFor="metadata-backfill-batch-size" className="display-block mb-100">
-            {t('vector.metadataBatchSizeLabel')}
+          <label htmlFor="metadata-backfill-delay-seconds" className="display-block mb-100">
+            {t('vector.metadataDelayLabel')}
           </label>
           <input
-            id="metadata-backfill-batch-size"
+            id="metadata-backfill-delay-seconds"
             type="number"
-            min="1"
-            max="500"
+            min="0"
+            max="300"
             step="1"
             inputMode="numeric"
-            value={metadataBatchSizeInput}
-            onChange={(e) => setMetadataBatchSizeInput(e.target.value)}
+            value={metadataDelaySecondsInput}
+            onChange={(e) => setMetadataDelaySecondsInput(e.target.value)}
             disabled={isBackfillingMetadata}
             className="mr-200"
           />
           <GcdsText>
-            {t('vector.metadataBatchSizeHelp')}
+            {t('vector.metadataDelayHelp')}
           </GcdsText>
         </div>
         <div className="button-group">
@@ -540,6 +508,9 @@ const VectorPage = ({ lang = 'en' }) => {
               )}
               {stopMetadataBackfill && !isBackfillingMetadata && (
                 <span> <strong>{t('vector.metadataBackfillStopped')}</strong></span>
+              )}
+              {metadataProgress.status === 'failed' && (
+                <span> <strong>{t('vector.metadataBackfillFailed')}</strong></span>
               )}
             </p>
           </div>
