@@ -4,6 +4,7 @@ import {
     computeStats,
     buildCrossTab,
     combinedLabel,
+    rowNeedsClassification,
     MIN_EVALS_FOR_FLAG
 } from '../evalAnalysisStats.js';
 import { deriveExpertFeedbackCategory as deriveCategory } from '../../api/util/chat-filters.js';
@@ -112,6 +113,48 @@ describe('toCompactRow', () => {
         const compact = toCompactRow({ _id: 'x', expertFeedback: { expertEmail: 'e@x.ca' } });
         expect(compact.score).toBeNull();
         expect(compact.category).toBeNull();
+    });
+
+    it('reuses a real stored program/action from the per-question classifier', () => {
+        const compact = toCompactRow({
+            _id: 'x',
+            program: 'Canada Pension Plan',
+            action: 'Apply',
+            answerType: 'normal',
+            expertFeedback: {}
+        });
+        expect(compact.program).toBe('Canada Pension Plan');
+        expect(compact.action).toBe('Apply');
+        expect(compact.answerType).toBe('normal');
+    });
+
+    it("normalizes '' and 'unknown' stored program/action to null (unclassified)", () => {
+        expect(toCompactRow({ _id: 'x', program: '', action: '', expertFeedback: {} }).program).toBeNull();
+        expect(toCompactRow({ _id: 'x', program: 'unknown', action: 'unknown', expertFeedback: {} }).program).toBeNull();
+        expect(toCompactRow({ _id: 'x', program: 'unknown', expertFeedback: {} }).action).toBeNull();
+    });
+
+    it('carries the answer type through for the classification gate', () => {
+        expect(toCompactRow({ _id: 'x', answerType: 'clarifying-question', expertFeedback: {} }).answerType)
+            .toBe('clarifying-question');
+        expect(toCompactRow({ _id: 'x', expertFeedback: {} }).answerType).toBe('');
+    });
+});
+
+describe('rowNeedsClassification', () => {
+    it('classifies only normal-type rows that lack a reusable program', () => {
+        expect(rowNeedsClassification({ program: null, answerType: 'normal' })).toBe(true);
+        expect(rowNeedsClassification({ program: null, answerType: '' })).toBe(true); // empty = normal
+    });
+
+    it('skips rows already tagged by the per-question classifier', () => {
+        expect(rowNeedsClassification({ program: 'Canada Pension Plan', answerType: 'normal' })).toBe(false);
+    });
+
+    it('skips non-normal answer types (no GC program to classify)', () => {
+        expect(rowNeedsClassification({ program: null, answerType: 'not-gc' })).toBe(false);
+        expect(rowNeedsClassification({ program: null, answerType: 'pt-muni' })).toBe(false);
+        expect(rowNeedsClassification({ program: null, answerType: 'clarifying-question' })).toBe(false);
     });
 });
 
