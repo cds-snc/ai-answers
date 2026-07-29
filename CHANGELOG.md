@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.175.0](https://github.com/cds-snc/ai-answers/compare/v1.174.0...v1.175.0) (2026-07-29)
+
+
+### Features
+
+* enhance question variation handling and dataset processing with skipped source row tracking ([81c0668](https://github.com/cds-snc/ai-answers/commit/81c0668397712b79ccf7a12f2f234db5e10b4bb5))
+* enhance question variation handling and dataset processing with… ([00f6079](https://github.com/cds-snc/ai-answers/commit/00f6079850ccf3a90c99d5049079c10bccdae462))
+
 ## [1.174.0](https://github.com/cds-snc/ai-answers/compare/v1.173.0...v1.174.0) (2026-07-29)
 
 
