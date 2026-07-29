@@ -239,10 +239,7 @@ class EmbeddingMetadataService {
       updateFilter = {
         $and: [
           updateFilter,
-          { $or: Object.keys(METADATA_UNSET).flatMap((field) => [
-            { [field]: { $exists: false } },
-            { [field]: null },
-          ]) },
+          { expertFeedbackId: null },
         ],
       };
     }
@@ -257,6 +254,22 @@ class EmbeddingMetadataService {
       updateFilter,
       { $set: update }
     );
+    if (onlyMissingMetadata && updateResult.matchedCount === 0) {
+      return {
+        ...updateResult,
+        skippedReason: 'metadataAlreadyComplete',
+        metadataSnapshot: {
+          interactionId: toIdString(interaction._id),
+          expertFeedbackId: toIdString(metadata.expertFeedbackId),
+          expertFeedbackTotalScore: metadata.expertFeedbackTotalScore,
+          expertFeedbackCreatedAt: metadata.expertFeedbackCreatedAt || null,
+          expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
+          pageLanguage: pageLanguage || null,
+          interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
+        },
+        feedbackType: normalizeFeedbackType(feedback),
+      };
+    }
     return {
       ...updateResult,
       metadataAction: 'updated',
@@ -294,7 +307,7 @@ class EmbeddingMetadataService {
   }
 
   async getBackfillStatus() {
-    const [summary = {}] = await Embedding.aggregate([
+    const aggregation = Embedding.aggregate([
       {
         $lookup: {
           from: 'interactions',
@@ -343,6 +356,10 @@ class EmbeddingMetadataService {
         },
       },
     ]);
+    // Production uses secondaryPreferred for general reads. Status must read
+    // from the primary so it reflects the metadata writes immediately.
+    if (typeof aggregation.read === 'function') aggregation.read('primary');
+    const [summary = {}] = await aggregation;
 
     const totalEmbeddings = summary.totalEmbeddings || 0;
     const recordsRequiringMetadata = summary.recordsRequiringMetadata || 0;
@@ -356,6 +373,148 @@ class EmbeddingMetadataService {
       recordsRequiringMetadata,
       recordsWithMetadata,
       recordsMissingMetadata,
+    };
+  }
+
+  async backfillMissingBatch({ lastProcessedId = null, limit = 100, includeDetails = false } = {}) {
+    lastProcessedId = normalizeObjectId(lastProcessedId);
+    const feedbackQuery = {
+      ...(lastProcessedId ? { _id: { $gt: lastProcessedId } } : {}),
+    };
+    const scanLimit = Math.max(1, limit);
+    const feedbacks = await ExpertFeedback.find(feedbackQuery)
+      .sort({ _id: 1 })
+      .limit(scanLimit)
+      .select('_id totalScore type neverStale createdAt')
+      .lean();
+
+    const feedbackIds = feedbacks.map(({ _id }) => _id).filter(Boolean);
+    const interactions = feedbackIds.length
+      ? await Interaction.find({ expertFeedback: { $in: feedbackIds } })
+        .select('_id expertFeedback question')
+        .populate({ path: 'question', select: 'language' })
+        .lean()
+      : [];
+    const feedbackById = new Map(
+      feedbacks.map((feedback) => [toIdString(feedback._id), feedback])
+    );
+    const interactionsWithFeedback = interactions.map((interaction) => ({
+      ...interaction,
+      expertFeedback: feedbackById.get(toIdString(interaction.expertFeedback)) || interaction.expertFeedback,
+    }));
+
+    const interactionIds = interactionsWithFeedback.map(({ _id }) => _id).filter(Boolean);
+    const missingEmbeddings = interactionIds.length
+      ? await Embedding.find({
+        interactionId: { $in: interactionIds },
+        // Equality to null matches both null and absent fields. Populated
+        // embeddings are discarded by DocumentDB before their vectors load.
+        expertFeedbackId: null,
+      })
+        .select('_id interactionId chatId')
+        .populate({ path: 'chatId', select: 'pageLanguage' })
+        .lean()
+      : [];
+    const missingEmbeddingsByInteractionId = new Map();
+    for (const embedding of missingEmbeddings) {
+      const key = toIdString(embedding.interactionId);
+      if (!missingEmbeddingsByInteractionId.has(key)) {
+        missingEmbeddingsByInteractionId.set(key, []);
+      }
+      missingEmbeddingsByInteractionId.get(key).push(embedding);
+    }
+    const interactionsByFeedbackId = new Map();
+    for (const interaction of interactionsWithFeedback) {
+      const key = toIdString(interaction.expertFeedback?._id || interaction.expertFeedback);
+      if (!interactionsByFeedbackId.has(key)) interactionsByFeedbackId.set(key, []);
+      interactionsByFeedbackId.get(key).push(interaction);
+    }
+
+    let selectedInteraction = null;
+    let selectedEmbeddings = [];
+    let selectedFeedbackIndex = -1;
+    for (const [index, feedback] of feedbacks.entries()) {
+      const linkedInteractions = interactionsByFeedbackId.get(toIdString(feedback._id)) || [];
+      selectedInteraction = linkedInteractions.find((interaction) =>
+        missingEmbeddingsByInteractionId.has(toIdString(interaction._id))
+      ) || null;
+      if (selectedInteraction) {
+        selectedEmbeddings = missingEmbeddingsByInteractionId.get(
+          toIdString(selectedInteraction._id)
+        );
+        selectedFeedbackIndex = index;
+        break;
+      }
+    }
+
+    let result = null;
+    if (selectedInteraction) {
+      const chat = selectedEmbeddings.find(
+        (embedding) => embedding.chatId && typeof embedding.chatId === 'object'
+      )?.chatId;
+      result = await this.syncForInteraction(selectedInteraction, null, {
+        updateScope: 'interaction',
+        onlyMissingMetadata: true,
+        pageLanguageOverride: chat?.pageLanguage || null,
+      });
+    }
+
+    let updated = 0;
+    let cleared = 0;
+    let skipped = 0;
+    let action = null;
+    let reason = null;
+    if (result?.skippedReason) {
+      skipped = 1;
+      action = 'skipped';
+      reason = result.skippedReason;
+    } else if (result?.metadataAction === 'cleared') {
+      cleared = 1;
+      action = 'cleared';
+      reason = result.clearReason || null;
+    } else if (result) {
+      updated = 1;
+      action = 'updated';
+    }
+
+    const selectedFeedback = selectedFeedbackIndex >= 0
+      ? feedbacks[selectedFeedbackIndex]
+      : null;
+    const lastScannedFeedback = feedbacks.length
+      ? feedbacks[feedbacks.length - 1]
+      : null;
+    const lastId = toIdString(selectedFeedback?._id || lastScannedFeedback?._id)
+      || lastProcessedId;
+    const hasMore = selectedFeedbackIndex >= 0
+      ? selectedFeedbackIndex < feedbacks.length - 1 || feedbacks.length === scanLimit
+      : feedbacks.length === scanLimit;
+    const batchRecords = [];
+    if (includeDetails && result) {
+      batchRecords.push({
+        embeddingId: toIdString(selectedEmbeddings[0]?._id),
+        storedInteractionId: toIdString(selectedEmbeddings[0]?.interactionId),
+        resolvedInteractionId: toIdString(selectedInteraction?._id),
+        action,
+        reason,
+        feedbackType: result.feedbackType || null,
+        metadata: result.metadataSnapshot || null,
+        modifiedCount: result.modifiedCount || 0,
+      });
+    }
+
+    return {
+      phase: 'missing',
+      cursorSource: BACKFILL_CURSOR_SOURCE,
+      processed: result ? 1 : 0,
+      updated,
+      cleared,
+      skipped,
+      remaining: null,
+      hasMore,
+      lastProcessedId: lastId,
+      scannedFeedbackCount: feedbacks.length,
+      scannedBeforeCandidate: selectedFeedbackIndex >= 0 ? selectedFeedbackIndex : null,
+      ...(includeDetails ? { batchRecords } : {}),
     };
   }
 
@@ -385,6 +544,10 @@ class EmbeddingMetadataService {
           }],
         } : {}),
       };
+    }
+
+    if (phase === 'missing') {
+      return this.backfillMissingBatch({ lastProcessedId, limit, includeDetails });
     }
 
     lastProcessedId = normalizeObjectId(lastProcessedId);

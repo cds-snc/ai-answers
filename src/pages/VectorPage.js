@@ -194,7 +194,10 @@ const VectorPage = ({ lang = 'en' }) => {
     }
   };
 
-  const handleBackfillMetadata = async (resumeJobId = null) => {
+  const handleBackfillMetadata = async ({
+    resumeJobId = null,
+    restartJobId = null,
+  } = {}) => {
     if (isBackfillingMetadata) return;
     const delaySeconds = Number(metadataDelaySecondsInput);
     if (!Number.isFinite(delaySeconds) || delaySeconds < 0 || delaySeconds > 300) {
@@ -208,6 +211,7 @@ const VectorPage = ({ lang = 'en' }) => {
       const { job } = await VectorService.startMetadataBackfillJob({
         phase: 'missing',
         resumeJobId,
+        restartJobId,
         delaySeconds,
       });
       setMetadataProgress(metadataProgressFromJob(job));
@@ -254,7 +258,12 @@ const VectorPage = ({ lang = 'en' }) => {
   };
 
   const handleResumeMetadataBackfill = () => {
-    handleBackfillMetadata(metadataProgress?.jobId || null);
+    handleBackfillMetadata({ resumeJobId: metadataProgress?.jobId || null });
+  };
+
+  const handleRestartMetadataBackfill = () => {
+    setMetadataBatchRecords([]);
+    handleBackfillMetadata({ restartJobId: metadataProgress?.jobId || null });
   };
 
   const handleRunDocdb8CapabilityTest = async (probe) => {
@@ -315,6 +324,8 @@ const VectorPage = ({ lang = 'en' }) => {
 
   const docdb8ProbeDefinitions = getDocdb8ProbeDefinitions(t);
   const hasMetadataBackfillResume = ['stopped', 'failed'].includes(metadataProgress?.status)
+    && Boolean(metadataProgress?.jobId);
+  const hasMetadataBackfillRestart = ['stopped', 'failed', 'completed'].includes(metadataProgress?.status)
     && Boolean(metadataProgress?.jobId);
   const loadedDocdb8Results = docdb8ProbeDefinitions
     .map(({ key, label }) => ({
@@ -478,6 +489,16 @@ const VectorPage = ({ lang = 'en' }) => {
           >
             {hasMetadataBackfillResume ? t('vector.resumeMetadataBackfill') : t('vector.backfillEmptyMetadata')}
           </GcdsButton>
+          {hasMetadataBackfillRestart && (
+            <GcdsButton
+              onClick={handleRestartMetadataBackfill}
+              disabled={isBackfillingMetadata}
+              buttonRole="secondary"
+              className="mb-200 mr-200"
+            >
+              {t('vector.restartMetadataBackfill')}
+            </GcdsButton>
+          )}
           <GcdsButton onClick={handleClearMetadata} disabled={isBackfillingMetadata} buttonRole="secondary" className="mb-200 mr-200">
             {t('vector.clearMetadata')}
           </GcdsButton>

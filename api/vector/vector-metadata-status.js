@@ -9,6 +9,9 @@ async function vectorMetadataStatusHandler(req, res) {
 
   try {
     await dbConnect();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     return res.status(200).json({ success: true, ...(await EmbeddingMetadataService.getBackfillStatus()) });
   } catch (error) {
     console.error('Error checking embedding metadata status:', error);

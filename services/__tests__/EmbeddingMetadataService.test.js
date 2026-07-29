@@ -416,6 +416,106 @@ describe('EmbeddingMetadataService', () => {
     expect(mockUpdateMany).not.toHaveBeenCalled();
   });
 
+  it('scans expert feedback in a window and updates only interactions with missing embedding metadata', async () => {
+    const firstInteractionId = '507f1f77bcf86cd799439011';
+    const missingInteractionId = '507f1f77bcf86cd799439013';
+    const firstFeedbackId = '507f1f77bcf86cd799439012';
+    const missingFeedbackId = '507f1f77bcf86cd799439014';
+    const missingEmbeddingId = '507f1f77bcf86cd799439021';
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => [{
+            _id: missingEmbeddingId,
+            interactionId: missingInteractionId,
+            chatId: {
+              _id: '507f1f77bcf86cd799439031',
+              pageLanguage: 'fr',
+            },
+          }],
+        }),
+      }),
+    });
+    mockInteractionFindResult([
+      {
+        _id: firstInteractionId,
+        expertFeedback: {
+          _id: firstFeedbackId,
+          totalScore: 80,
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+        },
+        question: { language: 'en' },
+      },
+      {
+        _id: missingInteractionId,
+        expertFeedback: {
+          _id: missingFeedbackId,
+          totalScore: 100,
+          createdAt: new Date('2024-01-02T00:00:00Z'),
+        },
+        question: { language: 'en' },
+      },
+    ]);
+    mockExpertFeedbackFindResult([
+      {
+        _id: firstFeedbackId,
+        totalScore: 80,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      },
+      {
+        _id: missingFeedbackId,
+        totalScore: 100,
+        createdAt: new Date('2024-01-02T00:00:00Z'),
+      },
+    ]);
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    const result = await EmbeddingMetadataService.backfillBatch({
+      phase: 'missing',
+      lastProcessedId: '507f1f77bcf86cd799439010',
+      limit: 1,
+      includeDetails: true,
+    });
+
+    expect(mockExpertFeedbackFind).toHaveBeenCalledWith({
+      _id: { $gt: '507f1f77bcf86cd799439010' },
+    });
+    expect(mockEmbeddingFind).toHaveBeenCalledWith({
+      interactionId: { $in: [firstInteractionId, missingInteractionId] },
+      expertFeedbackId: null,
+    });
+    expect(mockUpdateMany).toHaveBeenCalledWith(
+      {
+        $and: [
+          { interactionId: missingInteractionId },
+          { expertFeedbackId: null },
+        ],
+      },
+      {
+        $set: expect.objectContaining({
+          expertFeedbackId: missingFeedbackId,
+          pageLanguage: 'fr',
+          interactionLanguage: 'en',
+        }),
+      }
+    );
+    expect(result).toEqual(expect.objectContaining({
+      cursorSource: 'expertFeedback',
+      lastProcessedId: missingFeedbackId,
+      processed: 1,
+      updated: 1,
+      skipped: 0,
+      hasMore: false,
+      scannedFeedbackCount: 2,
+      scannedBeforeCandidate: 1,
+    }));
+    expect(result.batchRecords[0]).toEqual(expect.objectContaining({
+      embeddingId: missingEmbeddingId,
+      action: 'updated',
+      modifiedCount: 1,
+    }));
+  });
+
   it('defensively clears metadata if an ai-typed feedback document is attached', async () => {
     const interaction = {
       _id: '507f1f77bcf86cd799439011',

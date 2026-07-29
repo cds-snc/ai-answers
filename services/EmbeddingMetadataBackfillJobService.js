@@ -5,6 +5,7 @@ import EmbeddingMetadataService from './EmbeddingMetadataService.js';
 const ACTIVE_STATUSES = ['queued', 'running', 'stopping'];
 const RUNNABLE_STATUSES = ['queued', 'running'];
 const LEASE_MS = 10 * 60 * 1000;
+const MISSING_SCAN_WINDOW = 100;
 
 function serializeJob(job) {
   if (!job) return null;
@@ -82,6 +83,7 @@ export class EmbeddingMetadataBackfillJobService {
     phase = 'missing',
     requestedBy = null,
     resumeJobId = null,
+    restartJobId = null,
     delayMs = 5000,
   } = {}) {
     const activeJob = await this.JobModel.findOne({
@@ -93,7 +95,34 @@ export class EmbeddingMetadataBackfillJobService {
     }
 
     let job = null;
-    if (resumeJobId) {
+    if (restartJobId) {
+      job = await this.JobModel.findOneAndUpdate(
+        {
+          _id: restartJobId,
+          status: { $in: ['stopped', 'failed', 'completed'] },
+        },
+        {
+          $set: {
+            status: 'queued',
+            phase: 'missing',
+            cursorSource: 'expertFeedback',
+            lastProcessedId: null,
+            processed: 0,
+            updated: 0,
+            cleared: 0,
+            skipped: 0,
+            latestBatchRecords: [],
+            error: '',
+            startedAt: null,
+            completedAt: null,
+            heartbeatAt: null,
+            delayMs,
+          },
+          $unset: { leaseOwner: 1, leaseUntil: 1 },
+        },
+        { new: true }
+      );
+    } else if (resumeJobId) {
       job = await this.JobModel.findOneAndUpdate(
         { _id: resumeJobId, status: { $in: ['stopped', 'failed'] } },
         {
@@ -188,12 +217,13 @@ export class EmbeddingMetadataBackfillJobService {
   async _run(jobId) {
     let job = await this._claim(jobId);
     if (!job) return;
+    let scanLimit = job.phase === 'missing' ? MISSING_SCAN_WINDOW : 1;
 
     try {
       while (job.status === 'running') {
         const result = await this.metadataService.backfillBatch({
           lastProcessedId: job.lastProcessedId,
-          limit: 1,
+          limit: scanLimit,
           includeDetails: true,
           phase: job.phase,
         });
@@ -241,6 +271,17 @@ export class EmbeddingMetadataBackfillJobService {
           return;
         }
         if (job.status !== 'running') return;
+
+        if (job.phase === 'missing') {
+          scanLimit = result.processed && result.scannedBeforeCandidate === 0
+            ? 1
+            : MISSING_SCAN_WINDOW;
+        }
+
+        // Empty windows contain no writes: continue scanning immediately.
+        // The configured delay throttles actual metadata updates, not the
+        // lightweight work needed to discard already-populated records.
+        if (!result.processed) continue;
 
         if (await this._waitForDelayOrStop(jobId, job.delayMs || 0)) {
           await this.JobModel.updateOne(

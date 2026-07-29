@@ -15,6 +15,7 @@ async function vectorMetadataBackfillJobHandler(req, res) {
       const {
         phase = 'missing',
         resumeJobId = null,
+        restartJobId = null,
         delaySeconds = 5,
       } = req.body || {};
       const parsedDelaySeconds = Number(delaySeconds);
@@ -27,10 +28,20 @@ async function vectorMetadataBackfillJobHandler(req, res) {
       if (resumeJobId && !normalizedResumeJobId) {
         return res.status(400).json({ error: 'Invalid resumeJobId' });
       }
+      const normalizedRestartJobId = restartJobId
+        ? normalizeObjectIdString(restartJobId)
+        : null;
+      if (restartJobId && !normalizedRestartJobId) {
+        return res.status(400).json({ error: 'Invalid restartJobId' });
+      }
+      if (normalizedResumeJobId && normalizedRestartJobId) {
+        return res.status(400).json({ error: 'Choose either resumeJobId or restartJobId' });
+      }
 
       const job = await EmbeddingMetadataBackfillJobService.start({
         phase: phase === 'interactions' ? 'interactions' : 'missing',
         resumeJobId: normalizedResumeJobId,
+        restartJobId: normalizedRestartJobId,
         delayMs: Math.round(parsedDelaySeconds * 1000),
       });
       return res.status(202).json({ job });
