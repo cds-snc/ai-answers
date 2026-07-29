@@ -26,6 +26,32 @@ const VectorService = {
     return await response.json();
   },
 
+  async getMetadataBackfillJob() {
+    const response = await AuthService.fetch(getApiUrl('vector-metadata-backfill-job'));
+    if (!response.ok) throw new Error('Failed to fetch embedding metadata backfill job');
+    return await response.json();
+  },
+
+  async startMetadataBackfillJob({ phase = 'missing', resumeJobId = null, delaySeconds = 5 } = {}) {
+    const response = await AuthService.fetch(getApiUrl('vector-metadata-backfill-job'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phase, resumeJobId, delaySeconds }),
+    });
+    if (!response.ok) throw new Error('Failed to start embedding metadata backfill job');
+    return await response.json();
+  },
+
+  async stopMetadataBackfillJob(jobId = null) {
+    const response = await AuthService.fetch(getApiUrl('vector-metadata-backfill-job'), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId }),
+    });
+    if (!response.ok) throw new Error('Failed to stop embedding metadata backfill job');
+    return await response.json();
+  },
+
   async getSimilarChats(chatId) {
     const response = await AuthService.fetch(getApiUrl(`vector-similar-chats?chatId=${encodeURIComponent(chatId)}`));
     return await response.json();

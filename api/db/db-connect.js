@@ -20,6 +20,7 @@ import "../../models/embedding.js";
 import "../../models/setting.js";
 import "../../models/batchItem.js";
 import "../../models/sentenceEmbedding.js";
+import "../../models/embeddingMetadataBackfillJob.js";
 
 // api/db/db-connect.js
 
