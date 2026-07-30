@@ -24,6 +24,7 @@ const CHAT_ID_ALIASES = ['chatid'];
 const SOURCE_CHAT_ID_ALIASES = ['chatid'];
 const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
+const ANALYSIS_MODES = new Set(['generated-answer', 'dataset-reference']);
 
 const extractAnswerText = (answer) => {
     if (typeof answer === 'string') {
@@ -104,6 +105,21 @@ const normalizeFieldKey = (input = '') => String(input)
     .toLowerCase()
     .replace(/[\s_-]+/g, '')
     .trim();
+
+const INPUT_ANSWER_FIELD_NAMES = new Set([
+    ...ANSWER_ALIASES,
+    'referenceAnswer'
+].map(normalizeFieldKey));
+
+const removeInputAnswerFields = (item = {}) => {
+    const next = { ...item };
+    for (const key of Object.keys(next)) {
+        if (INPUT_ANSWER_FIELD_NAMES.has(normalizeFieldKey(key))) {
+            delete next[key];
+        }
+    }
+    return next;
+};
 
 const pickFirstField = (sources, keys) => {
     const normalizedKeys = keys.map(normalizeFieldKey);
@@ -190,25 +206,28 @@ const getRegisteredWorkflowNames = () => {
     }
 };
 
-const prepareQaPairRowsForComparison = (items, { referenceRunSelected = false } = {}) => items.map((item = {}) => {
+const prepareRowsForDatasetReference = (items) => items.map((item = {}) => {
     const referenceAnswer = pickExplicitReferenceAnswer(item);
     const uploadedAnswer = pickNormalizedAnswer(item);
-
-    if (!referenceRunSelected && (referenceAnswer || !uploadedAnswer)) {
-        return item;
-    }
-
-    const next = { ...item };
-    if (!referenceRunSelected && uploadedAnswer) {
-        next.referenceAnswer = uploadedAnswer;
-    }
-
-    for (const alias of ANSWER_ALIASES) {
-        delete next[alias];
-    }
+    const next = removeInputAnswerFields(item);
+    next.referenceAnswer = referenceAnswer || uploadedAnswer;
 
     return next;
 });
+
+const prepareRowsForGeneratedAnalysis = (items) => items.map((item = {}) => {
+    return removeInputAnswerFields(item);
+});
+
+const hasReferenceInput = (items) => items.some((item) => (
+    Boolean(String(pickExplicitReferenceAnswer(item) || '').trim())
+    || Boolean(String(pickNormalizedAnswer(item) || '').trim())
+));
+
+const resolveAnalysisMode = (mode, hasReference) => {
+    if (!mode) return hasReference ? 'dataset-reference' : 'generated-answer';
+    return ANALYSIS_MODES.has(mode) ? mode : '';
+};
 
 class ExperimentalBatchService {
     constructor() {
@@ -253,7 +272,6 @@ class ExperimentalBatchService {
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
         const config = batchData.config || {};
         const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
-        let sourceDatasetType = '';
 
         if (batchData.type === 'analysis') {
             const requestedAnalyzerIds = Array.isArray(config.analyzerIds)
@@ -300,7 +318,6 @@ class ExperimentalBatchService {
             }
 
             const sourceDataset = await ExperimentalDataset.findById(batchData.config.datasetId).select('type').lean();
-            sourceDatasetType = sourceDataset?.type || '';
 
             const rows = await ExperimentalDatasetRow.find({
                 experimentalDataset: new mongoose.Types.ObjectId(batchData.config.datasetId)
@@ -308,7 +325,7 @@ class ExperimentalBatchService {
 
             console.log('[ExperimentalBatchService] Loaded dataset rows for batch', {
                 datasetId: String(batchData.config.datasetId),
-                datasetType: sourceDatasetType || null,
+                datasetType: sourceDataset?.type || null,
                 rowCount: rows.length,
                 workflow: batchData.config.workflow || 'DefaultGraph'
             });
@@ -364,13 +381,30 @@ class ExperimentalBatchService {
 
         // Delegate batch-level validation to the analyzer. Each analyzer
         // owns its own requirements — the service just calls and throws.
-        if (selectedAnalyzerId) {
-            const analyzerConfig = await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId);
-            if (sourceDatasetType === 'qa-pair' && analyzerConfig?.inputType === 'comparison') {
-                finalItems = prepareQaPairRowsForComparison(finalItems, {
-                    referenceRunSelected: Boolean(batchData.config?.baselineRunId)
-                });
+        const analyzerConfig = selectedAnalyzerId
+            ? await ExperimentalAnalyzerRegistry.get(selectedAnalyzerId)
+            : null;
+
+        if (batchData.type === 'analysis') {
+            const hasReference = hasReferenceInput(finalItems);
+            const analysisMode = resolveAnalysisMode(batchData.config?.analysisMode, hasReference);
+            if (!analysisMode) {
+                throw makeError('experimental.analysis.messages.error.INVALID_ANALYSIS_MODE', 'INVALID_ANALYSIS_MODE', 400);
             }
+            if (analysisMode === 'dataset-reference' && !hasReference) {
+                throw makeError('experimental.analysis.messages.error.REFERENCE_REQUIRED', 'REFERENCE_REQUIRED', 400);
+            }
+            if (analysisMode === 'generated-answer' && analyzerConfig?.requiresReference) {
+                throw makeError('experimental.analysis.messages.error.REFERENCE_REQUIRED', 'REFERENCE_REQUIRED', 400);
+            }
+
+            finalItems = analysisMode === 'dataset-reference'
+                ? prepareRowsForDatasetReference(finalItems)
+                : prepareRowsForGeneratedAnalysis(finalItems);
+            batchData.config.analysisMode = analysisMode;
+        }
+
+        if (selectedAnalyzerId) {
             const validation = analyzerConfig?.validateBatch(finalItems, batchData.config);
             if (validation && !validation.valid) {
                 throw makeError(validation.localeKey, validation.code, 400);
@@ -501,6 +535,9 @@ class ExperimentalBatchService {
         }
 
         const analyzerDef = await ExperimentalAnalyzerRegistry.get(baselineAnalyzerId);
+        if (analyzerDef?.supportsBatchComparison === false) {
+            throw makeError('experimental.analysis.messages.error.BATCH_COMPARISON_NOT_SUPPORTED', 'BATCH_COMPARISON_NOT_SUPPORTED', 400);
+        }
         const validation = analyzerDef?.validateBatch(comparisonItems, {
             ...config,
             analyzerId: baselineAnalyzerId,

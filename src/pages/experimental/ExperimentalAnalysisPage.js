@@ -68,6 +68,15 @@ const ANALYZER_RULE_ROWS = {
     'bias-detection': ['standalone', 'withReference']
 };
 
+const ANSWER_COLUMN_NAMES = new Set(['answer', 'redactedanswer', 'response', 'referenceanswer']);
+
+const datasetHasReferenceAnswer = (dataset) => (
+    dataset?.type === 'qa-pair'
+    || (Array.isArray(dataset?.columns) && dataset.columns.some((column) => (
+        ANSWER_COLUMN_NAMES.has(String(column?.name || '').replace(/[\s_-]+/g, '').toLowerCase())
+    )))
+);
+
 export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
@@ -85,6 +94,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [comparisonCandidateId, setComparisonCandidateId] = useState('');
     const [comparisonLoading, setComparisonLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('batches');
+    const [analysisMode, setAnalysisMode] = useState('generated-answer');
     const [runLabel, setRunLabel] = useState('');
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
@@ -182,6 +192,23 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         };
     }, [selectedDatasetId]);
 
+    const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
+    const hasDatasetReferenceAnswer = datasetHasReferenceAnswer(selectedDataset);
+    const availableAnalyzers = analyzers.filter((analyzer) => (
+        (analysisMode === 'dataset-reference' || analyzer.requiresReference !== true)
+        && (!Array.isArray(analyzer.supportedWorkflows) || analyzer.supportedWorkflows.includes(selectedWorkflow))
+    ));
+
+    useEffect(() => {
+        setAnalysisMode(hasDatasetReferenceAnswer ? 'dataset-reference' : 'generated-answer');
+    }, [selectedDatasetId, hasDatasetReferenceAnswer]);
+
+    useEffect(() => {
+        if (selectedAnalyzerId && !availableAnalyzers.some(analyzer => analyzer.id === selectedAnalyzerId)) {
+            setSelectedAnalyzerId('');
+        }
+    }, [availableAnalyzers, selectedAnalyzerId]);
+
     const fetchInitialData = async () => {
         try {
             const [az, ds] = await Promise.all([
@@ -242,7 +269,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             return;
         }
 
-        const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
         const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
         const selectedWorkflowLabel = WORKFLOWS.find(item => item.value === normalizeWorkflow(selectedWorkflow));
         const selectedModelLabel = AVAILABLE_MODELS.find(item => item.value === selectedModel);
@@ -277,6 +303,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 workflow: normalizeWorkflow(selectedWorkflow),
                 aiProvider: selectedModel || undefined,
                 datasetId: selectedDatasetId || undefined,
+                analysisMode,
                 trials,
                 pageLanguage: String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en',
             }
@@ -376,10 +403,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
+    const supportsBatchComparison = (batch) => {
+        const analyzer = analyzers.find(candidate => candidate.id === resolveBatchAnalyzerId(batch));
+        return analyzer?.supportsBatchComparison !== false;
+    };
+
     const comparisonBaseline = batches.find(batch => batch._id === comparisonBaselineId);
     const comparisonCandidates = batches.filter(batch => (
         batch.status === 'completed'
         && batch._id !== comparisonBaselineId
+        && supportsBatchComparison(batch)
         && (!comparisonBaseline || resolveBatchAnalyzerId(batch) === resolveBatchAnalyzerId(comparisonBaseline))
     ));
 
@@ -500,7 +533,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     );
 
-    const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
@@ -569,7 +601,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 style={{ padding: '8px', width: '100%' }}
                             >
                                 <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
-                                {analyzers.map(a => (
+                                {availableAnalyzers.map(a => (
                                     <option key={a.id} value={a.id}>
                                         {getAnalyzerDisplayName(a)}
                                     </option>
@@ -613,6 +645,38 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     )}
                                 </GcdsDetails>
                             )}
+                        </div>
+
+                        <div className="mb-400">
+                            <fieldset>
+                                <legend>{t('experimental.analysis.analysisMode.label')}</legend>
+                                {hasDatasetReferenceAnswer ? (
+                                    <>
+                                        <div className="mb-200">
+                                            <input
+                                                id="analysis-mode-reference"
+                                                type="radio"
+                                                name="analysis-mode"
+                                                checked={analysisMode === 'dataset-reference'}
+                                                onChange={() => setAnalysisMode('dataset-reference')}
+                                            />
+                                            <label htmlFor="analysis-mode-reference">{t('experimental.analysis.analysisMode.reference')}</label>
+                                        </div>
+                                        <div>
+                                            <input
+                                                id="analysis-mode-generated"
+                                                type="radio"
+                                                name="analysis-mode"
+                                                checked={analysisMode === 'generated-answer'}
+                                                onChange={() => setAnalysisMode('generated-answer')}
+                                            />
+                                            <label htmlFor="analysis-mode-generated">{t('experimental.analysis.analysisMode.generated')}</label>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
+                                )}
+                            </fieldset>
                         </div>
 
                         <div className="mb-400">
@@ -798,7 +862,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         style={{ padding: '8px', width: '100%' }}
                     >
                         <option value="">{t('experimental.analysis.comparison.selectBaseline')}</option>
-                        {batches.filter(batch => batch.status === 'completed').map(batch => (
+                        {batches.filter(batch => batch.status === 'completed' && supportsBatchComparison(batch)).map(batch => (
                             <option key={batch._id} value={batch._id}>{getRunLabel(batch)}</option>
                         ))}
                     </select>

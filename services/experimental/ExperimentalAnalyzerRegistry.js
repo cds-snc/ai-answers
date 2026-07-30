@@ -17,6 +17,9 @@ class ExperimentalAnalyzerRegistry {
                         nameKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.name`,
                         descriptionKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.description`,
                         inputType: AnalyzerClass.inputType,
+                        requiresReference: AnalyzerClass.requiresReference === true,
+                        supportsBatchComparison: AnalyzerClass.supportsBatchComparison !== false,
+                        supportedWorkflows: AnalyzerClass.supportedWorkflows,
                         outputColumns: [...new Set([
                             ...AnalyzerBase.standardOutputColumns,
                             ...(AnalyzerClass.outputColumns || [])

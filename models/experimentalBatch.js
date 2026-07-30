@@ -33,6 +33,7 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         analyzerIds: [{ type: String }],
         datasetId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalDataset' },
         analyzerConfig: { type: mongoose.Schema.Types.Mixed, default: {} }, // threshold, etc.
+        analysisMode: { type: String, enum: ['generated-answer', 'dataset-reference'] },
         baselineRunId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalBatch' },
         candidateRunId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalBatch' },
         // Trials per question (pass@k / pass^k). Each dataset row is run

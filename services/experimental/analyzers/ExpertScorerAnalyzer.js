@@ -18,6 +18,7 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static inputType = 'comparison';
+    static requiresReference = true;
     static outputColumns = [
         'explanation', 'verdict', 'confidence', 'flags', 'keyIdeasFound',
         'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck',

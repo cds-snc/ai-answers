@@ -16,6 +16,9 @@ export class AnalyzerBase {
     static descriptionKey = '';  // e.g., 'experimental.analysis.analyzers.expert-scorer.description'
     static inputType = '';    // 'single' | 'comparison' | 'universal'
     static outputColumns = []; // e.g., ['verdict', 'confidence', 'explanation']
+    static requiresReference = false;
+    static supportsBatchComparison = true;
+    static supportedWorkflows = null;
 
     /**
      * Validate the full set of batch input rows before the batch is created.
