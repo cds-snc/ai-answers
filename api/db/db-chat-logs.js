@@ -79,7 +79,8 @@ async function chatLogsHandler(req, res) {
     let { batchId } = req.query;
 
     // Validate eval category inputs (supports comma-separated multi-select)
-    const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
+    const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful', 'noEval'];
+    const validPartnerEvalCategories = [...validCategories, 'hasContentIssue'];
     const validAnswerTypes = ['all', 'not-gc', 'clarifying-question', 'pt-muni', 'normal'];
 
     const validateCategories = (input, paramName, validValues) => {
@@ -92,7 +93,7 @@ async function chatLogsHandler(req, res) {
       return true;
     };
 
-    const partnerEvalValidation = validateCategories(partnerEval, 'partnerEval', validCategories);
+    const partnerEvalValidation = validateCategories(partnerEval, 'partnerEval', validPartnerEvalCategories);
     if (partnerEvalValidation !== true) {
       return res.status(400).json({ error: partnerEvalValidation });
     }

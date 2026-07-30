@@ -501,7 +501,8 @@ export async function chatExportHandler(req, res) {
         }
 
         // Validate eval category inputs (supports comma-separated multi-select)
-        const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful'];
+        const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful', 'noEval'];
+        const validPartnerEvalCategories = [...validCategories, 'hasContentIssue'];
         const validAnswerTypes = ['all', 'not-gc', 'clarifying-question', 'pt-muni', 'normal'];
 
         const validateCategories = (input, paramName, validValues) => {
@@ -515,7 +516,7 @@ export async function chatExportHandler(req, res) {
         };
 
         if (partnerEval) {
-            const validation = validateCategories(partnerEval, 'partnerEval', validCategories);
+            const validation = validateCategories(partnerEval, 'partnerEval', validPartnerEvalCategories);
             if (validation !== true) {
                 return res.status(400).json({ error: validation });
             }
