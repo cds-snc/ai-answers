@@ -70,6 +70,42 @@ describe('ExperimentalBatchService', () => {
     });
 
     describe('createBatch', () => {
+        it('creates comparison items by pairing trial indexes up to the smaller trial count', async () => {
+            const datasetId = new mongoose.Types.ObjectId();
+            const [baseline, candidate] = await ExperimentalBatch.create([
+                {
+                    name: 'Baseline', type: 'analysis', status: 'completed', createdBy: userId,
+                    config: { datasetId, analyzerId: 'expert-scorer', analyzerIds: ['expert-scorer'], trials: 3 }
+                },
+                {
+                    name: 'Candidate', type: 'analysis', status: 'completed', createdBy: userId,
+                    config: { datasetId, analyzerId: 'expert-scorer', analyzerIds: ['expert-scorer'], trials: 2 }
+                }
+            ]);
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Baseline 1', status: 'completed' },
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Baseline 2', status: 'completed' },
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 3, question: 'Q1', answer: 'Baseline 3', status: 'completed' },
+                { experimentalBatch: candidate._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Candidate 1', status: 'completed' },
+                { experimentalBatch: candidate._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Candidate 2', status: 'completed' }
+            ]);
+
+            const comparison = await ExperimentalBatchService.createBatch({
+                name: 'Baseline versus candidate',
+                type: 'comparison',
+                createdBy: userId,
+                config: { baselineRunId: baseline._id, candidateRunId: candidate._id }
+            }, []);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: comparison._id }).sort({ trialIndex: 1 }).lean();
+
+            expect(comparison.type).toBe('comparison');
+            expect(comparison.summary.total).toBe(2);
+            expect(items.map(item => [item.referenceAnswer, item.answer])).toEqual([
+                ['Baseline 1', 'Candidate 1'],
+                ['Baseline 2', 'Candidate 2']
+            ]);
+        });
+
         it('should create a batch with items from provided data', async () => {
             const batchData = { name: 'Test Batch', type: 'batch', createdBy: userId };
             const itemsData = [{ question: 'Q1' }, { question: 'Q2' }];

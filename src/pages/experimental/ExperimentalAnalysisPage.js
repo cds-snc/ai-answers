@@ -8,7 +8,6 @@ import { formatNumber } from '../../utils/numberFormat.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
-const NO_ANALYZER_ID = 'no-analyzer';
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -73,7 +72,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const [datasets, setDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(datasetIdParam || '');
-    const [baselineBatchId, setBaselineBatchId] = useState('');
+    const [comparisonBaselineId, setComparisonBaselineId] = useState('');
+    const [comparisonCandidateId, setComparisonCandidateId] = useState('');
+    const [comparisonLoading, setComparisonLoading] = useState(false);
     const [runLabel, setRunLabel] = useState('');
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
@@ -81,6 +82,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
+    const [comparisons, setComparisons] = useState([]);
     const [message, setMessage] = useState('');
     const [startingRun, setStartingRun] = useState(null);
 
@@ -121,7 +123,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const loadBatches = async (datasetId = selectedDatasetId) => {
         try {
-            const result = await ExperimentalBatchClientService.listBatches(1, 100, 'analysis', datasetId);
+            const [result, comparisonResult] = await Promise.all([
+                ExperimentalBatchClientService.listBatches(1, 100, 'analysis', datasetId),
+                ExperimentalBatchClientService.listBatches(1, 100, 'comparison', datasetId)
+            ]);
             const nextBatches = result.data || [];
 
             if (!isMountedRef.current) {
@@ -129,6 +134,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             }
 
             setBatches(nextBatches);
+            setComparisons(comparisonResult.data || []);
             setBatchProgress(buildProgressMap(nextBatches));
 
             const hasActiveRuns = nextBatches.some(batch => batch.status === 'processing');
@@ -261,7 +267,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 workflow: normalizeWorkflow(selectedWorkflow),
                 aiProvider: selectedModel || undefined,
                 datasetId: selectedDatasetId || undefined,
-                baselineRunId: selectedAnalyzerId === NO_ANALYZER_ID ? undefined : baselineBatchId || undefined,
                 trials,
                 pageLanguage: String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en',
             }
@@ -334,7 +339,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleExportChatLogs = async (batch) => {
         try {
-            const blob = await ExperimentalBatchClientService.exportChatLogs(batch._id, baselineBatchId);
+            const blob = await ExperimentalBatchClientService.exportChatLogs(batch._id);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -361,12 +366,48 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const handleUseAsBaseline = (batch) => {
-        setBaselineBatchId(batch._id);
+    const comparisonBaseline = batches.find(batch => batch._id === comparisonBaselineId);
+    const comparisonCandidates = batches.filter(batch => (
+        batch.status === 'completed'
+        && batch._id !== comparisonBaselineId
+        && (!comparisonBaseline || resolveBatchAnalyzerId(batch) === resolveBatchAnalyzerId(comparisonBaseline))
+    ));
 
-        const analyzerId = resolveBatchAnalyzerId(batch);
-        if (analyzerId && analyzerId !== NO_ANALYZER_ID) {
-            setSelectedAnalyzerId(analyzerId);
+    const handleCreateComparison = async () => {
+        if (!comparisonBaselineId || !comparisonCandidateId) {
+            setMessage(t('experimental.analysis.messages.selectComparisonRuns'));
+            return;
+        }
+
+        const baseline = batches.find(batch => batch._id === comparisonBaselineId);
+        const candidate = batches.find(batch => batch._id === comparisonCandidateId);
+        if (!baseline || !candidate) return;
+
+        setComparisonLoading(true);
+        try {
+            const analyzerId = resolveBatchAnalyzerId(baseline);
+            const result = await ExperimentalBatchClientService.createBatch({
+                name: `${t('experimental.analysis.comparison.title')}: ${getRunLabel(baseline)} → ${getRunLabel(candidate)}`,
+                description: `${t('experimental.analysis.comparison.baseline')}: ${getRunLabel(baseline)}`,
+                type: 'comparison',
+                config: {
+                    datasetId: selectedDatasetId,
+                    analyzerId,
+                    analyzerIds: [analyzerId],
+                    baselineRunId: baseline._id,
+                    candidateRunId: candidate._id
+                }
+            });
+            await ExperimentalBatchClientService.processBatch(result._id);
+            setMessage(t('experimental.analysis.messages.comparisonStarted'));
+            setComparisonBaselineId('');
+            setComparisonCandidateId('');
+            await loadBatches(selectedDatasetId);
+        } catch (err) {
+            console.error('Comparison creation error:', err);
+            setMessage(t('experimental.analysis.messages.comparisonFailed'));
+        } finally {
+            setComparisonLoading(false);
         }
     };
 
@@ -398,16 +439,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return appVersion ? appVersion.slice(-10) : t('common.na');
     };
 
-    // No-analyzer capture runs only provide answers, so they can baseline any analyzer.
-    const canBaseline = (batch) => {
-        const analyzerId = resolveBatchAnalyzerId(batch);
-        return analyzerId === selectedAnalyzerId || analyzerId === NO_ANALYZER_ID;
-    };
-    const baselineOptions = batches.filter(batch =>
-        batch.status === 'completed' && (!selectedAnalyzerId || canBaseline(batch))
-    );
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
-    const datasetHasReferenceColumn = Boolean(selectedDataset?.hasReferenceAnswer);
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
     return (
@@ -447,22 +479,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 id="analyzer-select"
                                 value={selectedAnalyzerId}
                                 onChange={(e) => {
-                                    const nextAnalyzerId = e.target.value;
-                                    setSelectedAnalyzerId(nextAnalyzerId);
-                                    setBaselineBatchId((currentBaselineId) => {
-                                        if (!currentBaselineId || !nextAnalyzerId) {
-                                            return currentBaselineId;
-                                        }
-
-                                        const currentBaseline = batches.find(batch => batch._id === currentBaselineId);
-                                        if (!currentBaseline) {
-                                            return '';
-                                        }
-
-                                        return resolveBatchAnalyzerId(currentBaseline) === nextAnalyzerId
-                                            ? currentBaselineId
-                                            : '';
-                                    });
+                                    setSelectedAnalyzerId(e.target.value);
                                 }}
                                 style={{ padding: '8px', width: '100%' }}
                             >
@@ -574,60 +591,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             )}
                         </div>
 
-                        {selectedDatasetId && (
-                            <div className="mb-400">
-                                <label htmlFor="baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                    {t('experimental.analysis.selectBaseline')}
-                                </label>
-                                <select
-                                    id="baseline-select"
-                                    value={baselineBatchId}
-                                    onChange={(e) => setBaselineBatchId(e.target.value)}
-                                    style={{ padding: '8px', width: '100%' }}
-                                >
-                                    <option value="">{t('experimental.analysis.noBaseline')}</option>
-                                    {baselineOptions.map(batch => (
-                                        <option key={batch._id} value={batch._id}>
-                                            {getRunLabel(batch)} - {new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(batch.createdAt))}
-                                        </option>
-                                    ))}
-                                </select>
-                                <GcdsText className="mt-200">
-                                    {t('experimental.analysis.baselineHint')}
-                                </GcdsText>
-                                {selectedAnalyzerId === 'expert-scorer' && selectedDatasetId && (
-                                    <div
-                                        role="alert"
-                                        className="mt-200"
-                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
-                                    >
-                                        <strong>{t('experimental.analysis.expertScorerInfo')}</strong>
-                                    </div>
-                                )}
-                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId !== 'expert-scorer' && (
-                                    <div
-                                        role="alert"
-                                        className="mt-200"
-                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
-                                    >
-                                        <strong>{t('experimental.analysis.baselineOverridesReference')}</strong>
-                                    </div>
-                                )}
-                                {baselineBatchId && datasetHasReferenceColumn && selectedAnalyzerId === 'expert-scorer' && (
-                                    <div
-                                        role="alert"
-                                        className="mt-200"
-                                        style={{ border: '2px solid #b07a00', borderRadius: '4px', padding: '0.75rem', backgroundColor: '#fbe9c6' }}
-                                    >
-                                        <strong>{t('experimental.analysis.expertScorerBaselineHint')}</strong>
-                                    </div>
-                                )}
-                                <GcdsText className="mt-200">
-                                    {t('experimental.analysis.referenceHint')}
-                                </GcdsText>
-                            </div>
-                        )}
-
                         <div className="mb-400">
                             <label htmlFor="trials-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                                 {t('experimental.analysis.trialsLabel')}
@@ -712,6 +675,62 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </section>
                     )}
 
+            <section className="mt-600">
+                <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
+                <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
+                <div className="mb-300">
+                    <label htmlFor="comparison-baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                        {t('experimental.analysis.comparison.baseline')}
+                    </label>
+                    <select
+                        id="comparison-baseline-select"
+                        value={comparisonBaselineId}
+                        onChange={(e) => {
+                            setComparisonBaselineId(e.target.value);
+                            setComparisonCandidateId('');
+                        }}
+                        style={{ padding: '8px', width: '100%' }}
+                    >
+                        <option value="">{t('experimental.analysis.comparison.selectBaseline')}</option>
+                        {batches.filter(batch => batch.status === 'completed').map(batch => (
+                            <option key={batch._id} value={batch._id}>{getRunLabel(batch)}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="mb-300">
+                    <label htmlFor="comparison-candidate-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                        {t('experimental.analysis.comparison.candidate')}
+                    </label>
+                    <select
+                        id="comparison-candidate-select"
+                        value={comparisonCandidateId}
+                        onChange={(e) => setComparisonCandidateId(e.target.value)}
+                        disabled={!comparisonBaselineId}
+                        style={{ padding: '8px', width: '100%' }}
+                    >
+                        <option value="">{t('experimental.analysis.comparison.selectCandidate')}</option>
+                        {comparisonCandidates.map(batch => (
+                            <option key={batch._id} value={batch._id}>{getRunLabel(batch)}</option>
+                        ))}
+                    </select>
+                </div>
+                <GcdsButton onClick={handleCreateComparison} disabled={comparisonLoading || !comparisonBaselineId || !comparisonCandidateId}>
+                    {comparisonLoading ? t('experimental.analysis.starting') : t('experimental.analysis.comparison.create')}
+                </GcdsButton>
+                {comparisons.length > 0 && (
+                    <div className="mt-300">
+                        {comparisons.map(comparison => (
+                            <div key={comparison._id} className="mb-200">
+                                <GcdsLink href={`/${lang}/experimental/analysis/${comparison._id}`}>
+                                    {comparison.name}
+                                </GcdsLink>
+                                {' - '}{getStatusLabel(comparison.status)}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+
             {/* History List */}
             <section style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
                 <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
@@ -777,18 +796,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
                                             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
                                                 {t('experimental.analysis.resume')}
-                                            </GcdsButton>
-                                        )}
-                                        {batch.status === 'completed' && (
-                                            <GcdsButton
-                                                size="small"
-                                                buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
-                                                disabled={!!selectedAnalyzerId && !canBaseline(batch)}
-                                                onClick={() => handleUseAsBaseline(batch)}
-                                            >
-                                                {baselineBatchId === batch._id
-                                                    ? t('experimental.analysis.baselineSelected')
-                                                    : t('experimental.analysis.useAsBaseline')}
                                             </GcdsButton>
                                         )}
                                         <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>

@@ -114,7 +114,7 @@ describe('experimental-suite-grid API', () => {
         }));
     });
 
-    it('marks reference-less similar-answer runs as capture runs', async () => {
+    it('returns comparison records without run-capture metadata', async () => {
         ExperimentalDataset.findById.mockReturnValue(
             chainResolving({ _id: DATASET_ID, name: 'No reference' }, ['select'])
         );
@@ -134,14 +134,10 @@ describe('experimental-suite-grid API', () => {
         await handler(req, res);
 
         const { runs } = res.json.mock.calls[0][0];
-        expect(runs.map(r => [r.name, r.referenceCapture])).toEqual([
-            ['Standalone', false], // expert-scorer judges quality without a reference
-            ['Drift', false],      // has a baseline run
-            ['Capture', true]      // similar-answer with nothing to compare against
-        ]);
+        expect(runs.map(r => r.referenceCapture)).toEqual([undefined, undefined, undefined]);
     });
 
-    it('does not mark runs as capture when the dataset has reference answers', async () => {
+    it('does not add run-capture metadata when the dataset has reference answers', async () => {
         ExperimentalDataset.findById.mockReturnValue(
             chainResolving({ _id: DATASET_ID, name: 'Reference' }, ['select'])
         );
@@ -158,7 +154,7 @@ describe('experimental-suite-grid API', () => {
         await handler(req, res);
 
         const { runs } = res.json.mock.calls[0][0];
-        expect(runs[0].referenceCapture).toBe(false);
+        expect(runs[0].referenceCapture).toBeUndefined();
     });
 
     it('returns empty cells when the dataset has no runs', async () => {

@@ -162,7 +162,7 @@ describe('ExperimentalAnalysisPage', () => {
             await vi.advanceTimersByTimeAsync(5000);
         });
 
-        expect(mockListBatches).toHaveBeenCalledTimes(2);
+        expect(mockListBatches).toHaveBeenCalledTimes(4);
         expect(screen.queryByText(/processing/, { selector: 'div' })).toBeNull();
     });
 
@@ -233,8 +233,8 @@ describe('ExperimentalAnalysisPage', () => {
         });
     });
 
-    it('disables baseline actions for batches that use a different analyzer than the selected one', async () => {
-        mockListBatches.mockResolvedValueOnce({
+    it('filters comparison candidates to runs with the baseline analyzer', async () => {
+        mockListBatches.mockResolvedValue({
             data: [
                 {
                     _id: 'batch-1',
@@ -255,6 +255,16 @@ describe('ExperimentalAnalysisPage', () => {
                     config: { analyzerIds: ['analyzer-2'] },
                     createdAt: '2026-05-04T00:00:00.000Z',
                     createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-3',
+                    name: 'Analysis - analyzer 1 candidate',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-03T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
                 }
             ]
         });
@@ -265,18 +275,21 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
-            target: { value: 'analyzer-1' }
+        fireEvent.change(screen.getByLabelText('experimental.analysis.comparison.baseline'), {
+            target: { value: 'batch-1' }
         });
 
-        const baselineButtons = screen.getAllByRole('button', { name: 'Use as baseline' });
-        expect(baselineButtons).toHaveLength(2);
-        expect(baselineButtons[0].disabled).toBe(false);
-        expect(baselineButtons[1].disabled).toBe(true);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        const candidateOptions = Array.from(screen.getByLabelText('experimental.analysis.comparison.candidate').options)
+            .map(option => option.textContent);
+        expect(candidateOptions).toContain('Analysis - analyzer 1 candidate');
+        expect(candidateOptions).not.toContain('Analysis - analyzer 2');
     });
 
-    it('shows and triggers export chat logs for completed runs when a baseline is selected', async () => {
-        mockListBatches.mockResolvedValueOnce({
+    it('exports chat logs for a completed run', async () => {
+        mockListBatches.mockResolvedValue({
             data: [
                 {
                     _id: 'batch-1',
@@ -312,14 +325,13 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'Use as baseline' })[0]);
         fireEvent.click(screen.getAllByRole('button', { name: 'experimental.analysis.exportChatLogs' })[1]);
 
         await act(async () => {
             await Promise.resolve();
         });
 
-        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2', 'batch-1');
+        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2');
         expect(createObjectURL).toHaveBeenCalled();
         expect(clickSpy).toHaveBeenCalled();
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:chat-logs');
@@ -329,8 +341,7 @@ describe('ExperimentalAnalysisPage', () => {
         clickSpy.mockRestore();
     });
 
-    it('shows the same run name in the baseline dropdown as the history table', async () => {
-        const expectedDate = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date('2026-05-05T00:00:00.000Z'));
+    it('shows completed runs in the comparison baseline selector', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
                 {
@@ -352,8 +363,9 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByText('Analysis - baseline')).toBeTruthy();
-        expect(screen.getByRole('option', { name: `Analysis - baseline - ${expectedDate}` })).toBeTruthy();
+        expect(screen.getAllByText('Analysis - baseline').length).toBeGreaterThan(0);
+        expect(Array.from(screen.getByLabelText('experimental.analysis.comparison.baseline').options)
+            .map(option => option.textContent)).toContain('Analysis - baseline');
     });
 
     it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {

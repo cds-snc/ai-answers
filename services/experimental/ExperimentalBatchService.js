@@ -247,6 +247,9 @@ class ExperimentalBatchService {
     }
 
     async createBatch(batchData, itemsData) {
+        if (batchData.type === 'comparison') {
+            return this.createComparison(batchData);
+        }
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
         const config = batchData.config || {};
         const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
@@ -416,6 +419,115 @@ class ExperimentalBatchService {
 
         await ExperimentalBatchItem.insertMany(items);
 
+        return batch;
+    }
+
+    async createComparison(batchData) {
+        const config = batchData.config || {};
+        const baselineRunId = String(config.baselineRunId || '');
+        const candidateRunId = String(config.candidateRunId || '');
+        if (!mongoose.Types.ObjectId.isValid(baselineRunId) || !mongoose.Types.ObjectId.isValid(candidateRunId)) {
+            throw makeError('A baseline run and candidate run are required', 'BAD_REQUEST', 400);
+        }
+        if (baselineRunId === candidateRunId) throw makeError('Baseline and candidate runs must be different', 'BAD_REQUEST', 400);
+
+        const [baselineRun, candidateRun] = await Promise.all([
+            ExperimentalBatch.findById(baselineRunId).lean(),
+            ExperimentalBatch.findById(candidateRunId).lean()
+        ]);
+        if (!baselineRun || !candidateRun) throw makeError('Comparison run not found', 'NOT_FOUND', 404);
+        if (baselineRun.type !== 'analysis' || candidateRun.type !== 'analysis'
+            || baselineRun.status !== 'completed' || candidateRun.status !== 'completed') {
+            throw makeError('Comparisons require two completed analysis runs', 'BAD_REQUEST', 400);
+        }
+
+        const baselineDatasetId = String(baselineRun.config?.datasetId || '');
+        const candidateDatasetId = String(candidateRun.config?.datasetId || '');
+        const baselineAnalyzerId = resolveSelectedAnalyzerId(baselineRun.config || {});
+        const candidateAnalyzerId = resolveSelectedAnalyzerId(candidateRun.config || {});
+        if (!baselineDatasetId || baselineDatasetId !== candidateDatasetId) {
+            throw makeError('Comparison runs must use the same dataset', 'BAD_REQUEST', 400);
+        }
+        if (!baselineAnalyzerId || baselineAnalyzerId !== candidateAnalyzerId) {
+            throw makeError('Comparison runs must use the same analyzer', 'BAD_REQUEST', 400);
+        }
+
+        const [baselineItems, candidateItems] = await Promise.all([
+            ExperimentalBatchItem.find({ experimentalBatch: baselineRun._id, status: 'completed', answer: { $exists: true, $nin: ['', null] } })
+                .sort({ rowIndex: 1, trialIndex: 1 }).lean(),
+            ExperimentalBatchItem.find({ experimentalBatch: candidateRun._id, status: 'completed', answer: { $exists: true, $nin: ['', null] } })
+                .sort({ rowIndex: 1, trialIndex: 1 }).lean()
+        ]);
+        const groupByRow = (items) => items.reduce((groups, item) => {
+            if (!groups.has(item.rowIndex)) groups.set(item.rowIndex, []);
+            groups.get(item.rowIndex).push(item);
+            return groups;
+        }, new Map());
+        const baselineByRow = groupByRow(baselineItems);
+        const candidateByRow = groupByRow(candidateItems);
+        const comparisonItems = [];
+
+        for (const [rowIndex, baselineTrials] of baselineByRow) {
+            const candidateTrials = candidateByRow.get(rowIndex) || [];
+            const pairCount = Math.min(baselineTrials.length, candidateTrials.length);
+            for (let index = 0; index < pairCount; index += 1) {
+                const baseline = baselineTrials[index];
+                const candidate = candidateTrials[index];
+                comparisonItems.push({
+                    rowIndex,
+                    trialIndex: index + 1,
+                    question: candidate.question || baseline.question,
+                    answer: candidate.answer,
+                    chatId: candidate.chatId || '',
+                    referenceChatId: baseline.chatId || '',
+                    referenceAnswer: baseline.answer,
+                    goldenReferenceAnswer: candidate.goldenReferenceAnswer || baseline.goldenReferenceAnswer || '',
+                    referenceAnalysisResults: baseline.analysisResults || {},
+                    referenceMatch: baseline.match,
+                    referenceFlagged: baseline.flagged,
+                    originalData: {
+                        candidateRunId,
+                        baselineRunId,
+                        candidateTrialIndex: candidate.trialIndex,
+                        baselineTrialIndex: baseline.trialIndex
+                    },
+                    status: 'pending',
+                    retryCount: 0
+                });
+            }
+        }
+        if (comparisonItems.length === 0) {
+            throw makeError('The selected runs have no completed trial pairs to compare', 'NO_ITEMS', 400);
+        }
+
+        const analyzerDef = await ExperimentalAnalyzerRegistry.get(baselineAnalyzerId);
+        const validation = analyzerDef?.validateBatch(comparisonItems, {
+            ...config,
+            analyzerId: baselineAnalyzerId,
+            datasetId: baselineDatasetId
+        });
+        if (validation && !validation.valid) throw makeError(validation.localeKey, validation.code, 400);
+
+        const batch = await ExperimentalBatch.create({
+            name: batchData.name,
+            description: batchData.description || '',
+            runLabel: batchData.runLabel || '',
+            type: 'comparison',
+            appVersion: getPersistedAppVersion(),
+            status: 'pending',
+            createdBy: batchData.createdBy,
+            config: {
+                analyzerId: baselineAnalyzerId,
+                analyzerIds: [baselineAnalyzerId],
+                datasetId: baselineRun.config.datasetId,
+                baselineRunId: baselineRun._id,
+                candidateRunId: candidateRun._id,
+                analyzerConfig: config.analyzerConfig || {},
+                trials: 1
+            },
+            summary: { total: comparisonItems.length, completed: 0, failed: 0, matches: 0 }
+        });
+        await ExperimentalBatchItem.insertMany(comparisonItems.map(item => ({ ...item, experimentalBatch: batch._id })));
         return batch;
     }
 

@@ -2026,16 +2026,25 @@
       "analyzerDetailsTitle": "Analyzer details",
       "analyzerPrefix": "Analyzer",
       "workflowLabel": "Workflow",
-      "selectBaseline": "Select reference run (comparison)",
-      "baselineHint": "Pick a previous analysis to act as the comparison reference. When selected, new runs are compared against that run's answers.",
-      "referenceHint": "If no reference run is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
+      "comparison": {
+        "title": "Compare completed batches",
+        "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
+        "baseline": "Baseline batch",
+        "candidate": "Compare against",
+        "selectBaseline": "-- Select a baseline batch --",
+        "selectCandidate": "-- Select a batch to compare --",
+        "create": "Create comparison"
+      },
+      "selectBaseline": "Select reference batch (comparison)",
+      "baselineHint": "Pick a completed batch to act as the comparison reference. Comparisons use that batch's answers.",
+      "referenceHint": "If no reference batch is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
       "expertScorerDescription": "Judges the current answer against the dataset's canonical reference when one is available. It checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and answer quality. With a previous run selected, the main verdict still uses the dataset reference and a separate drift result describes whether the current answer improved, regressed, or stayed unchanged.",
-      "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison run. Use a question and answer dataset with a referenceAnswer column, or a comparison run.",
-      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare the current answer with the selected reference run for drift.",
-      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference run's answers will replace it as the comparison reference for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No reference run\" to compare against the dataset reference answer.",
+      "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison batch. Use a question and answer dataset with a referenceAnswer column, or a comparison batch.",
+      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare answers with the selected reference batch for drift.",
+      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference batch's answers will replace it as the comparison reference. Results will measure drift from that batch, not against the dataset reference answer.",
       "analyzerRules": {
         "headers": {
-          "setup": "Run setup",
+          "setup": "Batch setup",
           "comparison": "What is compared",
           "flagged": "What can be flagged"
         },
@@ -2045,7 +2054,7 @@
             "always": {
               "setup": "Any setup",
               "comparison": "No comparison is performed.",
-              "flagged": "Nothing is flagged; the run only validates generation and storage."
+              "flagged": "Nothing is flagged; the batch only validates generation and storage."
             }
           }
         },
@@ -2053,13 +2062,13 @@
         "title": "Expert scorer comparison rules",
         "rows": {
           "datasetOnly": {
-            "setup": "Dataset reference, no reference run",
+            "setup": "Dataset reference, no reference batch",
             "comparison": "Current answer against the dataset reference answer.",
             "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
           },
           "datasetAndRun": {
-            "setup": "Dataset reference and reference run",
-            "comparison": "Main verdict against the dataset reference; separate drift result against the previous run.",
+            "setup": "Dataset reference and reference batch",
+            "comparison": "Main verdict against the dataset reference; separate drift result against the previous batch.",
             "flagged": "The main verdict can be flagged for quality issues. Drift is reported separately as improved, regressed, unchanged, or needs review."
           }
         }
@@ -2067,8 +2076,8 @@
         "similar-answer": {
           "title": "Similar answer comparison rules",
           "rows": {
-            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the run can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
+            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the batch can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
+            "withReference": { "setup": "Dataset or reference-batch answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
           }
         },
         "refusal": {
@@ -2093,7 +2102,7 @@
           }
         }
       },
-      "runLabelLabel": "Run label (optional)",
+      "runLabelLabel": "Batch label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",
       "trialsLabel": "Trials per question",
@@ -2107,17 +2116,17 @@
       "orUpload": "Or upload new data:",
       "inputFile": "Input File (Excel/CSV)",
       "comparisonFile": "Comparison File (Optional)",
-      "run": "Run analysis",
+      "run": "Create batch",
       "starting": "Starting...",
-      "startingRun": "Starting analysis...",
+      "startingRun": "Starting batch...",
       "resume": "Resume",
-      "runningStatus": "Running status",
-      "noActiveRuns": "No active runs currently tracked.",
-      "previousRuns": "Previous runs",
+      "runningStatus": "Batch status",
+      "noActiveRuns": "No active batches currently tracked.",
+      "previousRuns": "Previous batches",
       "batchPrefix": "Batch",
       "progressSummary": "Completed: {completed} | Failed: {failed} | Total: {total}",
       "columns": {
-        "name": "Run name",
+        "name": "Batch name",
         "analyzer": "Analyzer",
         "workflow": "Workflow",
         "modelFamily": "Model family",
@@ -2151,9 +2160,12 @@
         "selectAnalyzer": "Please select an analyzer.",
         "selectData": "Please select a dataset or upload a file.",
         "selectDataset": "Please select an existing dataset before starting analysis.",
+        "selectComparisonRuns": "Please select both batches to compare.",
+        "comparisonStarted": "Batch comparison started.",
+        "comparisonFailed": "Failed to start comparison.",
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
-        "startingRun": "Starting your analysis run. Please wait a moment.",
-        "startedCount": "Started {count} analysis runs.",
+        "startingRun": "Starting your analysis batch. Please wait a moment.",
+        "startedCount": "Started {count} analysis batches.",
         "resumeStarted": "Resume requested.",
         "confirmDelete": "Are you sure you want to delete this batch?",
         "processingStarted": "Processing started.",
@@ -2210,7 +2222,7 @@
     },
     "results": {
       "title": "Batch results",
-      "backToRuns": "Back to analysis runs",
+      "backToRuns": "Back to analysis batches",
       "loading": "Loading results...",
       "loadError": "Failed to load batch results.",
       "summary": {
@@ -2282,13 +2294,13 @@
       "title": "Test suite",
       "loading": "Loading suite grid...",
       "loadError": "Failed to load suite grid.",
-      "noRuns": "No analysis runs yet for this dataset. Start one from the analysis page.",
-      "runColumn": "Run",
+      "noRuns": "No analysis batches yet for this dataset. Start one from the analysis page.",
+      "runColumn": "Batch",
       "scoreColumn": "Score",
       "scoreAll": "all trials",
       "scoreAny": "any trial",
-      "captureRun": "Reference capture — not scored against a reference",
-      "newRun": "New analysis run",
+      "captureRun": "Reference batch — not scored against a reference",
+      "newRun": "New analysis batch",
       "categoryLabel": "Category",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {
