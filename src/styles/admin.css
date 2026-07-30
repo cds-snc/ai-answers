@@ -639,6 +639,49 @@
   gap: 0.25rem;
 }
 
+/* Keep dataset actions together so DataTables sizes their column to the
+   buttons' content and gives the remaining space to the other columns. */
+.experimental-table-actions--group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: var(--gcds-spacing-50);
+}
+
+.experimental-table-actions--group gcds-button {
+  flex: 0 0 auto;
+}
+
+/* The dataset table reserves room for its inline actions and limits the
+   name/description cell to two lines rather than widening the whole table. */
+.experimental-dataset-table-container table.dataTable {
+  table-layout: fixed;
+}
+
+.experimental-table-layout table.dataTable {
+  table-layout: fixed;
+}
+
+.experimental-dataset-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.experimental-dataset-name span {
+  display: block;
+}
+
+.experimental-table-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);

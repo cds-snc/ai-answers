@@ -1,19 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
-import DataTable from 'datatables.net-react';
-import 'datatables.net-dt/css/dataTables.dataTables.css';
-import DT from 'datatables.net-dt';
-import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
-
-DataTable.use(DT);
+import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+}[character]));
 
 const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
@@ -445,6 +448,57 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return appVersion ? appVersion.slice(-10) : t('common.na');
     };
 
+    const fetchBatchTableData = useCallback((query) => (
+        ExperimentalBatchClientService.listBatches(1, 10, 'analysis', selectedDatasetId, query)
+    ), [selectedDatasetId]);
+
+    const fetchComparisonTableData = useCallback((query) => (
+        ExperimentalBatchClientService.listBatches(1, 10, 'comparison', selectedDatasetId, query)
+    ), [selectedDatasetId]);
+
+    const batchColumns = [
+        { title: t('experimental.analysis.columns.name'), data: 'name', width: '9%', render: (data, type) => type === 'display' ? `<span class="experimental-table-name">${escapeHtml(data)}</span>` : data },
+        { title: t('experimental.analysis.columns.analyzer'), data: null, width: '8%', render: (_data, _type, row) => getAnalyzerLabel(row) },
+        { title: t('experimental.analysis.columns.workflow'), data: null, width: '8%', render: (_data, _type, row) => getWorkflowLabel(row) },
+        { title: t('experimental.analysis.columns.modelFamily'), data: null, width: '8%', render: (_data, _type, row) => getModelLabel(row) },
+        { title: t('experimental.analysis.columns.appVersion'), data: 'appVersion', width: '5%', render: (data, type) => type === 'display' ? getAppVersionLabel({ appVersion: data }) : data },
+        { title: t('experimental.analysis.columns.status'), data: 'status', width: '7%', render: (data) => getStatusLabel(data) },
+        { title: t('experimental.analysis.columns.completed'), data: 'summary.completed', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.columns.failed'), data: 'summary.failed', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.columns.totalQuestions'), data: 'summary.total', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.columns.createdBy'), data: null, width: '10%', render: (_data, _type, row) => row.createdBy?.email || t('common.na') },
+        { title: t('experimental.analysis.columns.flagged'), data: 'summary.flagged', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.columns.date'), data: 'createdAt', width: '6%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+    ];
+
+    const comparisonColumns = [
+        { title: t('experimental.analysis.comparison.columns.name'), data: 'name', width: '23%', render: (data, type) => type === 'display' ? `<span class="experimental-table-name">${escapeHtml(data)}</span>` : data },
+        { title: t('experimental.analysis.comparison.columns.analyzer'), data: null, width: '15%', render: (_data, _type, row) => getAnalyzerLabel(row) },
+        { title: t('experimental.analysis.comparison.columns.status'), data: 'status', width: '10%', render: (data) => getStatusLabel(data) },
+        { title: t('experimental.analysis.comparison.columns.completed'), data: 'summary.completed', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.comparison.columns.failed'), data: 'summary.failed', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.comparison.columns.total'), data: 'summary.total', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '11%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+    ];
+
+    const renderComparisonActions = (comparison) => (
+        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
+            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
+        </div>
+    );
+
+    const renderBatchActions = (batch) => (
+        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
+            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
+            {batch.status === 'processing' && !isActivelyRunningBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
+            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>{t('experimental.analysis.delete')}</GcdsButton>
+        </div>
+    );
+
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
     const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
 
@@ -728,65 +782,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <div className="experimental-table-container">
                             <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
                             <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.comparison.columns.previousComparisons')}</GcdsHeading>
-                            <div className="overflow-auto">
-                            <DataTable
-                                key={`comparisons-${comparisons.map(comparison => `${comparison._id}:${comparison.status}:${comparison.summary?.completed || 0}`).join('|')}`}
-                                className="display chat-dashboard-table"
-                                style={{ width: '100%' }}
-                                options={{
-                                    paging: true,
-                                    searching: true,
-                                    ordering: true,
-                                    language: dataTableLanguage(lang)
-                                }}
-                            >
-                            <thead>
-                                <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.name')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.analyzer')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.status')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.completed')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.failed')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.total')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.date')}</th>
-                                    <th className="p-300">{t('experimental.analysis.comparison.columns.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {comparisons.map(comparison => (
-                                    <tr key={comparison._id} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td className="p-200">{comparison.name || getRunLabel(comparison)}</td>
-                                        <td className="p-200">{getAnalyzerLabel(comparison)}</td>
-                                        <td className="p-300">
-                                            <span style={{
-                                                color: comparison.status === 'completed' ? 'green' : (comparison.status === 'failed' ? 'red' : 'orange'),
-                                                fontWeight: 'bold'
-                                            }}>
-                                                {getStatusLabel(comparison.status)}
-                                            </span>
-                                        </td>
-                                        <td className="p-300">{formatNumber(comparison.summary?.completed, lang)}</td>
-                                        <td className="p-300">{formatNumber(comparison.summary?.failed, lang)}</td>
-                                        <td className="p-300">{formatNumber(comparison.summary?.total, lang)}</td>
-                                        <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(comparison.createdAt))}</td>
-                                        <td className="p-200">
-                                            <div className="flex gap-200 experimental-table-actions">
-                                                <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${comparison._id}`)}>
-                                                    {t('experimental.analysis.viewResults')}
-                                                </GcdsButton>
-                                                <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>
-                                                    {t('experimental.analysis.export')}
-                                                </GcdsButton>
-                                                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>
-                                                    {t('experimental.analysis.delete')}
-                                                </GcdsButton>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            </DataTable>
-                            </div>
+                            <ExperimentalServerDataTable
+                                columns={comparisonColumns}
+                                fetchData={fetchComparisonTableData}
+                                actionsTitle={t('experimental.analysis.comparison.columns.actions')}
+                                renderActions={renderComparisonActions}
+                                lang={lang}
+                                tableKey={`comparisons-${selectedDatasetId}`}
+                                actionsWidth="20%"
+                                autoWidth={false}
+                                containerClassName="experimental-table-layout"
+                            />
                             </div>
                         </div>
                     </div>
@@ -797,90 +803,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <section className="experimental-table-container">
                 <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
                     <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
-                    <div className="overflow-auto">
-                        <DataTable
-                            key={`batches-${batches.map(batch => `${batch._id}:${batch.status}:${batch.summary?.completed || 0}`).join('|')}`}
-                            className="display chat-dashboard-table"
-                            style={{ width: '100%' }}
-                            options={{
-                                paging: true,
-                                searching: true,
-                                ordering: true,
-                                order: [[11, 'desc']],
-                                language: dataTableLanguage(lang)
-                            }}
-                        >
-                    <thead>
-                        <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-                            <th className="p-300">{t('experimental.analysis.columns.name')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.analyzer')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.workflow')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.modelFamily')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.appVersion')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.status')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.completed')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.failed')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.totalQuestions')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.createdBy')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.flagged')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.date')}</th>
-                            <th className="p-300">{t('experimental.analysis.columns.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {batches.map(batch => (
-                            <tr key={batch._id} style={{ borderBottom: '1px solid #eee' }}>
-                                <td className="p-200">{getRunLabel(batch)}</td>
-                                <td className="p-200">{getAnalyzerLabel(batch)}</td>
-                                <td className="p-200">{getWorkflowLabel(batch)}</td>
-                                <td className="p-200">{getModelLabel(batch)}</td>
-                                <td className="p-200" title={batch.appVersion || ''}>{getAppVersionLabel(batch)}</td>
-                                <td className="p-300">
-                                    <span style={{
-                                        color: batch.status === 'completed' ? 'green' : (batch.status === 'failed' ? 'red' : 'orange'),
-                                        fontWeight: 'bold'
-                                    }}>
-                                        {getStatusLabel(batch.status)}
-                                    </span>
-                                </td>
-                                <td className="p-300">{formatNumber(batch.summary?.completed, lang)}</td>
-                                <td className="p-300">{formatNumber(batch.summary?.failed, lang)}</td>
-                                <td className="p-300">{formatNumber(batch.summary?.total, lang)}</td>
-                                <td className="p-300">{batch.createdBy?.email || t('common.na')}</td>
-                                <td className="p-300">
-                                    {batch.summary?.flagged > 0 ? (
-                                        <span style={{ color: '#d30800', fontWeight: 'bold' }}>⚠ {formatNumber(batch.summary.flagged, lang)}</span>
-                                    ) : (
-                                        <span>0</span>
-                                    )}
-                                </td>
-                                <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(batch.createdAt))}</td>
-                                <td className="p-200">
-                                    <div className="flex gap-200 experimental-table-actions">
-                                        <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
-                                            {t('experimental.analysis.viewResults')}
-                                        </GcdsButton>
-                                        <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
-                                            {t('experimental.analysis.export')}
-                                        </GcdsButton>
-                                        <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>
-                                            {t('experimental.analysis.exportChatLogs')}
-                                        </GcdsButton>
-                                        {batch.status === 'processing' && !isActivelyRunningBatch(batch) && (
-                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>
-                                                {t('experimental.analysis.resume')}
-                                            </GcdsButton>
-                                        )}
-                                        <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>
-                                            {t('experimental.analysis.delete')}
-                                        </GcdsButton>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                        </DataTable>
-                    </div>
+                    <ExperimentalServerDataTable
+                        columns={batchColumns}
+                        fetchData={fetchBatchTableData}
+                        actionsTitle={t('experimental.analysis.columns.actions')}
+                        renderActions={renderBatchActions}
+                        lang={lang}
+                        tableKey={`batches-${selectedDatasetId}`}
+                        order={[[11, 'desc']]}
+                        actionsWidth="23%"
+                        autoWidth={false}
+                        containerClassName="experimental-table-layout"
+                    />
                 </div>
             </section>
         </GcdsContainer>

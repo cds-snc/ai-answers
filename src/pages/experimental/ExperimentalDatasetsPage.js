@@ -1,19 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
-import DataTable from 'datatables.net-react';
-import 'datatables.net-dt/css/dataTables.dataTables.css';
-import DT from 'datatables.net-dt';
-import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 
-DataTable.use(DT);
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+}[character]));
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
     const [datasets, setDatasets] = useState([]);
+    const [datasetListResult, setDatasetListResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [exportingDatasetId, setExportingDatasetId] = useState(null);
@@ -39,8 +44,9 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const fetchDatasets = async (showLoading = false) => {
         if (showLoading) setLoading(true);
         try {
-            const result = await ExperimentalBatchClientService.listDatasets();
+            const result = await ExperimentalBatchClientService.listDatasets(1, 10);
             setDatasets(result.data);
+            setDatasetListResult(result);
             if (result.executionMode === 'lambda') {
                 const active = (result.data || []).find(ds => ['queued', 'processing'].includes(ds.creationStatus));
                 if (active && !processingDatasetRef.current) {
@@ -188,6 +194,59 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         { field: t('experimental.datasets.columnVariants.chatId.field'), variants: t('experimental.datasets.columnVariants.chatId.variants') }
     ];
 
+    const datasetColumns = [
+        {
+            title: t('experimental.datasets.nameLabel'),
+            data: 'name',
+            width: '24%',
+            render: (data, type, row) => type === 'display'
+                ? `<div class="experimental-dataset-name"><strong>${escapeHtml(data)}</strong>${row.description ? `<span>${escapeHtml(row.description)}</span>` : ''}</div>`
+                : data
+        },
+        {
+            title: t('experimental.datasets.typeLabel'),
+            data: 'type',
+            width: '10%',
+            render: (data, type) => type !== 'display' ? data : data === 'question-only'
+                ? t('experimental.datasets.type.questionOnly')
+                : data === 'qa-pair'
+                    ? t('experimental.datasets.type.qaPair')
+                    : data === 'batch-output'
+                        ? t('experimental.datasets.type.batchOutput')
+                        : data
+        },
+        { title: t('experimental.datasets.uploadedBy'), data: null, width: '16%', render: (_data, _type, row) => row.createdBy?.email || t('common.na') },
+        { title: t('experimental.datasets.rowCount'), data: 'rowCount', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        {
+            title: t('experimental.datasets.creationStatus.title'),
+            data: 'creationStatus',
+            width: '11%',
+            render: (data, _type, row) => {
+                const status = (!data || data === 'complete') ? t('experimental.datasets.creationStatus.complete') : t(`experimental.datasets.creationStatus.${data}`);
+                if (data === 'complete' && row.creationSkippedSourceRows > 0) {
+                    return `<span>${status}</span><div class="font-size-text-xsm-nr">${t('experimental.datasets.creationStatus.skippedSourceRows').replace('{count}', formatNumber(row.creationSkippedSourceRows, lang))}</div>`;
+                }
+                return status;
+            }
+        },
+        { title: t('experimental.datasets.runCountLabel'), data: 'runCount', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.datasets.created'), data: 'createdAt', width: '8%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+    ];
+
+    const fetchDatasetTableData = useCallback((query) => (
+        ExperimentalBatchClientService.listDatasets(1, 10, query)
+    ), []);
+
+    const renderDatasetActions = (ds) => (
+        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
+            {ds.creationStatus && ds.creationStatus !== 'complete' && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleViewDataset(ds._id)} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.analyze')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.suiteView')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || (ds.creationStatus && ds.creationStatus !== 'complete')}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
+        </div>
+    );
+
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
@@ -317,120 +376,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (
-                <div className="experimental-table-container">
-                    <DataTable
-                        key={`datasets-${datasets.map(ds => `${ds._id}:${ds.creationStatus}:${ds.runCount || 0}`).join('|')}`}
-                        className="display chat-dashboard-table"
-                        style={{ width: '100%' }}
-                        options={{
-                            paging: true,
-                            searching: true,
-                            ordering: true,
-                            order: [[6, 'desc']],
-                            language: { ...dataTableLanguage(lang), emptyTable: t('experimental.datasets.empty') }
-                        }}
-                    >
-                        <thead>
-                            <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-                                <th className="p-200">{t('experimental.datasets.nameLabel')}</th>
-                                <th className="p-200">{t('experimental.datasets.typeLabel')}</th>
-                                <th className="p-200">{t('experimental.datasets.uploadedBy')}</th>
-                                <th className="p-200">{t('experimental.datasets.rowCount')}</th>
-                                <th className="p-200">{t('experimental.datasets.creationStatus.title')}</th>
-                                <th className="p-200">{t('experimental.datasets.runCountLabel')}</th>
-                                <th className="p-200">{t('experimental.datasets.created')}</th>
-                                <th className="p-200">{t('experimental.datasets.actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {datasets.map(ds => (
-                                <tr key={ds._id} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td className="p-200">
-                                        <strong>{ds.name}</strong>
-                                        <div style={{ fontSize: '0.8rem', color: '#666' }}>{ds.description}</div>
-                                    </td>
-                                    <td className="p-200">
-                                        {ds.type === 'question-only'
-                                            ? t('experimental.datasets.type.questionOnly')
-                                            : ds.type === 'qa-pair'
-                                                ? t('experimental.datasets.type.qaPair')
-                                                : ds.type === 'batch-output'
-                                                ? t('experimental.datasets.type.batchOutput')
-                                                : ds.type}
-                                    </td>
-                                    <td className="p-200">{ds.createdBy?.email || t('common.na')}</td>
-                                    <td className="p-200">{formatNumber(ds.rowCount, lang)}</td>
-                                    <td className="p-200">
-                                        {ds.creationStatus === 'queued' && t('experimental.datasets.creationStatus.queued')}
-                                        {ds.creationStatus === 'processing' && t('experimental.datasets.creationStatus.processing')}
-                                        {ds.creationStatus === 'failed' && t('experimental.datasets.creationStatus.failed')}
-                                        {(!ds.creationStatus || ds.creationStatus === 'complete') && t('experimental.datasets.creationStatus.complete')}
-                                        {ds.creationStatus === 'failed' && ds.creationError && (
-                                            <div className="font-size-text-xsm-nr">{ds.creationError}</div>
-                                        )}
-                                        {ds.creationStatus === 'complete' && ds.creationSkippedSourceRows > 0 && (
-                                            <div className="font-size-text-xsm-nr">
-                                                {t('experimental.datasets.creationStatus.skippedSourceRows')
-                                                    .replace('{count}', formatNumber(ds.creationSkippedSourceRows, lang))}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="p-200">
-                                        {ds.runCount > 0
-                                            ? <strong>{formatNumber(ds.runCount, lang)}</strong>
-                                            : formatNumber(0, lang)}
-                                    </td>
-                                    <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
-                                    <td className="p-200">
-                                        <div className="d-flex gap-200 experimental-table-actions">
-                                            {ds.creationStatus && ds.creationStatus !== 'complete' && (
-                                            <GcdsButton
-                                                size="small"
-                                                buttonRole="secondary"
-                                                onClick={() => handleProcessDataset(ds)}
-                                                disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}
-                                            >
-                                                    {processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus)
-                                                    ? t('experimental.datasets.processing')
-                                                    : t('experimental.datasets.startAgain')}
-                                            </GcdsButton>
-                                        )}
-                                            <GcdsButton
-                                                size="small"
-                                                buttonRole="secondary"
-                                                onClick={() => handleViewDataset(ds._id)}
-                                                disabled={ds.creationStatus && ds.creationStatus !== 'complete'}
-                                            >
-                                            {t('experimental.datasets.analyze')}
-                                            </GcdsButton>
-                                            <GcdsButton
-                                                size="small"
-                                                buttonRole="secondary"
-                                                onClick={() => { window.location.href = `/${lang}/experimental/suites/${ds._id}`; }}
-                                                disabled={ds.creationStatus && ds.creationStatus !== 'complete'}
-                                            >
-                                                {t('experimental.datasets.suiteView')}
-                                            </GcdsButton>
-                                            <GcdsButton
-                                                size="small"
-                                                buttonRole="secondary"
-                                                onClick={() => handleExportDataset(ds)}
-                                                disabled={exportingDatasetId === ds._id || (ds.creationStatus && ds.creationStatus !== 'complete')}
-                                            >
-                                                {exportingDatasetId === ds._id
-                                                    ? t('experimental.datasets.exporting')
-                                                    : t('experimental.datasets.export')}
-                                            </GcdsButton>
-                                            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>
-                                                {t('experimental.datasets.delete')}
-                                            </GcdsButton>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </DataTable>
-                </div>
+                    <ExperimentalServerDataTable
+                        columns={datasetColumns}
+                        fetchData={fetchDatasetTableData}
+                        actionsTitle={t('experimental.datasets.actions')}
+                        renderActions={renderDatasetActions}
+                        lang={lang}
+                        initialResult={datasetListResult}
+                        emptyTableText={t('experimental.datasets.empty')}
+                        actionsWidth="23%"
+                        autoWidth={false}
+                        containerClassName="experimental-table-container experimental-dataset-table-container"
+                        tableKey={`datasets-${processingDatasetId || ''}-${exportingDatasetId || ''}`}
+                    order={[[6, 'desc']]}
+                />
             )}
         </GcdsContainer>
     );

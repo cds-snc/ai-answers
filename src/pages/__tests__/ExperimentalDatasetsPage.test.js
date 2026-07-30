@@ -115,7 +115,7 @@ describe('ExperimentalDatasetsPage', () => {
 
         const processingButton = await screen.findByRole('button', { name: 'experimental.datasets.processing' });
         expect(processingButton.disabled).toBe(true);
-        expect(processingButton.closest('.d-flex')).toBeTruthy();
+        expect(processingButton.closest('.experimental-table-actions--group')).toBeTruthy();
         fireEvent.click(processingButton);
         expect(mockProcessDataset).not.toHaveBeenCalled();
     });

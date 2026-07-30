@@ -34,10 +34,15 @@ export const ExperimentalBatchClientService = {
      * @param {number} limit 
      * @param {string} type 
      */
-    async listBatches(page = 1, limit = 20, type = null, datasetId = null) {
+    async listBatches(page = 1, limit = 20, type = null, datasetId = null, tableQuery = {}) {
         let url = getApiUrl(`experimental-batch-list?page=${page}&limit=${limit}`);
         if (type) url += `&type=${encodeURIComponent(type)}`;
         if (datasetId) url += `&datasetId=${encodeURIComponent(datasetId)}`;
+        Object.entries(tableQuery).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                url += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            }
+        });
         const res = await AuthService.fetch(url);
         if (!res.ok) throw new Error(`Failed to list batches: ${res.status} ${res.statusText}`);
         return await res.json();
@@ -185,9 +190,11 @@ export const ExperimentalBatchClientService = {
     /**
      * List datasets
      */
-    async listDatasets(page = 1, limit = 20) {
+    async listDatasets(page = 1, limit = 20, tableQuery = {}) {
         const url = getApiUrl(`experimental-dataset-list?page=${page}&limit=${limit}`);
-        const res = await AuthService.fetch(url);
+        const query = new URLSearchParams(tableQuery);
+        const fullUrl = `${url}${query.toString() ? `&${query.toString()}` : ''}`;
+        const res = await AuthService.fetch(fullUrl);
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
             throw new Error(errBody.error || `Failed to list datasets: ${res.status} ${res.statusText}`);

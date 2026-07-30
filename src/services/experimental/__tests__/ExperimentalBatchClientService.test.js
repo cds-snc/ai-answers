@@ -88,4 +88,25 @@ describe('ExperimentalBatchClientService', () => {
                 .rejects.toThrow('Export failed');
         });
     });
+
+    describe('listDatasets', () => {
+        it('sends DataTables pagination, search, and sorting parameters to the API', async () => {
+            AuthService.fetch.mockResolvedValue({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ data: [], recordsTotal: 12, recordsFiltered: 1 })
+            });
+
+            await ExperimentalBatchClientService.listDatasets(1, 10, {
+                start: 10,
+                length: 10,
+                search: 'benefits',
+                orderBy: 'name',
+                orderDir: 'asc'
+            });
+
+            expect(AuthService.fetch).toHaveBeenCalledWith(
+                '/api/experimental/experimental-dataset-list?page=1&limit=10&start=10&length=10&search=benefits&orderBy=name&orderDir=asc'
+            );
+        });
+    });
 });
