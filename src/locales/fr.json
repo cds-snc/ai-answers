@@ -2107,7 +2107,7 @@
       "suiteView": "Grille de la suite",
       "trialsLabel": "Essais par question",
       "trialsCostHint": "{rows} questions × {trials} essais = {total} exécutions du pipeline",
-      "noBaseline": "-- Aucune exécution de référence (évaluation autonome) --",
+      "noBaseline": "-- Aucun lot de référence (évaluation autonome) --",
       "useExistingDatasetLabel": "Utiliser un ensemble de données existant",
       "datasetSelectPlaceholder": "-- Sélectionner un ensemble de données existant --",
       "datasetHelper": "Téléversez et gérez les ensembles de données dans la page des ensembles de données, puis sélectionnez-en un ici.",
@@ -2148,7 +2148,7 @@
       "useAsBaseline": "Utiliser comme référence",
       "baselineSelected": "Référence sélectionnée",
       "delete": "Supprimer",
-      "empty": "Aucune exécution précédente trouvée pour cet ensemble de données.",
+      "empty": "Aucun lot précédent trouvé pour cet ensemble de données.",
       "statuses": {
         "pending": "En attente",
         "processing": "En cours",
