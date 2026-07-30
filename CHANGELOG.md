@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.177.0](https://github.com/cds-snc/ai-answers/compare/v1.176.0...v1.177.0) (2026-07-30)
+
+
+### Features
+
+* dashboard md category clarification ([e6a2888](https://github.com/cds-snc/ai-answers/commit/e6a288845bd3e23bc9a061f154e1898b995264ae))
+
+
+### Bug Fixes
+
+* dashboard advanced filter functional matching ([745a475](https://github.com/cds-snc/ai-answers/commit/745a4754dcff8ce2ed809e3b753ba811ef8c8b80))
+* dashboard advanced filter functional matching ([6f43cc0](https://github.com/cds-snc/ai-answers/commit/6f43cc048d71f226adc84d8f8f9bd07b89fcf013))
+* update brace-expansion package versions to latest ([b01e4f4](https://github.com/cds-snc/ai-answers/commit/b01e4f4ee3f4de5a89a4e0ba646b2a43e935038d))
+* update brace-expansion package versions to latest ([0b2352b](https://github.com/cds-snc/ai-answers/commit/0b2352bd8647a4ae4e1c7240a96ca44157d6d5f1))
+
 ## [1.176.0](https://github.com/cds-snc/ai-answers/compare/v1.175.0...v1.176.0) (2026-07-29)
 
 
