@@ -275,6 +275,7 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
         fireEvent.change(screen.getByLabelText('experimental.analysis.comparison.baseline'), {
             target: { value: 'batch-1' }
         });
@@ -364,6 +365,7 @@ describe('ExperimentalAnalysisPage', () => {
         });
 
         expect(screen.getAllByText('Analysis - baseline').length).toBeGreaterThan(0);
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
         expect(Array.from(screen.getByLabelText('experimental.analysis.comparison.baseline').options)
             .map(option => option.textContent)).toContain('Analysis - baseline');
     });

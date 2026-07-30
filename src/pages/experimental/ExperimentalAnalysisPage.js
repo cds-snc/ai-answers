@@ -28,7 +28,7 @@ const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId
         datasetName || datasetId || '',
         workflowLabel || '',
         modelLabel || ''
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).join(' Â· ');
 };
 
 const sanitizeFileName = (value) => String(value || '')
@@ -84,6 +84,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [comparisonBaselineId, setComparisonBaselineId] = useState('');
     const [comparisonCandidateId, setComparisonCandidateId] = useState('');
     const [comparisonLoading, setComparisonLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('batches');
     const [runLabel, setRunLabel] = useState('');
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
@@ -396,7 +397,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
             const analyzerId = resolveBatchAnalyzerId(baseline);
             const result = await ExperimentalBatchClientService.createBatch({
-                name: `${t('experimental.analysis.comparison.title')}: ${getRunLabel(baseline)} → ${getRunLabel(candidate)}`,
+                name: `${t('experimental.analysis.comparison.title')}: ${getRunLabel(baseline)} â†’ ${getRunLabel(candidate)}`,
                 description: `${t('experimental.analysis.comparison.baseline')}: ${getRunLabel(baseline)}`,
                 type: 'comparison',
                 config: {
@@ -524,9 +525,33 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     )}
                 </div>
             </header>
-            
 
-            
+            <div className="experimental-analysis-tabs" role="tablist" aria-label={t('experimental.analysis.tabs.label')}>
+                <button
+                    type="button"
+                    role="tab"
+                    id="batches-tab"
+                    aria-selected={activeTab === 'batches'}
+                    aria-controls="batches-tab-panel"
+                    className={`experimental-analysis-tab${activeTab === 'batches' ? ' experimental-analysis-tab--active' : ''}`}
+                    onClick={() => setActiveTab('batches')}
+                >
+                    {t('experimental.analysis.tabs.batches')}
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    id="comparison-tab"
+                    aria-selected={activeTab === 'comparison'}
+                    aria-controls="comparison-tab-panel"
+                    className={`experimental-analysis-tab${activeTab === 'comparison' ? ' experimental-analysis-tab--active' : ''}`}
+                    onClick={() => setActiveTab('comparison')}
+                >
+                    {t('experimental.analysis.tabs.comparison')}
+                </button>
+            </div>
+
+            {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
                     <section>
                         <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
@@ -734,10 +759,31 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
+            </div>}
 
-            <section className="mt-600">
+            {activeTab === 'comparison' && <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab">
+            <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
+                <div className="mb-300">
+                    <label htmlFor="comparison-dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                        {t('experimental.analysis.useExistingDatasetLabel')}
+                    </label>
+                    <select
+                        id="comparison-dataset-select"
+                        value={selectedDatasetId}
+                        onChange={(e) => setSelectedDatasetId(e.target.value)}
+                        style={{ padding: '8px', width: '100%' }}
+                    >
+                        <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
+                        {datasets.map(ds => (
+                            <option key={ds._id} value={ds._id}>
+                                {ds.name} ({formatNumber(ds.rowCount, lang)} {t('experimental.analysis.datasetRows')})
+                            </option>
+                        ))}
+                    </select>
+                    {!selectedDatasetId && <GcdsText className="mt-200">{t('experimental.analysis.datasetHelper')}</GcdsText>}
+                </div>
                 <div className="mb-300">
                     <label htmlFor="comparison-baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                         {t('experimental.analysis.comparison.baseline')}
@@ -798,9 +844,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </div>
                 )}
             </section>
+            </div>}
 
             {/* History List */}
-            <section className="experimental-table-container">
+            {activeTab === 'batches' && <section id="batches-history" className="experimental-table-container">
                 <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
                     <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
                     <ExperimentalServerDataTable
@@ -817,6 +864,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     />
                 </div>
             </section>
+            }
         </GcdsContainer>
     );
 }

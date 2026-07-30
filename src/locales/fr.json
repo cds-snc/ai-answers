@@ -2026,6 +2026,11 @@
       "analyzerDetailsTitle": "Détails de l'analyseur",
       "analyzerPrefix": "Analyseur",
       "workflowLabel": "Flux de travail",
+      "tabs": {
+        "label": "Vues de l’analyse",
+        "batches": "Lots",
+        "comparison": "Comparer les lots"
+      },
       "comparison": {
         "title": "Comparer les lots terminés",
         "hint": "Sélectionnez un lot de référence, puis un lot terminé utilisant le même analyseur. Les essais sont comparés selon leur index jusqu’au plus petit nombre d’essais.",

@@ -609,6 +609,33 @@
 
 /* Experimental tables use the full viewport so wide analysis columns do not
    create artificial gutters inside the page container. */
+.experimental-analysis-tabs {
+  display: flex;
+  gap: var(--gcds-spacing-300);
+  margin-bottom: var(--gcds-spacing-500);
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
+.experimental-analysis-tab {
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-300);
+  border: 0;
+  border-bottom: var(--gcds-border-width-lg) solid transparent;
+  background: transparent;
+  color: var(--gcds-link-default);
+  cursor: pointer;
+  font: inherit;
+}
+
+.experimental-analysis-tab:hover,
+.experimental-analysis-tab:focus-visible {
+  color: var(--gcds-link-hover);
+}
+
+.experimental-analysis-tab--active {
+  border-bottom-color: var(--gcds-link-default);
+  font-weight: var(--gcds-font-weights-bold);
+}
+
 .experimental-table-container {
   width: 100vw;
   margin-left: calc(50% - 50vw);

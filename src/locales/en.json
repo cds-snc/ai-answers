@@ -2026,6 +2026,11 @@
       "analyzerDetailsTitle": "Analyzer details",
       "analyzerPrefix": "Analyzer",
       "workflowLabel": "Workflow",
+      "tabs": {
+        "label": "Analysis views",
+        "batches": "Batches",
+        "comparison": "Compare batches"
+      },
       "comparison": {
         "title": "Compare completed batches",
         "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
