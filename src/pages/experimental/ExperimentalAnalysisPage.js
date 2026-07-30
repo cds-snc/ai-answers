@@ -5,6 +5,12 @@ import { ExperimentalBatchClientService } from '../../services/experimental/Expe
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
+import DataTable from 'datatables.net-react';
+import 'datatables.net-dt/css/dataTables.dataTables.css';
+import DT from 'datatables.net-dt';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+
+DataTable.use(DT);
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
@@ -719,11 +725,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </GcdsButton>
                 {comparisons.length > 0 && (
                     <div className="mt-300">
-                        <div style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+                        <div className="experimental-table-container">
                             <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
                             <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.comparison.columns.previousComparisons')}</GcdsHeading>
                             <div className="overflow-auto">
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <DataTable
+                                key={`comparisons-${comparisons.map(comparison => `${comparison._id}:${comparison.status}:${comparison.summary?.completed || 0}`).join('|')}`}
+                                className="display chat-dashboard-table"
+                                style={{ width: '100%' }}
+                                options={{
+                                    paging: true,
+                                    searching: true,
+                                    ordering: true,
+                                    language: dataTableLanguage(lang)
+                                }}
+                            >
                             <thead>
                                 <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                                     <th className="p-300">{t('experimental.analysis.comparison.columns.name')}</th>
@@ -754,7 +770,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         <td className="p-300">{formatNumber(comparison.summary?.total, lang)}</td>
                                         <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(comparison.createdAt))}</td>
                                         <td className="p-200">
-                                            <div className="flex gap-200">
+                                            <div className="flex gap-200 experimental-table-actions">
                                                 <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${comparison._id}`)}>
                                                     {t('experimental.analysis.viewResults')}
                                                 </GcdsButton>
@@ -769,7 +785,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     </tr>
                                 ))}
                             </tbody>
-                            </table>
+                            </DataTable>
                             </div>
                             </div>
                         </div>
@@ -778,11 +794,22 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             </section>
 
             {/* History List */}
-            <section style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+            <section className="experimental-table-container">
                 <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
                     <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
                     <div className="overflow-auto">
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <DataTable
+                            key={`batches-${batches.map(batch => `${batch._id}:${batch.status}:${batch.summary?.completed || 0}`).join('|')}`}
+                            className="display chat-dashboard-table"
+                            style={{ width: '100%' }}
+                            options={{
+                                paging: true,
+                                searching: true,
+                                ordering: true,
+                                order: [[11, 'desc']],
+                                language: dataTableLanguage(lang)
+                            }}
+                        >
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-300">{t('experimental.analysis.columns.name')}</th>
@@ -829,7 +856,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 </td>
                                 <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(batch.createdAt))}</td>
                                 <td className="p-200">
-                                    <div className="flex gap-200">
+                                    <div className="flex gap-200 experimental-table-actions">
                                         <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
                                             {t('experimental.analysis.viewResults')}
                                         </GcdsButton>
@@ -852,7 +879,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </tr>
                         ))}
                     </tbody>
-                </table>
+                        </DataTable>
                     </div>
                 </div>
             </section>

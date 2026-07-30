@@ -4,6 +4,12 @@ import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink }
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
+import DataTable from 'datatables.net-react';
+import 'datatables.net-dt/css/dataTables.dataTables.css';
+import DT from 'datatables.net-dt';
+import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+
+DataTable.use(DT);
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -311,8 +317,19 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (
-                <div className="overflow-auto">
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="experimental-table-container">
+                    <DataTable
+                        key={`datasets-${datasets.map(ds => `${ds._id}:${ds.creationStatus}:${ds.runCount || 0}`).join('|')}`}
+                        className="display chat-dashboard-table"
+                        style={{ width: '100%' }}
+                        options={{
+                            paging: true,
+                            searching: true,
+                            ordering: true,
+                            order: [[6, 'desc']],
+                            language: { ...dataTableLanguage(lang), emptyTable: t('experimental.datasets.empty') }
+                        }}
+                    >
                         <thead>
                             <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
                                 <th className="p-200">{t('experimental.datasets.nameLabel')}</th>
@@ -365,7 +382,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     </td>
                                     <td className="p-200">{new Date(ds.createdAt).toLocaleDateString()}</td>
                                     <td className="p-200">
-                                        <div className="d-flex gap-200">
+                                        <div className="d-flex gap-200 experimental-table-actions">
                                             {ds.creationStatus && ds.creationStatus !== 'complete' && (
                                             <GcdsButton
                                                 size="small"
@@ -411,13 +428,8 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     </td>
                                 </tr>
                             ))}
-                            {datasets.length === 0 && (
-                                <tr>
-                                    <td colSpan="8" className="p-400 text-center">{t('experimental.datasets.empty')}</td>
-                                </tr>
-                            )}
                         </tbody>
-                    </table>
+                    </DataTable>
                 </div>
             )}
         </GcdsContainer>

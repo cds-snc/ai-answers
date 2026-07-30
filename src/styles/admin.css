@@ -607,6 +607,38 @@
   padding: var(--gcds-spacing-200);
 }
 
+/* Experimental tables use the full viewport so wide analysis columns do not
+   create artificial gutters inside the page container. */
+.experimental-table-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  overflow-x: auto;
+  margin-block-start: var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200);
+  box-sizing: border-box;
+}
+
+/* Keep action buttons visually aligned with DataTables body text. */
+.experimental-table-actions gcds-button {
+  --gcds-button-small-font-desktop: 400 1rem/150% "Noto Sans", sans-serif;
+  --gcds-button-small-font-mobile: 400 0.875rem/140% "Noto Sans", sans-serif;
+  --gcds-button-small-padding: 0.25rem 0.5rem;
+}
+
+.experimental-table-container table.dataTable th,
+.experimental-table-container table.dataTable td {
+  padding: 0.35rem 0.5rem;
+  white-space: normal;
+  vertical-align: top;
+}
+
+.experimental-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);

@@ -405,9 +405,9 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' })).toBeTruthy();
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.workflow' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' }).length).toBeGreaterThan(0);
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getByText('7890abcdef')).toBeTruthy();
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
