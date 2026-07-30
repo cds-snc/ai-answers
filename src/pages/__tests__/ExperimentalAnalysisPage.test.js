@@ -154,8 +154,8 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'experimental.analysis.viewResults' })).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'experimental.analysis.export' })).toBeTruthy();
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' }).length).toBeGreaterThan(0);
         expect(screen.getByRole('button', { name: 'experimental.analysis.exportChatLogs' })).toBeTruthy();
 
         await act(async () => {

@@ -2033,7 +2033,18 @@
         "candidate": "Comparer à",
         "selectBaseline": "-- Sélectionner un lot de référence --",
         "selectCandidate": "-- Sélectionner un lot à comparer --",
-        "create": "Créer la comparaison"
+        "create": "Créer la comparaison",
+        "columns": {
+          "name": "Nom de la comparaison",
+          "analyzer": "Analyseur",
+          "status": "Statut",
+          "completed": "Terminés",
+          "failed": "Échoués",
+          "total": "Éléments au total",
+          "date": "Date",
+          "actions": "Actions",
+          "previousComparisons": "Comparaisons précédentes"
+        }
       },
       "selectBaseline": "Sélectionner un lot de référence (comparaison)",
       "baselineHint": "Choisissez un lot terminé comme référence de comparaison. Les comparaisons utilisent les réponses de ce lot.",

@@ -2033,7 +2033,18 @@
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
         "selectCandidate": "-- Select a batch to compare --",
-        "create": "Create comparison"
+        "create": "Create comparison",
+        "columns": {
+          "name": "Comparison name",
+          "analyzer": "Analyzer",
+          "status": "Status",
+          "completed": "Completed",
+          "failed": "Failed",
+          "total": "Total items",
+          "date": "Date",
+          "actions": "Actions",
+          "previousComparisons": "Previous comparisons"
+        }
       },
       "selectBaseline": "Select reference batch (comparison)",
       "baselineHint": "Pick a completed batch to act as the comparison reference. Comparisons use that batch's answers.",

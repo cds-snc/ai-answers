@@ -719,14 +719,60 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </GcdsButton>
                 {comparisons.length > 0 && (
                     <div className="mt-300">
-                        {comparisons.map(comparison => (
-                            <div key={comparison._id} className="mb-200">
-                                <GcdsLink href={`/${lang}/experimental/analysis/${comparison._id}`}>
-                                    {comparison.name}
-                                </GcdsLink>
-                                {' - '}{getStatusLabel(comparison.status)}
+                        <div style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+                            <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
+                            <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.comparison.columns.previousComparisons')}</GcdsHeading>
+                            <div className="overflow-auto">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.name')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.analyzer')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.status')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.completed')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.failed')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.total')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.date')}</th>
+                                    <th className="p-300">{t('experimental.analysis.comparison.columns.actions')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {comparisons.map(comparison => (
+                                    <tr key={comparison._id} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td className="p-200">{comparison.name || getRunLabel(comparison)}</td>
+                                        <td className="p-200">{getAnalyzerLabel(comparison)}</td>
+                                        <td className="p-300">
+                                            <span style={{
+                                                color: comparison.status === 'completed' ? 'green' : (comparison.status === 'failed' ? 'red' : 'orange'),
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {getStatusLabel(comparison.status)}
+                                            </span>
+                                        </td>
+                                        <td className="p-300">{formatNumber(comparison.summary?.completed, lang)}</td>
+                                        <td className="p-300">{formatNumber(comparison.summary?.failed, lang)}</td>
+                                        <td className="p-300">{formatNumber(comparison.summary?.total, lang)}</td>
+                                        <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(comparison.createdAt))}</td>
+                                        <td className="p-200">
+                                            <div className="flex gap-200">
+                                                <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${comparison._id}`)}>
+                                                    {t('experimental.analysis.viewResults')}
+                                                </GcdsButton>
+                                                <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>
+                                                    {t('experimental.analysis.export')}
+                                                </GcdsButton>
+                                                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>
+                                                    {t('experimental.analysis.delete')}
+                                                </GcdsButton>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            </table>
                             </div>
-                        ))}
+                            </div>
+                        </div>
                     </div>
                 )}
             </section>
