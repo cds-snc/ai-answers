@@ -12,7 +12,7 @@
 //
 // PER-DEPARTMENT MARKDOWN IS NOW THE SOURCE OF TRUTH: each department's programs
 // live in a curated, partner-editable EN/FR list at
-//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md
+//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-services.md
 // loaded via programSeedsLoader.js (getSeedPrograms). Every department that had
 // harvested programs has migrated to its .md, so this map is now empty; it is
 // kept only as the loader's fallback for any department that has neither a .md

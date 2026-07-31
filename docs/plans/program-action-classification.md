@@ -1,7 +1,10 @@
 # Per-question program & action classification
 
-**Status:** shipped (July 2026, merged to `main`). EN-first MVP per the plan below;
-FR display and the "later phases" remain outstanding.
+**Status:** shipped (July 2026, merged to `main`). EN-first MVP per the plan below,
+plus **Phase 2** (curated program `.md` for every scenario folder + eval-analysis
+rationalization — see the Phase 2 section). FR display of *action* values and the
+remaining "later phases" (program-name normalization, exec dashboard,
+`FilterPanel` program/action filters) remain outstanding.
 **Owner:** Lisa Fast
 
 Post-ship tuning of the partner "Question volume by program" card: real programs
@@ -49,7 +52,7 @@ by per-question scoping.
    normalization pass can be added later if it proves to be a problem.
    *Update (post-ship):* the seed vocabulary is moving to a curated,
    partner-editable EN/FR Markdown table per department at
-   `agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md`,
+   `agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-services.md`,
    loaded by `api/data/programSeedsLoader.js` (`getSeedPrograms`, with an
    EN→FR map via `getProgramNameMap` for future French display). CRA-ARC has
    migrated; departments without a file fall back to the arrays in
@@ -193,7 +196,7 @@ questions the model chooses to snap to it.
 - `context.program` stores a **canonical English** string, or `''` (never
   classified) / `'unknown'` (ran, not confident). Non-normal answers are never
   classified (see the answer-type gate).
-- The curated list per department (`context-<dept>/<dept>-programs.md`, EN|FR)
+- The curated list per department (`context-<dept>/<dept>-services.md`, EN|FR)
   is the source of truth for **canonical** names + their French display value.
 - Both the volume chart (`metrics-programs.js`) and FR display key off the
   **exact** stored string. Any normalization must reconcile a stored variant to
@@ -248,33 +251,56 @@ handful of aliases (→ A) or a long tail (→ B + D), and whether C is worth it
 
 ## Phase 2 — curated program lists for all partners + eval-analysis rationalization
 
-**Status:** planned (July 2026). **Owner:** Lisa Fast.
+**Status:** shipped (July 2026, merged to `main`). **Owner:** Lisa Fast.
 
-Phase 1 migrated only CRA-ARC to a curated `.md`. Phase 2 rolls a curated program
-list to **every partner that has a scenario folder**, seeded from a cleaned
-version of the auto-harvested draft (`.../CDS/AI/programs-by-dept-draft.csv` — a
-dump of the `context.program` values the classifier has emitted over the last few
-weeks), and rationalizes the two places programs/actions get produced (this
-classifier vs. the eval-analysis Tier-2). Curating the seed vocabulary at the
-source is the drift mitigation from the section above, applied before the fact.
+Phase 1 migrated only CRA-ARC to a curated `.md`. Phase 2 rolled a curated program
+list to **every partner scenario folder**, seeded from a cleaned version of the
+auto-harvested draft (`.../CDS/AI/programs-by-dept-draft.csv` — a dump of the
+`context.program` values the classifier had emitted over the prior few weeks), and
+rationalized the two places programs/actions get produced (this classifier vs. the
+eval-analysis Tier-2). Curating the seed vocabulary at the source is the drift
+mitigation from the section above, applied before the fact.
 
-### 1. Rollout target
+**What shipped vs. this plan:**
 
-One `context-<dept>/<dept>-programs.md` per partner folder, same format as
-`cra-arc-programs.md` (English | Français, curated header, one program per row).
-The draft covers 13 departments: BAC-LAC, CEO-BEC, DND-MDN, ECCC, EDSC-ESDC,
+- **All 19 scenario folders got a `.md`, not 12.** The plan below scoped the
+  rollout to the 13 draft departments (→ 12 files after PHAC folds into HC-SC) and
+  left the seven data-less folders on model-knowledge fallback. In practice every
+  scenario folder was stubbed — including AAFC-AAC, CBSA-ASFC, CDS-SNC, FIN, JUS,
+  NRCAN-RNCAN, and VAC-ACC — so there is now one `context-<dept>/<dept>-services.md`
+  per folder. PHAC-ASPC still has no folder and folds into `hc-sc-services.md` as
+  planned.
+- **Legacy seed arrays fully retired (§4 done).** `PROGRAM_SEEDS_BY_DEPARTMENT` is
+  now `{}` — the EDSC-ESDC, IRCC, and TBS-SCT arrays were removed and merged into
+  their `.md` files. `ACTION_SEEDS` and `OTHER_LABEL` remain.
+- **Loader guards blank FR cells.** `programSeedsLoader.js` builds the EN→FR map
+  from rows that actually have a French value, so an EN-only draft row no longer
+  maps `en → ''` and clobbers the English fallback.
+- **Eval-analysis Tier-2 rationalized (§5 done).** The emergent
+  `evalAnalysisProgramsStrategy` proposal call was deleted; the service now reuses
+  stored `context.program`/`context.action`, gates the LLM fallback on
+  `rowNeedsClassification` (unclassified **and** `normal` answer type), and
+  classifies the fallback against the curated seed list plus in-run names. The
+  pre-existing answer-type gate bug is fixed.
+- **Export logs** now include `context.program` and `context.action` columns.
+
+### 1. Rollout target — done
+
+One `context-<dept>/<dept>-services.md` per partner folder, same format as
+`cra-arc-services.md` (English | Français, curated header, one service per row).
+The draft covered 13 departments: BAC-LAC, CEO-BEC, DND-MDN, ECCC, EDSC-ESDC,
 HC-SC, IRCC, ISED-ISDE, PHAC-ASPC, SAC-ISC, STATCAN, TBS-SCT, TC.
 
 - **Aliased departments share the primary's file.** `PHAC-ASPC` has no scenario
   folder — it resolves to `HC-SC` via `resolveScenarioKey`, and the loader keys
   the file off the *resolved* abbrKey. So PHAC-ASPC programs are **merged into
-  `hc-sc-programs.md`**, not given their own file. Same rule for every other
+  `hc-sc-services.md`**, not given their own file. Same rule for every other
   aliased abbrKey (Defence portfolio → DND-MDN, RCAANC → SAC-ISC, RDAs →
-  ISED-ISDE): curate at the primary folder. Net: 13 draft departments → **12
-  files** (PHAC folds into HC-SC).
-- Scenario folders with no draft data yet (AAFC-AAC, CBSA-ASFC, CDS-SNC, FIN,
-  JUS, NRCAN-RNCAN, VAC-ACC) keep falling back to model knowledge until they
-  accrue data — no empty files.
+  ISED-ISDE): curate at the primary folder.
+- **Shipped wider than planned:** rather than leaving the seven data-less folders
+  (AAFC-AAC, CBSA-ASFC, CDS-SNC, FIN, JUS, NRCAN-RNCAN, VAC-ACC) on model-knowledge
+  fallback, every scenario folder got a `.md`. Net: **19 files**, one per folder,
+  with PHAC folding into HC-SC.
 
 ### 2. CSV cleanup rules (draft → curated)
 
@@ -323,25 +349,31 @@ no FR regression. Official French program names are filled in afterward by Lisa 
 partners, same edit model as CRA-ARC. Do **not** machine-generate official GC
 program names (consistent with the EN-first MVP).
 
-### 4. Retire the legacy seed arrays
+### 4. Retire the legacy seed arrays — done
 
-`programActionSeeds.js` still hardcodes program arrays for **EDSC-ESDC**,
-**IRCC**, and **TBS-SCT** (one entry). Once each has a curated `.md`, remove its
-array from `PROGRAM_SEEDS_BY_DEPARTMENT` (mirroring how CRA-ARC was removed) so
-the `.md` is the single source of truth and the two can't diverge. The draft
-`.md` for those three should **merge** the existing array entries with the
-cleaned harvest — the arrays hold curated names the harvest may miss (EI
-sub-benefit breakdowns, IRCC `Study permit` / `Citizenship`, etc.). `ACTION_SEEDS`
-and `OTHER_LABEL` stay in `programActionSeeds.js` — actions remain a global,
-non-department list.
+`programActionSeeds.js` previously hardcoded program arrays for **EDSC-ESDC**,
+**IRCC**, and **TBS-SCT** (one entry). All three arrays were removed and their
+entries merged into the department `.md` files (mirroring how CRA-ARC was
+removed), so `PROGRAM_SEEDS_BY_DEPARTMENT` is now `{}` — the `.md` is the single
+source of truth and the two can't diverge. The merge preserved curated names the
+harvest missed (EI sub-benefit breakdowns, IRCC `Study permit` / `Citizenship`,
+etc.). `ACTION_SEEDS` and `OTHER_LABEL` stay in `programActionSeeds.js` — actions
+remain a global, non-department list. The empty map is kept only as the loader's
+fallback for a folder that has neither a `.md` nor harvested programs (the loader
+returns `[]` in that case).
 
-### 5. Rationalize with the eval-analysis Tier-2 (decided July 2026)
+### 5. Rationalize with the eval-analysis Tier-2 (shipped July 2026)
 
-`partner-eval-analysis.md` predates this classifier, so its Tier-2 runs its own
-two-pass emergent program/action grouping — which now double-classifies every
-recent normal question (those already carry `context.program`/`context.action`).
+`partner-eval-analysis.md` predated this classifier, so its Tier-2 ran its own
+two-pass emergent program/action grouping — which double-classified every recent
+normal question (those already carry `context.program`/`context.action`).
 
-Decision: **read stored, keep Tier-2 as a fallback.**
+Decision, now shipped: **read stored, keep Tier-2 as a fallback.** The emergent
+program-proposal pass (`evalAnalysisProgramsStrategy`, `sampleRows`,
+`PROGRAM_SAMPLE_SIZE`) was deleted; the classification vocabulary is now the
+department's curated seed list (`getSeedPrograms`) plus program names already
+stored on rows in the run. The gate lives in `rowNeedsClassification`
+(`services/evalAnalysisStats.js`).
 
 - Eval-analysis uses the stored `context.program` / `context.action` when
   present — so recent rows bucket **identically to the partner volume card** (one
@@ -372,13 +404,14 @@ everywhere; the eval-analysis Tier-2 shrinks to a gap-filler for old data. The
 `partner-eval-analysis.md` Tier-2 section should get a pointer back here noting it
 now prefers stored values.
 
-### Open items for the walkthrough
+### Open items for the walkthrough — resolved
 
-- The initial draft I generate is a **first cut** for partners to curate; I'll
-  pick a reasonable canonical name per merged cluster (esp. the DND
+- The shipped draft is a **first cut** for partners to curate; a reasonable
+  canonical name was chosen per merged cluster (esp. the DND
   release/transition/pay family and the STATCAN census/CPI/survey clusters), and
   partners refine their own file afterward.
-- Whether to seed FR for the highest-volume programs in the same PR or defer all
-  FR to a follow-up.
-- Confirm which of the seven data-less scenario folders (if any) you want stubbed
-  now vs. left on model-knowledge fallback.
+- **FR deferred:** draft `.md` files shipped with the English column populated and
+  the Français column blank; official French names are filled in afterward by Lisa
+  / partners (same edit model as CRA-ARC).
+- **All seven data-less folders were stubbed now** rather than left on
+  model-knowledge fallback (see §1).

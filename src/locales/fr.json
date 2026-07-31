@@ -666,7 +666,7 @@
       "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
-      "dateRange": "Plage de dates (24 heures)",
+      "dateRange": "Plage de dates",
       "dateRangePickerDialog": "Calendrier de plage de dates",
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
@@ -814,7 +814,7 @@
         "chatId": "ID de chat",
         "questionNumber": "Q #",
         "department": "Ministère",
-        "program": "Programme",
+        "program": "Service",
         "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
@@ -1419,7 +1419,7 @@
       "title": "Mesures de sécurité"
     },
     "programs": {
-      "title": "Volume de questions par programme",
+      "title": "Volume de questions par service",
       "subtitle": "{total} questions classées · EN : {en} · FR : {fr}",
       "unclassifiedNote": "{count} non classées",
       "tooltipCount": "{count} questions",
@@ -1448,7 +1448,7 @@
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",
-      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par programme, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
+      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par service, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
       "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
       "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
       "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
@@ -1459,7 +1459,7 @@
       "error": "L'analyse a échoué. Des résultats partiels peuvent être affichés ci-dessous.",
       "running": {
         "preparing": "Préparation de l'analyse…",
-        "classifying": "Classification des programmes… {done} de {total}",
+        "classifying": "Classification des services… {done} de {total}",
         "synthesizing": "Rédaction des constats…"
       },
       "status": {
@@ -1484,15 +1484,15 @@
         "runOn": "Exécutée le {date}",
         "runBy": "par {email}",
         "excluded": "{count} sans note exclues des statistiques de résultats",
-        "unclassified": "{count} n'ont pas pu être classées par programme",
+        "unclassified": "{count} n'ont pas pu être classées par service",
         "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
         "running": "Cette analyse est toujours en cours ({status}). Les résultats ci-dessous sont partiels.",
         "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
         "rowsTitle": "Détails des évaluations",
         "viewRowData": "Afficher toutes les données de la ligne",
         "noValue": "Non disponible",
-        "programActionsTitle": "Résultats par programme et action",
-        "colProgramAction": "Programme — action",
+        "programActionsTitle": "Résultats par service et action",
+        "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
         "colCount": "Évaluations",
         "colNonPerfect": "Non parfaites",
@@ -1515,7 +1515,7 @@
         "colEvaluator": "Évaluateur",
         "colQuestion": "Question",
         "colScore": "Note",
-        "colProgram": "Programme",
+        "colProgram": "Service",
         "colAction": "Action",
         "colDetails": "Détails",
         "flagged": "À examiner"

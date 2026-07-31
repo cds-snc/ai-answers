@@ -1,12 +1,12 @@
-# CRA-ARC programs
+# CRA-ARC services
 
-Curated list of Canada Revenue Agency programs used to keep program tagging
-consistent across questions. One program per row.
+Curated list of Canada Revenue Agency services used to keep service tagging
+consistent across questions. One service per row.
 
 **How to edit (for partners):**
-- Add a row for a missing program; remove one that doesn't apply.
+- Add a row for a missing service; remove one that doesn't apply.
 - Keep the two columns: **English** name, then the official **Français** name.
-- Use the official Government of Canada program name (as it appears on canada.ca),
+- Use the official Government of Canada service name (as it appears on canada.ca),
   not a web-page or section title.
 - Keep the header row and the `|---|---|` separator line intact.
 
