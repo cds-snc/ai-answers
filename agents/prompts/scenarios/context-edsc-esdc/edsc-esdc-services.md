@@ -12,29 +12,31 @@ per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Canada Disability Benefit |  |
-| Canada Education Savings Grant |  |
-| Canada Pension Plan |  |
-| Canada Student Grants and Canada Student Loans |  |
-| Canadian Dental Care Plan |  |
-| CPP children's benefit |  |
-| CPP death benefit |  |
-| CPP disability benefits |  |
-| Employment insurance - Benefits for self-employed |  |
-| Employment insurance - Caregiving benefits |  |
-| Employment insurance - Fishing benefits |  |
-| Employment insurance - maternity and parental benefits |  |
-| Employment insurance - regular benefits |  |
-| Employment insurance - sickness benefits |  |
-| Job Bank |  |
-| Labour Program |  |
-| My Service Canada Account |  |
-| Old Age Security |  |
-| Public Service Health Care Plan |  |
-| Social Insurance Number |  |
-| Workplace harassment and violence prevention |  |
+| Canada Disability Benefit | Prestation canadienne pour les personnes handicapées |
+| Canada Education Savings Grant | Subvention canadienne pour l'épargne-études |
+| Canada Pension Plan | Régime de pensions du Canada |
+| Canada Student Grants and Canada Student Loans | Bourses d'études canadiennes et prêts d'études canadiens |
+| Canadian Dental Care Plan | Régime canadien de soins dentaires |
+| CPP children's benefit | Prestation d'enfant du RPC |
+| CPP death benefit | Prestation de décès du RPC |
+| CPP disability benefits | Prestations d'invalidité du RPC |
+| Employment insurance - Benefits for self-employed | Assurance-emploi - Prestations pour travailleurs indépendants |
+| Employment insurance - Caregiving benefits | Assurance-emploi - Prestations pour proches aidants |
+| Employment insurance - Fishing benefits | Assurance-emploi - Prestations pour pêcheurs |
+| Employment insurance - maternity and parental benefits | Assurance-emploi - Prestations de maternité et parentales |
+| Employment insurance - regular benefits | Assurance-emploi - Prestations régulières |
+| Employment insurance - sickness benefits | Assurance-emploi - Prestations de maladie |
+| Record of Employment (ROE) | Relevé d'emploi (RE) |
+| Work-Sharing Program | Programme de travail partagé |
+| Temporary Foreign Worker Program | Programme des travailleurs étrangers temporaires |
+| Job Bank | Guichet-Emplois |
+| Labour Program | Programme du travail |
+| My Service Canada Account | Mon dossier Service Canada |
+| Old Age Security | Sécurité de la vieillesse |
+| Public Service Health Care Plan | Régime de soins de santé de la fonction publique |
+| Social Insurance Number | Numéro d'assurance sociale |
+| Workplace harassment and violence prevention | Prévention du harcèlement et de la violence dans le lieu de travail |

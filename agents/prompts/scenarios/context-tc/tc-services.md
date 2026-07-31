@@ -11,16 +11,24 @@ consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Aircraft registration |  |
-| Aviation Document Booklet |  |
-| Aviation licensing |  |
-| Boating safety |  |
-| Civil Aviation Medical Certificate |  |
-| Marine Medical Certificate |  |
-| Pleasure Craft Licence (PCL) |  |
-| Pleasure Craft Operator Card (PCOC) |  |
+| Aircraft registration | Immatriculation des aéronefs |
+| Aviation Document Booklet | Carnet de documents d'aviation |
+| Aviation licensing | Délivrance de licences en aviation |
+| Drone safety | Sécurité des drones |
+| Civil Aviation Medical Certificate | Certificat médical de l'aviation civile |
+| Boating safety | Sécurité nautique |
+| Pleasure Craft Licence (PCL) | Permis d'embarcation de plaisance |
+| Pleasure Craft Operator Card (PCOC) | Carte de conducteur d'embarcation de plaisance |
+| Vessel licensing and registration | Permis et immatriculation des bâtiments |
+| Marine Medical Certificate | Certificat médical maritime |
+| Transportation of dangerous goods | Transport des marchandises dangereuses |
+| CANUTEC | CANUTEC |
+| Transportation security clearance | Habilitation de sécurité en matière de transport |
+| Vehicle defects and recalls | Défauts et rappels de véhicules |
+| Child car seat safety | Sécurité des sièges d'auto pour enfants |
+| Rail grade crossings | Passages à niveau |
+| Railway operating certificate | Certificat d'exploitation ferroviaire |

@@ -3,9 +3,6 @@
 Curated list of Veterans Affairs Canada services used to keep service tagging
 consistent across questions. One service per row.
 
-**This is a starter file** — no services have been curated yet. Add your
-department's services to the table below.
-
 **How to edit (for partners):**
 - Add a row for each service your department is asked about.
 - Keep the two columns: **English** name, then the official **Français** name.
@@ -18,3 +15,12 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
+| Compensation for illness or injury | Indemnité en cas de maladie ou de blessure |
+| Income support | Soutien du revenu |
+| Medical costs | Frais médicaux |
+| Emergency funds | Fonds d'urgence |
+| Help at home | Aide à domicile |
+| Death and bereavement | Décès et deuil |
+| Prisoner of War benefits | Indemnisation de prisonnier de guerre |
+| Funding programs for organizations | Programmes de financement à l'intention d'organismes |
+| Financial management | Gestion financière |

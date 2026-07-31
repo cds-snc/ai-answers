@@ -11,12 +11,17 @@ service tagging consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| 2030 Nature Strategy |  |
-| Convention on Biological Diversity |  |
-| Weather forecasts |  |
-| Wildlife rehabilitation |  |
+| Weather forecasts | Prévisions météorologiques |
+| Weather alerts | Alertes météorologiques |
+| Aviation, marine and ice weather services | Services météorologiques pour l'aviation, la marine et les glaces |
+| Climate data viewer | Visualiseur de données climatiques |
+| Climate change funding programs | Programmes de financement pour les changements climatiques |
+| 2030 Nature Strategy | Stratégie 2030 pour la nature |
+| Convention on Biological Diversity | Convention sur la diversité biologique |
+| Wildlife rehabilitation | Réhabilitation de la faune |
+| Environmental and wildlife enforcement | Application des lois environnementales et sur la faune |
+| Water quality information | Information sur la qualité de l'eau |

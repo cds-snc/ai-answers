@@ -11,11 +11,15 @@ tagging consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Census records |  |
-| Collection Search |  |
-| Genealogy |  |
+| Collection Search | Recherche dans la collection |
+| Genealogy | Généalogie |
+| Census records | Documents de recensement |
+| Research help | Aide à la recherche |
+| Ask a reference librarian | Poser une question à un bibliothécaire de référence |
+| Ordering material | Commande de documents |
+| Services for publishers | Services aux éditeurs |
+| Aurora library catalogue | Catalogue de bibliothèque Aurora |

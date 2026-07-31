@@ -3,9 +3,18 @@
 Curated list of Innovation, Science and Economic Development Canada services used
 to keep service tagging consistent across questions. One service per row.
 
-This file also covers the **regional development agencies** (ACOA, CED-QR,
-CanNor, FedDev Ontario, FedNor, PacifiCan, PrairiesCan), which share ISED's
-scenario folder — add their services here too.
+This file also covers ISED's **portfolio organizations** — the regional
+development agencies (ACOA, CED-QR, CanNor, FedDev Ontario, FedNor, PacifiCan,
+PrairiesCan), the Canadian Intellectual Property Office (CIPO-OPIC), the
+Communications Research Centre (CRC), the Competition Bureau (COBU-BUCO),
+Measurement Canada (MC), and the Office of the Superintendent of Bankruptcy
+(OSB-BSF) — which share ISED's scenario folder via `scenario-aliases.js` — add
+their services here too.
+
+Health Emergency Readiness Canada (HERC-PCSC) is also listed as a service, but it
+is **not yet aliased**: it has no abbrKey in `departments_EN.js`/`departments_FR.js`,
+so the context node can't match it. Add it there and to `scenario-aliases.js`
+(→ ISED-ISDE) once it's registered as a department.
 
 **How to edit (for partners):**
 - Add a row for a missing service; remove one that doesn't apply.
@@ -15,12 +24,33 @@ scenario folder — add their services here too.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Amateur radio call signs |  |
-| Canada Digital Identity Grant Program |  |
-| Women Entrepreneurship Loan Fund |  |
-| Women's Enterprise Initiative |  |
+| Business Benefits Finder | Repérage des avantages pour les entreprises |
+| Corporations Canada | Corporations Canada |
+| Federal corporation search | Recherche de sociétés de régime fédéral |
+| Canadian Importers Database | Base de données sur les importateurs canadiens |
+| Apply for or amend a trademark | Déposer ou modifier une demande de marque de commerce |
+| Search trademarks | Effectuer une recherche sur les marques de commerce |
+| Apply for a patent | Déposer une demande de brevet |
+| Pay patent maintenance fees | Payez la taxe pour le maintien en état d'un brevet |
+| Search patents | Effectuer une recherche sur les brevets |
+| Register a copyright | Enregistrer un droit d'auteur |
+| Apply for or amend an industrial design | Déposer ou modifier une demande de dessin industriel |
+| Amateur radio call signs | Indicatifs d'appel de radioamateur |
+| Women Entrepreneurship Loan Fund | Fonds de prêts pour les femmes entrepreneures |
+| Women's Enterprise Initiative | Initiative pour les femmes en entreprise |
+| Atlantic Canada Opportunities Agency (ACOA) | Agence de promotion économique du Canada atlantique (APECA) |
+| Canada Economic Development for Quebec Regions (CED) | Développement économique Canada pour les régions du Québec (DEC) |
+| Canadian Northern Economic Development Agency (CanNor) | Agence canadienne de développement économique du Nord (CanNor) |
+| Federal Economic Development Agency for Southern Ontario (FedDev Ontario) | Agence fédérale de développement économique pour le Sud de l'Ontario (FedDev Ontario) |
+| Federal Economic Development Agency for Northern Ontario (FedNor) | Agence fédérale de développement économique pour le Nord de l'Ontario (FedNor) |
+| Pacific Economic Development Canada (PacifiCan) | Développement économique Canada pour le Pacifique (PacifiCan) |
+| Prairies Economic Development Canada (PrairiesCan) | Développement économique Canada pour les Prairies (PrairiesCan) |
+| Communications Research Centre Canada (CRC) | Centre de recherches sur les communications Canada (CRC) |
+| Competition Bureau Canada | Bureau de la concurrence |
+| Measurement Canada | Mesures Canada |
+| Office of the Superintendent of Bankruptcy | Bureau du surintendant des faillites Canada |
+| Health Emergency Readiness Canada (HERC) | Préparation aux crises sanitaires Canada (PCSC) |

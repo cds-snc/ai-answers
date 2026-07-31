@@ -14,15 +14,17 @@ This file also covers **Crown-Indigenous Relations and Northern Affairs
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Aboriginal Entrepreneurship Program |  |
-| Contributions to support service transfer and transformation |  |
-| Indian status |  |
-| Indian status registration |  |
-| Non-Insured Health Benefits (NIHB) |  |
-| Secure Certificate of Indian Status (SCIS) |  |
-| Treaty Annuities |  |
+| Indian status | Statut d'Indien |
+| Secure Certificate of Indian Status (SCIS) | Certificat sécurisé de statut indien (CSSI) |
+| Non-Insured Health Benefits (NIHB) | Services de santé non assurés (SSNA) |
+| Jordan's Principle | Principe de Jordan |
+| Inuit Child First Initiative | Initiative Les enfants inuits d'abord |
+| Treaty Annuities | Annuités de traités |
+| Specific claims | Revendications particulières |
+| Drinking water advisories | Avis concernant la qualité de l'eau potable |
+| Aboriginal Entrepreneurship Program | Programme d'entrepreneuriat autochtone |
+| Contributions to support service transfer and transformation | Contributions pour appuyer le transfert et la transformation des services |

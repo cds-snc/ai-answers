@@ -11,14 +11,19 @@ consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Annual Survey of Manufactures and Logging |  |
-| Census jobs |  |
-| Census of Population |  |
-| Consumer Price Index (CPI) |  |
-| Labour Force Survey |  |
-| Population estimates |  |
+| Survey participation | Participation aux enquêtes |
+| Data tables | Tableaux de données |
+| Census of Population | Recensement de la population |
+| Census of Agriculture | Recensement de l'agriculture |
+| Census jobs | Emplois du recensement |
+| Labour Force Survey | Enquête sur la population active |
+| Consumer Price Index (CPI) | Indice des prix à la consommation (IPC) |
+| Population estimates | Estimations de la population |
+| Annual Survey of Manufactures and Logging | Enquête annuelle sur les industries manufacturières et l'exploitation forestière |
+| North American Industry Classification System (NAICS) | Système de classification des industries de l'Amérique du Nord (SCIAN) |
+| Canadian Export Classification | Classification canadienne des exportations |
+| Quality of Life Hub | Carrefour de la qualité de vie |
