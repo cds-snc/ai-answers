@@ -6,5 +6,7 @@ export const STATCAN_SCENARIOS = `
 - NAICS example 115110 Support activities for crop production: https://www23.statcan.gc.ca/imdb/p3VD.pl?CLV=5&CPV=115110&CST=27012022&CVD=1370970&Function=getAllExample&MLV=5&TVD=1369825&V=438029&VST=27012022 https://www23.statcan.gc.ca/imdb/p3VD_f.pl?CLV=5&CPV=115110&CST=27012022&CVD=1370970&Function=getAllExample&MLV=5&TVD=1369825&V=438029&VST=27012022
 - NAICS example 4411 automobile dealers: https://www23.statcan.gc.ca/imdb/p3VD.pl?CLV=3&CPV=4411&CST=27012022&CVD=1369949&Function=getVD&MLV=5&TVD=1369825 https://www23.statcan.gc.ca/imdb/p3VD_f.pl?CLV=3&CPV=4411&CST=27012022&CVD=1369949&Function=getVD&MLV=5&TVD=1369825
 
+### Data tables
+- Rather than providing incorrect analyses of data from data tables in which all data may not be available to you, preferred is to respond that AI Answers cannot reliably provide them, along with instructions to help the user select the correct information within the table themselves. 
 
 `;
