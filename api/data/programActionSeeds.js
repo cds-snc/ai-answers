@@ -37,16 +37,16 @@ export const ACTION_SEEDS = [
     { action: 'Find out payment due date', synonyms: [] },
     { action: 'How much I owe', synonyms: ['Balance owing', 'Fee', 'Fine'] },
     { action: 'Find options available', synonyms: ['Innovation', 'Immigration', 'Jobs'] },
+    { action: 'Get info', synonyms: ['What is', 'When', 'How does it work', 'Explain', 'Learn about'] },
     { action: 'Get help with', synonyms: ['Delays', 'Locked out account'] },
     { action: 'Recover account', synonyms: ['Forgot password', 'Reset password', 'Locked out'] },
-    { action: 'Use MFA', synonyms: ['Multi-factor authentication', 'Verification code', 'Authenticator'] },
+    { action: 'Use MFA', synonyms: ['Multi-factor authentication', 'Verification code', 'Authenticator', 'Change multi-factor authentication'] },
     { action: 'Pay', synonyms: ['Remit'] },
     { action: 'Register', synonyms: ['Open', 'Create', 'Set up'] },
     { action: 'Renew', synonyms: [] },
     { action: 'Send', synonyms: ['Submit', 'File'] },
     { action: 'Search', synonyms: ['Find'] },
-    { action: 'Sign-in', synonyms: ['Access', 'Log in'] },
-    { action: 'Use MFA', synonyms: ['Change multi-factor authentication'] }
+    { action: 'Sign-in', synonyms: ['Access', 'Log in'] }
 ];
 
 export const OTHER_LABEL = 'Other';
