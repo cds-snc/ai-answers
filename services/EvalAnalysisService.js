@@ -6,7 +6,8 @@ import {
     getPartnerEvalAggregationExpression,
     getAiEvalAggregationExpression
 } from '../api/util/chat-filters.js';
-import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification } from './evalAnalysisStats.js';
+import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification, combinedLabelFrom } from './evalAnalysisStats.js';
+import { frForProgram, frForAction } from '../api/util/programActionFr.js';
 import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createEvalAnalysisAgent } from '../agents/AgentFactory.js';
 import { evalAnalysisClassifyStrategy } from '../agents/strategies/evalAnalysisClassifyStrategy.js';
@@ -147,9 +148,28 @@ const slimRowForInsights = (r) => ({
 
 // The rows snapshot never leaves the server (it repeats question text for up
 // to 200 interactions); clients get everything else.
+// French display label for a cross-tab group, built from the stored English
+// program/action parts (display-only; English stays canonical). Older reports
+// saved before the parts were stored keep only the English label.
+const withCrossTabFr = (crossTab) => {
+    if (!crossTab || !Array.isArray(crossTab.groups)) return crossTab;
+    return {
+        ...crossTab,
+        groups: crossTab.groups.map((g) =>
+            g.program || g.action
+                ? { ...g, labelFr: combinedLabelFrom(
+                      g.program ? (frForProgram(g.program) || g.program) : null,
+                      g.action ? (frForAction(g.action) || g.action) : null
+                  ) }
+                : g
+        )
+    };
+};
+
 const toClientDoc = (doc) => {
     const obj = doc.toObject ? doc.toObject() : doc;
     const { rows, ...rest } = obj;
+    if (rest.crossTab) rest.crossTab = withCrossTabFr(rest.crossTab);
     return rest;
 };
 

@@ -2,6 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { frForProgram, frForAction } from '../util/programActionFr.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -494,6 +495,10 @@ async function evalDashboardHandler(req, res) {
       department: r.department || '',
       program: r.program || '',
       action: r.action || '',
+      // Display-only French labels; program/action stay canonical English for
+      // search/sort. UI picks by lang, falling back to English when unmapped.
+      programFr: frForProgram(r.program),
+      actionFr: frForAction(r.action),
       referringUrl: r.referringUrl || '',
       pageLanguage: r.pageLanguage || '',
       hasAutoEval: !!r.hasAutoEval,

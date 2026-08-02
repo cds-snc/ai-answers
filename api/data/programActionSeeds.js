@@ -49,4 +49,37 @@ export const ACTION_SEEDS = [
     { action: 'Sign-in', synonyms: ['Access', 'Log in'] }
 ];
 
+// French display labels for the action vocabulary, keyed by the canonical English
+// action (the value stored in Context.action). Display-only: actions are always
+// classified and stored in English; French admins/partners see these at render
+// time, English is the fallback for anything unmapped. Kept as a separate map so
+// ACTION_SEEDS stays English-only when passed to the classifier prompt. Every
+// ACTION_SEEDS action must have an entry here.
+export const ACTION_FR = {
+    'Apply': 'Présenter une demande',
+    'Change contact details': 'Modifier les coordonnées',
+    'Change direct deposit': 'Modifier le dépôt direct',
+    'Check status': "Vérifier l'état",
+    'Check eligibility': "Vérifier l'admissibilité",
+    'Check processing times': 'Vérifier les délais de traitement',
+    'Claim': 'Faire une réclamation',
+    'Complain': 'Porter plainte',
+    'Contact': 'Communiquer',
+    'How much can I receive': 'Combien puis-je recevoir',
+    'Find benefit payment date': 'Trouver la date de paiement de la prestation',
+    'Find out payment due date': "Trouver la date d'échéance du paiement",
+    'How much I owe': 'Combien je dois',
+    'Find options available': 'Trouver les options offertes',
+    'Get info': "Obtenir de l'information",
+    'Get help with': "Obtenir de l'aide",
+    'Recover account': "Récupérer l'accès au compte",
+    'Use MFA': "Utiliser l'authentification multifacteur",
+    'Pay': 'Payer',
+    'Register': "S'inscrire",
+    'Renew': 'Renouveler',
+    'Send': 'Envoyer',
+    'Search': 'Rechercher',
+    'Sign-in': 'Se connecter'
+};
+
 export const OTHER_LABEL = 'Other';

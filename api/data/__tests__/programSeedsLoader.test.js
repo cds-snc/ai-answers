@@ -58,10 +58,18 @@ describe('getSeedPrograms / getProgramNameMap — EDSC-ESDC now curated from .md
     expect(programs).toContain('Old Age Security');
   });
 
-  it('has an empty French map while the EDSC-ESDC .md Français column is unfilled', () => {
+  it('exposes the English→French name map now that EDSC-ESDC French is curated', () => {
+    const map = getProgramNameMap('EDSC-ESDC');
+    expect(map.get('Canada Pension Plan')).toBe('Régime de pensions du Canada');
+    expect(map.get('Old Age Security')).toBe('Sécurité de la vieillesse');
+  });
+
+  it('skips en-only rows so a draft with a blank Français column has an empty map', () => {
     // Draft .md files ship with a blank Français column; only real EN→FR pairs
-    // populate the map, so it stays empty until French names are added.
-    expect(getProgramNameMap('EDSC-ESDC').size).toBe(0);
+    // populate the map. IRCC still has programs but no French yet, so its map
+    // stays empty until French names are added.
+    expect(getSeedPrograms('IRCC').length).toBeGreaterThan(0);
+    expect(getProgramNameMap('IRCC').size).toBe(0);
   });
 });
 
