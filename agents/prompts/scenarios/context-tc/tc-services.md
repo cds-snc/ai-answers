@@ -30,5 +30,6 @@ French users. Both are stored exactly as written here.
 | Transportation security clearance | Habilitation de sécurité en matière de transport |
 | Vehicle defects and recalls | Défauts et rappels de véhicules |
 | Child car seat safety | Sécurité des sièges d'auto pour enfants |
+| Importing a vehicle | Importer un véhicule |
 | Rail grade crossings | Passages à niveau |
 | Railway operating certificate | Certificat d'exploitation ferroviaire |

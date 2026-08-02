@@ -3,9 +3,6 @@
 Curated list of Justice Canada services used to keep service tagging consistent
 across questions. One service per row.
 
-**This is a starter file** — no services have been curated yet. Add your
-department's services to the table below.
-
 **How to edit (for partners):**
 - Add a row for each service your department is asked about.
 - Keep the two columns: **English** name, then the official **Français** name.
@@ -18,3 +15,5 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
+| Justice Laws Website | Site Web de la législation (Justice) |
+| Criminal conviction review | Révision des condamnations criminelles |

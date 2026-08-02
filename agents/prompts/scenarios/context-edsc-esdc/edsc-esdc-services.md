@@ -39,6 +39,7 @@ French users. Both are stored exactly as written here.
 | Old Age Security | Sécurité de la vieillesse |
 | Guaranteed Income Supplement (GIS) | Supplément de revenu garanti (SRG) |
 | Allowance | Allocation |
+| Allowance for the Survivor | Allocation au survivant |
 | Public Service Health Care Plan | Régime de soins de santé de la fonction publique |
 | Social Insurance Number | Numéro d'assurance sociale |
 | Workplace harassment and violence prevention | Prévention du harcèlement et de la violence dans le lieu de travail |
