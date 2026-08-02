@@ -141,24 +141,37 @@ Single `HBarCard`: top programs by question volume plus an "unknown" bucket
 range, department, userType, …). Numbers via `formatNumber`. Chrome (title,
 labels) fully bilingual via locale keys.
 
-## French — deferred (MVP is EN-first)
+## French display — shipped (option 1, display-time translation)
 
-Stored values are canonical **English** strings (the pipeline classifies on the
-English translation of the question, and consistency requires one canonical
-language). Program/action values shown in dashboards are dynamic DB content,
-which is exempt from the locale-key rule — but a French admin/partner will see
-English program names, which is not acceptable long-term.
+Stored values remain canonical **English** strings (the pipeline classifies on
+the English translation of the question, and consistency requires one canonical
+language — a French user's question is still classified and stored in English).
+French is **display-only**, translated at the render boundary and falling back to
+English when unmapped, so grouping/search/sort stay on the single English value
+and no service ever splits into an EN row and an FR row.
 
-Follow-up options when we get there:
+The translation sources (option 1 from the original plan — no classification-time
+cost, no second LLM pass):
 
-1. **Display-time translation map** — seed the high-volume programs with their
-   official FR names (programs have official French names on canada.ca);
-   fall back to the stored EN string when unmapped.
-2. **Second LLM pass or bilingual output** — ask the classifier for both EN and
-   FR names at classification time and store both.
+- **Programs/services** — the curated EN|FR `.md` per department, merged into the
+  EN→FR map by `getAllProgramNameMap` (`programSeedsLoader.js`).
+- **Actions** — the closed action vocabulary's `ACTION_FR` map in
+  `programActionSeeds.js` (kept separate from `ACTION_SEEDS` so the classifier
+  prompt stays English-only). Shared helper `api/util/programActionFr.js`
+  (`frForProgram` / `frForAction`) applies both at the server boundary.
 
-Option 1 is likely sufficient for seeded programs and costs nothing at
-classification time. Decision deferred until the EN MVP has real data.
+Where French now renders (all pick by `lang`, English fallback):
+
+- **Partner dashboard** — "Question volume by service" card (`programFr`).
+- **Eval dashboard table** — service and action columns (`programFr` / `actionFr`
+  added in `eval-dashboard.js`; columns render by lang). Search/sort still operate
+  on the stored **English** value — a known gap for a French partner searching a
+  French service name.
+- **Eval-analysis report** — the "Service — action" cross-tab: groups keep their
+  English program/action parts, and `EvalAnalysisService.toClientDoc` builds a
+  `labelFr` from the two maps (older reports without the stored parts fall back to
+  the English label). The report's per-row table is not translated because
+  `toClientDoc` strips `rows` before sending — it doesn't reach the client.
 
 ## Later phases (not in this PR)
 
@@ -166,9 +179,11 @@ classification time. Decision deferred until the EN MVP has real data.
   program (partner dashboard)
 - Program/action filters in `FilterPanel` (scan chats by program area)
 - Exec dashboard volume-by-program view
-- FR display of program values — **shipped** (option 1: curated EN/FR `.md`,
-  merged map served as `programFr`, English fallback). FR display of *action*
-  values is still outstanding.
+- FR display of program **and action** values — **shipped** (option 1:
+  display-time translation via the curated EN/FR `.md` map + the `ACTION_FR` map,
+  English fallback; wired into the partner volume card, the eval dashboard table,
+  and the eval-analysis cross-tab). See "French display — shipped" above.
+  Remaining gap: French search/sort on the eval dashboard's service/action columns.
 - Program-name normalization (drift) — see the dedicated section below.
 
 ## Program-name normalization (drift)

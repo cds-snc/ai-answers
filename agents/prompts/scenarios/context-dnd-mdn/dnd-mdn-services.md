@@ -11,30 +11,29 @@ service tagging consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---------------------------------------------|---|
-| Access to Information and Privacy |  |
-| Canadian Armed Forces Retirement Dress (CAFRD) |  |
-| Canadian Cadet Organizations |  |
-| Canadian Forces Health Services |  |
-| Compensation and Benefits Instructions |  |
-| Early Retirement Incentive |  |
-| Imposed Restriction |  |
-| Military leave |  |
-| Military maternity and parental benefits |  |
-| Military medical and dental benefits |  |
-| Military medical records |  |
-| Military pay |  |
-| Military promotions |  |
-| Military relocation |  |
-| Military release process |  |
-| Military Transition Program |  |
-| Provincial health insurance plan |  |
-| Public Service Pension Plan |  |
-| Queen's Regulations and Orders |  |
-| Severance pay |  |
-| Standing offer |  |
-| Vocational Rehabilitation Program for Serving Members |  |
+| Access to Information and Privacy | Accès à l'information et protection des renseignements personnels |
+| Canadian Cadet Organizations | Organisations de cadets du Canada |
+| Canadian Forces Health Services | Services de santé des Forces canadiennes |
+| Compensation and Benefits Instructions | Directives sur la rémunération et les avantages sociaux |
+| Dress instructions | Instructions sur la tenue |
+| Early Retirement Incentive | Incitation à la retraite anticipée |
+| Imposed Restriction | Restriction imposée |
+| Military leave | Congé militaire |
+| Military maternity and parental benefits | Prestations militaires de maternité et parentales |
+| Military medical and dental benefits | Prestations médicales et dentaires militaires |
+| Military medical records | Dossiers médicaux militaires |
+| Military pay | Solde militaire |
+| Military promotions | Promotions militaires |
+| Military relocation | Réinstallation militaire |
+| Military release process | Processus de libération militaire |
+| Military Transition Program | Programme de transition militaire |
+| Provincial health insurance plan | Régime d'assurance maladie provincial |
+| Public Service Pension Plan | Régime de retraite de la fonction publique |
+| Queen's Regulations and Orders | Ordonnances et règlements royaux |
+| Severance pay | Indemnité de départ |
+| Standing offer | Offre à commandes |
+| Vocational Rehabilitation Program for Serving Members | Programme de réadaptation professionnelle pour les militaires en service |

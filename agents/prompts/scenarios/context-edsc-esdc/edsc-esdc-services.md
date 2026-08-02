@@ -37,6 +37,8 @@ French users. Both are stored exactly as written here.
 | Labour Program | Programme du travail |
 | My Service Canada Account | Mon dossier Service Canada |
 | Old Age Security | Sécurité de la vieillesse |
+| Guaranteed Income Supplement (GIS) | Supplément de revenu garanti (SRG) |
+| Allowance | Allocation |
 | Public Service Health Care Plan | Régime de soins de santé de la fonction publique |
 | Social Insurance Number | Numéro d'assurance sociale |
 | Workplace harassment and violence prevention | Prévention du harcèlement et de la violence dans le lieu de travail |

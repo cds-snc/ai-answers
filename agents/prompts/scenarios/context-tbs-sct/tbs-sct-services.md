@@ -11,28 +11,27 @@ service tagging consistent across questions. One service per row.
 - Keep the header row and the `|---|---|` separator line intact.
 
 The English names anchor the classifier; the French names are used for display to
-French users. Both are stored exactly as written here. The Français column is a
-draft placeholder — fill in the official French service names.
+French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Access to Information |  |
-| Commerce and Purchasing collective agreement |  |
-| Conflict of interest disclosure |  |
-| Early Retirement Incentive |  |
-| Economic Development Collective Agreement |  |
-| Government of Canada AI Strategy |  |
-| Pay equity |  |
-| Pensioners' Dental Services Plan |  |
-| Performance management program |  |
-| Policy on Service and Digital |  |
-| Public Service Dental Care Plan |  |
-| Public Service Disability Insurance Plan |  |
-| Public Service Employment |  |
-| Public Service Health Care Plan |  |
-| Public Service Labour Relations |  |
-| Public Service Pension Plan |  |
-| Public Service Supplementary Death Benefit |  |
-| Treasury Board Secretariat risk taxonomy |  |
-| Values and Ethics in the Public Sector |  |
-| Workforce Adjustment Policy |  |
+| Access to Information | Accès à l'information |
+| Commerce and Purchasing collective agreement | Convention collective Commerce et achat |
+| Conflict of interest disclosure | Divulgation de conflit d'intérêts |
+| Early Retirement Incentive | Incitation à la retraite anticipée |
+| Economic Development Collective Agreement | Convention collective Développement économique |
+| Government of Canada AI Strategy | Stratégie d'intelligence artificielle du gouvernement du Canada |
+| Pay equity | Équité salariale |
+| Pensioners' Dental Services Plan | Régime de services dentaires pour les pensionnés |
+| Performance management program | Programme de gestion du rendement |
+| Policy on Service and Digital | Politique sur les services et le numérique |
+| Public Service Dental Care Plan | Régime de soins dentaires de la fonction publique |
+| Public Service Disability Insurance Plan | Régime d'assurance-invalidité de la fonction publique |
+| Public Service Employment | Emploi dans la fonction publique |
+| Public Service Health Care Plan | Régime de soins de santé de la fonction publique |
+| Public Service Labour Relations | Relations de travail dans la fonction publique |
+| Public Service Pension Plan | Régime de retraite de la fonction publique |
+| Public Service Supplementary Death Benefit | Prestation supplémentaire de décès de la fonction publique |
+| Treasury Board Secretariat risk taxonomy | Taxonomie des risques du Secrétariat du Conseil du Trésor |
+| Values and Ethics in the Public Sector | Valeurs et éthique dans le secteur public |
+| Workforce Adjustment Policy | Politique sur le réaménagement des effectifs |
