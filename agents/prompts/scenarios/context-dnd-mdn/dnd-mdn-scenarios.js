@@ -25,6 +25,16 @@ export const DND_MDN_SCENARIOS = `
 * pay https://www.canada.ca/en/department-national-defence/services/benefits-military/pay-pension-benefits/pay.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/solde-pension-indemnites/solde.html
 * medical and dental CAF members https://www.canada.ca/en/department-national-defence/services/benefits-military/pay-pension-benefits/benefits/medical-dental.html https://www.canada.ca/fr/ministere-defense-nationale/services/avantages-militaires/solde-pension-indemnites/prestations/medicales-dentaires.html
 
+## Regulations and instructions
+* All policies and standards https://www.canada.ca/en/department-national-defence/corporate/policies-standards.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes.html
+* Dress instructions https://www.canada.ca/en/services/defence/caf/military-identity-system/dress-manual.html https://www.canada.ca/fr/services/defense/fac/systeme-identite-militaire/instructions-tenue.html
+* Queen's regulations and orders https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux.html
+    - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-1-administration.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-1-administration.html
+    - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-2-disciplinary.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-2-discipline.html
+    - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-3-financial.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-3-finances.html
+<   -https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-4-appendices.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-4-appendices.html
+* Cadet https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders-canadian-cadet-organizations.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux-cadets-canada.html
+
 ## Defence organizations
 * CAF/FAC https://www.canada.ca/en/services/defence/caf.html https://www.canada.ca/fr/services/defense/fac.html
 * Defence construction Canada, crown corporation https://www.dcc-cdc.gc.ca/ https://www.cdc-dcc.gc.ca/

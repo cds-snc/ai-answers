@@ -1,6 +1,13 @@
-// Shared scenarios for ISED-ISDE and the seven Regional Development Agencies
+// Shared scenarios for ISED-ISDE and its portfolio organizations (the seven
+// Regional Development Agencies plus CIPO, CRC, the Competition Bureau,
+// Measurement Canada, and the Office of the Superintendent of Bankruptcy).
 // The following abbrKeys resolve to this file via scenario-aliases.js:
 //   ISED-ISDE (canonical) — Innovation, Science and Economic Development Canada
+//   CIPO-OPIC      — Canadian Intellectual Property Office
+//   CRC            — Communications Research Centre Canada
+//   COBU-BUCO      — Competition Bureau Canada
+//   MC             — Measurement Canada
+//   OSB-BSF        — Office of the Superintendent of Bankruptcy
 //   ACOA-APECA     — Atlantic Canada Opportunities Agency
 //   CED-QR         — Canada Economic Development for Quebec Regions
 //   CanNor         — Canadian Northern Economic Development Agency

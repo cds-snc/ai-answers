@@ -666,7 +666,7 @@
       "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
-      "dateRange": "Date range (24-hour)",
+      "dateRange": "Date range",
       "dateRangePickerDialog": "Date range calendar",
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
@@ -814,7 +814,7 @@
         "chatId": "Chat ID",
         "questionNumber": "Q #",
         "department": "Department",
-        "program": "Program",
+        "program": "Service",
         "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
@@ -1419,7 +1419,7 @@
       "title": "Safety metrics"
     },
     "programs": {
-      "title": "Question volume by program",
+      "title": "Question volume by service",
       "subtitle": "{total} classified questions · EN: {en} · FR: {fr}",
       "unclassifiedNote": "{count} not yet classified",
       "tooltipCount": "{count} questions",
@@ -1448,7 +1448,7 @@
     },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
@@ -1459,7 +1459,7 @@
       "error": "The analysis failed. Partial results may be shown below.",
       "running": {
         "preparing": "Preparing analysis…",
-        "classifying": "Classifying programs… {done} of {total}",
+        "classifying": "Classifying services… {done} of {total}",
         "synthesizing": "Writing findings…"
       },
       "status": {
@@ -1484,15 +1484,15 @@
         "runOn": "Run on {date}",
         "runBy": "by {email}",
         "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by program",
+        "unclassified": "{count} could not be classified by service",
         "partial": "This analysis did not finish — the results below are partial.",
         "running": "This analysis is still running ({status}). The results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
         "rowsTitle": "Evaluation details",
         "viewRowData": "View all row data",
         "noValue": "Not available",
-        "programActionsTitle": "Scores by program and action",
-        "colProgramAction": "Program — action",
+        "programActionsTitle": "Scores by service and action",
+        "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
         "colCount": "Evaluations",
         "colNonPerfect": "Non-perfect",
@@ -1515,7 +1515,7 @@
         "colEvaluator": "Evaluator",
         "colQuestion": "Question",
         "colScore": "Score",
-        "colProgram": "Program",
+        "colProgram": "Service",
         "colAction": "Action",
         "colDetails": "Details",
         "flagged": "Review"

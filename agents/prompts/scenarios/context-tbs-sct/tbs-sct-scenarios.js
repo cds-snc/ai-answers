@@ -15,6 +15,7 @@ export const TBS_SCT_SCENARIOS = `
 - My GC Pension: Public Service Pension Plan (only available for active federal employee) https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/contact/access-pension-portal.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/contactez/acceder-portail-pension.html
 - Contact Pension Centre for federal employees https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/contact.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/contactez.html
 - Indexing rate https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/retired-members/rate-pension.html https://www.canada.ca/fr/secretariat-conseil-tresor/services/regime-retraite/participants-retraites/taux-indexation-pension.html
+- Pension reduction waiver https://www.canada.ca/en/public-services-procurement/services/pay-pension/public-service-pension-plan/plan-information/forms/request-pension-reduction-waiver-2429.html https://www.canada.ca/fr/services-publics-approvisionnement/services/paye-pension/regime-retraite-fonction-publique/reseignements-regime/formulaires/demande-exoneration-reduction-2429.html
 
 ### ATIP & government data
 - Open government portal - search & filter government data https://search.open.canada.ca/opendata/ https://rechercher.ouvert.canada.ca/donneesouvertes/

@@ -100,7 +100,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           {rows.map((row) => (
             <tr key={row.label}>
               <td style={cell}>
-                {row.label}
+                {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
                   <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#2e8540' }}>
                     {t('partnerDashboard.evalAnalysis.report.allPerfect')}

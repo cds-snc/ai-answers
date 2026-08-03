@@ -141,14 +141,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
-    { title: t('admin.evalDashboard.columns.action', 'Action'), data: 'action', render: v => v ? escapeHtmlAttribute(v) : '', searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },
+    { title: t('admin.evalDashboard.columns.action', 'Action'), data: 'action', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: false, orderable: true }
-  ]), [formatDate, t]);
+  ]), [formatDate, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
