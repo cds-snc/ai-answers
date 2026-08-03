@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.177.1](https://github.com/cds-snc/ai-answers/compare/v1.177.0...v1.177.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* action seed for specific information ([c951a35](https://github.com/cds-snc/ai-answers/commit/c951a35c13934517b8fe6f479f7d3edfb025f362))
+* add action table so displays in FR ([9d4e316](https://github.com/cds-snc/ai-answers/commit/9d4e31695881debd99ce08d6472bbc4dddb03db6))
+* add French to service files ([d6f265b](https://github.com/cds-snc/ai-answers/commit/d6f265bf6dff7e4536f05a70469c642fc1c0918a))
+* fill in service files ([f83723f](https://github.com/cds-snc/ai-answers/commit/f83723fe71276d71cb0d98d1267f6c37e6f8b604))
+* finish all scenarios and services ([73fae30](https://github.com/cds-snc/ai-answers/commit/73fae306640e940d6d3370ece1afe6ca83933cd5))
+* rename program to service ([959d5c3](https://github.com/cds-snc/ai-answers/commit/959d5c37ef42af2e8b3071c78cebcd860e534333))
+* tbs pension waiver ([97b5ed0](https://github.com/cds-snc/ai-answers/commit/97b5ed06b26b90ec55665cce76115c246813ed8e))
+* update statcan based on eval ([52eb442](https://github.com/cds-snc/ai-answers/commit/52eb442ecde7f248870cc47198179f1c4292cce0))
+
 ## [1.177.0](https://github.com/cds-snc/ai-answers/compare/v1.176.0...v1.177.0) (2026-07-30)
 
 
