@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.178.0](https://github.com/cds-snc/ai-answers/compare/v1.177.1...v1.178.0) (2026-08-03)
+
+
+### Features
+
+* instructions for new features and download logs ([a5a0f85](https://github.com/cds-snc/ai-answers/commit/a5a0f85dc90d8dc7fa6e15980dafd3db5471afab))
+
+
+### Bug Fixes
+
+* stop evalLogic from being dropped by export request ([f4a88a7](https://github.com/cds-snc/ai-answers/commit/f4a88a77b643f809f336544f14dc9109a810140c))
+
 ## [1.177.1](https://github.com/cds-snc/ai-answers/compare/v1.177.0...v1.177.1) (2026-08-03)
 
 
