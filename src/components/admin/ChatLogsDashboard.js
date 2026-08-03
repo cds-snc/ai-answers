@@ -58,6 +58,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (filters.aiEval && filters.aiEval !== 'all') {
           params.append('aiEval', filters.aiEval);
         }
+        if (filters.evalLogic) params.append('evalLogic', filters.evalLogic);
       }
 
       params.append('view', selectedView);
