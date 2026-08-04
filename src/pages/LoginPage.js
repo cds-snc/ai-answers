@@ -22,6 +22,11 @@ const LoginPage = ({ lang = 'en' }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // The expiry marker is informational only. Once the user starts a fresh
+    // login attempt, remove it so it cannot persist into a new session.
+    if (sessionExpired) {
+      navigate(location.pathname, { replace: true });
+    }
     setIsLoading(true);
     clearError();
     // If 2FA flow already started, ignore normal submit
