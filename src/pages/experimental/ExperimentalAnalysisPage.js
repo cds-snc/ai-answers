@@ -97,7 +97,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [comparisonBaselineId, setComparisonBaselineId] = useState('');
     const [comparisonCandidateId, setComparisonCandidateId] = useState('');
     const [comparisonLoading, setComparisonLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('batches');
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'comparison' ? 'comparison' : 'batches');
     const [analysisMode, setAnalysisMode] = useState('generated-answer');
     const [runLabel, setRunLabel] = useState('');
     const [trials, setTrials] = useState(1);
@@ -112,6 +112,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     // Progress tracking
     const [batchProgress, setBatchProgress] = useState({});
+    const [comparisonProgress, setComparisonProgress] = useState({});
     const pollRef = useRef(null);
     const isMountedRef = useRef(true);
 
@@ -160,8 +161,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setBatches(nextBatches);
             setComparisons(comparisonResult.data || []);
             setBatchProgress(buildProgressMap(nextBatches));
+            setComparisonProgress(buildProgressMap(comparisonResult.data || []));
 
-            const hasActiveRuns = nextBatches.some(batch => batch.status === 'processing');
+            const hasActiveRuns = nextBatches.some(batch => batch.status === 'processing')
+                || (comparisonResult.data || []).some(batch => batch.status === 'processing');
             if (hasActiveRuns) {
                 if (!pollRef.current) {
                     pollRef.current = setInterval(() => {
@@ -517,7 +520,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     ];
 
     const comparisonColumns = [
-        { title: t('experimental.analysis.comparison.columns.name'), data: 'name', width: '23%', render: (data, type) => type === 'display' ? `<span class="experimental-table-name">${escapeHtml(data)}</span>` : data },
+        { title: t('experimental.analysis.comparison.columns.name'), data: 'name', width: '23%', render: (data, type) => type === 'display' ? `<span style="white-space: normal; overflow-wrap: anywhere;">${escapeHtml(data)}</span>` : data },
         { title: t('experimental.analysis.comparison.columns.analyzer'), data: null, width: '15%', render: (_data, _type, row) => getAnalyzerLabel(row) },
         { title: t('experimental.analysis.comparison.columns.status'), data: 'status', width: '10%', render: (data) => getStatusLabel(data) },
         { title: t('experimental.analysis.comparison.columns.completed'), data: 'summary.completed', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
@@ -543,6 +546,26 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
     );
+
+    const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
+        <div key={id} className="border p-200 mb-200 rounded bg-light">
+            <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
+            <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
+                <div style={{
+                    width: `${prog.percentComplete}%`,
+                    backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
+                    height: '100%',
+                    transition: 'width 0.5s ease-in-out'
+                }}></div>
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
+                {t('experimental.analysis.progressSummary')
+                    .replace('{completed}', formatNumber(prog.completed, lang))
+                    .replace('{failed}', formatNumber(prog.failed, lang))
+                    .replace('{total}', formatNumber(prog.total, lang))}
+            </div>
+        </div>
+    ));
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -795,25 +818,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <GcdsText className="mt-200">{startingRun.message}</GcdsText>
                                 </div>
                             )}
-                            {Object.entries(batchProgress).map(([id, prog]) => (
-                                <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
-                                    <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
-                                        <div style={{
-                                            width: `${prog.percentComplete}%`,
-                                            backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
-                                            height: '100%',
-                                            transition: 'width 0.5s ease-in-out'
-                                        }}></div>
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
-                                        {t('experimental.analysis.progressSummary')
-                                            .replace('{completed}', formatNumber(prog.completed, lang))
-                                            .replace('{failed}', formatNumber(prog.failed, lang))
-                                            .replace('{total}', formatNumber(prog.total, lang))}
-                                    </div>
-                                </div>
-                            ))}
+                            {renderProgressCards(batchProgress)}
                         </section>
                     )}
                     {!startingRun && Object.keys(batchProgress).length === 0 && (
@@ -827,6 +832,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
+                {Object.keys(comparisonProgress).length > 0 && (
+                    <section className="mb-400">
+                        <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                        {renderProgressCards(comparisonProgress)}
+                    </section>
+                )}
                 <div className="mb-300">
                     <label htmlFor="comparison-dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                         {t('experimental.analysis.useExistingDatasetLabel')}

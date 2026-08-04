@@ -25,7 +25,6 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { batchId } = useParams();
     const [searchParams] = useSearchParams();
     const openParam = parseInt(searchParams.get('open'), 10);
-
     const {
         batch,
         items,
@@ -48,6 +47,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         hasNext,
         hasPrev
     } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
+    const returnToComparisonTab = batch?.type === 'comparison';
 
     // Arrow-key navigation while reviewing an item.
     useEffect(() => {
@@ -75,8 +75,8 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
                     <GcdsLink href={`/${lang}/experimental/analysis${batch?.config?.datasetId
-                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}`
-                        : ''}`}>
+                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}${returnToComparisonTab ? '&tab=comparison' : ''}`
+                        : returnToComparisonTab ? '?tab=comparison' : ''}`}>
                         {t('experimental.results.backToRuns')}
                     </GcdsLink>
                     {batch?.config?.datasetId && (
@@ -118,6 +118,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     item={selectedItem}
                     chatItems={selectedChatItems}
                     lang={lang}
+                    comparisonMode={batch?.type === 'comparison'}
                     position={positionInFilter}
                     totalInFilter={pagination.total}
                     trialsCount={batch?.config?.trials || 1}
