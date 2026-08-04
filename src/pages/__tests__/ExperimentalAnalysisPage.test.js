@@ -206,6 +206,40 @@ describe('ExperimentalAnalysisPage', () => {
         expect(modeSelect.value).toBe('generated-answer');
     });
 
+    it('limits reference-required analyzers to dataset-reference mode', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([
+            {
+                id: 'expert-scorer',
+                nameKey: 'experimental.analysis.analyzers.expert-scorer.name',
+                descriptionKey: 'experimental.analysis.analyzers.expert-scorer.description',
+                requiresReference: true
+            }
+        ]);
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'answer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
+            target: { value: 'expert-scorer' }
+        });
+
+        const modeSelect = document.querySelector('#analysis-mode-select');
+        expect(modeSelect.value).toBe('dataset-reference');
+        expect(modeSelect.options).toHaveLength(1);
+        expect(modeSelect.options[0].value).toBe('dataset-reference');
+    });
+
     it('does not show the analysis mode select when the dataset has no answer column', async () => {
         render(<ExperimentalAnalysisPage lang="en" />);
 

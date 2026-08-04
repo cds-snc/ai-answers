@@ -194,14 +194,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const selectedDataset = datasets.find(ds => ds._id === selectedDatasetId);
     const hasDatasetReferenceAnswer = datasetHasReferenceAnswer(selectedDataset);
+    const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
     const availableAnalyzers = analyzers.filter((analyzer) => (
-        (analysisMode === 'dataset-reference' || analyzer.requiresReference !== true)
+        (analyzer.requiresReference !== true || hasDatasetReferenceAnswer)
         && (!Array.isArray(analyzer.supportedWorkflows) || analyzer.supportedWorkflows.includes(selectedWorkflow))
     ));
 
     useEffect(() => {
         setAnalysisMode(hasDatasetReferenceAnswer ? 'dataset-reference' : 'generated-answer');
     }, [selectedDatasetId, hasDatasetReferenceAnswer]);
+
+    useEffect(() => {
+        if (selectedAnalyzer?.requiresReference === true && hasDatasetReferenceAnswer) {
+            setAnalysisMode('dataset-reference');
+        }
+    }, [selectedAnalyzer, hasDatasetReferenceAnswer]);
 
     useEffect(() => {
         if (selectedAnalyzerId && !availableAnalyzers.some(analyzer => analyzer.id === selectedAnalyzerId)) {
@@ -533,8 +540,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     );
 
-    const selectedAnalyzer = analyzers.find(a => a.id === selectedAnalyzerId);
-
     return (
         <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
@@ -659,7 +664,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     style={{ padding: '8px', width: '100%' }}
                                 >
                                     <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
-                                    <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
+                                    {selectedAnalyzer?.requiresReference !== true && (
+                                        <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
+                                    )}
                                 </select>
                             ) : (
                                 <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
