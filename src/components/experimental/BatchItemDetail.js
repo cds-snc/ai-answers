@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
-import { getItemVerdict, humanizeFieldName, truncate, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
+import { getItemVerdict, humanizeFieldName, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
 
 const VERDICT_STYLES = {
     pass: { color: '#2e8540' },
@@ -42,8 +42,8 @@ const getAnalyzerColumns = (items) => {
 
 const formatAnalyzerValue = (value) => {
     if (value === undefined || value === null || value === '') return '—';
-    if (typeof value === 'object') return truncate(JSON.stringify(value), 240);
-    return truncate(String(value), 240);
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
 };
 
 const renderAnalyzerCell = (item, analyzerId, field) => {
@@ -69,7 +69,7 @@ const renderAnalyzerSummary = (item, analyzerId) => {
     const verdict = result.verdict || result.status || result.label;
     const explanation = result.explanation || result.differenceExplanation;
     const summary = [verdict, explanation].filter(Boolean).join(': ');
-    return summary ? truncate(summary, 240) : formatAnalyzerValue(result);
+    return summary ? summary : formatAnalyzerValue(result);
 };
 
 /**
@@ -194,7 +194,7 @@ export default function BatchItemDetail({
                                     </td>
                                     <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
                                     {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
-                                        <td key={`${analyzerId}-${field || 'summary'}`} className="p-200">
+                                        <td key={`${analyzerId}-${field || 'summary'}`} className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                                             {field
                                                 ? renderAnalyzerCell(interaction, analyzerId, field)
                                                 : renderAnalyzerSummary(interaction, analyzerId)}
