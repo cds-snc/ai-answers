@@ -8,7 +8,7 @@ import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
-const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
+const ACTIVE_BATCH_WINDOW_MS = 60 * 1000;
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;',
@@ -55,6 +55,10 @@ const isActivelyRunningBatch = (batch) => {
 
     return (Date.now() - updatedAtMs) < ACTIVE_BATCH_WINDOW_MS;
 };
+
+const canResumeBatch = (batch) => batch?.status === 'processing' && !isActivelyRunningBatch(batch);
+
+const isLambdaRuntime = () => typeof window !== 'undefined' && window.RUNTIME_CONFIG?.IS_LAMBDA === true;
 
 const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
 const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
@@ -535,7 +539,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
-            {batch.status === 'processing' && !isActivelyRunningBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
+            {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
     );

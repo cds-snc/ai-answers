@@ -201,7 +201,8 @@ app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+  const isLambda = Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_LAMBDA_RUNTIME_API);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)},IS_LAMBDA:${JSON.stringify(isLambda)}};`);
 });
 
 // Ensure `/api` never caches anything
