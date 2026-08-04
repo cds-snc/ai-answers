@@ -733,6 +733,7 @@ class ExperimentalBatchService {
                             question: item.question,
                             answer: item.answer || '',
                             referenceAnswer: item.referenceAnswer,
+                            datasetReferenceAnswer: item.datasetReferenceAnswer,
                             goldenReferenceAnswer: item.goldenReferenceAnswer,
                             referenceAnalysisResults: item.referenceAnalysisResults,
                             referenceMatch: item.referenceMatch,

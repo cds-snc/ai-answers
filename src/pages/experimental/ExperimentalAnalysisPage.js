@@ -471,6 +471,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 }
             });
             await ExperimentalBatchClientService.processBatch(result._id);
+            setComparisonProgress(current => ({
+                ...current,
+                ...buildProgressMap([{
+                    ...result,
+                    status: 'processing'
+                }], true)
+            }));
             setMessage(t('experimental.analysis.messages.comparisonStarted'));
             setComparisonBaselineId('');
             setComparisonCandidateId('');
