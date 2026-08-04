@@ -1,5 +1,6 @@
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { requireLiteralString, requireObjectIdString } from '../util/db-query.js';
 
 /**
  * GET /api/experimental/batch-list
@@ -10,14 +11,20 @@ async function handler(req, res) {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const rawType = req.query.type;
+        const type = rawType !== undefined ? requireLiteralString(rawType, 'type') : undefined;
+        const datasetId = req.query.datasetId
+            ? requireObjectIdString(req.query.datasetId, 'datasetId')
+            : undefined;
 
-        const query = {};
-        if (rawType !== undefined) {
-            query.type = rawType;
+        const baseQuery = {};
+        if (type !== undefined) {
+            baseQuery.type = type;
         }
-        if (req.query.datasetId) {
-            query['config.datasetId'] = req.query.datasetId;
+        if (datasetId !== undefined) {
+            baseQuery['config.datasetId'] = datasetId;
         }
+
+        const query = { ...baseQuery };
 
         const search = String(req.query.search || '').trim();
         if (search) {
@@ -31,10 +38,7 @@ async function handler(req, res) {
             ];
         }
 
-        const total = await ExperimentalBatch.countDocuments({
-            ...(rawType !== undefined ? { type: rawType } : {}),
-            ...(req.query.datasetId ? { 'config.datasetId': req.query.datasetId } : {})
-        });
+        const total = await ExperimentalBatch.countDocuments(baseQuery);
         const filtered = await ExperimentalBatch.countDocuments(query);
         const skip = isDataTablesRequest ? Math.max(0, parseInt(req.query.start) || 0) : (page - 1) * limit;
         const take = isDataTablesRequest ? Math.max(1, parseInt(req.query.length) || 10) : limit;
