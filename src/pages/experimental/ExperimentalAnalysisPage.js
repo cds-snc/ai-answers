@@ -113,8 +113,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     // Progress tracking
     const [batchProgress, setBatchProgress] = useState({});
     const [comparisonProgress, setComparisonProgress] = useState({});
+    const [tableRefreshKey, setTableRefreshKey] = useState(0);
     const pollRef = useRef(null);
     const isMountedRef = useRef(true);
+    const previousBatchStatusesRef = useRef(new Map());
 
     const stopPolling = () => {
         if (pollRef.current) {
@@ -123,9 +125,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const buildProgressMap = (batchList) => {
+    const buildProgressMap = (batchList, includePending = false) => {
         return batchList
-            .filter(batch => batch.status === 'processing')
+            .filter(batch => batch.status === 'processing' || (includePending && batch.status === 'pending'))
             .reduce((acc, batch) => {
                 const completed = batch.summary?.completed ?? 0;
                 const failed = batch.summary?.failed ?? 0;
@@ -161,10 +163,23 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             setBatches(nextBatches);
             setComparisons(comparisonResult.data || []);
             setBatchProgress(buildProgressMap(nextBatches));
-            setComparisonProgress(buildProgressMap(comparisonResult.data || []));
+            setComparisonProgress(buildProgressMap(comparisonResult.data || [], true));
+
+            const currentBatches = [...nextBatches, ...(comparisonResult.data || [])];
+            const currentStatuses = new Map(currentBatches.map(batch => [batch._id, batch.status]));
+            const activeStatuses = new Set(['pending', 'processing']);
+            const completedRun = [...previousBatchStatusesRef.current.entries()].some(([id, previousStatus]) => (
+                activeStatuses.has(previousStatus)
+                && currentStatuses.has(id)
+                && !activeStatuses.has(currentStatuses.get(id))
+            ));
+            if (completedRun) {
+                setTableRefreshKey(key => key + 1);
+            }
+            previousBatchStatusesRef.current = currentStatuses;
 
             const hasActiveRuns = nextBatches.some(batch => batch.status === 'processing')
-                || (comparisonResult.data || []).some(batch => batch.status === 'processing');
+                || (comparisonResult.data || []).some(batch => ['pending', 'processing'].includes(batch.status));
             if (hasActiveRuns) {
                 if (!pollRef.current) {
                     pollRef.current = setInterval(() => {
@@ -907,7 +922,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 actionsTitle={t('experimental.analysis.comparison.columns.actions')}
                                 renderActions={renderComparisonActions}
                                 lang={lang}
-                                tableKey={`comparisons-${selectedDatasetId}`}
+                                tableKey={`comparisons-${selectedDatasetId}-${tableRefreshKey}`}
                                 actionsWidth="20%"
                                 autoWidth={false}
                                 containerClassName="experimental-table-layout"
@@ -929,7 +944,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         actionsTitle={t('experimental.analysis.columns.actions')}
                         renderActions={renderBatchActions}
                         lang={lang}
-                        tableKey={`batches-${selectedDatasetId}`}
+                        tableKey={`batches-${selectedDatasetId}-${tableRefreshKey}`}
                         order={[[11, 'desc']]}
                         actionsWidth="23%"
                         autoWidth={false}
