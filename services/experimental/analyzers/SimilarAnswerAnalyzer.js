@@ -54,6 +54,8 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
         'differenceFound',
         'confidence',
         'comparisonExplanation',
+        'referenceComparisonWinner',
+        'referenceComparisonExplanation',
         'changedFacts',
         'referenceOnlyFacts',
         'currentOnlyFacts',
@@ -80,10 +82,12 @@ export class SimilarAnswerAnalyzer extends AnalyzerBase {
             .trim();
     }
 
-    _buildPrompt({ question, answer, referenceAnswer }) {
+    _buildPrompt({ question, answer, referenceAnswer, datasetReferenceAnswer, isBatchComparison }) {
+        const baselineLabel = isBatchComparison ? 'BASELINE ANSWER' : 'REFERENCE ANSWER';
+        const comparedLabel = isBatchComparison ? 'COMPARED-AGAINST ANSWER' : 'CURRENT ANSWER';
         return `You are a strict answer-drift analyzer for an experiment system.
 
-Compare the REFERENCE ANSWER from a previous run against the CURRENT ANSWER from a new run.
+Compare the ${baselineLabel} from the previous run against the ${comparedLabel} from the new run.
 Your job is to notice meaningful differences. Be especially sensitive to concrete facts:
 - dates, deadlines, months, years, durations, timeframes, and effective dates
 - numbers, amounts, percentages, limits, counts, ages, scores, fees, rates, and units
@@ -94,14 +98,19 @@ Your job is to notice meaningful differences. Be especially sensitive to concret
 Flag a difference when the answers would lead a user to a different understanding or action, or when either answer adds/removes a material fact, condition, date, number, named object, step, exception, warning, or scope limit.
 Do not flag harmless rewording, formatting, sentence IDs, reordered equivalent points, or tone differences when the meaning and all material facts match.
 If you are uncertain whether a concrete difference matters, use "needs-review" and explain the uncertainty.
+${datasetReferenceAnswer ? `
+The dataset reference answer below is the canonical answer. Also compare BOTH the baseline and compared-against answers against it, state which is more similar to the dataset reference, and explain why.
+DATASET REFERENCE ANSWER:
+${datasetReferenceAnswer}
+` : ''}
 
 QUESTION:
 ${question || 'N/A'}
 
-REFERENCE ANSWER:
+${baselineLabel}:
 ${referenceAnswer}
 
-CURRENT ANSWER:
+${comparedLabel}:
 ${answer}
 
 Return ONLY a JSON object with this shape:
@@ -111,6 +120,8 @@ Return ONLY a JSON object with this shape:
   "differenceFound": true | false,
   "confidence": 0.0,
   "comparisonExplanation": "Briefly explain the important difference or why the meanings match.",
+  "referenceComparisonWinner": "baseline" | "current" | "tie" | "needs-review",
+  "referenceComparisonExplanation": "Explain which answer is more similar to the dataset reference, when a dataset reference is provided.",
   "changedFacts": [
     {
       "type": "date" | "number" | "object" | "eligibility" | "condition" | "step" | "scope" | "answer-type" | "other",
@@ -132,6 +143,10 @@ Return ONLY a JSON object with this shape:
             : (result?.differenceFound ? 'flagged' : 'pass');
         const differenceFound = toBoolean(result?.differenceFound ?? status === 'flagged');
         const flagged = differenceFound || status === 'flagged' || status === 'needs-review';
+        const referenceComparisonExplanation = result?.referenceComparisonExplanation || '';
+        const comparisonExplanation = [result?.comparisonExplanation, referenceComparisonExplanation]
+            .filter(value => typeof value === 'string' && value.trim())
+            .join(' ');
 
         return {
             status: flagged && status === 'pass' ? 'flagged' : status,
@@ -139,7 +154,9 @@ Return ONLY a JSON object with this shape:
             flagged,
             differenceFound,
             confidence: typeof result?.confidence === 'number' ? result.confidence : null,
-            comparisonExplanation: result?.comparisonExplanation || '',
+            comparisonExplanation,
+            referenceComparisonWinner: result?.referenceComparisonWinner || '',
+            referenceComparisonExplanation: result?.referenceComparisonExplanation || '',
             changedFacts: Array.isArray(result?.changedFacts) ? result.changedFacts : [],
             referenceOnlyFacts: Array.isArray(result?.referenceOnlyFacts) ? result.referenceOnlyFacts : [],
             currentOnlyFacts: Array.isArray(result?.currentOnlyFacts) ? result.currentOnlyFacts : [],
@@ -151,6 +168,8 @@ Return ONLY a JSON object with this shape:
         const question = input?.question || '';
         const answer = this._normalize(input?.answer);
         const referenceAnswer = this._normalize(input?.referenceAnswer);
+        const datasetReferenceAnswer = this._normalize(input?.datasetReferenceAnswer);
+        const isBatchComparison = Boolean(input?.originalData?.baselineRunId && input?.originalData?.candidateRunId);
 
         if (!referenceAnswer) {
             return {
@@ -187,7 +206,7 @@ Return ONLY a JSON object with this shape:
             };
         }
 
-        if (answer === referenceAnswer) {
+        if (answer === referenceAnswer && !datasetReferenceAnswer) {
             return {
                 status: 'pass',
                 label: 'same-meaning',
@@ -203,7 +222,7 @@ Return ONLY a JSON object with this shape:
         }
 
         const llm = await this._getLLM();
-        const prompt = this._buildPrompt({ question, answer, referenceAnswer });
+        const prompt = this._buildPrompt({ question, answer, referenceAnswer, datasetReferenceAnswer, isBatchComparison });
         const response = await llm.invoke([{ role: 'user', content: prompt }]);
 
         try {
