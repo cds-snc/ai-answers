@@ -752,6 +752,12 @@ class ExperimentalBatchService {
                             }
                         });
 
+                        if (batch.type === 'comparison') {
+                            result.comparisonExplanation = result.comparisonExplanation
+                                || result.explanation
+                                || '';
+                        }
+
                         if (!item.analysisResults) item.analysisResults = {};
                         item.analysisResults[analyzerId] = result;
 

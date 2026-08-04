@@ -21,8 +21,8 @@ export const getItemExplanation = (item, comparisonMode = false) => {
     const results = item.analysisResults || {};
     for (const result of Object.values(results)) {
         const text = comparisonMode
-            ? result?.comparisonExplanation || result?.differenceExplanation || result?.explanation
-            : result?.explanation || result?.differenceExplanation;
+            ? result?.comparisonExplanation || result?.explanation
+            : result?.explanation;
         if (text) return text;
     }
     return item.explanation || '';

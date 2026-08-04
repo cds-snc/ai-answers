@@ -105,7 +105,7 @@ describe('RefusalAnalyzer', () => {
         expect(result.referenceRefusalDetected).toBe(true);
         expect(result.flagsDiffer).toBe(true);
         expect(result.differenceFound).toBe(true);
-        expect(result.differenceExplanation).toContain('reference');
+        expect(result.comparisonExplanation).toContain('reference');
     });
 
     it('uses reference analyzer metadata when available', async () => {

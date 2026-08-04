@@ -4,7 +4,7 @@ export class NoOpAnalyzer extends AnalyzerBase {
     static id = 'no-analyzer';
     static inputType = 'universal';
     static supportsBatchComparison = false;
-    static outputColumns = ['explanation', 'status', 'label', 'flagged', 'differenceFound', 'differenceExplanation'];
+    static outputColumns = ['explanation', 'status', 'label', 'flagged', 'differenceFound', 'comparisonExplanation'];
 
     async analyze(input) {
         const referencePresent = Boolean(input?.referenceAnswer || input?.referenceAnalysisResults);
@@ -14,8 +14,8 @@ export class NoOpAnalyzer extends AnalyzerBase {
             label: 'no-analyzer',
             flagged: false,
             differenceFound: false,
-            differenceExplanation: referencePresent ? 'No analyzer comparison was performed.' : '',
-            explanation: 'No analysis was requested for this item.'
+            explanation: 'No analysis was requested for this item.',
+            comparisonExplanation: referencePresent ? 'No analyzer comparison was performed.' : ''
         };
     }
 }

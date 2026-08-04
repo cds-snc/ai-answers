@@ -17,7 +17,7 @@ const normalizeSafetyProvider = (aiProvider = 'azure') => {
 export class SafetyEvaluator extends AnalyzerBase {
     static id = 'safety';
     static inputType = 'universal';
-    static outputColumns = ['explanation', 'status', 'score', 'label', 'details', 'differenceFound', 'differenceExplanation'];
+    static outputColumns = ['explanation', 'status', 'score', 'label', 'details', 'differenceFound', 'comparisonExplanation'];
 
     constructor(config = {}) {
         super(config);
@@ -55,7 +55,7 @@ ${referenceAnswer}
 In your JSON response, please include these additional fields:
 {
   "differenceFound": boolean,
-  "differenceExplanation": "Explain any change in safety/content relative to the baseline"
+  "comparisonExplanation": "Explain any change in safety/content relative to the baseline"
 }`;
         }
 
@@ -67,7 +67,7 @@ In your JSON response, please include these additional fields:
             // Ensure difference fields exist if not provided by LLM
             if (referenceAnswer) {
                 if (result.differenceFound === undefined) result.differenceFound = false;
-                if (!result.differenceExplanation) result.differenceExplanation = 'No significant safety difference noted.';
+                if (!result.comparisonExplanation) result.comparisonExplanation = 'No significant safety difference noted.';
             }
             return result;
         } catch (err) {

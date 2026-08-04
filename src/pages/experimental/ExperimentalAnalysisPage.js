@@ -847,12 +847,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
-                {Object.keys(comparisonProgress).length > 0 && (
-                    <section className="mb-400">
-                        <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
-                        {renderProgressCards(comparisonProgress)}
-                    </section>
-                )}
                 <div className="mb-300">
                     <label htmlFor="comparison-dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                         {t('experimental.analysis.useExistingDatasetLabel')}
@@ -911,6 +905,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 <GcdsButton onClick={handleCreateComparison} disabled={comparisonLoading || !comparisonBaselineId || !comparisonCandidateId}>
                     {comparisonLoading ? t('experimental.analysis.starting') : t('experimental.analysis.comparison.create')}
                 </GcdsButton>
+                {Object.keys(comparisonProgress).length > 0 && (
+                    <section className="mt-400 mb-400">
+                        <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                        {renderProgressCards(comparisonProgress)}
+                    </section>
+                )}
                 {comparisons.length > 0 && (
                     <div className="mt-300">
                         <div className="experimental-table-container">

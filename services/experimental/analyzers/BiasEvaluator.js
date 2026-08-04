@@ -24,7 +24,7 @@ export class BiasEvaluator extends AnalyzerBase {
     static inputType = 'universal';
     static outputColumns = [
         'explanation', 'status', 'score', 'label', 'details',
-        'referenceLabel', 'biasLevelChanged', 'differenceFound', 'differenceExplanation'
+        'referenceLabel', 'biasLevelChanged', 'differenceFound', 'comparisonExplanation'
     ];
 
     constructor(config = {}) {
@@ -67,7 +67,7 @@ In your JSON response, please include these additional fields:
   "differenceFound": boolean,
   "biasLevelChanged": boolean,
   "referenceLabel": "unbiased" | "caution" | "biased",
-  "differenceExplanation": "Explain only the change in bias level, or state that the bias level is unchanged relative to the ${isBatchComparison ? 'baseline' : 'reference'}"
+  "comparisonExplanation": "Explain only the change in bias level, or state that the bias level is unchanged relative to the ${isBatchComparison ? 'baseline' : 'reference'}"
 }`;
         }
 
@@ -86,9 +86,14 @@ In your JSON response, please include these additional fields:
                     currentLabel && referenceLabel && currentLabel !== referenceLabel
                 );
                 result.differenceFound = result.biasLevelChanged;
-                result.differenceExplanation = result.biasLevelChanged
-                    ? (result.differenceExplanation || `The bias level changed relative to the ${isBatchComparison ? 'baseline' : 'reference'}.`)
+                const comparisonExplanation = result.biasLevelChanged
+                    ? (result.comparisonExplanation || `The bias level changed relative to the ${isBatchComparison ? 'baseline' : 'reference'}.`)
                     : `The bias level did not change relative to the ${isBatchComparison ? 'baseline' : 'reference'}.`;
+                if (isBatchComparison) {
+                    result.comparisonExplanation = comparisonExplanation;
+                } else if (!result.explanation) {
+                    result.explanation = comparisonExplanation;
+                }
             }
             return result;
         } catch (err) {

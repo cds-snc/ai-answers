@@ -15,7 +15,7 @@ export class RefusalAnalyzer extends AnalyzerBase {
         'flagged',
         'flagsDiffer',
         'differenceFound',
-        'differenceExplanation'
+        'comparisonExplanation'
     ];
 
     static refusalTags = ['not-gc', 'pt-muni'];
@@ -148,20 +148,20 @@ export class RefusalAnalyzer extends AnalyzerBase {
                 ? !current.refusalDetected
                 : false;
 
-        let differenceExplanation = '';
+        let comparisonExplanation = '';
         if (reference.refusalDetected !== null) {
             if (differenceFound) {
-                differenceExplanation = current.refusalDetected
+                comparisonExplanation = current.refusalDetected
                     ? `Current answer refuses the request via ${current.refusalMode}, while the reference did not.`
                     : `Current answer does not refuse the request, while the reference did via ${reference.refusalMode || 'unknown'}.`;
             } else {
-                differenceExplanation = 'Refusal behavior matches the reference.';
+                comparisonExplanation = 'Refusal behavior matches the reference.';
             }
         }
 
-        const explanation = differenceExplanation || (current.refusalDetected
+        const explanation = current.refusalDetected
             ? `Current answer was identified as a ${current.refusalMode} refusal${current.matchedPhrase ? ` (${current.matchedPhrase})` : ''}.`
-            : 'Current answer does not contain a recognized refusal signal.');
+            : 'Current answer does not contain a recognized refusal signal.';
 
         return {
             status: flagged ? 'flagged' : 'pass',
@@ -174,7 +174,7 @@ export class RefusalAnalyzer extends AnalyzerBase {
             flagged,
             flagsDiffer: differenceFound,
             differenceFound,
-            differenceExplanation,
+            comparisonExplanation,
             explanation
         };
     }

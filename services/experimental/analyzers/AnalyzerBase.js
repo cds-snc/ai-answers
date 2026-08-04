@@ -8,7 +8,8 @@ export class AnalyzerBase {
         'label',
         'flagged',
         'differenceFound',
-        'explanation'
+        'explanation',
+        'comparisonExplanation'
     ];
     // Required static properties - subclasses must override
     static id = '';           // e.g., 'expert-scorer'
@@ -61,7 +62,6 @@ export class AnalyzerBase {
         const differenceFound = result.differenceFound === true;
         const explanation = [
             result.explanation,
-            result.differenceExplanation,
             result.details
         ].find(value => typeof value === 'string' && value.trim())
             || `Analyzer completed with ${result.label || result.verdict || result.status || 'no verdict'}.`;

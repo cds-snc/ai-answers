@@ -68,8 +68,8 @@ const renderAnalyzerSummary = (item, analyzerId, comparisonMode = false) => {
 
     const verdict = result.verdict || result.status || result.label;
     const explanation = comparisonMode
-        ? result.comparisonExplanation || result.differenceExplanation || result.explanation
-        : result.explanation || result.differenceExplanation;
+        ? result.comparisonExplanation || result.explanation
+        : result.explanation;
     const summary = [verdict, explanation].filter(Boolean).join(': ');
     return summary ? summary : formatAnalyzerValue(result);
 };
