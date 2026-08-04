@@ -115,8 +115,9 @@ export const ExperimentalBatchClientService = {
      * @param {string} id 
      * @param {string} format 'json' or 'excel'
      */
-    async exportBatch(id, format = 'json') {
-        const url = getApiUrl(`experimental-batch-export/${encodeURIComponent(id)}?format=${format}`);
+    async exportBatch(id, format = 'json', lang = 'en') {
+        const languageSuffix = String(lang).toLowerCase().startsWith('fr') ? '&lang=fr' : '';
+        const url = getApiUrl(`experimental-batch-export/${encodeURIComponent(id)}?format=${format}${languageSuffix}`);
         const res = await AuthService.fetch(url);
         if (!res.ok) throw new Error(`Failed to export batch: ${res.status} ${res.statusText}`);
         if (format === 'excel') {

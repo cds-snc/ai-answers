@@ -158,6 +158,50 @@ describe('experimental-batch-export API', () => {
         expect(res.end).toHaveBeenCalled();
     });
 
+    it('should use comparison result labels for comparison Excel exports', async () => {
+        req.query.format = 'excel';
+        const mockItems = [{
+            rowIndex: 1,
+            question: 'A',
+            answer: 'Compared answer',
+            referenceAnswer: 'Baseline answer'
+        }];
+        ExperimentalBatch.findById.mockReturnValue({
+            select: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue({
+                appVersion: 'v2.0.0',
+                type: 'comparison',
+                config: {}
+            })
+        });
+        ExperimentalBatchItem.find.mockReturnValue({
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue(mockItems)
+        });
+
+        await handler(req, res);
+
+        expect(mockWorksheet.columns.find((column) => column.key === 'answer').header).toBe('Compared answer');
+        expect(mockWorksheet.columns.find((column) => column.key === 'referenceAnswer').header).toBe('Baseline answer');
+    });
+
+    it('should localize comparison Excel labels in French', async () => {
+        req.query = { format: 'excel', lang: 'fr' };
+        ExperimentalBatch.findById.mockReturnValue({
+            select: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue({ type: 'comparison', config: {} })
+        });
+        ExperimentalBatchItem.find.mockReturnValue({
+            sort: vi.fn().mockReturnThis(),
+            lean: vi.fn().mockResolvedValue([{ answer: 'A', referenceAnswer: 'B' }])
+        });
+
+        await handler(req, res);
+
+        expect(mockWorksheet.columns.find((column) => column.key === 'answer').header).toBe('Réponse comparée');
+        expect(mockWorksheet.columns.find((column) => column.key === 'referenceAnswer').header).toBe('Réponse de référence');
+    });
+
     it('should prioritize core fields and analyzer columns before debug fields', async () => {
         req.query.format = 'excel';
         const mockItems = [{

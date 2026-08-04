@@ -375,7 +375,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleExport = async (batchId) => {
         try {
-            const blob = await ExperimentalBatchClientService.exportBatch(batchId, 'excel');
+            const blob = await ExperimentalBatchClientService.exportBatch(batchId, 'excel', lang);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

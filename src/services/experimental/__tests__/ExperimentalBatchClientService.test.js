@@ -48,6 +48,19 @@ describe('ExperimentalBatchClientService', () => {
             expect(result).toBeInstanceOf(Blob);
         });
 
+        it('should include French when exporting localized comparison labels', async () => {
+            AuthService.fetch.mockResolvedValue({
+                ok: true,
+                blob: vi.fn().mockResolvedValue(new Blob(['test']))
+            });
+
+            await ExperimentalBatchClientService.exportBatch('batch-123', 'excel', 'fr');
+
+            expect(AuthService.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('experimental-batch-export/batch-123?format=excel&lang=fr')
+            );
+        });
+
         it('should throw error when fetch fails', async () => {
             AuthService.fetch.mockResolvedValue({
                 ok: false,
