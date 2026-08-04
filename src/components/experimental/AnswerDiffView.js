@@ -20,9 +20,7 @@ const PANE_STYLE = {
     borderRadius: '4px',
     padding: '1rem',
     whiteSpace: 'pre-wrap',
-    overflowWrap: 'break-word',
-    maxHeight: '32rem',
-    overflowY: 'auto'
+    overflowWrap: 'anywhere'
 };
 
 const renderSegments = (segments, paneType) => segments.map((segment, idx) => {

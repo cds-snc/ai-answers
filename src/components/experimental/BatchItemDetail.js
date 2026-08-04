@@ -173,13 +173,12 @@ export default function BatchItemDetail({
                                 <tr key={interaction._id || index} style={{ borderBottom: '1px solid #eee', verticalAlign: 'top' }}>
                                     <td className="p-200">{index + 1}</td>
                                     <td className="p-200">{interaction.question || '—'}</td>
-                                    <td className="p-200">
-                                        {truncate(
-                                            interaction.goldenReferenceAnswer || interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer'),
-                                            180
-                                        )}
+                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                        {interaction.goldenReferenceAnswer || interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer')}
                                     </td>
-                                    <td className="p-200">{truncate(interaction.answer || t('experimental.results.detail.noAnswer'), 180)}</td>
+                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                        {interaction.answer || t('experimental.results.detail.noAnswer')}
+                                    </td>
                                     <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
                                     {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
                                         <td key={`${analyzerId}-${field || 'summary'}`} className="p-200">
