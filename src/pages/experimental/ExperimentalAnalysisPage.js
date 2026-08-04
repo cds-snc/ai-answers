@@ -28,7 +28,7 @@ const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId
         datasetName || datasetId || '',
         workflowLabel || '',
         modelLabel || ''
-    ].filter(Boolean).join(' Â· ');
+    ].filter(Boolean).join(' \u00b7 ');
 };
 
 const sanitizeFileName = (value) => String(value || '')
@@ -648,22 +648,22 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <fieldset>
-                                <legend>{t('experimental.analysis.analysisMode.label')}</legend>
-                                {hasDatasetReferenceAnswer ? (
-                                    <select
-                                        id="analysis-mode-select"
-                                        value={analysisMode}
-                                        onChange={(e) => setAnalysisMode(e.target.value)}
-                                        style={{ padding: '8px', width: '100%' }}
-                                    >
-                                        <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
-                                        <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
-                                    </select>
-                                ) : (
-                                    <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
-                                )}
-                            </fieldset>
+                            <label htmlFor="analysis-mode-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                                {t('experimental.analysis.analysisMode.label')}
+                            </label>
+                            {hasDatasetReferenceAnswer ? (
+                                <select
+                                    id="analysis-mode-select"
+                                    value={analysisMode}
+                                    onChange={(e) => setAnalysisMode(e.target.value)}
+                                    style={{ padding: '8px', width: '100%' }}
+                                >
+                                    <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
+                                    <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
+                                </select>
+                            ) : (
+                                <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
+                            )}
                         </div>
 
                         <div className="mb-400">

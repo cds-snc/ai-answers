@@ -255,7 +255,7 @@ describe('ExperimentalAnalysisPage', () => {
             fireEvent.click(screen.getByRole('button', { name: 'experimental.analysis.run' }));
         });
 
-        const expectedRunName = 'Analyzer 1 · Dataset 1 · workflows.generic · models.gpt51';
+        const expectedRunName = `Analyzer 1 \u00b7 Dataset 1 \u00b7 workflows.generic \u00b7 models.gpt51`;
         expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ name: expectedRunName }));
         expect(screen.getByText(expectedRunName)).toBeTruthy();
         expect(screen.getByText('experimental.analysis.messages.startingRun')).toBeTruthy();
