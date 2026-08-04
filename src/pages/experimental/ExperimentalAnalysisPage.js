@@ -71,7 +71,7 @@ const ANALYZER_RULE_ROWS = {
 const ANSWER_COLUMN_NAMES = new Set(['answer', 'redactedanswer', 'response', 'referenceanswer']);
 
 const datasetHasReferenceAnswer = (dataset) => (
-    dataset?.type === 'qa-pair'
+    dataset?.hasReferenceAnswer === true
     || (Array.isArray(dataset?.columns) && dataset.columns.some((column) => (
         ANSWER_COLUMN_NAMES.has(String(column?.name || '').replace(/[\s_-]+/g, '').toLowerCase())
     )))
@@ -651,28 +651,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <fieldset>
                                 <legend>{t('experimental.analysis.analysisMode.label')}</legend>
                                 {hasDatasetReferenceAnswer ? (
-                                    <>
-                                        <div className="mb-200">
-                                            <input
-                                                id="analysis-mode-reference"
-                                                type="radio"
-                                                name="analysis-mode"
-                                                checked={analysisMode === 'dataset-reference'}
-                                                onChange={() => setAnalysisMode('dataset-reference')}
-                                            />
-                                            <label htmlFor="analysis-mode-reference">{t('experimental.analysis.analysisMode.reference')}</label>
-                                        </div>
-                                        <div>
-                                            <input
-                                                id="analysis-mode-generated"
-                                                type="radio"
-                                                name="analysis-mode"
-                                                checked={analysisMode === 'generated-answer'}
-                                                onChange={() => setAnalysisMode('generated-answer')}
-                                            />
-                                            <label htmlFor="analysis-mode-generated">{t('experimental.analysis.analysisMode.generated')}</label>
-                                        </div>
-                                    </>
+                                    <select
+                                        id="analysis-mode-select"
+                                        value={analysisMode}
+                                        onChange={(e) => setAnalysisMode(e.target.value)}
+                                        style={{ padding: '8px', width: '100%' }}
+                                    >
+                                        <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
+                                        <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
+                                    </select>
                                 ) : (
                                     <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
                                 )}

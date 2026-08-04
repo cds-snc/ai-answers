@@ -180,6 +180,43 @@ describe('ExperimentalAnalysisPage', () => {
         );
     });
 
+    it('shows the analysis mode as a select when the dataset has an answer column', async () => {
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'answer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const modeSelect = document.querySelector('#analysis-mode-select');
+        expect(modeSelect).toBeTruthy();
+        expect(modeSelect.tagName).toBe('SELECT');
+        expect(modeSelect.value).toBe('dataset-reference');
+        expect(screen.queryByRole('radio')).toBeNull();
+
+        fireEvent.change(modeSelect, { target: { value: 'generated-answer' } });
+        expect(modeSelect.value).toBe('generated-answer');
+    });
+
+    it('does not show the analysis mode select when the dataset has no answer column', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(document.querySelector('#analysis-mode-select')).toBeNull();
+        expect(screen.getByText('experimental.analysis.analysisMode.generatedOnly')).toBeTruthy();
+    });
+
     it('shows the selected analyzer details in a collapsible control', async () => {
         render(<ExperimentalAnalysisPage lang="en" />);
 
