@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.178.1](https://github.com/cds-snc/ai-answers/compare/v1.178.0...v1.178.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* update styles for answer display and add tests for BatchItemDeta… ([eb07fe3](https://github.com/cds-snc/ai-answers/commit/eb07fe3ee7af46d52f8945f006167b4206f25542))
+* update styles for answer display and add tests for BatchItemDetail component ([217a6eb](https://github.com/cds-snc/ai-answers/commit/217a6ebd3c140333b3da6039ff0b2e01155a5fa2))
+
 ## [1.178.0](https://github.com/cds-snc/ai-answers/compare/v1.177.1...v1.178.0) (2026-08-03)
 
 
