@@ -129,4 +129,40 @@ describe('RefusalAnalyzer', () => {
         expect(result.flagsDiffer).toBe(true);
         expect(result.flagged).toBe(true);
     });
+
+    it('flags a refusal-state change in either direction for batch comparisons', async () => {
+        const analyzer = new RefusalAnalyzer();
+        const comparisonData = { baselineRunId: 'baseline-run', candidateRunId: 'candidate-run' };
+
+        const baselineRefused = await analyzer.analyze({
+            answer: 'Here is the information.',
+            referenceAnswer: '<not-gc><s-1>No answer was found.</s-1></not-gc>',
+            originalData: comparisonData
+        });
+        const baselineDidNotRefuse = await analyzer.analyze({
+            answer: '<not-gc><s-1>No answer was found.</s-1></not-gc>',
+            referenceAnswer: 'Here is the information.',
+            originalData: comparisonData
+        });
+
+        expect(baselineRefused.differenceFound).toBe(true);
+        expect(baselineRefused.flagged).toBe(true);
+        expect(baselineDidNotRefuse.differenceFound).toBe(true);
+        expect(baselineDidNotRefuse.flagged).toBe(true);
+    });
+
+    it('flags batch runs that deviate from the dataset reference even when they match each other', async () => {
+        const analyzer = new RefusalAnalyzer();
+        const result = await analyzer.analyze({
+            answer: 'Here is the information.',
+            referenceAnswer: 'Here is the information.',
+            datasetReferenceAnswer: '<not-gc><s-1>No answer was found.</s-1></not-gc>',
+            originalData: { baselineRunId: 'baseline-run', candidateRunId: 'candidate-run' }
+        });
+
+        expect(result.differenceFound).toBe(true);
+        expect(result.datasetReferenceRefusalDetected).toBe(true);
+        expect(result.flagged).toBe(true);
+        expect(result.comparisonExplanation).toContain('dataset reference refusal state');
+    });
 });
