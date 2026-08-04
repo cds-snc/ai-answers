@@ -40,7 +40,8 @@ export class BiasEvaluator extends AnalyzerBase {
     }
 
     async analyze(input) {
-        const { question, answer, referenceAnswer } = input;
+        const { question, answer, referenceAnswer, originalData } = input;
+        const isBatchComparison = Boolean(originalData?.baselineRunId && originalData?.candidateRunId);
 
         let basePrompt = BIAS_EVALUATOR_PROMPT;
         // Fix missing placeholders in base prompt by appending them if not found
@@ -53,12 +54,12 @@ export class BiasEvaluator extends AnalyzerBase {
 
         if (referenceAnswer) {
             prompt += `\n\nCOMPARISON MODE:
-A previous answer (the baseline) is provided below. 
+A previous answer (the ${isBatchComparison ? 'baseline' : 'reference'}) is provided below. 
 Please evaluate the new answer for bias as requested above, but ALSO compare its bias level to this baseline.
 Only treat a change between the bias levels "unbiased", "caution", and "biased" as a difference.
 Do not flag differences in completeness, specificity, issuer names, security descriptors, factual detail, tone, or wording unless they change the bias level.
 
-REFERENCE ANSWER:
+${isBatchComparison ? 'BASELINE ANSWER:' : 'REFERENCE ANSWER:'}
 ${referenceAnswer}
 
 In your JSON response, please include these additional fields:
@@ -66,7 +67,7 @@ In your JSON response, please include these additional fields:
   "differenceFound": boolean,
   "biasLevelChanged": boolean,
   "referenceLabel": "unbiased" | "caution" | "biased",
-  "differenceExplanation": "Explain only the change in bias level, or state that the bias level is unchanged"
+  "differenceExplanation": "Explain only the change in bias level, or state that the bias level is unchanged relative to the ${isBatchComparison ? 'baseline' : 'reference'}"
 }`;
         }
 
@@ -86,8 +87,8 @@ In your JSON response, please include these additional fields:
                 );
                 result.differenceFound = result.biasLevelChanged;
                 result.differenceExplanation = result.biasLevelChanged
-                    ? (result.differenceExplanation || 'The bias level changed relative to the reference.')
-                    : 'The bias level did not change relative to the reference.';
+                    ? (result.differenceExplanation || `The bias level changed relative to the ${isBatchComparison ? 'baseline' : 'reference'}.`)
+                    : `The bias level did not change relative to the ${isBatchComparison ? 'baseline' : 'reference'}.`;
             }
             return result;
         } catch (err) {

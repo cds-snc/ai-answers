@@ -58,7 +58,7 @@ const renderAnalyzerCell = (item, analyzerId, field) => {
     return formatAnalyzerValue(flattenAnalyzerValue(result)[field]);
 };
 
-const renderAnalyzerSummary = (item, analyzerId) => {
+const renderAnalyzerSummary = (item, analyzerId, comparisonMode = false) => {
     const error = item.analysisErrors?.[analyzerId];
     if (error) return formatAnalyzerValue(error);
 
@@ -67,7 +67,9 @@ const renderAnalyzerSummary = (item, analyzerId) => {
     if (typeof result !== 'object') return formatAnalyzerValue(result);
 
     const verdict = result.verdict || result.status || result.label;
-    const explanation = result.explanation || result.differenceExplanation;
+    const explanation = comparisonMode
+        ? result.comparisonExplanation || result.differenceExplanation || result.explanation
+        : result.explanation || result.differenceExplanation;
     const summary = [verdict, explanation].filter(Boolean).join(': ');
     return summary ? summary : formatAnalyzerValue(result);
 };
@@ -173,7 +175,9 @@ export default function BatchItemDetail({
                             <th className="p-200">{t('experimental.results.table.verdict')}</th>
                             {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
                                 <th key={`${analyzerId}-${field || 'summary'}`} className="p-200">
-                                    {humanizeFieldName(analyzerId)}{field ? `: ${humanizeFieldName(field)}` : ''}
+                                    {humanizeFieldName(analyzerId)}{field
+                                        ? `: ${humanizeFieldName(field)}`
+                                        : comparisonMode ? `: ${humanizeFieldName('comparisonExplanation')}` : ''}
                                 </th>
                             ))}
                             <th className="p-200">{t('experimental.results.table.actions')}</th>
@@ -197,7 +201,7 @@ export default function BatchItemDetail({
                                         <td key={`${analyzerId}-${field || 'summary'}`} className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                                             {field
                                                 ? renderAnalyzerCell(interaction, analyzerId, field)
-                                                : renderAnalyzerSummary(interaction, analyzerId)}
+                                                : renderAnalyzerSummary(interaction, analyzerId, comparisonMode)}
                                         </td>
                                     ))}
                                     <td className="p-200">

@@ -158,6 +158,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                                 lang={lang}
                                 onSelect={selectItem}
                                 showTrials={(batch?.config?.trials || 1) > 1}
+                                comparisonMode={batch?.type === 'comparison'}
                             />
 
                             {pagination.pages > 1 && (

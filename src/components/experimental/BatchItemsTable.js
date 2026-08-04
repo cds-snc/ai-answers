@@ -14,7 +14,7 @@ const VERDICT_COLORS = {
  * List of batch items for the results drill-down. Rows open the
  * side-by-side detail view.
  */
-export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, showTrials = false }) {
+export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, showTrials = false, comparisonMode = false }) {
     const { t } = useTranslations(lang);
     const displayGroups = groups || (items || []).map(item => ({ chatId: item.chatId || null, items: [item] }));
 
@@ -37,7 +37,7 @@ export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, 
                         {showTrials && <th className="p-200">{t('experimental.results.table.trial')}</th>}
                         <th className="p-200">{t('experimental.results.table.question')}</th>
                         <th className="p-200">{t('experimental.results.table.verdict')}</th>
-                        <th className="p-200">{t('experimental.results.table.explanation')}</th>
+                        <th className="p-200">{t(comparisonMode ? 'experimental.results.table.comparisonExplanation' : 'experimental.results.table.explanation')}</th>
                         <th className="p-200">{t('experimental.results.table.actions')}</th>
                     </tr>
                 </thead>
@@ -59,7 +59,7 @@ export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, 
                                         {t(`experimental.results.verdict.${verdict}`)}
                                     </span>
                                 </td>
-                                <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{getItemExplanation(item)}</td>
+                                <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{getItemExplanation(item, comparisonMode)}</td>
                                 <td className="p-200">
                                     <GcdsButton
                                         size="small"

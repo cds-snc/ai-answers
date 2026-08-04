@@ -2271,6 +2271,7 @@
         "question": "Question",
         "verdict": "Verdict",
         "explanation": "Explanation",
+        "comparisonExplanation": "Comparison explanation",
         "actions": "Actions",
         "view": "View",
         "empty": "No items match this filter."

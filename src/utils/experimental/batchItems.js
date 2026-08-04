@@ -14,13 +14,15 @@ export const getItemVerdict = (item) => {
 
 // Best one-line explanation for the list view: prefer judge explanations,
 // fall back to the standardized field or the processing error.
-export const getItemExplanation = (item) => {
+export const getItemExplanation = (item, comparisonMode = false) => {
     if (!item) return '';
     if (item.status === 'failed' && item.error) return item.error;
 
     const results = item.analysisResults || {};
     for (const result of Object.values(results)) {
-        const text = result?.explanation || result?.differenceExplanation;
+        const text = comparisonMode
+            ? result?.comparisonExplanation || result?.differenceExplanation || result?.explanation
+            : result?.explanation || result?.differenceExplanation;
         if (text) return text;
     }
     return item.explanation || '';

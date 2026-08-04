@@ -2271,6 +2271,7 @@
         "question": "Question",
         "verdict": "Verdict",
         "explanation": "Explication",
+        "comparisonExplanation": "Explication de la comparaison",
         "actions": "Actions",
         "view": "Voir",
         "empty": "Aucun élément ne correspond à ce filtre."
