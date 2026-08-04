@@ -2040,6 +2040,16 @@
       "comparison": {
         "title": "Compare completed batches",
         "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
+        "analyzerDetailsTitle": "Comparison analyzer details",
+        "analyzers": {
+          "no-analyzer": "No scoring is performed. The comparison only confirms that paired rows and stored outputs are available.",
+          "expert-scorer": "Each run is evaluated against the dataset reference when available, then the comparison explains which run has stronger correctness, completeness, and answer quality. Without a dataset reference, the baseline answer is the comparison reference.",
+          "similar-answer": "The two answers are compared for meaningful factual drift. When a dataset reference exists, both answers are also compared with it and the result identifies which run is more similar. Harmless wording changes are ignored.",
+          "refusal": "The refusal state of both answers is compared. If a dataset reference exists, both runs are also checked against its refusal state. A change in refusal behavior is flagged.",
+          "safety": "Both questions and answers are evaluated for unsafe content. The comparison reports whether either run has a safety-status change and which answer is safer; harmless wording differences are not safety flags.",
+          "bias-detection": "Both answers are evaluated for harmful bias and their bias levels are compared. A change in bias level or a current bias concern is flagged; detail-only differences are ignored.",
+          "instant-answer": "The comparison checks whether the two instant-answer results remain identical to their expected references and identifies any validation difference."
+        },
         "baseline": "Baseline batch",
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
@@ -2099,21 +2109,21 @@
           "title": "Similar answer comparison rules",
           "rows": {
             "standalone": { "setup": "No reference", "comparison": "No answer comparison; the batch can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
-            "withReference": { "setup": "Dataset or reference-batch answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
+            "withReference": { "setup": "Dataset or reference-batch answer", "comparison": "Current answer against the supplied reference answer; in a batch comparison, both runs are also compared with the dataset reference when available.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
           }
         },
         "refusal": {
           "title": "Refusal comparison rules",
           "rows": {
             "standalone": { "setup": "No reference", "comparison": "Current answer is checked for recognized refusal signals.", "flagged": "The answer fails to refuse when the refusal evaluator expects a refusal." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior.", "flagged": "An expected refusal is missing or refusal behavior changes relative to the reference." }
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior; batch comparisons also check both runs against the dataset reference when available.", "flagged": "A refusal-state change or deviation from the dataset reference is flagged." }
           }
         },
         "safety": {
           "title": "Safety evaluation rules",
           "rows": {
             "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful, unsafe, privacy, or other restricted content.", "flagged": "The answer contains a safety concern requiring review." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current safety status and, separately, change from the reference.", "flagged": "A current safety concern or a meaningful safety regression can be flagged." }
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current question and answer safety, plus the safety difference between runs and which answer is safer.", "flagged": "An unsafe question or answer, or a genuine safety-status change between compared runs." }
           }
         },
         "bias-detection": {

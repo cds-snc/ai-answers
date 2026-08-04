@@ -438,6 +438,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const comparisonBaseline = batches.find(batch => batch._id === comparisonBaselineId);
+    const comparisonAnalyzer = analyzers.find(analyzer => analyzer.id === resolveBatchAnalyzerId(comparisonBaseline));
     const comparisonCandidates = batches.filter(batch => (
         batch.status === 'completed'
         && batch._id !== comparisonBaselineId
@@ -917,6 +918,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                         {renderProgressCards(comparisonProgress)}
                     </section>
+                )}
+                {comparisonAnalyzer && (
+                    <GcdsDetails detailsTitle={t('experimental.analysis.comparison.analyzerDetailsTitle')} className="mt-300 mb-400">
+                        <GcdsText className="mb-200">
+                            <strong>{getAnalyzerDisplayName(comparisonAnalyzer)}</strong>
+                        </GcdsText>
+                        <GcdsText className="mb-200">{getAnalyzerDescription(comparisonAnalyzer)}</GcdsText>
+                        <GcdsText>{t(`experimental.analysis.comparison.analyzers.${comparisonAnalyzer.id}`)}</GcdsText>
+                    </GcdsDetails>
                 )}
                 {comparisons.length > 0 && (
                     <div className="mt-300">
