@@ -2050,6 +2050,48 @@
           "bias-detection": "Les deux réponses sont évaluées pour détecter les biais nuisibles et leurs niveaux de biais sont comparés. Un changement de niveau de biais ou un problème de biais actuel est signalé; les différences de détail seulement sont ignorées.",
           "instant-answer": "La comparaison vérifie si les deux résultats de réponse instantanée restent identiques à leurs références attendues et indique toute différence de validation."
         },
+        "analyzerRules": {
+          "headers": {
+            "setup": "Éléments comparés",
+            "comparison": "Ce que fait l’analyseur",
+            "flagged": "Éléments signalés"
+          },
+          "expert-scorer": {
+            "title": "Règles de comparaison par lot de l’évaluateur expert",
+            "rows": {
+              "canonicalReference": { "setup": "Réponse de référence, réponse candidate et référence de l’ensemble de données lorsqu’elle est enregistrée", "comparison": "La réponse candidate et la réponse de référence sont chacune évaluées par rapport à la même référence de l’ensemble de données. Si la référence enregistrée n’est pas disponible, la réponse de référence sert de référence d’évaluation.", "flagged": "La candidate peut échouer en raison d’idées clés manquantes, de recommandations modifiées, d’affirmations non fondées, de régressions du type de réponse, de balises invalides ou d’une qualité sensiblement inférieure." },
+              "runToRun": { "setup": "Réponses de référence et candidate appariées", "comparison": "L’analyseur produit des évaluations distinctes pour les réponses de référence et candidate, puis indique si la candidate s’est améliorée, a régressé, est inchangée ou doit être vérifiée.", "flagged": "Un échec de qualité et le résultat de dérive entre les lots sont signalés séparément." }
+            }
+          },
+          "similar-answer": {
+            "title": "Règles de comparaison par lot des réponses similaires",
+            "rows": {
+              "pairedAnswers": { "setup": "Réponses de référence et candidate appariées", "comparison": "Compare les deux réponses pour détecter des différences factuelles importantes. Les reformulations, la mise en forme et les points équivalents réordonnés sont ignorés.", "flagged": "Un fait, une date, un nombre, une règle d’admissibilité, une étape, un élément nommé, une portée, une URL ou un type de réponse modifié qui pourrait changer la compréhension ou l’action de l’utilisateur." },
+              "datasetReference": { "setup": "Réponses appariées et référence de l’ensemble de données lorsqu’elle est enregistrée", "comparison": "Compare aussi les deux réponses à la référence de l’ensemble de données et indique laquelle lui ressemble le plus.", "flagged": "Les mêmes différences importantes; le résultat peut aussi indiquer la réponse la plus proche de la référence de l’ensemble de données." }
+            }
+          },
+          "refusal": {
+            "title": "Règles de comparaison par lot des refus",
+            "rows": {
+              "pairedAnswers": { "setup": "Réponses de référence et candidate appariées", "comparison": "Détecte les signaux de refus balisés par l’invite ou déclenchés par une erreur dans les deux réponses et compare leurs états de refus.", "flagged": "Toute différence d’état de refus entre la référence et la candidate." },
+              "datasetReference": { "setup": "Réponses appariées et référence de l’ensemble de données lorsqu’elle est enregistrée", "comparison": "Vérifie aussi si l’une des réponses diffère de l’état de refus de la référence de l’ensemble de données.", "flagged": "Un état de refus de référence ou candidat qui diffère de celui de l’ensemble de données." }
+            }
+          },
+          "safety": {
+            "title": "Règles de comparaison par lot de la sécurité",
+            "rows": {
+              "pairedAnswers": { "setup": "Réponses de référence et candidate appariées", "comparison": "Évalue les deux réponses pour le contenu dangereux et demande quelle réponse est la plus sûre, ou si elles sont aussi sûres l’une que l’autre.", "flagged": "Du contenu dangereux dans l’une ou l’autre réponse ou une différence de sécurité signalée entre les lots." },
+              "datasetReference": { "setup": "Réponses appariées et référence de l’ensemble de données lorsqu’elle est enregistrée", "comparison": "Fournit la référence de l’ensemble de données comme contexte supplémentaire lors de l’évaluation des deux réponses d’exécution.", "flagged": "Les mêmes problèmes de sécurité ou différence d’état de sécurité; la référence de l’ensemble de données sert de contexte et n’est pas un troisième résultat évalué." }
+            }
+          },
+          "bias-detection": {
+            "title": "Règles de comparaison par lot des biais",
+            "rows": {
+              "pairedAnswers": { "setup": "Réponses de référence et candidate appariées", "comparison": "Évalue la candidate pour les biais nuisibles et compare seulement les étiquettes non biaisée, prudence et biaisée avec la référence.", "flagged": "Un problème de biais actuel ou un changement du niveau de biais. Les différences de détail, de ton, de formulation, de faits ou d’exhaustivité seules sont ignorées." },
+              "datasetReference": { "setup": "Une référence de l’ensemble de données peut être enregistrée avec les réponses appariées", "comparison": "N’utilise pas la référence de l’ensemble de données dans sa comparaison; il compare l’étiquette de biais candidate avec celle de la référence.", "flagged": "Seulement le problème de biais de la candidate ou un changement de niveau de biais entre la référence et la candidate." }
+            }
+          }
+        },
         "baseline": "Lot de référence",
         "candidate": "Comparer à",
         "selectBaseline": "-- Sélectionner un lot de référence --",
@@ -2070,7 +2112,7 @@
       "selectBaseline": "Sélectionner un lot de référence (comparaison)",
       "baselineHint": "Choisissez un lot terminé comme référence de comparaison. Les comparaisons utilisent les réponses de ce lot.",
       "referenceHint": "Si aucun lot de référence n'est sélectionné, la référence de l'ensemble de données est utilisée automatiquement. Pour les ensembles de données de questions et réponses, la colonne answer sert de référence pour les analyseurs de comparaison.",
-      "expertScorerDescription": "Évalue la réponse actuelle par rapport à la référence canonique de l’ensemble de données lorsqu’elle est disponible. L’évaluation porte sur les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. Lorsqu’une exécution précédente est sélectionnée, le verdict principal utilise toujours la référence de l’ensemble de données et un résultat distinct indique si la réponse actuelle s’est améliorée, a régressé ou est demeurée inchangée.",
+      "expertScorerDescription": "Exige une réponse de référence de l’ensemble de données en mode analyse. Il évalue la réponse nouvellement générée par rapport à cette référence pour les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. La dérive entre les lots est affichée seulement dans Comparer les lots.",
       "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'un lot de comparaison. Utilisez un ensemble de données de questions et réponses avec une colonne referenceAnswer, ou un lot de comparaison.",
       "expertScorerBaselineHint": "L’évaluateur expert utilisera la réponse de référence de l’ensemble de données pour la note de qualité principale et comparera les réponses au lot de référence sélectionné pour mesurer la dérive.",
       "baselineOverridesReference": "Avertissement : cet ensemble de données contient une colonne de réponse de référence, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence de comparaison pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non par rapport à la réponse de référence de l'ensemble de données. Choisissez « Aucune exécution de référence » pour comparer à la réponse de référence de l'ensemble de données.",
@@ -2093,6 +2135,16 @@
         "expert-scorer": {
         "title": "Règles de comparaison de l’évaluateur expert",
         "rows": {
+          "referenceAnswer": {
+            "setup": "Ensemble de données avec une réponse de référence",
+            "comparison": "Le mode analyse compare toujours la réponse nouvellement générée à la réponse de référence de l’ensemble de données.",
+            "flagged": "L’évaluateur expert ne peut pas être exécuté sans réponse de référence."
+          },
+          "qualityReview": {
+            "setup": "Réponse générée et réponse de référence de l’ensemble de données",
+            "comparison": "Vérifie les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale.",
+            "flagged": "Des idées clés manquantes, des recommandations modifiées, des affirmations non fondées, des régressions du type de réponse, des balises invalides ou une qualité sensiblement inférieure."
+          },
           "datasetOnly": {
             "setup": "Référence de l’ensemble de données, sans exécution de référence",
             "comparison": "La réponse actuelle est comparée à la réponse de référence de l’ensemble de données.",
@@ -2108,6 +2160,8 @@
         "similar-answer": {
           "title": "Règles de comparaison des réponses similaires",
           "rows": {
+            "withDatasetReference": { "setup": "Ensemble de données avec une réponse de référence", "comparison": "Compare la réponse nouvellement générée à la référence de l’ensemble de données pour détecter les différences factuelles importantes.", "flagged": "Les changements importants de faits, dates, nombres, critères d’admissibilité, étapes, programmes nommés, portée, URL ou type de réponse. Les changements de formulation et de mise en forme inoffensifs sont ignorés." },
+            "withoutReference": { "setup": "Ensemble de données sans réponse de référence", "comparison": "Ne compare pas les réponses; il enregistre une réponse générée qui peut être utilisée comme référence dans Comparer les lots.", "flagged": "Rien n’est signalé pour les différences de réponses." },
             "standalone": { "setup": "Aucune référence", "comparison": "Aucune comparaison de réponses; l’exécution peut servir de référence ultérieurement.", "flagged": "Rien n’est signalé pour la comparaison." },
             "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "La réponse actuelle est comparée à la réponse de référence fournie; dans une comparaison de lots, les deux exécutions sont aussi comparées à la référence de l’ensemble de données lorsqu’elle existe.", "flagged": "Les changements importants de faits, dates, nombres, critères d’admissibilité, étapes, programmes nommés, portée ou URL sont signalés. Les changements de formulation inoffensifs sont ignorés." }
           }
@@ -2115,6 +2169,8 @@
         "refusal": {
           "title": "Règles de comparaison des refus",
           "rows": {
+            "withDatasetReference": { "setup": "Ensemble de données avec une réponse de référence", "comparison": "Compare l’état de refus reconnu de la réponse générée à celui de la référence de l’ensemble de données.", "flagged": "La référence est un refus et la réponse générée ne l’est pas, ou les états de refus diffèrent." },
+            "withoutReference": { "setup": "Ensemble de données sans réponse de référence", "comparison": "Vérifie les signaux de refus balisés par l’invite ou déclenchés par une erreur dans la réponse générée, sans réponse de référence.", "flagged": "Une réponse générée sans signal de refus reconnu." },
             "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est vérifiée pour détecter les signaux de refus reconnus.", "flagged": "La réponse ne refuse pas lorsque l’évaluateur s’attend à un refus." },
             "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le comportement de refus actuel est comparé au comportement de référence; les comparaisons de lots vérifient aussi les deux exécutions par rapport à la référence de l’ensemble de données lorsqu’elle existe.", "flagged": "Tout changement d’état de refus ou tout écart par rapport à la référence de l’ensemble de données est signalé." }
           }
@@ -2122,6 +2178,8 @@
         "safety": {
           "title": "Règles d’évaluation de la sécurité",
           "rows": {
+            "withDatasetReference": { "setup": "Ensemble de données avec une réponse de référence", "comparison": "Évalue la réponse générée pour la sécurité et demande toute différence de sécurité importante par rapport à la réponse de référence de l’ensemble de données.", "flagged": "Du contenu dangereux dans la réponse générée ou une différence de sécurité signalée par rapport à la référence." },
+            "withoutReference": { "setup": "Ensemble de données sans réponse de référence", "comparison": "Évalue la réponse générée pour détecter le contenu nuisible, dangereux, lié à la vie privée ou autrement restreint sans comparer de référence.", "flagged": "Un problème de sécurité qui doit être vérifié." },
             "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter le contenu nuisible, dangereux, lié à la vie privée ou autrement restreint.", "flagged": "La réponse présente un problème de sécurité qui doit être vérifié." },
             "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "La sécurité de la question et de la réponse actuelles, ainsi que la différence de sécurité entre les exécutions et la réponse la plus sûre.", "flagged": "Une question ou réponse dangereuse, ou un changement réel d’état de sécurité entre les exécutions comparées." }
           }
@@ -2129,8 +2187,16 @@
         "bias-detection": {
           "title": "Règles d’évaluation des biais",
           "rows": {
+            "withDatasetReference": { "setup": "Ensemble de données avec une réponse de référence", "comparison": "Évalue la réponse générée pour détecter les biais nuisibles et compare son étiquette non biaisée, prudence ou biaisée avec la référence de l’ensemble de données.", "flagged": "Un problème de biais actuel ou un changement du niveau de biais; les différences de détail seulement sont ignorées." },
+            "withoutReference": { "setup": "Ensemble de données sans réponse de référence", "comparison": "Évalue la réponse générée pour détecter les biais nuisibles sans comparer de référence.", "flagged": "Un problème de biais actuel." },
             "standalone": { "setup": "Aucune référence", "comparison": "La réponse actuelle est évaluée pour détecter les biais nuisibles.", "flagged": "La réponse est classée comme biaisée ou préoccupante." },
             "withReference": { "setup": "Réponse de l’ensemble de données ou d’une exécution de référence", "comparison": "Le niveau de biais actuel et son changement par rapport au niveau de biais de référence.", "flagged": "Un problème de biais actuel ou un changement de niveau de biais; les différences de détail seulement sont ignorées." }
+          }
+        },
+        "instant-answer": {
+          "title": "Règles de validation de la réponse instantanée",
+          "rows": {
+            "goldenReference": { "setup": "Flux de travail de réponse instantanée et ensemble de données avec une réponse de référence", "comparison": "Vérifie que le flux de travail a utilisé son court-circuit de réponse instantanée et que la réponse générée est exactement égale à la réponse de référence de l’ensemble de données.", "flagged": "Le court-circuit n’a pas été utilisé ou la réponse générée n’est pas identique à la réponse de référence." }
           }
         }
       },
@@ -2231,7 +2297,7 @@
         },
         "bias-detection": {
           "name": "Biais",
-          "description": "Cet analyseur vérifie si la réponse introduit ou renforce un biais nuisible, par exemple un biais lié au genre, à la race, à l'âge, au handicap ou à d'autres caractéristiques protégées. Il recherche les formulations qui stéréotypent, excluent ou traitent un groupe de façon injuste, et il peut aussi comparer l'exécution actuelle à un lot de référence afin de déterminer si le biais s'est amélioré, aggravé ou maintenu. Un résultat signalé signifie que la réponse contient un signal de biais qui mérite une vérification, ou que la réponse actuelle est sensiblement plus biaisée que la référence. En l'absence de référence, l'analyseur agit comme une revue de sécurité autonome et évalue seulement la réponse courante. Utilisez-le pour surveiller les formulations nuisibles, les hypothèses injustes et les régressions subtiles de ton ou de vocabulaire."
+          "description": "Évalue une réponse nouvellement générée pour détecter les biais nuisibles, y compris les stéréotypes, l’exclusion ou le traitement injuste fondé sur des caractéristiques protégées. Utilisez-le pour repérer les formulations ou hypothèses nuisibles dans un seul lot d’analyse."
         },
         "expert-scorer": {
           "name": "Évaluateur expert",
@@ -2239,15 +2305,15 @@
         },
         "refusal": {
           "name": "Refus",
-          "description": "Cet analyseur vérifie qu'un refus attendu est maintenu, y compris les refus marqués par des balises comme <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur. Un résultat signalé signifie que la référence était un refus, mais que la réponse actuelle répond normalement. En mode comparaison, il vérifie si le comportement de refus a changé entre la référence et l'exécution courante."
+          "description": "Vérifie les refus attendus dans une réponse nouvellement générée, y compris les balises <not-gc> et <pt-muni>, les blocages liés aux requêtes trop courtes, les blocages de sécurité et les autres états de refus déclenchés par une erreur."
         },
         "safety": {
           "name": "Sécurité",
-          "description": "Cet analyseur examine la réponse pour repérer du contenu nuisible, des propos haineux, des instructions dangereuses, des fuites de renseignements personnels et tout autre contenu qui ne devrait pas être diffusé tel quel. Un résultat signalé signifie que la réponse a franchi une limite de sécurité ou qu'elle a exposé du contenu qui devrait être examiné avant de considérer l'exécution comme acceptable. Lorsqu'une référence est fournie, l'analyseur compare les deux exécutions et indique si la sécurité s'est améliorée, détériorée ou maintenue. Utilisez cet analyseur pour surveiller la qualité de la modération, repérer rapidement les sorties à risque et vérifier que les changements apportés au système rendent les réponses plus sûres, et non moins sûres."
+          "description": "Examine une réponse nouvellement générée pour repérer le contenu nuisible, les propos haineux, les instructions dangereuses, les fuites de renseignements personnels et tout autre contenu qui ne devrait pas être diffusé tel quel."
         },
         "similar-answer": {
           "name": "Réponse similaire",
-          "description": "Un détecteur strict de différences factuelles : il compare deux réponses et signale les changements de dates, de nombres, de règles d'admissibilité, d'étapes, de programmes nommés, de portée et d'URL qui changeraient l'action à prendre par l'utilisateur. Les reformulations sans conséquence et les changements de mise en forme sont ignorés, et il renvoie needs-review en cas de doute. Ce qui est comparé dépend de la configuration de l'exécution :\n• Vous avez sélectionné une exécution de comparaison — chaque nouvelle réponse est comparée à la réponse de cette exécution pour la même question. Un signalement signifie que la réponse a changé depuis cette exécution — possiblement pour le mieux. C'est la configuration habituelle de surveillance de la dérive.\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse générée est comparée à la réponse approuvée par l'expert, en signalant uniquement les écarts factuels. Pour un jugement de qualité plus global par rapport à une réponse de référence, préférez l'évaluateur expert.\n• Ni l'un ni l'autre — il n'y a rien à comparer : l'exécution ne fait que capturer les réponses et n'est pas notée (la grille de la suite la marque comme capture de référence). Sélectionnez-la comme référence pour une exécution de dérive ultérieure.\nUtilisez cet analyseur pour repérer les régressions factuelles subtiles qu'une révision de qualité générale pourrait manquer."
+          "description": "Détecte les différences factuelles importantes dans une réponse nouvellement générée, notamment les dates, les nombres, les règles d’admissibilité, les étapes, les programmes nommés, la portée et les URL. Les reformulations et les changements de mise en forme inoffensifs sont ignorés."
         },
         "instant-answer": {
           "name": "Validation de la réponse instantanée",

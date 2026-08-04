@@ -63,13 +63,25 @@ const isLambdaRuntime = () => typeof window !== 'undefined' && window.RUNTIME_CO
 const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
 const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
 
-const ANALYZER_RULE_ROWS = {
+const ANALYSIS_RULE_ROWS = {
     'no-analyzer': ['always'],
-    'expert-scorer': ['datasetOnly', 'datasetAndRun'],
-    'similar-answer': ['standalone', 'withReference'],
-    'refusal': ['standalone', 'withReference'],
-    safety: ['standalone', 'withReference'],
-    'bias-detection': ['standalone', 'withReference']
+    // Expert scorer cannot run without the dataset's reference answer. Keep
+    // its two rows focused on that analysis, rather than implying a run-to-run
+    // comparison can be configured from this tab.
+    'expert-scorer': ['referenceAnswer', 'qualityReview'],
+    'similar-answer': ['withDatasetReference', 'withoutReference'],
+    refusal: ['withDatasetReference', 'withoutReference'],
+    safety: ['withDatasetReference', 'withoutReference'],
+    'bias-detection': ['withDatasetReference', 'withoutReference'],
+    'instant-answer': ['goldenReference']
+};
+
+const BATCH_COMPARISON_RULE_ROWS = {
+    'expert-scorer': ['canonicalReference', 'runToRun'],
+    'similar-answer': ['pairedAnswers', 'datasetReference'],
+    refusal: ['pairedAnswers', 'datasetReference'],
+    safety: ['pairedAnswers', 'datasetReference'],
+    'bias-detection': ['pairedAnswers', 'datasetReference']
 };
 
 const ANSWER_COLUMN_NAMES = new Set(['answer', 'redactedanswer', 'response', 'referenceanswer']);
@@ -272,6 +284,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const getAnalyzerDescription = (analyzer) => analyzer?.id === 'expert-scorer'
         ? t('experimental.analysis.expertScorerDescription')
         : getLocalizedAnalyzerText(analyzer, 'description');
+    const getComparisonAnalyzerDescription = (analyzer) => (
+        analyzer?.id ? t(`experimental.analysis.comparison.analyzers.${analyzer.id}`) : ''
+    );
 
     const getStatusLabel = (status) => {
         const key = getStatusTranslationKey(status);
@@ -590,6 +605,43 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     ));
 
+    const renderAnalyzerRulesTable = (analyzerId, mode) => {
+        const ruleRows = mode === 'comparison'
+            ? BATCH_COMPARISON_RULE_ROWS[analyzerId]
+            : ANALYSIS_RULE_ROWS[analyzerId];
+        if (!ruleRows) return null;
+
+        const keyPrefix = mode === 'comparison'
+            ? 'experimental.analysis.comparison.analyzerRules'
+            : 'experimental.analysis.analyzerRules';
+
+        return (
+            <div className="overflow-auto mt-300">
+                <GcdsText className="mb-200">
+                    <strong>{t(`${keyPrefix}.${analyzerId}.title`)}</strong>
+                </GcdsText>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                            <th className="p-200">{t(`${keyPrefix}.headers.setup`)}</th>
+                            <th className="p-200">{t(`${keyPrefix}.headers.comparison`)}</th>
+                            <th className="p-200">{t(`${keyPrefix}.headers.flagged`)}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ruleRows.map(rule => (
+                            <tr key={rule} style={{ borderBottom: '1px solid #eee' }}>
+                                <td className="p-200">{t(`${keyPrefix}.${analyzerId}.rows.${rule}.setup`)}</td>
+                                <td className="p-200">{t(`${keyPrefix}.${analyzerId}.rows.${rule}.comparison`)}</td>
+                                <td className="p-200">{t(`${keyPrefix}.${analyzerId}.rows.${rule}.flagged`)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
     return (
         <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
@@ -673,31 +725,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         .map((line, idx) => (
                                             <GcdsText key={idx} className="mb-200">{line}</GcdsText>
                                         ))}
-                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId] && (
-                                        <div className="overflow-auto mt-300">
-                                            <GcdsText className="mb-200">
-                                                <strong>{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.title`)}</strong>
-                                            </GcdsText>
-                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                                <thead>
-                                                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.setup')}</th>
-                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.comparison')}</th>
-                                                        <th className="p-200">{t('experimental.analysis.analyzerRules.headers.flagged')}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {ANALYZER_RULE_ROWS[selectedAnalyzerId].map(rule => (
-                                                        <tr key={rule} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.setup`)}</td>
-                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.comparison`)}</td>
-                                                            <td className="p-200">{t(`experimental.analysis.analyzerRules.${selectedAnalyzerId}.rows.${rule}.flagged`)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
+                                    {renderAnalyzerRulesTable(selectedAnalyzerId, 'analysis')}
                                 </GcdsDetails>
                             )}
                         </div>
@@ -924,8 +952,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsText className="mb-200">
                             <strong>{getAnalyzerDisplayName(comparisonAnalyzer)}</strong>
                         </GcdsText>
-                        <GcdsText className="mb-200">{getAnalyzerDescription(comparisonAnalyzer)}</GcdsText>
-                        <GcdsText>{t(`experimental.analysis.comparison.analyzers.${comparisonAnalyzer.id}`)}</GcdsText>
+                        <GcdsText>{getComparisonAnalyzerDescription(comparisonAnalyzer)}</GcdsText>
+                        {renderAnalyzerRulesTable(comparisonAnalyzer.id, 'comparison')}
                     </GcdsDetails>
                 )}
                 {comparisons.length > 0 && (

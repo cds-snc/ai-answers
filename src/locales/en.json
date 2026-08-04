@@ -2050,6 +2050,48 @@
           "bias-detection": "Both answers are evaluated for harmful bias and their bias levels are compared. A change in bias level or a current bias concern is flagged; detail-only differences are ignored.",
           "instant-answer": "The comparison checks whether the two instant-answer results remain identical to their expected references and identifies any validation difference."
         },
+        "analyzerRules": {
+          "headers": {
+            "setup": "Compared inputs",
+            "comparison": "What the analyzer does",
+            "flagged": "What is flagged"
+          },
+          "expert-scorer": {
+            "title": "Expert scorer batch-comparison rules",
+            "rows": {
+              "canonicalReference": { "setup": "Baseline answer, candidate answer, and dataset reference when stored", "comparison": "The candidate and baseline are each assessed against the same dataset reference. If the stored dataset reference is unavailable, the baseline is used as the evaluation reference.", "flagged": "The candidate can fail for missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality." },
+              "runToRun": { "setup": "Paired baseline and candidate answers", "comparison": "The analyzer returns separate baseline and candidate assessments, then reports whether the candidate improved, regressed, was unchanged, or needs review.", "flagged": "A quality failure and the run-to-run drift result are reported separately." }
+            }
+          },
+          "similar-answer": {
+            "title": "Similar answer batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Compares the two answers for material factual differences. Harmless wording, formatting, and equivalent reordered points are ignored.", "flagged": "A changed fact, date, number, eligibility rule, step, named item, scope, URL, or answer type that could change a user’s understanding or action." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Also compares both answers with the dataset reference and identifies which is more similar to it.", "flagged": "The same material differences; the result can also identify the answer closer to the dataset reference." }
+            }
+          },
+          "refusal": {
+            "title": "Refusal batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Detects prompt-tagged or error-driven refusal signals in both answers and compares their refusal states.", "flagged": "Any difference in refusal state between the baseline and candidate." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Also checks whether either answer differs from the dataset reference’s refusal state.", "flagged": "A baseline or candidate refusal state that differs from the dataset reference." }
+            }
+          },
+          "safety": {
+            "title": "Safety batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Evaluates both answers for unsafe content and asks which answer is safer, or whether they are equally safe.", "flagged": "Unsafe content in either answer or a reported safety difference between the runs." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Supplies the dataset reference as additional context while assessing the two run answers.", "flagged": "The same safety concerns or safety-status difference; the dataset reference is context, not a third scored result." }
+            }
+          },
+          "bias-detection": {
+            "title": "Bias batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Evaluates the candidate for harmful bias and compares only the labels unbiased, caution, and biased with the baseline.", "flagged": "A current bias concern or a change in bias level. Detail, tone, wording, factual, or completeness differences alone are ignored." },
+              "datasetReference": { "setup": "A dataset reference may be stored with the paired answers", "comparison": "Does not use the dataset reference in its comparison; it compares the candidate bias label with the baseline bias label.", "flagged": "Only the candidate’s bias concern or a baseline-to-candidate bias-level change." }
+            }
+          }
+        },
         "baseline": "Baseline batch",
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
@@ -2070,7 +2112,7 @@
       "selectBaseline": "Select reference batch (comparison)",
       "baselineHint": "Pick a completed batch to act as the comparison reference. Comparisons use that batch's answers.",
       "referenceHint": "If no reference batch is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
-      "expertScorerDescription": "Judges the current answer against the dataset's canonical reference when one is available. It checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and answer quality. With a previous run selected, the main verdict still uses the dataset reference and a separate drift result describes whether the current answer improved, regressed, or stayed unchanged.",
+      "expertScorerDescription": "Requires a dataset reference answer in analysis mode. It judges the newly generated answer against that reference for key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall quality. Batch-to-batch drift is shown only in Compare batches.",
       "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison batch. Use a question and answer dataset with a referenceAnswer column, or a comparison batch.",
       "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare answers with the selected reference batch for drift.",
       "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference batch's answers will replace it as the comparison reference. Results will measure drift from that batch, not against the dataset reference answer.",
@@ -2091,8 +2133,18 @@
           }
         },
         "expert-scorer": {
-        "title": "Expert scorer comparison rules",
+          "title": "Expert scorer comparison rules",
         "rows": {
+          "referenceAnswer": {
+            "setup": "Dataset with a reference answer",
+            "comparison": "Analysis mode always compares the newly generated answer with the dataset reference answer.",
+            "flagged": "Expert scorer cannot be run without a reference answer."
+          },
+          "qualityReview": {
+            "setup": "Generated answer and dataset reference answer",
+            "comparison": "Checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall answer quality.",
+            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+          },
           "datasetOnly": {
             "setup": "Dataset reference, no reference batch",
             "comparison": "Current answer against the dataset reference answer.",
@@ -2108,6 +2160,8 @@
         "similar-answer": {
           "title": "Similar answer comparison rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Compares the newly generated answer with the dataset reference for material factual differences.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, URLs, or answer type. Harmless wording and formatting changes are ignored." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Does not compare answers; it records a generated answer that can be used as a baseline in Compare batches.", "flagged": "Nothing is flagged for answer differences." },
             "standalone": { "setup": "No reference", "comparison": "No answer comparison; the batch can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
             "withReference": { "setup": "Dataset or reference-batch answer", "comparison": "Current answer against the supplied reference answer; in a batch comparison, both runs are also compared with the dataset reference when available.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
           }
@@ -2115,6 +2169,8 @@
         "refusal": {
           "title": "Refusal comparison rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Compares the generated answer’s recognized refusal state with the dataset reference’s refusal state.", "flagged": "The reference is a refusal and the generated answer is not, or the refusal states differ." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Checks the generated answer for recognized prompt-tagged or error-driven refusal signals without a reference answer.", "flagged": "A generated answer without a recognized refusal signal." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is checked for recognized refusal signals.", "flagged": "The answer fails to refuse when the refusal evaluator expects a refusal." },
             "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior; batch comparisons also check both runs against the dataset reference when available.", "flagged": "A refusal-state change or deviation from the dataset reference is flagged." }
           }
@@ -2122,6 +2178,8 @@
         "safety": {
           "title": "Safety evaluation rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Evaluates the generated answer for safety and asks for any meaningful safety difference from the dataset reference answer.", "flagged": "Unsafe content in the generated answer or a reported safety difference from the reference." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Evaluates the generated answer for harmful, unsafe, privacy, or other restricted content without comparing a reference.", "flagged": "A safety concern requiring review." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful, unsafe, privacy, or other restricted content.", "flagged": "The answer contains a safety concern requiring review." },
             "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current question and answer safety, plus the safety difference between runs and which answer is safer.", "flagged": "An unsafe question or answer, or a genuine safety-status change between compared runs." }
           }
@@ -2129,8 +2187,16 @@
         "bias-detection": {
           "title": "Bias evaluation rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Evaluates the generated answer for harmful bias and compares its unbiased, caution, or biased label with the dataset reference.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Evaluates the generated answer for harmful bias without comparing a reference.", "flagged": "A current bias concern." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful bias.", "flagged": "The answer is classified as biased or caution-worthy." },
             "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current bias level and change from the reference bias level.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." }
+          }
+        },
+        "instant-answer": {
+          "title": "Instant-answer validation rules",
+          "rows": {
+            "goldenReference": { "setup": "Instant-answer workflow and dataset with a reference answer", "comparison": "Checks that the workflow used its instant-answer short-circuit and that the generated answer exactly equals the dataset reference answer.", "flagged": "The short-circuit was not used or the generated answer is not identical to the reference answer." }
           }
         }
       },
@@ -2231,7 +2297,7 @@
         },
         "bias-detection": {
           "name": "Bias",
-          "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a reference run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the reference. If no reference exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
+          "description": "Reviews a newly generated answer for harmful bias, including stereotypes, exclusion, or unfair treatment based on protected characteristics. Use it to identify harmful framing or assumptions in a single analysis batch."
         },
         "expert-scorer": {
           "name": "Expert scorer",
@@ -2239,15 +2305,15 @@
         },
         "refusal": {
           "name": "Refusal",
-          "description": "This analyzer checks whether an expected refusal is preserved, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the reference refused but the current answer responded normally. In comparison mode, it checks whether refusal behaviour changed between the reference and the current run."
+          "description": "Checks a newly generated answer for expected refusals, including <not-gc> and <pt-muni> tags, short-query blocks, safety blocks, and other error-driven refusal states."
         },
         "safety": {
           "name": "Safety",
-          "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a reference is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
+          "description": "Reviews a newly generated answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is."
         },
         "similar-answer": {
           "name": "Similar answer",
-          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a reference run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a reference capture). Select it as the reference for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+          "description": "Detects material factual differences in a newly generated answer, including dates, numbers, eligibility rules, steps, named programs, scope, and URLs. Harmless rewording and formatting changes are ignored."
         },
         "instant-answer": {
           "name": "Instant-answer validation",

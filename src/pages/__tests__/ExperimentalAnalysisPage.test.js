@@ -266,6 +266,70 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getByText('Analyzer 1 description')).toBeTruthy();
     });
 
+    it('shows Expert scorer’s two reference-required analysis rules', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([{
+            id: 'expert-scorer',
+            nameKey: 'experimental.analysis.analyzers.expert-scorer.name',
+            descriptionKey: 'experimental.analysis.analyzers.expert-scorer.description',
+            requiresReference: true
+        }]);
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'referenceAnswer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
+            target: { value: 'expert-scorer' }
+        });
+
+        expect(screen.getByText('experimental.analysis.analyzerRules.expert-scorer.rows.referenceAnswer.setup')).toBeTruthy();
+        expect(screen.getByText('experimental.analysis.analyzerRules.expert-scorer.rows.qualityReview.setup')).toBeTruthy();
+    });
+
+    it('shows the selected analyzer’s batch-comparison rules in Compare batches', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([{
+            id: 'bias-detection',
+            nameKey: 'experimental.analysis.analyzers.bias-detection.name',
+            descriptionKey: 'experimental.analysis.analyzers.bias-detection.description'
+        }]);
+        mockListBatches.mockResolvedValue({
+            data: [{
+                _id: 'batch-1',
+                name: 'Analysis - baseline',
+                status: 'completed',
+                summary: { completed: 1, failed: 0, total: 1 },
+                analyzerSummary: {},
+                config: { analyzerIds: ['bias-detection'] },
+                createdAt: '2026-05-05T00:00:00.000Z',
+                createdBy: { email: 'user@example.com' }
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        fireEvent.change(screen.getByLabelText('experimental.analysis.comparison.baseline'), {
+            target: { value: 'batch-1' }
+        });
+
+        expect(screen.getByText('experimental.analysis.comparison.analyzerRules.bias-detection.rows.pairedAnswers.setup')).toBeTruthy();
+        expect(screen.getByText('experimental.analysis.comparison.analyzerRules.bias-detection.rows.datasetReference.setup')).toBeTruthy();
+    });
+
     it('shows a starting status card immediately when analysis is launched', async () => {
         let resolveCreateBatch;
         const createBatchPromise = new Promise((resolve) => {
