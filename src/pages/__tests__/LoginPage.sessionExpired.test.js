@@ -3,18 +3,21 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+const mockLogin = vi.fn();
+const mockNavigate = vi.fn();
 import LoginPage from '../LoginPage.js';
 
 vi.mock('react-router-dom', () => ({
   Link: ({ children, to }) => React.createElement('a', { href: to }, children),
-  useLocation: () => ({ search: '?reason=session-expired' }),
-  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/en/signin', search: '?reason=session-expired' }),
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('../../contexts/AuthContext.js', () => ({
   useAuth: () => ({
-    login: vi.fn(),
+    login: mockLogin,
     refreshUser: vi.fn(),
     getDefaultRouteForRole: vi.fn(() => '/en/admin'),
   }),
@@ -56,6 +59,8 @@ vi.mock('../../components/auth/PasswordInput.js', () => ({
 describe('LoginPage session expired notice', () => {
   afterEach(() => {
     cleanup();
+    mockLogin.mockReset();
+    mockNavigate.mockReset();
   });
 
   it('shows a warning when redirected after a session check fails', () => {
@@ -66,5 +71,20 @@ describe('LoginPage session expired notice', () => {
     expect(notice?.getAttribute('data-notice-role')).toBe('warning');
     expect(notice?.getAttribute('data-notice-title')).toBe('Session expired');
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+  });
+
+  it('allows valid credentials to log in while the expiry reason is present', async () => {
+    mockLogin.mockResolvedValue({ defaultRoute: '/en/admin' });
+    render(<LoginPage lang="en" />);
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'login.email' }), { target: { value: 'admin@example.com' } });
+    fireEvent.change(screen.getByLabelText('login.password'), { target: { value: 'correct-password' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'));
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('admin@example.com', 'correct-password');
+      expect(mockNavigate).toHaveBeenCalledWith('/en/signin', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/en/admin');
+    });
   });
 });
