@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.179.0](https://github.com/cds-snc/ai-answers/compare/v1.178.1...v1.179.0) (2026-08-05)
+
+
+### Features
+
+* implement chat session availability checks and update related c… ([f5f537b](https://github.com/cds-snc/ai-answers/commit/f5f537b578b994aae91e52dc4bf2a9b626f8847d))
+* implement chat session availability checks and update related components ([9064440](https://github.com/cds-snc/ai-answers/commit/9064440dbd311463d22767fe2ffde41ff6744404))
+
+
+### Bug Fixes
+
+* handle session expiration during login and update tests ([eae6af0](https://github.com/cds-snc/ai-answers/commit/eae6af03a68b599cf627aacf1c767e8df6966b0f))
+* handle session expiration during login and update tests ([577cb54](https://github.com/cds-snc/ai-answers/commit/577cb54b079d86a47d71422dd9eb899ba93a19f0))
+
 ## [1.178.1](https://github.com/cds-snc/ai-answers/compare/v1.178.0...v1.178.1) (2026-08-04)
 
 
