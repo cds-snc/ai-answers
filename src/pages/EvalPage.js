@@ -120,7 +120,7 @@ const EvalPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page">
       <h1 className="mb-400">{t('admin.navigation.eval', 'Evaluation Administration')}</h1>
       
-      <nav className="mb-400">
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
