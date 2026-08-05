@@ -128,7 +128,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('admin.autoEvalDashboard.title', 'Auto-Evaluation dashboard')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>

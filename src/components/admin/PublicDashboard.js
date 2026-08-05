@@ -142,20 +142,20 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </h2>
 
       {loading ? (
-        <div className="dashboard-loading">
+        <div className="dashboard-loading" role="status" aria-live="polite">
           {t('common.loading')}
         </div>
       ) : (
       <>
 
       {error && (
-        <div className="dashboard-error">
+        <div className="dashboard-error" role="alert">
           {t('publicDashboard.error')}
         </div>
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning">
+        <div className="dashboard-warning" role="status" aria-live="polite">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('publicDashboard.noData')}
         </div>

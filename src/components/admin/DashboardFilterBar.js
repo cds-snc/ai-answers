@@ -301,7 +301,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
             </button>
           )}
         </span>
-        {loading && <span className="filter-bar__loading">{t('dashboardFilter.loading')}</span>}
+        {loading && <span className="filter-bar__loading" role="status" aria-live="polite">{t('dashboardFilter.loading')}</span>}
       </div>
     </div>
   );
