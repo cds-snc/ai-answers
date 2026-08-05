@@ -9,6 +9,13 @@ import { getEncoding } from "js-tiktoken";
 const tokenizer = getEncoding("cl100k_base");
 const DEFAULT_MAX_TOKENS = 32000;
 
+// Client-rendered pages (e.g. Nuxt/Angular SPAs) return HTTP 200 with an empty
+// body, so Readability extracts nothing. Without this floor the agent receives
+// an empty string as a successful read and answers from training data instead.
+// Measured against live Canada.ca pages: the shortest genuine extraction is
+// ~300 chars, while shells produce 0.
+const MIN_CONTENT_CHARS = 50;
+
 function clipByTokens(text, maxTokens = DEFAULT_MAX_TOKENS) {
   const ids = tokenizer.encode(text);
   if (ids.length <= maxTokens) return text;
@@ -77,12 +84,13 @@ async function downloadWebPage(url) {
 
 const downloadWebPageTool = tool(
   async ({ url }) => {
+    let markdown;
     try {
-      const { markdown, res } = await downloadWebPage(url);
+      const result = await downloadWebPage(url);
+      markdown = result.markdown;
 
       // Successfully received response
-      console.log("Read web page - Status:", res.status);
-      return markdown;
+      console.log("Read web page - Status:", result.res.status);
     } catch (error) {
       const req = error.request || error.response?.request;
       // Fallback to config if request object is incomplete (common in timeouts/network errors)
@@ -107,6 +115,19 @@ const downloadWebPageTool = tool(
       if (error.code === "ETIMEDOUT") throw new Error(`Request timed out: ${url}`);
       throw new Error(`Failed to download webpage: ${url} - ${error.message}`);
     }
+
+    // Thrown outside the catch above so it is not re-wrapped as a network error.
+    if (markdown.trim().length < MIN_CONTENT_CHARS) {
+      console.log("Read web page (No content):", url);
+      throw new Error(
+        `No readable content at ${url}. The page returned HTTP 200 but renders its ` +
+        `content with JavaScript, which this tool cannot execute. The URL is valid ` +
+        `and may still be cited, but you did NOT read it — do not state any facts ` +
+        `from this page, and do not retry it.`
+      );
+    }
+
+    return markdown;
   },
   {
     name: "downloadWebPage",
