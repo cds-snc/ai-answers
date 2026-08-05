@@ -1008,7 +1008,7 @@
     "defaultWithVector": "Instant answer ON",
     "defaultWithLocalModel": "Local-model instant answer ON",
     "instantAndQA": "Instant answer with context ON",
-    "genericWithQA": "Past Q&A context ON"
+    "genericWithQA": "Past evals context ON"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
@@ -1283,7 +1283,7 @@
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages",
-    "usedQaChatsTitle": "Past Q&A used",
+    "usedQaChatsTitle": "Past evals used",
     "chatId": "Chat ID"
   },
   "dashboardFilter": {
