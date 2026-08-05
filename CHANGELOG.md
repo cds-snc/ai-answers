@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.180.0](https://github.com/cds-snc/ai-answers/compare/v1.179.0...v1.180.0) (2026-08-05)
+
+
+### Features
+
+* add empty context guard - tested in preview ([da016ec](https://github.com/cds-snc/ai-answers/commit/da016ecedc9ad0907dc20ad90a9a3def21b88693))
+
 ## [1.179.0](https://github.com/cds-snc/ai-answers/compare/v1.178.1...v1.179.0) (2026-08-05)
 
 
