@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
+import HowToPage from './pages/HowToPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
@@ -42,7 +43,8 @@ import ExperimentalBatchResultsPage from './pages/experimental/ExperimentalBatch
 import ExperimentalSuitePage from './pages/experimental/ExperimentalSuitePage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
-import { translateSlug } from './utils/routes.js';
+import { translateSlug, getPath } from './utils/routes.js';
+import { HOW_TOS } from './config/howTos.js';
 import { PUBLIC_HOME_ROUTE_PATHS, isPublicAuthExemptPath } from './config/appRoutePaths.js';
 
 
@@ -452,6 +454,18 @@ export default function App() {
       { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
       { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      ...HOW_TOS.flatMap((howTo) => ([
+        {
+          path: getPath(howTo.route, 'en'),
+          element: <HowToPage lang="en" howToId={howTo.id} />,
+          roles: ['admin', 'partner'],
+        },
+        {
+          path: getPath(howTo.route, 'fr'),
+          element: <HowToPage lang="fr" howToId={howTo.id} />,
+          roles: ['admin', 'partner'],
+        },
+      ])),
       { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/analysis', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },

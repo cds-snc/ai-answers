@@ -1,6 +1,11 @@
+---
+title: "Evaluation-informed answers — AI Answers"
+description: "How expert evaluations shape future answers, how to see which ones were used, and how to remove one from the pool."
+---
+
 # Evaluation-informed answers — how it works and how to use it
 
-*Audience: admin and partner users. For the engineering detail behind everything on this page, see [docs/architecture/using-evals-for-answers.md](../architecture/using-evals-for-answers.md).*
+*Audience: admin and partner users. For the engineering detail behind everything on this page, see [docs/architecture/using-evals-for-answers.md](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md).*
 
 ## What it does
 
@@ -18,9 +23,9 @@ Open the chat in review mode. Click on a chat ID to view it from a dashboard —
 
 If any past evaluations were used, a **Past evals used** panel is displayed under the answer. Expand it:
 
-![Past evals used panel expanded under an answer, listing each past chat ID and its total score, English](../images/eval-informed-past-qa-used-en.jpg)
+![Past evals used panel expanded under an answer, listing each past chat ID and its total score, English](/content/admin/images/eval-informed-past-evals-used-en.jpg)
 
-![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total, français](../images/eval-informed-past-qa-used-fr.jpg)
+![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total, français](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
 
 The panel lists each past chat that informed the answer, with the expert's total score out of 100. Scores vary, and a mix is expected — high-scoring examples show the model an approach an expert approved, while lower-scoring ones carry the expert's notes on what to avoid. There is no minimum score, so a low score in this list is not a sign that something went wrong.
 
@@ -30,9 +35,9 @@ Each **chat ID is a link**. Opening it loads that past conversation in review mo
 
 If an expert evaluation shouldn't be shaping future answers — the content it was based on has changed, the judgement was wrong, or it was a test entry — delete it from that past chat via the **Delete expert evaluation** button. The button is visible when you expand the Expert evaluation and its score.
 
-![Expanded Expert evaluation panel showing the sentence-by-sentence scores and the Delete expert evaluation button, English](../images/eval-informed-delete-button-en.jpg)
+![Expanded Expert evaluation panel showing the sentence-by-sentence scores and the Delete expert evaluation button, English](/content/admin/images/eval-informed-delete-button-en.jpg)
 
-![Panneau « Évaluation d'expert » déployé montrant les notes par phrase et le bouton « Supprimer l'évaluation d'expert », français](../images/eval-informed-delete-button-fr.jpg)
+![Panneau « Évaluation d'expert » déployé montrant les notes par phrase et le bouton « Supprimer l'évaluation d'expert », français](/content/admin/images/eval-informed-delete-button-fr.jpg)
 
 Beside the delete button is a **Never stale** checkbox. Ticking it exempts that evaluation from the one-year freshness rule, so it stays eligible indefinitely instead of dropping out on its first birthday. Use it for evaluations resting on guidance that doesn't go out of date. It only overrides the age check — the evaluation still has to clear the similarity floor and language match like any other, and deleting it still removes it from the pool.
 
@@ -61,6 +66,7 @@ The instructions that accompany the block tell the model to treat perfect-score 
 
 ## Related
 
-- [Using evaluations to improve answers](../../SYSTEM_CARD.md#using-evaluations-to-improve-answers) — the public-facing summary in the system card
-- [docs/architecture/using-evals-for-answers.md](../architecture/using-evals-for-answers.md) — retrieval mechanics, thresholds, graph wiring, failure modes
-- [Expert evaluation process, with screenshots](../pdf/ai-answers-expert-evals-integration.pdf)
+- [Using evaluations to improve answers](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#using-evaluations-to-improve-answers) — the public-facing summary in the system card
+- [docs/architecture/using-evals-for-answers.md](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md) — retrieval mechanics, thresholds, graph wiring, failure modes
+- [Expert evaluation process, with screenshots](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/ai-answers-expert-evals-integration.pdf)
+- [French version of this page](/fr/comment-faire/reponses-informees-par-evaluations)

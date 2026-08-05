@@ -27,6 +27,7 @@ export const ROUTE_SLUGS = {
   database:                { en: 'database',                     fr: 'base-de-donnees' },
   vector:                  { en: 'vector',                       fr: 'vecteur' },
   connectivity:            { en: 'connectivity',                 fr: 'connectivite' },
+  'how-to-eval-informed':  { en: 'how-to/eval-informed-answers',  fr: 'comment-faire/reponses-informees-par-evaluations' },
   'experimental-datasets': { en: 'experimental/datasets',         fr: 'experimental/ensembles-de-donnees' },
   'experimental-create-dataset': { en: 'experimental/create-dataset', fr: 'experimental/creer-ensemble-de-donnees' },
 };

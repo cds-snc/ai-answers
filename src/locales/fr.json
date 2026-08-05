@@ -538,6 +538,15 @@
       "totalInactive": "utilisateur(s) inactif(s) au total",
       "viewUsers": "Voir et gérer les utilisateurs"
     },
+    "howTo": {
+      "title": "Comment faire",
+      "evalInformedAnswers": "Réponses informées par les évaluations — fonctionnement et utilisation",
+      "backToAdmin": "Retour à la page d'administration",
+      "loading": "Chargement...",
+      "loadError": "Impossible de charger ce guide.",
+      "notFoundTitle": "Guide introuvable",
+      "notFound": "Ce guide n'existe pas."
+    },
     "viewChat": {
       "title": "Voir le chat par ID",
       "label": "ID de chat",

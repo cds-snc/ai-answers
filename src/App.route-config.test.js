@@ -15,6 +15,7 @@ const {
   mockUseAuth,
   mockUseTranslations,
   mockTranslateSlug,
+  mockGetPath,
 } = vi.hoisted(() => ({
   mockCreateBrowserRouter: vi.fn((routes) => routes),
   mockRouterProvider: vi.fn(() => null),
@@ -30,6 +31,7 @@ const {
     t: (key) => key,
   })),
   mockTranslateSlug: vi.fn((slug) => slug),
+  mockGetPath: vi.fn((name, lang) => `/${lang}/${name}`),
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -64,6 +66,7 @@ vi.mock('./hooks/useTranslations.js', () => ({
 
 vi.mock('./utils/routes.js', () => ({
   translateSlug: mockTranslateSlug,
+  getPath: mockGetPath,
 }));
 
 vi.mock('./pages/HomePage.js', () => ({ default: mockHomePage }));
@@ -96,6 +99,7 @@ vi.mock('./pages/ConnectivityPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/experimental/ExperimentalAnalysisPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/experimental/ExperimentalDatasetsPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/404.js', () => ({ default: mockGenericPage }));
+vi.mock('./pages/HowToPage.js', () => ({ default: mockGenericPage }));
 
 vi.mock('./config/metadata.js', () => ({
   DEFAULT_METADATA: {

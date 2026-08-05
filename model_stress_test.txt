@@ -1,0 +1,15 @@
+--- QUORA MODEL STRESS TEST REPORT ---
+Threshold: 0.94
+
+MATCH   | Score: 0.9970 | Identical                 | "What is SCIS?" vs "What is SCIS?"
+REJECT  | Score: 0.0010 | +1 word (please)          | "What is SCIS?" vs "What is SCIS please?"
+MATCH   | Score: 0.9440 | +1 word (exactly)         | "What is SCIS?" vs "What is SCIS exactly?"
+MATCH   | Score: 0.9890 | +1 word (Hey)             | "What is SCIS?" vs "Hey what is SCIS?"
+REJECT  | Score: 0.0060 | +2 words (Hey...please)   | "What is SCIS?" vs "Hey what is SCIS please?"
+MATCH   | Score: 0.9910 | +3 words (I was wondering) | "What is SCIS?" vs "I was wondering what is SCIS?"
+MATCH   | Score: 0.9970 | +4 words (Can you tell me) | "What is SCIS?" vs "Can you tell me what is SCIS?"
+REJECT  | Score: 0.0110 | Sponsor/Applicant swap    | "Can I apply for my daughter?" vs "Can my daughter apply for me?"
+MATCH   | Score: 0.9420 | Helper/Recipient swap     | "I need to help my daughter with SCIS" vs "My daughter needs to help me with SCIS"
+REJECT  | Score: 0.9330 | Age swap benchmark        | "I am 16 and my daughter is 20" vs "I am 20 and my daughter is 16"
+REJECT  | Score: 0.8550 | Over vs Under (1 word diff) | "How do I find the form for over 18?" vs "How do I find the form for under 18?"
+REJECT  | Score: 0.0110 | Inside vs Outside (1 word diff) | "Apply from inside Canada" vs "Apply from outside Canada"
