@@ -113,11 +113,13 @@ const HomePage = ({ lang = "en" }) => {
   // const [isLoading, setIsLoading] = useState(false);
 
   // Lazy init: chatId will be null initially and set from server response after first message.
-  // Check siteStatus so admins can take the site offline via SettingsPage.
+  // Use the same server-side availability check that is enforced when a new
+  // anonymous chat session is created. This keeps the UI from offering a
+  // session slot that the backend will immediately reject.
   useEffect(() => {
     if (!authLoading && !reviewChatId) {
-      DataStoreService.getSiteStatus().then((status) => {
-        if (status === 'available') {
+      DataStoreService.getChatSessionAvailability().then(({ siteStatus, sessionAvailable }) => {
+        if (siteStatus && sessionAvailable) {
           setServiceStatus({ isAvailable: true, sessionAvailable: true, message: '' });
         } else {
           setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });

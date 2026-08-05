@@ -6,15 +6,15 @@ import React from 'react';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import HomePage from '../HomePage.js';
 
-// Mock DataStoreService — tests control what getSiteStatus resolves to
-const { mockGetSiteStatus, mockGetChat, mockGetPublicSetting } = vi.hoisted(() => ({
-  mockGetSiteStatus: vi.fn(() => Promise.resolve('available')),
+// Mock DataStoreService — tests control what the availability endpoint resolves to
+const { mockGetChatSessionAvailability, mockGetChat, mockGetPublicSetting } = vi.hoisted(() => ({
+  mockGetChatSessionAvailability: vi.fn(() => Promise.resolve({ siteStatus: true, sessionAvailable: true })),
   mockGetChat: vi.fn(() => Promise.resolve({ chat: null })),
   mockGetPublicSetting: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock('../../services/DataStoreService.js', () => ({
   default: {
-    getSiteStatus: mockGetSiteStatus,
+    getChatSessionAvailability: mockGetChatSessionAvailability,
     getChat: mockGetChat,
     getPublicSetting: mockGetPublicSetting,
   }
@@ -56,19 +56,19 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsNotice: ({ children }) => <div>{children}</div>,
 }));
 
-describe('HomePage siteStatus', () => {
+describe('HomePage availability', () => {
   afterEach(() => {
     cleanup();
   });
 
   beforeEach(() => {
-    mockGetSiteStatus.mockReset().mockResolvedValue('available');
+    mockGetChatSessionAvailability.mockReset().mockResolvedValue({ siteStatus: true, sessionAvailable: true });
     mockGetChat.mockReset().mockResolvedValue({ chat: null });
     mockGetPublicSetting.mockReset().mockResolvedValue(null);
   });
 
   it('renders the chat when siteStatus is available', async () => {
-    mockGetSiteStatus.mockResolvedValue('available');
+    mockGetChatSessionAvailability.mockResolvedValue({ siteStatus: true, sessionAvailable: true });
 
     render(<HomePage lang="en" />);
 
@@ -79,7 +79,7 @@ describe('HomePage siteStatus', () => {
   });
 
   it('renders OutageComponent when siteStatus is unavailable', async () => {
-    mockGetSiteStatus.mockResolvedValue('unavailable');
+    mockGetChatSessionAvailability.mockResolvedValue({ siteStatus: false, sessionAvailable: true });
 
     render(<HomePage lang="en" />);
 
@@ -89,14 +89,14 @@ describe('HomePage siteStatus', () => {
     });
   });
 
-  it('renders the chat when getSiteStatus fails (defaults to available)', async () => {
-    // DataStoreService.getSiteStatus returns 'available' on error by default
-    mockGetSiteStatus.mockResolvedValue('available');
+  it('renders OutageComponent when session capacity is unavailable', async () => {
+    mockGetChatSessionAvailability.mockResolvedValue({ siteStatus: true, sessionAvailable: false });
 
     render(<HomePage lang="en" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('chat-app')).toBeTruthy();
+      expect(screen.getByTestId('outage-component')).toBeTruthy();
+      expect(screen.queryByTestId('chat-app')).toBeNull();
     });
   });
 });
