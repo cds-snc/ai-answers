@@ -306,7 +306,16 @@
         "process": "Process",
         "delete": "Delete",
         "confirmDelete": "Are you sure you want to delete this batch?",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "deleteSuccess": "Batch deleted.",
+        "deleteError": "Failed to delete batch.",
+        "exportSuccess": "Batch exported.",
+        "exportEmpty": "No chats found to export for this batch.",
+        "exportError": "Failed to export batch.",
+        "processError": "Failed to process batch.",
+        "processSuccess": "Batch processing finished.",
+        "cancelSuccess": "Batch cancelled.",
+        "cancelError": "Failed to cancel batch."
       },
       "types": {
         "client": "Client"
@@ -499,6 +508,7 @@
       "chunkSizeLabel": "Chunk size (MB):",
       "throttleLabel": "Throttle (ms):",
       "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
+      "importFileLabel": "Import file (.jsonl):",
       "importingLabel": "Importing...",
       "importButton": "Import database",
       "integrityTitle": "Integrity checks",
@@ -881,8 +891,6 @@
       "title": "Delete a chat from the logs",
       "idLabel": "Chat ID",
       "button": "Delete chat",
-      "confirm": "Confirm delete",
-      "cancel": "Cancel",
       "loading": "Deleting...",
       "success": "Chat deleted successfully",
       "error": "Failed to delete chat: "
@@ -1000,7 +1008,11 @@
     "actions": {
       "delete": "Delete",
       "confirmDelete": "Are you sure you want to delete this user?",
-      "adminOnly": "Only administrators can delete users."
+      "adminOnly": "Only administrators can delete users.",
+      "saveSuccess": "User updated.",
+      "saveError": "Failed to update user.",
+      "deleteSuccess": "User deleted.",
+      "deleteError": "Failed to delete user."
     }
   },
   "workflows": {
@@ -1016,6 +1028,8 @@
   },
   "settings": {
     "title": "Settings",
+    "saveSuccess": "Setting saved.",
+    "saveError": "Failed to save setting.",
     "general": {
       "title": "General settings"
     },
@@ -1476,6 +1490,7 @@
         "colCount": "Evaluations",
         "colStatus": "Status",
         "colBy": "Run by",
+        "colActions": "Actions",
         "view": "View"
       },
       "report": {
@@ -1664,6 +1679,7 @@
     "createIndex": "Create vector index",
     "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
+    "embeddingProviderLabel": "Embedding provider",
     "generateEmbeddings": "Generate embeddings",
     "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
@@ -1890,6 +1906,7 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
+    "testComplete": "Connectivity test complete: {connected} connected, {errors} errors, {warnings} warnings.",
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",

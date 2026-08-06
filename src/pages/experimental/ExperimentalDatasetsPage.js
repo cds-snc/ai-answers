@@ -4,6 +4,7 @@ import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink }
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -115,7 +116,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const handleViewDataset = (id) => {
         // Navigate to analysis page with pre-selected dataset
-        window.location.href = `/${lang}/experimental/analysis?datasetId=${id}`;
+        window.location.href = `${getPath('experimental-analysis', lang)}?datasetId=${id}`;
     };
 
     const handleExportDataset = async (dataset) => {
@@ -275,33 +276,40 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 </tbody>
                             </table>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                <label htmlFor="experimental-dataset-file" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                                     {t('experimental.datasets.fileLabel')}
                                 </label>
-                                <input type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
+                                <input id="experimental-dataset-file" type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
                             </div>
                             <div>
                                 <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>
                                     {uploading ? t('experimental.datasets.uploading') : t('experimental.datasets.upload')}
                                 </GcdsButton>
                             </div>
-                            {message && (
-                                <div style={{
+                            <StatusMessage
+                                message={message?.text}
+                                isError={message?.type !== 'success'}
+                                tag="div"
+                                style={{
                                     padding: '10px 14px',
                                     borderRadius: '4px',
-                                    backgroundColor: message.type === 'success' ? '#d4edda' : '#f8d7da',
-                                    color: message.type === 'success' ? '#155724' : '#721c24',
-                                }}>
-                                    <GcdsText>{message.text}</GcdsText>
-                                    {message.details && Array.isArray(message.details) && message.details.length > 0 && (
-                                        <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                                            {message.details.map((detail, i) => (
-                                                <li key={i}>{detail}</li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
+                                    backgroundColor: message?.type === 'success' ? '#d4edda' : '#f8d7da',
+                                    color: message?.type === 'success' ? '#155724' : '#721c24',
+                                }}
+                            >
+                                {message && (
+                                    <>
+                                        <GcdsText>{message.text}</GcdsText>
+                                        {message.details && Array.isArray(message.details) && message.details.length > 0 && (
+                                            <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                                                {message.details.map((detail, i) => (
+                                                    <li key={i}>{detail}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </>
+                                )}
+                            </StatusMessage>
                         </div>
                     </div>
                 )}

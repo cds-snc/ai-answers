@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import ExportService from '../services/ExportService.js';
@@ -10,8 +11,20 @@ import BatchService from '../services/BatchService.js';
 const BatchPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
+
+  // Action-outcome announcement: BatchList's per-row buttons hide themselves
+  // immediately on click (see BatchList.js) with no other feedback, so this
+  // is the only place delete/export/process/cancel results reach the user.
+  const [statusMessage, setStatusMessage] = useState(null); // { text, isError }
+
   const onDelete = async (batchId) => {
-    await BatchService.deleteBatch(batchId);
+    try {
+      await BatchService.deleteBatch(batchId);
+      setStatusMessage({ text: t('batch.list.actions.deleteSuccess'), isError: false });
+    } catch (err) {
+      console.error('Failed to delete batch:', err);
+      setStatusMessage({ text: t('batch.list.actions.deleteError'), isError: true });
+    }
   };
 
   // Simple refresh trigger to force BatchList to remount and refresh data
@@ -38,13 +51,14 @@ const BatchPage = ({ lang = 'en' }) => {
       const fileName = `${batchId}.${type === 'excel' ? 'xlsx' : 'csv'}`;
       if (Array.isArray(chats) && chats.length > 0) {
         ExportService.export(chats, fileName);
+        setStatusMessage({ text: t('batch.list.actions.exportSuccess'), isError: false });
         return;
       }
+      setStatusMessage({ text: t('batch.list.actions.exportEmpty'), isError: true });
     } catch (err) {
       console.error('Failed to fetch chats from BatchService.retrieveBatchChats, falling back to batch retrieve:', err);
+      setStatusMessage({ text: t('batch.list.actions.exportError'), isError: true });
     }
-
-
   };
 
   const onProcess = async (batchId, provider, workflowParam) => {
@@ -95,9 +109,16 @@ const BatchPage = ({ lang = 'en' }) => {
         }
         // Clear local processing marker when the run completes
         unmarkProcessing(batchId);
-      }).catch((err) => console.error('Batch run failed:', err));
+        setStatusMessage({ text: t('batch.list.actions.processSuccess'), isError: false });
+      }).catch((err) => {
+        console.error('Batch run failed:', err);
+        unmarkProcessing(batchId);
+        setStatusMessage({ text: t('batch.list.actions.processError'), isError: true });
+      });
     } catch (err) {
       console.error('Error starting process:', err);
+      unmarkProcessing(batchId);
+      setStatusMessage({ text: t('batch.list.actions.processError'), isError: true });
     }
   };
 
@@ -107,8 +128,10 @@ const BatchPage = ({ lang = 'en' }) => {
       await BatchService.cancelBatch(batchId, provider);
       // Clear local processing marker
       unmarkProcessing(batchId);
+      setStatusMessage({ text: t('batch.list.actions.cancelSuccess'), isError: false });
     } catch (err) {
       console.error('Cancel failed:', err);
+      setStatusMessage({ text: t('batch.list.actions.cancelError'), isError: true });
     }
   };
 
@@ -122,6 +145,7 @@ const BatchPage = ({ lang = 'en' }) => {
         </GcdsLink>
       </nav>
 
+      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
 
       <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>

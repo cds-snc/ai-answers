@@ -6,6 +6,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -174,7 +175,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
+      <StatusMessage
+        message={error ? `${t('admin.evalDashboard.error')} ${String(error)}` : null}
+        isError
+        tag="div"
+        className="mt-400 error"
+      />
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
         <div className="dashboard-warning">
@@ -238,6 +244,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                       if (!headerEl) return;
                       const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
                       if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
+                      // Captured before the filter container is appended below, so this is
+                      // just the column's own title text — used to give each generated
+                      // input/select a unique accessible name (screen readers otherwise hear
+                      // an identical, unlabeled "Filter" control for every column).
+                      const colTitle = headerEl.textContent.trim();
                       const filterContainer = document.createElement('div');
                       filterContainer.className = 'dt-col-filter-container';
                       filterContainer.style.marginTop = '4px';
@@ -245,6 +256,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                       if (booleanCols.includes(colData)) {
                         const sel = document.createElement('select');
                         sel.className = 'dt-col-search';
+                        sel.setAttribute('aria-label', `${t('admin.evalDashboard.columnFilterPlaceholder')} — ${colTitle}`);
                         const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.evalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
                         const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
                         const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
@@ -258,6 +270,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                         input.type = 'search';
                         input.className = 'dt-col-search';
                         input.placeholder = t('admin.evalDashboard.columnFilterPlaceholder', 'Filter');
+                        input.setAttribute('aria-label', `${input.placeholder} — ${colTitle}`);
                         input.addEventListener('input', debounce(function (e) {
                           column.search(e.target.value);
                           api.page('first').draw('page');

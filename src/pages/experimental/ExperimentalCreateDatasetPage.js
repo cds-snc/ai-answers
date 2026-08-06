@@ -4,6 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
 
 export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -163,7 +164,9 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                             : t('experimental.datasets.creatingGoldenAnswer')
                         : t('experimental.datasets.createButton')}
                 </GcdsButton>
-                {message && <GcdsText>{message.text}</GcdsText>}
+                <StatusMessage message={message?.text} isError={message?.type === 'error'} tag="div">
+                    {message && <GcdsText>{message.text}</GcdsText>}
+                </StatusMessage>
             </div>
         </GcdsContainer>
     );

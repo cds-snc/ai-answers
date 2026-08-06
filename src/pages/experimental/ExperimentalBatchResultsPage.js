@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { getPath } from '../../utils/routes.js';
 import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimentalBatchItems.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import BatchItemsTable from '../../components/experimental/BatchItemsTable.js';
@@ -46,7 +47,8 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         goNext,
         goPrev,
         hasNext,
-        hasPrev
+        hasPrev,
+        detailFocusRef
     } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
 
     // Arrow-key navigation while reviewing an item.
@@ -74,7 +76,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/analysis${batch?.config?.datasetId
+                    <GcdsLink href={`${getPath('experimental-analysis', lang)}${batch?.config?.datasetId
                         ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}`
                         : ''}`}>
                         {t('experimental.results.backToRuns')}
@@ -126,6 +128,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     onPrev={goPrev}
                     onNext={goNext}
                     onBack={backToList}
+                    backButtonRef={detailFocusRef}
                 />
             ) : (
                 <section>

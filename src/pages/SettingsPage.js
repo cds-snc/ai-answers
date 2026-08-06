@@ -3,6 +3,7 @@ import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-re
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const normalizeChatTransport = (value) => (
   ['sse', 'ndjson'].includes(value) ? value : 'sse'
@@ -56,6 +57,7 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const [statusMessage, setStatusMessage] = useState(null); // { text, isError }
   const [status, setStatus] = useState('available');
   const [saving, setSaving] = useState(false);
   const [deploymentMode, setDeploymentMode] = useState('CDS');
@@ -211,10 +213,19 @@ const SettingsPage = ({ lang = 'en' }) => {
   }, []);
 
   // Helper to save a setting and read it back to confirm persistence.
+  // Single choke-point every one of this page's ~40 fields saves through —
+  // fixing the outcome announcement here covers all of them at once instead
+  // of wiring 40 separate message states.
   const saveAndVerify = async (key, value, readTransform = (v) => v) => {
-    await DataStoreService.setSetting(key, value);
-    const current = await DataStoreService.getSetting(key, value);
-    return readTransform(current);
+    try {
+      await DataStoreService.setSetting(key, value);
+      const current = await DataStoreService.getSetting(key, value);
+      setStatusMessage({ text: t('settings.saveSuccess'), isError: false });
+      return readTransform(current);
+    } catch (err) {
+      setStatusMessage({ text: t('settings.saveError'), isError: true });
+      throw err;
+    }
   };
 
   const saveHealthSetting = async ({ key, value, setValue, setSaving, readTransform = (v) => v }) => {
@@ -612,6 +623,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       <nav className="mb-400">
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
+      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
       <div className="mb-400">
         <GcdsButton
           type="button"
@@ -621,7 +633,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
         </GcdsButton>
-        {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
+        <StatusMessage message={settingsCacheMessage} className="mt-200" />
       </div>
       <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
         <div>
@@ -1078,17 +1090,17 @@ const SettingsPage = ({ lang = 'en' }) => {
           <div>
             <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
 
-            <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.profanity.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.profanity.en" initialValue={redactionValues['redaction.profanity.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="threat-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.threat.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.threat.en" initialValue={redactionValues['redaction.threat.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.manipulation.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.manipulation.en" initialValue={redactionValues['redaction.manipulation.en']} saveAndVerify={saveAndVerify} lang={lang} />
@@ -1097,17 +1109,17 @@ const SettingsPage = ({ lang = 'en' }) => {
           <div>
             <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
 
-            <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.profanity.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.profanity.fr" initialValue={redactionValues['redaction.profanity.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.threat.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.threat.fr" initialValue={redactionValues['redaction.threat.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.manipulation.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.manipulation.fr" initialValue={redactionValues['redaction.manipulation.fr']} saveAndVerify={saveAndVerify} lang={lang} />

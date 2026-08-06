@@ -110,6 +110,16 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // Process instead of waiting for the next polling cycle.
   // Note: lang is intentionally excluded — language switches always trigger
   // full page navigation so the component remounts naturally with the correct lang.
+  //
+  // TODO(a11y): this remount undermines the "keep something in the DOM so
+  // focus isn't dropped to <body>" fix on the row action buttons below.
+  // Process marks processingBatches synchronously on click, which bumps
+  // refreshKey almost immediately and tears down the just-focused
+  // "Processing…" span; Delete/Cancel/Export lose it more slowly via the
+  // 10s poll on `batches`. Either avoid remounting the whole table on every
+  // tick (diff the changed row instead), or capture document.activeElement
+  // before the remount and restore focus after redraw, as done in
+  // DashboardFilterBar.js / useExperimentalBatchItems.js.
   useEffect(() => {
     setRefreshKey((r) => r + 1);
   }, [batches, processingBatches]);
@@ -200,7 +210,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             ) {
               const ActionButtons = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {finishedCount >= total && status === 'processed' && (
@@ -257,7 +277,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               // Offer a Process button which triggers provider-side processing
               const ProcessButton = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton
@@ -288,7 +318,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } else if (status === 'completed') {
               const ActionButtonComplete = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton
@@ -316,7 +356,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } else {
               const ActionButtonCancel = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton

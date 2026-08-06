@@ -5,6 +5,7 @@ import { ExperimentalBatchClientService } from '../../services/experimental/Expe
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
+import { getPath } from '../../utils/routes.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 2 * 60 * 1000;
@@ -422,7 +423,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </GcdsText>
                 )}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}
                     </GcdsLink>
                     {selectedDatasetId && (
@@ -677,7 +678,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <section>
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {startingRun && (
-                                <div className="border p-200 mb-200 rounded bg-light">
+                                <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
                                     {startingRun.name && (
                                     <div><strong>{startingRun.name}</strong></div>
                                     )}
@@ -687,8 +688,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
-                                    <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
+                                    {/* Status label only (not the raw percentage below, which updates too
+                                        frequently to announce every tick without becoming noise). */}
+                                    <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
+                                    <div
+                                        role="progressbar"
+                                        aria-valuenow={Math.round(prog.percentComplete)}
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                        aria-label={prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}
+                                        style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}
+                                    >
                                         <div style={{
                                             width: `${prog.percentComplete}%`,
                                             backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
@@ -765,7 +775,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 <td className="p-300">{new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(batch.createdAt))}</td>
                                 <td className="p-200">
                                     <div className="flex gap-200">
-                                        <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>
+                                        <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${batch._id}`)}>
                                             {t('experimental.analysis.viewResults')}
                                         </GcdsButton>
                                         <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>
@@ -785,6 +795,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
                                                 disabled={!!selectedAnalyzerId && !canBaseline(batch)}
                                                 onClick={() => handleUseAsBaseline(batch)}
+                                                aria-pressed={baselineBatchId === batch._id}
                                             >
                                                 {baselineBatchId === batch._id
                                                     ? t('experimental.analysis.baselineSelected')

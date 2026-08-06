@@ -7,6 +7,7 @@ import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -658,9 +659,7 @@ const DatabasePage = ({ lang }) => {
           {t('admin.database.importDescription')}
         </GcdsText>
         {/* Show import progress message above the import button */}
-        {isImporting && message && (
-          <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
-        )}
+        {isImporting && <StatusMessage message={message} tag="div" style={{ margin: '12px 0', color: 'blue' }} />}
         <form onSubmit={handleImport} className="mb-200">
           <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
             <label>
@@ -709,7 +708,11 @@ const DatabasePage = ({ lang }) => {
               </select>
             </label>
           </div>
+          <label htmlFor="database-import-file" className="mb-200 display-block">
+            {t('admin.database.importFileLabel')}
+          </label>
           <input
+            id="database-import-file"
             type="file"
             accept=".jsonl"
             ref={fileInputRef}
@@ -923,7 +926,7 @@ const DatabasePage = ({ lang }) => {
       </div>
 
       {/* Show other messages (not import progress) at the bottom */}
-      {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
+      {!isImporting && <StatusMessage message={message} tag="div" style={{ marginTop: 16, color: 'blue' }} />}
     </GcdsContainer >
   );
 };
