@@ -9,6 +9,7 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -59,6 +60,7 @@ const UsersPage = ({ lang }) => {
   // This state is just used to trigger re-renders when editStatesRef changes
   // eslint-disable-next-line no-unused-vars
   const [triggerRender, setTriggerRender] = useState(0);
+  const [statusMessage, setStatusMessage] = useState(null); // { text, isError }
   const { currentUser } = useAuth();
 
   // Initialize editStates with data from users
@@ -123,8 +125,10 @@ const UsersPage = ({ lang }) => {
       // Force re-render
       setTriggerRender(prev => prev + 1);
       console.log('Save successful, changes:', edit);
+      setStatusMessage({ text: t('users.actions.saveSuccess'), isError: false });
     } catch (error) {
       console.error('Error updating user:', error);
+      setStatusMessage({ text: t('users.actions.saveError'), isError: true });
     }
   };
   const handleDelete = async (userId) => {
@@ -145,8 +149,10 @@ const UsersPage = ({ lang }) => {
       delete editStatesRef.current[userId];
       // Force re-render
       setTriggerRender(prev => prev + 1);
+      setStatusMessage({ text: t('users.actions.deleteSuccess'), isError: false });
     } catch (error) {
       console.error('Error deleting user:', error);
+      setStatusMessage({ text: t('users.actions.deleteError'), isError: true });
     }
   };
 
@@ -261,6 +267,8 @@ const UsersPage = ({ lang }) => {
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
+
+      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
 
       <DataTable
         data={users}

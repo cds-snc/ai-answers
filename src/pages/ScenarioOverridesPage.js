@@ -4,6 +4,7 @@ import ScenarioOverrideService from '../services/ScenarioOverrideService.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 // The `diff` package is a valid dependency but some eslint configurations
 // (especially with ESM/Type:module projects) may incorrectly flag it as
 // unresolved. Add an inline disable for import/no-unresolved on this line.
@@ -334,17 +335,17 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
 
               {/* original default details removed — default is shown in the left diff column */}
 
-              {row.error && (
-                <p style={{ color: '#d3080c' }}>{row.error}</p>
-              )}
+              <StatusMessage message={row.error} isError style={{ color: '#d3080c' }} />
 
               {/* Two details blocks: one for editing the override, one for viewing the side-by-side diff */}
               <details className="mb-200" open={row.editOpen} onToggle={(e) => handleFieldChange(index, { editOpen: e.target.open })}>
                 <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>{t('scenarioOverrides.sections.editOverride', 'Edit override')}</span>
-                  <span style={{ marginLeft: '1rem', color: '#54616c', fontSize: '0.9rem' }}>
-                    {(savingMap[row.departmentKey]) ? loadingLabel : (row.dirty ? t('scenarioOverrides.status.saving', 'Saving...') : null)}
-                  </span>
+                  <StatusMessage
+                    tag="span"
+                    message={(savingMap[row.departmentKey]) ? loadingLabel : (row.dirty ? t('scenarioOverrides.status.saving', 'Saving...') : null)}
+                    style={{ marginLeft: '1rem', color: '#54616c', fontSize: '0.9rem' }}
+                  />
                 </summary>
                 <div style={{ marginTop: '0.5rem' }}>
                   <textarea

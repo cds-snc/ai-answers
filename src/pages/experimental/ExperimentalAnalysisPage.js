@@ -677,7 +677,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <section>
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {startingRun && (
-                                <div className="border p-200 mb-200 rounded bg-light">
+                                <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
                                     {startingRun.name && (
                                     <div><strong>{startingRun.name}</strong></div>
                                     )}
@@ -687,7 +687,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             )}
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
-                                    <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
+                                    {/* Status label only (not the raw percentage below, which updates too
+                                        frequently to announce every tick without becoming noise). */}
+                                    <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
                                     <div
                                         role="progressbar"
                                         aria-valuenow={Math.round(prog.percentComplete)}

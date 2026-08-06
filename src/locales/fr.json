@@ -870,8 +870,6 @@
       "title": "Supprimer un chat des journaux",
       "idLabel": "ID de chat",
       "button": "Supprimer le chat",
-      "confirm": "Confirmer la suppression",
-      "cancel": "Annuler",
       "loading": "Suppression en cours...",
       "success": "Chat supprimé avec succès",
       "error": "Échec de la suppression du chat : "
@@ -1010,7 +1008,11 @@
     "actions": {
       "delete": "Supprimer",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
-      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
+      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs.",
+      "saveSuccess": "Utilisateur mis à jour.",
+      "saveError": "Échec de la mise à jour de l'utilisateur.",
+      "deleteSuccess": "Utilisateur supprimé.",
+      "deleteError": "Échec de la suppression de l'utilisateur."
     }
   },
   "workflows": {
@@ -1026,6 +1028,8 @@
   },
   "settings": {
     "title": "Paramètres",
+    "saveSuccess": "Paramètre enregistré.",
+    "saveError": "Échec de l'enregistrement du paramètre.",
     "general": {
       "title": "Paramètres généraux"
     },
@@ -1902,6 +1906,7 @@
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
+    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s).",
     "simulation": {
       "title": "Simulation de panne",
       "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
