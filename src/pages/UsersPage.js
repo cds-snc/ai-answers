@@ -12,6 +12,15 @@ import { usePageContext } from '../hooks/usePageParam.js';
 
 DataTable.use(DT);
 
+const escapeHtmlAttribute = (value) => {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 const statusOptions = [
   { value: true, sortIndex: 0 },
   { value: false, sortIndex: 1 },
@@ -195,8 +204,9 @@ const UsersPage = ({ lang }) => {
           const isKnownKey = roleOptions.some(opt => opt.value === value);
           // For unknown roles (including 'user'), show N/A placeholder with empty value
           const extraOption = !isKnownKey ? `<option value="" selected>${naLabel}</option>` : '';
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.role')} — ${row.email || userId}`);
 
-          return `<select data-userid="${userId}" data-field="role" style="width: 100%">${extraOption}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" style="width: 100%">${extraOption}${optionsHtml}</select>`;
         }
         return label;
       }
@@ -225,7 +235,8 @@ const UsersPage = ({ lang }) => {
           // Only show N/A placeholder when status is unknown; otherwise show the two known options
           const placeholder = option ? '' : `<option value="" selected>${naLabel}</option>`;
           const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
-          return `<select data-userid="${userId}" data-field="active" style="width: 100%">${placeholder}${optionsHtml}</select>`;
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.status')} — ${row.email || userId}`);
+          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" style="width: 100%">${placeholder}${optionsHtml}</select>`;
         }
         return label;
       }

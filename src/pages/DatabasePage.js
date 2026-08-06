@@ -709,7 +709,11 @@ const DatabasePage = ({ lang }) => {
               </select>
             </label>
           </div>
+          <label htmlFor="database-import-file" className="mb-200 display-block">
+            {t('admin.database.importFileLabel')}
+          </label>
           <input
+            id="database-import-file"
             type="file"
             accept=".jsonl"
             ref={fileInputRef}

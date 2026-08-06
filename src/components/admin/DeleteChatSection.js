@@ -45,6 +45,9 @@ const DeleteChatSection = ({ lang = 'en' }) => {
     <div className="bg-white shadow rounded-lg p-4">
       <h2 className="mt-400 mb-400">{t('admin.deleteChat.title')}</h2>
       <div className="flex gap-400">
+        <label htmlFor="chatId" className="sr-only">
+          {t('admin.deleteChat.idLabel')}
+        </label>
         <input
           type="text"
           id="chatId"

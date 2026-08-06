@@ -1078,17 +1078,17 @@ const SettingsPage = ({ lang = 'en' }) => {
           <div>
             <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
 
-            <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.profanity.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.profanity.en" initialValue={redactionValues['redaction.profanity.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="threat-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.threat.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.threat.en" initialValue={redactionValues['redaction.threat.en']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.manipulation.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (EN)
             </label>
             <SettingsTextArea settingKey="redaction.manipulation.en" initialValue={redactionValues['redaction.manipulation.en']} saveAndVerify={saveAndVerify} lang={lang} />
@@ -1097,17 +1097,17 @@ const SettingsPage = ({ lang = 'en' }) => {
           <div>
             <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
 
-            <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.profanity.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.profanity.fr" initialValue={redactionValues['redaction.profanity.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.threat.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.threat')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.threat.fr" initialValue={redactionValues['redaction.threat.fr']} saveAndVerify={saveAndVerify} lang={lang} />
 
-            <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
+            <label htmlFor="redaction.manipulation.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.manipulation')} (FR)
             </label>
             <SettingsTextArea settingKey="redaction.manipulation.fr" initialValue={redactionValues['redaction.manipulation.fr']} saveAndVerify={saveAndVerify} lang={lang} />

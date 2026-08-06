@@ -424,7 +424,7 @@ const VectorPage = ({ lang = 'en' }) => {
           {t('vector.embeddingDescription')}
         </GcdsText>
         <div className="button-group">
-          <select value={provider} onChange={e => setProvider(e.target.value)} className="mr-200">
+          <select value={provider} onChange={e => setProvider(e.target.value)} className="mr-200" aria-label={t('vector.embeddingProviderLabel')}>
             <option value="openai">OpenAI</option>
             <option value="azure">Azure OpenAI</option>
           </select>
