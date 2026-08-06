@@ -1087,6 +1087,26 @@
       "success": "Cache des paramètres rafraîchi.",
       "error": "Échec du rafraîchissement du cache des paramètres : {error}"
     },
+    "auditHistory": {
+      "title": "Historique des paramètres",
+      "description": "Consultez qui a modifié les paramètres et à quel moment.",
+      "loading": "Chargement de l’historique des paramètres...",
+      "loadingMore": "Chargement supplémentaire...",
+      "loadMore": "Charger plus",
+      "empty": "Aucune modification des paramètres n’a été enregistrée.",
+      "error": "Échec du chargement de l’historique des paramètres.",
+      "user": "Utilisateur",
+      "action": "Action",
+      "setting": "Paramètre",
+      "previousValue": "Valeur originale",
+      "newValue": "Valeur modifiée",
+      "date": "Date",
+      "notApplicable": "Sans objet",
+      "actions": {
+        "settingUpdated": "Paramètre modifié",
+        "cacheRefreshed": "Cache des paramètres rafraîchi"
+      }
+    },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",

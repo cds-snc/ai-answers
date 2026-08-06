@@ -17,7 +17,11 @@ async function settingsHandler(req, res) {
       return res.status(400).json({ message: 'Key required' });
     }
     key = requireLiteralString(key, 'setting key');
-    await SettingsService.set(key, value);
+    await SettingsService.set(key, value, {
+      actorUserId: req.user?.userId,
+      actorEmail: req.user?.email || 'Unknown admin',
+      source: 'admin',
+    });
     return res.status(200).json({ message: 'Setting updated' });
   } else {
     res.setHeader('Allow', ['GET', 'POST']);

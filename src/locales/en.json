@@ -1087,6 +1087,26 @@
       "success": "Settings cache refreshed.",
       "error": "Failed to refresh settings cache: {error}"
     },
+    "auditHistory": {
+      "title": "Settings history",
+      "description": "Review who changed settings and when.",
+      "loading": "Loading settings history...",
+      "loadingMore": "Loading more...",
+      "loadMore": "Load more",
+      "empty": "No settings changes have been recorded.",
+      "error": "Failed to load settings history.",
+      "user": "User",
+      "action": "Action",
+      "setting": "Setting",
+      "previousValue": "Original value",
+      "newValue": "Changed value",
+      "date": "Date",
+      "notApplicable": "Not applicable",
+      "actions": {
+        "settingUpdated": "Setting updated",
+        "cacheRefreshed": "Settings cache refreshed"
+      }
+    },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",

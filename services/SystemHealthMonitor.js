@@ -418,7 +418,8 @@ class SystemHealthMonitor {
   }
 
   async markUnavailable(category, count, config = this.getHealthConfig()) {
-    const wasUnavailable = String(this.readSetting(SITE_STATUS_KEY, 'available')) === UNAVAILABLE_STATUS;
+    const previousSiteStatus = this.readSetting(SITE_STATUS_KEY, 'available');
+    const wasUnavailable = String(previousSiteStatus) === UNAVAILABLE_STATUS;
     if (!this.activeOutageCategory) {
       this.activeOutageCategory = category;
     }
@@ -428,7 +429,12 @@ class SystemHealthMonitor {
       this.settingsService.cache[SITE_STATUS_KEY] = UNAVAILABLE_STATUS;
 
       try {
-        await this.settingsService.set(SITE_STATUS_KEY, UNAVAILABLE_STATUS);
+        await this.settingsService.set(SITE_STATUS_KEY, UNAVAILABLE_STATUS, {
+          actorEmail: 'System health monitor',
+          source: 'system',
+          previousValue: previousSiteStatus,
+          metadata: { category: outageCategory, count, windowMs: config.windowMs },
+        });
       } catch (error) {
         await this.loggingService.error('Failed to persist siteStatus unavailable', 'system', error);
       }

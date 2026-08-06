@@ -6,7 +6,7 @@ import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import SettingsPage from '../SettingsPage.js';
 
-const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(() => {
+const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache, mockGetSettingsAudit } = vi.hoisted(() => {
   const healthSettings = {
     'siteStatus': 'available',
     'deploymentMode': 'CDS',
@@ -60,6 +60,7 @@ const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted
     }),
     mockSetSetting: vi.fn(async () => ({ message: 'Setting updated' })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
+    mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, hasMore: false })),
   };
 });
 
@@ -68,6 +69,7 @@ vi.mock('../../services/DataStoreService.js', () => ({
     getSettings: mockGetSettings,
     setSetting: mockSetSetting,
     refreshSettingsCache: mockRefreshSettingsCache,
+    getSettingsAudit: mockGetSettingsAudit,
   },
 }));
 

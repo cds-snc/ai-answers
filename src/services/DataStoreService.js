@@ -100,6 +100,19 @@ class DataStoreService {
       throw error;
     }
   }
+
+  static async getSettingsAudit({ limit = 50, skip = 0 } = {}) {
+    try {
+      const response = await AuthService.fetch(
+        `${getApiUrl('setting-audit')}?limit=${encodeURIComponent(limit)}&skip=${encodeURIComponent(skip)}`
+      );
+      if (!response.ok) throw new Error('Failed to get settings audit history');
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting settings audit history:', error);
+      throw error;
+    }
+  }
   static async checkDatabaseConnection() {
     if (!import.meta.env.PROD) {
       console.log('Skipping database connection check in development environment');
