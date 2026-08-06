@@ -6,6 +6,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -174,7 +175,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {error && (<div className="mt-400 error" role="alert">{t('admin.evalDashboard.error', 'Unable to load eval data.')} {String(error)}</div>)}
+      <StatusMessage
+        message={error ? `${t('admin.evalDashboard.error')} ${String(error)}` : null}
+        isError
+        tag="div"
+        className="mt-400 error"
+      />
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
         <div className="dashboard-warning">
