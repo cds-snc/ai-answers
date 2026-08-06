@@ -23,9 +23,7 @@ Ouvrez le chat en mode révision. Cliquez sur un ID de chat pour l'ouvrir à par
 
 Si des évaluations antérieures ont été utilisées, un panneau **Évaluations antérieures utilisées** s'affiche sous la réponse. Déployez-le :
 
-![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total, français](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
-
-![Past evals used panel expanded under an answer, listing each past chat ID and its total score, anglais](/content/admin/images/eval-informed-past-evals-used-en.jpg)
+![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
 
 Le panneau liste chaque chat antérieur ayant informé la réponse, avec le score total de l'expert sur 100. Les scores varient, et un mélange est normal : les exemples au score élevé montrent au modèle une approche approuvée par un expert, tandis que ceux au score plus faible portent les notes de l'expert sur ce qu'il faut éviter. Il n'y a aucun score minimal, donc un score faible dans cette liste n'indique pas qu'il y a eu un problème.
 
@@ -35,9 +33,7 @@ Chaque **ID de chat est un lien**. En l'ouvrant, vous chargez la conversation an
 
 Si une évaluation d'expert ne devrait plus influencer les réponses futures — le contenu sur lequel elle reposait a changé, le jugement était erroné, ou il s'agissait d'une entrée de test — supprimez-la à partir de ce chat antérieur au moyen du bouton **Supprimer l'évaluation d'expert**. Le bouton est visible lorsque vous déployez l'évaluation d'expert et son score.
 
-![Panneau « Évaluation d'expert » déployé montrant les notes par phrase et le bouton « Supprimer l'évaluation d'expert », français](/content/admin/images/eval-informed-delete-button-fr.jpg)
-
-![Expanded Expert evaluation panel showing the sentence-by-sentence scores and the Delete expert evaluation button, anglais](/content/admin/images/eval-informed-delete-button-en.jpg)
+![Panneau « Évaluation d'expert » déployé montrant les notes par phrase et le bouton « Supprimer l'évaluation d'expert »](/content/admin/images/eval-informed-delete-button-fr.jpg)
 
 À côté du bouton de suppression se trouve la case **Toujours valide**. La cocher soustrait l'évaluation à la règle d'actualité d'un an : elle demeure admissible indéfiniment au lieu d'être écartée à son premier anniversaire. Utilisez-la pour les évaluations qui reposent sur des directives qui ne se périment pas. Cette case ne remplace que la vérification de l'âge — l'évaluation doit quand même franchir le seuil de similarité et correspondre à la langue, comme toute autre, et la supprimer la retire toujours du bassin.
 

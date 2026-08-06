@@ -189,7 +189,8 @@ const AdminPage = ({ lang = 'en' }) => {
             <ul className="list-none p-0">
               {HOW_TOS.map((howTo) => (
                 <li key={howTo.id}>
-                  <GcdsLink href={getPath(howTo.route, lang)}>
+                  {/* New tab so the guide stays open alongside the page it describes */}
+                  <GcdsLink href={getPath(howTo.route, lang)} target="_blank" rel="noopener noreferrer">
                     {t(howTo.titleKey)}
                   </GcdsLink>
                 </li>
