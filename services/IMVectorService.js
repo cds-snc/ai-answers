@@ -9,6 +9,7 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import { Interaction } from '../models/interaction.js';
+import { compareVectorMatches } from './vectorMatchOrdering.js';
 
 function isValidVector(vec) {
   return Array.isArray(vec) && vec.every((x) => typeof x === 'number' && Number.isFinite(x));
@@ -472,7 +473,7 @@ class IMVectorService {
           expertFeedbackId,
           similarity: sim,
         });
-        mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
+        mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim, expertFeedbackCreatedAt: meta.expertFeedbackCreatedAt || null });
         if (!(useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) && mapped.length >= k * 2) break;
       }
       debugPerQuestion.push(debugCandidates);
@@ -569,8 +570,8 @@ class IMVectorService {
       }
 
       // Apply the similarity threshold when one was requested, then return hits
-      // in similarity order. No expert-feedback promotion: relevance decides
-      // order (a below-threshold rated hit must not be hoisted into the result).
+      // in similarity order, breaking exact ties by latest expert feedback.
+      // Relevance remains primary (a below-threshold rated hit is not hoisted).
       let result = filtered;
       if (threshold !== null) {
         const beforeThreshold = result.length;
@@ -582,7 +583,7 @@ class IMVectorService {
           afterCount: result.length,
         });
       }
-      result = result.slice().sort((a, b) => b.similarity - a.similarity).slice(0, k);
+      result = result.slice().sort(compareVectorMatches).slice(0, k);
       ServerLoggingService.info('matchQuestions final result', 'IMVectorService', {
         questionIndex,
         finalCount: result.length,

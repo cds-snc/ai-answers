@@ -7,6 +7,7 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import cosineSimilarity from 'compute-cosine-similarity';
 import EmbeddingService from './EmbeddingService.js';
+import { compareVectorMatches } from './vectorMatchOrdering.js';
 
 function isFrenchLanguage(lang) {
   if (!lang) return false;
@@ -414,9 +415,9 @@ class DocDBVectorService {
           }
         }
         if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
-        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore' } });
+        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead', expertFeedbackScore: '$ef.totalScore', expertFeedbackCreatedAt: '$ef.createdAt' } });
       } else {
-        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: 1, questionsEmbedding: 1, expertFeedbackScore: '$expertFeedbackTotalScore' } });
+        pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: 1, questionsEmbedding: 1, expertFeedbackScore: '$expertFeedbackTotalScore', expertFeedbackCreatedAt: 1 } });
       }
       return pipeline;
     });
@@ -466,6 +467,7 @@ class DocDBVectorService {
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
           similarity: sim,
+          expertFeedbackCreatedAt: r.expertFeedbackCreatedAt || null,
           citation: {
             providedCitationUrl: r.providedCitationUrl || null,
             aiCitationUrl: r.aiCitationUrl || null,
@@ -473,7 +475,7 @@ class DocDBVectorService {
           },
         });
       }
-      mapped.sort((a, b) => b.similarity - a.similarity);
+      mapped.sort(compareVectorMatches);
       const top = mapped.slice(0, k);
       ServerLoggingService.info('matchQuestions final result', 'DocDBVectorService', {
         questionIndex: idx,
