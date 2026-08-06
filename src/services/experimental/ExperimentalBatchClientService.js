@@ -156,6 +156,15 @@ export const ExperimentalBatchClientService = {
         return await res.json();
     },
 
+    async deleteAllExperimentalBatches() {
+        const res = await AuthService.fetch(getApiUrl('experimental-batches-delete-all'), { method: 'DELETE' });
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.message || errBody.error || `Failed to delete all experimental batches: ${res.status} ${res.statusText}`);
+        }
+        return await res.json();
+    },
+
     /**
      * List available analyzers
      */

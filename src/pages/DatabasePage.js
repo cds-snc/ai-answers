@@ -4,6 +4,7 @@ import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcd
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
+import { ExperimentalBatchClientService } from '../services/experimental/ExperimentalBatchClientService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
@@ -25,6 +26,7 @@ const DatabasePage = ({ lang }) => {
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
+  const [isDeletingAllExperimentalBatches, setIsDeletingAllExperimentalBatches] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isRepairingQaMatchScores, setIsRepairingQaMatchScores] = useState(false);
@@ -423,6 +425,23 @@ const DatabasePage = ({ lang }) => {
       setMessage(t('admin.database.repairExpertFeedbackError').replace('{error}', error.message));
     } finally {
       setIsRepairingExpertFeedback(false);
+    }
+  };
+
+  const handleDeleteAllExperimentalBatches = async () => {
+    if (!window.confirm(t('admin.database.deleteAllExperimentalBatchesConfirm'))) return;
+    setIsDeletingAllExperimentalBatches(true);
+    setMessage('');
+    try {
+      const result = await ExperimentalBatchClientService.deleteAllExperimentalBatches();
+      setMessage(t('admin.database.deleteAllExperimentalBatchesSuccess')
+        .replace('{batches}', result.deletedBatches || 0)
+        .replace('{batchItems}', result.deletedBatchItems || 0));
+      setTableCounts(await DataStoreService.getTableCounts());
+    } catch (error) {
+      setMessage(t('admin.database.deleteAllExperimentalBatchesError').replace('{error}', error.message));
+    } finally {
+      setIsDeletingAllExperimentalBatches(false);
     }
   };
 
@@ -914,6 +933,14 @@ const DatabasePage = ({ lang }) => {
           className="mb-200"
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{t('admin.database.deleteAllExperimentalBatchesTitle')}</GcdsHeading>
+        <GcdsText>{t('admin.database.deleteAllExperimentalBatchesDescription')}</GcdsText>
+        <GcdsButton onClick={handleDeleteAllExperimentalBatches} disabled={isDeletingAllExperimentalBatches} buttonRole="danger" className="mb-200">
+          {isDeletingAllExperimentalBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllExperimentalBatchesButton')}
         </GcdsButton>
       </div>
 
