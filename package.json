@@ -148,7 +148,8 @@
     "@storybook/test": "8.6.17",
     "@storybook/addon-a11y": "8.6.17",
     "@storybook/addon-highlight": "8.6.17",
-    "@storybook/theming": "8.6.17"
+    "@storybook/theming": "8.6.17",
+    "js-yaml": "4.3.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.9",

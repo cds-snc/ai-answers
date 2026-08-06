@@ -70,6 +70,132 @@ describe('ExperimentalBatchService', () => {
     });
 
     describe('createBatch', () => {
+        it('uses an uploaded answer as the reference and generates a fresh answer in reference mode', async () => {
+            const dataset = await ExperimentalDataset.create({
+                name: 'Reference mode dataset', type: 'qa-pair', rowCount: 1,
+                columns: [{ name: 'question', type: 'string' }, { name: 'answer', type: 'string' }]
+            });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: dataset._id,
+                rowIndex: 1,
+                data: { question: 'Q1', answer: 'Uploaded reference' }
+            });
+            ExperimentalAnalyzerRegistry.get.mockResolvedValueOnce({
+                id: 'similar-answer', inputType: 'universal', validateBatch: () => ({ valid: true })
+            });
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Reference mode', type: 'analysis', createdBy: userId,
+                config: { datasetId: dataset._id, analyzerId: 'similar-answer', analysisMode: 'dataset-reference' }
+            });
+            const [item] = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).lean();
+
+            expect(item.answer).toBe('');
+            expect(item.referenceAnswer).toBe('Uploaded reference');
+            expect(batch.config.analysisMode).toBe('dataset-reference');
+        });
+
+        it('ignores an uploaded answer and generates a fresh answer in generated mode', async () => {
+            const dataset = await ExperimentalDataset.create({
+                name: 'Generated mode dataset', type: 'qa-pair', rowCount: 1,
+                columns: [{ name: 'question', type: 'string' }, { name: 'answer', type: 'string' }]
+            });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: dataset._id,
+                rowIndex: 1,
+                data: { question: 'Q1', answer: 'Uploaded answer' }
+            });
+            ExperimentalAnalyzerRegistry.get.mockResolvedValueOnce({
+                id: 'safety', inputType: 'universal', validateBatch: () => ({ valid: true })
+            });
+
+            const batch = await ExperimentalBatchService.createBatch({
+                name: 'Generated mode', type: 'analysis', createdBy: userId,
+                config: { datasetId: dataset._id, analyzerId: 'safety', analysisMode: 'generated-answer' }
+            });
+            const [item] = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).lean();
+
+            expect(item.answer).toBe('');
+            expect(item.referenceAnswer).toBe('');
+            expect(batch.config.analysisMode).toBe('generated-answer');
+        });
+
+        it('rejects generated mode for analyzers that require a reference answer', async () => {
+            const dataset = await ExperimentalDataset.create({
+                name: 'Expert generated mode dataset', type: 'qa-pair', rowCount: 1,
+                columns: [{ name: 'question', type: 'string' }, { name: 'answer', type: 'string' }]
+            });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: dataset._id,
+                rowIndex: 1,
+                data: { question: 'Q1', answer: 'Uploaded answer' }
+            });
+            ExperimentalAnalyzerRegistry.get.mockResolvedValueOnce({
+                id: 'expert-scorer', inputType: 'comparison', requiresReference: true, validateBatch: () => ({ valid: true })
+            });
+
+            await expect(ExperimentalBatchService.createBatch({
+                name: 'Invalid expert mode', type: 'analysis', createdBy: userId,
+                config: { datasetId: dataset._id, analyzerId: 'expert-scorer', analysisMode: 'generated-answer' }
+            })).rejects.toMatchObject({ code: 'REFERENCE_REQUIRED' });
+        });
+
+        it('creates comparison items by pairing trial indexes up to the smaller trial count', async () => {
+            const datasetId = new mongoose.Types.ObjectId();
+            const [baseline, candidate] = await ExperimentalBatch.create([
+                {
+                    name: 'Baseline', type: 'analysis', status: 'completed', createdBy: userId,
+                    config: { datasetId, analyzerId: 'expert-scorer', analyzerIds: ['expert-scorer'], trials: 3 }
+                },
+                {
+                    name: 'Candidate', type: 'analysis', status: 'completed', createdBy: userId,
+                    config: { datasetId, analyzerId: 'expert-scorer', analyzerIds: ['expert-scorer'], trials: 2 }
+                }
+            ]);
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Baseline 1', status: 'completed' },
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Baseline 2', status: 'completed' },
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 3, question: 'Q1', answer: 'Baseline 3', status: 'completed' },
+                { experimentalBatch: candidate._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Candidate 1', status: 'completed' },
+                { experimentalBatch: candidate._id, rowIndex: 1, trialIndex: 2, question: 'Q1', answer: 'Candidate 2', status: 'completed' }
+            ]);
+
+            const comparison = await ExperimentalBatchService.createBatch({
+                name: 'Baseline versus candidate',
+                type: 'comparison',
+                createdBy: userId,
+                config: { baselineRunId: baseline._id, candidateRunId: candidate._id }
+            }, []);
+            const items = await ExperimentalBatchItem.find({ experimentalBatch: comparison._id }).sort({ trialIndex: 1 }).lean();
+
+            expect(comparison.type).toBe('comparison');
+            expect(comparison.summary.total).toBe(2);
+            expect(items.map(item => [item.referenceAnswer, item.answer])).toEqual([
+                ['Baseline 1', 'Candidate 1'],
+                ['Baseline 2', 'Candidate 2']
+            ]);
+        });
+
+        it('rejects a completed-batch comparison for an unsupported analyzer', async () => {
+            const datasetId = new mongoose.Types.ObjectId();
+            const [baseline, candidate] = await ExperimentalBatch.create([
+                { name: 'Instant baseline', type: 'analysis', status: 'completed', config: { datasetId, analyzerId: 'instant-answer' } },
+                { name: 'Instant candidate', type: 'analysis', status: 'completed', config: { datasetId, analyzerId: 'instant-answer' } }
+            ]);
+            await ExperimentalBatchItem.create([
+                { experimentalBatch: baseline._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Baseline', status: 'completed' },
+                { experimentalBatch: candidate._id, rowIndex: 1, trialIndex: 1, question: 'Q1', answer: 'Candidate', status: 'completed' }
+            ]);
+            ExperimentalAnalyzerRegistry.get.mockResolvedValueOnce({
+                id: 'instant-answer', supportsBatchComparison: false, validateBatch: () => ({ valid: true })
+            });
+
+            await expect(ExperimentalBatchService.createBatch({
+                name: 'Invalid instant comparison', type: 'comparison',
+                config: { baselineRunId: baseline._id, candidateRunId: candidate._id }
+            })).rejects.toMatchObject({ code: 'BATCH_COMPARISON_NOT_SUPPORTED' });
+        });
+
         it('should create a batch with items from provided data', async () => {
             const batchData = { name: 'Test Batch', type: 'batch', createdBy: userId };
             const itemsData = [{ question: 'Q1' }, { question: 'Q2' }];
@@ -117,7 +243,7 @@ describe('ExperimentalBatchService', () => {
         });
 
         it('should map various field names to standardized item fields', async () => {
-            const batchData = { name: 'Mapping Test', type: 'analysis', config: { analyzerId: 'refusal' } };
+            const batchData = { name: 'Mapping Test', type: 'batch', config: { analyzerId: 'refusal' } };
             const itemsData = [{
                 Question: 'Standard Q',
                 Response: 'Standard A',
@@ -148,12 +274,12 @@ describe('ExperimentalBatchService', () => {
             expect(items.map(i => i.referenceAnswer)).toEqual([
                 'Expert answer 1',
                 'Expert answer 2',
-                '',
-                ''
+                'Expert answer 3',
+                'Expert answer 4'
             ]);
             // Baseline answers land in the reference slot only — the current
             // answer stays empty so processing generates a fresh one to compare.
-            expect(items.map(i => i.answer)).toEqual(['', '', 'Expert answer 3', 'Expert answer 4']);
+            expect(items.map(i => i.answer)).toEqual(['', '', '', '']);
         });
 
         it('should expand each question into n items when config.trials is set', async () => {

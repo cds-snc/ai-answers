@@ -617,6 +617,108 @@
   padding: var(--gcds-spacing-200);
 }
 
+/* Experimental tables use the full viewport so wide analysis columns do not
+   create artificial gutters inside the page container. */
+.experimental-analysis-tabs {
+  display: flex;
+  gap: var(--gcds-spacing-300);
+  margin-bottom: var(--gcds-spacing-500);
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
+.experimental-analysis-tab {
+  padding: var(--gcds-spacing-200) var(--gcds-spacing-300);
+  border: 0;
+  border-bottom: var(--gcds-border-width-lg) solid transparent;
+  background: transparent;
+  color: var(--gcds-link-default);
+  cursor: pointer;
+  font: inherit;
+}
+
+.experimental-analysis-tab:hover,
+.experimental-analysis-tab:focus-visible {
+  color: var(--gcds-link-hover);
+}
+
+.experimental-analysis-tab--active {
+  border-bottom-color: var(--gcds-link-default);
+  font-weight: var(--gcds-font-weights-bold);
+}
+
+.experimental-table-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  overflow-x: auto;
+  margin-block-start: var(--gcds-spacing-200);
+  padding: var(--gcds-spacing-200);
+  box-sizing: border-box;
+}
+
+/* Keep action buttons visually aligned with DataTables body text. */
+.experimental-table-actions gcds-button {
+  --gcds-button-small-font-desktop: 400 1rem/150% "Noto Sans", sans-serif;
+  --gcds-button-small-font-mobile: 400 0.875rem/140% "Noto Sans", sans-serif;
+  --gcds-button-small-padding: 0.25rem 0.5rem;
+}
+
+.experimental-table-container table.dataTable th,
+.experimental-table-container table.dataTable td {
+  padding: 0.35rem 0.5rem;
+  white-space: normal;
+  vertical-align: top;
+}
+
+.experimental-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* Keep dataset actions together so DataTables sizes their column to the
+   buttons' content and gives the remaining space to the other columns. */
+.experimental-table-actions--group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: var(--gcds-spacing-50);
+}
+
+.experimental-table-actions--group gcds-button {
+  flex: 0 0 auto;
+}
+
+/* The dataset table reserves room for its inline actions and limits the
+   name/description cell to two lines rather than widening the whole table. */
+.experimental-dataset-table-container table.dataTable {
+  table-layout: fixed;
+}
+
+.experimental-table-layout table.dataTable {
+  table-layout: fixed;
+}
+
+.experimental-dataset-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.experimental-dataset-name span {
+  display: block;
+}
+
+.experimental-table-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);
