@@ -19,7 +19,7 @@ Evaluations by subject-matter experts propagate forward to improve consistency a
 
 ## Seeing which evaluations were used
 
-Open the chat in review mode. Click on a chat ID to view it from a dashboard — most often the Evaluation dashboard — or paste the ID into **View chat by ID**, just under the menus on the admin page.
+Open the chat in review mode by clicking on a chat ID to view it from a dashboard — most often the Evaluation dashboard — or paste the ID into **View chat by ID**, just under the menus on the admin page.
 
 If any past evaluations were used, a **Past evals used** panel is displayed under the answer. Expand it:
 
