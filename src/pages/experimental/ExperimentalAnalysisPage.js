@@ -688,7 +688,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             {Object.entries(batchProgress).map(([id, prog]) => (
                                 <div key={id} className="border p-200 mb-200 rounded bg-light">
                                     <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
-                                    <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
+                                    <div
+                                        role="progressbar"
+                                        aria-valuenow={Math.round(prog.percentComplete)}
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                        aria-label={prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}
+                                        style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}
+                                    >
                                         <div style={{
                                             width: `${prog.percentComplete}%`,
                                             backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
@@ -785,6 +792,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                                 buttonRole={baselineBatchId === batch._id ? 'primary' : 'secondary'}
                                                 disabled={!!selectedAnalyzerId && !canBaseline(batch)}
                                                 onClick={() => handleUseAsBaseline(batch)}
+                                                aria-pressed={baselineBatchId === batch._id}
                                             >
                                                 {baselineBatchId === batch._id
                                                     ? t('experimental.analysis.baselineSelected')

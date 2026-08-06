@@ -1477,6 +1477,7 @@
         "colCount": "Évaluations",
         "colStatus": "État",
         "colBy": "Lancée par",
+        "colActions": "Actions",
         "view": "Afficher"
       },
       "report": {

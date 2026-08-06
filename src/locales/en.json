@@ -1477,6 +1477,7 @@
         "colCount": "Evaluations",
         "colStatus": "Status",
         "colBy": "Run by",
+        "colActions": "Actions",
         "view": "View"
       },
       "report": {

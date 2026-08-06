@@ -224,6 +224,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
                 ].filter(Boolean).join(' ')}
                 onClick={() => handlePresetClick(p)}
                 disabled={loading}
+                aria-pressed={p === 'custom' ? showCustom : datePreset === p}
               >
                 {t(`dashboardFilter.${p}`)}
                 {p === 'custom' && (

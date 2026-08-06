@@ -158,6 +158,8 @@ const LoginPage = ({ lang = 'en' }) => {
                 onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
                 required
                 disabled={isLoading}
+                aria-describedby={error ? 'login-error' : undefined}
+                aria-invalid={!!error}
               />
             </div>
             <PasswordInput
@@ -170,6 +172,8 @@ const LoginPage = ({ lang = 'en' }) => {
               required
               disabled={isLoading}
               autoComplete="current-password"
+              ariaDescribedBy={error ? 'login-error' : undefined}
+              ariaInvalid={!!error}
               lang={lang}
             />
             <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">

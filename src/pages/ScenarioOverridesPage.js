@@ -348,7 +348,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
                 </summary>
                 <div style={{ marginTop: '0.5rem' }}>
                   <textarea
-                    aria-label={t('scenarioOverrides.table.overrideLabel', 'Override text')}
+                    aria-label={`${t('scenarioOverrides.table.overrideLabel')} — ${row.departmentKey}`}
                     value={row.overrideText && row.overrideText.length > 0 ? row.overrideText : row.defaultText}
                     onChange={(e) => handleFieldChange(index, { overrideText: e.target.value })}
                     rows={Math.max(8, (row.overrideText || row.defaultText || '').split('\n').length)}

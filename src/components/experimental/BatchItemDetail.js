@@ -137,6 +137,7 @@ export default function BatchItemDetail({
                     size="small"
                     buttonRole={detailMode ? 'secondary' : 'primary'}
                     onClick={() => setDetailMode(false)}
+                    aria-pressed={!detailMode}
                 >
                     {t('experimental.results.detail.simpleView')}
                 </GcdsButton>
@@ -144,6 +145,7 @@ export default function BatchItemDetail({
                     size="small"
                     buttonRole={detailMode ? 'primary' : 'secondary'}
                     onClick={() => setDetailMode(true)}
+                    aria-pressed={detailMode}
                 >
                     {t('experimental.results.detail.detailedView')}
                 </GcdsButton>
