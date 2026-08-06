@@ -87,6 +87,13 @@ const HowToPage = ({ lang = 'en', howToId }) => {
             img: ({ src, alt }) => (
               <img src={src} alt={alt} className="how-to-screenshot" />
             ),
+            // Wide tables scroll in their own container so the page body never
+            // scrolls sideways. tabIndex makes the scroll region keyboard-reachable.
+            table: ({ children }) => (
+              <div className="how-to-table-scroll" tabIndex={0}>
+                <table>{children}</table>
+              </div>
+            ),
           }}
         >
           {content}

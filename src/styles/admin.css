@@ -1606,9 +1606,13 @@
   margin-bottom: var(--gcds-spacing-300, 1rem);
 }
 
+.how-to-table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--gcds-spacing-400, 1.5rem);
+}
+
 .how-to-content table {
   border-collapse: collapse;
-  margin-bottom: var(--gcds-spacing-400, 1.5rem);
 }
 
 .how-to-content th,
@@ -1617,9 +1621,4 @@
   padding: var(--gcds-spacing-200, 0.5rem);
   text-align: left;
   vertical-align: top;
-}
-
-/* Wide tables scroll inside the page rather than pushing the layout sideways */
-.how-to-content {
-  overflow-x: auto;
 }

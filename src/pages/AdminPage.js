@@ -184,7 +184,7 @@ const AdminPage = ({ lang = 'en' }) => {
       {/* How-to guides, rendered in-app from public/content/admin/ */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
-          <details tabIndex={0}>
+          <details>
             <summary>{t('admin.howTo.title')}</summary>
             <ul className="list-none p-0">
               {HOW_TOS.map((howTo) => (
