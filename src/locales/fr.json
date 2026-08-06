@@ -306,7 +306,16 @@
         "process": "Traiter",
         "delete": "Supprimer",
         "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "deleteSuccess": "Lot supprimé.",
+        "deleteError": "Échec de la suppression du lot.",
+        "exportSuccess": "Lot exporté.",
+        "exportEmpty": "Aucune conversation trouvée à exporter pour ce lot.",
+        "exportError": "Échec de l'exportation du lot.",
+        "processError": "Échec du traitement du lot.",
+        "processSuccess": "Traitement du lot terminé.",
+        "cancelSuccess": "Lot annulé.",
+        "cancelError": "Échec de l'annulation du lot."
       },
       "types": {
         "client": "Client"

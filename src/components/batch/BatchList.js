@@ -200,7 +200,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             ) {
               const ActionButtons = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {finishedCount >= total && status === 'processed' && (
@@ -257,7 +267,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               // Offer a Process button which triggers provider-side processing
               const ProcessButton = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton
@@ -288,7 +308,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } else if (status === 'completed') {
               const ActionButtonComplete = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton
@@ -316,7 +346,17 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } else {
               const ActionButtonCancel = () => {
                 const [clicked, setClicked] = useState(false);
-                if (clicked) return null;
+                // Keep something in the DOM in place of the button (rather than
+                // returning null) so focus isn't dropped to <body>, and announce
+                // the pending state — the row's cell gets replaced for real once
+                // `batches` refreshes and the table remounts (see `key={refreshKey}`).
+                if (clicked) {
+                  return (
+                    <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+                      {t('common.processing')}
+                    </span>
+                  );
+                }
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton

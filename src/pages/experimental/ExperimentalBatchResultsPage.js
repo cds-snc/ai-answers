@@ -46,7 +46,8 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         goNext,
         goPrev,
         hasNext,
-        hasPrev
+        hasPrev,
+        detailFocusRef
     } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
 
     // Arrow-key navigation while reviewing an item.
@@ -126,6 +127,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     onPrev={goPrev}
                     onNext={goNext}
                     onBack={backToList}
+                    backButtonRef={detailFocusRef}
                 />
             ) : (
                 <section>

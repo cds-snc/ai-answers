@@ -87,7 +87,8 @@ export default function BatchItemDetail({
     onPrev,
     onNext,
     onBack,
-    chatItems = []
+    chatItems = [],
+    backButtonRef
 }) {
     const { t } = useTranslations(lang);
     const [detailMode, setDetailMode] = useState(false);
@@ -106,7 +107,7 @@ export default function BatchItemDetail({
     return (
         <section>
             <div className="mb-300" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <GcdsButton size="small" buttonRole="secondary" onClick={onBack}>
+                <GcdsButton ref={backButtonRef} size="small" buttonRole="secondary" onClick={onBack}>
                     {t('experimental.results.detail.backToList')}
                 </GcdsButton>
                 <GcdsButton size="small" buttonRole="secondary" disabled={!hasPrev} onClick={onPrev}>
