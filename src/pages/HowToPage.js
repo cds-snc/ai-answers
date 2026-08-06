@@ -81,8 +81,15 @@ const HowToPage = ({ lang = 'en', howToId }) => {
             h1: ({ children }) => <h1 className="mb-400">{children}</h1>,
             h2: ({ children }) => <h2 className="mt-400 mb-300">{children}</h2>,
             p: ({ children }) => <p className="mb-300">{children}</p>,
-            ul: ({ children }) => <ul className="mb-400">{children}</ul>,
-            ol: ({ children }) => <ol className="mb-400">{children}</ol>,
+            // GCDS's reset applies `ol,ul{list-style:none}`, so markers have to be
+            // asked for explicitly. `text-measure` matches the readable line length
+            // GCDS already gives <p>, so list text wraps like body copy.
+            ul: ({ children }) => (
+              <ul className="list-disc mb-400 text-measure canada-ca-list-spcd-2">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal mb-400 text-measure canada-ca-list-spcd-2">{children}</ol>
+            ),
             a: ({ href, children }) => <a href={href}>{children}</a>,
             img: ({ src, alt }) => (
               <img src={src} alt={alt} className="how-to-screenshot" />
