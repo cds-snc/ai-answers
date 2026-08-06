@@ -524,6 +524,16 @@
   border-color: transparent;
 }
 
+/* Same link look as .filter-button-secondary, flush left and sized like the
+   surrounding text — for when it sits inline in a list of GcdsLinks instead
+   of a button row. GcdsLink defaults to size="inherit", so matching it here
+   means inheriting too, not a fixed token. */
+.filter-button-secondary--inline {
+  padding-left: 0;
+  padding-right: 0;
+  font: inherit;
+}
+
 
 /* Link-style buttons and links */
 .filter-button-secondary,
