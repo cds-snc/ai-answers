@@ -43,7 +43,7 @@ import ExperimentalBatchResultsPage from './pages/experimental/ExperimentalBatch
 import ExperimentalSuitePage from './pages/experimental/ExperimentalSuitePage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
-import { translateSlug, getPath } from './utils/routes.js';
+import { translatePathSegments, getPath } from './utils/routes.js';
 import { HOW_TOS } from './config/howTos.js';
 import { PUBLIC_HOME_ROUTE_PATHS, isPublicAuthExemptPath } from './config/appRoutePaths.js';
 
@@ -82,7 +82,7 @@ const getAlternatePath = (currentPath, currentLang) => {
   newSegments.push(newLang);
 
   if (restSegments && restSegments.length) {
-    newSegments.push(...restSegments.filter(Boolean).map(seg => translateSlug(seg, currentLang, newLang)));
+    newSegments.push(...translatePathSegments(restSegments, currentLang, newLang));
   }
 
   const result = newSegments.join('/') || `/${newLang}`;

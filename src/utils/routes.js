@@ -53,3 +53,32 @@ export const translateSlug = (slug, fromLang, toLang) => {
   }
   return slug;
 };
+
+/**
+ * Translates the path segments that follow the language prefix.
+ *
+ * Segments must be translated as a path, not one at a time: some routes have
+ * multi-segment slugs (e.g. 'how-to/eval-informed-answers'), and translating
+ * 'how-to' and 'eval-informed-answers' separately matches neither, leaving the
+ * URL in the original language. Matches the longest route prefix first, then
+ * preserves any trailing segments such as an id.
+ *
+ * e.g. translatePathSegments(['how-to', 'eval-informed-answers'], 'en', 'fr')
+ *      => ['comment-faire', 'reponses-informees-par-evaluations']
+ */
+export const translatePathSegments = (segments, fromLang, toLang) => {
+  const cleanSegments = (segments || []).filter(Boolean);
+
+  for (let length = cleanSegments.length; length > 0; length -= 1) {
+    const candidate = cleanSegments.slice(0, length).join('/');
+    for (const slugs of Object.values(ROUTE_SLUGS)) {
+      if (slugs[fromLang] === candidate) {
+        const translated = slugs[toLang] || candidate;
+        return [...translated.split('/'), ...cleanSegments.slice(length)];
+      }
+    }
+  }
+
+  // No route matched the path — fall back to translating each segment on its own.
+  return cleanSegments.map((segment) => translateSlug(segment, fromLang, toLang));
+};

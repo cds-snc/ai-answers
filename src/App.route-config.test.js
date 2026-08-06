@@ -14,7 +14,7 @@ const {
   mockGenericPage,
   mockUseAuth,
   mockUseTranslations,
-  mockTranslateSlug,
+  mockTranslatePathSegments,
   mockGetPath,
 } = vi.hoisted(() => ({
   mockCreateBrowserRouter: vi.fn((routes) => routes),
@@ -30,7 +30,7 @@ const {
   mockUseTranslations: vi.fn(() => ({
     t: (key) => key,
   })),
-  mockTranslateSlug: vi.fn((slug) => slug),
+  mockTranslatePathSegments: vi.fn((segments) => segments),
   mockGetPath: vi.fn((name, lang) => `/${lang}/${name}`),
 }));
 
@@ -65,7 +65,7 @@ vi.mock('./hooks/useTranslations.js', () => ({
 }));
 
 vi.mock('./utils/routes.js', () => ({
-  translateSlug: mockTranslateSlug,
+  translatePathSegments: mockTranslatePathSegments,
   getPath: mockGetPath,
 }));
 
