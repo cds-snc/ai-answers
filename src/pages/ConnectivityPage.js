@@ -223,6 +223,10 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             {results && (
                 <>
+                    {/* TODO: these counts should go through formatNumber(n, lang) per the
+                        project's number-formatting rule (AGENTS.md) — they're small today
+                        but this is a raw-number template that'll silently be wrong in fr-CA
+                        if these ever grow past 3 digits. */}
                     <StatusMessage
                         message={t('connectivity.testComplete')
                             .replace('{connected}', results.summary.connected)

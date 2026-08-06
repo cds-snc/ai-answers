@@ -237,7 +237,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
                 ].filter(Boolean).join(' ')}
                 onClick={() => handlePresetClick(p)}
                 disabled={loading}
-                aria-pressed={datePreset === p}
+                aria-current={datePreset === p ? 'true' : undefined}
               >
                 {t(`dashboardFilter.${p}`)}
                 {p === 'custom' && (

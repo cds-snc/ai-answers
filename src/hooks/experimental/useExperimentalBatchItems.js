@@ -42,6 +42,12 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     const detailFocusRef = useRef(null);
     const lastTriggerRef = useRef(null);
     const wasDetailOpenRef = useRef(false);
+    // Skip the auto-focus-into-detail step the first time the effect below
+    // runs — a ?open= deep link can land selectedIndex on a non-null value
+    // before the user has done anything, and stealing focus straight to the
+    // "Back to list" button on page load would skip past the normal
+    // land-on-<h1> landing a fresh page load should get.
+    const isFirstRenderRef = useRef(true);
 
     const load = useCallback(async () => {
         if (!batchId) return;
@@ -96,7 +102,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     // Move focus on the list<->detail edge only.
     useEffect(() => {
         const isDetailOpen = selectedIndex !== null;
-        if (isDetailOpen && !wasDetailOpenRef.current) {
+        if (isDetailOpen && !wasDetailOpenRef.current && !isFirstRenderRef.current) {
             detailFocusRef.current?.focus?.();
         } else if (!isDetailOpen && wasDetailOpenRef.current) {
             const trigger = lastTriggerRef.current;
@@ -106,6 +112,7 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
             lastTriggerRef.current = null;
         }
         wasDetailOpenRef.current = isDetailOpen;
+        isFirstRenderRef.current = false;
     }, [selectedIndex]);
 
     const selectedGroupIndex = selectedIndex === null
