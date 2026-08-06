@@ -82,7 +82,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                         {t('experimental.results.backToRuns')}
                     </GcdsLink>
                     {batch?.config?.datasetId && (
-                        <GcdsLink href={`/${lang}/experimental/suites/${batch.config.datasetId}`}>
+                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${batch.config.datasetId}`}>
                             {t('experimental.analysis.suiteView')}
                         </GcdsLink>
                     )}
