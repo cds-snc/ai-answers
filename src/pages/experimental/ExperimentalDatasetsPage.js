@@ -116,7 +116,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const handleViewDataset = (id) => {
         // Navigate to analysis page with pre-selected dataset
-        window.location.href = `/${lang}/experimental/analysis?datasetId=${id}`;
+        window.location.href = `${getPath('experimental-analysis', lang)}?datasetId=${id}`;
     };
 
     const handleExportDataset = async (dataset) => {

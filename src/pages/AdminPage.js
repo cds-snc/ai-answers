@@ -158,7 +158,7 @@ const AdminPage = ({ lang = 'en' }) => {
                 <strong>{t('admin.navigation.experimental', 'Experimental')}</strong>
                 <ul className="list-none pl-400">
                   <li>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                       {t('admin.navigation.dataAnalysis', 'Data Analysis')}
                     </GcdsLink>
                   </li>
