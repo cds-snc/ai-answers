@@ -64,6 +64,11 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingVectorType, setSavingVectorType] = useState(false);
   const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
   const [settingsCacheMessage, setSettingsCacheMessage] = useState('');
+  const [auditEntries, setAuditEntries] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditLoadingMore, setAuditLoadingMore] = useState(false);
+  const [auditError, setAuditError] = useState(false);
+  const [auditHasMore, setAuditHasMore] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
@@ -208,6 +213,26 @@ const SettingsPage = ({ lang = 'en' }) => {
       });
     }
     loadSettings();
+  }, []);
+
+  const loadAuditHistory = async (skip = 0, append = false) => {
+    if (append) setAuditLoadingMore(true);
+    else setAuditLoading(true);
+    setAuditError(false);
+    try {
+      const result = await DataStoreService.getSettingsAudit({ limit: 50, skip });
+      setAuditEntries((current) => (append ? [...current, ...(result.entries || [])] : (result.entries || [])));
+      setAuditHasMore(Boolean(result.hasMore));
+    } catch (error) {
+      setAuditError(true);
+    } finally {
+      if (append) setAuditLoadingMore(false);
+      else setAuditLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAuditHistory();
   }, []);
 
   // Helper to save a setting and read it back to confirm persistence.
@@ -417,6 +442,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     try {
       await DataStoreService.refreshSettingsCache();
       setSettingsCacheMessage(t('settings.refreshCache.success'));
+      await loadAuditHistory();
     } catch (error) {
       setSettingsCacheMessage(t('settings.refreshCache.error').replace('{error}', error.message));
     } finally {
@@ -1114,6 +1140,57 @@ const SettingsPage = ({ lang = 'en' }) => {
           </div>
         </div>
       </GcdsDetails>
+
+      <section className="mt-600" aria-labelledby="settings-audit-title">
+        <h2 id="settings-audit-title">{t('settings.auditHistory.title')}</h2>
+        <p>{t('settings.auditHistory.description')}</p>
+        {auditLoading ? <p>{t('settings.auditHistory.loading')}</p> : null}
+        {auditError ? <p role="alert">{t('settings.auditHistory.error')}</p> : null}
+        {!auditLoading && !auditError && auditEntries.length === 0 ? (
+          <p>{t('settings.auditHistory.empty')}</p>
+        ) : null}
+        {auditEntries.length > 0 ? (
+          <div className="table-responsive">
+            <table>
+              <caption className="visually-hidden">{t('settings.auditHistory.title')}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t('settings.auditHistory.user')}</th>
+                  <th scope="col">{t('settings.auditHistory.action')}</th>
+                  <th scope="col">{t('settings.auditHistory.setting')}</th>
+                  <th scope="col">{t('settings.auditHistory.previousValue')}</th>
+                  <th scope="col">{t('settings.auditHistory.newValue')}</th>
+                  <th scope="col">{t('settings.auditHistory.date')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditEntries.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.actorEmail}</td>
+                    <td>{entry.action === 'settings.cache_refreshed'
+                      ? t('settings.auditHistory.actions.cacheRefreshed')
+                      : t('settings.auditHistory.actions.settingUpdated')}</td>
+                    <td>{entry.settingKey || t('settings.auditHistory.notApplicable')}</td>
+                    <td>{entry.previousValue ?? t('settings.auditHistory.notApplicable')}</td>
+                    <td>{entry.newValue ?? t('settings.auditHistory.notApplicable')}</td>
+                    <td>{new Date(entry.createdAt).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+        {auditHasMore ? (
+          <GcdsButton
+            type="button"
+            buttonRole="secondary"
+            onClick={() => loadAuditHistory(auditEntries.length, true)}
+            disabled={auditLoadingMore}
+          >
+            {auditLoadingMore ? t('settings.auditHistory.loadingMore') : t('settings.auditHistory.loadMore')}
+          </GcdsButton>
+        ) : null}
+      </section>
 
     </GcdsContainer>
   );

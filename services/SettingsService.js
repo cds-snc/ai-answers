@@ -1,6 +1,7 @@
 import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
+import SettingsAuditService from './SettingsAuditService.js';
 
 // Default values for settings that must always exist.
 // Seeded on startup if missing from the database.
@@ -72,12 +73,23 @@ class SettingsServiceClass {
     return this.cache.hasOwnProperty(key) ? this.cache[key] : null;
   }
 
-  async set(key, value) {
+  async set(key, value, auditContext = null) {
     key = requireLiteralString(key, 'setting key');
+    const previousValue = auditContext && Object.prototype.hasOwnProperty.call(auditContext, 'previousValue')
+      ? auditContext.previousValue
+      : this.get(key);
     if (value === '' && EMPTY_ALLOWED_SETTINGS.has(key)) {
       this.cache[key] = '';
       await dbConnect();
       await Setting.findOneAndUpdate({ key }, { value: '' }, { upsert: true });
+      if (auditContext && previousValue !== '') {
+        await SettingsAuditService.recordSettingChange({
+          ...auditContext,
+          settingKey: key,
+          previousValue,
+          newValue: '',
+        });
+      }
       return;
     }
 
@@ -87,6 +99,14 @@ class SettingsServiceClass {
     // Persist to DB asynchronously
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
+    if (auditContext && previousValue !== value) {
+      await SettingsAuditService.recordSettingChange({
+        ...auditContext,
+        settingKey: key,
+        previousValue,
+        newValue: value,
+      });
+    }
   }
 
   toBoolean(value, defaultValue = true) {
