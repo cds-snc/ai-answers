@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.180.1](https://github.com/cds-snc/ai-answers/compare/v1.180.0...v1.180.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* aria functions added ([bd86388](https://github.com/cds-snc/ai-answers/commit/bd86388b6b80a41461ebdefde93866b7464db082))
+* aria functions added ([c6ea19a](https://github.com/cds-snc/ai-answers/commit/c6ea19a75507dd80524a44580cd2abf9a1d42b49))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump postcss from 8.5.22 to 8.5.25 ([2b8d059](https://github.com/cds-snc/ai-answers/commit/2b8d059a0558b16c61753fa391422915cffa3271))
+
 ## [1.180.0](https://github.com/cds-snc/ai-answers/compare/v1.179.0...v1.180.0) (2026-08-05)
 
 
