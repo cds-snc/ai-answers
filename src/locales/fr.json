@@ -306,7 +306,16 @@
         "process": "Traiter",
         "delete": "Supprimer",
         "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "deleteSuccess": "Lot supprimé.",
+        "deleteError": "Échec de la suppression du lot.",
+        "exportSuccess": "Lot exporté.",
+        "exportEmpty": "Aucune conversation trouvée à exporter pour ce lot.",
+        "exportError": "Échec de l'exportation du lot.",
+        "processError": "Échec du traitement du lot.",
+        "processSuccess": "Traitement du lot terminé.",
+        "cancelSuccess": "Lot annulé.",
+        "cancelError": "Échec de l'annulation du lot."
       },
       "types": {
         "client": "Client"
@@ -499,6 +508,7 @@
       "chunkSizeLabel": "Taille du bloc (Mo) :",
       "throttleLabel": "Limitation (ms) :",
       "tableSelectLabel": "Table (maintenir Ctrl/Cmd pour la sélection multiple) :",
+      "importFileLabel": "Fichier à importer (.jsonl) :",
       "importingLabel": "Importation...",
       "importButton": "Importer la base de données",
       "integrityTitle": "Vérifications d'intégrité",
@@ -666,7 +676,7 @@
       "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
-      "dateRange": "Plage de dates (24 heures)",
+      "dateRange": "Plage de dates",
       "dateRangePickerDialog": "Calendrier de plage de dates",
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
@@ -814,7 +824,7 @@
         "chatId": "ID de chat",
         "questionNumber": "Q #",
         "department": "Ministère",
-        "program": "Programme",
+        "program": "Service",
         "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
@@ -860,8 +870,6 @@
       "title": "Supprimer un chat des journaux",
       "idLabel": "ID de chat",
       "button": "Supprimer le chat",
-      "confirm": "Confirmer la suppression",
-      "cancel": "Annuler",
       "loading": "Suppression en cours...",
       "success": "Chat supprimé avec succès",
       "error": "Échec de la suppression du chat : "
@@ -1000,7 +1008,11 @@
     "actions": {
       "delete": "Supprimer",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
-      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs."
+      "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs.",
+      "saveSuccess": "Utilisateur mis à jour.",
+      "saveError": "Échec de la mise à jour de l'utilisateur.",
+      "deleteSuccess": "Utilisateur supprimé.",
+      "deleteError": "Échec de la suppression de l'utilisateur."
     }
   },
   "workflows": {
@@ -1016,6 +1028,8 @@
   },
   "settings": {
     "title": "Paramètres",
+    "saveSuccess": "Paramètre enregistré.",
+    "saveError": "Échec de l'enregistrement du paramètre.",
     "general": {
       "title": "Paramètres généraux"
     },
@@ -1419,7 +1433,7 @@
       "title": "Mesures de sécurité"
     },
     "programs": {
-      "title": "Volume de questions par programme",
+      "title": "Volume de questions par service",
       "subtitle": "{total} questions classées · EN : {en} · FR : {fr}",
       "unclassifiedNote": "{count} non classées",
       "tooltipCount": "{count} questions",
@@ -1448,7 +1462,7 @@
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",
-      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par programme, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
+      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par service, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
       "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
       "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
       "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
@@ -1459,7 +1473,7 @@
       "error": "L'analyse a échoué. Des résultats partiels peuvent être affichés ci-dessous.",
       "running": {
         "preparing": "Préparation de l'analyse…",
-        "classifying": "Classification des programmes… {done} de {total}",
+        "classifying": "Classification des services… {done} de {total}",
         "synthesizing": "Rédaction des constats…"
       },
       "status": {
@@ -1476,6 +1490,7 @@
         "colCount": "Évaluations",
         "colStatus": "État",
         "colBy": "Lancée par",
+        "colActions": "Actions",
         "view": "Afficher"
       },
       "report": {
@@ -1484,15 +1499,15 @@
         "runOn": "Exécutée le {date}",
         "runBy": "par {email}",
         "excluded": "{count} sans note exclues des statistiques de résultats",
-        "unclassified": "{count} n'ont pas pu être classées par programme",
+        "unclassified": "{count} n'ont pas pu être classées par service",
         "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
         "running": "Cette analyse est toujours en cours ({status}). Les résultats ci-dessous sont partiels.",
         "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
         "rowsTitle": "Détails des évaluations",
         "viewRowData": "Afficher toutes les données de la ligne",
         "noValue": "Non disponible",
-        "programActionsTitle": "Résultats par programme et action",
-        "colProgramAction": "Programme — action",
+        "programActionsTitle": "Résultats par service et action",
+        "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
         "colCount": "Évaluations",
         "colNonPerfect": "Non parfaites",
@@ -1515,7 +1530,7 @@
         "colEvaluator": "Évaluateur",
         "colQuestion": "Question",
         "colScore": "Note",
-        "colProgram": "Programme",
+        "colProgram": "Service",
         "colAction": "Action",
         "colDetails": "Détails",
         "flagged": "À examiner"
@@ -1664,6 +1679,7 @@
     "createIndex": "Créer un index de vecteurs",
     "embeddingManagement": "Gestion des embeddings",
     "embeddingDescription": "Traitez les interactions pour générer des embeddings.",
+    "embeddingProviderLabel": "Fournisseur d'embeddings",
     "generateEmbeddings": "Générer les embeddings",
     "regenerateEmbeddings": "Régénérer les embeddings",
     "regenerating": "Régénération...",
@@ -1890,6 +1906,7 @@
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
+    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s).",
     "simulation": {
       "title": "Simulation de panne",
       "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",

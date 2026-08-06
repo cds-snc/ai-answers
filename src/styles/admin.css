@@ -524,6 +524,16 @@
   border-color: transparent;
 }
 
+/* Same link look as .filter-button-secondary, flush left and sized like the
+   surrounding text — for when it sits inline in a list of GcdsLinks instead
+   of a button row. GcdsLink defaults to size="inherit", so matching it here
+   means inheriting too, not a fixed token. */
+.filter-button-secondary--inline {
+  padding-left: 0;
+  padding-right: 0;
+  font: inherit;
+}
+
 
 /* Link-style buttons and links */
 .filter-button-secondary,
@@ -1438,7 +1448,9 @@
   color: var(--gcds-text-primary);
 }
 
-/* Active non-custom presets: GC DS dark blue */
+/* Currently-applied preset (including Custom once its panel is closed):
+   GC DS dark blue. When Custom's panel is open, .filter-bar__preset--custom-open
+   below is also applied and — being the later rule — takes over the look. */
 .filter-bar__preset--active {
   background: var(--gcds-color-blue-muted);
   border-color: var(--gcds-color-blue-muted);
@@ -1634,9 +1646,10 @@
 }
 
 .auth-form-group input:focus {
-  outline: none;
-  border-color: #0066CC;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+  border-color: var(--gcds-input-focus-border);
+  box-shadow: var(--gcds-input-focus-box-shadow);
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
+  outline-offset: var(--gcds-input-border-width);
 }
 
 .auth-submit-button {

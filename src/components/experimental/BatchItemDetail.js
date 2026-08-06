@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
-import { getItemVerdict, humanizeFieldName, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
+import { getItemVerdict, humanizeFieldName, truncate, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
 
 const VERDICT_STYLES = {
     pass: { color: '#2e8540' },
@@ -42,8 +42,8 @@ const getAnalyzerColumns = (items) => {
 
 const formatAnalyzerValue = (value) => {
     if (value === undefined || value === null || value === '') return '—';
-    if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
+    if (typeof value === 'object') return truncate(JSON.stringify(value), 240);
+    return truncate(String(value), 240);
 };
 
 const renderAnalyzerCell = (item, analyzerId, field) => {
@@ -68,10 +68,10 @@ const renderAnalyzerSummary = (item, analyzerId, comparisonMode = false) => {
 
     const verdict = result.verdict || result.status || result.label;
     const explanation = comparisonMode
-        ? result.comparisonExplanation || result.explanation
-        : result.explanation;
+        ? result.comparisonExplanation || result.explanation || result.differenceExplanation
+        : result.explanation || result.differenceExplanation;
     const summary = [verdict, explanation].filter(Boolean).join(': ');
-    return summary ? summary : formatAnalyzerValue(result);
+    return summary ? truncate(summary, 240) : formatAnalyzerValue(result);
 };
 
 /**
@@ -90,7 +90,8 @@ export default function BatchItemDetail({
     onNext,
     onBack,
     chatItems = [],
-    comparisonMode = false
+    comparisonMode = false,
+    backButtonRef
 }) {
     const { t } = useTranslations(lang);
     const [detailMode, setDetailMode] = useState(false);
@@ -121,7 +122,7 @@ export default function BatchItemDetail({
     return (
         <section>
             <div className="mb-300" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <GcdsButton size="small" buttonRole="secondary" onClick={onBack}>
+                <GcdsButton ref={backButtonRef} size="small" buttonRole="secondary" onClick={onBack}>
                     {t('experimental.results.detail.backToList')}
                 </GcdsButton>
                 <GcdsButton size="small" buttonRole="secondary" disabled={!hasPrev} onClick={onPrev}>
@@ -152,6 +153,7 @@ export default function BatchItemDetail({
                     size="small"
                     buttonRole={detailMode ? 'secondary' : 'primary'}
                     onClick={() => setDetailMode(false)}
+                    aria-pressed={!detailMode}
                 >
                     {t('experimental.results.detail.simpleView')}
                 </GcdsButton>
@@ -159,6 +161,7 @@ export default function BatchItemDetail({
                     size="small"
                     buttonRole={detailMode ? 'primary' : 'secondary'}
                     onClick={() => setDetailMode(true)}
+                    aria-pressed={detailMode}
                 >
                     {t('experimental.results.detail.detailedView')}
                 </GcdsButton>

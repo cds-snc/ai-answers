@@ -22,6 +22,11 @@ const LoginPage = ({ lang = 'en' }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // The expiry marker is informational only. Once the user starts a fresh
+    // login attempt, remove it so it cannot persist into a new session.
+    if (sessionExpired) {
+      navigate(location.pathname, { replace: true });
+    }
     setIsLoading(true);
     clearError();
     // If 2FA flow already started, ignore normal submit
@@ -153,6 +158,8 @@ const LoginPage = ({ lang = 'en' }) => {
                 onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
                 required
                 disabled={isLoading}
+                aria-describedby={error ? 'login-error' : undefined}
+                aria-invalid={!!error}
               />
             </div>
             <PasswordInput
@@ -165,6 +172,8 @@ const LoginPage = ({ lang = 'en' }) => {
               required
               disabled={isLoading}
               autoComplete="current-password"
+              ariaDescribedBy={error ? 'login-error' : undefined}
+              ariaInvalid={!!error}
               lang={lang}
             />
             <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">

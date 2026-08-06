@@ -171,14 +171,26 @@ export function computeStats(rows) {
 // from the table and reported in aggregate (skippedSingles).
 export const MIN_GROUP_COUNT = 2;
 
-// Combined "program — action" group label, e.g.
-// "Canada child benefit — Change my contact information". An uninformative
-// half (missing or "Other") is left off rather than shown as "— Other".
-export function combinedLabel(row) {
-    const program = row.program && row.program !== OTHER_LABEL ? row.program : null;
-    const action = row.action && row.action !== OTHER_LABEL ? row.action : null;
+// The informative halves of a row's program/action — "Other"/missing collapse
+// to null so they're left off the combined label rather than shown as "— Other".
+export function labelParts(row) {
+    return {
+        program: row.program && row.program !== OTHER_LABEL ? row.program : null,
+        action: row.action && row.action !== OTHER_LABEL ? row.action : null
+    };
+}
+
+// Combined "program — action" group label from explicit parts, e.g.
+// "Canada child benefit — Change my contact information". Reused for the French
+// label (pass the translated parts) so the join/omit logic lives in one place.
+export function combinedLabelFrom(program, action) {
     if (program && action) return `${program} — ${action}`;
     return program || action || OTHER_LABEL;
+}
+
+export function combinedLabel(row) {
+    const { program, action } = labelParts(row);
+    return combinedLabelFrom(program, action);
 }
 
 // Tier 2 cross-tab: score categories per combined program—action group, built
@@ -201,8 +213,14 @@ export function buildCrossTab(rows) {
         const exampleRow =
             groupRows.find((r) => (r.score !== null && r.score < 100) || (r.category && r.category !== 'correct')) ||
             groupRows[0];
+        // The cleaned English parts are constant within a group (the label is
+        // derived from them). Kept so the display boundary can build a French
+        // label without re-parsing the combined string.
+        const { program, action } = labelParts(groupRows[0]);
         return {
             label,
+            program,
+            action,
             example: { chatId: exampleRow.chatId, interactionId: exampleRow.id, lang: exampleRow.lang },
             count: summary.count,
             scoredCount: summary.scoredCount,

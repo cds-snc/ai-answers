@@ -1,3 +1,8 @@
+// Shared scenarios for Indigenous Services Canada and Crown-Indigenous Relations
+// and Northern Affairs Canada.
+// The following abbrKeys resolve to this file via scenario-aliases.js:
+//   SAC-ISC (canonical) — Indigenous Services Canada
+//   RCAANC-CIRNAC       — Crown-Indigenous Relations and Northern Affairs Canada
 export const SAC_ISC_SCENARIOS = `
 
 ### French URL tip for sac-isc.gc.ca:

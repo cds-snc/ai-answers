@@ -27,7 +27,12 @@ When changing `FilterPanel.js` or the backend filter logic in `getChatFilterCond
 - **AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`, same backend)
 - **MetricsDashboard** (`api/metrics/metrics-common.js` + individual metric endpoints)
 - **PartnerDashboard** (`api/metrics/*` via `parseRequestFilters`) — uses `FilterPanel` too; see the [filter components](#filter-components) table below
+- **ChatViewer / Chat Logs list** (`api/db/db-chat-logs.js`)
 - **Export/Download** (`api/chat/chat-export-logs.js`) — has a `$lookup` that overwrites `user`; user-type filter must be applied early in `dateFilter` before the overwrite
+
+**Any new/changed `FilterPanel` field must also be forwarded by `ChatLogsDashboard.js`, or the download silently ignores it.** `ChatDashboardPage.js` forwards filters generically (`DashboardService.getChatDashboard` appends every key in the filters object as a query param), but `ChatLogsDashboard.js`'s `handleApplyFilters` (the "Download chat logs" page) hand-picks specific fields into `URLSearchParams` before calling `chat-export-logs.js`. When adding or renaming a field in `FilterPanel.js`, check `ChatLogsDashboard.js`'s param-building list explicitly — it won't fail loudly, it just drops the field.
+
+**`partnerEval`/`aiEval`/`answerType` allow-lists are hand-duplicated, not shared — check both when adding a category.** `api/db/db-chat-logs.js` and `api/chat/chat-export-logs.js` each keep their own `validCategories`/`validAnswerTypes` arrays that gate requests with a 400 *before* the pipeline runs, separate from the pseudo-category handling (`noEval`, `hasContentIssue`) inside `getChatFilterConditions` in `chat-filters.js`. Adding a new pseudo-category to `chat-filters.js` + `FilterPanel.js` is not enough — you must also add it to the `validCategories` (or `validPartnerEvalCategories`) array in *both* `db-chat-logs.js` and `chat-export-logs.js`, or requests using it get rejected with "Invalid partnerEval values" even though the filter logic itself supports it.
 
 ## Cross-dashboard gotchas
 

@@ -20,6 +20,7 @@ export const TC_SCENARIOS = `
 * Licensing for pilots personnel https://tc.canada.ca/en/aviation/licensing-pilots-personnel https://tc.canada.ca/fr/aviation/delivrance-licences-pilotes-personnel
 * Defects and recalls https://tc.canada.ca/en/road-transportation/defects-recalls-vehicles-tires-child-car-seats https://tc.canada.ca/fr/transport-routier/defauts-rappels-vehicules-pneus-sieges-auto-enfant
 * Child car seat https://tc.canada.ca/en/road-transportation/child-car-seat-safety https://tc.canada.ca/fr/transport-routier/securite-sieges-auto-enfants
+* Importing a vehicle https://tc.canada.ca/en/road-transportation/importing-vehicle https://tc.canada.ca/fr/transport-routier/importer-vehicule
 * Rail Grade crossings https://tc.canada.ca/en/rail-transportation/grade-crossings https://tc.canada.ca/fr/transport-ferroviaire/passages-niveau
 * Railway Operating Certificates, noise and vibration requirements, work/rest and medical rules, accounting, rates. https://tc.canada.ca/en/rail-transportation/operating-federal-railway https://tc.canada.ca/fr/transport-ferroviaire/exploitation-chemin-fer-federal
 `;

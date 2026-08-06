@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
@@ -27,6 +27,14 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   // Export options
   const [selectedView, setSelectedView] = useState('default');
   const [selectedFormat, setSelectedFormat] = useState('xlsx');
+
+  // "Get logs" removes itself from the DOM the moment it's clicked, so move
+  // focus to the first control in the panel that replaces it — otherwise
+  // keyboard/screen-reader focus silently drops to <body>.
+  const exportViewRef = useRef(null);
+  useEffect(() => {
+    if (showPanel) exportViewRef.current?.focus();
+  }, [showPanel]);
 
   const handleGetLogs = () => {
     // Show the export options and filter panel
@@ -58,6 +66,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (filters.aiEval && filters.aiEval !== 'all') {
           params.append('aiEval', filters.aiEval);
         }
+        if (filters.evalLogic) params.append('evalLogic', filters.evalLogic);
       }
 
       params.append('view', selectedView);
@@ -139,6 +148,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 </label>
                 <select
                   id="export-view"
+                  ref={exportViewRef}
                   value={selectedView}
                   onChange={(e) => setSelectedView(e.target.value)}
                   className="filter-select"

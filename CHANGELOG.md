@@ -1,5 +1,82 @@
 # Changelog
 
+## [1.180.0](https://github.com/cds-snc/ai-answers/compare/v1.179.0...v1.180.0) (2026-08-05)
+
+
+### Features
+
+* add empty context guard - tested in preview ([da016ec](https://github.com/cds-snc/ai-answers/commit/da016ecedc9ad0907dc20ad90a9a3def21b88693))
+
+## [1.179.0](https://github.com/cds-snc/ai-answers/compare/v1.178.1...v1.179.0) (2026-08-05)
+
+
+### Features
+
+* implement chat session availability checks and update related c… ([f5f537b](https://github.com/cds-snc/ai-answers/commit/f5f537b578b994aae91e52dc4bf2a9b626f8847d))
+* implement chat session availability checks and update related components ([9064440](https://github.com/cds-snc/ai-answers/commit/9064440dbd311463d22767fe2ffde41ff6744404))
+
+
+### Bug Fixes
+
+* handle session expiration during login and update tests ([eae6af0](https://github.com/cds-snc/ai-answers/commit/eae6af03a68b599cf627aacf1c767e8df6966b0f))
+* handle session expiration during login and update tests ([577cb54](https://github.com/cds-snc/ai-answers/commit/577cb54b079d86a47d71422dd9eb899ba93a19f0))
+
+## [1.178.1](https://github.com/cds-snc/ai-answers/compare/v1.178.0...v1.178.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* update styles for answer display and add tests for BatchItemDeta… ([eb07fe3](https://github.com/cds-snc/ai-answers/commit/eb07fe3ee7af46d52f8945f006167b4206f25542))
+* update styles for answer display and add tests for BatchItemDetail component ([217a6eb](https://github.com/cds-snc/ai-answers/commit/217a6ebd3c140333b3da6039ff0b2e01155a5fa2))
+
+## [1.178.0](https://github.com/cds-snc/ai-answers/compare/v1.177.1...v1.178.0) (2026-08-03)
+
+
+### Features
+
+* instructions for new features and download logs ([a5a0f85](https://github.com/cds-snc/ai-answers/commit/a5a0f85dc90d8dc7fa6e15980dafd3db5471afab))
+
+
+### Bug Fixes
+
+* stop evalLogic from being dropped by export request ([f4a88a7](https://github.com/cds-snc/ai-answers/commit/f4a88a77b643f809f336544f14dc9109a810140c))
+
+## [1.177.1](https://github.com/cds-snc/ai-answers/compare/v1.177.0...v1.177.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* action seed for specific information ([c951a35](https://github.com/cds-snc/ai-answers/commit/c951a35c13934517b8fe6f479f7d3edfb025f362))
+* add action table so displays in FR ([9d4e316](https://github.com/cds-snc/ai-answers/commit/9d4e31695881debd99ce08d6472bbc4dddb03db6))
+* add French to service files ([d6f265b](https://github.com/cds-snc/ai-answers/commit/d6f265bf6dff7e4536f05a70469c642fc1c0918a))
+* fill in service files ([f83723f](https://github.com/cds-snc/ai-answers/commit/f83723fe71276d71cb0d98d1267f6c37e6f8b604))
+* finish all scenarios and services ([73fae30](https://github.com/cds-snc/ai-answers/commit/73fae306640e940d6d3370ece1afe6ca83933cd5))
+* rename program to service ([959d5c3](https://github.com/cds-snc/ai-answers/commit/959d5c37ef42af2e8b3071c78cebcd860e534333))
+* tbs pension waiver ([97b5ed0](https://github.com/cds-snc/ai-answers/commit/97b5ed06b26b90ec55665cce76115c246813ed8e))
+* update statcan based on eval ([52eb442](https://github.com/cds-snc/ai-answers/commit/52eb442ecde7f248870cc47198179f1c4292cce0))
+
+## [1.177.0](https://github.com/cds-snc/ai-answers/compare/v1.176.0...v1.177.0) (2026-07-30)
+
+
+### Features
+
+* dashboard md category clarification ([e6a2888](https://github.com/cds-snc/ai-answers/commit/e6a288845bd3e23bc9a061f154e1898b995264ae))
+
+
+### Bug Fixes
+
+* dashboard advanced filter functional matching ([745a475](https://github.com/cds-snc/ai-answers/commit/745a4754dcff8ce2ed809e3b753ba811ef8c8b80))
+* dashboard advanced filter functional matching ([6f43cc0](https://github.com/cds-snc/ai-answers/commit/6f43cc048d71f226adc84d8f8f9bd07b89fcf013))
+* update brace-expansion package versions to latest ([b01e4f4](https://github.com/cds-snc/ai-answers/commit/b01e4f4ee3f4de5a89a4e0ba646b2a43e935038d))
+* update brace-expansion package versions to latest ([0b2352b](https://github.com/cds-snc/ai-answers/commit/0b2352bd8647a4ae4e1c7240a96ca44157d6d5f1))
+
+## [1.176.0](https://github.com/cds-snc/ai-answers/compare/v1.175.0...v1.176.0) (2026-07-29)
+
+
+### Features
+
+* add program files - tested on preview with batch and eval ([0cc37eb](https://github.com/cds-snc/ai-answers/commit/0cc37eb9edf2a30bf06efb566699268a611272c7))
+
 ## [1.175.0](https://github.com/cds-snc/ai-answers/compare/v1.174.0...v1.175.0) (2026-07-29)
 
 

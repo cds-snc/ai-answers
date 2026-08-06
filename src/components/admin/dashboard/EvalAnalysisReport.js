@@ -100,7 +100,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           {rows.map((row) => (
             <tr key={row.label}>
               <td style={cell}>
-                {row.label}
+                {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
                   <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#2e8540' }}>
                     {t('partnerDashboard.evalAnalysis.report.allPerfect')}
@@ -123,7 +123,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   return (
     <div>
       {analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <div className="dashboard-warning">
+        <div className="dashboard-warning" role="status" aria-live="polite">
           <span className="dashboard-warning__icon" aria-hidden="true" />
           {t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))}
         </div>
@@ -153,7 +153,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </p>
         )}
         {analysis.status === 'error' && (
-          <div className="dashboard-warning">
+          <div className="dashboard-warning" role="alert">
             <span className="dashboard-warning__icon" aria-hidden="true" />
             {t('partnerDashboard.evalAnalysis.report.partial')}
           </div>

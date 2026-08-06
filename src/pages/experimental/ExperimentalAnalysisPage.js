@@ -6,6 +6,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
+import { getPath } from '../../utils/routes.js';
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 60 * 1000;
@@ -585,8 +586,15 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
-            <div><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
-            <div style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}>
+            <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
+            <div
+                role="progressbar"
+                aria-valuenow={Math.round(prog.percentComplete)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}
+                style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}
+            >
                 <div style={{
                     width: `${prog.percentComplete}%`,
                     backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',

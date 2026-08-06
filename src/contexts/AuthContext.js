@@ -215,6 +215,10 @@ export const AuthProvider = ({ children }) => {
     const lang = (typeof window !== 'undefined' && window.location.pathname.startsWith('/fr')) ? 'fr' : 'en';
     try {
       setLoading(true);
+      // A login from the session-expired page starts a fresh auth transition.
+      // This is important when expiry redirected within the SPA rather than
+      // through a full document reload.
+      redirectingRef.current = false;
       const data = await AuthService.login(email, password);
       setSessionExpiredRedirecting(false);
       // If twoFA is required, do not set currentUser yet -- caller should prompt for code
@@ -227,6 +231,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Update the user state for normal login
+      currentUserRef.current = data.user;
       setCurrentUser(data.user);
       const expiry = syncSessionExpiry();
       scheduleSessionExpiryState(expiry);

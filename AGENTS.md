@@ -200,6 +200,20 @@ When adding a new page, register its route in `src/utils/routes.js` under `ROUTE
 
 French slugs must be real translations — not copied English slugs. Once registered, use `getPath('my-new-page', lang)` to generate links and `ROUTE_SLUGS['my-new-page']` to define the route in `App.js`. Never hardcode URL paths as strings elsewhere in the codebase.
 
+## Announcing status, errors, and async outcomes
+
+Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>` for this. A lot of the admin section had these render as plain DOM text with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
+
+```jsx
+import StatusMessage from '../components/admin/StatusMessage.js';
+
+<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
+```
+
+It renders `role="alert"`/`aria-live="assertive"` when `isError`, otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing.
+
+Known gap (tracked as a TODO in the component itself): it only standardizes the ARIA behaviour so far — callers still each pass their own inline `style` for colour/spacing. Don't add another one-off inline style; if you need visual treatment beyond the default, flag it rather than copying an existing page's ad-hoc hex colours.
+
 ## UI architecture and folders
 
 For UI work, follow the layered pattern below so data flow and responsibilities stay clear:

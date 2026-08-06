@@ -453,13 +453,13 @@ export default function App() {
       { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
       { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/analysis', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/experimental/analyse', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/datasets', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/experimental/ensembles-de-donnees', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/create-dataset', element: <ExperimentalCreateDatasetPage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/creer-ensemble-de-donnees', element: <ExperimentalCreateDatasetPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
+      { path: '/fr/experimental/analyse/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
     ];

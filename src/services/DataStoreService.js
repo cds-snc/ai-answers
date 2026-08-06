@@ -311,6 +311,23 @@ class DataStoreService {
   static async getSiteStatus() {
     return await this.getPublicSetting('siteStatus', 'available');
   }
+
+  static async getChatSessionAvailability() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('chat-session-availability'), {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error(`Failed to get chat session availability: ${response.status}`);
+      const data = await response.json();
+      return {
+        siteStatus: data.siteStatus === true,
+        sessionAvailable: data.sessionAvailable === true
+      };
+    } catch (error) {
+      console.error('Error getting chat session availability:', error);
+      return { siteStatus: false, sessionAvailable: false };
+    }
+  }
 }
 
 export default DataStoreService;

@@ -6,6 +6,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -327,11 +328,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {error && (
-        <div className="mt-400 error" role="alert">
-          {t('admin.chatDashboard.error', 'Unable to load chat data.')} {String(error)}
-        </div>
-      )}
+      <StatusMessage
+        message={error ? `${t('admin.chatDashboard.error')} ${String(error)}` : null}
+        isError
+        tag="div"
+        className="mt-400 error"
+      />
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
         <div className="dashboard-warning">

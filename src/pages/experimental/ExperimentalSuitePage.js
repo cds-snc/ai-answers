@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { getPath } from '../../utils/routes.js';
 import { useExperimentalSuiteGrid } from '../../hooks/experimental/useExperimentalSuiteGrid.js';
 import SuiteGridTable from '../../components/experimental/SuiteGridTable.js';
 
@@ -25,7 +26,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
     const { dataset, tests, runs, cells, loading, error } = useExperimentalSuiteGrid(datasetId);
 
     const handleCellClick = (run, test) => {
-        navigate(`/${lang}/experimental/analysis/${run._id}?open=${test.position}`);
+        navigate(`${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`);
     };
 
     return (
@@ -43,10 +44,10 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}
                     </GcdsLink>
-                    <GcdsLink href={`/${lang}/experimental/analysis?datasetId=${datasetId}`}>
+                    <GcdsLink href={`${getPath('experimental-analysis', lang)}?datasetId=${datasetId}`}>
                         {t('experimental.suite.newRun')}
                     </GcdsLink>
                 </div>

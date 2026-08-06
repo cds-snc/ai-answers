@@ -306,7 +306,16 @@
         "process": "Process",
         "delete": "Delete",
         "confirmDelete": "Are you sure you want to delete this batch?",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "deleteSuccess": "Batch deleted.",
+        "deleteError": "Failed to delete batch.",
+        "exportSuccess": "Batch exported.",
+        "exportEmpty": "No chats found to export for this batch.",
+        "exportError": "Failed to export batch.",
+        "processError": "Failed to process batch.",
+        "processSuccess": "Batch processing finished.",
+        "cancelSuccess": "Batch cancelled.",
+        "cancelError": "Failed to cancel batch."
       },
       "types": {
         "client": "Client"
@@ -499,6 +508,7 @@
       "chunkSizeLabel": "Chunk size (MB):",
       "throttleLabel": "Throttle (ms):",
       "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
+      "importFileLabel": "Import file (.jsonl):",
       "importingLabel": "Importing...",
       "importButton": "Import database",
       "integrityTitle": "Integrity checks",
@@ -666,7 +676,7 @@
       "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
-      "dateRange": "Date range (24-hour)",
+      "dateRange": "Date range",
       "dateRangePickerDialog": "Date range calendar",
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
@@ -814,7 +824,7 @@
         "chatId": "Chat ID",
         "questionNumber": "Q #",
         "department": "Department",
-        "program": "Program",
+        "program": "Service",
         "action": "Action",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
@@ -881,8 +891,6 @@
       "title": "Delete a chat from the logs",
       "idLabel": "Chat ID",
       "button": "Delete chat",
-      "confirm": "Confirm delete",
-      "cancel": "Cancel",
       "loading": "Deleting...",
       "success": "Chat deleted successfully",
       "error": "Failed to delete chat: "
@@ -1000,7 +1008,11 @@
     "actions": {
       "delete": "Delete",
       "confirmDelete": "Are you sure you want to delete this user?",
-      "adminOnly": "Only administrators can delete users."
+      "adminOnly": "Only administrators can delete users.",
+      "saveSuccess": "User updated.",
+      "saveError": "Failed to update user.",
+      "deleteSuccess": "User deleted.",
+      "deleteError": "Failed to delete user."
     }
   },
   "workflows": {
@@ -1016,6 +1028,8 @@
   },
   "settings": {
     "title": "Settings",
+    "saveSuccess": "Setting saved.",
+    "saveError": "Failed to save setting.",
     "general": {
       "title": "General settings"
     },
@@ -1419,7 +1433,7 @@
       "title": "Safety metrics"
     },
     "programs": {
-      "title": "Question volume by program",
+      "title": "Question volume by service",
       "subtitle": "{total} classified questions · EN: {en} · FR: {fr}",
       "unclassifiedNote": "{count} not yet classified",
       "tooltipCount": "{count} questions",
@@ -1448,7 +1462,7 @@
     },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
@@ -1459,7 +1473,7 @@
       "error": "The analysis failed. Partial results may be shown below.",
       "running": {
         "preparing": "Preparing analysis…",
-        "classifying": "Classifying programs… {done} of {total}",
+        "classifying": "Classifying services… {done} of {total}",
         "synthesizing": "Writing findings…"
       },
       "status": {
@@ -1476,6 +1490,7 @@
         "colCount": "Evaluations",
         "colStatus": "Status",
         "colBy": "Run by",
+        "colActions": "Actions",
         "view": "View"
       },
       "report": {
@@ -1484,15 +1499,15 @@
         "runOn": "Run on {date}",
         "runBy": "by {email}",
         "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by program",
+        "unclassified": "{count} could not be classified by service",
         "partial": "This analysis did not finish — the results below are partial.",
         "running": "This analysis is still running ({status}). The results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
         "rowsTitle": "Evaluation details",
         "viewRowData": "View all row data",
         "noValue": "Not available",
-        "programActionsTitle": "Scores by program and action",
-        "colProgramAction": "Program — action",
+        "programActionsTitle": "Scores by service and action",
+        "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
         "colCount": "Evaluations",
         "colNonPerfect": "Non-perfect",
@@ -1515,7 +1530,7 @@
         "colEvaluator": "Evaluator",
         "colQuestion": "Question",
         "colScore": "Score",
-        "colProgram": "Program",
+        "colProgram": "Service",
         "colAction": "Action",
         "colDetails": "Details",
         "flagged": "Review"
@@ -1664,6 +1679,7 @@
     "createIndex": "Create vector index",
     "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
+    "embeddingProviderLabel": "Embedding provider",
     "generateEmbeddings": "Generate embeddings",
     "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
@@ -1890,6 +1906,7 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
+    "testComplete": "Connectivity test complete: {connected} connected, {errors} errors, {warnings} warnings.",
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
