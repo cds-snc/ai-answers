@@ -13,12 +13,17 @@ const BlockedQueriesTable = ({ blockedQueries = {}, lang = 'en', t }) => {
 
   return (
     <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <caption className="sr-only">{t('blockedQueries.byTypeTitle')}</caption>
+      {/* This table has headers on both axes (col headers below + the Total
+          row header further down) — scope is what disambiguates which axis
+          each <th> labels in that mixed case (WCAG 1.3.1, technique H63).
+          For a simple single-axis header row, <th> alone is normally enough. */}
       <thead>
         <tr>
-          <th style={{ textAlign: 'left' }}>{t('blockedQueries.colType')}</th>
-          <th style={{ textAlign: 'right' }}>{t('blockedQueries.colTotal')}</th>
-          <th style={{ textAlign: 'right' }}>{t('blockedQueries.colEn')}</th>
-          <th style={{ textAlign: 'right' }}>{t('blockedQueries.colFr')}</th>
+          <th scope="col" style={{ textAlign: 'left' }}>{t('blockedQueries.colType')}</th>
+          <th scope="col" style={{ textAlign: 'right' }}>{t('blockedQueries.colTotal')}</th>
+          <th scope="col" style={{ textAlign: 'right' }}>{t('blockedQueries.colEn')}</th>
+          <th scope="col" style={{ textAlign: 'right' }}>{t('blockedQueries.colFr')}</th>
         </tr>
       </thead>
       <tbody>
@@ -34,7 +39,7 @@ const BlockedQueriesTable = ({ blockedQueries = {}, lang = 'en', t }) => {
           );
         })}
         <tr style={{ fontWeight: 600 }}>
-          <td>{t('blockedQueries.totalRow')}</td>
+          <th scope="row" style={{ textAlign: 'left', fontWeight: 600 }}>{t('blockedQueries.totalRow')}</th>
           <td style={{ textAlign: 'right' }}>{fmtN(totals.total)}</td>
           <td style={{ textAlign: 'right' }}>{fmtN(totals.en)}</td>
           <td style={{ textAlign: 'right' }}>{fmtN(totals.fr)}</td>

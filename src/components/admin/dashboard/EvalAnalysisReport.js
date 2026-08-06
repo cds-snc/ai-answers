@@ -30,18 +30,18 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   const rowTable = Array.isArray(analysis.rows) && analysis.rows.length > 0 && (
     <div className="dashboard-section">
-      <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
+      <h3 id="eval-analysis-rows-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
       <div style={{ overflowX: 'auto' }}>
-        <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="display" aria-labelledby="eval-analysis-rows-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-              <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
+              <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
             </tr>
           </thead>
           <tbody>
@@ -84,29 +84,35 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
     );
   };
 
+  // This table has headers on both axes (col headers here + a row header for
+  // each label below) — scope is what disambiguates which axis each <th>
+  // labels in that mixed case (WCAG 1.3.1, technique H63). The other tables
+  // in this file only have column headers, where <th> alone is normally
+  // enough, but scope="col" is kept on those too since it's harmless and
+  // keeps the pattern consistent across the file.
   const crossTabTable = (rows, labelColLabel) => (
     <div style={{ overflowX: 'auto' }}>
-      <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="display" aria-labelledby="eval-analysis-program-actions-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th style={head}>{labelColLabel}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
-            <th style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
+            <th scope="col" style={head}>{labelColLabel}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
+            <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.label}>
-              <td style={cell}>
+              <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 'normal' }}>
                 {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
                   <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#2e8540' }}>
                     {t('partnerDashboard.evalAnalysis.report.allPerfect')}
                   </span>
                 )}
-              </td>
+              </th>
               <td style={numCell}>{fmtN(row.count)}</td>
               <td style={numCell}>{fmtN(row.nonPerfectCount)}</td>
               <td style={numCell}>{pctOrDash(row.pctNonPerfect)}</td>
@@ -163,7 +169,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Scores by combined program — action group (Tier 2 cross-tab) */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
+          <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
           {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'))}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
@@ -216,15 +222,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* EN vs FR */}
       {stats && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
+          <h3 id="eval-analysis-language-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
-            <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="display" aria-labelledby="eval-analysis-language-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,15 +258,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           (which uses the same delta internally) stays. */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
+          <h3 id="eval-analysis-evaluators-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
-            <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="display" aria-labelledby="eval-analysis-evaluators-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>
