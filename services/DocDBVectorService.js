@@ -457,6 +457,7 @@ class DocDBVectorService {
           interactionId: r.interactionId?.toString?.() || r.interactionId || null,
           expertFeedbackId: r.expertFeedbackId || null,
           similarity: sim,
+          expertFeedbackCreatedAt: r.expertFeedbackCreatedAt || null,
         };
         debugCandidates.push(debugEntry);
         if (threshold !== null && sim < threshold) continue;

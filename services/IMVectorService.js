@@ -472,6 +472,7 @@ class IMVectorService {
           interactionId: meta.interactionId || null,
           expertFeedbackId,
           similarity: sim,
+          expertFeedbackCreatedAt: meta.expertFeedbackCreatedAt || null,
         });
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim, expertFeedbackCreatedAt: meta.expertFeedbackCreatedAt || null });
         if (!(useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) && mapped.length >= k * 2) break;
