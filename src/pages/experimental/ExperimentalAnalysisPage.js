@@ -65,10 +65,8 @@ const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${St
 
 const ANALYSIS_RULE_ROWS = {
     'no-analyzer': ['always'],
-    // Expert scorer cannot run without the dataset's reference answer. Keep
-    // its two rows focused on that analysis, rather than implying a run-to-run
-    // comparison can be configured from this tab.
-    'expert-scorer': ['referenceAnswer', 'qualityReview'],
+    // Expert scorer requires the dataset's reference answer in analysis mode.
+    'expert-scorer': ['referenceAnswer'],
     'similar-answer': ['withDatasetReference', 'withoutReference'],
     refusal: ['withDatasetReference', 'withoutReference'],
     safety: ['withDatasetReference', 'withoutReference'],

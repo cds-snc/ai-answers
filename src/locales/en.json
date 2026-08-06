@@ -2043,7 +2043,7 @@
         "analyzerDetailsTitle": "Comparison analyzer details",
         "analyzers": {
           "no-analyzer": "No scoring is performed. The comparison only confirms that paired rows and stored outputs are available.",
-          "expert-scorer": "Each run is evaluated against the dataset reference when available, then the comparison explains which run has stronger correctness, completeness, and answer quality. Without a dataset reference, the baseline answer is the comparison reference.",
+          "expert-scorer": "Requires a reference answer for every comparison. Each run is evaluated against the dataset reference when available; otherwise, the selected baseline answer is used as the reference. The comparison explains which run has stronger correctness, completeness, and answer quality.",
           "similar-answer": "The two answers are compared for meaningful factual drift. When a dataset reference exists, both answers are also compared with it and the result identifies which run is more similar. Harmless wording changes are ignored.",
           "refusal": "The refusal state of both answers is compared. If a dataset reference exists, both runs are also checked against its refusal state. A change in refusal behavior is flagged.",
           "safety": "Both questions and answers are evaluated for unsafe content. The comparison reports whether either run has a safety-status change and which answer is safer; harmless wording differences are not safety flags.",
@@ -2059,8 +2059,8 @@
           "expert-scorer": {
             "title": "Expert scorer batch-comparison rules",
             "rows": {
-              "canonicalReference": { "setup": "Baseline answer, candidate answer, and dataset reference when stored", "comparison": "The candidate and baseline are each assessed against the same dataset reference. If the stored dataset reference is unavailable, the baseline is used as the evaluation reference.", "flagged": "The candidate can fail for missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality." },
-              "runToRun": { "setup": "Paired baseline and candidate answers", "comparison": "The analyzer returns separate baseline and candidate assessments, then reports whether the candidate improved, regressed, was unchanged, or needs review.", "flagged": "A quality failure and the run-to-run drift result are reported separately." }
+              "canonicalReference": { "setup": "Baseline answer, candidate answer, and a required reference answer", "comparison": "The candidate and baseline are each assessed against the dataset reference when available. If it is unavailable, the selected baseline answer is used as the required reference.", "flagged": "The candidate can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules." },
+              "runToRun": { "setup": "Paired baseline and candidate answers with a required reference", "comparison": "The analyzer returns separate baseline and candidate assessments, then reports whether the candidate improved, regressed, was unchanged, or needs review.", "flagged": "A quality failure or a change in the candidate’s quality compared with the baseline can be flagged." }
             }
           },
           "similar-answer": {
@@ -2112,7 +2112,7 @@
       "selectBaseline": "Select reference batch (comparison)",
       "baselineHint": "Pick a completed batch to act as the comparison reference. Comparisons use that batch's answers.",
       "referenceHint": "If no reference batch is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
-      "expertScorerDescription": "Requires a dataset reference answer in analysis mode. It judges the newly generated answer against that reference for key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall quality. Batch-to-batch drift is shown only in Compare batches.",
+      "expertScorerDescription": "Requires a reference answer for every run. In analysis mode, it judges the newly generated answer against the dataset reference for key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall quality. In Compare batches, the dataset reference is used when available; otherwise, the selected baseline answer is the required reference.",
       "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison batch. Use a question and answer dataset with a referenceAnswer column, or a comparison batch.",
       "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare answers with the selected reference batch for drift.",
       "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference batch's answers will replace it as the comparison reference. Results will measure drift from that batch, not against the dataset reference answer.",
@@ -2138,22 +2138,17 @@
           "referenceAnswer": {
             "setup": "Dataset with a reference answer",
             "comparison": "Analysis mode always compares the newly generated answer with the dataset reference answer.",
-            "flagged": "Expert scorer cannot be run without a reference answer."
-          },
-          "qualityReview": {
-            "setup": "Generated answer and dataset reference answer",
-            "comparison": "Checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall answer quality.",
-            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules."
           },
           "datasetOnly": {
             "setup": "Dataset reference, no reference batch",
             "comparison": "Current answer against the dataset reference answer.",
-            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules."
           },
           "datasetAndRun": {
             "setup": "Dataset reference and reference batch",
             "comparison": "Main verdict against the dataset reference; separate drift result against the previous batch.",
-            "flagged": "The main verdict can be flagged for quality issues. Drift is reported separately as improved, regressed, unchanged, or needs review."
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules. Drift is reported separately."
           }
         }
       },
@@ -2301,7 +2296,7 @@
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "Judges answer quality against Government of Canada expectations. It can score a question and answer pair on its own, or compare that answer against a reference answer or reference run when you provide one. What each answer is judged against depends on how you set up the run:\n• Your dataset has a reference answer column — each answer is judged against the expert-approved reference: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard.\n• You selected a reference run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has a reference answer, the reference run's answers take precedence.\nUse this as the default scorer when you want a broad quality judgment, whether or not you have a comparison answer."
+          "description": "Requires a reference answer for every run. It judges answer quality against Government of Canada expectations, including missing key ideas, changed recommendations, answer-type regressions, unsupported claims, and overall quality. In analysis mode, the dataset reference is required. In Compare batches, the dataset reference is used when available; otherwise, the selected baseline answer is the required reference."
         },
         "refusal": {
           "name": "Refusal",

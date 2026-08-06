@@ -2043,7 +2043,7 @@
         "analyzerDetailsTitle": "Détails de l’analyseur de comparaison",
         "analyzers": {
           "no-analyzer": "Aucune notation n’est effectuée. La comparaison vérifie seulement que les lignes appariées et les résultats enregistrés sont disponibles.",
-          "expert-scorer": "Chaque exécution est évaluée par rapport à la référence de l’ensemble de données lorsqu’elle existe, puis la comparaison indique quelle exécution offre la meilleure exactitude, exhaustivité et qualité de réponse. Sans référence de l’ensemble de données, la réponse de référence sert de référence de comparaison.",
+          "expert-scorer": "Une réponse de référence est requise pour chaque comparaison. Chaque exécution est évaluée par rapport à la référence de l’ensemble de données lorsqu’elle existe ; sinon, la réponse du lot de référence sélectionné sert de référence. La comparaison indique quelle exécution offre la meilleure exactitude, exhaustivité et qualité de réponse.",
           "similar-answer": "Les deux réponses sont comparées pour détecter les dérives factuelles importantes. Lorsqu’une référence de l’ensemble de données existe, les deux réponses y sont aussi comparées et le résultat indique quelle exécution lui ressemble le plus. Les changements de formulation inoffensifs sont ignorés.",
           "refusal": "L’état de refus des deux réponses est comparé. Lorsqu’une référence de l’ensemble de données existe, les deux exécutions sont aussi vérifiées par rapport à son état de refus. Tout changement du comportement de refus est signalé.",
           "safety": "Les questions et les réponses sont évaluées pour détecter le contenu dangereux. La comparaison indique tout changement d’état de sécurité et quelle réponse est la plus sûre; les différences de formulation inoffensives ne sont pas signalées comme des problèmes de sécurité.",
@@ -2059,8 +2059,8 @@
           "expert-scorer": {
             "title": "Règles de comparaison par lot de l’évaluateur expert",
             "rows": {
-              "canonicalReference": { "setup": "Réponse de référence, réponse candidate et référence de l’ensemble de données lorsqu’elle est enregistrée", "comparison": "La réponse candidate et la réponse de référence sont chacune évaluées par rapport à la même référence de l’ensemble de données. Si la référence enregistrée n’est pas disponible, la réponse de référence sert de référence d’évaluation.", "flagged": "La candidate peut échouer en raison d’idées clés manquantes, de recommandations modifiées, d’affirmations non fondées, de régressions du type de réponse, de balises invalides ou d’une qualité sensiblement inférieure." },
-              "runToRun": { "setup": "Réponses de référence et candidate appariées", "comparison": "L’analyseur produit des évaluations distinctes pour les réponses de référence et candidate, puis indique si la candidate s’est améliorée, a régressé, est inchangée ou doit être vérifiée.", "flagged": "Un échec de qualité et le résultat de dérive entre les lots sont signalés séparément." }
+              "canonicalReference": { "setup": "Réponse de référence, réponse candidate et réponse de référence obligatoire", "comparison": "La réponse candidate et la réponse de référence sont chacune évaluées par rapport à la référence de l’ensemble de données lorsqu’elle existe. Sinon, la réponse du lot de référence sélectionné sert de référence obligatoire.", "flagged": "La candidate peut être signalée si elle omet des informations clés, contient des informations non fondées ou inventées, présente une régression du type de réponse, utilise des balises XML invalides ou ne respecte pas les règles de longueur." },
+              "runToRun": { "setup": "Réponses de référence et candidate appariées avec une référence obligatoire", "comparison": "L’analyseur produit des évaluations distinctes pour les réponses de référence et candidate, puis indique si la candidate s’est améliorée, a régressé, est inchangée ou doit être vérifiée.", "flagged": "Un échec de qualité ou un changement de la qualité de la candidate par rapport à la réponse de référence peut être signalé." }
             }
           },
           "similar-answer": {
@@ -2112,7 +2112,7 @@
       "selectBaseline": "Sélectionner un lot de référence (comparaison)",
       "baselineHint": "Choisissez un lot terminé comme référence de comparaison. Les comparaisons utilisent les réponses de ce lot.",
       "referenceHint": "Si aucun lot de référence n'est sélectionné, la référence de l'ensemble de données est utilisée automatiquement. Pour les ensembles de données de questions et réponses, la colonne answer sert de référence pour les analyseurs de comparaison.",
-      "expertScorerDescription": "Exige une réponse de référence de l’ensemble de données en mode analyse. Il évalue la réponse nouvellement générée par rapport à cette référence pour les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. La dérive entre les lots est affichée seulement dans Comparer les lots.",
+      "expertScorerDescription": "Exige une réponse de référence pour chaque exécution. En mode analyse, il évalue la réponse nouvellement générée par rapport à la référence de l’ensemble de données pour les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale. Dans Comparer les lots, la référence de l’ensemble de données est utilisée lorsqu’elle existe ; sinon, la réponse du lot de référence sélectionné sert de référence obligatoire.",
       "expertScorerInfo": "L'évaluateur expert nécessite une réponse de référence provenant de l'ensemble de données ou d'un lot de comparaison. Utilisez un ensemble de données de questions et réponses avec une colonne referenceAnswer, ou un lot de comparaison.",
       "expertScorerBaselineHint": "L’évaluateur expert utilisera la réponse de référence de l’ensemble de données pour la note de qualité principale et comparera les réponses au lot de référence sélectionné pour mesurer la dérive.",
       "baselineOverridesReference": "Avertissement : cet ensemble de données contient une colonne de réponse de référence, mais les réponses de l'exécution de référence sélectionnée la remplaceront comme référence de comparaison pour cette exécution. Les résultats mesureront la dérive par rapport à cette exécution, et non par rapport à la réponse de référence de l'ensemble de données. Choisissez « Aucune exécution de référence » pour comparer à la réponse de référence de l'ensemble de données.",
@@ -2138,22 +2138,17 @@
           "referenceAnswer": {
             "setup": "Ensemble de données avec une réponse de référence",
             "comparison": "Le mode analyse compare toujours la réponse nouvellement générée à la réponse de référence de l’ensemble de données.",
-            "flagged": "L’évaluateur expert ne peut pas être exécuté sans réponse de référence."
-          },
-          "qualityReview": {
-            "setup": "Réponse générée et réponse de référence de l’ensemble de données",
-            "comparison": "Vérifie les idées clés, les recommandations, le type de réponse, l’intégrité des sources du gouvernement du Canada, les balises XML, les affirmations non fondées et la qualité générale.",
-            "flagged": "Des idées clés manquantes, des recommandations modifiées, des affirmations non fondées, des régressions du type de réponse, des balises invalides ou une qualité sensiblement inférieure."
+            "flagged": "Une réponse peut être signalée si elle omet des informations clés, contient des informations non fondées ou inventées, présente une régression du type de réponse, utilise des balises XML invalides ou ne respecte pas les règles de longueur."
           },
           "datasetOnly": {
             "setup": "Référence de l’ensemble de données, sans exécution de référence",
             "comparison": "La réponse actuelle est comparée à la réponse de référence de l’ensemble de données.",
-            "flagged": "Idées clés manquantes, recommandations modifiées, affirmations non fondées, régressions du type de réponse, balises invalides ou qualité sensiblement inférieure."
+            "flagged": "Une réponse peut être signalée si elle omet des informations clés, contient des informations non fondées ou inventées, présente une régression du type de réponse, utilise des balises XML invalides ou ne respecte pas les règles de longueur."
           },
           "datasetAndRun": {
             "setup": "Référence de l’ensemble de données et exécution de référence",
             "comparison": "Verdict principal par rapport à la référence de l’ensemble de données; résultat de dérive distinct par rapport à l’exécution précédente.",
-            "flagged": "Le verdict principal peut être signalé pour des problèmes de qualité. La dérive est indiquée séparément comme améliorée, régressée, inchangée ou à vérifier."
+            "flagged": "Une réponse peut être signalée si elle omet des informations clés, contient des informations non fondées ou inventées, présente une régression du type de réponse, utilise des balises XML invalides ou ne respecte pas les règles de longueur. La dérive est indiquée séparément."
           }
         }
       },
@@ -2301,7 +2296,7 @@
         },
         "expert-scorer": {
           "name": "Évaluateur expert",
-          "description": "Évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada. Il peut évaluer une paire question et réponse seule, ou comparer cette réponse à une réponse de référence ou à une exécution de comparaison lorsque vous en fournissez une. La référence utilisée pour évaluer chaque réponse dépend de la configuration de l'exécution :\n• Votre ensemble de données contient une colonne de réponse de référence — chaque réponse est évaluée par rapport à la réponse approuvée par l'expert : idées clés manquantes, recommandations modifiées et régressions de type de réponse (par exemple, une réponse normale qui devient un refus). Un échec signifie que la réponse est erronée ou plus faible que la norme de l'expert.\n• Vous avez sélectionné une exécution de comparaison — la même évaluation, mais la référence est constituée des réponses générées par cette exécution : un échec signifie que la qualité a changé depuis cette exécution, pas que la réponse est erronée. Si l'ensemble de données contient aussi une réponse de référence, les réponses de l'exécution de comparaison ont priorité.\nUtilisez cet analyseur par défaut lorsque vous voulez un jugement de qualité global, avec ou sans réponse de comparaison."
+          "description": "Exige une réponse de référence pour chaque exécution. Il évalue la qualité des réponses par rapport aux attentes du gouvernement du Canada, notamment les idées clés manquantes, les recommandations modifiées, les régressions du type de réponse, les affirmations non fondées et la qualité générale. En mode analyse, la référence de l’ensemble de données est obligatoire. Dans Comparer les lots, la référence de l’ensemble de données est utilisée lorsqu’elle existe ; sinon, la réponse du lot de référence sélectionné sert de référence obligatoire."
         },
         "refusal": {
           "name": "Refus",

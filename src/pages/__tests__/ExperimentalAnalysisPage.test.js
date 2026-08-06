@@ -266,7 +266,7 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getByText('Analyzer 1 description')).toBeTruthy();
     });
 
-    it('shows Expert scorer’s two reference-required analysis rules', async () => {
+    it('shows Expert scorer’s reference-required analysis rule', async () => {
         mockListAnalyzers.mockResolvedValueOnce([{
             id: 'expert-scorer',
             nameKey: 'experimental.analysis.analyzers.expert-scorer.name',
@@ -293,7 +293,7 @@ describe('ExperimentalAnalysisPage', () => {
         });
 
         expect(screen.getByText('experimental.analysis.analyzerRules.expert-scorer.rows.referenceAnswer.setup')).toBeTruthy();
-        expect(screen.getByText('experimental.analysis.analyzerRules.expert-scorer.rows.qualityReview.setup')).toBeTruthy();
+        expect(screen.queryByText('experimental.analysis.analyzerRules.expert-scorer.rows.qualityReview.setup')).toBeNull();
     });
 
     it('shows the selected analyzer’s batch-comparison rules in Compare batches', async () => {
