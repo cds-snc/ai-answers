@@ -568,7 +568,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderComparisonActions = (comparison) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
@@ -576,7 +576,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderBatchActions = (batch) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`/${lang}/experimental/analysis/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
             {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
@@ -660,11 +660,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </GcdsText>
                 )}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}
                     </GcdsLink>
                     {selectedDatasetId && (
-                        <GcdsLink href={`/${lang}/experimental/suites/${selectedDatasetId}`}>
+                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${selectedDatasetId}`}>
                             {t('experimental.analysis.suiteView')}
                         </GcdsLink>
                     )}
@@ -867,7 +867,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <section>
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {startingRun && (
-                                <div className="border p-200 mb-200 rounded bg-light">
+                                <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
                                     {startingRun.name && (
                                     <div><strong>{startingRun.name}</strong></div>
                                     )}

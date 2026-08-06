@@ -30,6 +30,7 @@ export const ROUTE_SLUGS = {
   'experimental-datasets': { en: 'experimental/datasets',         fr: 'experimental/ensembles-de-donnees' },
   'experimental-create-dataset': { en: 'experimental/create-dataset', fr: 'experimental/creer-ensemble-de-donnees' },
   'experimental-analysis': { en: 'experimental/analysis',         fr: 'experimental/analyse' },
+  'experimental-suites':   { en: 'experimental/suites',           fr: 'experimental/suites-de-tests' },
 };
 
 /**

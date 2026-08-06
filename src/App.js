@@ -461,7 +461,7 @@ export default function App() {
       { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'] },
       { path: '/fr/experimental/analyse/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
+      { path: '/fr/experimental/suites-de-tests/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
     ];
 
     // sessions routes are defined in the protectedRoutes array above
