@@ -233,8 +233,6 @@ class EmbeddingMetadataService {
       ? pageLanguageOverride
       : await getPageLanguage(interaction._id);
     const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
-    const normalizedPageLanguage = normalizeMatchLanguage(pageLanguage);
-    const normalizedInteractionLanguage = normalizeMatchLanguage(interactionLanguage);
     const metadata = feedbackMetadata(feedback);
     let updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
     if (onlyMissingMetadata) {
@@ -248,8 +246,8 @@ class EmbeddingMetadataService {
     const update = {
       ...metadata,
       interactionId: interaction._id,
-      pageLanguage: normalizedPageLanguage || undefined,
-      interactionLanguage: normalizedInteractionLanguage || undefined,
+      pageLanguage: pageLanguage || undefined,
+      interactionLanguage: normalizeMatchLanguage(interactionLanguage) || undefined,
     };
 
     const updateResult = await Embedding.updateMany(
@@ -266,8 +264,8 @@ class EmbeddingMetadataService {
           expertFeedbackTotalScore: metadata.expertFeedbackTotalScore,
           expertFeedbackCreatedAt: metadata.expertFeedbackCreatedAt || null,
           expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
-          pageLanguage: normalizedPageLanguage || null,
-          interactionLanguage: normalizedInteractionLanguage || null,
+          pageLanguage: pageLanguage || null,
+          interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
         },
         feedbackType: normalizeFeedbackType(feedback),
       };
@@ -281,8 +279,8 @@ class EmbeddingMetadataService {
         expertFeedbackTotalScore: metadata.expertFeedbackTotalScore,
         expertFeedbackCreatedAt: metadata.expertFeedbackCreatedAt || null,
         expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
-        pageLanguage: normalizedPageLanguage || null,
-        interactionLanguage: normalizedInteractionLanguage || null,
+        pageLanguage: pageLanguage || null,
+        interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
       },
       feedbackType: normalizeFeedbackType(feedback),
     };
