@@ -1,5 +1,6 @@
 function feedbackTimestamp(value) {
   const timestamp = value ? new Date(value).getTime() : NaN;
+  // Treat missing or invalid review dates as older than any valid timestamp.
   return Number.isFinite(timestamp) ? timestamp : -Infinity;
 }
 
