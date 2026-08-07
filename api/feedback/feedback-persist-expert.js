@@ -38,7 +38,7 @@ async function feedbackPersistExpertHandler(req, res) {
     existingInteraction.expertFeedback = expertFeedbackDoc._id;
     await expertFeedbackDoc.save();
     await existingInteraction.save();
-    await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc);
+    await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc.toObject());
     // Add embedding to VectorService
     const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });
     if (embedding && embedding.questionsAnswerEmbedding && embedding.answerEmbedding) {
