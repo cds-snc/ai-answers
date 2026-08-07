@@ -53,7 +53,7 @@ async function feedbackExpertNeverStaleHandler(req, res) {
       interaction.expertFeedback = ef._id;
       await interaction.save();
     }
-    await EmbeddingMetadataService.syncForInteraction(interaction, ef);
+    await EmbeddingMetadataService.syncForInteraction(interaction, ef.toObject());
 
     return res.status(200).json({ message: 'Expert feedback updated', expertFeedback: ef });
   } catch (err) {
