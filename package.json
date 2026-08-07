@@ -98,6 +98,7 @@
     "react-router-dom": "^7.18.1",
     "recharts": "^2.15.3",
     "redis": "^5.10.0",
+    "remark-gfm": "^4.0.1",
     "similarity": "^1.2.1",
     "speakeasy": "^2.0.0",
     "streamsaver": "^2.0.6",

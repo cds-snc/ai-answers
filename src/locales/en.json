@@ -548,6 +548,15 @@
       "totalInactive": "total inactive user(s)",
       "viewUsers": "View and manage users"
     },
+    "howTo": {
+      "title": "How to",
+      "evalInformedAnswers": "Evaluation-informed answers — how it works and how to use it",
+      "backToAdmin": "Back to the admin page",
+      "loading": "Loading...",
+      "loadError": "Unable to load this guide.",
+      "notFoundTitle": "Guide not found",
+      "notFound": "That how-to guide does not exist."
+    },
     "viewChat": {
       "title": "View chat by ID",
       "label": "Chat ID",
@@ -1020,7 +1029,7 @@
     "defaultWithVector": "Instant answer ON",
     "defaultWithLocalModel": "Local-model instant answer ON",
     "instantAndQA": "Instant answer with context ON",
-    "genericWithQA": "Past Q&A context ON"
+    "genericWithQA": "Past evals context ON"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
@@ -1297,7 +1306,7 @@
     "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages",
-    "usedQaChatsTitle": "Past Q&A used",
+    "usedQaChatsTitle": "Past evals used",
     "chatId": "Chat ID"
   },
   "dashboardFilter": {

@@ -47,6 +47,13 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
   }, []);
 
   useEffect(() => {
+    // No filename means the caller has nothing to load (e.g. an unknown guide id);
+    // skip the fetch rather than requesting a bogus path.
+    if (!filename) {
+      setLoading(false);
+      return;
+    }
+
     const fetchAndParseContent = async () => {
       setLoading(true);
       setError(null);

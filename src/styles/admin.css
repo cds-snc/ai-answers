@@ -1712,3 +1712,28 @@
     padding: 15px;
   }
 }
+
+/* How-to guides (rendered from markdown in public/content/admin/) */
+.how-to-content .how-to-screenshot {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--gcds-border-default, #6f7680);
+  margin-bottom: var(--gcds-spacing-300, 1rem);
+}
+
+.how-to-table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--gcds-spacing-400, 1.5rem);
+}
+
+.how-to-content table {
+  border-collapse: collapse;
+}
+
+.how-to-content th,
+.how-to-content td {
+  border: 1px solid var(--gcds-border-default, #6f7680);
+  padding: var(--gcds-spacing-200, 0.5rem);
+  text-align: left;
+  vertical-align: top;
+}
