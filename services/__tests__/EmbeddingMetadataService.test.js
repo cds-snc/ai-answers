@@ -116,7 +116,7 @@ describe('EmbeddingMetadataService', () => {
   it('stores both pageLanguage and interactionLanguage when syncing metadata', async () => {
     mockChatFindOne.mockReturnValue({
       select: () => ({
-        lean: async () => ({ pageLanguage: 'fr' }),
+        lean: async () => ({ pageLanguage: 'fra' }),
       }),
     });
     mockUpdateMany.mockResolvedValue({ matchedCount: 2, modifiedCount: 2 });
@@ -124,7 +124,7 @@ describe('EmbeddingMetadataService', () => {
     const result = await EmbeddingMetadataService.syncForInteraction({
       _id: '507f1f77bcf86cd799439011',
       interactionId: '3',
-      question: { language: 'en' },
+      question: { language: 'eng' },
       expertFeedback: {
         _id: '507f1f77bcf86cd799439012',
         totalScore: 100,
