@@ -39,6 +39,66 @@ This regenerates `docs/agents-prompts/system-prompt-documentation.md`.
 - `public/content/about-en.md`
 - `public/content/about-fr.md`
 
+See [Markdown-driven pages](#markdown-driven-pages) below for how these render.
+
+## Markdown-driven pages
+
+A few pages take their text from markdown under `public/content/` instead of the
+locale files, so content can be edited without touching components. Everything in
+`public/` is copied into `build/` and served as static files — it is **not**
+behind auth, so don't put anything there that shouldn't be public.
+
+| Page | Files | Renders |
+|---|---|---|
+| About | `public/content/about-{en,fr}.md` | Named `##` sections, picked out by key in `AboutPage.js` |
+| Admin how-to guides | `public/content/admin/*.md` | The whole document, via `HowToPage.js` |
+
+Both use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
+file, splits the YAML frontmatter, and also exposes `sections` keyed by `##`
+heading.
+
+### Frontmatter contract
+
+```markdown
+---
+title: "Page title — AI Answers"
+description: "One sentence, used for the meta description."
+---
+
+# Heading
+```
+
+`title` sets `document.title`; `description` sets the meta description. Both are
+optional but expected on every page.
+
+**Gotcha:** the hook parses YAML with `js-yaml` directly, *not* `gray-matter`.
+`package.json` `overrides` pins `js-yaml` to 4.x for every dependency, and
+gray-matter calls the `safeLoad` API that js-yaml 4 removed — under that pin
+every gray-matter call throws. Don't reintroduce it. Note that a parse failure
+is invisible on the About page (it only renders `##` sections, so a broken
+frontmatter block silently disappears) but renders as raw text on a how-to page.
+
+### Adding a how-to guide
+
+1. Add the two markdown files to `public/content/admin/`, named in their own
+   language (English name for EN, French name for FR).
+2. Reference images as absolute paths — `/content/admin/images/foo-en.jpg`.
+   Keep each language's screenshots on its own page only.
+3. Add a route to `ROUTE_SLUGS` in `src/utils/routes.js` (French slug must be a
+   real translation).
+4. Add an entry to `HOW_TOS` in `src/config/howTos.js` with the matching route.
+5. Add the `titleKey` to both `src/locales/en.json` and `fr.json`.
+
+Routes, the admin-page link, and the AI Answers breadcrumb are all derived from
+`HOW_TOS`, so steps 3–5 are all that's needed — no component changes.
+
+### Rendering gotcha: GCDS resets list markers
+
+The GCDS utility stylesheet applies `ol,ul{list-style:none}` globally and caps
+`p{max-width:var(--gcds-text-character-limit)}`. Markdown-rendered lists
+therefore need markers and the readable width asked for explicitly — see the
+`ul`/`ol` overrides in `HowToPage.js` (`list-disc`/`list-decimal` + `text-measure`).
+
 ## Building an Admin Dashboard
 
 Reuse the shared dashboard building blocks — don't recompute metrics or redefine cards/colours per page. All figures are computed server-side by the `metrics-*` endpoints; the frontend only fetches and formats.

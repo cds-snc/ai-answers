@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import UsedChatsPanel from '../UsedChatsPanel.js';
 
 const translations = {
-    'reviewPanels.usedQaChatsTitle': 'Past Q&A used',
+    'reviewPanels.usedQaChatsTitle': 'Past evals used',
     'reviewPanels.chatId': 'Chat ID',
     'reviewPanels.totalScore': 'Total score',
     'homepage.expertRating.answerNumberLabel': 'Answer {number}',
@@ -25,7 +25,7 @@ describe('UsedChatsPanel', () => {
             }] } } }}
         />);
 
-        expect(screen.getByText('Past Q&A used: Answer 1')).not.toBeNull();
+        expect(screen.getByText('Past evals used: Answer 1')).not.toBeNull();
         const chatLink = screen.getByText('chat-1');
         expect(chatLink).not.toBeNull();
         expect(chatLink.closest('a').getAttribute('href')).toBe('/fr?chat=chat-1&review=1');

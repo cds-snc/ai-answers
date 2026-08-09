@@ -9,6 +9,7 @@ import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
 import AdminNotifications from '../components/admin/AdminNotifications.js';
+import { HOW_TOS } from '../config/howTos.js';
 
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -183,6 +184,25 @@ const AdminPage = ({ lang = 'en' }) => {
           </ul>
         </section>
       </nav>
+
+      {/* How-to guides, rendered in-app from public/content/admin/ */}
+      <RoleBasedContent roles={["admin", "partner"]}>
+        <section className="mb-400">
+          <details>
+            <summary>{t('admin.howTo.title')}</summary>
+            <ul className="list-none p-0">
+              {HOW_TOS.map((howTo) => (
+                <li key={howTo.id}>
+                  {/* New tab so the guide stays open alongside the page it describes */}
+                  <GcdsLink href={getPath(howTo.route, lang)} target="_blank" rel="noopener noreferrer">
+                    {t(howTo.titleKey)}
+                  </GcdsLink>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
+      </RoleBasedContent>
 
       {/* Quick chat lookup for admins and partners */}
       <RoleBasedContent roles={["admin", "partner"]}>

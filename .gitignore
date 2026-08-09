@@ -57,3 +57,6 @@ server-out.log
 server-err.log
 server*.log
 
+
+# Test artifact written to the repo root by services/comparators/__tests__/pinpoint.test.js
+model_stress_test.txt

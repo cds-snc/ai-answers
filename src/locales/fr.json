@@ -548,6 +548,14 @@
       "totalInactive": "utilisateur(s) inactif(s) au total",
       "viewUsers": "Voir et gérer les utilisateurs"
     },
+    "howTo": {
+      "title": "Comment faire",
+      "evalInformedAnswers": "Réponses informées par les évaluations",
+      "loading": "Chargement...",
+      "loadError": "Impossible de charger ce guide.",
+      "notFoundTitle": "Guide introuvable",
+      "notFound": "Ce guide n'existe pas."
+    },
     "viewChat": {
       "title": "Voir le chat par ID",
       "label": "ID de chat",
@@ -1020,7 +1028,7 @@
     "defaultWithVector": "Réponse instantanée ACTIVÉE",
     "defaultWithLocalModel": "Réponse instantanée avec modèle local ACTIVÉE",
     "instantAndQA": "Réponse instantanée avec contexte ACTIVÉE",
-    "genericWithQA": "Contexte de Q-R antérieures ACTIVÉ"
+    "genericWithQA": "Contexte d'évaluations antérieures ACTIVÉ"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
@@ -1297,7 +1305,7 @@
     "reEvaluate": "Réévaluer",
     "deleteEvaluation": "Supprimer l'évaluation",
     "runEvaluation": "Lancer l'évaluation",
-    "usedQaChatsTitle": "Questions et réponses antérieures utilisées",
+    "usedQaChatsTitle": "Évaluations antérieures utilisées",
     "chatId": "ID de chat"
   },
   "dashboardFilter": {
