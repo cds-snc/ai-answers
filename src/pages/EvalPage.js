@@ -4,6 +4,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 // Removed unused imports
 import EvaluationService from '../services/EvaluationService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const EvalPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
@@ -354,7 +355,7 @@ const EvalPage = ({ lang = 'en' }) => {
           </GcdsButton>
         </div>
           {evalProgress && (
-          <div className="mb-200">
+          <StatusMessage tag="div" className="mb-200">
             <p>
               {evalProgress.processed !== undefined && (
                 <span> • {t('admin.evalPage.progress.processed', 'Processed')}: {evalProgress.processed}</span>
@@ -375,7 +376,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <span> • <strong>{t('admin.evalPage.progress.regeneratingAll', 'Regenerating all evaluations')}</strong></span>
               )}
             </p>
-          </div>
+          </StatusMessage>
         )}
       </div>
     </GcdsContainer>
