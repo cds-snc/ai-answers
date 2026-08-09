@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.181.0](https://github.com/cds-snc/ai-answers/compare/v1.180.2...v1.181.0) (2026-08-09)
+
+
+### Features
+
+* make new doc for eval-informed how-to - tested in preview. ([0b8da0d](https://github.com/cds-snc/ai-answers/commit/0b8da0d0f13259b4c749d8f26cc8d2ee71a1f0eb))
+
+
+### Bug Fixes
+
+* all docs for recency ([22c5ee2](https://github.com/cds-snc/ai-answers/commit/22c5ee206e442a1f312529c7b1277e086c00ea60))
+* breadcrumb and back to admin link ([9f7771e](https://github.com/cds-snc/ai-answers/commit/9f7771e8574256fabe223466d4e8b5868bbbb527))
+* broken frontmatter ([b7188ac](https://github.com/cds-snc/ai-answers/commit/b7188ac995d27a5fd6426c9922cf187de95da8f1))
+
 ## [1.180.2](https://github.com/cds-snc/ai-answers/compare/v1.180.1...v1.180.2) (2026-08-07)
 
 
