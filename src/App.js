@@ -197,14 +197,6 @@ const AppLayout = () => {
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
 
-  // How-to guides show the AI Answers breadcrumb, like the About page. Derived
-  // from the registry so a new guide picks this up without touching App.js.
-  const isHowToPage = useMemo(
-    () => HOW_TOS.some((howTo) =>
-      ['en', 'fr'].some((howToLang) => location.pathname.includes(getPath(howTo.route, howToLang)))
-    ),
-    [location.pathname]
-  );
 
   // Set the html lang attribute synchronously (before paint/microtasks) so that
   // GCDS web components (gcds-header, gcds-footer) resolve the correct language
@@ -356,8 +348,8 @@ const AppLayout = () => {
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About, how-to and 404 pages */}
-          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || isHowToPage || is404) && (
+          {/* Show AI Answers breadcrumb on About and 404 pages */}
+          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
             <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
               {t('notFound.breadcrumb')}
             </GcdsBreadcrumbsItem>

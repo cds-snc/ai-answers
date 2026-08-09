@@ -11,11 +11,10 @@
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GcdsContainer } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
 import { getHowTo, HOW_TO_CONTENT_DIR } from '../config/howTos.js';
-import { getPath } from '../utils/routes.js';
 
 const HowToPage = ({ lang = 'en', howToId }) => {
   const { t } = useTranslations(lang);
@@ -38,18 +37,21 @@ const HowToPage = ({ lang = 'en', howToId }) => {
     }
   }, [frontmatter, loading]);
 
-  const backLink = (
-    <p className="mt-400">
-      <a href={getPath('admin', lang)}>{t('admin.howTo.backToAdmin')}</a>
-    </p>
+  // Same back-to-admin placement as every other admin page: directly under the h1.
+  const backToAdminNav = (
+    <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
+      <GcdsText>
+        <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
+      </GcdsText>
+    </nav>
   );
 
   if (!howTo) {
     return (
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('admin.howTo.notFoundTitle')}</h1>
+        {backToAdminNav}
         <p>{t('admin.howTo.notFound')}</p>
-        {backLink}
       </GcdsContainer>
     );
   }
@@ -66,8 +68,8 @@ const HowToPage = ({ lang = 'en', howToId }) => {
     return (
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t(howTo.titleKey)}</h1>
+        {backToAdminNav}
         <p>{t('admin.howTo.loadError')}</p>
-        {backLink}
       </GcdsContainer>
     );
   }
@@ -78,7 +80,14 @@ const HowToPage = ({ lang = 'en', howToId }) => {
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
-            h1: ({ children }) => <h1 className="mb-400">{children}</h1>,
+            // The guide's h1 comes from the markdown, so the back link is emitted
+            // right after it to match the other admin pages. Each guide has one h1.
+            h1: ({ children }) => (
+              <>
+                <h1 className="mb-400">{children}</h1>
+                {backToAdminNav}
+              </>
+            ),
             h2: ({ children }) => <h2 className="mt-400 mb-300">{children}</h2>,
             p: ({ children }) => <p className="mb-300">{children}</p>,
             // GCDS's reset applies `ol,ul{list-style:none}`, so markers have to be
@@ -106,7 +115,6 @@ const HowToPage = ({ lang = 'en', howToId }) => {
           {content}
         </ReactMarkdown>
       </div>
-      {backLink}
     </GcdsContainer>
   );
 };

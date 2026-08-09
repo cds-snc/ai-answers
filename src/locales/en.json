@@ -550,8 +550,7 @@
     },
     "howTo": {
       "title": "How to",
-      "evalInformedAnswers": "Evaluation-informed answers — how it works and how to use it",
-      "backToAdmin": "Back to the admin page",
+      "evalInformedAnswers": "Evaluation-informed answers",
       "loading": "Loading...",
       "loadError": "Unable to load this guide.",
       "notFoundTitle": "Guide not found",

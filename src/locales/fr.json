@@ -550,8 +550,7 @@
     },
     "howTo": {
       "title": "Comment faire",
-      "evalInformedAnswers": "Réponses informées par les évaluations — fonctionnement et utilisation",
-      "backToAdmin": "Retour à la page d'administration",
+      "evalInformedAnswers": "Réponses informées par les évaluations",
       "loading": "Chargement...",
       "loadError": "Impossible de charger ce guide.",
       "notFoundTitle": "Guide introuvable",

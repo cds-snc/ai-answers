@@ -14,6 +14,8 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 
 vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
+  GcdsText: ({ children }) => <div>{children}</div>,
+  GcdsLink: ({ href, children }) => <a href={href}>{children}</a>,
 }));
 
 const GUIDE_MARKDOWN = `---
@@ -76,6 +78,20 @@ describe('HowToPage', () => {
     expect(screen.getByAltText('A screenshot').getAttribute('src')).toBe(
       '/content/admin/images/eval-informed-past-evals-used-en.jpg'
     );
+  });
+
+  it('renders a back-to-admin link directly after the guide heading', async () => {
+    const { container } = render(<HowToPage lang="fr" howToId="eval-informed-answers" />);
+
+    await waitFor(() => expect(container.querySelector('h1')).not.toBeNull());
+
+    const link = container.querySelector('nav a');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('/fr/admin');
+
+    // The link must follow the h1, matching the other admin pages' layout.
+    const heading = container.querySelector('h1');
+    expect(heading.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows a not-found message for an unknown how-to id, without fetching', async () => {
