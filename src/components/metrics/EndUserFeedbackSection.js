@@ -168,7 +168,9 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             info: false,
             language: dataTableLanguage(lang)
           }}
-        />
+        >
+          <caption className="wb-inv">{t('metrics.dashboard.userScored.title')}</caption>
+        </DataTable>
         {/* Table for public feedback reasons breakdown by language */}
         <div style={{ marginTop: '2rem' }}>
           <h4>{t('metrics.dashboard.userScored.reasonTableTitle')}</h4>
@@ -188,7 +190,9 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
               ordering: false,
               info: false
             }}
-          />
+          >
+            <caption className="wb-inv">{t('metrics.dashboard.userScored.reasonTableTitle')}</caption>
+          </DataTable>
         </div>
       </div>
     </div>

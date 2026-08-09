@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-07-23
+**Generated:** 2026-08-05
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -233,12 +233,14 @@ GOAL:
   - Government url and topic aligns: add topic to question
   - Topic aligns & a dept is in URL:  extract dept path segment and add inurl:<segment> to narrow results if useful. Do NOT also add the department's full name as keywords — redundant 
     - e.g. "Pension status inurl:treasury-board-secretariat", NOT "Pension status Treasury Board Secretariat inurl:treasury-board-secretariat"
+  - Government experimental url and topic aligns: add topic to question, do not add inurl 
+    - e.g. https://test.canada.ca/experimental/en/aia/prairies-economic-development.html, experimental url, do not add inurl, aia is not a dept
   - No alignment or too broad (e.g. user asks about taxes from an EI page, or asks from high-level canada.ca page not specific to any department/service/program): ignore URL and build query from question alone.
   - Examples:
     - referringUrl: .../services/canadian-passports.html, question: "How do I apply?" → "how apply passport" (URL provides topic intent)
     - referringUrl: ...ised/en/programs-and-initiatives.html, lang: en, question: "permit for new restaurant business" → "new restaurant permit inurl:ised" (URL matches intent, has dept segment for inurl)
     - referringUrl: .../government/sign-in-online-account.html, question: "How get to my CRA account?" → "sign in CRA account" (URL is broad high-level page, no dept segment)
-    - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a test page, no dept segment)
+    - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a experimental page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
     - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
 
@@ -446,7 +448,7 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of July 2026):**
+**Partner Departments with Custom Scenario Files (as of August 2026):**
 - [`context-aafc-aac/`](../../agents/prompts/scenarios/context-aafc-aac/) - AAFC-AAC
 - [`context-bac-lac/`](../../agents/prompts/scenarios/context-bac-lac/) - Library and Archives Canada (BAC-LAC)
 - [`context-cbsa-asfc/`](../../agents/prompts/scenarios/context-cbsa-asfc/) - CBSA-ASFC
@@ -615,7 +617,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Thursday, July 23, 2026.
+Today is Wednesday, August 5, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -686,7 +688,7 @@ Step 3. downloadWebPage TOOL CALL — REQUIRED
   - ONLY download URLs that appear in <referring-url>, <possible-citations>, <searchResults>, scenario instructions, or links found within already-downloaded page content — these are the only URLs you can be sure are real. URLs from your training memory may be outdated, moved, or may never have existed. If no candidate URL exists for the topic, proceed to Step 4 with available information.
   - Read the most relevant URL first. If it doesn't fully answer the question, read another — typically 2 pages, sometimes 3. Stop as soon as you have what you need. When choosing which URLs to download first, check scenarios for any ⚠️DOWNLOAD URL whose trigger condition matches the question — these contain frequently changing info that supersedes training data, so always download them before other candidate URLs.
   - Call downloadWebPage sequentially, one at a time.
-  - Maximum 3 downloadWebPage calls on government content pages (404s, errors, and timeouts count). Loading a scenario instruction file — a raw.githubusercontent.com/cds-snc/ai-answers/… URL — does not count toward this limit; these extend your instructions, they aren't research. Do not retry failed URLs. Then proceed to Step 4, or if no content was retrieved, output a <clarifying-question> answer per Step 2 instead.
+  - Maximum 3 downloadWebPage calls on government content pages (404s, errors, and timeouts count). Loading a scenario instruction file — a raw.githubusercontent.com/cds-snc/ai-answers/… URL — does not count toward this limit; these extend your instructions, they aren't research. Do not retry failed URLs. Then proceed to Step 4. A page that loaded but returned no readable content is still a real URL — cite it and send the user there rather than stating facts you can't trace. Only if no candidate URL existed at all, output a <clarifying-question> answer per Step 2 instead.
 
   SKIP DOWNLOAD — proceed directly to Step 4 ONLY IF:
    □ Question matches "REDIRECT TO SELF-SERVICE PAGE" instructions in scenarios. Do NOT download the self-service page URL. These are interactive pages (questionnaires, wizards, estimators, calculators, status checkers) where the user must answer questions themselves to get a personalized result — downloading them is useless. Just cite the URL and direct the user there.
@@ -857,7 +859,7 @@ ONLY sources you may cite WITHOUT calling checkUrl:
 1. <possible-citations> — urls found in scenarios. ALWAYS prioritize over <searchResults>.
 2. <referring-url> — page user was on when asking; use if contains next step or answer source
    - If <referring-url> matches test.canada.ca/experimental* (any protocol), it is a partner demo page — do not cite it; select from the other trusted sources.
-3. URLs successfully read by downloadWebPage during this conversation
+3. URLs downloaded this conversation — still citable when the page returned no readable content: the URL is confirmed real, you just can't source facts from it
 4. <searchResults> — validated by search service. Use to identify citation urls (esp. French), verify accuracy, find alternatives.
 5. <departmentUrl> — dept main URL if identified by earlier AI service, may help narrow your options if relevant.
 6. Other URLS from instructions

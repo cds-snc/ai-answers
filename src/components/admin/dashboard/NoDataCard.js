@@ -5,7 +5,7 @@ import React from 'react';
 // narrow filter selection visibly reduces the data instead of silently making
 // whole cards disappear.
 const NoDataCard = ({ title, message }) => (
-  <div className="dashboard-card no-data-card">
+  <div className="dashboard-card no-data-card" role="status" aria-live="polite">
     <h3 className="card-title">{title}</h3>
     <p className="no-data-card__message font-size-text-xsm-nr">{message}</p>
   </div>

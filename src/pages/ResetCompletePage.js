@@ -77,6 +77,8 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
           autoComplete="new-password"
+          ariaDescribedBy={error ? 'reset-complete-error' : undefined}
+          ariaInvalid={!!error}
           lang={lang}
         />
         <PasswordInput
@@ -87,6 +89,8 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           onChange={(e) => setConfirm(e.target.value)}
           disabled={isLoading}
           autoComplete="new-password"
+          ariaDescribedBy={error ? 'reset-complete-error' : undefined}
+          ariaInvalid={!!error}
           lang={lang}
         />
 

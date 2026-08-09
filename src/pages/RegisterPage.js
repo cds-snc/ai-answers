@@ -72,6 +72,8 @@ const RegisterPage = ({ lang = 'en' }) => {
           required
           disabled={isLoading}
           autoComplete="new-password"
+          ariaDescribedBy={error ? 'signup-error' : undefined}
+          ariaInvalid={!!error}
           lang={lang}
         />
         <PasswordInput
@@ -85,6 +87,8 @@ const RegisterPage = ({ lang = 'en' }) => {
           required
           disabled={isLoading}
           autoComplete="new-password"
+          ariaDescribedBy={error ? 'signup-error' : undefined}
+          ariaInvalid={!!error}
           lang={lang}
         />
         <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">

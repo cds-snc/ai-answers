@@ -38,7 +38,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
   return (
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('admin.publicEval.title', 'Public Evaluation')}</h1>
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>

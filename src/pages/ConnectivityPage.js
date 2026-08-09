@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -204,21 +205,35 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 ))}
             </section>
 
-            {error && (
-                <div style={{
+            <StatusMessage
+                message={error}
+                isError
+                tag="div"
+                style={{
                     padding: '16px',
                     backgroundColor: '#f8d7da',
                     border: '1px solid #f5c6cb',
                     borderRadius: '4px',
                     color: '#721c24',
                     marginBottom: '20px'
-                }}>
-                    <strong>{t('connectivity.error')}:</strong> {error}
-                </div>
-            )}
+                }}
+            >
+                {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
+            </StatusMessage>
 
             {results && (
                 <>
+                    {/* TODO: these counts should go through formatNumber(n, lang) per the
+                        project's number-formatting rule (AGENTS.md) — they're small today
+                        but this is a raw-number template that'll silently be wrong in fr-CA
+                        if these ever grow past 3 digits. */}
+                    <StatusMessage
+                        message={t('connectivity.testComplete')
+                            .replace('{connected}', results.summary.connected)
+                            .replace('{errors}', results.summary.errors)
+                            .replace('{warnings}', results.summary.warnings)}
+                        className="sr-only"
+                    />
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

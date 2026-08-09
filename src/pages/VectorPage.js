@@ -6,6 +6,7 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
 
@@ -359,7 +360,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
-        {error && <div className="error-message">{error}</div>}
+        <StatusMessage message={error} isError tag="div" className="error-message" />
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -424,7 +425,7 @@ const VectorPage = ({ lang = 'en' }) => {
           {t('vector.embeddingDescription')}
         </GcdsText>
         <div className="button-group">
-          <select value={provider} onChange={e => setProvider(e.target.value)} className="mr-200">
+          <select value={provider} onChange={e => setProvider(e.target.value)} className="mr-200" aria-label={t('vector.embeddingProviderLabel')}>
             <option value="openai">OpenAI</option>
             <option value="azure">Azure OpenAI</option>
           </select>
@@ -595,7 +596,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataStatusLoading ? t('vector.metadataStatus.loading') : t('vector.metadataStatus.check')}
           </GcdsButton>
         </div>
-        {metadataStatusError && <div className="error-message">{metadataStatusError}</div>}
+        <StatusMessage message={metadataStatusError} isError tag="div" className="error-message" />
         {metadataStatus && (
           <div className="mb-400">
             <p><strong>{metadataStatus.complete ? t('vector.metadataStatus.complete') : t('vector.metadataStatus.incomplete')}</strong></p>
@@ -635,7 +636,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataLookupLoading ? t('vector.metadataLookup.loading') : t('vector.metadataLookup.lookup')}
           </GcdsButton>
         </div>
-        {metadataLookupError && <div className="error-message">{metadataLookupError}</div>}
+        <StatusMessage message={metadataLookupError} isError tag="div" className="error-message" />
         {metadataLookupResult?.chat && (
           <div className="mb-400">
             <p>
