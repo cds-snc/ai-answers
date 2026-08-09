@@ -332,13 +332,16 @@
         "uploaded": "Uploaded",
         "unknown": "Unknown"
       },
-      "totalsLabel": "{finished}/{total} completed"
+      "totalsLabel": "{finished}/{total} completed",
+      "pauseUpdates": "Pause automatic updates",
+      "resumeUpdates": "Resume automatic updates"
     }
   },
   "logging": {
     "title": "Chat viewer",
     "refresh": "Refresh",
     "refreshPending": "Please wait...",
+    "refreshComplete": "Logs refreshed. {count} entries loaded.",
     "download": "Download logs (JSON)",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
@@ -757,7 +760,9 @@
       "avgLatency": "Avg latency (ms)",
       "rpm": "Requests / minute",
       "errorLoading": "Failed to load sessions: {status} {text}",
-      "errorGeneric": "Error: {message}"
+      "errorGeneric": "Error: {message}",
+      "pauseUpdates": "Pause automatic updates",
+      "resumeUpdates": "Resume automatic updates"
     },
     "chatDashboard": {
       "title": "Chat dashboard",

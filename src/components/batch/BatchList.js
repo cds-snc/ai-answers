@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client'; // Import createRoot
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
@@ -16,6 +16,14 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [searchText] = useState('');
   // refreshKey forces the DataTable to remount when batches change
   const [refreshKey, setRefreshKey] = useState(0);
+  // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
+  // table, which is exactly the kind of auto-updating content that
+  // criterion requires a way to stop. isPausedRef mirrors isPaused into the
+  // interval closure so toggling the button takes effect on the next tick
+  // without having to tear down and recreate the interval.
+  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
   const { t } = useTranslations(lang);
 
   // Fetch all statuses
@@ -99,7 +107,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
     fetchBatches();
 
-    const intervalId = setInterval(fetchBatches, 10000); // Poll every 10 seconds
+    // Poll every 10 seconds, unless the user has paused updates.
+    const intervalId = setInterval(() => {
+      if (isPausedRef.current) return;
+      fetchBatches();
+    }, 10000);
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, [lang, fetchStatuses]);
 
@@ -153,6 +165,15 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   return (
     <div>
+      <GcdsButton
+        size="small"
+        buttonRole="secondary"
+        className="mb-200"
+        onClick={() => setIsPaused((paused) => !paused)}
+        aria-pressed={isPaused}
+      >
+        {isPaused ? t('batch.list.resumeUpdates') : t('batch.list.pauseUpdates')}
+      </GcdsButton>
       <DataTable
         data={filteredBatches}
         columns={columns} // Use memoized columns

@@ -22,6 +22,26 @@ export function useChatLogsTable({
       return undefined;
     }
 
+    // DataTables has no in-place update path here, so every refresh tears
+    // the whole table down and rebuilds it, which silently drops focus to
+    // <body> if the user had something inside it focused (e.g. a row's
+    // "Expand" button). Capture where focus was beforehand so it can be
+    // restored to the equivalent spot afterwards. tableRef.current itself
+    // gets tabindex="-1" as a last-resort landing spot when the exact
+    // element can't be recovered (e.g. the row no longer exists).
+    let focusRestore = null;
+    const activeEl = document.activeElement;
+    if (activeEl && tableRef.current.contains(activeEl)) {
+      const row = activeEl.closest('tr');
+      const cell = activeEl.closest('td');
+      focusRestore = {
+        rowIndex: row ? Array.from(row.parentNode.children).indexOf(row) : -1,
+        cellIndex: cell ? Array.from(cell.parentNode.children).indexOf(cell) : -1,
+        isExpandButton: activeEl.classList.contains('expand-button'),
+      };
+    }
+    tableRef.current.setAttribute('tabindex', '-1');
+
     if (dataTableRef.current) {
       dataTableRef.current.destroy();
       dataTableRef.current = null;
@@ -155,6 +175,17 @@ export function useChatLogsTable({
 
     if (logLevelRef.current && dataTableRef.current) {
       dataTableRef.current.column(1).search(logLevelRef.current, false, false).draw();
+    }
+
+    if (focusRestore) {
+      const rows = tableRef.current.querySelectorAll('tbody tr');
+      const targetRow = focusRestore.rowIndex >= 0 ? rows[focusRestore.rowIndex] : null;
+      const targetCell = targetRow?.children?.[focusRestore.cellIndex];
+      const target =
+        (focusRestore.isExpandButton && targetCell?.querySelector('.expand-button')) ||
+        targetCell?.querySelector('[tabindex="0"]') ||
+        tableRef.current;
+      target.focus();
     }
 
     return () => {

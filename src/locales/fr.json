@@ -332,13 +332,16 @@
         "uploaded": "Téléversé",
         "unknown": "Inconnu"
       },
-      "totalsLabel": "{finished}/{total} terminé"
+      "totalsLabel": "{finished}/{total} terminé",
+      "pauseUpdates": "Suspendre les mises à jour automatiques",
+      "resumeUpdates": "Reprendre les mises à jour automatiques"
     }
   },
   "logging": {
     "title": "Visualiseur de chat",
     "refresh": "Actualiser",
     "refreshPending": "Patientez...",
+    "refreshComplete": "Journaux actualisés. {count} entrées chargées.",
     "download": "Télécharger les journaux (JSON)",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",
@@ -757,7 +760,9 @@
       "avgLatency": "Latence moyenne (ms)",
       "rpm": "Requêtes / minute",
       "errorLoading": "Échec du chargement des sessions : {status} {text}",
-      "errorGeneric": "Erreur : {message}"
+      "errorGeneric": "Erreur : {message}",
+      "pauseUpdates": "Suspendre les mises à jour automatiques",
+      "resumeUpdates": "Reprendre les mises à jour automatiques"
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",

@@ -5,6 +5,8 @@ import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
 import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
 import MetadataModal from '../components/chatviewer/MetadataModal.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { formatNumber } from '../utils/numberFormat.js';
 import 'prismjs/themes/prism.css';
 import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-xml-doc.js';
@@ -14,7 +16,9 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [chatId, setChatId] = useState('');
   const [logLevel, setLogLevel] = useState('');
   const [expandedMetadata, setExpandedMetadata] = useState(null);
+  const [refreshAnnouncement, setRefreshAnnouncement] = useState('');
   const tableRef = useRef(null);
+  const refreshButtonRef = useRef(null);
 
   const { clearLogs, isRefreshingLogs, logs, refreshLogs } = useChatLogs(chatId);
   const stepTimeline = useChatTimeline(logs);
@@ -45,6 +49,7 @@ const ChatViewer = ({ lang = 'en' }) => {
     if (newValue !== chatId) {
       clearLogs();
       setExpandedMetadata(null);
+      setRefreshAnnouncement('');
     }
 
     setChatId(newValue);
@@ -55,7 +60,20 @@ const ChatViewer = ({ lang = 'en' }) => {
       return;
     }
 
-    await refreshLogs();
+    // Track whether this button had focus before disabling it below —
+    // disabling a focused control can drop focus to <body> in some
+    // browser/AT combinations (2.4.3), so restore it once refresh finishes.
+    const wasFocused = document.activeElement === refreshButtonRef.current;
+    const nextLogs = await refreshLogs();
+    // The button's own label changes ("Refresh" -> "Please wait..." -> back)
+    // isn't reliably announced by screen readers on its own — a status
+    // message gives an explicit confirmation the content updated (4.1.3).
+    setRefreshAnnouncement(
+      t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang))
+    );
+    if (wasFocused) {
+      refreshButtonRef.current?.focus?.();
+    }
   };
 
   const handleDownloadLogs = () => {
@@ -133,6 +151,7 @@ const ChatViewer = ({ lang = 'en' }) => {
               </div>
               <GcdsButton
                 id="refresh-logs-button"
+                ref={refreshButtonRef}
                 type="button"
                 disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
@@ -141,6 +160,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
+            <StatusMessage message={refreshAnnouncement} tag="p" className="mb-0" />
 
             {chatId && stepTimeline && (
               <div className="bg-white shadow rounded-lg p-4">

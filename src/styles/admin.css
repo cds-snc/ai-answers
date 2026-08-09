@@ -617,6 +617,38 @@
   padding: var(--gcds-spacing-200);
 }
 
+/* "+N more" departments disclosure (Department column). Overrides the
+   generic bordered-box <details>/<summary> styling from global.css, which
+   is sized for block-level form sections, not an inline table-cell trigger. */
+.chat-dashboard-department-details {
+  display: inline-block;
+  padding: 0;
+  margin: 0 0 0 var(--gcds-spacing-100);
+  vertical-align: baseline;
+}
+
+.chat-dashboard-department-details > summary {
+  display: inline-flex !important;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: none;
+  /* Matches the muted grey the original title-attribute label used; no GC DS
+     token for this specific secondary-text shade. */
+  color: #666;
+  font-size: 0.85em;
+}
+
+.chat-dashboard-department-details[open] {
+  border: none;
+  background: none;
+}
+
+.chat-dashboard-department-list {
+  display: block;
+  margin-top: var(--gcds-spacing-100);
+}
+
 /* Experimental tables use the full viewport so wide analysis columns do not
    create artificial gutters inside the page container. */
 .experimental-analysis-tabs {
