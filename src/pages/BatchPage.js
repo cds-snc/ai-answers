@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import ExportService from '../services/ExportService.js';
@@ -144,11 +145,7 @@ const BatchPage = ({ lang = 'en' }) => {
         </GcdsLink>
       </nav>
 
-      {statusMessage && (
-        <p role={statusMessage.isError ? 'alert' : 'status'} aria-live={statusMessage.isError ? 'assertive' : 'polite'}>
-          {statusMessage.text}
-        </p>
-      )}
+      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
 
       <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>

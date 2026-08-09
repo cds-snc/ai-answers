@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import matter from 'gray-matter';
-import { Buffer } from 'buffer';
+import { load as loadYaml } from 'js-yaml';
 
 /**
  * Default frontmatter structure
@@ -32,11 +31,6 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // gray-matter expects Buffer to exist; polyfill for browsers
-  if (typeof window !== 'undefined' && !window.Buffer) {
-    window.Buffer = Buffer;
-  }
-
   // Signal to the shell (App.js) that this page manages its own metadata
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -47,6 +41,13 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
   }, []);
 
   useEffect(() => {
+    // No filename means the caller has nothing to load (e.g. an unknown guide id);
+    // skip the fetch rather than requesting a bogus path.
+    if (!filename) {
+      setLoading(false);
+      return;
+    }
+
     const fetchAndParseContent = async () => {
       setLoading(true);
       setError(null);
@@ -86,33 +87,47 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
 };
 
 /**
- * Parse YAML frontmatter from markdown content using gray-matter
- * Expects YAML block between --- delimiters at the top of file
+ * Matches a leading YAML frontmatter block: --- on its own line, the YAML body,
+ * then a closing --- on its own line. Tolerates CRLF endings.
+ */
+const FRONTMATTER_PATTERN = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+/**
+ * Parse YAML frontmatter from markdown content.
+ *
+ * Uses js-yaml directly rather than gray-matter: gray-matter calls the
+ * `yaml.safeLoad` API that js-yaml 4 removed, and this repo pins js-yaml to 4.x
+ * for every dependency via `overrides` in package.json. Under that pin every
+ * gray-matter call throws, which previously left the raw frontmatter in the
+ * rendered markdown.
  *
  * @param {string} markdown - Raw markdown content
  * @returns {Object} - { frontmatter, contentBody }
  */
 function parseFrontmatter(markdown) {
+  // The opening --- must be the very first thing in the file, so drop any BOM.
+  const source = markdown.replace(/^﻿/, '');
+  const match = source.match(FRONTMATTER_PATTERN);
+
+  if (!match) {
+    return { frontmatter: DEFAULT_FRONTMATTER, contentBody: source.trim() };
+  }
+
+  // Strip the block whether or not its YAML parses, so malformed frontmatter is
+  // never rendered to the page as content.
+  const contentBody = source.slice(match[0].length).trim();
+
   try {
-    const { data, content } = matter(markdown);
-    
+    const data = loadYaml(match[1]) || {};
+
     // Merge with defaults to ensure all expected fields exist
-    const frontmatter = {
-      ...DEFAULT_FRONTMATTER,
-      ...data
-    };
-    
     return {
-      frontmatter,
-      contentBody: content.trim()
+      frontmatter: { ...DEFAULT_FRONTMATTER, ...data },
+      contentBody
     };
   } catch (err) {
     console.warn(`Failed to parse YAML frontmatter in markdown:`, err.message);
-    // Return defaults on parse error
-    return {
-      frontmatter: DEFAULT_FRONTMATTER,
-      contentBody: markdown
-    };
+    return { frontmatter: DEFAULT_FRONTMATTER, contentBody };
   }
 }
 

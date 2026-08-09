@@ -154,15 +154,15 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'experimental.analysis.viewResults' })).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'experimental.analysis.export' })).toBeTruthy();
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' }).length).toBeGreaterThan(0);
         expect(screen.getByRole('button', { name: 'experimental.analysis.exportChatLogs' })).toBeTruthy();
 
         await act(async () => {
             await vi.advanceTimersByTimeAsync(5000);
         });
 
-        expect(mockListBatches).toHaveBeenCalledTimes(2);
+        expect(mockListBatches).toHaveBeenCalledTimes(4);
         expect(screen.queryByText(/processing/, { selector: 'div' })).toBeNull();
     });
 
@@ -180,6 +180,77 @@ describe('ExperimentalAnalysisPage', () => {
         );
     });
 
+    it('shows the analysis mode as a select when the dataset has an answer column', async () => {
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'answer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const modeSelect = document.querySelector('#analysis-mode-select');
+        expect(modeSelect).toBeTruthy();
+        expect(modeSelect.tagName).toBe('SELECT');
+        expect(modeSelect.value).toBe('dataset-reference');
+        expect(screen.queryByRole('radio')).toBeNull();
+
+        fireEvent.change(modeSelect, { target: { value: 'generated-answer' } });
+        expect(modeSelect.value).toBe('generated-answer');
+    });
+
+    it('limits reference-required analyzers to dataset-reference mode', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([
+            {
+                id: 'expert-scorer',
+                nameKey: 'experimental.analysis.analyzers.expert-scorer.name',
+                descriptionKey: 'experimental.analysis.analyzers.expert-scorer.description',
+                requiresReference: true
+            }
+        ]);
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'answer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
+            target: { value: 'expert-scorer' }
+        });
+
+        const modeSelect = document.querySelector('#analysis-mode-select');
+        expect(modeSelect.value).toBe('dataset-reference');
+        expect(modeSelect.options).toHaveLength(1);
+        expect(modeSelect.options[0].value).toBe('dataset-reference');
+    });
+
+    it('does not show the analysis mode select when the dataset has no answer column', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(document.querySelector('#analysis-mode-select')).toBeNull();
+        expect(screen.getByText('experimental.analysis.analysisMode.generatedOnly')).toBeTruthy();
+    });
+
     it('shows the selected analyzer details in a collapsible control', async () => {
         render(<ExperimentalAnalysisPage lang="en" />);
 
@@ -193,6 +264,70 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText('Analyzer details')).toBeTruthy();
         expect(screen.getByText('Analyzer 1 description')).toBeTruthy();
+    });
+
+    it('shows Expert scorer’s reference-required analysis rule', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([{
+            id: 'expert-scorer',
+            nameKey: 'experimental.analysis.analyzers.expert-scorer.name',
+            descriptionKey: 'experimental.analysis.analyzers.expert-scorer.description',
+            requiresReference: true
+        }]);
+        mockListDatasets.mockResolvedValueOnce({
+            data: [{
+                _id: 'dataset-1',
+                name: 'Dataset 1',
+                rowCount: 1,
+                columns: [{ name: 'question' }, { name: 'referenceAnswer' }]
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
+            target: { value: 'expert-scorer' }
+        });
+
+        expect(screen.getByText('experimental.analysis.analyzerRules.expert-scorer.rows.referenceAnswer.setup')).toBeTruthy();
+        expect(screen.queryByText('experimental.analysis.analyzerRules.expert-scorer.rows.qualityReview.setup')).toBeNull();
+    });
+
+    it('shows the selected analyzer’s batch-comparison rules in Compare batches', async () => {
+        mockListAnalyzers.mockResolvedValueOnce([{
+            id: 'bias-detection',
+            nameKey: 'experimental.analysis.analyzers.bias-detection.name',
+            descriptionKey: 'experimental.analysis.analyzers.bias-detection.description'
+        }]);
+        mockListBatches.mockResolvedValue({
+            data: [{
+                _id: 'batch-1',
+                name: 'Analysis - baseline',
+                status: 'completed',
+                summary: { completed: 1, failed: 0, total: 1 },
+                analyzerSummary: {},
+                config: { analyzerIds: ['bias-detection'] },
+                createdAt: '2026-05-05T00:00:00.000Z',
+                createdBy: { email: 'user@example.com' }
+            }]
+        });
+
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        fireEvent.change(screen.getByLabelText('experimental.analysis.comparison.baseline'), {
+            target: { value: 'batch-1' }
+        });
+
+        expect(screen.getByText('experimental.analysis.comparison.analyzerRules.bias-detection.rows.pairedAnswers.setup')).toBeTruthy();
+        expect(screen.getByText('experimental.analysis.comparison.analyzerRules.bias-detection.rows.datasetReference.setup')).toBeTruthy();
     });
 
     it('shows a starting status card immediately when analysis is launched', async () => {
@@ -218,7 +353,7 @@ describe('ExperimentalAnalysisPage', () => {
             fireEvent.click(screen.getByRole('button', { name: 'experimental.analysis.run' }));
         });
 
-        const expectedRunName = 'Analyzer 1 · Dataset 1 · workflows.generic · models.gpt51';
+        const expectedRunName = `Analyzer 1 \u00b7 Dataset 1 \u00b7 workflows.generic \u00b7 models.gpt51`;
         expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ name: expectedRunName }));
         expect(screen.getByText(expectedRunName)).toBeTruthy();
         expect(screen.getByText('experimental.analysis.messages.startingRun')).toBeTruthy();
@@ -233,8 +368,8 @@ describe('ExperimentalAnalysisPage', () => {
         });
     });
 
-    it('disables baseline actions for batches that use a different analyzer than the selected one', async () => {
-        mockListBatches.mockResolvedValueOnce({
+    it('filters comparison candidates to runs with the baseline analyzer', async () => {
+        mockListBatches.mockResolvedValue({
             data: [
                 {
                     _id: 'batch-1',
@@ -255,6 +390,16 @@ describe('ExperimentalAnalysisPage', () => {
                     config: { analyzerIds: ['analyzer-2'] },
                     createdAt: '2026-05-04T00:00:00.000Z',
                     createdBy: { email: 'user@example.com' }
+                },
+                {
+                    _id: 'batch-3',
+                    name: 'Analysis - analyzer 1 candidate',
+                    status: 'completed',
+                    summary: { completed: 1, failed: 0, total: 1 },
+                    analyzerSummary: {},
+                    config: { analyzerIds: ['analyzer-1'] },
+                    createdAt: '2026-05-03T00:00:00.000Z',
+                    createdBy: { email: 'user@example.com' }
                 }
             ]
         });
@@ -265,18 +410,22 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
-            target: { value: 'analyzer-1' }
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        fireEvent.change(screen.getByLabelText('experimental.analysis.comparison.baseline'), {
+            target: { value: 'batch-1' }
         });
 
-        const baselineButtons = screen.getAllByRole('button', { name: 'Use as baseline' });
-        expect(baselineButtons).toHaveLength(2);
-        expect(baselineButtons[0].disabled).toBe(false);
-        expect(baselineButtons[1].disabled).toBe(true);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        const candidateOptions = Array.from(screen.getByLabelText('experimental.analysis.comparison.candidate').options)
+            .map(option => option.textContent);
+        expect(candidateOptions).toContain('Analysis - analyzer 1 candidate');
+        expect(candidateOptions).not.toContain('Analysis - analyzer 2');
     });
 
-    it('shows and triggers export chat logs for completed runs when a baseline is selected', async () => {
-        mockListBatches.mockResolvedValueOnce({
+    it('exports chat logs for a completed run', async () => {
+        mockListBatches.mockResolvedValue({
             data: [
                 {
                     _id: 'batch-1',
@@ -312,14 +461,13 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'Use as baseline' })[0]);
         fireEvent.click(screen.getAllByRole('button', { name: 'experimental.analysis.exportChatLogs' })[1]);
 
         await act(async () => {
             await Promise.resolve();
         });
 
-        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2', 'batch-1');
+        expect(mockExportChatLogs).toHaveBeenCalledWith('batch-2');
         expect(createObjectURL).toHaveBeenCalled();
         expect(clickSpy).toHaveBeenCalled();
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:chat-logs');
@@ -329,8 +477,7 @@ describe('ExperimentalAnalysisPage', () => {
         clickSpy.mockRestore();
     });
 
-    it('shows the same run name in the baseline dropdown as the history table', async () => {
-        const expectedDate = new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date('2026-05-05T00:00:00.000Z'));
+    it('shows completed runs in the comparison baseline selector', async () => {
         mockListBatches.mockResolvedValueOnce({
             data: [
                 {
@@ -352,8 +499,10 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByText('Analysis - baseline')).toBeTruthy();
-        expect(screen.getByRole('option', { name: `Analysis - baseline - ${expectedDate}` })).toBeTruthy();
+        expect(screen.getAllByText('Analysis - baseline').length).toBeGreaterThan(0);
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        expect(Array.from(screen.getByLabelText('experimental.analysis.comparison.baseline').options)
+            .map(option => option.textContent)).toContain('Analysis - baseline');
     });
 
     it('shows workflow and model family values from saved batch config and falls back to N/A when missing', async () => {
@@ -393,9 +542,9 @@ describe('ExperimentalAnalysisPage', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.workflow' })).toBeTruthy();
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' })).toBeTruthy();
-        expect(screen.getByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' })).toBeTruthy();
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.workflow' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' }).length).toBeGreaterThan(0);
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getByText('7890abcdef')).toBeTruthy();
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);

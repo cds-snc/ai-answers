@@ -14,7 +14,7 @@ async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid batch input' });
         }
 
-        if (!['batch', 'analysis'].includes(type)) {
+        if (!['batch', 'analysis', 'comparison'].includes(type)) {
             return res.status(400).json({ error: 'Invalid batch type' });
         }
 

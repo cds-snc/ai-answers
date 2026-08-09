@@ -159,6 +159,19 @@ describe('DocDBVectorService', () => {
     expect(out[0][0].similarity).toBeCloseTo(1, 5);
   });
 
+  it('breaks equal similarity ties with the latest expert feedback', async () => {
+    mockEmbedDocuments.mockResolvedValue([[1, 0]]);
+    const docs = [
+      { _id: 'older', interactionId: 'i1', expertFeedbackId: 'ef-1', expertFeedbackCreatedAt: new Date('2026-01-01'), questionsEmbedding: [1, 0] },
+      { _id: 'newer', interactionId: 'i2', expertFeedbackId: 'ef-2', expertFeedbackCreatedAt: new Date('2026-02-01'), questionsEmbedding: [1, 0] },
+    ];
+    service.collection = { aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue(docs) })) };
+
+    const out = await service.matchQuestions(['q'], { k: 2 });
+
+    expect(out[0].map((r) => r.id)).toEqual(['newer', 'older']);
+  });
+
   it('drops candidates below the similarity threshold', async () => {
     mockEmbedDocuments.mockResolvedValue([[1, 0]]);
     const docs = [

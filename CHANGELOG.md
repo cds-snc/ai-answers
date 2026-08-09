@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.180.2](https://github.com/cds-snc/ai-answers/compare/v1.180.1...v1.180.2) (2026-08-07)
+
+
+### Bug Fixes
+
+* implement tie-breaking logic for vector matches based on expert … ([91578d4](https://github.com/cds-snc/ai-answers/commit/91578d4c525e1b877a814010696b25734fae3082))
+* normalize embedding metadata languages ([75c305d](https://github.com/cds-snc/ai-answers/commit/75c305d8b52c0e8635d006b705c54a2d3ce6ebc6))
+* pass plain feedback to metadata sync ([9887f96](https://github.com/cds-snc/ai-answers/commit/9887f966cb663050a17011b6243d4015af1d43ae))
+* update js-yaml to version 4.3.0 and remove deprecated dependencies ([af5c79c](https://github.com/cds-snc/ai-answers/commit/af5c79c8ccddeb9d1dc3126162fb2f3d5ccd173f))
+
+
+### Miscellaneous Chores
+
+* touch readme for branch repush ([84bed97](https://github.com/cds-snc/ai-answers/commit/84bed978387bfaff07234357d766f9043985ed5f))
+* trigger tie-breaker redeploy ([51e2d9e](https://github.com/cds-snc/ai-answers/commit/51e2d9e7f6be43c2be1be95f60bbc142e8dabe54))
+
+## [1.180.1](https://github.com/cds-snc/ai-answers/compare/v1.180.0...v1.180.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* aria functions added ([bd86388](https://github.com/cds-snc/ai-answers/commit/bd86388b6b80a41461ebdefde93866b7464db082))
+* aria functions added ([c6ea19a](https://github.com/cds-snc/ai-answers/commit/c6ea19a75507dd80524a44580cd2abf9a1d42b49))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump postcss from 8.5.22 to 8.5.25 ([2b8d059](https://github.com/cds-snc/ai-answers/commit/2b8d059a0558b16c61753fa391422915cffa3271))
+
 ## [1.180.0](https://github.com/cds-snc/ai-answers/compare/v1.179.0...v1.180.0) (2026-08-05)
 
 

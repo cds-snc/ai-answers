@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { getPath } from '../../utils/routes.js';
 import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimentalBatchItems.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import BatchItemsTable from '../../components/experimental/BatchItemsTable.js';
@@ -25,7 +26,6 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     const { batchId } = useParams();
     const [searchParams] = useSearchParams();
     const openParam = parseInt(searchParams.get('open'), 10);
-
     const {
         batch,
         items,
@@ -49,6 +49,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
         hasPrev,
         detailFocusRef
     } = useExperimentalBatchItems(batchId, Number.isInteger(openParam) && openParam > 0 ? { openRowIndex: openParam } : {});
+    const returnToComparisonTab = batch?.type === 'comparison';
 
     // Arrow-key navigation while reviewing an item.
     useEffect(() => {
@@ -75,13 +76,13 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/analysis${batch?.config?.datasetId
-                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}`
-                        : ''}`}>
+                    <GcdsLink href={`${getPath('experimental-analysis', lang)}${batch?.config?.datasetId
+                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}${returnToComparisonTab ? '&tab=comparison' : ''}`
+                        : returnToComparisonTab ? '?tab=comparison' : ''}`}>
                         {t('experimental.results.backToRuns')}
                     </GcdsLink>
                     {batch?.config?.datasetId && (
-                        <GcdsLink href={`/${lang}/experimental/suites/${batch.config.datasetId}`}>
+                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${batch.config.datasetId}`}>
                             {t('experimental.analysis.suiteView')}
                         </GcdsLink>
                     )}
@@ -119,6 +120,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     item={selectedItem}
                     chatItems={selectedChatItems}
                     lang={lang}
+                    comparisonMode={batch?.type === 'comparison'}
                     position={positionInFilter}
                     totalInFilter={pagination.total}
                     trialsCount={batch?.config?.trials || 1}
@@ -159,6 +161,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                                 lang={lang}
                                 onSelect={selectItem}
                                 showTrials={(batch?.config?.trials || 1) > 1}
+                                comparisonMode={batch?.type === 'comparison'}
                             />
 
                             {pagination.pages > 1 && (

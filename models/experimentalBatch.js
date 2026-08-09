@@ -7,8 +7,8 @@ const ExperimentalBatchSchema = new mongoose.Schema({
     // e.g. "v2 – tightened citation instructions".
     runLabel: { type: String, default: '', trim: true, maxLength: 200 },
 
-    // 'batch' (generation), 'analysis' (comparison/evaluator)
-    type: { type: String, required: true, enum: ['batch', 'analysis'] },
+    // 'batch' (generation), 'analysis' (run + analyzer), 'comparison' (two completed runs)
+    type: { type: String, required: true, enum: ['batch', 'analysis', 'comparison'] },
     appVersion: { type: String, default: '' },
 
     status: {
@@ -33,6 +33,9 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         analyzerIds: [{ type: String }],
         datasetId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalDataset' },
         analyzerConfig: { type: mongoose.Schema.Types.Mixed, default: {} }, // threshold, etc.
+        analysisMode: { type: String, enum: ['generated-answer', 'dataset-reference'] },
+        baselineRunId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalBatch' },
+        candidateRunId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExperimentalBatch' },
         // Trials per question (pass@k / pass^k). Each dataset row is run
         // this many times as independent items.
         trials: { type: Number, default: 1, min: 1, max: 8 },

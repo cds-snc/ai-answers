@@ -19,7 +19,6 @@ describe('BiasEvaluator', () => {
                 status: 'completed',
                 label: 'unbiased',
                 differenceFound: true,
-                differenceExplanation: 'The answer is less detailed and omits an issuer.'
             })
         });
 
@@ -31,7 +30,7 @@ describe('BiasEvaluator', () => {
 
         expect(result.differenceFound).toBe(false);
         expect(result.biasLevelChanged).toBe(false);
-        expect(result.differenceExplanation).toContain('did not change');
+        expect(result.explanation).toContain('did not change');
     });
 
     it('flags only an explicit change between bias levels', async () => {
@@ -40,7 +39,7 @@ describe('BiasEvaluator', () => {
                 status: 'completed',
                 label: 'biased',
                 referenceLabel: 'unbiased',
-                differenceExplanation: 'The current answer introduces a racial assumption.'
+                comparisonExplanation: 'The current answer introduces a racial assumption.'
             })
         });
 

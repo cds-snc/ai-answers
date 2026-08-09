@@ -110,6 +110,16 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // Process instead of waiting for the next polling cycle.
   // Note: lang is intentionally excluded — language switches always trigger
   // full page navigation so the component remounts naturally with the correct lang.
+  //
+  // TODO(a11y): this remount undermines the "keep something in the DOM so
+  // focus isn't dropped to <body>" fix on the row action buttons below.
+  // Process marks processingBatches synchronously on click, which bumps
+  // refreshKey almost immediately and tears down the just-focused
+  // "Processing…" span; Delete/Cancel/Export lose it more slowly via the
+  // 10s poll on `batches`. Either avoid remounting the whole table on every
+  // tick (diff the changed row instead), or capture document.activeElement
+  // before the remount and restore focus after redraw, as done in
+  // DashboardFilterBar.js / useExperimentalBatchItems.js.
   useEffect(() => {
     setRefreshKey((r) => r + 1);
   }, [batches, processingBatches]);

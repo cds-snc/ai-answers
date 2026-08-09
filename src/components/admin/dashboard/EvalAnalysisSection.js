@@ -127,6 +127,10 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {appliedDepartment && count !== null && !running && (
           <>
+            {/* TODO: role="status"/"alert" here rely on their implicit aria-live
+                mapping (polite/assertive) rather than pairing it explicitly, unlike
+                the equivalent warnings in EvalAnalysisReport.js. Functionally the
+                same, but worth picking one convention across both files. */}
             {tooFew && (
               <div className="dashboard-warning" role="status">
                 <span className="dashboard-warning__icon" aria-hidden="true" />
