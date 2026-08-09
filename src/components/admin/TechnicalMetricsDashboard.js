@@ -135,7 +135,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.responseTime.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -174,7 +176,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.tools.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -269,7 +273,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.tokens.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
           </div>

@@ -59,7 +59,9 @@ const PublicEvalPage = ({ lang: propLang }) => {
           }
         ]}
         options={{ paging: true, searching: true, ordering: true, language: dataTableLanguage(lang) }}
-      />
+      >
+        <caption className="sr-only">{t('admin.publicEval.title')}</caption>
+      </DataTable>
     </GcdsContainer>
   );
 };

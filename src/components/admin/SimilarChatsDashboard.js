@@ -80,7 +80,9 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               order: [[1, 'desc']],
               language: dataTableLanguage(lang),
             }}
-          />
+          >
+            <caption className="sr-only">{t('vector.similarChats')}</caption>
+          </DataTable>
         </div>
       )}
     </div>

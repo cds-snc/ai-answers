@@ -25,7 +25,7 @@ const ReferralUrlsCard = ({
         {rows.length === 0 ? (
           <p className="font-size-text-xsm-nr">{noDataLabel}</p>
         ) : (
-          <CountTable labelColLabel={urlColLabel} countColLabel={countColLabel} rows={rows} lang={lang} />
+          <CountTable labelColLabel={urlColLabel} countColLabel={countColLabel} rows={rows} lang={lang} captionLabel={title} />
         )}
       </details>
     </div>

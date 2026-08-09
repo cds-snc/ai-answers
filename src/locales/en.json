@@ -646,6 +646,8 @@
       },
       "metrics": {
         "title": "Evaluation metrics",
+        "metricLabel": "Metric",
+        "valueLabel": "Value",
         "total": "Total evaluations",
         "processed": "Processed evaluations",
         "hasMatches": "Evaluations with matches",

@@ -228,6 +228,12 @@ const EvalPage = ({ lang = 'en' }) => {
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead className="sr-only">
+                  <tr>
+                    <th scope="col">{t('admin.evalPage.metrics.metricLabel')}</th>
+                    <th scope="col">{t('admin.evalPage.metrics.valueLabel')}</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.total', 'Total evaluations')}</td>
@@ -250,8 +256,8 @@ const EvalPage = ({ lang = 'en' }) => {
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel', 'Reason')}</th>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel', 'Count')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -274,8 +280,8 @@ const EvalPage = ({ lang = 'en' }) => {
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel', 'Fallback')}</th>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel', 'Count')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel')}</th>
                       </tr>
                     </thead>
                     <tbody>

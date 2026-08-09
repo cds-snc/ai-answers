@@ -292,7 +292,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.questions.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -338,7 +340,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.accuracy.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -367,7 +371,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.sessions.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -423,7 +429,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.questionTypes.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -515,7 +523,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang)
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.expertScored.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -589,7 +599,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang)
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.aiScored.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -628,7 +640,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang)
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.byDepartment.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
           </div>

@@ -80,17 +80,19 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
             <table style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
-                        <th style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left' }}>
+                        <th scope="col" style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left' }}>
                             {t('experimental.suite.runColumn')}
                         </th>
-                        <th style={{ ...CELL_BASE, cursor: 'default' }}>
+                        <th scope="col" style={{ ...CELL_BASE, cursor: 'default' }}>
                             {t('experimental.suite.scoreColumn')}
                         </th>
                         {tests.map(test => (
                             <th
                                 key={test.position}
+                                scope="col"
                                 style={{ ...CELL_BASE, cursor: 'default', verticalAlign: 'bottom' }}
                                 title={`${test.testName} — ${test.question}`}
+                                aria-label={`${test.testName} — ${test.question}`}
                             >
                                 <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
@@ -105,7 +107,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                 <tbody>
                     {runs.map((run, index) => (
                         <tr key={run._id}>
-                            <td style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
+                            <th scope="row" style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
                                 <div><strong>{truncate(runLabel(run, index), 60)}</strong></div>
                                 {run.referenceCapture && (
                                     <div style={{ fontSize: '0.75rem', color: '#7a5a00', fontWeight: 'bold' }}>
@@ -118,7 +120,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                         new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(run.createdAt))
                                     ].filter(Boolean).join(' · ')}
                                 </div>
-                            </td>
+                            </th>
                             <td style={{ ...CELL_BASE, cursor: 'default' }}>
                                 {(() => {
                                     if (run.referenceCapture) return '—';
@@ -140,9 +142,10 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 // mean "nothing was compared", not success.
                                 const verdict = run.referenceCapture ? 'missing' : displayVerdict(cell);
                                 const clickable = run.referenceCapture ? Boolean(cell) : verdict !== 'missing';
+                                const rowLabel = runLabel(run, index);
                                 const label = run.referenceCapture && cell
-                                    ? `${test.testName} — ${t('experimental.suite.captureRun')}`
-                                    : `${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
+                                    ? `${rowLabel} — ${test.testName} — ${t('experimental.suite.captureRun')}`
+                                    : `${rowLabel} — ${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
                                 return (
                                     <td
                                         key={test.position}
