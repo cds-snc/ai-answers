@@ -108,7 +108,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 'normal' }}>
                 {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
-                  <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#2e8540' }}>
+                  <span className="font-size-text-xsm-nr text-status--positive" style={{ marginLeft: 8 }}>
                     {t('partnerDashboard.evalAnalysis.report.allPerfect')}
                   </span>
                 )}

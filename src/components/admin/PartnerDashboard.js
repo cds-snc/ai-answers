@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -279,6 +280,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
       {error && (
         <div className="dashboard-error" role="alert">
+          <GcdsIcon name="warning-triangle" marginRight="50" />
           {t('partnerDashboard.error')}
         </div>
       )}

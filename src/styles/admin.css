@@ -12,9 +12,31 @@
   text-decoration: underline;
 }
 
-/* evaluator styles */
-.error-text {
-  color: red;
+/* Generic status-colour text utilities — for a plain word/value that needs
+   to convey good/bad/warning/neutral state via text colour alone (paired
+   with a text label, never colour-only). Several components had already
+   duplicated the green-700/red-700 pairing as their own one-off modifier
+   classes (.stat-card__value--*, .donut-card__centre-value--*,
+   .label.correct/.hasError) — new call sites should use these instead of
+   adding another near-identical set. --warning is NOT the same value as
+   those same components' --orange variants (#e65100, ~3.76:1 against white
+   — itself a latent contrast risk, just not one flagged by this audit);
+   var(--gcds-color-orange-700) is a deliberately different, more
+   accessible shade (~7:1), not a straight tokenization of the existing one. */
+.text-status--positive {
+  color: var(--gcds-color-green-700);
+}
+
+.text-status--negative {
+  color: var(--gcds-color-red-700);
+}
+
+.text-status--warning {
+  color: var(--gcds-color-orange-700);
+}
+
+.text-status--neutral {
+  color: var(--gcds-color-blue-muted);
 }
 
 /* Fixed loading overlay for dashboards - always visible on screen */

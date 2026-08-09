@@ -86,13 +86,15 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                         <th scope="col" style={{ ...CELL_BASE, cursor: 'default' }}>
                             {t('experimental.suite.scoreColumn')}
                         </th>
-                        {tests.map(test => (
+                        {tests.map(test => {
+                            const fullTitle = `${test.testName} — ${test.question}`;
+                            return (
                             <th
                                 key={test.position}
                                 scope="col"
                                 style={{ ...CELL_BASE, cursor: 'default', verticalAlign: 'bottom' }}
-                                title={`${test.testName} — ${test.question}`}
-                                aria-label={`${test.testName} — ${test.question}`}
+                                title={fullTitle}
+                                aria-label={fullTitle}
                             >
                                 <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
@@ -101,7 +103,8 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                     </div>
                                 )}
                             </th>
-                        ))}
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>

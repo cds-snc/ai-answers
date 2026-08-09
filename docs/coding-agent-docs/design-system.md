@@ -26,6 +26,23 @@ The existing CSS files have accumulated custom classes that are scattered, incon
 
 **Stay scoped to the relevant file.** If the task touches the dashboard, only look at dashboard-related styles. Do not raise CSS issues in files outside the current PR's scope. If a user wants a CSS review on a specific page or file, they can request one explicitly.
 
+## No Tailwind
+
+This project has **no Tailwind dependency** — it is not installed and no
+Tailwind config exists. Never write Tailwind-style utility class names
+(`text-red-600`, `bg-red-50`, `gap-2`, `mb-2`, `rounded`, `p-2`, `flex`,
+`items-center`, `w-4`, `h-4`, etc.) expecting them to work; a handful of
+these have been pasted into JSX over time from copied examples and render as
+dead classes — no padding, no background, no colour, default browser
+styling — not what the author intended. `.flex` happens to exist as a real
+utility class in `global.css`, which makes the surrounding dead classes on
+the same element easy to miss.
+
+If you spot Tailwind-style classes while touching a file for any reason,
+flag them and, if asked to fix or clean up, eliminate them — replace with
+the nearest existing GC DS token/utility or a real custom class per the
+hierarchy below, not by adding the missing Tailwind config.
+
 ## No inline styles
 
 Do not use inline `style={{...}}` attributes on elements. Add a CSS class instead.
@@ -129,6 +146,8 @@ When a designer requests a CSS review on a specific page or file, audit the rele
 8. **Missed reuse across related elements.** A new custom class duplicates a rule a sibling or related element already defines for the same purpose (e.g. list-item spacing, a form-embedded `<details>` border). Flag for consolidation into one shared class.
 
 9. **Opportunities to frame as a token proposal.** A custom value solves a real, generalizable gap in GC DS's token set — not a one-off visual tweak. Spot these and propose shaping them into a `TOKEN SUGGESTION`: name it, scope it, and describe what GC DS could add and why, surfacing the gap as a contribution candidate rather than leaving it as an isolated workaround.
+
+10. **Tailwind-style classes.** Any class name matching Tailwind's convention (`text-red-600`, `bg-red-50`, `gap-2`, `rounded`, `p-2`, `flex`, `items-center`, `w-4`, `h-4`, etc.) — grep `src/styles/*.css` to confirm whether it's real. This project has no Tailwind dependency (see "No Tailwind" above), so most of these are dead classes silently rendering unstyled. Always flag; eliminate when asked to fix, replacing with the nearest real token/class rather than defining the missing rule under a Tailwind-shaped name.
 
 For each finding, include:
 - The class name(s) affected

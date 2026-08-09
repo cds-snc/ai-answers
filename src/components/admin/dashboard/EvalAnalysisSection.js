@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton, GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
@@ -177,6 +177,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {runError && (
           <div className="dashboard-error" role="alert" style={{ marginTop: 12 }}>
+            <GcdsIcon name="warning-triangle" marginRight="50" />
             {runErrorLabel()}
           </div>
         )}

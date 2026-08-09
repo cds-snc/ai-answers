@@ -228,10 +228,10 @@ const EvalPage = ({ lang = 'en' }) => {
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <thead className="sr-only">
+                <thead>
                   <tr>
-                    <th scope="col">{t('admin.evalPage.metrics.metricLabel')}</th>
-                    <th scope="col">{t('admin.evalPage.metrics.valueLabel')}</th>
+                    <th scope="col"><span className="sr-only">{t('admin.evalPage.metrics.metricLabel')}</span></th>
+                    <th scope="col"><span className="sr-only">{t('admin.evalPage.metrics.valueLabel')}</span></th>
                   </tr>
                 </thead>
                 <tbody>

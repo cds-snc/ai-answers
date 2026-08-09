@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
+import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
@@ -150,6 +151,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
 
       {error && (
         <div className="dashboard-error" role="alert">
+          <GcdsIcon name="warning-triangle" marginRight="50" />
           {t('publicDashboard.error')}
         </div>
       )}
