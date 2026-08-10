@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton, GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
 import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
+import StatusMessage from '../StatusMessage.js';
 
 // "Run eval analysis" section at the bottom of the partner dashboard.
 // Disabled until an institution filter is applied; the precheck endpoint
@@ -176,9 +177,10 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {runError && (
-          <div className="dashboard-error" role="alert" style={{ marginTop: 12 }}>
+          <StatusMessage isError tag="div" className="dashboard-error" style={{ marginTop: 12 }}>
+            <GcdsIcon name="warning-triangle" marginRight="50" />
             {runErrorLabel()}
-          </div>
+          </StatusMessage>
         )}
       </div>
 

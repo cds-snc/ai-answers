@@ -751,7 +751,11 @@ const DatabasePage = ({ lang }) => {
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
+                  {/* TODO: .text-secondary is not defined in any stylesheet (only the
+                      --gcds-text-secondary CSS var exists) — this code suffix renders in
+                      default text color instead of muted grey. Add a .text-secondary class
+                      or swap to var(--gcds-text-secondary) directly. */}
+                  {f.code && <span className="text-secondary font-size-text-xxs-nr" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
             </ul>
@@ -802,7 +806,16 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.anyBuilding ? 'blue' : indexStatus.allComplete ? 'green' : 'orange' }}>
+            <div
+              className={
+                indexStatus.anyBuilding
+                  ? 'text-status--neutral'
+                  : indexStatus.allComplete
+                    ? 'text-status--positive'
+                    : 'text-status--warning'
+              }
+              style={{ fontWeight: 600, marginBottom: 8 }}
+            >
               {indexStatus.message}
             </div>
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
@@ -820,15 +833,20 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ paddingRight: 16 }}>{col.collection}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
-                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'building' ? 'blue' : col.status === 'error' ? 'red' : 'orange' }}>
-                      {col.status}
+                    <td>
+                      {/* TODO: confirm the backend (api/db/db-database-management.js) never emits
+                          a status outside building/complete/incomplete/error — if it doesn't, this
+                          whitelist is dead code and can simplify to `label ${col.status}`. */}
+                      <span className={`label ${['complete', 'building', 'error'].includes(col.status) ? col.status : 'incomplete'}`}>
+                        {col.status}
+                      </span>
                       {col.status === 'building' && col.building?.length > 0 && (
-                        <span style={{ marginLeft: 8, fontSize: 11 }}>
+                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
                           ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
-                        <span style={{ marginLeft: 8, fontSize: 11, fontStyle: 'italic' }}>
+                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8, fontStyle: 'italic' }}>
                           {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}

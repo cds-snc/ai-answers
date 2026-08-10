@@ -310,7 +310,9 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                   return null;
                 }
               }}
-            />
+            >
+              <caption className="sr-only">{t('admin.autoEvalDashboard.title')}</caption>
+            </DataTable>
             </div>
           )}
         </div>

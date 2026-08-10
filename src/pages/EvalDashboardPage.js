@@ -339,7 +339,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   return null;
                 }
               }}
-            />
+            >
+              <caption className="sr-only">{t('admin.evalDashboard.title')}</caption>
+            </DataTable>
             </div>
           )}
         </div>

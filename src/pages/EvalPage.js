@@ -4,6 +4,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 // Removed unused imports
 import EvaluationService from '../services/EvaluationService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const EvalPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
@@ -228,6 +229,12 @@ const EvalPage = ({ lang = 'en' }) => {
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th scope="col"><span className="sr-only">{t('reviewPanels.metric')}</span></th>
+                    <th scope="col"><span className="sr-only">{t('reviewPanels.value')}</span></th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.total', 'Total evaluations')}</td>
@@ -250,8 +257,8 @@ const EvalPage = ({ lang = 'en' }) => {
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel', 'Reason')}</th>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel', 'Count')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -274,8 +281,8 @@ const EvalPage = ({ lang = 'en' }) => {
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel', 'Fallback')}</th>
-                        <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel', 'Count')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel')}</th>
+                        <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.countLabel')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -348,7 +355,7 @@ const EvalPage = ({ lang = 'en' }) => {
           </GcdsButton>
         </div>
           {evalProgress && (
-          <div className="mb-200">
+          <StatusMessage tag="div" className="mb-200">
             <p>
               {evalProgress.processed !== undefined && (
                 <span> • {t('admin.evalPage.progress.processed', 'Processed')}: {evalProgress.processed}</span>
@@ -369,7 +376,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <span> • <strong>{t('admin.evalPage.progress.regeneratingAll', 'Regenerating all evaluations')}</strong></span>
               )}
             </p>
-          </div>
+          </StatusMessage>
         )}
       </div>
     </GcdsContainer>

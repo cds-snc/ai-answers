@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -14,6 +15,7 @@ import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import StatusMessage from './StatusMessage.js';
 
 // Bars shown in the "question volume by program" chart. Capped client-side so
 // the API's larger MAX_PROGRAMS response stays available to other views.
@@ -278,9 +280,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       <>
 
       {error && (
-        <div className="dashboard-error" role="alert">
+        <StatusMessage isError tag="div" className="dashboard-error">
+          <GcdsIcon name="warning-triangle" marginRight="50" />
           {t('partnerDashboard.error')}
-        </div>
+        </StatusMessage>
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (

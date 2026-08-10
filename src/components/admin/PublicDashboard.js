@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
+import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
@@ -9,6 +10,7 @@ import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import StatusMessage from './StatusMessage.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -149,9 +151,10 @@ const PublicDashboard = ({ lang = 'en' }) => {
       <>
 
       {error && (
-        <div className="dashboard-error" role="alert">
+        <StatusMessage isError tag="div" className="dashboard-error">
+          <GcdsIcon name="warning-triangle" marginRight="50" />
           {t('publicDashboard.error')}
-        </div>
+        </StatusMessage>
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (

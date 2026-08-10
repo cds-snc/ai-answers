@@ -31,13 +31,13 @@ const CitationPagesCard = ({
         {citationRows.length === 0 ? (
           <p className="font-size-text-xsm-nr">{noDataLabel}</p>
         ) : (
-          <CountTable labelColLabel={urlColLabel} countColLabel={countColLabel} rows={citationRows} lang={lang} />
+          <CountTable labelColLabel={urlColLabel} countColLabel={countColLabel} rows={citationRows} lang={lang} captionLabel={title} />
         )}
 
         {answerTypeRows.length > 0 && (
           <>
             <h4 className="card-subtitle mt-400">{answerTypesTitle}</h4>
-            <CountTable labelColLabel={answerTypeColLabel} countColLabel={countColLabel} rows={answerTypeRows} lang={lang} />
+            <CountTable labelColLabel={answerTypeColLabel} countColLabel={countColLabel} rows={answerTypeRows} lang={lang} captionLabel={answerTypesTitle} />
           </>
         )}
       </details>

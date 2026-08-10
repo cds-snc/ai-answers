@@ -76,7 +76,7 @@ const SessionPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
 
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <div className="text-status--negative">{error}</div>}
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
 
       <DataTable
@@ -104,7 +104,9 @@ const SessionPage = ({ lang: propLang }) => {
           { title: t('admin.session.rpm', 'Requests / minute'), data: 'rpm' }
         ]}
         options={{ paging: true, searching: true, ordering: true, language: dataTableLanguage(lang) }}
-      />
+      >
+        <caption className="sr-only">{t('admin.session.title')}</caption>
+      </DataTable>
     </GcdsContainer>
   );
 };

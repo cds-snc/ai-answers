@@ -6,17 +6,18 @@ import { formatNumber } from '../../../utils/numberFormat.js';
 // Row dividers keep the count readable across a full-width row. `rows` is
 // [{ key, label, count, href? }] — when `href` is set the label renders as a
 // new-tab link.
-const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en' }) => {
+const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', captionLabel }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
   const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px' };
 
   return (
     <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {captionLabel && <caption className="sr-only">{captionLabel}</caption>}
       <thead>
         <tr>
-          <th style={{ ...head, textAlign: 'left' }}>{labelColLabel}</th>
-          <th style={{ ...head, textAlign: 'right' }}>{countColLabel}</th>
+          <th scope="col" style={{ ...head, textAlign: 'left' }}>{labelColLabel}</th>
+          <th scope="col" style={{ ...head, textAlign: 'right' }}>{countColLabel}</th>
         </tr>
       </thead>
       <tbody>
