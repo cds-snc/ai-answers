@@ -340,6 +340,7 @@
     "refresh": "Actualiser",
     "refreshPending": "Patientez...",
     "refreshComplete": "Journaux actualisés. {count} entrées chargées.",
+    "refreshFailed": "Échec de l'actualisation. Les journaux n'ont pas été mis à jour.",
     "download": "Télécharger les journaux (JSON)",
     "backToAdmin": "Retour à l'administration",
     "createdAt": "Créé le",

@@ -17,6 +17,7 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [logLevel, setLogLevel] = useState('');
   const [expandedMetadata, setExpandedMetadata] = useState(null);
   const [refreshAnnouncement, setRefreshAnnouncement] = useState('');
+  const [refreshAnnouncementIsError, setRefreshAnnouncementIsError] = useState(false);
   const tableRef = useRef(null);
   const refreshButtonRef = useRef(null);
   const pageContentRef = useRef(null);
@@ -70,6 +71,7 @@ const ChatViewer = ({ lang = 'en' }) => {
       clearLogs();
       setExpandedMetadata(null);
       setRefreshAnnouncement('');
+      setRefreshAnnouncementIsError(false);
     }
 
     setChatId(newValue);
@@ -85,7 +87,7 @@ const ChatViewer = ({ lang = 'en' }) => {
     // browser/AT combinations (2.4.3), so restore it once refresh finishes.
     const wasFocused = document.activeElement === refreshButtonRef.current;
     const requestedChatId = chatId;
-    const nextLogs = await refreshLogs();
+    const { logs: nextLogs, error } = await refreshLogs();
 
     // The chatId input is disabled while refreshing (below), but guard
     // anyway: if the viewer moved off this chatId while the request was in
@@ -98,14 +100,19 @@ const ChatViewer = ({ lang = 'en' }) => {
     // The button's own label changes ("Refresh" -> "Please wait..." -> back)
     // isn't reliably announced by screen readers on its own — a status
     // message gives an explicit confirmation the content updated (4.1.3).
+    // A failed fetch also resolves to zero logs, so it needs its own
+    // message — otherwise a failure reads identically to "nothing new".
     // Clearing first guarantees a DOM mutation even when the new message is
     // identical to the last one (e.g. two refreshes in a row with no new
     // entries) — otherwise React's same-value bail-out means the aria-live
     // region never changes and nothing gets announced.
     setRefreshAnnouncement('');
     await new Promise(requestAnimationFrame);
+    setRefreshAnnouncementIsError(!!error);
     setRefreshAnnouncement(
-      t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang))
+      error
+        ? t('logging.refreshFailed')
+        : t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang))
     );
     if (wasFocused) {
       refreshButtonRef.current?.focus?.();
@@ -198,7 +205,12 @@ const ChatViewer = ({ lang = 'en' }) => {
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
-            <StatusMessage message={refreshAnnouncement} tag="p" className="mb-0" />
+            <StatusMessage
+              message={refreshAnnouncement}
+              isError={refreshAnnouncementIsError}
+              tag="p"
+              className="mb-0"
+            />
 
             {chatId && stepTimeline && (
               <div className="bg-white shadow rounded-lg p-4">

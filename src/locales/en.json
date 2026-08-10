@@ -340,6 +340,7 @@
     "refresh": "Refresh",
     "refreshPending": "Please wait...",
     "refreshComplete": "Logs refreshed. {count} entries loaded.",
+    "refreshFailed": "Refresh failed. Logs were not updated.",
     "download": "Download logs (JSON)",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
