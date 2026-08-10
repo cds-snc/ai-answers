@@ -95,7 +95,7 @@ const SessionPage = ({ lang: propLang }) => {
         onClick={() => setIsPaused((paused) => !paused)}
         aria-pressed={isPaused}
       >
-        {isPaused ? t('admin.session.resumeUpdates') : t('admin.session.pauseUpdates')}
+        {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
       </GcdsButton>
 
       <DataTable

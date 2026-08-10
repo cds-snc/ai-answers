@@ -332,9 +332,7 @@
         "uploaded": "Téléversé",
         "unknown": "Inconnu"
       },
-      "totalsLabel": "{finished}/{total} terminé",
-      "pauseUpdates": "Suspendre les mises à jour automatiques",
-      "resumeUpdates": "Reprendre les mises à jour automatiques"
+      "totalsLabel": "{finished}/{total} terminé"
     }
   },
   "logging": {
@@ -760,9 +758,7 @@
       "avgLatency": "Latence moyenne (ms)",
       "rpm": "Requêtes / minute",
       "errorLoading": "Échec du chargement des sessions : {status} {text}",
-      "errorGeneric": "Erreur : {message}",
-      "pauseUpdates": "Suspendre les mises à jour automatiques",
-      "resumeUpdates": "Reprendre les mises à jour automatiques"
+      "errorGeneric": "Erreur : {message}"
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
@@ -1173,7 +1169,9 @@
     "off": "Désactivé",
     "na": "S.O.",
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
-    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés."
+    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés.",
+    "pauseUpdates": "Suspendre les mises à jour automatiques",
+    "resumeUpdates": "Reprendre les mises à jour automatiques"
   },
   "eval": {
     "metric": "Métrique",

@@ -172,7 +172,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
         onClick={() => setIsPaused((paused) => !paused)}
         aria-pressed={isPaused}
       >
-        {isPaused ? t('batch.list.resumeUpdates') : t('batch.list.pauseUpdates')}
+        {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
       </GcdsButton>
       <DataTable
         data={filteredBatches}

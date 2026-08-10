@@ -36,9 +36,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const [showUpload, setShowUpload] = useState(false);
 
+    // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs unconditionally for as
+    // long as the admin has the page open. isPausedRef mirrors isPaused
+    // into the interval closure so the pause button takes effect on the
+    // next tick without recreating the timer.
+    const [isRefreshPaused, setIsRefreshPaused] = useState(false);
+    const isRefreshPausedRef = useRef(isRefreshPaused);
+    isRefreshPausedRef.current = isRefreshPaused;
+
     useEffect(() => {
         fetchDatasets(true);
-        const refreshTimer = window.setInterval(() => fetchDatasets(false), 5000);
+        const refreshTimer = window.setInterval(() => {
+            if (isRefreshPausedRef.current) return;
+            fetchDatasets(false);
+        }, 5000);
         return () => window.clearInterval(refreshTimer);
     }, []);
 
@@ -381,6 +392,15 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             </div>
 
             <GcdsHeading tag="h2" className="mt-600">{t('experimental.datasets.existing')}</GcdsHeading>
+            <GcdsButton
+                size="small"
+                buttonRole="secondary"
+                className="mb-200"
+                onClick={() => setIsRefreshPaused((paused) => !paused)}
+                aria-pressed={isRefreshPaused}
+            >
+                {isRefreshPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
+            </GcdsButton>
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (
