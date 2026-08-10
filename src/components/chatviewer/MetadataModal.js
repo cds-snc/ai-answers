@@ -22,6 +22,14 @@ const MetadataModal = ({ metadata, onClose, t }) => {
 
   useReturnFocusOnClose(isOpen, triggerRef);
 
+  // Keep the latest onClose in a ref so the keydown-trap effect below only
+  // needs to key off `metadata` — onClose is a new function identity on
+  // every ChatViewer render, and including it directly in that effect's
+  // deps meant the document keydown listener was torn down and re-attached
+  // on every render while the modal stayed open.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (metadata) {
       // Must run before focus moves into the dialog below.
@@ -49,7 +57,7 @@ const MetadataModal = ({ metadata, onClose, t }) => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -76,7 +84,7 @@ const MetadataModal = ({ metadata, onClose, t }) => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [metadata, onClose]);
+  }, [metadata]);
 
   if (!metadata) {
     return null;
