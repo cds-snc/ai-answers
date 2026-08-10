@@ -201,16 +201,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         const otherCount = allDepts.length > 1 ? allDepts.length - 1 : 0;
 
         if (otherCount > 0) {
-          // A native `title` tooltip is mouse-hover only — unreachable by
-          // keyboard and unannounced by screen readers (fails 2.1.1 and
-          // 1.4.13). <details>/<summary> is natively focusable and
-          // toggled with Enter/Space, matching the disclosure pattern used
-          // elsewhere in the admin dashboards (e.g. ReferralUrlsCard).
-          const moreText = escapeHtmlAttribute(
-            t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount)
-          );
+          const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
           const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
-          return `<span>${primary} <details class="chat-dashboard-department-details"><summary>${moreText}</summary><span class="chat-dashboard-department-list">${allDeptsStr}</span></details></span>`;
+          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
         }
         return primary;
       }

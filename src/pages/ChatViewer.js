@@ -19,6 +19,7 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [refreshAnnouncement, setRefreshAnnouncement] = useState('');
   const tableRef = useRef(null);
   const refreshButtonRef = useRef(null);
+  const pageContentRef = useRef(null);
 
   const { clearLogs, isRefreshingLogs, logs, refreshLogs } = useChatLogs(chatId);
   const stepTimeline = useChatTimeline(logs);
@@ -38,6 +39,20 @@ const ChatViewer = ({ lang = 'en' }) => {
       setChatId(storedChatId);
     }
   }, []);
+
+  // MetadataModal's Tab-trap keeps keyboard focus inside it, but a screen
+  // reader's browse/virtual-cursor mode (NVDA arrow keys, VoiceOver rotor)
+  // walks the accessibility tree independently of focus order — it would
+  // still reach the page underneath the full-screen overlay. `inert` removes
+  // this content from the accessibility tree (and blocks interaction with
+  // it) for as long as the modal is open. Set imperatively via a ref rather
+  // than as a JSX prop so it works regardless of whether it lands on a
+  // GC DS custom element.
+  useEffect(() => {
+    if (pageContentRef.current) {
+      pageContentRef.current.inert = !!expandedMetadata;
+    }
+  }, [expandedMetadata]);
 
   const handleLogLevelChange = (e) => {
     setLogLevel(e.target.value);
@@ -103,6 +118,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
   return (
     <>
+      <div ref={pageContentRef}>
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
@@ -300,6 +316,7 @@ const ChatViewer = ({ lang = 'en' }) => {
           </div>
         </section>
       </GcdsContainer>
+      </div>
 
       <MetadataModal
         metadata={expandedMetadata}
