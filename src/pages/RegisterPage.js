@@ -5,8 +5,8 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
-import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
-import { isValidEmail } from '../utils/auth/validateEmail.js';
+import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
+import { normalizeEmail } from '../utils/auth/validateEmail.js';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -14,36 +14,31 @@ const RegisterPage = ({ lang = 'en' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
+  const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
 
-    if (!email || !password || !confirmPassword) {
-      setError(t('validation.required'));
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setError(t('validation.emailInvalid'));
+    const trimmedEmail = normalizeEmail(email);
+    if (!validate({ email: trimmedEmail, password, confirmPassword }, t)) {
       return;
     }
 
     if (password !== confirmPassword) {
-      setError(t('signup.passwordMismatch'));
+      setError(t('signup.passwordMismatch'), ['password', 'confirmPassword']);
       return;
     }
 
     if (password.length < 8) {
-      setError(t('signup.passwordTooShort'));
+      setError(t('signup.passwordTooShort'), ['password']);
       return;
     }
 
     setIsLoading(true);
     try {
-      await AuthService.signup(email, password);
+      await AuthService.signup(trimmedEmail, password);
       navigate(getPath('admin', lang));
     } catch (err) {
       setError(err.message || t('signup.errorOccurred'));
@@ -70,6 +65,8 @@ const RegisterPage = ({ lang = 'en' }) => {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={isLoading}
+            aria-describedby={error ? 'signup-error' : undefined}
+            aria-invalid={isFieldInvalid('email')}
           />
         </div>
         <PasswordInput
@@ -83,7 +80,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'signup-error' : undefined}
-          ariaInvalid={!!error}
+          ariaInvalid={isFieldInvalid('password')}
           lang={lang}
         />
         <PasswordInput
@@ -97,7 +94,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'signup-error' : undefined}
-          ariaInvalid={!!error}
+          ariaInvalid={isFieldInvalid('confirmPassword')}
           lang={lang}
         />
         <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">

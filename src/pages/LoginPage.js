@@ -7,7 +7,8 @@ import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
-import { isValidEmail } from '../utils/auth/validateEmail.js';
+import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
+import { normalizeEmail } from '../utils/auth/validateEmail.js';
 import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -17,33 +18,30 @@ const LoginPage = ({ lang = 'en' }) => {
   const { login, refreshUser, getDefaultRouteForRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
+  const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
   const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // The expiry marker is informational only. Once the user starts a fresh
-    // login attempt, remove it so it cannot persist into a new session.
-    if (sessionExpired) {
-      navigate(location.pathname, { replace: true });
-    }
     clearError();
     // If 2FA flow already started, ignore normal submit
     if (showTwoStep) {
       return;
     }
-    if (!email || !password) {
-      setError(t('validation.required'));
+    const trimmedEmail = normalizeEmail(email);
+    if (!validate({ email: trimmedEmail, password }, t)) {
       return;
     }
-    if (!isValidEmail(email)) {
-      setError(t('validation.emailInvalid'));
-      return;
+    // The expiry marker is informational only. Once the user starts a fresh
+    // login attempt that passes validation, remove it so it cannot persist
+    // into a new session.
+    if (sessionExpired) {
+      navigate(location.pathname, { replace: true });
     }
     setIsLoading(true);
     try {
-      const data = await login(email, password);
+      const data = await login(trimmedEmail, password);
       // If backend requires two-step verification, backend already sent the email; prompt for code
       if (data && data.twoFA) {
         setShowTwoStep(true);
@@ -52,7 +50,7 @@ const LoginPage = ({ lang = 'en' }) => {
       const defaultRoute = data?.defaultRoute || '/';
       navigate(defaultRoute);
     } catch (err) {
-      setError(t('login.invalidCredentials'));
+      setError(t('login.invalidCredentials'), ['email', 'password']);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +164,7 @@ const LoginPage = ({ lang = 'en' }) => {
                 required
                 disabled={isLoading}
                 aria-describedby={error ? 'login-error' : undefined}
-                aria-invalid={!!error}
+                aria-invalid={isFieldInvalid('email')}
               />
             </div>
             <PasswordInput
@@ -179,7 +177,7 @@ const LoginPage = ({ lang = 'en' }) => {
               disabled={isLoading}
               autoComplete="current-password"
               ariaDescribedBy={error ? 'login-error' : undefined}
-              ariaInvalid={!!error}
+              ariaInvalid={isFieldInvalid('password')}
               lang={lang}
             />
             <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
