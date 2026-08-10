@@ -7,6 +7,7 @@ import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
+import StatusMessage from './StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -38,10 +39,10 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
           </div>
         )}
         {error && !isLoading && (
-          <div className="dashboard-error" role="alert">
+          <StatusMessage isError tag="div" className="dashboard-error">
             <GcdsIcon name="warning-triangle" marginRight="50" />
             {error}
-          </div>
+          </StatusMessage>
         )}
         <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
           {children}
