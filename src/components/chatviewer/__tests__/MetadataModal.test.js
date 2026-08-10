@@ -7,9 +7,11 @@ import { render, fireEvent, cleanup } from '@testing-library/react';
 import MetadataModal from '../MetadataModal.js';
 
 vi.mock('@gcds-core/components-react', () => ({
-  GcdsButton: React.forwardRef(({ children, onClick }, ref) => (
-    <button ref={ref} onClick={onClick}>{children}</button>
-  )),
+  GcdsButton: React.forwardRef(function GcdsButton({ children, onClick }, ref) {
+    return (
+      <button ref={ref} onClick={onClick}>{children}</button>
+    );
+  }),
 }));
 
 vi.mock('prismjs', () => ({
