@@ -4,12 +4,17 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { truncate } from '../../utils/experimental/batchItems.js';
 
-const VERDICT_CELL_STYLES = {
-    pass: { backgroundColor: '#d8eeca', color: '#1d4d27' },
-    mixed: { backgroundColor: '#fbe9c6', color: '#7a5a00' },
-    flagged: { backgroundColor: '#fdd7d9', color: '#a12622' },
-    error: { backgroundColor: '#f3c4c6', color: '#7a1b16' },
-    missing: { backgroundColor: '#f1f1f1', color: '#666' }
+// Colours live in admin.css (.verdict-cell--*) so pass/mixed/error stay in
+// sync with the shared .label good/caution/error tier instead of drifting
+// as a second hardcoded copy. flagged/missing are this table's own colours
+// — see admin.css. Exported so other verdict displays (e.g. the legend in
+// ExperimentalSuitePage.js) point at the same classes instead of a third copy.
+export const VERDICT_CELL_CLASSES = {
+    pass: 'verdict-cell--pass',
+    mixed: 'verdict-cell--mixed',
+    flagged: 'verdict-cell--flagged',
+    error: 'verdict-cell--error',
+    missing: 'verdict-cell--missing'
 };
 
 const VERDICT_SYMBOLS = {
@@ -152,7 +157,8 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 return (
                                     <td
                                         key={test.position}
-                                        style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict], cursor: clickable ? 'pointer' : 'default' }}
+                                        className={VERDICT_CELL_CLASSES[verdict]}
+                                        style={{ ...CELL_BASE, cursor: clickable ? 'pointer' : 'default' }}
                                         title={label}
                                         role={clickable ? 'button' : undefined}
                                         tabIndex={clickable ? 0 : undefined}

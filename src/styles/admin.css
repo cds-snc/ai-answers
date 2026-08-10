@@ -12,17 +12,11 @@
   text-decoration: underline;
 }
 
-/* Generic status-colour text utilities — for a plain word/value that needs
-   to convey good/bad/warning/neutral state via text colour alone (paired
-   with a text label, never colour-only). Several components had already
-   duplicated the green-700/red-700 pairing as their own one-off modifier
-   classes (.stat-card__value--*, .donut-card__centre-value--*,
-   .label.correct/.hasError) — new call sites should use these instead of
-   adding another near-identical set. --warning is NOT the same value as
-   those same components' --orange variants (#e65100, ~3.76:1 against white
-   — itself a latent contrast risk, just not one flagged by this audit);
-   var(--gcds-color-orange-700) is a deliberately different, more
-   accessible shade (~7:1), not a straight tokenization of the existing one. */
+/* Shared status-colour text utilities (colour only, always paired with a
+   label). Replaces one-off duplicates like .stat-card__value--*,
+   .donut-card__centre-value--*, .label.correct/.hasError — prefer these
+   for new call sites. --warning is #a14b00 (not a GC DS token), matching
+   .label.hasContentIssue's amber; clears 4.5:1 on both backgrounds. */
 .text-status--positive {
   color: var(--gcds-color-green-700);
 }
@@ -32,7 +26,7 @@
 }
 
 .text-status--warning {
-  color: var(--gcds-color-orange-700);
+  color: #a14b00;
 }
 
 .text-status--neutral {
@@ -749,7 +743,7 @@
 /* Base label styles */
 .label {
   display: inline-block;
-  padding: var(--gcds-spacing-25) var(--gcds-spacing-50);
+  padding: var(--gcds-spacing-50) var(--gcds-spacing-75);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
@@ -782,8 +776,10 @@
   padding: var(--gcds-spacing-125) var(--gcds-spacing-250) var(--gcds-spacing-125) var(--gcds-spacing-200);
 }
 
-/* User type labels */
-.label.public {
+/* User type labels — shared with DatabasePage.js's .label.building
+   ("building" has no neutral tier of its own below). */
+.label.public,
+.label.building {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
 }
@@ -814,42 +810,61 @@
   color: #004D40;
 }
 
-/* Evaluation labels */
-
-/* Correct (green) */
-.label.correct {
-  background-color: var(--gcds-color-green-100);
-  color: var(--gcds-color-green-700);
+/* Evaluation labels + DatabasePage.js index-build status share one
+   good/caution/error tier. SuiteGridTable.js's pass/mixed/error verdict
+   cells reuse these same classes below — only its flagged/missing cells
+   are their own thing, see that file. */
+.label.correct,
+.label.complete,
+.verdict-cell--pass {
+  background-color: #d8eeca;
+  color: #1d4d27;
 }
 
-/* Needs improvement (yellow) */
-.label.needsImprovement {
+.label.needsImprovement,
+.label.incomplete,
+.verdict-cell--mixed {
   background-color: var(--gcds-color-yellow-100);
-  color: var(--gcds-color-grayscale-900);
+  color: #7a5a00;
 }
 
-/* All errors (red) */
+/* #f5bdbb: red-100 blended ~15% toward red-500 (no matching GC DS token).
+   Text is red-900, not red-700 — red-700 falls to ~4.33:1 on this fill.
+   SuiteGridTable.js's error verdict cell shares this rule too. */
 .label.hasError,
 .label.hasCitationError,
-.label.harmful {
-  background-color: var(--gcds-color-red-100);
-  color: var(--gcds-color-red-700);
-  border: 1px solid var(--gcds-color-red-500);
+.label.error,
+.verdict-cell--error {
+  background-color: #f5bdbb;
+  color: var(--gcds-color-red-900);
 }
 
-/* Content issue (amber) — an independent per-sentence tag, not part of the
-   correct/needsImprovement/error score scale above, so it gets its own
-   colour rather than reusing one of those. GC DS has no light-orange token
-   pairing (only --gcds-color-orange-700), so this follows the same
-   hardcoded-pair convention already used for .label.admin/.clarifying-
-   question/.not-gc/.pt-muni above. #e65100 (used elsewhere in this file for
-   stat-card/donut values on a plain background) only reaches 2.99:1 against
-   this chip's #FFE0B2 fill — below the 4.5:1 WCAG AA minimum for this text
-   size, and lightening the fill further can't fix it (pure white still
-   caps at 3.79:1). #a13900 keeps the same amber family and clears 5.34:1. */
+/* SuiteGridTable.js's own cells that aren't part of a shared tier: flagged
+   has no .label equivalent, so it keeps its own light custom tint. missing
+   is a neutral grey, not a severity colour at all. */
+.verdict-cell--flagged {
+  background-color: #fdf0ee;
+  color: #a62a1e;
+}
+
+.verdict-cell--missing {
+  background-color: #f1f1f1;
+  color: #666;
+}
+
+/* Harmful — most severe category, kept as its own solid red-900/white
+   treatment (~9.64:1), distinct from the error tier above. */
+.label.harmful {
+  background-color: var(--gcds-color-red-900);
+  color: white;
+}
+
+/* Content issue (amber) — independent per-sentence tag, own colour like
+   .label.admin/.clarifying-question/.not-gc/.pt-muni above (no matching
+   GC DS token). #a14b00 clears 4.70:1 on #FFE0B2 (old #e65100 was 2.99:1). */
 .label.hasContentIssue {
   background-color: #FFE0B2;
-  color: #a13900;
+  color: #a14b00;
 }
 
 /* Table summary stats */
@@ -1122,13 +1137,15 @@
   }
 }
 
+/* Now uses the shared red-100/red-500/red-700 pairing instead of its own
+   hardcoded red (#ffebee/#ef9a9a/#c62828). */
 .dashboard-error {
-  background: #ffebee;
-  border: 1px solid #ef9a9a;
+  background: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-500);
   border-radius: 6px;
   padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
   margin-bottom: var(--gcds-spacing-300);
-  color: #c62828;
+  color: var(--gcds-color-red-700);
 }
 
 .dashboard-warning {

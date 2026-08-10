@@ -829,18 +829,10 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ paddingRight: 16 }}>{col.collection}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
-                    <td
-                      className={
-                        col.status === 'complete'
-                          ? 'text-status--positive'
-                          : col.status === 'building'
-                            ? 'text-status--neutral'
-                            : col.status === 'error'
-                              ? 'text-status--negative'
-                              : 'text-status--warning'
-                      }
-                    >
-                      {col.status}
+                    <td>
+                      <span className={`label ${['complete', 'building', 'error'].includes(col.status) ? col.status : 'incomplete'}`}>
+                        {col.status}
+                      </span>
                       {col.status === 'building' && col.building?.length > 0 && (
                         <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
                           ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
