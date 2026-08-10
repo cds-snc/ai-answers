@@ -20,6 +20,11 @@ const ChatViewer = ({ lang = 'en' }) => {
   const tableRef = useRef(null);
   const refreshButtonRef = useRef(null);
   const pageContentRef = useRef(null);
+  // Lets an in-flight refresh recognize that the user has since switched to
+  // a different chatId, so its result doesn't overwrite the announcement or
+  // focus for the chat now on screen.
+  const chatIdRef = useRef(chatId);
+  chatIdRef.current = chatId;
 
   const { clearLogs, isRefreshingLogs, logs, refreshLogs } = useChatLogs(chatId);
   const stepTimeline = useChatTimeline(logs);
@@ -79,10 +84,26 @@ const ChatViewer = ({ lang = 'en' }) => {
     // disabling a focused control can drop focus to <body> in some
     // browser/AT combinations (2.4.3), so restore it once refresh finishes.
     const wasFocused = document.activeElement === refreshButtonRef.current;
+    const requestedChatId = chatId;
     const nextLogs = await refreshLogs();
+
+    // The chatId input is disabled while refreshing (below), but guard
+    // anyway: if the viewer moved off this chatId while the request was in
+    // flight, this result no longer describes what's on screen, so don't
+    // announce or refocus based on it.
+    if (chatIdRef.current !== requestedChatId) {
+      return;
+    }
+
     // The button's own label changes ("Refresh" -> "Please wait..." -> back)
     // isn't reliably announced by screen readers on its own — a status
     // message gives an explicit confirmation the content updated (4.1.3).
+    // Clearing first guarantees a DOM mutation even when the new message is
+    // identical to the last one (e.g. two refreshes in a row with no new
+    // entries) — otherwise React's same-value bail-out means the aria-live
+    // region never changes and nothing gets announced.
+    setRefreshAnnouncement('');
+    await new Promise(requestAnimationFrame);
     setRefreshAnnouncement(
       t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang))
     );
@@ -140,6 +161,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                 value={chatId}
                 onChange={handleChatIdChange}
                 required
+                disabled={isRefreshingLogs}
                 className="form-control p-2 border rounded w-full"
               />
             </div>
@@ -282,8 +304,8 @@ const ChatViewer = ({ lang = 'en' }) => {
 
             {chatId && logs && (
               <div className="bg-white shadow rounded-lg">
-                {logs.length > 0 ? (
-                  <div className="p-4">
+                <div className="p-4">
+                  {logs.length > 0 && (
                     <div className="mb-3">
                       <GcdsButton
                         id="download-logs-button"
@@ -295,22 +317,23 @@ const ChatViewer = ({ lang = 'en' }) => {
                         {t('logging.download')}
                       </GcdsButton>
                     </div>
-                    <table ref={tableRef} className="display">
-                      <thead>
-                        <tr>
-                          <th>{t('logging.createdAt')}</th>
-                          <th>{t('logging.level')}</th>
-                          <th>{t('logging.message')}</th>
-                          <th>{t('logging.metadata')}</th>
-                        </tr>
-                      </thead>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    <p className="text-gray-500">{t('logging.noLogs')}</p>
-                  </div>
-                )}
+                  )}
+                  {/* Always mounted, even with zero logs — DataTables shows
+                      its own localized empty state (see useChatLogsTable),
+                      which keeps tableRef stable so focus can be captured
+                      and restored across refreshes instead of being lost to
+                      <body> when this element used to get swapped out. */}
+                  <table ref={tableRef} className="display">
+                    <thead>
+                      <tr>
+                        <th>{t('logging.createdAt')}</th>
+                        <th>{t('logging.level')}</th>
+                        <th>{t('logging.message')}</th>
+                        <th>{t('logging.metadata')}</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
               </div>
             )}
           </div>

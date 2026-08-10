@@ -1169,9 +1169,7 @@
     "off": "Désactivé",
     "na": "S.O.",
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
-    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés.",
-    "pauseUpdates": "Suspendre les mises à jour automatiques",
-    "resumeUpdates": "Reprendre les mises à jour automatiques"
+    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés."
   },
   "eval": {
     "metric": "Métrique",

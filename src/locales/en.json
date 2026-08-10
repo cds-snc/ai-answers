@@ -1169,9 +1169,7 @@
     "off": "Off",
     "na": "N/A",
     "noDataForFilters": "No data found for the selected filters.",
-    "notEnoughData": "Not enough data available for the filters selected.",
-    "pauseUpdates": "Pause automatic updates",
-    "resumeUpdates": "Resume automatic updates"
+    "notEnoughData": "Not enough data available for the filters selected."
   },
   "eval": {
     "metric": "Metric",
