@@ -8,6 +8,7 @@ import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
+import StatusMessage from './StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -189,11 +190,16 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           </div>
         )}
         {error && !isLoading && (
-          <div className="dashboard-error" role="alert">
+          <StatusMessage isError tag="div" className="dashboard-error">
             <GcdsIcon name="warning-triangle" marginRight="50" />
             {error}
-          </div>
+          </StatusMessage>
         )}
+        {/* TODO: transition-opacity/duration-200/opacity-50/pointer-events-none are
+            Tailwind-style class names not defined anywhere in this project's CSS —
+            loading never actually dims or disables this section. Same bug in
+            TechnicalMetricsDashboard.js's identical SectionWrapper. Needs a real CSS
+            class or an inline style. */}
         <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
           {children}
         </div>

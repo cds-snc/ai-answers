@@ -150,6 +150,9 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 // mean "nothing was compared", not success.
                                 const verdict = run.referenceCapture ? 'missing' : displayVerdict(cell);
                                 const clickable = run.referenceCapture ? Boolean(cell) : verdict !== 'missing';
+                                // TODO: runLabel(run, index) only depends on run/index, which are
+                                // constant for the whole row (already computed once at line 119) —
+                                // hoist to row scope instead of recomputing per cell (O(R) not O(R×T)).
                                 const rowLabel = runLabel(run, index);
                                 const label = run.referenceCapture && cell
                                     ? `${rowLabel} — ${test.testName} — ${t('experimental.suite.captureRun')}`

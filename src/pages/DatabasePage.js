@@ -751,6 +751,10 @@ const DatabasePage = ({ lang }) => {
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
+                  {/* TODO: .text-secondary is not defined in any stylesheet (only the
+                      --gcds-text-secondary CSS var exists) — this code suffix renders in
+                      default text color instead of muted grey. Add a .text-secondary class
+                      or swap to var(--gcds-text-secondary) directly. */}
                   {f.code && <span className="text-secondary font-size-text-xxs-nr" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
@@ -830,6 +834,9 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
                     <td>
+                      {/* TODO: confirm the backend (api/db/db-database-management.js) never emits
+                          a status outside building/complete/incomplete/error — if it doesn't, this
+                          whitelist is dead code and can simplify to `label ${col.status}`. */}
                       <span className={`label ${['complete', 'building', 'error'].includes(col.status) ? col.status : 'incomplete'}`}>
                         {col.status}
                       </span>

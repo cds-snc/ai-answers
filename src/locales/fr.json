@@ -646,8 +646,6 @@
       },
       "metrics": {
         "title": "Métriques d'évaluation",
-        "metricLabel": "Métrique",
-        "valueLabel": "Valeur",
         "total": "Total des évaluations",
         "processed": "Évaluations traitées",
         "hasMatches": "Évaluations avec correspondances",

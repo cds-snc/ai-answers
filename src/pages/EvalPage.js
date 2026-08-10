@@ -231,8 +231,8 @@ const EvalPage = ({ lang = 'en' }) => {
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th scope="col"><span className="sr-only">{t('admin.evalPage.metrics.metricLabel')}</span></th>
-                    <th scope="col"><span className="sr-only">{t('admin.evalPage.metrics.valueLabel')}</span></th>
+                    <th scope="col"><span className="sr-only">{t('reviewPanels.metric')}</span></th>
+                    <th scope="col"><span className="sr-only">{t('reviewPanels.value')}</span></th>
                   </tr>
                 </thead>
                 <tbody>

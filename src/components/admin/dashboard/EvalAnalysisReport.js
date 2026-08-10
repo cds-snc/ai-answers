@@ -90,9 +90,9 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   // in this file only have column headers, where <th> alone is normally
   // enough, but scope="col" is kept on those too since it's harmless and
   // keeps the pattern consistent across the file.
-  const crossTabTable = (rows, labelColLabel) => (
+  const crossTabTable = (rows, labelColLabel, headingId) => (
     <div style={{ overflowX: 'auto' }}>
-      <table className="display" aria-labelledby="eval-analysis-program-actions-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="display" aria-labelledby={headingId} style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             <th scope="col" style={head}>{labelColLabel}</th>
@@ -170,7 +170,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
           <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
-          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'))}
+          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
               {t('partnerDashboard.evalAnalysis.report.singlesSkipped')

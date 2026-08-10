@@ -12,11 +12,14 @@
   text-decoration: underline;
 }
 
-/* Shared status-colour text utilities (colour only, always paired with a
-   label). Replaces one-off duplicates like .stat-card__value--*,
-   .donut-card__centre-value--*, .label.correct/.hasError — prefer these
-   for new call sites. --warning is #a14b00 (not a GC DS token), matching
-   .label.hasContentIssue's amber; clears 4.5:1 on both backgrounds. */
+/* Shared status-colour text utilities — plain text, no background, always
+   paired with a label. Same colour values as .stat-card__value--*/
+   .donut-card__centre-value--* (not yet migrated to these — TODO), but NOT
+   the same as .label.correct/.hasError etc. below: those are bg+text pill
+   pairs with their own contrast-tuned hex per background, not a duplicate
+   of this text-only set. Prefer these for new plain-text call sites.
+   --warning is #a14b00 (not a GC DS token), matching .label.hasContentIssue's
+   amber; clears 4.5:1 on both backgrounds. */
 .text-status--positive {
   color: var(--gcds-color-green-700);
 }
