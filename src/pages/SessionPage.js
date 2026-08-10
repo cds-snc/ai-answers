@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@gcds-core/components-react';
+import React, { useState, useEffect } from 'react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -16,12 +16,6 @@ const SessionPage = ({ lang: propLang }) => {
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
-  // table; isPausedRef mirrors isPaused into the interval closure so the
-  // pause button takes effect on the next tick without recreating the timer.
-  const [isPaused, setIsPaused] = useState(false);
-  const isPausedRef = useRef(isPaused);
-  isPausedRef.current = isPaused;
   const sessionTypeLabel = React.useCallback((value) => {
     const type = value || 'unknown';
     const labels = {
@@ -69,10 +63,7 @@ const SessionPage = ({ lang: propLang }) => {
 
   useEffect(() => {
     fetchSessions();
-    const iv = setInterval(() => {
-      if (isPausedRef.current) return;
-      fetchSessions();
-    }, 5000);
+    const iv = setInterval(fetchSessions, 5000);
     return () => clearInterval(iv);
   }, [fetchSessions]);
 
@@ -87,16 +78,6 @@ const SessionPage = ({ lang: propLang }) => {
 
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
-
-      <GcdsButton
-        size="small"
-        buttonRole="secondary"
-        className="mb-200"
-        onClick={() => setIsPaused((paused) => !paused)}
-        aria-pressed={isPaused}
-      >
-        {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-      </GcdsButton>
 
       <DataTable
         data={sessions}
