@@ -7,6 +7,7 @@ import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { isValidEmail } from '../utils/auth/validateEmail.js';
 import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -27,13 +28,20 @@ const LoginPage = ({ lang = 'en' }) => {
     if (sessionExpired) {
       navigate(location.pathname, { replace: true });
     }
-    setIsLoading(true);
     clearError();
     // If 2FA flow already started, ignore normal submit
     if (showTwoStep) {
-      setIsLoading(false);
       return;
     }
+    if (!email || !password) {
+      setError(t('validation.required'));
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError(t('validation.emailInvalid'));
+      return;
+    }
+    setIsLoading(true);
     try {
       const data = await login(email, password);
       // If backend requires two-step verification, backend already sent the email; prompt for code
@@ -102,6 +110,7 @@ const LoginPage = ({ lang = 'en' }) => {
 
   return (
     <div className="auth-login-container">
+      <h1>{showTwoStep ? t('login.2fa.title') : t('login.title')}</h1>
       {sessionExpired && (
         <GcdsNotice
           noticeRole="warning"
@@ -116,7 +125,6 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
-          <h2>{t('login.2fa.title')}</h2>
           <p>{t('login.2fa.sentToEmail')}</p>
           {twoStepError && (
             <AnnouncedError
@@ -142,11 +150,10 @@ const LoginPage = ({ lang = 'en' }) => {
       ) : (
         // Default login form with signup link when not in 2FA flow
         <>
-          <h1>{t('login.title')}</h1>
           {error && (
             <AnnouncedError id="login-error" message={error} errorCount={errorCount} inputRef={errorRef} />
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="auth-form-group">
               <label htmlFor="email">{t('login.email')}</label>
               <input
@@ -154,8 +161,8 @@ const LoginPage = ({ lang = 'en' }) => {
                 id="email"
                 value={email}
                 title={t('login.email')}
-                onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
-                onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
+                autoComplete="email"
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
                 aria-describedby={error ? 'login-error' : undefined}
@@ -167,8 +174,7 @@ const LoginPage = ({ lang = 'en' }) => {
               label={t('login.password')}
               value={password}
               title={t('login.password')}
-              onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
-              onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+              onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
               autoComplete="current-password"

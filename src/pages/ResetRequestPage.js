@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getPath } from '../utils/routes.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { isValidEmail } from '../utils/auth/validateEmail.js';
 
 const ResetRequestPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -16,9 +17,17 @@ const ResetRequestPage = ({ lang = 'en' }) => {
 
   const submit = async (e) => {
     e && e.preventDefault();
-    setIsLoading(true);
     setSuccessMessage('');
     clearError();
+    if (!email) {
+      setError(t('validation.required'));
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError(t('validation.emailInvalid'));
+      return;
+    }
+    setIsLoading(true);
     try {
       await AuthService.sendReset(email, lang);
       setSuccessMessage(t('reset.request.sent'));
@@ -43,7 +52,7 @@ const ResetRequestPage = ({ lang = 'en' }) => {
       {error && (
         <AnnouncedError id="reset-request-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
-      <form onSubmit={submit}>
+      <form onSubmit={submit} noValidate>
         <div className="auth-form-group">
           <label htmlFor="email">{t('login.email')}</label>
           <input
@@ -51,8 +60,8 @@ const ResetRequestPage = ({ lang = 'en' }) => {
             type="email"
             value={email}
             title={t('login.email')}
-            onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
-            onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
             required
             disabled={isLoading}
           />

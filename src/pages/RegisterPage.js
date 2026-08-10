@@ -6,6 +6,7 @@ import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { isValidEmail } from '../utils/auth/validateEmail.js';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -19,6 +20,16 @@ const RegisterPage = ({ lang = 'en' }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
+
+    if (!email || !password || !confirmPassword) {
+      setError(t('validation.required'));
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError(t('validation.emailInvalid'));
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError(t('signup.passwordMismatch'));
@@ -47,7 +58,7 @@ const RegisterPage = ({ lang = 'en' }) => {
       {error && (
         <AnnouncedError id="signup-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="auth-form-group">
           <label htmlFor="email">{t('signup.email')}</label>
           <input
@@ -55,8 +66,8 @@ const RegisterPage = ({ lang = 'en' }) => {
             id="email"
             value={email}
             title={t('signup.email')}
-            onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
-            onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
             required
             disabled={isLoading}
           />
@@ -67,8 +78,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           label={t('signup.password')}
           value={password}
           title={t('signup.password')}
-          onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
-          onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+          onChange={(e) => setPassword(e.target.value)}
           required
           disabled={isLoading}
           autoComplete="new-password"
@@ -82,8 +92,7 @@ const RegisterPage = ({ lang = 'en' }) => {
           label={t('signup.confirmPassword')}
           value={confirmPassword}
           title={t('signup.confirmPassword')}
-          onChange={(e) => { e.target.setCustomValidity(''); setConfirmPassword(e.target.value); }}
-          onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+          onChange={(e) => setConfirmPassword(e.target.value)}
           required
           disabled={isLoading}
           autoComplete="new-password"
