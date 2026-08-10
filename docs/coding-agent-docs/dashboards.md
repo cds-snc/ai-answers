@@ -461,6 +461,12 @@ This applies to **minimum-sample** gates only. Sections gated on *presence* of d
 
 ## Conventions
 
+- **Error banners**: use `src/components/admin/StatusMessage.js`
+  (`<StatusMessage isError tag="div" className="dashboard-error">…</StatusMessage>`,
+  `children` for icon + text) instead of hand-rolling a `<div className="dashboard-error"
+  role="alert">` — it standardizes the `role`/`aria-live` announcement. All of Public,
+  Partner, Metrics, TechnicalMetrics, and the eval-analysis section already use it; match
+  that pattern for any new dashboard error banner rather than copying the old inline markup.
 - **Locales**: each dashboard has its own `partnerDashboard.*` / `publicDashboard.*`
   namespace (`kpi`, `charts`). Duplicated keys across the two are normal. Add
   EN + FR together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).
