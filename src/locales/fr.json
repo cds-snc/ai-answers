@@ -1413,10 +1413,12 @@
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
-      "satisfactionCentre": "sur {total} réponses",
-      "satisfactionSummary": "Rétroaction du public (satisfaction) – {pct} utiles sur {total} réponses",
+      "satisfactionSubtext": "{pct} utile sur {total} réponses",
+      "satisfactionTrigger": "Voir la répartition de la satisfaction des utilisateurs",
+      "topRankSubtext": "N° 1 : {label}",
       "feedbackSectionTitle": "Rétroaction du public (satisfaction)",
       "feedbackSplitTitle": "Utile ou non",
+      "feedbackSplitSubtitle": "{total} des réponses",
       "feedbackReasonsTitle": "Répartition par motif",
       "feedbackBreakdownSubtitle": "Basé sur {total} réponses de rétroaction du public",
       "engagementTitle": "Longueur des conversations",
@@ -1449,13 +1451,13 @@
     },
     "referrals": {
       "title": "Principales pages référentes",
-      "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
+      "trigger": "Pages ayant généré le plus de trafic",
       "colUrl": "Page référente",
       "colCount": "Redirections"
     },
     "citations": {
       "title": "Principales pages citées",
-      "subtitle": "Pages du gouvernement du Canada les plus souvent citées par Réponses IA, calculé par question.",
+      "trigger": "Pages les plus citées",
       "colUrl": "Page citée",
       "colCount": "Questions",
       "noCitations": "Aucune citation pour cette période.",
@@ -1467,6 +1469,20 @@
         "ptMuni": "Provincial/municipal",
         "notGc": "Réponses hors du mandat du GC"
       }
+    },
+    "answerTypes": {
+      "trigger": "Types de questions posées"
+    },
+    "contentIssueChats": {
+      "title": "Problèmes de contenu par ID de clavardage",
+      "trigger": "Voir tous les clavardages par ID avec un problème de contenu",
+      "issueTypeCol": "Type de problème",
+      "noData": "Aucun problème de contenu signalé pour cette période."
+    },
+    "harmfulChats": {
+      "title": "Clavardages nuisibles par ID de clavardage",
+      "trigger": "Voir tous les clavardages nuisibles par ID",
+      "noData": "Aucun clavardage nuisible signalé pour cette période."
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",

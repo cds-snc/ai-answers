@@ -1,11 +1,13 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { formatNumber } from '../../../utils/numberFormat.js';
 
 // Plain two-column "label / count" table shared by the dashboard's collapsible
 // list cards (top referral pages, top citation pages, answer-type breakdown).
 // Row dividers keep the count readable across a full-width row. `rows` is
 // [{ key, label, count, href? }] — when `href` is set the label renders as a
-// new-tab link.
+// new-tab link via GcdsLink, which handles the icon, rel, and a localized
+// "(Opens destination in a new tab.)" accessible label on its own.
 const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', captionLabel }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
@@ -25,7 +27,7 @@ const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', capt
           <tr key={row.key}>
             <td style={{ ...cell, wordBreak: 'break-all' }}>
               {row.href ? (
-                <a href={row.href} target="_blank" rel="noopener noreferrer">{row.label}</a>
+                <GcdsLink href={row.href} target="_blank" lang={lang}>{row.label}</GcdsLink>
               ) : (
                 row.label
               )}

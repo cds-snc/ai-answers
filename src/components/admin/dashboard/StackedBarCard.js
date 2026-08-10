@@ -1,0 +1,111 @@
+import React from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
+
+// Single 100%-stacked horizontal bar in a card: one thin bar split into
+// segments, each segment's share of the total shown as a % label when there's
+// room, raw count + % in the tooltip. Good for a small fixed set of
+// mutually-exclusive categories that sum to one whole (e.g. conversation
+// length: single/two/three+ questions) — same part-to-whole read as a donut,
+// but bar length is easier to compare precisely than arc angle.
+// `data` = [{ name, value, colour, stroke? }], `value` = raw count. `stroke`
+// is optional per-item — set it when that segment's fill doesn't clear 3:1
+// against whatever it's touching (the white card edge, or a neighbour of
+// similar luminance despite a different hue — WCAG contrast is luminance-only,
+// so e.g. green vs red can still fail). Omit it and the segment gets a
+// self-coloured (invisible) stroke instead — every segment still gets
+// stroke width 1 either way, since SVG strokes are centred on the path (not
+// inset), so an unstroked segment would render geometrically smaller than a
+// stroked one and look like it "sticks out".
+// `leftContent` (optional) renders arbitrary content — e.g. a title/subtitle/
+// stat block — to the left of the bar, inside the same card
+// (stacked-bar-card--side-by-side). Replaces title/subtitle (ignored when
+// leftContent is passed).
+const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', noDataLabel = '', leftContent = null }) => {
+  const total = data.reduce((s, d) => s + (d.value || 0), 0);
+  const fmtPct = (v) => formatPercent(total > 0 ? Math.round((v / total) * 100) : 0, lang);
+
+  // One synthetic row so every segment stacks into a single bar.
+  const row = { name: 'total' };
+  data.forEach((d, i) => { row[`v${i}`] = d.value; });
+
+  const Tip = ({ active }) => {
+    if (!active) return null;
+    return (
+      <div className="chart-tooltip">
+        {data.map((d, i) => (
+          <div key={i}>
+            <span
+              className="stacked-bar-card__tooltip-swatch"
+              style={{ background: d.colour, borderColor: d.stroke || d.colour }}
+            />
+            {d.name}: {formatNumber(d.value, lang)} ({fmtPct(d.value)})
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const bar = total === 0 ? (
+    <div className="stacked-bar-card__no-data font-size-text-xsm-nr" style={{ height }}>{noDataLabel}</div>
+  ) : (
+    <>
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={[row]} layout="vertical" margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+          <XAxis type="number" domain={[0, total]} hide />
+          <YAxis type="category" dataKey="name" hide />
+          <Tooltip content={<Tip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+          {data.map((d, i) => {
+            return (
+              <Bar
+                key={d.name}
+                dataKey={`v${i}`}
+                stackId="a"
+                fill={d.colour}
+                stroke={d.stroke || d.colour}
+                strokeWidth={1}
+                radius={[
+                  i === 0 ? 4 : 0, i === data.length - 1 ? 4 : 0,
+                  i === data.length - 1 ? 4 : 0, i === 0 ? 4 : 0,
+                ]}
+              />
+            );
+          })}
+        </BarChart>
+      </ResponsiveContainer>
+      <ul className="stacked-bar-card__legend">
+        {data.map((d) => (
+          <li key={d.name}>
+            {/* Same stroke as the bar segment, so the legend dot matches
+                what's actually drawn in the bar. */}
+            <span
+              className="stacked-bar-card__swatch"
+              style={{ background: d.colour, borderColor: d.stroke || d.colour }}
+              aria-hidden="true"
+            />
+            {d.name} ({fmtPct(d.value)})
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+
+  if (leftContent) {
+    return (
+      <div className="dashboard-card stacked-bar-card stacked-bar-card--side-by-side">
+        <div className="stacked-bar-card__side">{leftContent}</div>
+        <div className="stacked-bar-card__bar">{bar}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard-card stacked-bar-card">
+      {title && <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>}
+      {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
+      {bar}
+    </div>
+  );
+};
+
+export default StackedBarCard;

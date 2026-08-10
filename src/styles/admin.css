@@ -973,10 +973,56 @@
   max-width: calc((100% - (var(--gcds-spacing-200) * 2)) / 3);
 }
 
+/* dashboard-row already stretches flex children to equal height by default
+   (no align-items override) — this fills that stretch down into the actual
+   card, since a bare block child doesn't grow to match its flex-item
+   parent's height on its own. Same technique as the Public dashboard's
+   conversation-length/response-time row. */
+.dashboard-col-third > .dashboard-card {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Answer types / Referrals / Citations trio: only the column whose <details>
+   is actually open grows to full width — its still-collapsed siblings stay
+   at their normal third-width and wrap onto their own line below (the row
+   already wraps), rather than every column reacting to any one opening.
+   order: -1 also floats the open one to the top of the row regardless of
+   its original position among the three. */
+.dashboard-col-third:has(details[open]) {
+  order: -1;
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
 .dashboard-col-half {
   flex: 0 0 calc((100% - var(--gcds-spacing-200)) / 2);
   max-width: calc((100% - var(--gcds-spacing-200)) / 2);
   min-width: 220px;
+}
+
+.dashboard-col-three-quarter {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) * 0.75);
+  max-width: calc((100% - var(--gcds-spacing-200)) * 0.75);
+  min-width: 280px;
+}
+
+.dashboard-col-quarter {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) * 0.25);
+  max-width: calc((100% - var(--gcds-spacing-200)) * 0.25);
+  min-width: 180px;
+}
+
+/* dashboard-row already stretches flex children to equal height by default
+   (no align-items override) — this fills that stretch down into the actual
+   card, since a bare block child doesn't grow to match its flex-item
+   parent's height on its own. Scoped to these two classes' direct card child
+   rather than dashboard-card globally, so it only affects rows that opt in
+   (e.g. Public dashboard's conversation-length + median-response-time row). */
+.dashboard-col-three-quarter > .dashboard-card,
+.dashboard-col-quarter > .dashboard-card {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* Apply alongside a column class to make direct children share the full column height */
@@ -1211,6 +1257,46 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
+/* Every dashboard-card variant defines its own padding (.donut-card,
+   .hbar-card, .stacked-bar-card, .stat-card, ...) rather than the shared
+   base — same value here for CollapsibleCard (Satisfaction, Referrals,
+   Citations, Answer types, Content issue chats). */
+.collapsible-card {
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+  /* Heading/subtext stack normally at the top; the trigger <details> anchors
+     to the bottom via margin-top: auto below. Combined with equal card
+     height (.dashboard-col-third/.dashboard-col-half > .dashboard-card),
+     this keeps the trigger link at the same Y position across siblings even
+     when one card's subtitle wraps to more lines than another's. */
+  display: flex;
+  flex-direction: column;
+}
+
+.collapsible-card > details {
+  margin-top: auto;
+}
+
+/* Chart cards (StackedBarCard, DivergingBarCard, ...) self-wrap in their own
+   .dashboard-card box for when they're used standalone. Nested inside a
+   CollapsibleCard's reveal (e.g. Satisfaction's helpful/not bar + reasons
+   breakdown), that would double-box them — strip the inner box styling so
+   they read as part of the same card instead of a card-within-a-card. */
+.collapsible-card > details > .dashboard-card {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.collapsible-card > details > .mt-400 > .dashboard-card {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
 /* ---- StatCard ---- */
 
 .stat-card {
@@ -1384,6 +1470,52 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+/* ---- StackedBarCard ---- */
+
+.stacked-bar-card {
+  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+}
+
+.stacked-bar-card__no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gcds-color-grayscale-700);
+}
+
+.stacked-bar-card__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gcds-spacing-200);
+  list-style: none;
+  margin: var(--gcds-spacing-150) 0 0;
+  padding: 0;
+  color: var(--gcds-color-grayscale-700);
+  font-size: 1rem;
+}
+
+.stacked-bar-card__legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-75);
+}
+
+.stacked-bar-card__swatch,
+.stacked-bar-card__tooltip-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  /* Base border-style so a per-swatch borderColor (matching the light bar
+     segment's stroke) can be set inline; transparent = invisible elsewhere. */
+  border: 1px solid transparent;
+}
+
+.stacked-bar-card__tooltip-swatch {
+  margin-right: var(--gcds-spacing-75);
 }
 
 /* Shared recharts custom tooltip chrome */

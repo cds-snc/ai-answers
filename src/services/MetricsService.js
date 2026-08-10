@@ -58,6 +58,14 @@ class MetricsService {
     return this._fetchMetric('metrics-citations', filters, signal);
   }
 
+  static async getContentIssueChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-content-issue-chats', filters, signal);
+  }
+
+  static async getHarmfulChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-harmful-chats', filters, signal);
+  }
+
   static async _fetchMetric(endpoint, filters, signal) {
     try {
       const queryParams = new URLSearchParams(filters).toString();

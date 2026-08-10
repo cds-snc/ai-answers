@@ -7,7 +7,7 @@ import { formatNumber } from '../../../utils/numberFormat.js';
 // `lang` drives locale-aware number formatting in the tooltip.
 const DonutCard = ({ title, subtitle, data, colours, centreValue, centreLabel, centreClass, centreMultiLine = false, footer, height = 260, lang = 'en' }) => (
   <div className="dashboard-card donut-card">
-    <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>
+    {title && <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>}
     {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
     <div className="donut-card__chart-wrap">
       <ResponsiveContainer width="100%" height={height}>

@@ -6,6 +6,7 @@ import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import StackedBarCard from './dashboard/StackedBarCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
@@ -123,9 +124,9 @@ const PublicDashboard = ({ lang = 'en' }) => {
   const totalConversations = metrics.totalConversations || 0;
   const sq = metrics.sessionsByQuestionCount || {};
   const sessionDepthData = totalConversations > 0 ? [
-    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
-    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
-    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0, colour: COLOURS.sessionDepthScale[0], stroke: COLOURS.chartStroke },
+    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0,   colour: COLOURS.sessionDepthScale[1] },
+    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0, colour: COLOURS.sessionDepthScale[2] },
   ].filter(d => d.value > 0) : [];
 
   const responseTime = metrics.responseTime || {};
@@ -238,20 +239,26 @@ const PublicDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Conversation length donut + median response time beside it.
-          Below 10 conversations the donut becomes a placeholder. */}
+      {/* Conversation length (75% width) + median response time beside it
+          (25%, height matched to conversation length via dashboard-row's
+          default flex stretch). Below 10 conversations the chart becomes a
+          placeholder. */}
       <div className="dashboard-row">
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-three-quarter">
           {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('publicDashboard.charts.engagementTitle')}
-              subtitle={t('publicDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('publicDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+            <StackedBarCard
+              data={sessionDepthData}
               lang={lang}
+              noDataLabel={t('publicDashboard.charts.noData')}
+              leftContent={(
+                <div>
+                  <h3 className="card-title card-title--has-subtitle">{t('publicDashboard.charts.engagementTitle')}</h3>
+                  <p className="card-subtitle font-size-text-xsm-nr">{t('publicDashboard.charts.engagementSubtitle')}</p>
+                  <p className="font-size-text-xsm-nr">
+                    {`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+                  </p>
+                </div>
+              )}
             />
           ) : (
             <NoDataCard
@@ -260,7 +267,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
             />
           )}
         </div>
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-quarter">
           <StatCard
             label={t('publicDashboard.ops.medianResponseTime')}
             value={hasResponseTime
@@ -272,7 +279,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
           />
         </div>
       </div>
-
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">

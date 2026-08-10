@@ -299,24 +299,23 @@ the only record of them. End-to-end:
   (per-type `{ total, en, fr }`). It honours date range + `userType`, and
   **ignores department on purpose** (blocks happen before the department is known).
 - **UI:** public **and** partner = `StatCard` (total) + `HBarCard` (by type, fixed
-  pipeline order, zero rows dropped); technical = `BlockedQueriesTable`. The
-  **partner** and technical dashboards track the applied department and **hide the
-  blocked-query view when a department is selected** (showing
-  `blockedQueries.deptNote` instead) — it can't be department-scoped. The public
-  dashboard has no institution filter, so its counter is always in scope and has
-  no such branch. Type order/labels:
+  pipeline order, zero rows dropped). The **partner** dashboard tracks the
+  applied department and **hides the blocked-query view when a department is
+  selected** (showing `blockedQueries.deptNote` instead) — it can't be
+  department-scoped. The public dashboard has no institution filter, so its
+  counter is always in scope and has no such branch. Type order/labels:
   `src/constants/blockedQueryTypes.js` + `blockedQueries.types.*` locale keys.
+  Technical dashboard doesn't show blocked queries at all — confirmed
+  intentional, not a gap.
 - **"Private details" is a display-only merge.** The public and partner bars group
   the two privacy guardrails (`piStage1` programmatic + `piStage2` AI detection)
   into one **Private details** row — which stage caught the query is an
   implementation detail to those audiences. The grouping lives in
   `BLOCK_QUERY_GROUPS` (`blockedQueryTypes.js`) and is summed by the shared
   `buildBlockedBarData` (`src/utils/dashboard/blockedQueryBars.js`), which both
-  dashboards call — don't rebuild the bar rows inline. The **technical**
-  dashboard deliberately keeps the raw two-row split (`BLOCK_QUERY_TYPES`) so the
-  guardrails stay debuggable. Storage, `blockType` tagging, and the metrics API
-  are untouched — they still record and return both stages separately.
-  Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
+  dashboards call — don't rebuild the bar rows inline. Storage, `blockType`
+  tagging, and the metrics API are untouched — they still record and return
+  both stages separately. Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
 - **Partner userType is deliberately NOT forced to public.** The public dashboard fixes
   `userType: 'public'` on every fetch, so its blocked counter excludes admin/
   partner test traffic. The partner dashboard intentionally does **not** do this —

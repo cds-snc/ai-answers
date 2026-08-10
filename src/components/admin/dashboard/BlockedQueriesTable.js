@@ -7,6 +7,10 @@ const EMPTY = { total: 0, en: 0, fr: 0 };
 // Text-free counts of queries blocked by the safety/security guardrails before
 // they reached the answer step. `blockedQueries` is the metric bundle's
 // blockedQueries object ({ [type]: { total, en, fr }, total: {...} }).
+//
+// TODO: currently unused — not imported by any page or component. Was built
+// for the technical dashboard's blocked-query section, which was confirmed
+// intentionally not present. Delete this file if no use is found for it.
 const BlockedQueriesTable = ({ blockedQueries = {}, lang = 'en', t }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const totals = blockedQueries.total || EMPTY;

@@ -1413,10 +1413,12 @@
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
-      "satisfactionCentre": "of {total} responses",
-      "satisfactionSummary": "Public feedback (satisfaction) – {pct} helpful of {total} responses",
+      "satisfactionSubtext": "{pct} helpful of {total} responses",
+      "satisfactionTrigger": "See breakdown of user satisfaction",
+      "topRankSubtext": "#1: {label}",
       "feedbackSectionTitle": "Public feedback (satisfaction)",
       "feedbackSplitTitle": "Helpful or not",
+      "feedbackSplitSubtitle": "{total} of responses",
       "feedbackReasonsTitle": "Breakdown by reason",
       "feedbackBreakdownSubtitle": "Based on {total} public feedback responses",
       "engagementTitle": "Conversation length",
@@ -1449,13 +1451,13 @@
     },
     "referrals": {
       "title": "Top referral pages",
-      "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation.",
+      "trigger": "Pages driving the most traffic",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     },
     "citations": {
       "title": "Top citation pages",
-      "subtitle": "Government of Canada pages AI Answers cited most often, counted by question.",
+      "trigger": "Most cited pages",
       "colUrl": "Cited page",
       "colCount": "Questions",
       "noCitations": "No citations in this period.",
@@ -1467,6 +1469,20 @@
         "ptMuni": "Provincial/municipal",
         "notGc": "Not in GC scope answers"
       }
+    },
+    "answerTypes": {
+      "trigger": "Question types being asked"
+    },
+    "contentIssueChats": {
+      "title": "Content issues by chat ID",
+      "trigger": "See all chats by ID with a content issue",
+      "issueTypeCol": "Issue type",
+      "noData": "No content issues flagged in this period."
+    },
+    "harmfulChats": {
+      "title": "Harmful chats by chat ID",
+      "trigger": "See all harmful chats by ID",
+      "noData": "No harmful chats flagged in this period."
     },
     "evalAnalysis": {
       "title": "Eval analysis",
