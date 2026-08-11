@@ -1154,6 +1154,11 @@
     "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
+    "chartCategoryColumn": "Catégorie",
+    "chartValueColumn": "Valeur",
+    "chartPercentColumn": "Pourcentage",
+    "chartDataTableCaption": "Données pour {title}",
+    "chartDataTableSummary": "Vue tableau",
     "backToAdmin": "Retour à l'administration",
     "close": "Fermer",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données ?",
@@ -1414,7 +1419,7 @@
       "hasError": "Contient une erreur",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
       "satisfactionSubtext": "{pct} utile sur {total} réponses",
-      "satisfactionTrigger": "Voir la répartition de la satisfaction des utilisateurs",
+      "satisfactionTrigger": "Répartition de la satisfaction du public",
       "topRankSubtext": "N° 1 : {label}",
       "feedbackSectionTitle": "Rétroaction du public (satisfaction)",
       "feedbackSplitTitle": "Utile ou non",
@@ -1451,13 +1456,13 @@
     },
     "referrals": {
       "title": "Principales pages référentes",
-      "trigger": "Pages ayant généré le plus de trafic",
+      "trigger": "Toutes les principales pages référentes",
       "colUrl": "Page référente",
       "colCount": "Redirections"
     },
     "citations": {
       "title": "Principales pages citées",
-      "trigger": "Pages les plus citées",
+      "trigger": "Toutes les principales pages citées",
       "colUrl": "Page citée",
       "colCount": "Questions",
       "noCitations": "Aucune citation pour cette période.",
@@ -1471,11 +1476,11 @@
       }
     },
     "answerTypes": {
-      "trigger": "Types de questions posées"
+      "trigger": "Tous les types de questions/réponses"
     },
     "contentIssueChats": {
       "title": "Problèmes de contenu par ID de clavardage",
-      "trigger": "Voir tous les clavardages par ID avec un problème de contenu",
+      "trigger": "Tous les clavardages par ID avec un problème de contenu",
       "issueTypeCol": "Type de problème",
       "noData": "Aucun problème de contenu signalé pour cette période."
     },

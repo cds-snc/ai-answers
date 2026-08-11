@@ -1154,6 +1154,11 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
+    "chartCategoryColumn": "Category",
+    "chartValueColumn": "Value",
+    "chartPercentColumn": "Percent",
+    "chartDataTableCaption": "Data for {title}",
+    "chartDataTableSummary": "Table view",
     "backToAdmin": "Back to admin",
     "close": "Close",
     "confirmDelete": "Are you sure you want to delete this data?",
@@ -1414,7 +1419,7 @@
       "hasError": "Has answer error",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
       "satisfactionSubtext": "{pct} helpful of {total} responses",
-      "satisfactionTrigger": "See breakdown of user satisfaction",
+      "satisfactionTrigger": "Breakdown of public satisfaction",
       "topRankSubtext": "#1: {label}",
       "feedbackSectionTitle": "Public feedback (satisfaction)",
       "feedbackSplitTitle": "Helpful or not",
@@ -1451,13 +1456,13 @@
     },
     "referrals": {
       "title": "Top referral pages",
-      "trigger": "Pages driving the most traffic",
+      "trigger": "All top referral pages",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     },
     "citations": {
       "title": "Top citation pages",
-      "trigger": "Most cited pages",
+      "trigger": "All top cited pages",
       "colUrl": "Cited page",
       "colCount": "Questions",
       "noCitations": "No citations in this period.",
@@ -1471,11 +1476,11 @@
       }
     },
     "answerTypes": {
-      "trigger": "Question types being asked"
+      "trigger": "All question/answer types"
     },
     "contentIssueChats": {
       "title": "Content issues by chat ID",
-      "trigger": "See all chats by ID with a content issue",
+      "trigger": "All chats by ID with a content issue",
       "issueTypeCol": "Issue type",
       "noData": "No content issues flagged in this period."
     },

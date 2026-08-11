@@ -26,6 +26,7 @@ const ContentIssueChatsCard = ({
   statusLabels = {},
   noDataLabel,
   defaultOpen = false,
+  anchorId = null,
 }) => {
   const showStatus = Boolean(statusColLabel);
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
@@ -34,12 +35,12 @@ const ContentIssueChatsCard = ({
   const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
 
   return (
-    <CollapsibleCard heading={title} subtext={subtitle} triggerLabel={triggerLabel} defaultOpen={defaultOpen}>
+    <CollapsibleCard heading={title} subtext={subtitle} triggerLabel={triggerLabel} defaultOpen={defaultOpen} anchorId={anchorId}>
       {chats.length === 0 ? (
         <p className="font-size-text-xsm-nr">{noDataLabel}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="display" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
             <caption className="sr-only">{title}</caption>
             <thead>
               <tr>

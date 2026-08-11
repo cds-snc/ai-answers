@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import ChartDataToggle from './ChartDataToggle.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 
 // Single 100%-stacked horizontal bar in a card: one thin bar split into
@@ -20,10 +21,23 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 // `leftContent` (optional) renders arbitrary content — e.g. a title/subtitle/
 // stat block — to the left of the bar, inside the same card
 // (stacked-bar-card--side-by-side). Replaces title/subtitle (ignored when
-// leftContent is passed).
-const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', noDataLabel = '', leftContent = null }) => {
+// leftContent is passed) — pass `a11yTitle` alongside it so the data-table
+// caption below still has a heading to reference. `a11y` (see
+// ChartDataToggle.js) adds a slim "As raw data table" expand/collapse below
+// the bar: the legend already shows name+% as static text, but the raw count
+// is otherwise hover-only.
+const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', noDataLabel = '', leftContent = null, a11y = null, a11yTitle = null }) => {
   const total = data.reduce((s, d) => s + (d.value || 0), 0);
   const fmtPct = (v) => formatPercent(total > 0 ? Math.round((v / total) * 100) : 0, lang);
+  const tableRows = a11y ? data.map((d) => [d.name, formatNumber(d.value, lang), fmtPct(d.value)]) : [];
+  const dataToggle = a11y && total > 0 ? (
+    <ChartDataToggle
+      label={a11y.rawDataTableLabel}
+      caption={a11y.captionTemplate.replace('{title}', title || subtitle || a11yTitle || '')}
+      columns={[a11y.categoryLabel, a11y.valueLabel, a11y.percentLabel]}
+      rows={tableRows}
+    />
+  ) : null;
 
   // One synthetic row so every segment stacks into a single bar.
   const row = { name: 'total' };
@@ -64,10 +78,7 @@ const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', 
                 fill={d.colour}
                 stroke={d.stroke || d.colour}
                 strokeWidth={1}
-                radius={[
-                  i === 0 ? 4 : 0, i === data.length - 1 ? 4 : 0,
-                  i === data.length - 1 ? 4 : 0, i === 0 ? 4 : 0,
-                ]}
+                radius={[0, 0, 0, 0]}
               />
             );
           })}
@@ -94,16 +105,20 @@ const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', 
     return (
       <div className="dashboard-card stacked-bar-card stacked-bar-card--side-by-side">
         <div className="stacked-bar-card__side">{leftContent}</div>
-        <div className="stacked-bar-card__bar">{bar}</div>
+        <div className="stacked-bar-card__bar">
+          {bar}
+          {dataToggle}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-card stacked-bar-card">
+    <div className="mt-200 dashboard-card stacked-bar-card">
       {title && <h3 className={`card-title${subtitle ? ' card-title--has-subtitle' : ''}`}>{title}</h3>}
       {subtitle && <p className="card-subtitle font-size-text-xsm-nr">{subtitle}</p>}
       {bar}
+      {dataToggle}
     </div>
   );
 };

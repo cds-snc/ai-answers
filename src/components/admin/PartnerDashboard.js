@@ -27,6 +27,16 @@ const TOP_PROGRAMS_LIMIT = 10;
 
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
+  // StackedBarCard) — renders each chart's data as a real, always-visible
+  // table alongside the hover-only Recharts tooltip. Required on new charts.
+  const chartA11y = {
+    categoryLabel: t('common.chartCategoryColumn'),
+    valueLabel: t('common.chartValueColumn'),
+    percentLabel: t('common.chartPercentColumn'),
+    captionTemplate: t('common.chartDataTableCaption'),
+    rawDataTableLabel: t('common.chartDataTableSummary'),
+  };
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
@@ -228,6 +238,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // department when a partner is applied, otherwise the global top pages.
   const topReferrals = metrics.topReferrals || [];
   const contentIssueChats = metrics.contentIssueChats || [];
+  // Anchors the KPI stat cards' "View" links jump to — landing inside the
+  // collapsed <details> auto-opens it (see CollapsibleCard.js's anchorId).
+  const CONTENT_ISSUE_ANCHOR = 'content-issue-chats-section';
+  const HARMFUL_CHATS_ANCHOR = 'harmful-chats-section';
   // Every row here is harmful by definition (the endpoint only ever returns
   // harmful-flagged chats) — status is set client-side so the table can still
   // show the red "Harmful" pill via ContentIssueChatsCard's optional status
@@ -254,8 +268,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   // "#1: <label>" subtext for the trio — rows are already sorted desc by
   // count for referrals/citations; answerTypeRows isn't (fixed display
-  // order), so its top row is found via reduce instead.
-  const topRankSubtext = (label) => (label ? t('partnerDashboard.charts.topRankSubtext').replace('{label}', label) : '');
+  // order), so its top row is found via reduce instead. Plain text — not a
+  // pill, since it isn't really a label/status like the satisfaction one.
+  // TODO: revisit visual styling for this later.
+  const topRankSubtext = (label) => (label
+    ? t('partnerDashboard.charts.topRankSubtext').replace('{label}', label)
+    : '');
   const topReferralSubtext = topRankSubtext(topReferrals[0]?.url);
   const topCitationSubtext = topRankSubtext(topCitations[0]?.url);
   const topAnswerType = answerTypeRows.reduce((top, row) => (row.count > (top?.count || 0) ? row : top), null);
@@ -334,9 +352,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <StatCard
           label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
-          sub={t('partnerDashboard.kpi.contentIssuesSub')
-            .replace('{ni}', fmtN(contentIssue.needsImprovement))
-            .replace('{error}', fmtN(contentIssue.hasError))}
+          href={contentIssueChats.length > 0 ? `#${CONTENT_ISSUE_ANCHOR}` : null}
+          sub={(
+            <>
+              {t('partnerDashboard.kpi.contentIssuesSub')
+                .replace('{ni}', fmtN(contentIssue.needsImprovement))
+                .replace('{error}', fmtN(contentIssue.hasError))}
+            </>
+          )}
         />
       </div>
 
@@ -354,6 +377,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
             footer={accuracyByLangFooter}
             lang={lang}
+            a11y={chartA11y}
           />
         ) : (
           <NoDataCard
@@ -375,6 +399,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               noDataLabel={t('partnerDashboard.charts.noData')}
               tooltipContent={QualityBarTooltip}
               lang={lang}
+              a11y={chartA11y}
             />
           ) : (
             <NoDataCard
@@ -402,6 +427,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             noDataLabel={t('partnerDashboard.charts.noData')}
             yAxisWidth={220}
             lang={lang}
+            a11y={chartA11y}
           />
         </div>
       )}
@@ -417,11 +443,13 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             data={sessionDepthData}
             lang={lang}
             noDataLabel={t('partnerDashboard.charts.noData')}
+            a11y={chartA11y}
+            a11yTitle={t('partnerDashboard.charts.engagementTitle')}
             leftContent={(
               <div>
                 <h3 className="card-title card-title--has-subtitle">{t('partnerDashboard.charts.engagementTitle')}</h3>
                 <p className="card-subtitle font-size-text-xsm-nr">{t('partnerDashboard.charts.engagementSubtitle')}</p>
-                <p className="font-size-text-xsm-nr">
+                <p className="font-size-text-xsm-nr mb-0">
                   {`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
                 </p>
               </div>
@@ -444,11 +472,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <div className="dashboard-section">
           <CollapsibleCard
             heading={t('partnerDashboard.charts.feedbackSectionTitle')}
-            subtext={t('partnerDashboard.charts.satisfactionSubtext')
-              .replace('{pct}', fmtPct(satisfactionPct))
-              .replace('{total}', fmtN(pfTotal))}
+            subtext={(
+              <span className="label normal">
+                {t('partnerDashboard.charts.satisfactionSubtext')
+                  .replace('{pct}', fmtPct(satisfactionPct))
+                  .replace('{total}', fmtN(pfTotal))}
+              </span>
+            )}
             triggerLabel={t('partnerDashboard.charts.satisfactionTrigger')}
-            triggerClassName="mb-200"
           >
             <StackedBarCard
               title={t('partnerDashboard.charts.feedbackSplitTitle')}
@@ -456,9 +487,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               data={satisfactionBarData}
               lang={lang}
               noDataLabel={t('partnerDashboard.charts.noData')}
+              a11y={chartA11y}
             />
             {pfTotal >= 40 && (
-              <div className="mt-400">
+              <div className="mt-200 mb-200">
                 <DivergingBarCard
                   title={t('partnerDashboard.charts.feedbackReasonsTitle')}
                   subtitle={t('partnerDashboard.charts.feedbackBreakdownSubtitle')
@@ -466,6 +498,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                   data={feedbackReasonsData}
                   noDataLabel={t('partnerDashboard.charts.noData')}
                   lang={lang}
+                  a11y={chartA11y}
                 />
               </div>
             )}
@@ -552,6 +585,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             }}
             noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
             lang={lang}
+            anchorId={CONTENT_ISSUE_ANCHOR}
           />
         </div>
       )}
@@ -607,6 +641,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               <StatCard
                 label={t('partnerDashboard.kpi.harmful')}
                 value={fmtN(harmful.total)}
+                href={harmfulChats.length > 0 ? `#${HARMFUL_CHATS_ANCHOR}` : null}
                 sub={t('partnerDashboard.kpi.harmfulSub')
                   .replace('{en}', fmtN(harmful.en))
                   .replace('{fr}', fmtN(harmful.fr))}
@@ -627,6 +662,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             <StatCard
               label={t('partnerDashboard.kpi.harmful')}
               value={fmtN(harmful.total)}
+              href={harmfulChats.length > 0 ? `#${HARMFUL_CHATS_ANCHOR}` : null}
               sub={t('partnerDashboard.kpi.harmfulSub')
                 .replace('{en}', fmtN(harmful.en))
                 .replace('{fr}', fmtN(harmful.fr))}
@@ -640,6 +676,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               lang={lang}
               tooltipContent={BlockedBarTooltip}
               noDataLabel={t('blockedQueries.noData')}
+              a11y={chartA11y}
             />
           </div>
         </div>
@@ -664,6 +701,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             statusLabels={{ harmful: t('partnerDashboard.kpi.harmful') }}
             noDataLabel={t('partnerDashboard.harmfulChats.noData')}
             lang={lang}
+            anchorId={HARMFUL_CHATS_ANCHOR}
           />
         </div>
       )}

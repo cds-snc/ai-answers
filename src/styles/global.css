@@ -400,6 +400,16 @@ details[open] > summary::before {
   content: '▼';
 }
 
+/* A focused, open summary's outline (outline-offset 0.125rem + outline
+   0.25rem, see summary:focus below) bleeds ~0.375rem past its own box —
+   without breathing room after it, that blue ring touches the revealed
+   content directly below. Applies to every <details> on the site, not just
+   one component's — same generic-styling approach as the rest of this
+   block (no per-component override). */
+details[open] > summary {
+  margin-bottom: var(--gcds-spacing-100);
+}
+
 /* buttons */
 .btn-primary-sm {
   padding: var(--gcds-button-small-padding);

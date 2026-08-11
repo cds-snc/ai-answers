@@ -209,13 +209,45 @@ tokens.
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
 All charts are **recharts** (`BarChart`/`PieChart`), wrapped in a shared white
-card chrome (border `#e0e0e0`, radius 8, soft shadow, 15px/600 title). Match this
+card chrome (`.dashboard-card`: white background, `1px solid` border, no
+radius, no shadow — square corners throughout the dashboards). Match this
 chrome when adding a new card — don't drop a bare `<table>`/chart in. Colours
 come from `src/constants/dashboardColours.js`.
 
+**Text alternative is required on every chart.** Recharts SVGs expose their
+data only on mouse hover (the `<Tooltip>`) with no `role="img"`/text
+fallback — a straight WCAG 1.1.1 / 2.1.1 miss for keyboard and screen-reader
+users, who never trigger a hover. `DonutCard.js`, `HBarCard.js`,
+`DivergingBarCard.js`, and `StackedBarCard.js` all take an `a11y` prop that
+adds a slim "Table view" `<details>`/`<summary>` expand/collapse
+(`ChartDataToggle.js`) below the chart, revealing the same `data` array as a
+real HTML `<table>` (`ChartDataTable.js`) — the chart itself always stays
+visible; this isn't a toggle that swaps it out. Any **new** chart component
+must accept and render `a11y` the same way — don't add a chart without it.
+Build the shared `a11y` object once per dashboard page and pass it to every
+chart:
+
+```jsx
+const chartA11y = {
+  categoryLabel: t('common.chartCategoryColumn'),
+  valueLabel: t('common.chartValueColumn'),
+  percentLabel: t('common.chartPercentColumn'),
+  captionTemplate: t('common.chartDataTableCaption'),
+  rawDataTableLabel: t('common.chartDataTableSummary'),
+};
+// ...
+<HBarCard ... a11y={chartA11y} />
+```
+
+`StackedBarCard`'s `leftContent` mode replaces `title`/`subtitle`, so also
+pass `a11yTitle` (a plain translated string) so the table's caption still has
+something to reference.
+
 | File | Purpose |
 |------|---------|
-| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. |
+| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. `href` (optional) makes the whole card a same-page link (e.g. Content issues/Harmful → their chat-list section). |
+| `ChartDataToggle.js` | Slim "Table view" `<details>` wrapping `ChartDataTable.js` — rendered via each chart's `a11y` prop, see above. Not used standalone. |
+| `ChartDataTable.js` | Text-alternative `<table>` for a chart's `data`. Only ever rendered inside `ChartDataToggle.js`. |
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on the **partner** dashboard only (the public dashboard no longer renders a satisfaction section). |

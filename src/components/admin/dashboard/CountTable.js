@@ -14,7 +14,7 @@ const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', capt
   const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px' };
 
   return (
-    <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <table className="display" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
       {captionLabel && <caption className="sr-only">{captionLabel}</caption>}
       <thead>
         <tr>

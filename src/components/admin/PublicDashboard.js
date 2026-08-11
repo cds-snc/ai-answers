@@ -15,6 +15,16 @@ import StatusMessage from './StatusMessage.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
+  // StackedBarCard) — renders each chart's data as a real, always-visible
+  // table alongside the hover-only Recharts tooltip. Required on new charts.
+  const chartA11y = {
+    categoryLabel: t('common.chartCategoryColumn'),
+    valueLabel: t('common.chartValueColumn'),
+    percentLabel: t('common.chartPercentColumn'),
+    captionTemplate: t('common.chartDataTableCaption'),
+    rawDataTableLabel: t('common.chartDataTableSummary'),
+  };
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
@@ -181,6 +191,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
               centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
               footer={accuracyByLangFooter}
               lang={lang}
+              a11y={chartA11y}
             />
           ) : (
             <NoDataCard
@@ -234,6 +245,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
               yAxisWidth={240}
               yAxisTextAlign="right"
               marginLeft={32}
+              a11y={chartA11y}
             />
           </div>
         </div>
@@ -250,11 +262,13 @@ const PublicDashboard = ({ lang = 'en' }) => {
               data={sessionDepthData}
               lang={lang}
               noDataLabel={t('publicDashboard.charts.noData')}
+              a11y={chartA11y}
+              a11yTitle={t('publicDashboard.charts.engagementTitle')}
               leftContent={(
                 <div>
                   <h3 className="card-title card-title--has-subtitle">{t('publicDashboard.charts.engagementTitle')}</h3>
                   <p className="card-subtitle font-size-text-xsm-nr">{t('publicDashboard.charts.engagementSubtitle')}</p>
-                  <p className="font-size-text-xsm-nr">
+                  <p className="font-size-text-xsm-nr mb-0">
                     {`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
                   </p>
                 </div>
@@ -305,6 +319,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
             lang={lang}
             tooltipContent={BlockedBarTooltip}
             noDataLabel={t('blockedQueries.noData')}
+            a11y={chartA11y}
           />
         </div>
       </div>
