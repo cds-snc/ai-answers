@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 import { formatDecimal } from '../../../utils/numberFormat.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
@@ -22,9 +22,9 @@ const renderChatLink = (chatId) => {
   }
   const url = `/en?chat=${encodeURIComponent(strId)}&review=1`;
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer">
+    <GcdsLink href={url} target="_blank" lang="en">
       {strId}
-    </a>
+    </GcdsLink>
   );
 };
 
@@ -227,7 +227,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                 {evalObj.referringUrl ? (
                   <tr>
                     <td>{tr('eval.referringUrl')}:</td>
-                    <td><a href={evalObj.referringUrl} target="_blank" rel="noopener noreferrer">{evalObj.referringUrl}</a></td>
+                    <td><GcdsLink href={evalObj.referringUrl} target="_blank" lang={lang}>{evalObj.referringUrl}</GcdsLink></td>
                   </tr>
                 ) : null}
 

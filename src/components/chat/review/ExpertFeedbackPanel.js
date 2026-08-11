@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
@@ -276,7 +276,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                             const suggestedUrl = efSource.expertCitationUrl || efSource.citationExplanation || null;
                             const scoreCell = citationScore !== null ? citationScore : (t('reviewPanels.notAvailable') || 'N/A');
                             const explCell = suggestedUrl ? (
-                                <a href={suggestedUrl} target="_blank" rel="noopener noreferrer">{suggestedUrl}</a>
+                                <GcdsLink href={suggestedUrl} target="_blank" lang={lang}>{suggestedUrl}</GcdsLink>
                             ) : (t('reviewPanels.notAvailable') || 'N/A');
                             return (
                                 <tr key="citation-row" className="citation-row">

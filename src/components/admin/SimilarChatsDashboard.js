@@ -62,9 +62,16 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               {
                 title: t('vector.columns.chatId'),
                 data: 'chatId',
+                // DataTables renders this as raw HTML, not JSX, so the React
+                // <GcdsLink> wrapper can't be used — but the underlying
+                // <gcds-link> custom element is just as usable in an HTML
+                // string; it auto-upgrades once inserted regardless of how
+                // it got into the DOM. Using it directly (rather than hand-
+                // rolling the icon/rel/accessible-text it already adds for
+                // target="_blank") keeps this in sync with GC DS for free.
                 render: function(data) {
                   const url = `/${lang}?chat=${data}&review=1`;
-                  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
+                  return `<gcds-link href="${url}" target="_blank" lang="${lang}">${data}</gcds-link>`;
                 }
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },

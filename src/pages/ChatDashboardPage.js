@@ -182,7 +182,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         if (!value) return '';
         const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // <gcds-link> (the custom element, not the React wrapper — DataTables
+        // renders this as raw HTML) auto-upgrades once inserted and handles
+        // the icon/rel/accessible new-tab text itself. See
+        // SimilarChatsDashboard.js for the same pattern.
+        return `<gcds-link href="/${chatLang}?chat=${safeId}&review=1" target="_blank" lang="${chatLang}">${safeId}</gcds-link>`;
       }
     },
     {

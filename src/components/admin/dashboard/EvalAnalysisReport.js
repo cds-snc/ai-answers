@@ -1,4 +1,5 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
 
@@ -69,18 +70,21 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   // Same review-mode deep link the eval/chat dashboards use for chatIds, in
   // the conversation's own language. Older stored reports have no example.
+  // GcdsLink's target="_blank" handles the icon, rel, and a localized
+  // "(Opens destination in a new tab.)" accessible label on its own — see
+  // ContentIssueChatsCard.js's GcdsLink for the same pattern.
   const exampleLink = (example) => {
     if (!example?.chatId) return '—';
     const chatLang = example.lang === 'fr' ? 'fr' : 'en';
     const hash = example.interactionId ? `#interaction=${encodeURIComponent(`interactionId${example.interactionId}`)}` : '';
     return (
-      <a
+      <GcdsLink
         href={`/${chatLang}?chat=${encodeURIComponent(example.chatId)}&review=1${hash}`}
         target="_blank"
-        rel="noopener noreferrer"
+        lang={chatLang}
       >
         {example.chatId}
-      </a>
+      </GcdsLink>
     );
   };
 

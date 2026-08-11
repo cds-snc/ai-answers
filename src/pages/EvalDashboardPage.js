@@ -124,7 +124,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
         const prefixed = interactionId ? `interactionId${interactionId}` : '';
         const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        // <gcds-link> (the custom element, not the React wrapper — DataTables
+        // renders this as raw HTML) auto-upgrades once inserted and handles
+        // the icon/rel/accessible new-tab text itself.
+        return `<gcds-link href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" lang="${chatLang}">${safeId}</gcds-link>`;
       },
       searchable: false,
       orderable: true
