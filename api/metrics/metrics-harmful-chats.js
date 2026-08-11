@@ -5,7 +5,9 @@ import { parseRequestFilters, executeWithRetry, buildFlaggedChatsBasePipeline } 
 
 // How many chats to list. This is a manual-review list (not a chart), so a
 // generous-but-bounded cap keeps the payload small without hiding recent
-// flags — most recent first.
+// flags — most recent first. Only one category here (no status split, unlike
+// metrics-content-issue-chats.js), so a flat limit carries none of that
+// file's starvation risk.
 const TOP_N = 100;
 
 // Chats with at least one expert-flagged harmful sentence (sentence1-4Harmful

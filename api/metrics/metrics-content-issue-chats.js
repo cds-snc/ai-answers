@@ -6,6 +6,13 @@ import { parseRequestFilters, executeWithRetry, buildFlaggedChatsBasePipeline } 
 // How many chats to list. This is a manual-review list (not a chart), so a
 // generous-but-bounded cap keeps the payload small without hiding recent
 // flags — most recent first.
+// TODO: hasError sorts before needsImprovement (see $sort below), so if
+// hasError count ever reaches TOP_N in the filtered range, needsImprovement
+// rows get pushed out of the list entirely with no indication anything was
+// excluded. Watch for that — e.g. check whether every row in a response is
+// 'hasError' with none 'needsImprovement' — and fix properly (independent
+// per-status caps, or real pagination) if it's actually happening rather
+// than pre-building it for a case that may never occur.
 const TOP_N = 100;
 
 // Chats with at least one expert-flagged content issue (sentence1-4
@@ -57,14 +64,8 @@ function buildContentIssueChatsPipeline(dateFilter, extraFilters = [], departmen
             }
         },
         // Grouped by status (errors first), most recent within each group.
-        // TODO: this sort+limit combination means needsImprovement rows can be
-        // starved out entirely, not just pushed down — 'hasError' sorts before
-        // 'needsImprovement' alphabetically, so if hasError count >= TOP_N (100)
-        // in the filtered range, zero needsImprovement rows ever reach the
-        // table, with no indication to the moderator that any were excluded.
-        // Confirm with the list's owner whether that's the intended
-        // prioritization (errors always win any contested slot) or whether it
-        // should cap each status independently (e.g. top 50/50) instead.
+        // See the TOP_N TODO above for the starvation risk this sort+limit
+        // combination carries.
         { $sort: { status: 1, createdAt: -1 } },
         { $limit: TOP_N }
     );
