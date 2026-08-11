@@ -595,6 +595,23 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     );
 
+    // Sits next to the "Running status" progress cards in both tab panels —
+    // that's the content the 5s poll actually keeps auto-updating, not the
+    // static configuration form above it or the history table below (which
+    // only remounts once, as a side effect, when a run finishes). Native
+    // <button>, not <GcdsButton> — see .filter-button-outline comment in
+    // admin.css for why.
+    const renderPauseToggle = () => (
+        <button
+            type="button"
+            className="filter-button filter-button-outline mb-200"
+            onClick={() => setIsPollPaused((paused) => !paused)}
+            aria-pressed={isPollPaused}
+        >
+            {isPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
+        </button>
+    );
+
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
             <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
@@ -706,17 +723,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {t('experimental.analysis.tabs.comparison')}
                 </button>
             </div>
-
-            {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
-                in admin.css for why. */}
-            <button
-                type="button"
-                className="filter-button filter-button-outline mt-200 mb-200"
-                onClick={() => setIsPollPaused((paused) => !paused)}
-                aria-pressed={isPollPaused}
-            >
-                {isPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-            </button>
 
             {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
                     <section>
@@ -888,6 +894,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {(startingRun || Object.keys(batchProgress).length > 0) && (
                         <section>
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                            {renderPauseToggle()}
                             {startingRun && (
                                 <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
                                     {startingRun.name && (
@@ -972,6 +979,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 {Object.keys(comparisonProgress).length > 0 && (
                     <section className="mt-400 mb-400">
                         <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                        {renderPauseToggle()}
                         {renderProgressCards(comparisonProgress)}
                     </section>
                 )}
