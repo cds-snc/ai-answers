@@ -212,17 +212,37 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 ## Announcing status, errors, and async outcomes
 
-Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>` for this. A lot of the admin section had these render as plain DOM text with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
+Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>`/`alert()` for this. A lot of the admin section had these render as plain DOM text (or a native `alert()` popup) with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
 
 ```jsx
 import StatusMessage from '../components/admin/StatusMessage.js';
 
 <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
+// in-progress state, not a completed result — same component, own sub-type:
+<StatusMessage loading message={t('some.page.loading')} />
 ```
 
-It renders `role="alert"`/`aria-live="assertive"` when `isError`, otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing.
+It renders `role="alert"`/`aria-live="assertive"` when `isError`, otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
 
-Known gap (tracked as a TODO in the component itself): it only standardizes the ARIA behaviour so far — callers still each pass their own inline `style` for colour/spacing. Don't add another one-off inline style; if you need visual treatment beyond the default, flag it rather than copying an existing page's ad-hoc hex colours.
+Known gap (tracked as a TODO in the component itself): it only standardizes the ARIA behaviour so far — callers still each pass their own inline `style` for colour/spacing, and there's no styled variant per message type yet. Don't add another one-off inline style; if you need visual treatment beyond the default, flag it rather than copying an existing page's ad-hoc hex colours.
+
+**Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
+
+```js
+t('admin.deleteChat.error').replace('{message}', () => error.message || String(error))
+```
+
+## Admin page nav landmark
+
+Every admin/partner page's "back to admin" `<nav>` needs an `aria-label`, or screen-reader users navigating by landmark get an unlabeled region (and, on pages with more than one `<nav>`, indistinguishable ones):
+
+```jsx
+<nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
+  <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
+</nav>
+```
+
+This is currently copy-pasted onto every admin page rather than centralized into a shared nav/breadcrumb component — don't forget it when adding a new admin page, and feel free to fold it into a shared component if you're touching several of these at once.
 
 ## UI architecture and folders
 

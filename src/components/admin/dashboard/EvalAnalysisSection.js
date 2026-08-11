@@ -58,14 +58,21 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
   // explanatory text is currently showing above it, so screen reader users
   // hear *why* it's disabled instead of just "dimmed". Mirrors the same
   // condition order as the JSX below — only one of these is ever rendered
-  // at a time.
+  // at a time. `running` and `precheckLoading` each need their own id here
+  // too: they're async gaps where the button is aria-disabled (GcdsButton
+  // doesn't use native `disabled`, so it stays focusable) but no
+  // explanatory text was previously mounted.
   const runButtonDescribedBy = !appliedDepartment
     ? 'eval-analysis-select-institution'
-    : tooFew
-      ? 'eval-analysis-too-few'
-      : tooMany
-        ? 'eval-analysis-too-many'
-        : (count !== null ? 'eval-analysis-precheck-count' : undefined);
+    : running
+      ? 'eval-analysis-running'
+      : precheckLoading
+        ? 'eval-analysis-checking'
+        : tooFew
+          ? 'eval-analysis-too-few'
+          : tooMany
+            ? 'eval-analysis-too-many'
+            : (count !== null ? 'eval-analysis-precheck-count' : undefined);
 
   const progressLabel = () => {
     if (!analysis) return t('partnerDashboard.evalAnalysis.running.preparing');
@@ -139,7 +146,16 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           <p id="eval-analysis-select-institution" className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
         )}
 
-        {appliedDepartment && count !== null && !running && (
+        {appliedDepartment && precheckLoading && (
+          <StatusMessage
+            loading
+            id="eval-analysis-checking"
+            className="font-size-text-small"
+            message={t('partnerDashboard.evalAnalysis.checkingEligibility')}
+          />
+        )}
+
+        {appliedDepartment && !precheckLoading && count !== null && !running && (
           <>
             {/* TODO: role="status"/"alert" here rely on their implicit aria-live
                 mapping (polite/assertive) rather than pairing it explicitly, unlike
@@ -169,6 +185,15 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           </>
         )}
 
+        {running && (
+          <StatusMessage
+            loading
+            id="eval-analysis-running"
+            className="font-size-text-small"
+            message={progressLabel()}
+          />
+        )}
+
         <GcdsButton
           onClick={() => runAnalysis(appliedFilters)}
           disabled={!canRun || undefined}
@@ -180,7 +205,6 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {analysis && analysis.status !== 'complete' && analysis.status !== 'error' && (
           <div style={{ marginTop: 12 }}>
-            {running && <p className="font-size-text-small" role="status">{progressLabel()}</p>}
             <GcdsButton onClick={loadFullAnalysis} className="hydrated">
               {t('partnerDashboard.evalAnalysis.viewRunning')}
             </GcdsButton>

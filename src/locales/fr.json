@@ -1326,10 +1326,6 @@
     "startDate": "Date de début",
     "endDate": "Date de fin",
     "showing": "Résultats :",
-    "footnoteRefSrPrefix": "Note de bas de page ",
-    "footnotesHeading": "Notes de bas de page",
-    "footnoteReturnSrPrefix": "Retour à la référence de la note de bas de page ",
-    "footnoteReturnSrSuffix": "",
     "removeFilter": "Supprimer le filtre",
     "apply": "Appliquer",
     "loading": "Chargement..."
@@ -1499,6 +1495,7 @@
       "title": "Analyse des évaluations",
       "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par service, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
       "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
+      "checkingEligibility": "Vérification de l'admissibilité…",
       "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
       "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
       "tooMany": "Trop d'évaluations pour une seule analyse — réduisez la plage de dates jusqu'à {max} ou moins ({count} correspondent actuellement).",

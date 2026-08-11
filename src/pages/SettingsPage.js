@@ -1088,7 +1088,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h2 className="mb-200">{t('settings.redaction.langEnglish')}</h2>
+            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langEnglish')}</h2>
 
             <label htmlFor="redaction.profanity.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (EN)
@@ -1107,7 +1107,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           </div>
 
           <div>
-            <h2 className="mb-200">{t('settings.redaction.langFrench')}</h2>
+            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langFrench')}</h2>
 
             <label htmlFor="redaction.profanity.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (FR)

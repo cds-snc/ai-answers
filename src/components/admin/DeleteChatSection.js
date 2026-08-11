@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsButton } from '@gcds-core/components-react';
 import DataStoreService from '../../services/DataStoreService.js';
+import StatusMessage from './StatusMessage.js';
 
 const DeleteChatSection = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [chatId, setChatId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
 
   const handleInputChange = (event) => {
     const value = event?.target?.value || '';
@@ -19,13 +21,20 @@ const DeleteChatSection = ({ lang = 'en' }) => {
     if (!window.confirm(t('common.confirmDelete'))) return;
 
     setLoading(true);
+    setStatus(null);
     try {
       await DataStoreService.deleteChat(chatId);
-      alert(t('admin.deleteChat.success'));
+      setStatus({ text: t('admin.deleteChat.success'), isError: false });
       setChatId('');
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert(t('admin.deleteChat.error').replace('{message}', error.message || String(error)));
+      // Replacer-function form: a 2nd-arg function is used verbatim, so a
+      // literal $ sequence in error.message (e.g. from a stack trace) can't
+      // be misread as a String.replace special replacement pattern ($&, $`, etc.).
+      setStatus({
+        text: t('admin.deleteChat.error').replace('{message}', () => error.message || String(error)),
+        isError: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -59,6 +68,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
             : t('admin.deleteChat.button')}
         </GcdsButton>
       </div>
+      <StatusMessage message={status?.text} isError={status?.isError} />
     </div>
   );
 };

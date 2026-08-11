@@ -149,7 +149,10 @@ const ChatViewer = ({ lang = 'en' }) => {
       <div ref={pageContentRef}>
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
-        <nav className="mb-400">
+        {/* TODO: this aria-label is hand-copied onto every admin page's own <nav> —
+            worth centralizing into a shared local nav/breadcrumb component so new
+            pages can't reintroduce the unlabeled-nav gap this fixes. */}
+        <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
           <GcdsText>
             <GcdsLink href={`/${lang}/admin`}>{t('logging.backToAdmin')}</GcdsLink>
           </GcdsText>

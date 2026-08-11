@@ -25,7 +25,9 @@ const PublicEvalPage = ({ lang: propLang }) => {
       .then(data => setRows(data.chats || []))
       .catch(err => {
         console.error('Failed to load list', err);
-        setError(t('admin.publicEval.errorLoading').replace('{message}', err.message || String(err)));
+        // Replacer-function form avoids String.replace treating a literal $
+        // sequence in err.message as a special replacement pattern.
+        setError(t('admin.publicEval.errorLoading').replace('{message}', () => err.message || String(err)));
       })
       .finally(() => setLoading(false));
   }, [t]);
@@ -53,7 +55,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
       <StatusMessage message={error} isError />
-      {loading && <div>{t('admin.publicEval.loading')}</div>}
+      {loading && <StatusMessage loading message={t('admin.publicEval.loading')} />}
       <DataTable
         data={rows}
         columns={[

@@ -150,9 +150,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </h2>
 
       {loading ? (
-        <div className="dashboard-loading" role="status" aria-live="polite">
-          {t('common.loading')}
-        </div>
+        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
       ) : (
       <>
 
@@ -321,29 +319,10 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </>
       )}
 
-      {/* Referenced by the footnote marker in PublicDashboardPage's h1 —
-          states the userType=public restriction baked into fetchPublicMetrics
-          above. Always rendered (not gated on loading/error) since the link
-          that points here is always present too.
-          WET-BOEW's standard footnote pattern (GCWeb's wb-fnote, not shipped
-          by GC DS — reproduced in admin.css): the marker box doubles as the
-          "return to referrer" link, so there's no separate visible number. */}
-      <aside className="wb-fnote" role="note">
-        <h2>{t('dashboardFilter.footnotesHeading')}</h2>
-        <dl>
-          <dt className="wb-inv">{t('dashboardFilter.footnotesHeading')} 1</dt>
-          <dd id="public-dashboard-footnote">
-            <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
-            <p className="fn-rtn">
-              <a href="#public-dashboard-fnref">
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrPrefix')}</span>
-                1
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrSuffix')}</span>
-              </a>
-            </p>
-          </dd>
-        </dl>
-      </aside>
+      {/* States the userType=public restriction baked into fetchPublicMetrics
+          above. Always rendered (not gated on loading/error). */}
+      <hr className="mt-600 mb-200" />
+      <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
     </div>
   );
 };
