@@ -7,6 +7,8 @@ import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
+import { normalizeEmail } from '../utils/auth/validateEmail.js';
 import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -16,26 +18,30 @@ const LoginPage = ({ lang = 'en' }) => {
   const { login, refreshUser, getDefaultRouteForRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
+  const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
   const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    clearError();
+    // If 2FA flow already started, ignore normal submit
+    if (showTwoStep) {
+      return;
+    }
+    const trimmedEmail = normalizeEmail(email);
+    if (!validate({ email: trimmedEmail, password }, t)) {
+      return;
+    }
     // The expiry marker is informational only. Once the user starts a fresh
-    // login attempt, remove it so it cannot persist into a new session.
+    // login attempt that passes validation, remove it so it cannot persist
+    // into a new session.
     if (sessionExpired) {
       navigate(location.pathname, { replace: true });
     }
     setIsLoading(true);
-    clearError();
-    // If 2FA flow already started, ignore normal submit
-    if (showTwoStep) {
-      setIsLoading(false);
-      return;
-    }
     try {
-      const data = await login(email, password);
+      const data = await login(trimmedEmail, password);
       // If backend requires two-step verification, backend already sent the email; prompt for code
       if (data && data.twoFA) {
         setShowTwoStep(true);
@@ -44,7 +50,7 @@ const LoginPage = ({ lang = 'en' }) => {
       const defaultRoute = data?.defaultRoute || '/';
       navigate(defaultRoute);
     } catch (err) {
-      setError(t('login.invalidCredentials'));
+      setError(t('login.invalidCredentials'), ['email', 'password']);
     } finally {
       setIsLoading(false);
     }
@@ -102,6 +108,7 @@ const LoginPage = ({ lang = 'en' }) => {
 
   return (
     <div className="auth-login-container">
+      <h1>{showTwoStep ? t('login.2fa.title') : t('login.title')}</h1>
       {sessionExpired && (
         <GcdsNotice
           noticeRole="warning"
@@ -116,7 +123,6 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
-          <h2>{t('login.2fa.title')}</h2>
           <p>{t('login.2fa.sentToEmail')}</p>
           {twoStepError && (
             <AnnouncedError
@@ -142,11 +148,10 @@ const LoginPage = ({ lang = 'en' }) => {
       ) : (
         // Default login form with signup link when not in 2FA flow
         <>
-          <h1>{t('login.title')}</h1>
           {error && (
             <AnnouncedError id="login-error" message={error} errorCount={errorCount} inputRef={errorRef} />
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="auth-form-group">
               <label htmlFor="email">{t('login.email')}</label>
               <input
@@ -154,12 +159,12 @@ const LoginPage = ({ lang = 'en' }) => {
                 id="email"
                 value={email}
                 title={t('login.email')}
-                onChange={(e) => { e.target.setCustomValidity(''); setEmail(e.target.value); }}
-                onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? t('validation.emailInvalid') : t('validation.required'))}
+                autoComplete="email"
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
                 aria-describedby={error ? 'login-error' : undefined}
-                aria-invalid={!!error}
+                aria-invalid={isFieldInvalid('email')}
               />
             </div>
             <PasswordInput
@@ -167,13 +172,12 @@ const LoginPage = ({ lang = 'en' }) => {
               label={t('login.password')}
               value={password}
               title={t('login.password')}
-              onChange={(e) => { e.target.setCustomValidity(''); setPassword(e.target.value); }}
-              onInvalid={(e) => e.target.setCustomValidity(t('validation.required'))}
+              onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
               autoComplete="current-password"
               ariaDescribedBy={error ? 'login-error' : undefined}
-              ariaInvalid={!!error}
+              ariaInvalid={isFieldInvalid('password')}
               lang={lang}
             />
             <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
