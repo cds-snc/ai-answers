@@ -944,6 +944,10 @@
 
 /* =================================================================
    Partner + Exec dashboards — layout, cards, and sub-components
+
+   TODO: colour and visual-design refinement is ongoing — several choices
+   below (chart palette, toggle/card greys, spacing) are settled for now but
+   not final; expect to revisit.
    ================================================================= */
 
 .dashboard-row {
@@ -973,10 +977,56 @@
   max-width: calc((100% - (var(--gcds-spacing-200) * 2)) / 3);
 }
 
+/* dashboard-row already stretches flex children to equal height by default
+   (no align-items override) — this fills that stretch down into the actual
+   card, since a bare block child doesn't grow to match its flex-item
+   parent's height on its own. Same technique as the Public dashboard's
+   conversation-length/response-time row. */
+.dashboard-col-third > .dashboard-card {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Answer types / Referrals / Citations trio: only the column whose <details>
+   is actually open grows to full width — its still-collapsed siblings stay
+   at their normal third-width and wrap onto their own line below (the row
+   already wraps), rather than every column reacting to any one opening.
+   order: -1 also floats the open one to the top of the row regardless of
+   its original position among the three. */
+.dashboard-col-third:has(details[open]) {
+  order: -1;
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
 .dashboard-col-half {
   flex: 0 0 calc((100% - var(--gcds-spacing-200)) / 2);
   max-width: calc((100% - var(--gcds-spacing-200)) / 2);
   min-width: 220px;
+}
+
+.dashboard-col-three-quarter {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) * 0.75);
+  max-width: calc((100% - var(--gcds-spacing-200)) * 0.75);
+  min-width: 280px;
+}
+
+.dashboard-col-quarter {
+  flex: 0 0 calc((100% - var(--gcds-spacing-200)) * 0.25);
+  max-width: calc((100% - var(--gcds-spacing-200)) * 0.25);
+  min-width: 180px;
+}
+
+/* dashboard-row already stretches flex children to equal height by default
+   (no align-items override) — this fills that stretch down into the actual
+   card, since a bare block child doesn't grow to match its flex-item
+   parent's height on its own. Scoped to these two classes' direct card child
+   rather than dashboard-card globally, so it only affects rows that opt in
+   (e.g. Public dashboard's conversation-length + median-response-time row). */
+.dashboard-col-three-quarter > .dashboard-card,
+.dashboard-col-quarter > .dashboard-card {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* Apply alongside a column class to make direct children share the full column height */
@@ -1104,7 +1154,14 @@
 
 /* Collapsible dashboard section: a <details> whose <summary> reads as a section
    heading. The summary carries the headline stat so the key figure shows while
-   collapsed; expanding reveals the charts below. */
+   collapsed; expanding reveals the charts below.
+   Deliberately no icon/colour/focus overrides here — global.css's generic
+   `details > summary::before` (►/▼ marker) and `summary:focus` (GC DS focus
+   background + white text) already apply to every <summary> on the site,
+   About page included, via the bare element selector. This used to redefine
+   its own smaller ▸/▾ marker with a hardcoded grey that didn't respond to
+   focus; removed so this matches the About page's rendition instead of
+   diverging from it. */
 .dashboard-collapse__summary {
   cursor: pointer;
   list-style: none;
@@ -1113,21 +1170,7 @@
   gap: var(--gcds-spacing-100);
 }
 
-.dashboard-collapse__summary::-webkit-details-marker {
-  display: none;
-}
-
-.dashboard-collapse__summary::before {
-  content: '\25B8'; /* ▸ collapsed */
-  font-size: 0.8em;
-  color: #666;
-}
-
-.dashboard-collapse[open] > .dashboard-collapse__summary::before {
-  content: '\25BE'; /* ▾ expanded */
-}
-
-@media only screen and (width < 48em) {
+@media only screen and (width <= 48em) {
   .dashboard-section-title {
     font: var(--gcds-font-h4-mobile);
   }
@@ -1135,6 +1178,14 @@
   /* On small screens, vertically-stacked stat card columns switch to side-by-side */
   .dashboard-col-third.dashboard-col--equal-height {
     flex-direction: row;
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  /* Referrals / Citations / Answer types trio: three-across is too narrow to
+     read on mobile, so each stacks full width instead. The more specific
+     .dashboard-col--equal-height rule above still wins for stat-card columns. */
+  .dashboard-col-third {
     flex: 1 1 100%;
     max-width: 100%;
   }
@@ -1207,8 +1258,33 @@
 .dashboard-card {
   background: #fff;
   border: 1px solid var(--gcds-color-grayscale-100);
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Every dashboard-card variant defines its own padding (.donut-card,
+   .hbar-card, .stacked-bar-card, .stat-card, ...) rather than the shared
+   base — same value here for CollapsibleCard (Satisfaction, Referrals,
+   Citations, Answer types, Content issue chats). */
+.collapsible-card {
+  padding: var(--gcds-spacing-200);
+  /* Heading/subtext stack normally at the top; the trigger <details> anchors
+     to the bottom via margin-top: auto below. Combined with equal card
+     height (.dashboard-col-third/.dashboard-col-half > .dashboard-card),
+     this keeps the trigger link at the same Y position across siblings even
+     when one card's subtitle wraps to more lines than another's. */
+  display: flex;
+  flex-direction: column;
+}
+
+.collapsible-card > details {
+  margin-top: auto;
+}
+
+/* Same-page "View" links (e.g. the Content issues/Harmful KPI stat cards)
+   land here — scroll-margin-top keeps the card's own heading/subtext/trigger
+   (sitting above this, outside <details>) visible above it instead of being
+   scrolled off the top of the viewport. */
+.collapsible-card__anchor {
+  scroll-margin-top: 8rem;
 }
 
 /* ---- StatCard ---- */
@@ -1217,6 +1293,32 @@
   flex: 1;
   min-width: 160px;
   padding: var(--gcds-spacing-300) var(--gcds-spacing-350);
+}
+
+/* StatCard rendered as <a href> (see StatCard.js) — the whole card is the
+   click target, not a link inside it, so undo the browser's default link
+   colour/underline on its text and give the card itself a hover/focus cue
+   instead. */
+.stat-card--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s ease-in-out, background-color .15s ease-in-out;
+}
+
+.stat-card--link:hover,
+.stat-card--link:focus-visible {
+  background: var(--gcds-color-grayscale-50);
+  border-color: var(--gcds-color-grayscale-200);
+  cursor: pointer;
+}
+
+.stat-card--link:hover .stat-card__sub,
+.stat-card--link:focus-visible .stat-card__sub {
+  color: var(--gcds-link-hover);
+  text-decoration: underline;
+  text-decoration-thickness: var(--gcds-link-hover-decoration-thickness);
+  text-underline-offset: var(--gcds-link-underline-offset);
 }
 
 .stat-card--wide {
@@ -1236,6 +1338,14 @@
   color: #1565c0;
   line-height: 1;
   margin: var(--gcds-spacing-150) 0;
+}
+
+/* Conversation length's "203 conversations" reuses .stat-card__value's bold
+   blue styling but at a smaller size — scoped to this one usage (inside
+   StackedBarCard's leftContent) rather than shrinking every StatCard's
+   headline number site-wide. */
+.stacked-bar-card__side .stat-card__value {
+  font-size: 24px;
 }
 
 .stat-card__value--green {
@@ -1273,7 +1383,36 @@
 .donut-card {
   flex: 1;
   min-width: 280px;
-  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+  /* Matches .collapsible-card/.stacked-bar-card's padding. */
+  padding: var(--gcds-spacing-200);
+}
+
+/* Flex column so .chart-data-toggle's margin-top: auto (below) sits after
+   this card's own content rather than needing a wrapper.
+   TODO: opening one card's "Table view" currently still stretches sibling
+   cards in the same row to match (equal-height default) — tried opting these
+   out via align-self: flex-start, but for HBarCard specifically that broke
+   its width instead (its parent, .dashboard-chart-wide, is a column-direction
+   flex container, so align-self there controls width, not height — needed
+   the fix on .dashboard-chart-wide itself, not .hbar-card). Reverted for now;
+   revisit properly later rather than shipping the width regression. */
+.donut-card,
+.hbar-card,
+.diverging-bar-card,
+.stacked-bar-card,
+.stacked-bar-card__bar {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Conversation length: indent the chart (and the "203 conversations" stat
+   line above it, in leftContent) left/right so they visually set apart from
+   the title/subtitle, rather than sharing the same left edge. Wraps only
+   the chart/legend (see StackedBarCard.js), not the whole
+   .stacked-bar-card__bar column — padding there would also indent
+   .chart-data-toggle, which is supposed to stay flush edge-to-edge. */
+.stacked-bar-card__inset {
+  padding: 0 var(--gcds-spacing-200);
 }
 
 .card-title {
@@ -1302,12 +1441,21 @@
   position: relative;
 }
 
+/* Recharts' hover tooltip is a later-appended absolutely-positioned sibling
+   inside the chart's own wrapper div — without an explicit z-index it still
+   loses to .donut-card__centre (later in DOM order, same auto stacking) and
+   renders underneath the centre figure whenever the tooltip appears near it. */
+.donut-card__chart-wrap .recharts-tooltip-wrapper {
+  z-index: 2;
+}
+
 .donut-card__centre {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -75%);
   text-align: center;
+  z-index: 1;
 }
 
 .donut-card__centre--multi-line {
@@ -1357,7 +1505,8 @@
 /* ---- HBarCard ---- */
 
 .hbar-card {
-  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+  /* Matches .collapsible-card/.stacked-bar-card's padding. */
+  padding: var(--gcds-spacing-200);
 }
 
 .hbar-card__no-data {
@@ -1376,7 +1525,9 @@
 /* ---- DivergingBarCard ---- */
 
 .diverging-bar-card {
-  padding: var(--gcds-spacing-300) var(--gcds-spacing-200);
+  /* Matches .collapsible-card/.stacked-bar-card's padding (only usage:
+     Public feedback's "breakdown by reason" chart). */
+  padding: var(--gcds-spacing-200);
 }
 
 .diverging-bar-card__no-data {
@@ -1384,6 +1535,54 @@
   align-items: center;
   justify-content: center;
   color: var(--gcds-color-grayscale-700);
+}
+
+/* ---- StackedBarCard ---- */
+
+.stacked-bar-card {
+  /* Matches .collapsible-card's padding (shared by Conversation length and the
+     Public feedback satisfaction bar, both StackedBarCard instances). */
+  padding: var(--gcds-spacing-200);
+}
+
+.stacked-bar-card__no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gcds-color-grayscale-700);
+}
+
+.stacked-bar-card__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gcds-spacing-200);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--gcds-color-grayscale-700);
+  font-size: 1rem;
+}
+
+.stacked-bar-card__legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-75);
+}
+
+.stacked-bar-card__swatch,
+.stacked-bar-card__tooltip-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  /* Base border-style so a per-swatch borderColor (matching the light bar
+     segment's stroke) can be set inline; transparent = invisible elsewhere. */
+  border: 1px solid transparent;
+}
+
+.stacked-bar-card__tooltip-swatch {
+  margin-right: var(--gcds-spacing-75);
 }
 
 /* Shared recharts custom tooltip chrome */
@@ -1399,6 +1598,147 @@
 .chart-tooltip__title {
   font-weight: var(--gcds-font-weights-semibold);
   margin-bottom: var(--gcds-spacing-50);
+}
+
+/* "Table view" expand/collapse (ChartDataToggle.js) — square corners, no
+   border of its own (it was doubling up against the card's own border once
+   bled to the edge — see below), bled through the card's own padding
+   (negative margins) so it reaches the card's actual edges instead of
+   stopping short at the padding boundary, reading as a footer strip flush
+   against the card's own (also square, no radius/shadow) corners rather than
+   a floating control. margin-top: auto (parent flex-column, see .donut-card
+   etc.) pushes it to the very bottom, aligning it across equal-height
+   sibling cards in a row — same trick as .collapsible-card > details. No
+   expand/collapse icon override — inherits global.css's generic
+   `details > summary::before`/`summary:focus`, same as every other
+   <details> on the dashboard. */
+.chart-data-toggle {
+  margin-top: auto;
+  /* Full-width separator from the chart above — spans the toggle's bled
+     (negative-margin) width, so it runs edge-to-edge with the card, not just
+     the padded content width. Left/right/bottom explicitly off: those edges
+     already meet the card's own border once bled out, a second border there
+     would double up. */
+  border-top: 1px solid var(--gcds-color-grayscale-100);
+  border-right: none;
+  border-bottom: none;
+  border-left: none;
+  border-radius: 0;
+}
+
+/* global.css's bare `details[open]`/`details summary` rules (unscoped —
+   they style every <details> on the whole site) carry their own
+   border/border-radius/background that this class doesn't declare on every
+   property, so on specific properties they still win: `details[open]` is
+   (0,1,1) specificity vs. this class's (0,1,0), so it beats it when open —
+   exactly the rounded-corner/edge-gap bug reported earlier. `.chart-data-
+   toggle[open]` here is (0,2,0), unambiguously higher, so it wins regardless
+   of source order. Repeats the same top-only border so it doesn't vanish
+   when open. Same reasoning for `details summary`'s border on the summary
+   below. */
+.chart-data-toggle[open] {
+  border-top: 1px solid var(--gcds-color-grayscale-100);
+  border-right: none;
+  border-bottom: none;
+  border-left: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Bleed to the card's left/right/bottom edges through its own padding.
+   .stacked-bar-card__side/__bar currently stack vertically, not side by
+   side (no layout CSS makes them a row), so .chart-data-toggle inside
+   __bar is already full width — safe to bleed left too, same as the rest. */
+.donut-card > .chart-data-toggle,
+.hbar-card > .chart-data-toggle,
+.diverging-bar-card > .chart-data-toggle,
+.stacked-bar-card:not(.stacked-bar-card--side-by-side) > .chart-data-toggle,
+.stacked-bar-card__bar > .chart-data-toggle {
+  margin-left: calc(-1 * var(--gcds-spacing-200));
+  margin-right: calc(-1 * var(--gcds-spacing-200));
+  margin-bottom: calc(-1 * var(--gcds-spacing-200));
+}
+
+/* Guaranteed minimum gap between whatever chart content sits above the
+   toggle and its border-top — margin-top: auto only fills genuinely
+   leftover flex space, so without this, the last element (donut footer,
+   chart SVG wrapper, stacked-bar legend, ...) touches the border directly
+   whenever the card isn't stretched taller than its own content. :has(+ ...)
+   targets whichever element that happens to be, generically, rather than
+   listing every chart type's specific last child by name. */
+.donut-card > *:has(+ .chart-data-toggle),
+.hbar-card > *:has(+ .chart-data-toggle),
+.diverging-bar-card > *:has(+ .chart-data-toggle),
+.stacked-bar-card > *:has(+ .chart-data-toggle),
+.stacked-bar-card__bar > *:has(+ .chart-data-toggle) {
+  margin-bottom: var(--gcds-spacing-150);
+}
+
+.chart-data-toggle__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-50);
+  cursor: pointer;
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-200);
+  /* Explicit, not inherited — without it the summary was taller than
+     intended: an unset line-height was inheriting a loose ambient value
+     (~1.6), not the 24px min-height below (which is a floor, not the active
+     constraint — padding + line-height already clear it on their own). */
+  line-height: 1.4;
+  /* Belt-and-suspenders WCAG 2.5.8: padding + line-height already clear 24px
+     with the above, but this guarantees it regardless of font/zoom. */
+  min-height: 1.5rem;
+  font-size: 1rem;
+  color: var(--gcds-color-grayscale-700);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.chart-data-toggle .chart-data-table {
+  padding: 0 var(--gcds-spacing-200) var(--gcds-spacing-150);
+}
+
+/* Text alternative for a chart's data (WCAG 1.1.1 · 2.1.1) — same numbers as
+   the hover-only Recharts tooltip, revealed by the "Table view" expand/
+   collapse above instead of permanently duplicated alongside the chart. */
+.chart-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  /* Matches the dashboard's other tables (CountTable, ContentIssueChatsCard)
+     and .font-size-text-xsm-nr — the smaller size used throughout for
+     secondary/table text rather than the larger ambient body size. */
+  font-size: 1rem;
+}
+
+.chart-data-table caption {
+  text-align: left;
+  color: var(--gcds-color-grayscale-700);
+  margin-bottom: var(--gcds-spacing-75);
+}
+
+.chart-data-table th,
+.chart-data-table td {
+  border-bottom: 1px solid var(--gcds-color-grayscale-100);
+  padding: var(--gcds-spacing-75) var(--gcds-spacing-100);
+  text-align: left;
+}
+
+/* Last row doesn't need its own border-bottom — the toggle bleeds this table
+   to the card's own bottom edge, which already supplies one right below it. */
+.chart-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.chart-data-table th {
+  border-bottom: 2px solid var(--gcds-color-grayscale-100);
+  font-weight: var(--gcds-font-weights-semibold);
+}
+
+.chart-data-table td:not(:first-child),
+.chart-data-table th:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* ---- DashboardFilterBar ---- */

@@ -1156,6 +1156,11 @@
     "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
+    "chartCategoryColumn": "Catégorie",
+    "chartValueColumn": "Valeur",
+    "chartPercentColumn": "Pourcentage",
+    "chartDataTableCaption": "Données pour {title}",
+    "chartDataTableSummary": "Vue tableau",
     "backToAdmin": "Retour à l'administration",
     "close": "Fermer",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer ces données ?",
@@ -1376,6 +1381,7 @@
       "hasError": "Contient une erreur",
       "engagementTitle": "Longueur des conversations",
       "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "totalQuestionsLabel": "Total : {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1415,14 +1421,17 @@
       "accurate": "Exactes",
       "hasError": "Contient une erreur",
       "accuracySubtitle": "{total} évaluations · Expert : {expert} · IA : {ai}",
-      "satisfactionCentre": "sur {total} réponses",
-      "satisfactionSummary": "Rétroaction du public (satisfaction) – {pct} utiles sur {total} réponses",
+      "satisfactionSubtext": "{pct} utile sur {total} réponses",
+      "satisfactionTrigger": "Répartition de la satisfaction du public",
+      "topRankSubtext": "N° 1 : {label}",
       "feedbackSectionTitle": "Rétroaction du public (satisfaction)",
       "feedbackSplitTitle": "Utile ou non",
+      "feedbackSplitSubtitle": "Total des réponses : {total}",
       "feedbackReasonsTitle": "Répartition par motif",
       "feedbackBreakdownSubtitle": "Basé sur {total} réponses de rétroaction du public",
       "engagementTitle": "Longueur des conversations",
       "engagementSubtitle": "Nombre de questions posées par les utilisateurs par conversation",
+      "totalQuestionsLabel": "Total : {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1451,13 +1460,13 @@
     },
     "referrals": {
       "title": "Principales pages référentes",
-      "subtitle": "Pages ayant dirigé le plus de visiteurs vers Réponses IA, calculé par conversation.",
+      "trigger": "Toutes les principales pages référentes",
       "colUrl": "Page référente",
       "colCount": "Redirections"
     },
     "citations": {
       "title": "Principales pages citées",
-      "subtitle": "Pages du gouvernement du Canada les plus souvent citées par Réponses IA, calculé par question.",
+      "trigger": "Toutes les principales pages citées",
       "colUrl": "Page citée",
       "colCount": "Questions",
       "noCitations": "Aucune citation pour cette période.",
@@ -1469,6 +1478,20 @@
         "ptMuni": "Provincial/municipal",
         "notGc": "Réponses hors du mandat du GC"
       }
+    },
+    "answerTypes": {
+      "trigger": "Tous les types de questions/réponses"
+    },
+    "contentIssueChats": {
+      "title": "Problèmes de contenu par ID de clavardage",
+      "trigger": "Tous les clavardages par ID avec un problème de contenu",
+      "issueTypeCol": "Type de problème",
+      "noData": "Aucun problème de contenu signalé pour cette période."
+    },
+    "harmfulChats": {
+      "title": "Clavardages nuisibles par ID de clavardage",
+      "trigger": "Voir tous les clavardages nuisibles par ID",
+      "noData": "Aucun clavardage nuisible signalé pour cette période."
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",
