@@ -202,8 +202,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
         if (otherCount > 0) {
           const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
-          const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
-          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
+          // Deliberately no tooltip listing the other department names: the
+          // count is sufficient on its own for a table scan, and the full
+          // per-turn breakdown is already shown accessibly in the chat
+          // review view (ChatInterface.js) one click away via the Chat ID
+          // link in this same row. A title-attribute tooltip would only add
+          // a mouse-only path to information the table doesn't need to carry.
+          // Reuses the same .label pill used by the Answer Type/Eval columns
+          // below, rather than one-off inline styling; .department is the
+          // same blue as ChatInterface.js's per-turn department label.
+          return `${primary} <span class="label department">${escapeHtmlAttribute(moreText)}</span>`;
         }
         return primary;
       }
