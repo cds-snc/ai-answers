@@ -267,10 +267,10 @@ const PublicDashboard = ({ lang = 'en' }) => {
               leftContent={(
                 <div>
                   <h3 className="card-title card-title--has-subtitle">{t('publicDashboard.charts.engagementTitle')}</h3>
-                  <p className="card-subtitle font-size-text-xsm-nr">{t('publicDashboard.charts.engagementSubtitle')}</p>
-                  <p className="font-size-text-xsm-nr mb-0">
-                    {`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+                  <p className="card-subtitle font-size-text-xsm-nr">
+                    {`${t('publicDashboard.charts.engagementSubtitle')} · ${t('publicDashboard.charts.totalQuestionsLabel').replace('{n}', fmtN(totalQuestions))}`}
                   </p>
+                  <p className="stat-card__value stacked-bar-card__inset">{fmtN(totalConversations)} {t('publicDashboard.charts.conversations')}</p>
                 </div>
               )}
             />

@@ -944,6 +944,10 @@
 
 /* =================================================================
    Partner + Exec dashboards — layout, cards, and sub-components
+
+   TODO: colour and visual-design refinement is ongoing — several choices
+   below (chart palette, toggle/card greys, spacing) are settled for now but
+   not final; expect to revisit.
    ================================================================= */
 
 .dashboard-row {
@@ -1336,6 +1340,14 @@
   margin: var(--gcds-spacing-150) 0;
 }
 
+/* Conversation length's "203 conversations" reuses .stat-card__value's bold
+   blue styling but at a smaller size — scoped to this one usage (inside
+   StackedBarCard's leftContent) rather than shrinking every StatCard's
+   headline number site-wide. */
+.stacked-bar-card__side .stat-card__value {
+  font-size: 24px;
+}
+
 .stat-card__value--green {
   color: var(--gcds-color-green-700);
 }
@@ -1391,6 +1403,16 @@
 .stacked-bar-card__bar {
   display: flex;
   flex-direction: column;
+}
+
+/* Conversation length: indent the chart (and the "203 conversations" stat
+   line above it, in leftContent) left/right so they visually set apart from
+   the title/subtitle, rather than sharing the same left edge. Wraps only
+   the chart/legend (see StackedBarCard.js), not the whole
+   .stacked-bar-card__bar column — padding there would also indent
+   .chart-data-toggle, which is supposed to stay flush edge-to-edge. */
+.stacked-bar-card__inset {
+  padding: 0 var(--gcds-spacing-200);
 }
 
 .card-title {

@@ -448,10 +448,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             leftContent={(
               <div>
                 <h3 className="card-title card-title--has-subtitle">{t('partnerDashboard.charts.engagementTitle')}</h3>
-                <p className="card-subtitle font-size-text-xsm-nr">{t('partnerDashboard.charts.engagementSubtitle')}</p>
-                <p className="font-size-text-xsm-nr mb-0">
-                  {`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
+                <p className="card-subtitle font-size-text-xsm-nr">
+                  {`${t('partnerDashboard.charts.engagementSubtitle')} · ${t('partnerDashboard.charts.totalQuestionsLabel').replace('{n}', fmtN(totalQuestions))}`}
                 </p>
+                <p className="stat-card__value stacked-bar-card__inset">{fmtN(totalConversations)} {t('partnerDashboard.charts.conversations')}</p>
               </div>
             )}
           />

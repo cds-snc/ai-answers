@@ -106,7 +106,7 @@ const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', 
       <div className="dashboard-card stacked-bar-card stacked-bar-card--side-by-side">
         <div className="stacked-bar-card__side">{leftContent}</div>
         <div className="stacked-bar-card__bar">
-          {bar}
+          <div className="stacked-bar-card__inset">{bar}</div>
           {dataToggle}
         </div>
       </div>
