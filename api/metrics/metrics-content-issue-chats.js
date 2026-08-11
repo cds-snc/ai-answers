@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { parseRequestFilters, executeWithRetry, buildFlaggedChatsBasePipeline } from './metrics-common.js';
 
 // How many chats to list. This is a manual-review list (not a chart), so a
 // generous-but-bounded cap keeps the payload small without hiding recent
@@ -14,48 +14,9 @@ const TOP_N = 100;
 // projects the chat/interaction identifiers needed for review-mode deep
 // links instead of aggregating a total.
 function buildContentIssueChatsPipeline(dateFilter, extraFilters = [], departmentFilter = []) {
-    const stages = [
-        { $match: dateFilter },
-        {
-            $lookup: {
-                from: 'interactions',
-                localField: 'interactions',
-                foreignField: '_id',
-                as: 'interactions'
-            }
-        },
-        { $unwind: '$interactions' },
-        ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
-    ];
-
-    if (departmentFilter.length > 0) {
-        stages.push(
-            {
-                $lookup: {
-                    from: 'contexts',
-                    localField: 'interactions.context',
-                    foreignField: '_id',
-                    as: 'ctx'
-                }
-            },
-            { $addFields: { department: { $ifNull: [{ $arrayElemAt: ['$ctx.department', 0] }, 'Unknown'] } } },
-            { $match: { $and: departmentFilter } },
-        );
-    }
+    const stages = buildFlaggedChatsBasePipeline(dateFilter, extraFilters, departmentFilter);
 
     stages.push(
-        {
-            $lookup: {
-                from: 'expertfeedbacks',
-                localField: 'interactions.expertFeedback',
-                foreignField: '_id',
-                as: 'ef'
-            }
-        },
-        { $addFields: { expertFeedback: { $arrayElemAt: ['$ef', 0] } } },
-        // Exclude blank ExpertFeedback records created solely by the neverStale
-        // flag (totalScore: null means no human scored the interaction).
-        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
         {
             $match: {
                 $or: [
@@ -96,6 +57,14 @@ function buildContentIssueChatsPipeline(dateFilter, extraFilters = [], departmen
             }
         },
         // Grouped by status (errors first), most recent within each group.
+        // TODO: this sort+limit combination means needsImprovement rows can be
+        // starved out entirely, not just pushed down — 'hasError' sorts before
+        // 'needsImprovement' alphabetically, so if hasError count >= TOP_N (100)
+        // in the filtered range, zero needsImprovement rows ever reach the
+        // table, with no indication to the moderator that any were excluded.
+        // Confirm with the list's owner whether that's the intended
+        // prioritization (errors always win any contested slot) or whether it
+        // should cap each status independently (e.g. top 50/50) instead.
         { $sort: { status: 1, createdAt: -1 } },
         { $limit: TOP_N }
     );
@@ -129,4 +98,9 @@ async function getContentIssueChatsMetrics(req, res) {
     }
 }
 
+// TODO: unauthenticated, like most of api/metrics/ (only metrics-blocked.js and
+// metrics-technical.js pass authMiddleware/partnerOrAdminMiddleware). This one
+// surfaces chatId/interactionId for content-issue-flagged chats — validate
+// whether that should require auth before deciding whether/how to fix it,
+// as part of the wider api/metrics/ review, not just this file in isolation.
 export default withProtection(getContentIssueChatsMetrics);

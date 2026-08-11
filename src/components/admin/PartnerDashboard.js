@@ -18,6 +18,7 @@ import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
+import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
 
@@ -30,13 +31,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
   // StackedBarCard) — renders each chart's data as a real, always-visible
   // table alongside the hover-only Recharts tooltip. Required on new charts.
-  const chartA11y = {
-    categoryLabel: t('common.chartCategoryColumn'),
-    valueLabel: t('common.chartValueColumn'),
-    percentLabel: t('common.chartPercentColumn'),
-    captionTemplate: t('common.chartDataTableCaption'),
-    rawDataTableLabel: t('common.chartDataTableSummary'),
-  };
+  const chartA11y = buildChartA11y(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
@@ -192,17 +187,13 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       en: acc.en + (row.en || 0),
       fr: acc.fr + (row.fr || 0),
     }), { total: 0, en: 0, fr: 0 });
-    // `value` is the raw count, not a percentage — same shape as Blocked
-    // queries' buildBlockedBarData, so the axis auto-scales to whatever the
-    // actual highest count is (recharts' default numeric domain) instead of
-    // a fixed 0–100% range that left most of the chart empty whenever no
-    // single service came close to being the whole classified total.
     const bars = classified
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .slice(0, TOP_PROGRAMS_LIMIT)
       .map((row) => ({
         name: (lang === 'fr' && row.programFr) ? row.programFr : row.program,
-        value: row.count || 0,
+        value: totals.total > 0 ? Math.round(((row.count || 0) / totals.total) * 100) : 0,
+        count: row.count || 0,
         en: row.en || 0,
         fr: row.fr || 0,
       }));
@@ -222,15 +213,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   ].join(' · ');
 
   // Programs tooltip shows the raw count and its EN/FR split — the bar label
-  // already carries the count itself, so repeating it adds nothing beyond
-  // the EN/FR split.
+  // already carries the percentage, so repeating it adds nothing.
   const ProgramBarTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip__title">{row.name}</div>
-        <div>{t('partnerDashboard.programs.tooltipCount').replace('{count}', fmtN(row.value))}</div>
+        <div>{t('partnerDashboard.programs.tooltipCount').replace('{count}', fmtN(row.count))}</div>
         <div>{t('partnerDashboard.programs.tooltipLang')
           .replace('{en}', fmtN(row.en))
           .replace('{fr}', fmtN(row.fr))}</div>
@@ -427,6 +417,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             title={t('partnerDashboard.programs.title')}
             subtitle={programsSubtitle}
             data={topProgramsData}
+            percent
             tooltipContent={ProgramBarTooltip}
             noDataLabel={t('partnerDashboard.charts.noData')}
             yAxisWidth={260}

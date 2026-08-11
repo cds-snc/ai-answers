@@ -10,6 +10,7 @@ import StackedBarCard from './dashboard/StackedBarCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
+import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
 
@@ -18,13 +19,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
   // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
   // StackedBarCard) — renders each chart's data as a real, always-visible
   // table alongside the hover-only Recharts tooltip. Required on new charts.
-  const chartA11y = {
-    categoryLabel: t('common.chartCategoryColumn'),
-    valueLabel: t('common.chartValueColumn'),
-    percentLabel: t('common.chartPercentColumn'),
-    captionTemplate: t('common.chartDataTableCaption'),
-    rawDataTableLabel: t('common.chartDataTableSummary'),
-  };
+  const chartA11y = buildChartA11y(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);

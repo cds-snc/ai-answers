@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection } from '../../middleware/auth.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { parseRequestFilters, executeWithRetry, buildFlaggedChatsBasePipeline } from './metrics-common.js';
 
 // How many chats to list. This is a manual-review list (not a chart), so a
 // generous-but-bounded cap keeps the payload small without hiding recent
@@ -16,48 +16,9 @@ const TOP_N = 100;
 // metrics-content-issue-chats.js. Same shape/pattern as that endpoint,
 // minus the status classification (every row here is harmful by definition).
 function buildHarmfulChatsPipeline(dateFilter, extraFilters = [], departmentFilter = []) {
-    const stages = [
-        { $match: dateFilter },
-        {
-            $lookup: {
-                from: 'interactions',
-                localField: 'interactions',
-                foreignField: '_id',
-                as: 'interactions'
-            }
-        },
-        { $unwind: '$interactions' },
-        ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
-    ];
-
-    if (departmentFilter.length > 0) {
-        stages.push(
-            {
-                $lookup: {
-                    from: 'contexts',
-                    localField: 'interactions.context',
-                    foreignField: '_id',
-                    as: 'ctx'
-                }
-            },
-            { $addFields: { department: { $ifNull: [{ $arrayElemAt: ['$ctx.department', 0] }, 'Unknown'] } } },
-            { $match: { $and: departmentFilter } },
-        );
-    }
+    const stages = buildFlaggedChatsBasePipeline(dateFilter, extraFilters, departmentFilter);
 
     stages.push(
-        {
-            $lookup: {
-                from: 'expertfeedbacks',
-                localField: 'interactions.expertFeedback',
-                foreignField: '_id',
-                as: 'ef'
-            }
-        },
-        { $addFields: { expertFeedback: { $arrayElemAt: ['$ef', 0] } } },
-        // Exclude blank ExpertFeedback records created solely by the neverStale
-        // flag (totalScore: null means no human scored the interaction).
-        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
         {
             $match: {
                 $or: [
@@ -109,4 +70,9 @@ async function getHarmfulChatsMetrics(req, res) {
     }
 }
 
+// TODO: unauthenticated, like most of api/metrics/ (only metrics-blocked.js and
+// metrics-technical.js pass authMiddleware/partnerOrAdminMiddleware). This one
+// surfaces chatId/interactionId for harmful-content-flagged chats — validate
+// whether that should require auth before deciding whether/how to fix it,
+// as part of the wider api/metrics/ review, not just this file in isolation.
 export default withProtection(getHarmfulChatsMetrics);
