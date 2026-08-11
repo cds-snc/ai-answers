@@ -23,14 +23,32 @@ import React from 'react';
 // otherwise drop focus to <body>. Both are optional; existing callers are
 // unaffected.
 const StatusMessage = React.forwardRef((
-  { message, isError = false, className, style, tag = 'p', tabIndex, children },
+  { message, isError = false, className, style, tag = 'p', tabIndex, persistent = false, children },
   ref
 ) => {
-  if (!message && !children) return null;
+  const Tag = tag;
+
+  // Screen readers announce changes inside a live region that was already
+  // present; a region inserted into the DOM with its text already in it is
+  // usually missed entirely. `persistent` keeps the region mounted while empty
+  // so the first message is a change rather than an insertion. Opt-in, because
+  // most callers render a one-off outcome where an always-present empty node
+  // would be pointless. Empty live regions are stripped of caller styling and
+  // zeroed out by `[aria-live]:empty` in global.css so they reserve no space.
+  if (!message && !children) {
+    if (!persistent) return null;
+    return (
+      <Tag
+        ref={ref}
+        role={isError ? 'alert' : 'status'}
+        aria-live={isError ? 'assertive' : 'polite'}
+        tabIndex={tabIndex}
+      />
+    );
+  }
   // children lets a caller render richer content (e.g. a follow-up bullet
   // list) than a single string — pass tag="div" alongside it, since block
   // content like a <ul> isn't valid inside the default <p>.
-  const Tag = tag;
   return (
     <Tag
       ref={ref}

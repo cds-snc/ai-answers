@@ -1806,3 +1806,20 @@
   background-color: transparent;
   color: inherit;
 }
+
+/* The reset above matches global.css's `summary:focus` on specificity and wins
+   on load order (App.js imports global.css before admin.css), which silently
+   stripped the GC DS focus fill and text colour from these disclosures. Put
+   them back so a focused value looks like every other focused control. */
+.settings-audit-value--long > summary:focus {
+  background-color: var(--gcds-details-focus-background);
+  color: var(--gcds-details-focus-text);
+}
+
+/* Focus lands here when the "Load more" button unmounts on the last page.
+   Programmatic focus on a non-interactive element does not trigger
+   :focus-visible, so without this a sighted keyboard user sees nothing move. */
+.settings-audit-count:focus {
+  outline: var(--gcds-details-focus-outline);
+  outline-offset: var(--gcds-details-focus-outline-offset);
+}

@@ -217,6 +217,10 @@ describe('SettingsPage audit history', () => {
       });
     });
 
+    // Disabling the focused button while loading would blur it and drop a
+    // keyboard user back to <body> on every page but the last.
+    expect(screen.queryByText('settings.auditHistory.loadMore')?.hasAttribute('disabled')).not.toBe(true);
+
     // Appending rows is silent for a screen reader unless the count is
     // announced, and the Load more button unmounts on the last page.
     const count = await screen.findByText('settings.auditHistory.showing');

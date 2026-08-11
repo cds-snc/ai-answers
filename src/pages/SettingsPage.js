@@ -1190,15 +1190,22 @@ const SettingsPage = ({ lang = 'en' }) => {
       <section className="mt-600" aria-labelledby="settings-audit-title">
         <h2 id="settings-audit-title">{t('settings.auditHistory.title')}</h2>
         <p>{t('settings.auditHistory.description')}</p>
-        <StatusMessage message={auditLoading ? t('settings.auditHistory.loading') : null} />
+        {/* One polite region covers loading and empty: both describe the state
+            of the same fetch, and keeping it mounted is what makes the message
+            an announced change rather than a silent insertion. */}
+        <StatusMessage
+          persistent
+          message={
+            auditLoading
+              ? t('settings.auditHistory.loading')
+              : (!auditError && auditEntries.length === 0 ? t('settings.auditHistory.empty') : null)
+          }
+        />
         <StatusMessage message={auditError ? t('settings.auditHistory.error') : null} isError />
-        {!auditLoading && !auditError && auditEntries.length === 0 ? (
-          <p>{t('settings.auditHistory.empty')}</p>
-        ) : null}
         {auditEntries.length > 0 ? (
           <div className="table-responsive">
             <table>
-              <caption className="visually-hidden">{t('settings.auditHistory.title')}</caption>
+              <caption className="sr-only">{t('settings.auditHistory.title')}</caption>
               <thead>
                 <tr>
                   <th scope="col">{t('settings.auditHistory.user')}</th>
@@ -1236,22 +1243,29 @@ const SettingsPage = ({ lang = 'en' }) => {
             </table>
           </div>
         ) : null}
-        {auditEntries.length > 0 ? (
-          <StatusMessage
-            message={t('settings.auditHistory.showing')
+        <StatusMessage
+          persistent
+          message={auditEntries.length > 0
+            ? t('settings.auditHistory.showing')
               .replace('{count}', formatNumber(auditEntries.length, lang))
-              .replace('{total}', formatNumber(auditTotal, lang))}
-            className="mb-200"
-            tabIndex={-1}
-            ref={auditCountRef}
-          />
-        ) : null}
+              .replace('{total}', formatNumber(auditTotal, lang))
+            : null}
+          className="mb-200 settings-audit-count"
+          tabIndex={-1}
+          ref={auditCountRef}
+        />
         {auditHasMore ? (
+          // Deliberately not `disabled` while loading: disabling the focused
+          // button blurs it, dropping a keyboard user back to <body> on every
+          // page but the last. The label carries the busy state and the handler
+          // guards against a second click.
           <GcdsButton
             type="button"
             buttonRole="secondary"
-            onClick={() => loadAuditHistory({ skip: auditEntries.length, append: true })}
-            disabled={auditLoadingMore}
+            onClick={() => {
+              if (auditLoadingMore) return;
+              loadAuditHistory({ skip: auditEntries.length, append: true });
+            }}
           >
             {auditLoadingMore ? t('settings.auditHistory.loadingMore') : t('settings.auditHistory.loadMore')}
           </GcdsButton>

@@ -473,6 +473,14 @@ summary:focus,
 }
 
 /* Screen reader only class */
+/* Live regions that stay mounted while empty (StatusMessage's `persistent`
+   prop) so screen readers treat the first message as a change rather than an
+   insertion — they must not reserve layout space in the meantime. */
+[aria-live]:empty {
+  margin: 0;
+  padding: 0;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
