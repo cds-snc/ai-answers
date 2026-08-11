@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.182.0](https://github.com/cds-snc/ai-answers/compare/v1.181.0...v1.182.0) (2026-08-11)
+
+
+### Features
+
+* add statusmessage instructions ([6efd26e](https://github.com/cds-snc/ai-answers/commit/6efd26e3d55c6fe05f4b42740fd365e47783f094))
+
+
+### Bug Fixes
+
+* account pages accessibility (heading, error announcements) ([9a5df39](https://github.com/cds-snc/ai-answers/commit/9a5df390db25c70efb2331213f9596ecf8127ea4))
+* convert errors to statusmessage ([c755b7b](https://github.com/cds-snc/ai-answers/commit/c755b7bcf7668e2721424ab43973eda6f74ba120))
+* convert errors to statusmessage, dedupe locale keys, fix table aria-labelledby ([2b8636b](https://github.com/cds-snc/ai-answers/commit/2b8636b44dbcbc3fce4fa71c84df4c6b617cb7f5))
+* correct aria-invalid scoping and validation issues on account pages ([f7ae262](https://github.com/cds-snc/ai-answers/commit/f7ae26206fc6f5a13122e3a1e0c58288d4663345))
+
 ## [1.181.0](https://github.com/cds-snc/ai-answers/compare/v1.180.2...v1.181.0) (2026-08-09)
 
 
