@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { usePauseToggle } from '../../hooks/usePauseToggle.js';
+import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -132,12 +134,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
     // any batch/comparison is pending or processing, and there's no other
     // control on this page that halts it (the runs themselves keep going
-    // server-side regardless). isPausedRef mirrors isPaused into the
-    // interval closure so the pause button takes effect on the next tick
-    // without recreating the timer.
-    const [isPollPaused, setIsPollPaused] = useState(false);
-    const isPollPausedRef = useRef(isPollPaused);
-    isPollPausedRef.current = isPollPaused;
+    // server-side regardless). See usePauseToggle for why this returns a
+    // ref alongside the boolean.
+    const { isPaused: isPollPaused, isPausedRef: isPollPausedRef, togglePause: toggleIsPollPaused } = usePauseToggle();
 
     const stopPolling = () => {
         if (pollRef.current) {
@@ -595,21 +594,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     );
 
-    // Sits next to the "Running status" progress cards in both tab panels —
-    // that's the content the 5s poll actually keeps auto-updating, not the
-    // static configuration form above it or the history table below (which
-    // only remounts once, as a side effect, when a run finishes). Native
-    // <button>, not <GcdsButton> — see .filter-button-outline comment in
-    // admin.css for why.
+    // Rendered next to the "Running status" progress cards in both tab
+    // panels — that's the content the 5s poll actually keeps auto-updating,
+    // not the static configuration form above it or the history table below
+    // (which only remounts once, as a side effect, when a run finishes).
     const renderPauseToggle = () => (
-        <button
-            type="button"
-            className="filter-button filter-button-outline mb-200"
-            onClick={() => setIsPollPaused((paused) => !paused)}
-            aria-pressed={isPollPaused}
-        >
-            {isPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-        </button>
+        <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
     );
 
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (

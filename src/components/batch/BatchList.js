@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client'; // Import createRoot
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { usePauseToggle } from '../../hooks/usePauseToggle.js';
+import PauseToggleButton from '../admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import BatchService from '../../services/BatchService.js';
@@ -18,12 +20,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [refreshKey, setRefreshKey] = useState(0);
   // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
   // table, which is exactly the kind of auto-updating content that
-  // criterion requires a way to stop. isPausedRef mirrors isPaused into the
-  // interval closure so toggling the button takes effect on the next tick
-  // without having to tear down and recreate the interval.
-  const [isPaused, setIsPaused] = useState(false);
-  const isPausedRef = useRef(isPaused);
-  isPausedRef.current = isPaused;
+  // criterion requires a way to stop. See usePauseToggle for why this
+  // returns a ref alongside the boolean.
+  const { isPaused, isPausedRef, togglePause } = usePauseToggle();
   const { t } = useTranslations(lang);
 
   // Fetch all statuses
@@ -113,7 +112,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       fetchBatches();
     }, 10000);
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [lang, fetchStatuses]);
+  }, [lang, fetchStatuses, isPausedRef]);
 
   // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that
@@ -165,16 +164,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   return (
     <div>
-      {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
-          in admin.css for why. */}
-      <button
-        type="button"
-        className="filter-button filter-button-outline mb-200"
-        onClick={() => setIsPaused((paused) => !paused)}
-        aria-pressed={isPaused}
-      >
-        {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-      </button>
+      <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
       <DataTable
         data={filteredBatches}
         columns={columns} // Use memoized columns

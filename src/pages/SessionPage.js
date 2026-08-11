@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { usePauseToggle } from '../hooks/usePauseToggle.js';
+import PauseToggleButton from '../components/admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
@@ -17,11 +19,9 @@ const SessionPage = ({ lang: propLang }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
-  // table; isPausedRef mirrors isPaused into the interval closure so the
-  // pause button takes effect on the next tick without recreating the timer.
-  const [isPaused, setIsPaused] = useState(false);
-  const isPausedRef = useRef(isPaused);
-  isPausedRef.current = isPaused;
+  // table. See usePauseToggle for why this returns a ref alongside the
+  // boolean.
+  const { isPaused, isPausedRef, togglePause } = usePauseToggle();
   const sessionTypeLabel = React.useCallback((value) => {
     const type = value || 'unknown';
     const labels = {
@@ -74,7 +74,7 @@ const SessionPage = ({ lang: propLang }) => {
       fetchSessions();
     }, 5000);
     return () => clearInterval(iv);
-  }, [fetchSessions]);
+  }, [fetchSessions, isPausedRef]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -88,16 +88,7 @@ const SessionPage = ({ lang: propLang }) => {
       {error && <div className="text-status--negative">{error}</div>}
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
 
-      {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
-          in admin.css for why. */}
-      <button
-        type="button"
-        className="filter-button filter-button-outline mb-200"
-        onClick={() => setIsPaused((paused) => !paused)}
-        aria-pressed={isPaused}
-      >
-        {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-      </button>
+      <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 
       <DataTable
         data={sessions}

@@ -555,14 +555,9 @@
 /* Bordered-outline look (GcdsButton's buttonRole="secondary": transparent
    background, visible border, fills light blue on hover) — distinct from
    .filter-button-secondary above, which is a link-style button with no
-   border. Used for the pause-toggle buttons on BatchList, SessionPage, and
-   ExperimentalAnalysisPage: those render a plain native <button>, not
-   <GcdsButton>, because GcdsButton copies aria-* attributes onto its
-   shadow-DOM native button inside its own click handler, which runs before
-   React's state update from that same click commits — so aria-pressed was
-   always one click behind for screen readers (previously papered over with
-   a since-removed useAriaPressedSync workaround hook). A plain button has
-   no shadow DOM to desync. */
+   border. Used by src/components/admin/PauseToggleButton.js (see that file
+   for why it's a native <button>, not <GcdsButton>) — the shared pause
+   toggle rendered by BatchList, SessionPage, and ExperimentalAnalysisPage. */
 .filter-button-outline {
   background: var(--gcds-button-secondary-default-background);
   border-color: var(--gcds-button-secondary-default-text);
