@@ -21,6 +21,7 @@ import "../../models/setting.js";
 import "../../models/batchItem.js";
 import "../../models/sentenceEmbedding.js";
 import "../../models/embeddingMetadataBackfillJob.js";
+import "../../models/auditLog.js";
 
 // api/db/db-connect.js
 

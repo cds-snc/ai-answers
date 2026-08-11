@@ -101,11 +101,13 @@ class DataStoreService {
     }
   }
 
-  static async getSettingsAudit({ limit = 50, skip = 0 } = {}) {
+  static async getSettingsAudit({ limit = 50, skip = 0, before = null } = {}) {
     try {
-      const response = await AuthService.fetch(
-        `${getApiUrl('setting-audit')}?limit=${encodeURIComponent(limit)}&skip=${encodeURIComponent(skip)}`
-      );
+      const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+      // Pins later pages to the snapshot the first page was read from, so an
+      // entry recorded mid-paging can't shift rows and repeat one.
+      if (before) params.set('before', before);
+      const response = await AuthService.fetch(`${getApiUrl('setting-audit')}?${params}`);
       if (!response.ok) throw new Error('Failed to get settings audit history');
       return await response.json();
     } catch (error) {

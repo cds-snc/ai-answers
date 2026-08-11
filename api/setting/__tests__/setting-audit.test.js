@@ -25,9 +25,24 @@ describe('setting-audit handler', () => {
 
     await handler(req, res);
 
-    expect(mockList).toHaveBeenCalledWith({ limit: 25, skip: 10 });
+    expect(mockList).toHaveBeenCalledWith({ limit: 25, skip: 10, before: null });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ entries: [{ id: 'audit-1' }], total: 1, hasMore: false });
+  });
+
+  it('passes the paging cursor through to the service', async () => {
+    mockList.mockResolvedValue({ entries: [], total: 0, hasMore: false });
+    const before = '2026-08-11T12:00:00.000Z';
+    const req = { method: 'GET', query: { limit: '50', skip: '50', before } };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      setHeader: vi.fn(),
+    };
+
+    await handler(req, res);
+
+    expect(mockList).toHaveBeenCalledWith({ limit: 50, skip: 50, before });
   });
 
   it('rejects unsupported methods', async () => {

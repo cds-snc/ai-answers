@@ -3,10 +3,16 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import SettingsPage from '../SettingsPage.js';
 
-const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache, mockGetSettingsAudit } = vi.hoisted(() => {
+const {
+  mockGetSettings,
+  mockGetSetting,
+  mockSetSetting,
+  mockRefreshSettingsCache,
+  mockGetSettingsAudit,
+} = vi.hoisted(() => {
   const healthSettings = {
     'siteStatus': 'available',
     'deploymentMode': 'CDS',
@@ -58,6 +64,9 @@ const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache, mockGetSettin
       }
       return values;
     }),
+    mockGetSetting: vi.fn(async (key, defaultValue = null) => (
+      Object.prototype.hasOwnProperty.call(healthSettings, key) ? healthSettings[key] : defaultValue
+    )),
     mockSetSetting: vi.fn(async () => ({ message: 'Setting updated' })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, hasMore: false })),
@@ -67,6 +76,7 @@ const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache, mockGetSettin
 vi.mock('../../services/DataStoreService.js', () => ({
   default: {
     getSettings: mockGetSettings,
+    getSetting: mockGetSetting,
     setSetting: mockSetSetting,
     refreshSettingsCache: mockRefreshSettingsCache,
     getSettingsAudit: mockGetSettingsAudit,
@@ -126,6 +136,94 @@ describe('SettingsPage health section', () => {
       expect(mockGetSettings.mock.calls[0][0]).toContain('systemHealth.enabled');
       expect(mockGetSettings.mock.calls[0][0]).toContain('session.rateLimitPersistence');
       expect(mockGetSettings.mock.calls[0][0]).toContain('redaction.profanity.en');
+    });
+  });
+});
+
+describe('SettingsPage audit history', () => {
+  beforeEach(() => {
+    mockGetSettings.mockClear();
+    mockGetSetting.mockClear();
+    mockSetSetting.mockClear();
+    mockRefreshSettingsCache.mockClear();
+    mockGetSettingsAudit.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('reloads the history after a setting is saved', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(mockGetSettingsAudit).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
+      target: { value: 'true' },
+    });
+
+    await waitFor(() => {
+      expect(mockSetSetting).toHaveBeenCalledWith('systemHealth.enabled', 'true');
+    });
+
+    // The saved change should show up in the table without a page reload,
+    // and the refresh starts from the newest page.
+    await waitFor(() => {
+      expect(mockGetSettingsAudit).toHaveBeenCalledTimes(2);
+    });
+    expect(mockGetSettingsAudit).toHaveBeenLastCalledWith({ limit: 50, skip: 0, before: null });
+  });
+
+  it('anchors load more to the first page and announces the new count', async () => {
+    const entry = (id, createdAt) => ({
+      id,
+      actorEmail: 'admin@example.com',
+      action: 'setting.updated',
+      settingKey: 'siteStatus',
+      previousValue: 'available',
+      newValue: 'unavailable',
+      createdAt,
+    });
+
+    mockGetSettingsAudit
+      .mockResolvedValueOnce({
+        entries: [entry('1', '2026-08-11T12:00:00.000Z')],
+        total: 2,
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({
+        entries: [entry('2', '2026-08-10T09:00:00.000Z')],
+        total: 2,
+        hasMore: false,
+      });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.auditHistory.loadMore')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText('settings.auditHistory.loadMore'));
+
+    // The next page is pinned to the newest row of the first page, so an entry
+    // recorded in between cannot shift rows into a repeat.
+    await waitFor(() => {
+      expect(mockGetSettingsAudit).toHaveBeenLastCalledWith({
+        limit: 50,
+        skip: 1,
+        before: '2026-08-11T12:00:00.000Z',
+      });
+    });
+
+    // Appending rows is silent for a screen reader unless the count is
+    // announced, and the Load more button unmounts on the last page.
+    const count = await screen.findByText('settings.auditHistory.showing');
+    expect(count.getAttribute('role')).toBe('status');
+    await waitFor(() => {
+      expect(screen.queryByText('settings.auditHistory.loadMore')).toBeNull();
+      expect(document.activeElement).toBe(count);
     });
   });
 });

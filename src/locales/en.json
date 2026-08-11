@@ -1103,6 +1103,7 @@
       "loadMore": "Load more",
       "empty": "No settings changes have been recorded.",
       "error": "Failed to load settings history.",
+      "showing": "Showing {count} of {total} changes.",
       "user": "User",
       "action": "Action",
       "setting": "Setting",

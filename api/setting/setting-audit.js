@@ -1,5 +1,6 @@
 import SettingsAuditService from '../../services/SettingsAuditService.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import { requireString } from '../util/db-query.js';
 
 async function settingAuditHandler(req, res) {
   if (req.method !== 'GET') {
@@ -7,10 +8,11 @@ async function settingAuditHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { limit = 50, skip = 0 } = req.query || {};
+  const { limit = 50, skip = 0, before = null } = req.query || {};
   const result = await SettingsAuditService.list({
     limit: Number.parseInt(limit, 10),
     skip: Number.parseInt(skip, 10),
+    before: before ? requireString(before, 'before') : null,
   });
   return res.status(200).json(result);
 }

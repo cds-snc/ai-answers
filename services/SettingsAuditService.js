@@ -15,6 +15,21 @@ const normalizePageValue = (value, fallback) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
+// Paging by skip alone is unstable: an entry recorded between two "load more"
+// clicks pushes every row down one, so the next page repeats a row the reader
+// has already seen. Callers pass the newest entry from their first page back as
+// `before`, which pins later pages to that same snapshot. Rejects an unusable
+// cursor rather than silently falling back to an unanchored read, which would
+// reintroduce the drift it exists to prevent.
+const buildListQuery = (before) => {
+  if (before === null || before === undefined || before === '') return {};
+  const anchor = new Date(before);
+  if (Number.isNaN(anchor.getTime())) {
+    throw new Error('Invalid before cursor for settings audit list');
+  }
+  return { createdAt: { $lte: anchor } };
+};
+
 const SettingsAuditService = {
   async recordSettingChange({
     actorUserId = null,
@@ -55,11 +70,11 @@ const SettingsAuditService = {
     });
   },
 
-  async list({ limit = 50, skip = 0 } = {}) {
+  async list({ limit = 50, skip = 0, before = null } = {}) {
     const safeLimit = Math.min(normalizePageValue(limit, 50), 100);
     const safeSkip = normalizePageValue(skip, 0);
+    const query = buildListQuery(before);
     await dbConnect();
-    const query = {};
     const [entries, total] = await Promise.all([
       AuditLog.find(query)
         .sort({ createdAt: -1 })

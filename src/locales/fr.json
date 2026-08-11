@@ -1103,6 +1103,7 @@
       "loadMore": "Charger plus",
       "empty": "Aucune modification des paramètres n’a été enregistrée.",
       "error": "Échec du chargement de l’historique des paramètres.",
+      "showing": "Affichage de {count} modifications sur {total}.",
       "user": "Utilisateur",
       "action": "Action",
       "setting": "Paramètre",

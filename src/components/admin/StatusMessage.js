@@ -17,7 +17,15 @@ import React from 'react';
 // default `variant`-based style (or GC DS tokens) into this component so
 // callers stop reinventing the colours, and dropping the `style` prop
 // once that lands.
-const StatusMessage = ({ message, isError = false, className, style, tag = 'p', children }) => {
+// forwardRef + tabIndex exist for callers that have to move focus to the
+// message itself — e.g. SettingsPage's history count, which becomes the landing
+// spot when the "Load more" button unmounts on the last page and would
+// otherwise drop focus to <body>. Both are optional; existing callers are
+// unaffected.
+const StatusMessage = React.forwardRef((
+  { message, isError = false, className, style, tag = 'p', tabIndex, children },
+  ref
+) => {
   if (!message && !children) return null;
   // children lets a caller render richer content (e.g. a follow-up bullet
   // list) than a single string — pass tag="div" alongside it, since block
@@ -25,14 +33,18 @@ const StatusMessage = ({ message, isError = false, className, style, tag = 'p', 
   const Tag = tag;
   return (
     <Tag
+      ref={ref}
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
       className={className}
       style={style}
+      tabIndex={tabIndex}
     >
       {children || message}
     </Tag>
   );
-};
+});
+
+StatusMessage.displayName = 'StatusMessage';
 
 export default StatusMessage;

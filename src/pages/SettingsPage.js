@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import SettingsAuditValue from '../components/settings/SettingsAuditValue.js';
+import { formatNumber } from '../utils/numberFormat.js';
 
 const normalizeChatTransport = (value) => (
   ['sse', 'ndjson'].includes(value) ? value : 'sse'
@@ -71,6 +73,13 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [auditLoadingMore, setAuditLoadingMore] = useState(false);
   const [auditError, setAuditError] = useState(false);
   const [auditHasMore, setAuditHasMore] = useState(false);
+  const [auditTotal, setAuditTotal] = useState(0);
+  // Newest entry of the first page — later pages are read relative to it. A ref
+  // rather than state: nothing renders it, and keeping it out of the render
+  // cycle avoids making the loader depend on a value it also writes.
+  const auditAnchorRef = useRef(null);
+  const auditCountRef = useRef(null);
+  const auditRefocusRef = useRef(false);
   const [baseUrl, setBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
@@ -217,25 +226,47 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
-  const loadAuditHistory = async (skip = 0, append = false) => {
+  // `append` pages in older entries under the existing ones; `silent` refreshes
+  // in place without flashing the loading text over a table that is already on
+  // screen. Never throws — a failed load surfaces through auditError instead, so
+  // callers can await it without wrapping it in their own try/catch.
+  const loadAuditHistory = async ({ skip = 0, append = false, silent = false } = {}) => {
     if (append) setAuditLoadingMore(true);
-    else setAuditLoading(true);
+    else if (!silent) setAuditLoading(true);
     setAuditError(false);
     try {
-      const result = await DataStoreService.getSettingsAudit({ limit: 50, skip });
-      setAuditEntries((current) => (append ? [...current, ...(result.entries || [])] : (result.entries || [])));
+      const result = await DataStoreService.getSettingsAudit({
+        limit: 50,
+        skip,
+        before: append ? auditAnchorRef.current : null,
+      });
+      const entries = result.entries || [];
+      setAuditEntries((current) => (append ? [...current, ...entries] : entries));
       setAuditHasMore(Boolean(result.hasMore));
+      setAuditTotal(result.total || 0);
+      // A fresh read establishes the snapshot every later page is anchored to.
+      if (!append) auditAnchorRef.current = entries[0]?.createdAt || null;
+      // The Load more button unmounts once the last page is in. Without moving
+      // focus, a keyboard user is dropped back to the top of the document and
+      // loses their place in the table.
+      if (append && !result.hasMore) auditRefocusRef.current = true;
     } catch (error) {
       setAuditError(true);
     } finally {
       if (append) setAuditLoadingMore(false);
-      else setAuditLoading(false);
+      else if (!silent) setAuditLoading(false);
     }
   };
 
   useEffect(() => {
     loadAuditHistory();
   }, []);
+
+  useEffect(() => {
+    if (!auditRefocusRef.current) return;
+    auditRefocusRef.current = false;
+    auditCountRef.current?.focus();
+  }, [auditEntries, auditHasMore]);
 
   // Helper to save a setting and read it back to confirm persistence.
   // Single choke-point every one of this page's ~40 fields saves through —
@@ -246,6 +277,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSetting(key, value);
       const current = await DataStoreService.getSetting(key, value);
       setStatusMessage({ text: t('settings.saveSuccess'), isError: false });
+      // Every save is audited, so the table below is stale the moment any field
+      // on this page saves. Refreshing at the same choke-point covers all ~40.
+      await loadAuditHistory({ silent: true });
       return readTransform(current);
     } catch (err) {
       setStatusMessage({ text: t('settings.saveError'), isError: true });
@@ -453,7 +487,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     try {
       await DataStoreService.refreshSettingsCache();
       setSettingsCacheMessage(t('settings.refreshCache.success'));
-      await loadAuditHistory();
+      await loadAuditHistory({ silent: true });
     } catch (error) {
       setSettingsCacheMessage(t('settings.refreshCache.error').replace('{error}', error.message));
     } finally {
@@ -1156,8 +1190,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       <section className="mt-600" aria-labelledby="settings-audit-title">
         <h2 id="settings-audit-title">{t('settings.auditHistory.title')}</h2>
         <p>{t('settings.auditHistory.description')}</p>
-        {auditLoading ? <p>{t('settings.auditHistory.loading')}</p> : null}
-        {auditError ? <p role="alert">{t('settings.auditHistory.error')}</p> : null}
+        <StatusMessage message={auditLoading ? t('settings.auditHistory.loading') : null} />
+        <StatusMessage message={auditError ? t('settings.auditHistory.error') : null} isError />
         {!auditLoading && !auditError && auditEntries.length === 0 ? (
           <p>{t('settings.auditHistory.empty')}</p>
         ) : null}
@@ -1183,8 +1217,18 @@ const SettingsPage = ({ lang = 'en' }) => {
                       ? t('settings.auditHistory.actions.cacheRefreshed')
                       : t('settings.auditHistory.actions.settingUpdated')}</td>
                     <td>{entry.settingKey || t('settings.auditHistory.notApplicable')}</td>
-                    <td>{entry.previousValue ?? t('settings.auditHistory.notApplicable')}</td>
-                    <td>{entry.newValue ?? t('settings.auditHistory.notApplicable')}</td>
+                    <td>
+                      <SettingsAuditValue
+                        value={entry.previousValue}
+                        emptyLabel={t('settings.auditHistory.notApplicable')}
+                      />
+                    </td>
+                    <td>
+                      <SettingsAuditValue
+                        value={entry.newValue}
+                        emptyLabel={t('settings.auditHistory.notApplicable')}
+                      />
+                    </td>
                     <td>{new Date(entry.createdAt).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</td>
                   </tr>
                 ))}
@@ -1192,11 +1236,21 @@ const SettingsPage = ({ lang = 'en' }) => {
             </table>
           </div>
         ) : null}
+        {auditEntries.length > 0 ? (
+          <StatusMessage
+            message={t('settings.auditHistory.showing')
+              .replace('{count}', formatNumber(auditEntries.length, lang))
+              .replace('{total}', formatNumber(auditTotal, lang))}
+            className="mb-200"
+            tabIndex={-1}
+            ref={auditCountRef}
+          />
+        ) : null}
         {auditHasMore ? (
           <GcdsButton
             type="button"
             buttonRole="secondary"
-            onClick={() => loadAuditHistory(auditEntries.length, true)}
+            onClick={() => loadAuditHistory({ skip: auditEntries.length, append: true })}
             disabled={auditLoadingMore}
           >
             {auditLoadingMore ? t('settings.auditHistory.loadingMore') : t('settings.auditHistory.loadMore')}

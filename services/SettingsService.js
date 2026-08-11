@@ -2,6 +2,25 @@ import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
 import SettingsAuditService from './SettingsAuditService.js';
+import ServerLoggingService from './ServerLoggingService.js';
+
+// The setting is already written to the cache and the database by the time the
+// audit row goes in, so a failed audit write must not fail the save — surfacing
+// it as an error would tell the admin a change did not happen when it did. Log
+// it instead, which is also how the health monitor treats its own failures.
+const recordAuditEntry = async (auditContext, settingKey, previousValue, newValue) => {
+  if (!auditContext || previousValue === newValue) return;
+  try {
+    await SettingsAuditService.recordSettingChange({
+      ...auditContext,
+      settingKey,
+      previousValue,
+      newValue,
+    });
+  } catch (error) {
+    await ServerLoggingService.error('Failed to record settings audit entry', 'system', error);
+  }
+};
 
 // Default values for settings that must always exist.
 // Seeded on startup if missing from the database.
@@ -82,14 +101,7 @@ class SettingsServiceClass {
       this.cache[key] = '';
       await dbConnect();
       await Setting.findOneAndUpdate({ key }, { value: '' }, { upsert: true });
-      if (auditContext && previousValue !== '') {
-        await SettingsAuditService.recordSettingChange({
-          ...auditContext,
-          settingKey: key,
-          previousValue,
-          newValue: '',
-        });
-      }
+      await recordAuditEntry(auditContext, key, previousValue, '');
       return;
     }
 
@@ -99,14 +111,7 @@ class SettingsServiceClass {
     // Persist to DB asynchronously
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
-    if (auditContext && previousValue !== value) {
-      await SettingsAuditService.recordSettingChange({
-        ...auditContext,
-        settingKey: key,
-        previousValue,
-        newValue: value,
-      });
-    }
+    await recordAuditEntry(auditContext, key, previousValue, value);
   }
 
   toBoolean(value, defaultValue = true) {

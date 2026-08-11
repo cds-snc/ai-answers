@@ -1779,3 +1779,30 @@
   text-align: left;
   vertical-align: top;
 }
+
+/* Settings history table (SettingsPage) — recorded setting values are arbitrary
+   text, so a cell has to survive a long unbroken value without pushing the
+   table wider than the page. */
+.settings-audit-value {
+  overflow-wrap: anywhere;
+}
+
+/* Values past the preview length collapse behind a disclosure. The global
+   details/summary rules give it form-control chrome (border, white background,
+   inset padding) that reads as a boxed widget inside a table cell — reset it
+   back to text so only the ► / ▼ marker signals the disclosure. */
+.settings-audit-value--long,
+.settings-audit-value--long[open] {
+  padding: 0;
+  margin-bottom: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.settings-audit-value--long > summary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+}

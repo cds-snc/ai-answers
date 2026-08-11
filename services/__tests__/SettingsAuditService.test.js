@@ -85,4 +85,21 @@ describe('SettingsAuditService', () => {
     expect(query.limit).toHaveBeenCalledWith(25);
     expect(mockCountDocuments).toHaveBeenCalledWith({});
   });
+
+  it('anchors a paged read to entries at or older than the cursor', async () => {
+    const before = '2026-08-11T12:00:00.000Z';
+
+    await SettingsAuditService.list({ limit: 50, skip: 50, before });
+
+    // Without this window, an entry recorded between two "load more" clicks
+    // shifts every later row down by one and the next page repeats a row.
+    const expectedQuery = { createdAt: { $lte: new Date(before) } };
+    expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockCountDocuments).toHaveBeenCalledWith(expectedQuery);
+  });
+
+  it('rejects a cursor that is not a usable date', async () => {
+    await expect(SettingsAuditService.list({ before: 'not-a-date' })).rejects.toThrow(/before/i);
+    expect(mockFind).not.toHaveBeenCalled();
+  });
 });
