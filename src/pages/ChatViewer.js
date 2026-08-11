@@ -5,6 +5,8 @@ import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
 import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
 import MetadataModal from '../components/chatviewer/MetadataModal.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { formatNumber } from '../utils/numberFormat.js';
 import 'prismjs/themes/prism.css';
 import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-xml-doc.js';
@@ -14,7 +16,16 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [chatId, setChatId] = useState('');
   const [logLevel, setLogLevel] = useState('');
   const [expandedMetadata, setExpandedMetadata] = useState(null);
+  const [refreshAnnouncement, setRefreshAnnouncement] = useState('');
+  const [refreshAnnouncementIsError, setRefreshAnnouncementIsError] = useState(false);
   const tableRef = useRef(null);
+  const refreshButtonRef = useRef(null);
+  const pageContentRef = useRef(null);
+  // Lets an in-flight refresh recognize that the user has since switched to
+  // a different chatId, so its result doesn't overwrite the announcement or
+  // focus for the chat now on screen.
+  const chatIdRef = useRef(chatId);
+  chatIdRef.current = chatId;
 
   const { clearLogs, isRefreshingLogs, logs, refreshLogs } = useChatLogs(chatId);
   const stepTimeline = useChatTimeline(logs);
@@ -35,6 +46,20 @@ const ChatViewer = ({ lang = 'en' }) => {
     }
   }, []);
 
+  // MetadataModal's Tab-trap keeps keyboard focus inside it, but a screen
+  // reader's browse/virtual-cursor mode (NVDA arrow keys, VoiceOver rotor)
+  // walks the accessibility tree independently of focus order — it would
+  // still reach the page underneath the full-screen overlay. `inert` removes
+  // this content from the accessibility tree (and blocks interaction with
+  // it) for as long as the modal is open. Set imperatively via a ref rather
+  // than as a JSX prop so it works regardless of whether it lands on a
+  // GC DS custom element.
+  useEffect(() => {
+    if (pageContentRef.current) {
+      pageContentRef.current.inert = !!expandedMetadata;
+    }
+  }, [expandedMetadata]);
+
   const handleLogLevelChange = (e) => {
     setLogLevel(e.target.value);
   };
@@ -45,6 +70,8 @@ const ChatViewer = ({ lang = 'en' }) => {
     if (newValue !== chatId) {
       clearLogs();
       setExpandedMetadata(null);
+      setRefreshAnnouncement('');
+      setRefreshAnnouncementIsError(false);
     }
 
     setChatId(newValue);
@@ -55,7 +82,41 @@ const ChatViewer = ({ lang = 'en' }) => {
       return;
     }
 
-    await refreshLogs();
+    // Track whether this button had focus before disabling it below —
+    // disabling a focused control can drop focus to <body> in some
+    // browser/AT combinations (2.4.3), so restore it once refresh finishes.
+    const wasFocused = document.activeElement === refreshButtonRef.current;
+    const requestedChatId = chatId;
+    const { logs: nextLogs, error } = await refreshLogs();
+
+    // The chatId input is disabled while refreshing (below), but guard
+    // anyway: if the viewer moved off this chatId while the request was in
+    // flight, this result no longer describes what's on screen, so don't
+    // announce or refocus based on it.
+    if (chatIdRef.current !== requestedChatId) {
+      return;
+    }
+
+    // The button's own label changes ("Refresh" -> "Please wait..." -> back)
+    // isn't reliably announced by screen readers on its own — a status
+    // message gives an explicit confirmation the content updated (4.1.3).
+    // A failed fetch also resolves to zero logs, so it needs its own
+    // message — otherwise a failure reads identically to "nothing new".
+    // Clearing first guarantees a DOM mutation even when the new message is
+    // identical to the last one (e.g. two refreshes in a row with no new
+    // entries) — otherwise React's same-value bail-out means the aria-live
+    // region never changes and nothing gets announced.
+    setRefreshAnnouncement('');
+    await new Promise(requestAnimationFrame);
+    setRefreshAnnouncementIsError(!!error);
+    setRefreshAnnouncement(
+      error
+        ? t('logging.refreshFailed')
+        : t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang))
+    );
+    if (wasFocused) {
+      refreshButtonRef.current?.focus?.();
+    }
   };
 
   const handleDownloadLogs = () => {
@@ -85,6 +146,7 @@ const ChatViewer = ({ lang = 'en' }) => {
 
   return (
     <>
+      <div ref={pageContentRef}>
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('logging.title')}</h1>
         <nav className="mb-400">
@@ -106,6 +168,7 @@ const ChatViewer = ({ lang = 'en' }) => {
                 value={chatId}
                 onChange={handleChatIdChange}
                 required
+                disabled={isRefreshingLogs}
                 className="form-control p-2 border rounded w-full"
               />
             </div>
@@ -133,6 +196,7 @@ const ChatViewer = ({ lang = 'en' }) => {
               </div>
               <GcdsButton
                 id="refresh-logs-button"
+                ref={refreshButtonRef}
                 type="button"
                 disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
@@ -141,6 +205,12 @@ const ChatViewer = ({ lang = 'en' }) => {
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
+            <StatusMessage
+              message={refreshAnnouncement}
+              isError={refreshAnnouncementIsError}
+              tag="p"
+              className="mb-0"
+            />
 
             {chatId && stepTimeline && (
               <div className="bg-white shadow rounded-lg p-4">
@@ -246,8 +316,8 @@ const ChatViewer = ({ lang = 'en' }) => {
 
             {chatId && logs && (
               <div className="bg-white shadow rounded-lg">
-                {logs.length > 0 ? (
-                  <div className="p-4">
+                <div className="p-4">
+                  {logs.length > 0 && (
                     <div className="mb-3">
                       <GcdsButton
                         id="download-logs-button"
@@ -259,27 +329,29 @@ const ChatViewer = ({ lang = 'en' }) => {
                         {t('logging.download')}
                       </GcdsButton>
                     </div>
-                    <table ref={tableRef} className="display">
-                      <thead>
-                        <tr>
-                          <th>{t('logging.createdAt')}</th>
-                          <th>{t('logging.level')}</th>
-                          <th>{t('logging.message')}</th>
-                          <th>{t('logging.metadata')}</th>
-                        </tr>
-                      </thead>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    <p className="text-gray-500">{t('logging.noLogs')}</p>
-                  </div>
-                )}
+                  )}
+                  {/* Always mounted, even with zero logs — DataTables shows
+                      its own localized empty state (see useChatLogsTable),
+                      which keeps tableRef stable so focus can be captured
+                      and restored across refreshes instead of being lost to
+                      <body> when this element used to get swapped out. */}
+                  <table ref={tableRef} className="display">
+                    <thead>
+                      <tr>
+                        <th>{t('logging.createdAt')}</th>
+                        <th>{t('logging.level')}</th>
+                        <th>{t('logging.message')}</th>
+                        <th>{t('logging.metadata')}</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
               </div>
             )}
           </div>
         </section>
       </GcdsContainer>
+      </div>
 
       <MetadataModal
         metadata={expandedMetadata}

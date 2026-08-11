@@ -13,9 +13,13 @@ export function useChatLogs(chatId) {
     setLogs([]);
   }, []);
 
+  // Returns { logs, error } rather than a bare array so callers can tell a
+  // genuinely empty result apart from a failed fetch — both would otherwise
+  // resolve to the same `[]`, which made a failed refresh indistinguishable
+  // from a successful-but-empty one wherever the result was announced.
   const refreshLogs = useCallback(async () => {
     if (!chatId || isRefreshingRef.current) {
-      return [];
+      return { logs: [], error: null };
     }
 
     isRefreshingRef.current = true;
@@ -28,13 +32,13 @@ export function useChatLogs(chatId) {
         setLogs(nextLogs);
       }
 
-      return nextLogs;
+      return { logs: nextLogs, error: null };
     } catch (error) {
       console.error('Error refreshing logs:', error);
       if (activeChatIdRef.current === chatId) {
         setLogs([]);
       }
-      return [];
+      return { logs: [], error };
     } finally {
       isRefreshingRef.current = false;
       setIsRefreshingLogs(false);
