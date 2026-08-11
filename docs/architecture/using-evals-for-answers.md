@@ -38,7 +38,7 @@ All four graphs share the same backbone: `init → validate → redact → trans
 
 **Skip-on-history:** the node bails out (no lookup) when the conversation already has a prior AI reply — short-circuiting in mid-conversation would ignore the established context.
 
-**Recency in this service:** `applyRecencyFilter` (drops items older than `recencyDays`, default `3650` ≈ 10 yrs, with `expertFeedback.neverStale === true` as escape hatch) and `buildQuestionFlows` (sorts survivors newest-first by `interaction.createdAt`) before the LLM ranker picks the best candidate.
+**Recency in this service:** `applyRecencyFilter` (drops items older than `recencyDays`, `DEFAULT_RECENCY_DAYS = 365` at `SimilarAnswerService.js:18`, with `expertFeedback.neverStale === true` as escape hatch) and `buildQuestionFlows` (sorts survivors newest-first by `interaction.createdAt`) before the LLM ranker picks the best candidate.
 
 See `services/SimilarAnswerService.js` and `agents/graphs/workflows/GraphWorkflowHelper.js#checkSimilarAnswer`.
 
@@ -56,8 +56,10 @@ The service is a thin orchestration layer over the existing vector index and the
 
 Both backends now re-score each candidate against the query embedding and drop those below the floor:
 
-- **`DocDBVectorService.matchQuestions`** — the `$search.vectorSearch` stage surfaces no score, but the `$project` already returns `questionsEmbedding`, so each candidate is re-scored in JS with `cosineSimilarity(queryEmb, r.questionsEmbedding)` (the same helper `_searchQA` uses). Candidates below `threshold` are dropped, survivors sorted by similarity desc, then sliced to `k`.
-- **`IMVectorService.matchQuestions`** — the score already exists (`r.similarity`); candidates below `threshold` are filtered out, then sorted and sliced.
+- **`DocDBVectorService.matchQuestions`** — the `$search.vectorSearch` stage surfaces no score, but the `$project` already returns `questionsEmbedding`, so each candidate is re-scored in JS with `cosineSimilarity(queryEmb, r.questionsEmbedding)` (the same helper `_searchQA` uses). Candidates below `threshold` are dropped, survivors sorted with `compareVectorMatches`, then sliced to `k`.
+- **`IMVectorService.matchQuestions`** — the score already exists (`r.similarity`); candidates below `threshold` are filtered out, then sorted with `compareVectorMatches` and sliced.
+
+Sort order is similarity-first with a recency tie-break — see [Ordering](#ordering--similarity-first-recency-as-tie-break) below.
 
 When `threshold` is `null` (the short-circuit caller, `SimilarAnswerService`) no floor is applied — behaviour there is unchanged.
 
@@ -65,7 +67,17 @@ When `threshold` is `null` (the short-circuit caller, `SimilarAnswerService`) no
 
 > **History:** both backends used to run a **promotion step** that pulled the first hit carrying an `expertFeedbackId` to the front of the result list, regardless of similarity.
 
-This was **already inert** on every production path: both QA graphs and the short-circuit caller pass a numeric `expertFeedbackRating`, and the rating filter runs *before* promotion — so every surviving hit already had feedback and "the first hit with feedback" was just the first hit. (It also was **not** why the EI example was injected — that was the missing threshold above.) Promotion only ever did anything for a caller passing no rating filter, which none do. Path A removed it: results are returned in pure similarity order. Removing it was set-identical for `SimilarAnswerService` (which re-sorts by recency and LLM-ranks downstream anyway).
+This was **already inert** on every production path: both QA graphs and the short-circuit caller pass a numeric `expertFeedbackRating`, and the rating filter runs *before* promotion — so every surviving hit already had feedback and "the first hit with feedback" was just the first hit. (It also was **not** why the EI example was injected — that was the missing threshold above.) Promotion only ever did anything for a caller passing no rating filter, which none do. Path A removed it: results are returned in similarity order (with the recency tie-break below). Removing it was set-identical for `SimilarAnswerService` (which re-sorts by recency and LLM-ranks downstream anyway).
+
+### Ordering — similarity first, recency as tie-break
+
+`matchQuestions` does **not** return pure similarity order. Both backends sort with `compareVectorMatches` (`services/vectorMatchOrdering.js`) before slicing to `k`:
+
+- Similarity is the primary signal — a more-similar candidate always outranks a less-similar one.
+- When two candidates have *identical* similarity, the one with the more recent `expertFeedbackCreatedAt` ranks first.
+- Missing or unparseable timestamps sort as `-Infinity`, i.e. oldest.
+
+Applied at `IMVectorService.js` (`matchQuestions`, sort-then-slice) and `DocDBVectorService.js` (`mapped.sort`). This is ordering only — it never rescues a hit that the threshold or recency filters would drop.
 
 ### `services/QuestionAnswerService.js`
 
@@ -86,11 +98,12 @@ Singleton service exposing two methods:
 | `maxAnswerChars` | `400` | Truncation length for the answer body. |
 | `includeQuestionFlow` | `true` | When true, runs `buildQuestionFlow` for each hit. |
 | `recencyDays` | `365` | Drops hits whose `expertFeedback.createdAt` is older than this many days. `null` / `0` / negative disables the filter. The `neverStale` escape hatch (below) bypasses it. |
+| `useDenormalizedPreFilter` | `false` | When true, the vector layer filters on denormalized fields **before** the search instead of `$lookup`-ing afterwards. Collapses the over-fetch and skips the lookup stages — see [Denormalized pre-filter](#denormalized-pre-filter--bi-implemented). `GenericWithQAGraph` passes `true`; nothing else does yet. |
 
 #### Execution flow
 
 1. `dbConnect()`.
-2. `initVectorService()` → `matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k: vectorK, threshold, expertFeedbackRating, expertFeedbackComparison, language })`. The service **over-fetches** from the vector layer: `vectorK = min(k * 3, 15)`. This gives the recency filter (step 6) headroom to still return `k` survivors when some hits are stale. (`threshold` is forwarded here and now [enforced](#similarity-threshold--now-enforced-path-a) by both vector services.)
+2. `initVectorService()` → `matchQuestions([question], { provider: 'azure', modelName: 'text-embedding-3-large', k: vectorK, threshold, expertFeedbackRating, expertFeedbackComparison, language, recencyDays, useDenormalizedPreFilter })`. `vectorK` depends on the path (`QuestionAnswerService.js:121`): `useDenormalizedPreFilter ? k : Math.min(k * 3, 15)`. The over-fetch on the legacy path gives the recency filter (step 6) headroom to still return `k` survivors when some hits are stale; with the pre-filter that headroom is unnecessary because staleness is already excluded at the vector layer. (`threshold` is forwarded here and now [enforced](#similarity-threshold--now-enforced-path-a) by both vector services.)
 3. Filter hits to those with **both** `interactionId` and `expertFeedbackId` (the service treats expert feedback as required — hits without it are dropped, not used).
 4. Single `Interaction.find({ _id: { $in: ids } })` populating `question`, `answer` → `citation`, and `expertFeedback`.
 5. Compute the recency cutoff: `Date.now() - recencyDays * 86400000` (or `null` when `recencyDays` is non-positive).
@@ -104,10 +117,11 @@ Singleton service exposing two methods:
 #### Recency filter — design notes
 
 - **Timestamp used:** `expertFeedback.createdAt` (when the expert rated the answer), **not** `interaction.createdAt`. A two-year-old question rated last week is treated as fresh; what matters is how current the expert judgement is. `ExpertFeedback` already carries `timestamps: true` and indexes `createdAt`.
-- **Hard cutoff, not a re-rank.** Survivors stay in the vector-similarity order returned by `matchQuestions`. Recency drops old hits; it doesn't promote newer ones over more-similar ones.
+- **Hard cutoff, not a re-rank.** Survivors stay in the order returned by `matchQuestions`. Recency drops old hits; it never promotes a newer hit over a more-similar one. Note this filter is distinct from the ordering tie-break below — the cutoff decides *whether* a hit survives, the tie-break only decides the order of hits that are already equally similar.
+- **Two places recency applies.** This service-level cutoff is the last line of defence. On the `useDenormalizedPreFilter` path the same window is already applied at the vector layer (`expertFeedbackCreatedAt >= cutoff` OR `expertFeedbackNeverStale: true`), so most stale hits never reach here. Recency also acts as an ordering tie-break — see [Ordering](#ordering--similarity-first-recency-as-tie-break).
 - **Unknown age is treated as stale.** A hit is kept iff `Number.isFinite(efCreated) && efCreated >= cutoff`. Missing `createdAt` (legacy records pre-dating `timestamps: true`) and unparseable `createdAt` (`new Date('garbage').getTime() === NaN`) both fail this check and are dropped. Conservative by design — when in doubt, exclude.
 - **`neverStale` escape hatch** — `expertFeedback.neverStale === true` always passes the filter, including for unknown-age records. This is the same flag `SimilarAnswerService` honours for evergreen content.
-- **Over-fetch ratio (`k * 3`, capped at 15)** — picked to absorb the common case where 1–2 of the top hits have stale feedback without ballooning the populate query. If the corpus becomes thin in the recent window the section may still return fewer than `k` blocks (or empty), which the system prompt handles cleanly by omitting the section.
+- **Over-fetch ratio (`k * 3`, capped at 15)** — legacy path only. Picked to absorb the common case where 1–2 of the top hits have stale feedback without ballooning the populate query. With `useDenormalizedPreFilter` there is no over-fetch (`vectorK = k`). Either way, if the corpus is thin in the recent window the section may return fewer than `k` blocks (or empty), which the system prompt handles cleanly by omitting the section.
 - **Disabling the filter:** pass `recencyDays: 0` (or `null`). Useful for backfill / debug scenarios.
 
 #### Block format
@@ -164,51 +178,50 @@ When `similarQuestions` is empty the entire section is omitted (no header, no pr
 **Path A — implemented.** Steps 1–3 below are done (see the [threshold](#similarity-threshold--now-enforced-path-a) and [promotion](#expert-feedback-promotion--removed-path-a) sections above); step 4 is in progress in preview.
 
 1. ✅ **Surface a similarity score on both backends.** DocDB re-scores in JS with `cosineSimilarity(queryEmb, r.questionsEmbedding)` (the `$project` already returns `questionsEmbedding`), reusing the helper `_searchQA` uses; `similarity` is no longer hard-coded `null`. IM uses its existing `r.similarity`.
-2. ✅ **Apply the threshold after scoring, then re-sort, then slice.** Both backends filter the full candidate list by `similarity >= threshold`, sort by similarity desc, then `slice(0, k)`.
-3. ✅ **Drop the promotion step.** Removed from both `matchQuestions` paths; results return in similarity order. Set-identical for the short-circuit caller (`threshold: null`, re-sorted downstream).
-4. 🔄 **Calibrate the value.** Shipped at `0.75` (the existing per-graph value in `InstantAndQAGraph.js:175` / `GenericWithQAGraph.js:155`). Because the floor was never enforced before, the cosine distribution is unmeasured — validate in preview with the business-number → EI case as a regression check and adjust if needed.
+2. ✅ **Apply the threshold after scoring, then re-sort, then slice.** Both backends filter the full candidate list by `similarity >= threshold`, sort with `compareVectorMatches`, then `slice(0, k)`.
+3. ✅ **Drop the promotion step.** Removed from both `matchQuestions` paths. Set-identical for the short-circuit caller (`threshold: null`, re-sorted downstream).
+4. 🔄 **Calibrate the value.** Shipped at `0.75` (the per-graph value in `InstantAndQAGraph.js:175` / `GenericWithQAGraph.js:156`). Because the floor was never enforced before, the cosine distribution is unmeasured — validate in preview with the business-number → EI case as a regression check and adjust if needed.
 
-**Still open (not Path A):** the `engineK` over-fetch and the haystack index — see the next two sections. Path A fixes correctness; it does not change the per-question search cost.
+**Search cost — also addressed since.** Path A fixed correctness only; the `engineK` over-fetch was left open. It has since been closed for `GenericWithQAGraph` by the denormalized pre-filter below.
 
-### The retrieval funnel and the `engineK` over-fetch
+### Denormalized pre-filter — B(i), implemented
 
-Enforcing the threshold is tangled up with a second, deeper issue: **what the vector index actually contains**, and the over-fetch that follows from it.
+**The problem it solves.** `InteractionPersistenceService.js` embeds **every** interaction during persistence, so the `Embedding` collection holds one vector per question across the *entire federal online ecosystem*, not just expert-rated ones. Rated interactions are a tiny fraction. Originally the embedding document stored `interactionId` but no feedback metadata, so "is this rated?" was only knowable by `$lookup`-ing embedding → interaction → expertFeedback — which can only happen *after* the vector search returns candidates. Hence a deep over-fetch to go needle-hunting in a haystack.
 
-**The index is the whole haystack, not the needles.** `InteractionPersistenceService.js:143` calls `EmbeddingService.createEmbedding` on **every** interaction during persistence — so the `Embedding` collection holds one vector per question across the *entire federal online ecosystem*, not just expert-rated ones. Expert-rated interactions are a tiny fraction of it. And the embedding document (`EmbeddingService.js:281-291`) stores `interactionId` but **not** `expertFeedbackId` — so "is this rated?" is only knowable by `$lookup`-ing embedding → interaction → expertFeedback, which can only happen *after* the vector search returns candidates.
+**The fix.** Feedback metadata is now denormalized onto the embedding document (`models/embedding.js:41-46`):
 
-**That is why `engineK` is 180.** Trace a single `InstantAndQAGraph` injection call (graph passes `k: 3`):
+| Field | Used for |
+|---|---|
+| `expertFeedbackId` | "is this rated?" — the pre-filter requires it to exist |
+| `expertFeedbackTotalScore` | the `lt` / `lte` / `eq` rating bound |
+| `expertFeedbackCreatedAt` | the recency window, and the ordering tie-break |
+| `expertFeedbackNeverStale` | the recency escape hatch |
+| `pageLanguage` / `interactionLanguage` | language match |
 
-| Stage | Where | Value | Role |
+Two compound indexes back the pre-filter (`models/embedding.js:62-63`). `EmbeddingMetadataService.js` keeps the fields in sync as feedback is created, changed, or deleted; `api/vector/vector-backfill-metadata.js` backfills existing rows.
+
+With `useDenormalizedPreFilter: true`, `DocDBVectorService.matchQuestions` puts a `$match` **before** `$search.vectorSearch` (`DocDBVectorService.js:363-394`) and skips the four `$lookup`/`$unwind` stages entirely (`:396`). `IMVectorService` applies the equivalent filter against its in-memory metadata map.
+
+**Effect on the funnel.** Trace a single `GenericWithQAGraph` injection call (graph passes `k: 3`):
+
+| Stage | Where | Legacy path | With pre-filter |
 |---|---|---|---|
-| `vectorK` | `QuestionAnswerService.js:119` | `min(3*3, 15)` = **9** | what QAService asks `matchQuestions` for |
-| `engineK` | `DocDBVectorService.js:324-325` | `max(9*20, 100)` = **180** | nearest neighbours the engine returns *before* metadata filters |
-| rating + language `$match` | `:345-355` | → N ≤ 180 | server-side filter to rating-bound + language |
-| `slice(0, k)` | `:378` | first **9** survivors | top 9 in engine order |
-| recency filter | `QuestionAnswerService.js:146-154` | → up to **3** blocks | drops stale feedback, stops at k=3 |
+| `vectorK` | `QuestionAnswerService.js:121` | `min(3*3, 15)` = **9** | `k` = **3** |
+| `engineK` | `DocDBVectorService.js:353-355` | `max(9*20, 100)` = **180** | `max(3*4, 25)` = **25** |
+| rated / rating / language / recency filter | pre-`$search` `$match` | ❌ post-search, after lookups | ✅ before the search |
+| `$lookup` / `$unwind` stages | `DocDBVectorService.js:396-404` | 4 stages × up to 180 candidates | skipped |
+| recency filter | `QuestionAnswerService.js:161-180` | → up to **3** blocks | → up to **3** blocks (rarely drops anything; already filtered) |
 
-So 180 is **search depth, not an expected result count**: scan the 180 nearest interactions (almost all unrated), drag each through the lookups, and hope a few turn out to be rated. The over-fetch (`max(k*20, 100)`, gated on `hasPostSearchFilters` at `:324`) is worst-case headroom for needle-hunting in a haystack.
+The search now runs over only the rated, in-language, in-window subset, so `engineK` is genuine search depth over the needles rather than worst-case headroom over the haystack.
 
-**Cost of this design (paid on every question, including one-offs that correctly return nothing):** a 180-wide vector search, 4 `$lookup`/`$unwind` stages × up to 180 candidates, transfer of up to 180 full question vectors, and — once the threshold lands — up to 180 JS cosine computations. For a one-off question there are zero rated neighbours, so the deep scan finds nothing at full price; for a top-task immigration question the rated examples are likely in the top ~20, so 180 is overkill there too. The over-fetch is almost never the right size.
+**What made this possible.** The cluster has since been upgraded to **DocumentDB engine 8.0** (`terragrunt/aws/database/documentdb.tf:93`, `engine_version = "8.0.0"`, family `docdb8.0`). DocumentDB supports a `$match` *before* `$vectorSearch` only on **engine 8.0 / Planner v3** — per AWS docs, "Only Planner v3 works when vectorSearch stage is not the first stage… Planner v1 does not support `$vectorSearch` stage" ([query planner v3](https://docs.aws.amazon.com/documentdb/latest/developerguide/query-planner-v3.html)). On the previous 5.0 cluster the vector search had to be the first pipeline stage, which is why the over-fetch existed. Vector search remains HNSW-only ([vector search docs](https://docs.aws.amazon.com/documentdb/latest/developerguide/vectorSearch.html)).
 
-### Architectural fork (decision pending)
+**Current status.** Only `GenericWithQAGraph` passes `useDenormalizedPreFilter: true` (`GenericWithQAGraph.js:163`). `InstantAndQAGraph`, `DefaultWithVectorGraph`, and `SimilarAnswerService` still take the legacy post-`$lookup` path with the `max(k*20, 100)` over-fetch. Extending the flag to the short-circuit path is the obvious next step; B(ii) (a separate `ratedEmbeddings` collection) is no longer needed, since the pre-filter achieves the same "search the needles" outcome without a second collection to keep in sync.
 
-Two ways forward, captured so the reasoning isn't lost:
-
-- **A — Keep the haystack, just tune it (small, low-risk).** Lower `engineK` (e.g. `k*4`), add the JS threshold + re-sort, remove promotion. Since zero results are acceptable (better than wrong ones), a shallower scan that occasionally misses a rated example at neighbour #90 is fine. Still searches all-interactions on every call.
-- **B — Search the needles directly (proper fix).** Run the nearest-neighbour search over **only** expert-rated embeddings, so `engineK` collapses to ~`k*2`, the threshold is trivial, and latency drops to near-nothing. Requires rated-ness to be filterable *before* the vector search — which today it isn't, because `expertFeedbackId` isn't on the `Embedding` doc. Sub-options: (i) denormalize `expertFeedbackId` onto the embedding doc (set when feedback lands) **and** pre-filter inside `$search.vectorSearch`; or (ii) maintain a separate small collection/index of rated embeddings, synced on expert-feedback creation.
-
-**Gating question — resolved (investigated May 2026):** does our Amazon DocumentDB `$search.vectorSearch` support a pre-filter? **No, not on our cluster.** The cluster runs **engine 5.0** (`terragrunt/aws/database/documentdb.tf:76`, `engine_version = "5.0.0"`, family `docdb5.0`). DocumentDB only supports a `$match` *before* `$vectorSearch` on **engine 8.0 / Planner v3** — per AWS docs, "Only Planner v3 works when vectorSearch stage is not the first stage… Planner v1 does not support `$vectorSearch` stage" ([query planner v3](https://docs.aws.amazon.com/documentdb/latest/developerguide/query-planner-v3.html)). On 5.0 the vector search **must be the first pipeline stage**, so filtering is post-search `$match` only — which is precisely why the haystack over-fetch exists. DocumentDB vector search is also HNSW-only ([vector search docs](https://docs.aws.amazon.com/documentdb/latest/developerguide/vectorSearch.html)). Consequences:
-
-- **B(i) is off the table** without a DocumentDB **5.0 → 8.0 engine upgrade** (separate infra change, its own testing/risk). Not in scope for this work.
-- **B(ii) is the viable proper fix** — a separate `ratedEmbeddings` collection (its own HNSW index, synced on expert-feedback create/delete) sidesteps filtering entirely: the searched set *is* the needles, so nearest-`k` needs no `$match` and the threshold is trivial. The rated corpus is small (nowhere near the full-ecosystem index), so this collection stays tiny and fast.
-- **A remains the low-risk quick win** and, given "a little latency is fine," a legitimate standalone step.
-
-**Status: A implemented; B(ii) deferred.** Path A (threshold + re-sort + promotion removal) is done and shipping at `0.75` for preview calibration — it fixes the correctness bug without touching per-question search cost. B(ii) remains the latency endgame for if/when the haystack search cost matters; it would reuse Path A's threshold/sort logic over the smaller rated-only set.
-
-**Decisions locked in so far:**
+**Decisions that still hold:**
 - Losing the count guarantee is **fine** — zero injected examples is strictly better than injecting an irrelevant one (the EI/business-number failure). The system prompt already omits the section when empty.
-- The corpus is sparse by nature (whole federal ecosystem): ~half of traffic is canada.ca top tasks (immigration especially) with potential coverage; the rest are one-offs that will usually have **no** rated match. This argues *for* B but doesn't strictly require it.
-- Latency budget: "a little is fine" — a modest per-question cost is acceptable, but the current 180-deep scan on every question is more than the work deserves.
+- The corpus is sparse by nature (whole federal ecosystem): ~half of traffic is canada.ca top tasks (immigration especially) with potential coverage; the rest are one-offs that will usually have **no** rated match.
+- Latency budget: "a little is fine."
 
 ---
 
@@ -263,7 +276,8 @@ Set the system prompt to debug-log mode is not currently wired, but you can veri
 
 ## Shared dependencies
 
-- **Vector index** — `DocDBVectorService` or `IMVectorService` (selected by `initVectorService()`). Both return `interactionId`, `expertFeedbackId`, and propagate `expertFeedbackRating` so the rating filter can work. Both also re-score each hit's cosine similarity and **enforce the `threshold`** floor (Path A — see [Similarity threshold — now enforced](#similarity-threshold--now-enforced-path-a)).
+- **Vector index** — `DocDBVectorService` or `IMVectorService` (selected by `initVectorService()`). Both return `interactionId`, `expertFeedbackId`, `expertFeedbackCreatedAt`, and propagate `expertFeedbackRating` so the rating filter can work. Both re-score each hit's cosine similarity and **enforce the `threshold`** floor (see [Similarity threshold](#similarity-threshold--now-enforced-path-a)), sort with `compareVectorMatches` (see [Ordering](#ordering--similarity-first-recency-as-tie-break)), and support the [denormalized pre-filter](#denormalized-pre-filter--bi-implemented).
+- **Denormalized feedback metadata** — `models/embedding.js` carries `expertFeedbackId` / `expertFeedbackTotalScore` / `expertFeedbackCreatedAt` / `expertFeedbackNeverStale` / language fields, kept in sync by `EmbeddingMetadataService.js` and backfilled by `api/vector/vector-backfill-metadata.js`. These are what make the pre-filter possible; if they drift, the pre-filter path silently under-returns.
 - **Mongo models** — `Interaction`, `Answer` (with populated `Citation`), `ExpertFeedback`, `Question`, `Chat`.
 - **Expert feedback is required.** A hit without an `expertFeedbackId` is silently dropped. If the expert-feedback corpus is empty, both mechanisms become no-ops.
 

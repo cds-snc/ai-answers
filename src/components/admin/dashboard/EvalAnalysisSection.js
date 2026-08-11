@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import { GcdsButton, GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
 import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
+import StatusMessage from '../StatusMessage.js';
 
 // "Run eval analysis" section at the bottom of the partner dashboard.
 // Disabled until an institution filter is applied; the precheck endpoint
@@ -127,8 +128,12 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {appliedDepartment && count !== null && !running && (
           <>
+            {/* TODO: role="status"/"alert" here rely on their implicit aria-live
+                mapping (polite/assertive) rather than pairing it explicitly, unlike
+                the equivalent warnings in EvalAnalysisReport.js. Functionally the
+                same, but worth picking one convention across both files. */}
             {tooFew && (
-              <div className="dashboard-warning">
+              <div className="dashboard-warning" role="status">
                 <span className="dashboard-warning__icon" aria-hidden="true" />
                 {t('partnerDashboard.evalAnalysis.tooFew')
                   .replace('{min}', fmtN(precheck.min))
@@ -136,7 +141,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
               </div>
             )}
             {tooMany && (
-              <div className="dashboard-warning">
+              <div className="dashboard-warning" role="status">
                 <span className="dashboard-warning__icon" aria-hidden="true" />
                 {t('partnerDashboard.evalAnalysis.tooMany')
                   .replace('{max}', fmtN(precheck.max))
@@ -172,9 +177,10 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {runError && (
-          <div className="dashboard-error" style={{ marginTop: 12 }}>
+          <StatusMessage isError tag="div" className="dashboard-error" style={{ marginTop: 12 }}>
+            <GcdsIcon name="warning-triangle" marginRight="50" />
             {runErrorLabel()}
-          </div>
+          </StatusMessage>
         )}
       </div>
 
@@ -195,7 +201,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
                       <th style={{ ...headStyle, textAlign: 'right' }}>{t('partnerDashboard.evalAnalysis.pastRuns.colCount')}</th>
                       <th style={headStyle}>{t('partnerDashboard.evalAnalysis.pastRuns.colStatus')}</th>
                       <th style={headStyle}>{t('partnerDashboard.evalAnalysis.pastRuns.colBy')}</th>
-                      <th style={headStyle}></th>
+                      <th style={headStyle}><span className="sr-only">{t('partnerDashboard.evalAnalysis.pastRuns.colActions')}</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -240,7 +246,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           rendering nothing. */}
       {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
         <div className="dashboard-section">
-          <div className="dashboard-warning">
+          <div className="dashboard-warning" role="status">
             <span className="dashboard-warning__icon" aria-hidden="true" />
             {t('partnerDashboard.evalAnalysis.report.incomplete')}
           </div>

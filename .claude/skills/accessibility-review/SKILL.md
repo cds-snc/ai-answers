@@ -113,6 +113,16 @@ commits) — check new code follows it rather than reinventing it:
   eyeballing it.
 - Colour is never the *only* signal for state (error, success, required) —
   there's always a text/icon/shape cue alongside it.
+- **Verify the class actually exists before trusting its computed colour.**
+  This project has no Tailwind dependency, but Tailwind-style class names
+  (`text-red-600`, `bg-red-50`, `gap-2`, `rounded`, `p-2`, …) still show up
+  copy-pasted in — grep `src/styles/*.css` for the class before estimating
+  its contrast. An undefined class isn't a contrast failure at the value it
+  implies; it's unstyled/default-rendered, often a worse and different bug
+  (missing padding/background/icon sizing, not just a bad colour). Flag it
+  as "undefined class, not a real style" and point at the nearest real
+  pattern to reuse (see design-system.md) rather than reporting a computed
+  ratio for a rule that was never applied.
 
 ### 7. Images & non-text content
 - Meaningful images have real `alt` text; decorative images have `alt=""`

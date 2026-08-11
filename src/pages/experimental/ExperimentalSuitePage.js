@@ -2,16 +2,13 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { getPath } from '../../utils/routes.js';
 import { useExperimentalSuiteGrid } from '../../hooks/experimental/useExperimentalSuiteGrid.js';
-import SuiteGridTable from '../../components/experimental/SuiteGridTable.js';
+import SuiteGridTable, { VERDICT_CELL_CLASSES } from '../../components/experimental/SuiteGridTable.js';
 
-const LEGEND = [
-    { verdict: 'pass', style: { backgroundColor: '#d8eeca', color: '#1d4d27' } },
-    { verdict: 'mixed', style: { backgroundColor: '#fbe9c6', color: '#7a5a00' } },
-    { verdict: 'flagged', style: { backgroundColor: '#fdd7d9', color: '#a12622' } },
-    { verdict: 'error', style: { backgroundColor: '#f3c4c6', color: '#7a1b16' } },
-    { verdict: 'missing', style: { backgroundColor: '#f1f1f1', color: '#666' } }
-];
+// Same order/verdicts as SuiteGridTable's cells; colours come from its
+// exported VERDICT_CELL_CLASSES so this legend can't drift from the grid.
+const LEGEND_VERDICTS = ['pass', 'mixed', 'flagged', 'error', 'missing'];
 
 /**
  * Suite view: every analysis run of a dataset as a row, every test as a
@@ -25,7 +22,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
     const { dataset, tests, runs, cells, loading, error } = useExperimentalSuiteGrid(datasetId);
 
     const handleCellClick = (run, test) => {
-        navigate(`/${lang}/experimental/analysis/${run._id}?open=${test.position}`);
+        navigate(`${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`);
     };
 
     return (
@@ -43,10 +40,10 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}
                     </GcdsLink>
-                    <GcdsLink href={`/${lang}/experimental/analysis?datasetId=${datasetId}`}>
+                    <GcdsLink href={`${getPath('experimental-analysis', lang)}?datasetId=${datasetId}`}>
                         {t('experimental.suite.newRun')}
                     </GcdsLink>
                 </div>
@@ -70,8 +67,12 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
 
                     {runs.length > 0 && (
                         <div className="mt-300" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-                            {LEGEND.map(({ verdict, style }) => (
-                                <span key={verdict} style={{ ...style, padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
+                            {LEGEND_VERDICTS.map((verdict) => (
+                                <span
+                                    key={verdict}
+                                    className={VERDICT_CELL_CLASSES[verdict]}
+                                    style={{ padding: '0.15rem 0.5rem', borderRadius: '3px' }}
+                                >
                                     {t(`experimental.suite.verdict.${verdict}`)}
                                 </span>
                             ))}

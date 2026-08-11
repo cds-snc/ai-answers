@@ -4,12 +4,17 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { truncate } from '../../utils/experimental/batchItems.js';
 
-const VERDICT_CELL_STYLES = {
-    pass: { backgroundColor: '#d8eeca', color: '#1d4d27' },
-    mixed: { backgroundColor: '#fbe9c6', color: '#7a5a00' },
-    flagged: { backgroundColor: '#fdd7d9', color: '#a12622' },
-    error: { backgroundColor: '#f3c4c6', color: '#7a1b16' },
-    missing: { backgroundColor: '#f1f1f1', color: '#666' }
+// Colours live in admin.css (.verdict-cell--*) so pass/mixed/error stay in
+// sync with the shared .label good/caution/error tier instead of drifting
+// as a second hardcoded copy. flagged/missing are this table's own colours
+// — see admin.css. Exported so other verdict displays (e.g. the legend in
+// ExperimentalSuitePage.js) point at the same classes instead of a third copy.
+export const VERDICT_CELL_CLASSES = {
+    pass: 'verdict-cell--pass',
+    mixed: 'verdict-cell--mixed',
+    flagged: 'verdict-cell--flagged',
+    error: 'verdict-cell--error',
+    missing: 'verdict-cell--missing'
 };
 
 const VERDICT_SYMBOLS = {
@@ -80,17 +85,21 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
             <table style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
-                        <th style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left' }}>
+                        <th scope="col" style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left' }}>
                             {t('experimental.suite.runColumn')}
                         </th>
-                        <th style={{ ...CELL_BASE, cursor: 'default' }}>
+                        <th scope="col" style={{ ...CELL_BASE, cursor: 'default' }}>
                             {t('experimental.suite.scoreColumn')}
                         </th>
-                        {tests.map(test => (
+                        {tests.map(test => {
+                            const fullTitle = `${test.testName} — ${test.question}`;
+                            return (
                             <th
                                 key={test.position}
+                                scope="col"
                                 style={{ ...CELL_BASE, cursor: 'default', verticalAlign: 'bottom' }}
-                                title={`${test.testName} — ${test.question}`}
+                                title={fullTitle}
+                                aria-label={fullTitle}
                             >
                                 <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
@@ -99,13 +108,14 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                     </div>
                                 )}
                             </th>
-                        ))}
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>
                     {runs.map((run, index) => (
                         <tr key={run._id}>
-                            <td style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
+                            <th scope="row" style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
                                 <div><strong>{truncate(runLabel(run, index), 60)}</strong></div>
                                 {run.referenceCapture && (
                                     <div style={{ fontSize: '0.75rem', color: '#7a5a00', fontWeight: 'bold' }}>
@@ -118,7 +128,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                         new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(run.createdAt))
                                     ].filter(Boolean).join(' · ')}
                                 </div>
-                            </td>
+                            </th>
                             <td style={{ ...CELL_BASE, cursor: 'default' }}>
                                 {(() => {
                                     if (run.referenceCapture) return '—';
@@ -140,13 +150,18 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 // mean "nothing was compared", not success.
                                 const verdict = run.referenceCapture ? 'missing' : displayVerdict(cell);
                                 const clickable = run.referenceCapture ? Boolean(cell) : verdict !== 'missing';
+                                // TODO: runLabel(run, index) only depends on run/index, which are
+                                // constant for the whole row (already computed once at line 119) —
+                                // hoist to row scope instead of recomputing per cell (O(R) not O(R×T)).
+                                const rowLabel = runLabel(run, index);
                                 const label = run.referenceCapture && cell
-                                    ? `${test.testName} — ${t('experimental.suite.captureRun')}`
-                                    : `${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
+                                    ? `${rowLabel} — ${test.testName} — ${t('experimental.suite.captureRun')}`
+                                    : `${rowLabel} — ${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
                                 return (
                                     <td
                                         key={test.position}
-                                        style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict], cursor: clickable ? 'pointer' : 'default' }}
+                                        className={VERDICT_CELL_CLASSES[verdict]}
+                                        style={{ ...CELL_BASE, cursor: clickable ? 'pointer' : 'default' }}
                                         title={label}
                                         role={clickable ? 'button' : undefined}
                                         tabIndex={clickable ? 0 : undefined}

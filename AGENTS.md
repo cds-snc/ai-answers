@@ -147,9 +147,19 @@ Every PR that touches UI components, pages, or locale files must be verified aga
 **Flag but don't block:**
 - Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
 
-About page is different - text content is in .md files
- *   - English: public/content/about-en.md
- *   - French:  public/content/about-fr.md
+### Markdown-driven pages
+
+Some pages get their text from markdown files under `public/content/`, not from
+the locale files. Edit the markdown, not the component — and always both languages:
+
+- **About page** — `public/content/about-en.md` / `about-fr.md`
+- **Admin how-to guides** — `public/content/admin/`, one file per language, with
+  screenshots in `public/content/admin/images/`
+
+Both render through `useMarkdownWithFrontmatter`. See
+[docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)
+for the frontmatter contract, how to add a new how-to guide, and the GCDS list
+reset that markdown rendering has to work around.
 
 System card has EN and FR versions — always update both:
  *   - English: SYSTEM_CARD.md
@@ -199,6 +209,20 @@ When adding a new page, register its route in `src/utils/routes.js` under `ROUTE
 ```
 
 French slugs must be real translations — not copied English slugs. Once registered, use `getPath('my-new-page', lang)` to generate links and `ROUTE_SLUGS['my-new-page']` to define the route in `App.js`. Never hardcode URL paths as strings elsewhere in the codebase.
+
+## Announcing status, errors, and async outcomes
+
+Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>` for this. A lot of the admin section had these render as plain DOM text with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
+
+```jsx
+import StatusMessage from '../components/admin/StatusMessage.js';
+
+<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
+```
+
+It renders `role="alert"`/`aria-live="assertive"` when `isError`, otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing.
+
+Known gap (tracked as a TODO in the component itself): it only standardizes the ARIA behaviour so far — callers still each pass their own inline `style` for colour/spacing. Don't add another one-off inline style; if you need visual treatment beyond the default, flag it rather than copying an existing page's ad-hoc hex colours.
 
 ## UI architecture and folders
 

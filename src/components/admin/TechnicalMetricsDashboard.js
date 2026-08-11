@@ -1,5 +1,5 @@
 import React from 'react';
-import { GcdsContainer } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsIcon } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -7,6 +7,7 @@ import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
+import StatusMessage from './StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -38,17 +39,16 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
           </div>
         )}
         {error && !isLoading && (
-          <div className="flex items-center gap-2 mb-2 text-sm text-red-600 bg-red-50 p-2 rounded" role="alert">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <StatusMessage isError tag="div" className="dashboard-error">
+            <GcdsIcon name="warning-triangle" marginRight="50" />
             {error}
-          </div>
+          </StatusMessage>
         )}
+        {/* TODO: transition-opacity/duration-200/opacity-50/pointer-events-none are
+            Tailwind-style class names not defined anywhere in this project's CSS —
+            loading never actually dims or disables this section. Same bug in
+            MetricsDashboard.js's identical SectionWrapper. Needs a real CSS class
+            or an inline style. */}
         <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
           {children}
         </div>
@@ -135,7 +135,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.responseTime.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -174,7 +176,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.tools.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
 
@@ -269,7 +273,9 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     className: 'display',
                     language: dataTableLanguage(lang),
                   }}
-                />
+                >
+                  <caption className="sr-only">{t('metrics.dashboard.tokens.title')}</caption>
+                </DataTable>
               </div>
             </SectionWrapper>
           </div>

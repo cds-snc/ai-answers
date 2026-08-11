@@ -76,6 +76,12 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
 
   const [datePreset, setDatePreset] = useState('allTime');
   const [showCustom, setShowCustom] = useState(false);
+  // The custom-date row (start/end inputs + Apply) unmounts whenever
+  // showCustom flips back to false — whatever inside it had focus would
+  // otherwise silently drop to <body>. Refocus this button (the one that
+  // opened the row) every time that happens, from all three closing paths:
+  // Escape, re-clicking "Custom", and clicking "Apply".
+  const customToggleRef = useRef(null);
   const [customStart, setCustomStart] = useState(DATA_START_DATE);
   const [customEnd, setCustomEnd] = useState(todayStr);
 
@@ -113,6 +119,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       if (e.key === 'Escape') {
         setShowCustom(false);
         setDatePreset(appliedPreset);
+        customToggleRef.current?.focus();
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -146,6 +153,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
         // Close the custom row; revert pending selection to last applied preset.
         setShowCustom(false);
         setDatePreset(appliedPreset);
+        // The element that triggered this is the Custom button itself, so
+        // focus never actually left it — this is just defensive consistency
+        // with the other two closing paths, not fixing a real drop here.
+        customToggleRef.current?.focus();
       } else {
         // Pre-fill custom inputs from the current preset's computed range.
         const allTimeStart = datePreset === 'allTime' ? (minDate || DATA_START_DATE) : undefined;
@@ -175,6 +186,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     setAppliedCustomStart(startDate);
     setAppliedCustomEnd(endDate);
     setShowCustom(false);
+    customToggleRef.current?.focus();
     onApplyRef.current({ startDate, endDate });
   };
 
@@ -217,13 +229,15 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
               <button
                 key={p}
                 type="button"
+                ref={p === 'custom' ? customToggleRef : undefined}
                 className={[
                   'filter-bar__preset',
-                  datePreset === p && p !== 'custom' ? 'filter-bar__preset--active' : '',
+                  datePreset === p ? 'filter-bar__preset--active' : '',
                   p === 'custom' && showCustom ? 'filter-bar__preset--custom-open' : '',
                 ].filter(Boolean).join(' ')}
                 onClick={() => handlePresetClick(p)}
                 disabled={loading}
+                aria-current={datePreset === p ? 'true' : undefined}
               >
                 {t(`dashboardFilter.${p}`)}
                 {p === 'custom' && (
@@ -301,7 +315,10 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
             </button>
           )}
         </span>
-        {loading && <span className="filter-bar__loading" role="status" aria-live="polite">{t('dashboardFilter.loading')}</span>}
+        {/* Visual-only — not a live region. The page-level .dashboard-loading
+            region (PartnerDashboard.js / PublicDashboard.js) is canon for the
+            "Loading…" announcement; a second live region here would double it. */}
+        {loading && <span className="filter-bar__loading">{t('dashboardFilter.loading')}</span>}
       </div>
     </div>
   );

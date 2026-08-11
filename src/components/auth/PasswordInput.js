@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 
-const PasswordInput = ({ id, name, label, value, onChange, onInvalid, title, required, disabled, autoComplete, ariaDescribedBy, ariaInvalid, lang = 'en' }) => {
+const PasswordInput = ({ id, name, label, value, onChange, title, required, disabled, autoComplete, ariaDescribedBy, ariaInvalid, lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -17,7 +17,6 @@ const PasswordInput = ({ id, name, label, value, onChange, onInvalid, title, req
           value={value}
           title={title}
           onChange={onChange}
-          onInvalid={onInvalid}
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}

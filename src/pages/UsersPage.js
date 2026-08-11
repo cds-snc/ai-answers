@@ -9,8 +9,18 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
+
+const escapeHtmlAttribute = (value) => {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
 
 const statusOptions = [
   { value: true, sortIndex: 0 },
@@ -50,6 +60,7 @@ const UsersPage = ({ lang }) => {
   // This state is just used to trigger re-renders when editStatesRef changes
   // eslint-disable-next-line no-unused-vars
   const [triggerRender, setTriggerRender] = useState(0);
+  const [statusMessage, setStatusMessage] = useState(null); // { text, isError }
   const { currentUser } = useAuth();
 
   // Initialize editStates with data from users
@@ -114,8 +125,10 @@ const UsersPage = ({ lang }) => {
       // Force re-render
       setTriggerRender(prev => prev + 1);
       console.log('Save successful, changes:', edit);
+      setStatusMessage({ text: t('users.actions.saveSuccess'), isError: false });
     } catch (error) {
       console.error('Error updating user:', error);
+      setStatusMessage({ text: t('users.actions.saveError'), isError: true });
     }
   };
   const handleDelete = async (userId) => {
@@ -136,8 +149,10 @@ const UsersPage = ({ lang }) => {
       delete editStatesRef.current[userId];
       // Force re-render
       setTriggerRender(prev => prev + 1);
+      setStatusMessage({ text: t('users.actions.deleteSuccess'), isError: false });
     } catch (error) {
       console.error('Error deleting user:', error);
+      setStatusMessage({ text: t('users.actions.deleteError'), isError: true });
     }
   };
 
@@ -195,8 +210,9 @@ const UsersPage = ({ lang }) => {
           const isKnownKey = roleOptions.some(opt => opt.value === value);
           // For unknown roles (including 'user'), show N/A placeholder with empty value
           const extraOption = !isKnownKey ? `<option value="" selected>${naLabel}</option>` : '';
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.role')} — ${row.email || userId}`);
 
-          return `<select data-userid="${userId}" data-field="role" style="width: 100%">${extraOption}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" style="width: 100%">${extraOption}${optionsHtml}</select>`;
         }
         return label;
       }
@@ -225,7 +241,8 @@ const UsersPage = ({ lang }) => {
           // Only show N/A placeholder when status is unknown; otherwise show the two known options
           const placeholder = option ? '' : `<option value="" selected>${naLabel}</option>`;
           const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
-          return `<select data-userid="${userId}" data-field="active" style="width: 100%">${placeholder}${optionsHtml}</select>`;
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.status')} — ${row.email || userId}`);
+          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" style="width: 100%">${placeholder}${optionsHtml}</select>`;
         }
         return label;
       }
@@ -250,6 +267,8 @@ const UsersPage = ({ lang }) => {
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
+
+      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
 
       <DataTable
         data={users}

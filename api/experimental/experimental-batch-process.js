@@ -6,6 +6,49 @@ import mongoose from 'mongoose';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
+const ITEMS_TO_WAIT_FOR = 2;
+const WAIT_POLL_MS = 1000;
+const WAIT_TIMEOUT_MS = 5 * 60 * 1000;
+
+const getBatchProgress = async (batchId) => {
+    const [stats] = await ExperimentalBatchItem.aggregate([
+        { $match: { experimentalBatch: new mongoose.Types.ObjectId(batchId) } },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: 1 },
+                pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+                processing: { $sum: { $cond: [{ $eq: ['$status', 'processing'] }, 1, 0] } },
+                processed: {
+                    $sum: {
+                        $cond: [{ $in: ['$status', ['completed', 'failed', 'refused']] }, 1, 0]
+                    }
+                }
+            }
+        }
+    ]);
+
+    return stats || { total: 0, pending: 0, processing: 0, processed: 0 };
+};
+
+const waitForBatchProgress = async (batchId, startingProcessed, targetProcessed) => {
+    const deadline = Date.now() + WAIT_TIMEOUT_MS;
+
+    while (Date.now() < deadline) {
+        const progress = await getBatchProgress(batchId);
+        if (progress.processed >= targetProcessed || (progress.pending + progress.processing) === 0) {
+            return progress;
+        }
+        await new Promise(resolve => setTimeout(resolve, WAIT_POLL_MS));
+    }
+
+    console.warn('[ExperimentalBatchProcess] Timed out waiting for queued items', {
+        batchId,
+        startingProcessed,
+        targetProcessed
+    });
+    return getBatchProgress(batchId);
+};
 
 /**
  * POST /api/experimental/batch-process/:id
@@ -27,6 +70,14 @@ async function handler(req, res) {
 
         if (batch.status === 'cancelled') {
             return res.status(409).json({ error: 'Cancelled batch cannot be processed again' });
+        }
+
+        let startingProgress = null;
+        let targetProcessed = null;
+        if (forceResume) {
+            startingProgress = await getBatchProgress(id);
+            const remainingItems = Math.max(startingProgress.total - startingProgress.processed, 0);
+            targetProcessed = startingProgress.processed + Math.min(ITEMS_TO_WAIT_FOR, remainingItems);
         }
 
         if (forceResume) {
@@ -109,10 +160,18 @@ async function handler(req, res) {
             });
         }
 
+        const progress = forceResume
+            ? await waitForBatchProgress(id, startingProgress.processed, targetProcessed)
+            : null;
+
         res.json({
             message: 'Processing started',
             count: toQueue.length,
-            retryEligibleCount: retryEligibleItems.length
+            retryEligibleCount: retryEligibleItems.length,
+            ...(progress && {
+                waitedForItems: Math.max(progress.processed - startingProgress.processed, 0),
+                waitTarget: Math.max(targetProcessed - startingProgress.processed, 0)
+            })
         });
 
     } catch (error) {

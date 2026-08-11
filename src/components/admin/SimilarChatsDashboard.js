@@ -35,7 +35,11 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-4">
+        <label htmlFor="similar-chats-chat-id" className="sr-only">
+          {t('vector.chatIdPlaceholder')}
+        </label>
         <input
+          id="similar-chats-chat-id"
           type="text"
           value={chatId}
           onChange={e => setChatId(e.target.value)}
@@ -76,7 +80,9 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               order: [[1, 'desc']],
               language: dataTableLanguage(lang),
             }}
-          />
+          >
+            <caption className="sr-only">{t('vector.similarChats')}</caption>
+          </DataTable>
         </div>
       )}
     </div>

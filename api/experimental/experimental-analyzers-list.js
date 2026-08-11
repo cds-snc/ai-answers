@@ -9,6 +9,9 @@ async function handler(req, res) {
         nameKey: a.nameKey,
         descriptionKey: a.descriptionKey,
         inputType: a.inputType,
+        requiresReference: a.requiresReference,
+        supportsBatchComparison: a.supportsBatchComparison,
+        supportedWorkflows: a.supportedWorkflows,
         outputColumns: a.outputColumns
     }));
     return res.json(metadata);

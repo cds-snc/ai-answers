@@ -9,6 +9,7 @@ import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
 import AdminNotifications from '../components/admin/AdminNotifications.js';
+import { HOW_TOS } from '../config/howTos.js';
 
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -16,8 +17,7 @@ const AdminPage = ({ lang = 'en' }) => {
   const navigate = useNavigate();
   const [lookupChatId, setLookupChatId] = useState('');
 
-  const handleLogout = (e) => {
-    e.preventDefault();
+  const handleLogout = () => {
     logout();
     // Force a full page reload to the signin page so the app's
     // fingerprint initialization runs again and a new session is created.
@@ -158,7 +158,7 @@ const AdminPage = ({ lang = 'en' }) => {
                 <strong>{t('admin.navigation.experimental', 'Experimental')}</strong>
                 <ul className="list-none pl-400">
                   <li>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
                       {t('admin.navigation.dataAnalysis', 'Data Analysis')}
                     </GcdsLink>
                   </li>
@@ -168,17 +168,41 @@ const AdminPage = ({ lang = 'en' }) => {
             </ul>
           </section>
         </RoleBasedContent>
-        {/* Logout Link */}
+        {/* Logout performs an action, not navigation, so it's a real button.
+            TODO: give sign-out its own slot once this app has local nav. */}
         <section className="mt-400">
           <ul className="list-none p-0">
             <li>
-              <GcdsLink href="#" onClick={handleLogout}>
+              <button
+                type="button"
+                className="filter-button-secondary filter-button-secondary--inline"
+                onClick={handleLogout}
+              >
                 {t('admin.navigation.logout', 'Logout')}
-              </GcdsLink>
+              </button>
             </li>
           </ul>
         </section>
       </nav>
+
+      {/* How-to guides, rendered in-app from public/content/admin/ */}
+      <RoleBasedContent roles={["admin", "partner"]}>
+        <section className="mb-400">
+          <details>
+            <summary>{t('admin.howTo.title')}</summary>
+            <ul className="list-none p-0">
+              {HOW_TOS.map((howTo) => (
+                <li key={howTo.id}>
+                  {/* New tab so the guide stays open alongside the page it describes */}
+                  <GcdsLink href={getPath(howTo.route, lang)} target="_blank" rel="noopener noreferrer">
+                    {t(howTo.titleKey)}
+                  </GcdsLink>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
+      </RoleBasedContent>
 
       {/* Quick chat lookup for admins and partners */}
       <RoleBasedContent roles={["admin", "partner"]}>
