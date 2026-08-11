@@ -3,6 +3,7 @@ import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLin
 import ChartDataToggle from './ChartDataToggle.js';
 import { COLOURS } from '../../../constants/dashboardColours.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
+import { measureTextWidth } from '../../../utils/dashboard/measureText.js';
 
 // Diverging horizontal bar chart in a card: positive rows extend right (green),
 // negative rows extend left (red), from a shared zero baseline. The axis is
@@ -36,8 +37,16 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
 
   const total = data.reduce((s, d) => s + (d.value || 0), 0);
   const maxAbs = data.reduce((m, d) => Math.max(m, d.value || 0), 0) || 1;
-  // Leave headroom past the longest bar so its end-of-bar % label isn't clipped.
-  const axisMax = maxAbs * 1.2;
+  // Axis bounds, headroom, and ticks all need to land on clean percentages
+  // (50%, not 51%) — computing headroom as a raw-count multiplier (maxAbs *
+  // 1.2) and only converting to % for display let the domain edge fall on
+  // an arbitrary value that happened to round to an odd number. Round the
+  // *percentage* up to the next 10 first (with a guaranteed >0 gap even when
+  // the real max is already an exact multiple of 10), then convert that
+  // clean percentage back to raw-count units for the actual domain.
+  const maxPct = total > 0 ? (maxAbs / total) * 100 : 0;
+  const axisMaxPct = Math.ceil((maxPct + 1) / 10) * 10;
+  const axisMax = (axisMaxPct / 100) * (total || 1);
   const fmtAxisPct = (v) => formatPercent(Math.round((Math.abs(v) / (total || 1)) * 100), lang);
   // Per-bar data label: each row's share of all responses; blank for the empty
   // (zero) side of the row so only the real bar is labelled.
@@ -50,17 +59,20 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
   // margins (left 4 + right 24) plus a minimum usable bar width (120, enough
   // for a short bar and its % label) are reserved first, and the label column
   // gets whatever's left. Falls back to the label-driven width before the
-  // first ResizeObserver measurement lands.
-  const CHAR_PX = 7.5;
-  const labelDrivenWidth = Math.min(340, Math.max(160, Math.max(...data.map(d => (d.name || '').length)) * CHAR_PX));
+  // first ResizeObserver measurement lands. Measures the real rendered width
+  // of the longest label (measureText.js) instead of estimating from an
+  // average char-width constant — a fixed estimate can never be exact for a
+  // proportional font (proven repeatedly: 7.0 → 8.0 → +8% safety margin
+  // still clipped real labels, e.g. "Saved me time searching and reading").
+  const labelDrivenWidth = Math.min(340, Math.max(160, Math.max(...data.map(d => measureTextWidth(d.name || ''))) + 16));
   const MIN_BAR_AREA = 120;
   const CHART_MARGINS = 28;
   const availableWidth = containerWidth
     ? Math.max(100, containerWidth - CHART_MARGINS - MIN_BAR_AREA)
     : labelDrivenWidth;
   const yAxisWidth = Math.min(labelDrivenWidth, availableWidth);
-  const charsPerLine = Math.max(10, Math.floor((yAxisWidth - 8) / CHAR_PX));
   const lineH = 16;
+  const maxTextWidth = Math.max(20, yAxisWidth - 8);
 
   const wrapLines = (text) => {
     const words = (text || '').split(' ');
@@ -68,7 +80,7 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
     let cur = '';
     for (const word of words) {
       const candidate = cur ? `${cur} ${word}` : word;
-      if (candidate.length <= charsPerLine) { cur = candidate; }
+      if (measureTextWidth(candidate) <= maxTextWidth) { cur = candidate; }
       else { if (cur) lines.push(cur); cur = word; }
     }
     if (cur) lines.push(cur);
@@ -77,9 +89,9 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
 
   const allWrapped = data.map(d => wrapLines(d.name || ''));
   const maxLines = allWrapped.length > 0 ? Math.max(...allWrapped.map(ls => ls.length)) : 1;
-  const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
+  const maxLineWidth = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => measureTextWidth(l)))) : 60;
   const barPx = Math.max(36, maxLines * lineH + 8);
-  const xOffset = Math.min(maxLineLen * CHAR_PX + 8, yAxisWidth - 6);
+  const xOffset = Math.min(maxLineWidth + 8, yAxisWidth - 6);
 
   const renderYTick = ({ x, y, payload }) => {
     const lines = wrapLines(payload.value || '');

@@ -100,6 +100,34 @@ export const MOCK_METRICS = {
     { url: 'canada.ca/fr/services/prestations/ae.html', count: 18 },
     { url: 'canada.ca/en/health-canada/services/health-products.html', count: 11 },
   ],
+  // "Question volume by service" (PartnerDashboard.js's topProgramsData) —
+  // shape is [{ program, programFr, count, en, fr }]; sorted/sliced to
+  // TOP_PROGRAMS_LIMIT (10) client-side, so only the first 10 below actually
+  // render as bars — the rest just contribute to the 78-question classified
+  // total shown in the subtitle, same as production. Modelled on a real
+  // production sample (all-English in that sample, hence en === count,
+  // fr: 0 throughout).
+  topPrograms: [
+    { program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', count: 23, en: 23, fr: 0 },
+    { program: 'Royal Canadian Mounted Police', programFr: 'Gendarmerie royale du Canada', count: 13, en: 13, fr: 0 },
+    { program: 'AI Answers', programFr: 'Réponses IA', count: 7, en: 7, fr: 0 },
+    { program: 'Tax-free savings account (TFSA)', programFr: 'Compte d’épargne libre d’impôt (CELI)', count: 7, en: 7, fr: 0 },
+    { program: 'Employment insurance - regular benefits', programFr: 'Assurance-emploi - prestations régulières', count: 4, en: 4, fr: 0 },
+    { program: 'Business Number (BN)', programFr: 'Numéro d’entreprise (NE)', count: 3, en: 3, fr: 0 },
+    { program: 'Canada child benefit', programFr: 'Allocation canadienne pour enfants', count: 3, en: 3, fr: 0 },
+    { program: 'Military Transition Program', programFr: 'Programme de transition militaire', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Groceries and Essentials Benefit', programFr: 'Prestation canadienne pour l’épicerie et les biens essentiels', count: 2, en: 2, fr: 0 },
+    { program: 'Performance management program', programFr: 'Programme de gestion du rendement', count: 2, en: 2, fr: 0 },
+    // Below TOP_PROGRAMS_LIMIT — same count (2) as the 10th row above but
+    // listed after it, so the stable sort keeps them out of the displayed
+    // top 10 while still counting toward the 78-question classified total.
+    { program: 'GST/HST credit', programFr: 'Crédit pour la TPS/TVH', count: 2, en: 2, fr: 0 },
+    { program: 'Old Age Security', programFr: 'Sécurité de la vieillesse', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Pension Plan', programFr: 'Régime de pensions du Canada', count: 2, en: 2, fr: 0 },
+    { program: 'Disability tax credit', programFr: 'Crédit d’impôt pour personnes handicapées', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Dental Benefit', programFr: 'Prestation dentaire canadienne', count: 2, en: 2, fr: 0 },
+    { program: 'Firearms licence', programFr: 'Permis d’armes à feu', count: 2, en: 2, fr: 0 },
+  ],
   answerTypeBreakdown: {
     normal: 1240,
     'clarifying-question': 186,

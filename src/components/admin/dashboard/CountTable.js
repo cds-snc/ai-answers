@@ -27,6 +27,13 @@ const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', capt
           <tr key={row.key}>
             <td style={{ ...cell, wordBreak: 'break-all' }}>
               {row.href ? (
+                // TODO: GcdsLink's own shadow-DOM template renders a literal
+                // non-breaking space inside the <a> before its external-link
+                // icon (`h("span", ..., " ", this.getIcon())` in
+                // gcds-link.js) — reads visually as an underlined space
+                // after the link text. Real shadow DOM, no exposed `part`
+                // on that span, so nothing in our own CSS can reach it. Not
+                // fixable here — let GC DS know upstream.
                 <GcdsLink href={row.href} target="_blank" lang={lang}>{row.label}</GcdsLink>
               ) : (
                 row.label

@@ -1424,7 +1424,7 @@
       "topRankSubtext": "N° 1 : {label}",
       "feedbackSectionTitle": "Rétroaction du public (satisfaction)",
       "feedbackSplitTitle": "Utile ou non",
-      "feedbackSplitSubtitle": "Réponses : {total}",
+      "feedbackSplitSubtitle": "Total des réponses : {total}",
       "feedbackReasonsTitle": "Répartition par motif",
       "feedbackBreakdownSubtitle": "Basé sur {total} réponses de rétroaction du public",
       "engagementTitle": "Longueur des conversations",

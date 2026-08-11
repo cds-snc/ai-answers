@@ -3,6 +3,7 @@ import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCo
 import ChartDataToggle from './ChartDataToggle.js';
 import { COLOURS } from '../../../constants/dashboardColours.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
+import { measureTextWidth } from '../../../utils/dashboard/measureText.js';
 
 // Horizontal bar chart in a card, for ranked lists. `height` is optional and
 // defaults to a height that grows with the number of rows. `lang` drives
@@ -14,7 +15,12 @@ import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
 // value-only tooltip — e.g. to surface extra per-row fields like an EN/FR split.
 // `a11y` (see ChartDataToggle.js) adds a slim "As raw data table" expand/
 // collapse below the chart — the SVG's Tooltip (default or custom) only fires
-// on mouse hover; the chart itself always stays visible either way.
+// on mouse hover; the chart itself always stays visible either way. When a
+// row also carries `count` (distinct from `value` — e.g. Answer quality/Top
+// programs, where `value` is a percent-of-total and `count` is the raw
+// number a custom tooltipContent shows on hover), the table gets its own
+// Percent column too instead of just the bar's own value — otherwise that
+// raw count would only ever exist in the mouse-hover tooltip.
 const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, percent = false, noDataLabel = '', lang = 'en', tooltipContent = null, yAxisWidth = 160, yAxisTextAlign = 'left', marginLeft = 8, a11y = null }) => {
   // `yAxisWidth` is a caller-chosen desired width (up to 240 for Departments/
   // Top programs) with no idea how much space the card actually has, so on a
@@ -37,24 +43,26 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
 
   const fmtVal = (v) => (percent ? formatPercent(v, lang) : formatNumber(v, lang));
   const lineH = 18;
-  // 8.0 (was 7.0) — a closer estimate of actual rendered character width at
-  // this font size; the old, too-narrow estimate let wrapLines pack more
-  // characters onto a line than actually fit, clipping the tail of the line.
-  const CHAR_PX = 8.0;
   const MIN_BAR_AREA = 100;
   const RIGHT_MARGIN = 44;
   const availableWidth = containerWidth
     ? Math.max(80, containerWidth - marginLeft - RIGHT_MARGIN - MIN_BAR_AREA)
     : yAxisWidth;
   const YAXIS_W = Math.min(yAxisWidth, availableWidth);
-  const charsPerLine = Math.floor((YAXIS_W - 8) / CHAR_PX); // ~20 chars
+  // Measures the real rendered width of each candidate line (measureText.js)
+  // instead of estimating from an average char-width constant — a fixed
+  // estimate can never be exact for a proportional font (proven repeatedly:
+  // 7.0 → 8.0 → +8% safety margin still clipped real labels, e.g.
+  // "Performance management program"), so this wraps on the actual pixel
+  // width the browser will render instead of guessing at it.
+  const maxTextWidth = Math.max(20, YAXIS_W - 8);
   const wrapLines = (text) => {
     const words = (text || '').split(' ');
     const lines = [];
     let cur = '';
     for (const word of words) {
       const candidate = cur ? `${cur} ${word}` : word;
-      if (candidate.length <= charsPerLine) { cur = candidate; }
+      if (measureTextWidth(candidate) <= maxTextWidth) { cur = candidate; }
       else { if (cur) lines.push(cur); cur = word; }
     }
     if (cur) lines.push(cur);
@@ -62,12 +70,12 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
   };
   const allWrapped = (data || []).map(d => wrapLines(d.name || ''));
   const maxLines = allWrapped.length > 0 ? Math.max(...allWrapped.map(ls => ls.length)) : 1;
-  const maxLineLen = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => l.length))) : 10;
+  const maxLineWidth = allWrapped.length > 0 ? Math.max(...allWrapped.flatMap(ls => ls.map(l => measureTextWidth(l)))) : 60;
   const barPx = Math.max(40, maxLines * lineH + 16);
-  const xOffset = Math.min(maxLineLen * CHAR_PX + 8, YAXIS_W - 6);
+  const xOffset = Math.min(maxLineWidth + 8, YAXIS_W - 6);
   // When right-aligned, only allocate as much axis space as the text needs.
   const effectiveYAxisWidth = yAxisTextAlign === 'right'
-    ? Math.min(YAXIS_W, maxLineLen * CHAR_PX + 16)
+    ? Math.min(YAXIS_W, maxLineWidth + 16)
     : YAXIS_W;
   const renderYTick = ({ x, y, payload }) => {
     const lines = wrapLines(payload.value || '');
@@ -81,7 +89,18 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
       </text>
     );
   };
-  const tableRows = a11y ? (data || []).map((d) => [d.name, fmtVal(d.value)]) : [];
+  // Some HBarCard usages (Answer quality, Top programs) carry a `count`
+  // distinct from `value` (the bar's own value is a percent-of-total; `count`
+  // is the raw number a custom tooltipContent shows on hover, e.g.
+  // QualityBarTooltip/ProgramBarTooltip) — that raw count previously had no
+  // text equivalent, a real gap in an otherwise-fixed chart (WCAG 1.1.1):
+  // sighted mouse users could still get it from the tooltip, keyboard/
+  // screen-reader users couldn't get it anywhere. Show it as its own column
+  // whenever it's present instead of just the bar's own value.
+  const hasCount = (data || []).some((d) => d.count !== undefined);
+  const tableRows = a11y
+    ? (data || []).map((d) => (hasCount ? [d.name, formatNumber(d.count, lang), fmtVal(d.value)] : [d.name, fmtVal(d.value)]))
+    : [];
 
   return (
     <div className="dashboard-card hbar-card">
@@ -115,7 +134,7 @@ const HBarCard = ({ title, subtitle, data, height, colour = COLOURS.brand, perce
             <ChartDataToggle
               label={a11y.rawDataTableLabel}
               caption={a11y.captionTemplate.replace('{title}', title || subtitle || '')}
-              columns={[a11y.categoryLabel, a11y.valueLabel]}
+              columns={hasCount ? [a11y.categoryLabel, a11y.valueLabel, a11y.percentLabel] : [a11y.categoryLabel, a11y.valueLabel]}
               rows={tableRows}
             />
           )}

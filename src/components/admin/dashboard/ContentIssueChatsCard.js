@@ -27,6 +27,7 @@ const ContentIssueChatsCard = ({
   noDataLabel,
   defaultOpen = false,
   anchorId = null,
+  collapsible = true,
 }) => {
   const showStatus = Boolean(statusColLabel);
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
@@ -35,7 +36,7 @@ const ContentIssueChatsCard = ({
   const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
 
   return (
-    <CollapsibleCard heading={title} subtext={subtitle} triggerLabel={triggerLabel} defaultOpen={defaultOpen} anchorId={anchorId}>
+    <CollapsibleCard heading={title} subtext={subtitle} triggerLabel={triggerLabel} defaultOpen={defaultOpen} anchorId={anchorId} collapsible={collapsible}>
       {chats.length === 0 ? (
         <p className="font-size-text-xsm-nr">{noDataLabel}</p>
       ) : (
@@ -57,6 +58,12 @@ const ContentIssueChatsCard = ({
                 return (
                   <tr key={`${c.chatId}-${c.interactionId}`}>
                     <td style={{ ...cell, wordBreak: 'break-all' }}>
+                      {/* TODO: GcdsLink's shadow-DOM template renders a
+                          literal non-breaking space inside the <a> before
+                          its icon — see CountTable.js's GcdsLink for the
+                          full note. Same upstream GC DS issue, not fixable
+                          from our CSS (real shadow DOM, no exposed `part`
+                          on that span). */}
                       <GcdsLink href={href} target="_blank" lang={chatLang}>{c.chatId}</GcdsLink>
                     </td>
                     <td style={cell}>

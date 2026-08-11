@@ -1424,7 +1424,7 @@
       "topRankSubtext": "#1: {label}",
       "feedbackSectionTitle": "Public feedback (satisfaction)",
       "feedbackSplitTitle": "Helpful or not",
-      "feedbackSplitSubtitle": "Responses: {total}",
+      "feedbackSplitSubtitle": "Total responses: {total}",
       "feedbackReasonsTitle": "Breakdown by reason",
       "feedbackBreakdownSubtitle": "Based on {total} public feedback responses",
       "engagementTitle": "Conversation length",

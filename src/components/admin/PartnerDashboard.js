@@ -192,13 +192,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       en: acc.en + (row.en || 0),
       fr: acc.fr + (row.fr || 0),
     }), { total: 0, en: 0, fr: 0 });
+    // `value` is the raw count, not a percentage — same shape as Blocked
+    // queries' buildBlockedBarData, so the axis auto-scales to whatever the
+    // actual highest count is (recharts' default numeric domain) instead of
+    // a fixed 0–100% range that left most of the chart empty whenever no
+    // single service came close to being the whole classified total.
     const bars = classified
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .slice(0, TOP_PROGRAMS_LIMIT)
       .map((row) => ({
         name: (lang === 'fr' && row.programFr) ? row.programFr : row.program,
-        value: totals.total > 0 ? Math.round(((row.count || 0) / totals.total) * 100) : 0,
-        count: row.count || 0,
+        value: row.count || 0,
         en: row.en || 0,
         fr: row.fr || 0,
       }));
@@ -218,14 +222,15 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   ].join(' · ');
 
   // Programs tooltip shows the raw count and its EN/FR split — the bar label
-  // already carries the percentage, so repeating it adds nothing.
+  // already carries the count itself, so repeating it adds nothing beyond
+  // the EN/FR split.
   const ProgramBarTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload;
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip__title">{row.name}</div>
-        <div>{t('partnerDashboard.programs.tooltipCount').replace('{count}', fmtN(row.count))}</div>
+        <div>{t('partnerDashboard.programs.tooltipCount').replace('{count}', fmtN(row.value))}</div>
         <div>{t('partnerDashboard.programs.tooltipLang')
           .replace('{en}', fmtN(row.en))
           .replace('{fr}', fmtN(row.fr))}</div>
@@ -422,10 +427,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             title={t('partnerDashboard.programs.title')}
             subtitle={programsSubtitle}
             data={topProgramsData}
-            percent
             tooltipContent={ProgramBarTooltip}
             noDataLabel={t('partnerDashboard.charts.noData')}
-            yAxisWidth={220}
+            yAxisWidth={260}
             lang={lang}
             a11y={chartA11y}
           />
@@ -688,7 +692,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           rather than the overview since harmful is a safety signal, not a
           content-quality one. Hidden entirely when there are none
           (presence-gated) — the KPI "Harmful" count above still shows 0
-          rather than hiding, only this list does. */}
+          rather than hiding, only this list does. Under 3 chats, skips the
+          collapse entirely (collapsible={false}) — a list that short doesn't
+          need an extra click to reveal it; content issues stays collapsible
+          regardless of count. */}
       {harmfulChats.length > 0 && (
         <div className="dashboard-section">
           <ContentIssueChatsCard
@@ -702,6 +709,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             noDataLabel={t('partnerDashboard.harmfulChats.noData')}
             lang={lang}
             anchorId={HARMFUL_CHATS_ANCHOR}
+            collapsible={harmfulChats.length >= 3}
           />
         </div>
       )}
