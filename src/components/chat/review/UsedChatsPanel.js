@@ -2,6 +2,7 @@ import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
+import { buildChatReviewHref } from '../../../utils/reviewLink.js';
 
 const UsedChatsPanel = ({ message, t, lang = 'en', answerNumber }) => {
     const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
@@ -25,11 +26,7 @@ const UsedChatsPanel = ({ message, t, lang = 'en', answerNumber }) => {
                             <tr key={match.interactionId || `${match.chatId}-${index}`}>
                                 <td>
                                     {match.chatId ? (
-                                        <GcdsLink
-                                            href={`/${lang}?chat=${encodeURIComponent(match.chatId)}&review=1`}
-                                            target="_blank"
-                                            lang={lang}
-                                        >
+                                        <GcdsLink href={buildChatReviewHref(match.chatId, lang)} target="_blank" lang={lang}>
                                             {match.chatId}
                                         </GcdsLink>
                                     ) : ''}

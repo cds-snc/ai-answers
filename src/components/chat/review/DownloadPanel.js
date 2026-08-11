@@ -40,7 +40,7 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
                             <span style={{ color: succeeded ? 'green' : 'red', marginRight: '0.4rem' }}>
                                 {succeeded ? '\u2714' : '\u2718'}
                             </span>
-                            <GcdsLink href={url} target="_blank" lang={lang} style={{ wordBreak: 'break-all' }}>
+                            <GcdsLink href={url} target="_blank" lang={lang} className="url-break-all">
                                 {url}
                             </GcdsLink>
                         </div>

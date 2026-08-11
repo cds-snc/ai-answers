@@ -818,7 +818,7 @@ const ChatInterface = ({
                           href={referringUrl}
                           target="_blank"
                           lang={lang}
-                          style={{ wordBreak: "break-all" }}
+                          className="url-break-all"
                         >
                           {referringUrl}
                         </GcdsLink>

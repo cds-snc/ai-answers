@@ -1,6 +1,7 @@
 import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
 import CollapsibleCard from './CollapsibleCard.js';
+import { buildChatReviewHref } from '../../../utils/reviewLink.js';
 
 // Collapsible list of chats matching some expert-feedback flag (content
 // issue, harmful, ...), server-scoped to the dashboard's current filters.
@@ -53,8 +54,7 @@ const ContentIssueChatsCard = ({
             <tbody>
               {chats.map((c) => {
                 const chatLang = c.pageLanguage === 'fr' ? 'fr' : 'en';
-                const hash = c.interactionId ? `#interaction=${encodeURIComponent(`interactionId${c.interactionId}`)}` : '';
-                const href = `/${chatLang}?chat=${encodeURIComponent(c.chatId)}&review=1${hash}`;
+                const href = buildChatReviewHref(c.chatId, chatLang, c.interactionId);
                 return (
                   <tr key={`${c.chatId}-${c.interactionId}`}>
                     <td style={{ ...cell, wordBreak: 'break-all' }}>
