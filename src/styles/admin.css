@@ -780,9 +780,13 @@
 }
 
 /* User type labels — shared with DatabasePage.js's .label.building
-   ("building" has no neutral tier of its own below). */
+   ("building" has no neutral tier of its own below), and with
+   ChatDashboardPage.js's .label.department ("+N more" departments pill —
+   same blue as ChatInterface.js's .department-label-text, since both are
+   department attribution). */
 .label.public,
-.label.building {
+.label.building,
+.label.department {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
 }

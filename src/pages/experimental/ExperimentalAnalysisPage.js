@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { useAriaPressedSync } from '../../hooks/useAriaPressedSync.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -129,6 +130,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const isMountedRef = useRef(true);
     const previousBatchStatusesRef = useRef(new Map());
 
+    // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
+    // any batch/comparison is pending or processing, and there's no other
+    // control on this page that halts it (the runs themselves keep going
+    // server-side regardless). isPausedRef mirrors isPaused into the
+    // interval closure so the pause button takes effect on the next tick
+    // without recreating the timer.
+    const [isPollPaused, setIsPollPaused] = useState(false);
+    const isPollPausedRef = useRef(isPollPaused);
+    isPollPausedRef.current = isPollPaused;
+    const pauseButtonRef = useRef(null);
+    useAriaPressedSync(pauseButtonRef, isPollPaused);
+
     const stopPolling = () => {
         if (pollRef.current) {
             clearInterval(pollRef.current);
@@ -194,6 +207,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             if (hasActiveRuns) {
                 if (!pollRef.current) {
                     pollRef.current = setInterval(() => {
+                        if (isPollPausedRef.current) return;
                         loadBatches(datasetId);
                     }, 5000);
                 }
@@ -695,6 +709,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {t('experimental.analysis.tabs.comparison')}
                 </button>
             </div>
+
+            <GcdsButton
+                ref={pauseButtonRef}
+                size="small"
+                buttonRole="secondary"
+                className="mt-200 mb-200"
+                onClick={() => setIsPollPaused((paused) => !paused)}
+                aria-pressed={isPollPaused}
+            >
+                {isPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
+            </GcdsButton>
 
             {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
                     <section>

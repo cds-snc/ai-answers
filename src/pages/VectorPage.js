@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsLink, GcdsDetails } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { useAriaPressedSync } from '../hooks/useAriaPressedSync.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
@@ -89,20 +88,16 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
   const [metadataStatusError, setMetadataStatusError] = useState(null);
-  // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs unconditionally for as
-  // long as the admin has the page open, independent of the "Stop backfill"
-  // button below (which stops the server-side job, not this status poll).
-  // isPausedRef mirrors isPaused into the interval closure so the pause
-  // button takes effect on the next tick without recreating the timer.
-  const [isMetadataPollPaused, setIsMetadataPollPaused] = useState(false);
-  const isMetadataPollPausedRef = useRef(isMetadataPollPaused);
-  isMetadataPollPausedRef.current = isMetadataPollPaused;
-  const metadataPauseButtonRef = useRef(null);
-  useAriaPressedSync(metadataPauseButtonRef, isMetadataPollPaused);
+  // WCAG 2.2.2 (Pause, Stop, Hide): this poll only changes what's on screen
+  // while a backfill job is active (queued/running/stopping) — when
+  // `!job`, below returns before touching state, so an idle page is a
+  // visual no-op. The "Stop backfill" button already halts the job, which
+  // is what stops the auto-updating content, so no separate pause control
+  // is needed here (unlike BatchList/SessionPage, which refresh
+  // unconditionally regardless of any admin action).
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
-      if (isMetadataPollPausedRef.current) return;
       try {
         const { job } = await VectorService.getMetadataBackfillJob();
         if (cancelled || !job) return;
@@ -474,16 +469,6 @@ const VectorPage = ({ lang = 'en' }) => {
         <GcdsText>
           {t('vector.metadataBackfillDescription')}
         </GcdsText>
-        <GcdsButton
-          ref={metadataPauseButtonRef}
-          size="small"
-          buttonRole="secondary"
-          className="mb-200"
-          onClick={() => setIsMetadataPollPaused((paused) => !paused)}
-          aria-pressed={isMetadataPollPaused}
-        >
-          {isMetadataPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-        </GcdsButton>
         <div className="mb-200">
           <label htmlFor="metadata-backfill-delay-seconds" className="display-block mb-100">
             {t('vector.metadataDelayLabel')}

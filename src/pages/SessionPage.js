@@ -92,6 +92,7 @@ const SessionPage = ({ lang: propLang }) => {
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
 
       <GcdsButton
+        ref={pauseButtonRef}
         size="small"
         buttonRole="secondary"
         className="mb-200"
