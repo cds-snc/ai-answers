@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { useAriaPressedSync } from '../../hooks/useAriaPressedSync.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
@@ -36,9 +37,22 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const [showUpload, setShowUpload] = useState(false);
 
+    // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs unconditionally for as
+    // long as the admin has the page open. isPausedRef mirrors isPaused
+    // into the interval closure so the pause button takes effect on the
+    // next tick without recreating the timer.
+    const [isRefreshPaused, setIsRefreshPaused] = useState(false);
+    const isRefreshPausedRef = useRef(isRefreshPaused);
+    isRefreshPausedRef.current = isRefreshPaused;
+    const pauseButtonRef = useRef(null);
+    useAriaPressedSync(pauseButtonRef, isRefreshPaused);
+
     useEffect(() => {
         fetchDatasets(true);
-        const refreshTimer = window.setInterval(() => fetchDatasets(false), 5000);
+        const refreshTimer = window.setInterval(() => {
+            if (isRefreshPausedRef.current) return;
+            fetchDatasets(false);
+        }, 5000);
         return () => window.clearInterval(refreshTimer);
     }, []);
 
@@ -381,6 +395,16 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             </div>
 
             <GcdsHeading tag="h2" className="mt-600">{t('experimental.datasets.existing')}</GcdsHeading>
+            <GcdsButton
+                ref={pauseButtonRef}
+                size="small"
+                buttonRole="secondary"
+                className="mb-200"
+                onClick={() => setIsRefreshPaused((paused) => !paused)}
+                aria-pressed={isRefreshPaused}
+            >
+                {isRefreshPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
+            </GcdsButton>
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (
