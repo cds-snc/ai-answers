@@ -731,7 +731,9 @@
       "title": "Public evaluation",
       "chatId": "Chat ID",
       "department": "Department",
-      "date": "Date"
+      "date": "Date",
+      "loading": "Loading...",
+      "errorLoading": "Failed to load public evaluation list: {message}"
     },
     "session": {
       "title": "Sessions",
@@ -903,7 +905,7 @@
       "button": "Delete chat",
       "loading": "Deleting...",
       "success": "Chat deleted successfully",
-      "error": "Failed to delete chat: "
+      "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",

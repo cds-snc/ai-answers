@@ -340,7 +340,7 @@ const VectorPage = ({ lang = 'en' }) => {
   return (
     <GcdsContainer layout="page">
       <h1>{t('vector.title')}</h1>
-      <nav className="mb-400">
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
             {t('common.backToAdmin')}

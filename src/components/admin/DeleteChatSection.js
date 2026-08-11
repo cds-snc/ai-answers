@@ -25,7 +25,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       setChatId('');
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert(t('admin.deleteChat.error') + error.message);
+      alert(t('admin.deleteChat.error').replace('{message}', error.message || String(error)));
     } finally {
       setLoading(false);
     }

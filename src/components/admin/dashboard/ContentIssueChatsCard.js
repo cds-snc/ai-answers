@@ -40,7 +40,10 @@ const ContentIssueChatsCard = ({
       {chats.length === 0 ? (
         <p className="font-size-text-xsm-nr">{noDataLabel}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        /* Wide table scrolls in its own container so the page body never
+           scrolls sideways. tabIndex makes the scroll region keyboard-reachable
+           when columns overflow on a narrow viewport. */
+        <div style={{ overflowX: 'auto' }} tabIndex={0}>
           <table className="display" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
             <caption className="sr-only">{title}</caption>
             <thead>

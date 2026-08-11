@@ -731,7 +731,9 @@
       "title": "Évaluation publique",
       "chatId": "ID de chat",
       "department": "Ministère",
-      "date": "Date"
+      "date": "Date",
+      "loading": "Chargement...",
+      "errorLoading": "Échec du chargement de la liste d'évaluation publique : {message}"
     },
     "session": {
       "title": "Sessions",
@@ -882,7 +884,7 @@
       "button": "Supprimer le chat",
       "loading": "Suppression en cours...",
       "success": "Chat supprimé avec succès",
-      "error": "Échec de la suppression du chat : "
+      "error": "Échec de la suppression du chat : {message}"
     },
     "deleteExpertEval": {
       "title": "Supprimer une évaluation d'expert",
