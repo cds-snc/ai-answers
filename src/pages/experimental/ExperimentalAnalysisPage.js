@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { useAriaPressedSync } from '../../hooks/useAriaPressedSync.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -139,8 +138,6 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [isPollPaused, setIsPollPaused] = useState(false);
     const isPollPausedRef = useRef(isPollPaused);
     isPollPausedRef.current = isPollPaused;
-    const pauseButtonRef = useRef(null);
-    useAriaPressedSync(pauseButtonRef, isPollPaused);
 
     const stopPolling = () => {
         if (pollRef.current) {
@@ -710,16 +707,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </button>
             </div>
 
-            <GcdsButton
-                ref={pauseButtonRef}
-                size="small"
-                buttonRole="secondary"
-                className="mt-200 mb-200"
+            {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
+                in admin.css for why. */}
+            <button
+                type="button"
+                className="filter-button filter-button-outline mt-200 mb-200"
                 onClick={() => setIsPollPaused((paused) => !paused)}
                 aria-pressed={isPollPaused}
             >
                 {isPollPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-            </GcdsButton>
+            </button>
 
             {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
                     <section>

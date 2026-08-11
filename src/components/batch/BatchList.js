@@ -5,7 +5,6 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { useAriaPressedSync } from '../../hooks/useAriaPressedSync.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import BatchService from '../../services/BatchService.js';
@@ -25,8 +24,6 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(isPaused);
   isPausedRef.current = isPaused;
-  const pauseButtonRef = useRef(null);
-  useAriaPressedSync(pauseButtonRef, isPaused);
   const { t } = useTranslations(lang);
 
   // Fetch all statuses
@@ -168,16 +165,16 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   return (
     <div>
-      <GcdsButton
-        ref={pauseButtonRef}
-        size="small"
-        buttonRole="secondary"
-        className="mb-200"
+      {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
+          in admin.css for why. */}
+      <button
+        type="button"
+        className="filter-button filter-button-outline mb-200"
         onClick={() => setIsPaused((paused) => !paused)}
         aria-pressed={isPaused}
       >
         {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-      </GcdsButton>
+      </button>
       <DataTable
         data={filteredBatches}
         columns={columns} // Use memoized columns

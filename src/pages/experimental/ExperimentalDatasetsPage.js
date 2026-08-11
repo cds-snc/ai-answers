@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { useAriaPressedSync } from '../../hooks/useAriaPressedSync.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
@@ -37,20 +36,25 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const [showUpload, setShowUpload] = useState(false);
 
-    // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs unconditionally for as
-    // long as the admin has the page open. isPausedRef mirrors isPaused
-    // into the interval closure so the pause button takes effect on the
-    // next tick without recreating the timer.
-    const [isRefreshPaused, setIsRefreshPaused] = useState(false);
-    const isRefreshPausedRef = useRef(isRefreshPaused);
-    isRefreshPausedRef.current = isRefreshPaused;
-    const pauseButtonRef = useRef(null);
-    useAriaPressedSync(pauseButtonRef, isRefreshPaused);
-
+    // WCAG 2.2.2 (Pause, Stop, Hide) intentionally NOT applied here, unlike
+    // the equivalent polls on BatchList/SessionPage/ExperimentalAnalysisPage.
+    // fetchDatasets() below isn't a pure display refresh: in lambda/no-Redis
+    // executionMode, it's also the only code path that detects a queued/
+    // processing dataset and drives its creation forward one batch at a time
+    // (see handleProcessDataset call below and
+    // ExperimentalBatchClientService.processDataset / queueInstantAnswerDataset
+    // in services/experimental/ExperimentalDatasetService.js). A pause button
+    // here would silently stall an in-flight dataset-creation job, and the
+    // manual "Start again" button is disabled for exactly the
+    // queued/processing statuses that pausing would strand it in — so there'd
+    // be no way to resume short of unpausing.
+    // TODO: before this page can get a compliant pause control, split the
+    // "redraw the table" concern from the "advance lambda-mode processing"
+    // concern (e.g. poll display state on its own timer, and drive
+    // processing via a mechanism a pause toggle can't touch).
     useEffect(() => {
         fetchDatasets(true);
         const refreshTimer = window.setInterval(() => {
-            if (isRefreshPausedRef.current) return;
             fetchDatasets(false);
         }, 5000);
         return () => window.clearInterval(refreshTimer);
@@ -395,16 +399,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             </div>
 
             <GcdsHeading tag="h2" className="mt-600">{t('experimental.datasets.existing')}</GcdsHeading>
-            <GcdsButton
-                ref={pauseButtonRef}
-                size="small"
-                buttonRole="secondary"
-                className="mb-200"
-                onClick={() => setIsRefreshPaused((paused) => !paused)}
-                aria-pressed={isRefreshPaused}
-            >
-                {isRefreshPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-            </GcdsButton>
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (

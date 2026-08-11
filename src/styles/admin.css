@@ -515,6 +515,15 @@
   padding-top: 0.5rem;
 }
 
+/* TODO(css-cleanup): .filter-button is now the shared base for buttons well
+   outside FilterPanel (pause-toggle buttons on BatchList/SessionPage/
+   ExperimentalAnalysisPage use it via .filter-button-outline below). The
+   "filter-" prefix is misleading at this scope, and native-HTML button
+   styling is otherwise scattered (GcdsButton component styles, this class,
+   and one-off native <button> styles like .experimental-analysis-tab). Worth
+   consolidating into a single generically-named base (e.g. .gc-button) with
+   role modifiers (primary/secondary/outline/link) shared by every native
+   button in the app, rather than growing filter-button-* piecemeal. */
 .filter-button {
   padding: var(--gcds-button-small-padding);
   border-radius: var(--gcds-button-border-radius);
@@ -541,6 +550,27 @@
 .filter-button-secondary {
   background: none;
   border-color: transparent;
+}
+
+/* Bordered-outline look (GcdsButton's buttonRole="secondary": transparent
+   background, visible border, fills light blue on hover) — distinct from
+   .filter-button-secondary above, which is a link-style button with no
+   border. Used for the pause-toggle buttons on BatchList, SessionPage, and
+   ExperimentalAnalysisPage: those render a plain native <button>, not
+   <GcdsButton>, because GcdsButton copies aria-* attributes onto its
+   shadow-DOM native button inside its own click handler, which runs before
+   React's state update from that same click commits — so aria-pressed was
+   always one click behind for screen readers (previously papered over with
+   a since-removed useAriaPressedSync workaround hook). A plain button has
+   no shadow DOM to desync. */
+.filter-button-outline {
+  background: var(--gcds-button-secondary-default-background);
+  border-color: var(--gcds-button-secondary-default-text);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+.filter-button-outline:hover:not(:disabled) {
+  background: var(--gcds-button-secondary-hover-background);
 }
 
 /* Same link look as .filter-button-secondary, flush left and sized like the
@@ -578,6 +608,8 @@
 .filter-button-primary:focus:hover,
 .filter-button-secondary:focus,
 .filter-button-secondary:focus:hover,
+.filter-button-outline:focus,
+.filter-button-outline:focus:hover,
 .filter-pills__clear-all:focus {
   background-color: var(--gcds-details-focus-background);
   box-shadow: var(--gcds-details-focus-box-shadow);
@@ -593,7 +625,9 @@
 }
 
 .filter-button-primary:focus,
-.filter-button-primary:focus:hover {
+.filter-button-primary:focus:hover,
+.filter-button-outline:focus,
+.filter-button-outline:focus:hover {
   border-color: var(--gcds-details-focus-background);
 }
 

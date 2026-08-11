@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink, GcdsButton } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { useAriaPressedSync } from '../hooks/useAriaPressedSync.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
@@ -23,8 +22,6 @@ const SessionPage = ({ lang: propLang }) => {
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(isPaused);
   isPausedRef.current = isPaused;
-  const pauseButtonRef = useRef(null);
-  useAriaPressedSync(pauseButtonRef, isPaused);
   const sessionTypeLabel = React.useCallback((value) => {
     const type = value || 'unknown';
     const labels = {
@@ -91,16 +88,16 @@ const SessionPage = ({ lang: propLang }) => {
       {error && <div className="text-status--negative">{error}</div>}
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
 
-      <GcdsButton
-        ref={pauseButtonRef}
-        size="small"
-        buttonRole="secondary"
-        className="mb-200"
+      {/* Native <button>, not <GcdsButton> — see .filter-button-outline comment
+          in admin.css for why. */}
+      <button
+        type="button"
+        className="filter-button filter-button-outline mb-200"
         onClick={() => setIsPaused((paused) => !paused)}
         aria-pressed={isPaused}
       >
         {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
-      </GcdsButton>
+      </button>
 
       <DataTable
         data={sessions}
