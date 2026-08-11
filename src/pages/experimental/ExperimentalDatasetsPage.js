@@ -251,11 +251,11 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.title')}</GcdsHeading>
-            <div className="mb-400">
+            <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
                 <GcdsLink href={`/${lang}/admin`}>
                     {t('common.backToAdmin')}
                 </GcdsLink>
-            </div>
+            </nav>
 
             <div className="my-400">
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
