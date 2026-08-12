@@ -14,9 +14,9 @@ vi.mock('@gcds-core/components-react', () => ({
   }),
 }));
 
-vi.mock('prismjs', () => ({
-  default: { highlightElement: vi.fn() },
-}));
+// Prism is deliberately NOT mocked: the highlighted markup the component
+// renders is the markup a user actually gets, and the point of these tests is
+// that React owns that markup outright rather than letting Prism rewrite it.
 
 const t = (key) => key;
 // Stable reference across renders so tests isolate the onClose-identity
@@ -64,5 +64,52 @@ describe('MetadataModal', () => {
 
     expect(secondOnClose).toHaveBeenCalledTimes(1);
     expect(firstOnClose).not.toHaveBeenCalled();
+  });
+
+  it('re-renders highlighted content when metadata changes, without a DOM conflict', () => {
+    // The <code> body is written by Prism, not reconciled by React. Swapping
+    // metadata while the modal stays open is what would break if React
+    // reconciled children an external highlighter had already replaced.
+    const { rerender, container } = render(
+      <MetadataModal metadata={{ first: 'value' }} onClose={() => {}} t={t} />
+    );
+
+    const code = container.querySelector('code');
+    expect(code.textContent).toContain('first');
+
+    rerender(<MetadataModal metadata={{ second: 'other' }} onClose={() => {}} t={t} />);
+
+    const updated = container.querySelector('code');
+    expect(updated.textContent).toContain('second');
+    expect(updated.textContent).not.toContain('first');
+    // Prism ran: JSON keys are tokenized rather than left as bare text.
+    expect(updated.querySelector('.token')).toBeTruthy();
+  });
+
+  it('escapes markup in metadata rather than injecting it as HTML', () => {
+    const { container } = render(
+      <MetadataModal
+        metadata={{ note: '<img src=x onerror=alert(1)>' }}
+        onClose={() => {}}
+        t={t}
+      />
+    );
+
+    const code = container.querySelector('code');
+    expect(code.querySelector('img')).toBeNull();
+    expect(code.textContent).toContain('<img src=x onerror=alert(1)>');
+  });
+
+  it('keeps the dialog free of extra focusable elements for the Tab trap', () => {
+    const { container } = render(
+      <MetadataModal metadata={{ foo: 'bar' }} onClose={() => {}} t={t} />
+    );
+
+    const dialog = container.querySelector('[role="dialog"]');
+    const focusable = dialog.querySelectorAll(
+      'button, gcds-button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    // Only the close button — highlighted content must not add tab stops.
+    expect(focusable).toHaveLength(1);
   });
 });

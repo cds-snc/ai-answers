@@ -1,6 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import Prism from 'prismjs';
+// The json grammar is a separate component (xml is aliased in Prism core).
+// Imported here rather than relied on as a side effect of ChatViewer's own
+// import, so this modal highlights correctly wherever it gets mounted.
+import 'prismjs/components/prism-json.js';
 import { useReturnFocusOnClose } from '../../hooks/useReturnFocusOnClose.js';
 
 // Elements a keyboard user could plausibly land on inside the dialog, for
@@ -9,8 +13,26 @@ import { useReturnFocusOnClose } from '../../hooks/useReturnFocusOnClose.js';
 const FOCUSABLE_SELECTOR =
   'button, gcds-button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+// Highlighting is done here, to an HTML string React renders itself, rather
+// than by pointing Prism.highlightElement at a live <code> node. Prism
+// rewrites the innerHTML of whatever element it is given — if React owned
+// that element's children, it would later reconcile against nodes Prism had
+// already destroyed (the same class of failure as DataTables re-parenting a
+// React-rendered <table>). dangerouslySetInnerHTML makes React the only
+// writer: it never reconciles children it did not create, so even the
+// document-wide Prism.highlightAll() in useChatLogsTable can't corrupt it.
+//
+// Safe against injection: Prism escapes & and < as it tokenizes, and the
+// no-grammar fallback escapes explicitly.
+const escapeHtml = (text) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const highlightToHtml = (text, language) => {
+  const grammar = Prism.languages[language];
+  return grammar ? Prism.highlight(text, grammar, language) : escapeHtml(text);
+};
+
 const MetadataModal = ({ metadata, onClose, t }) => {
-  const codeRef = useRef(null);
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   // The element that had focus right before the modal opened (e.g. the
@@ -35,9 +57,6 @@ const MetadataModal = ({ metadata, onClose, t }) => {
       // Must run before focus moves into the dialog below.
       triggerRef.current = document.activeElement;
       document.body.style.overflow = 'hidden';
-      if (codeRef.current) {
-        Prism.highlightElement(codeRef.current);
-      }
       closeButtonRef.current?.focus?.();
     } else {
       document.body.style.overflow = 'auto';
@@ -86,14 +105,27 @@ const MetadataModal = ({ metadata, onClose, t }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [metadata]);
 
+  // Above the early return below, so the hook order stays stable whether or
+  // not the modal is open.
+  const { language, html } = useMemo(() => {
+    if (!metadata) {
+      return { language: 'json', html: '' };
+    }
+
+    const isXml =
+      typeof metadata === 'string' &&
+      metadata.trim().startsWith('<') &&
+      metadata.trim().endsWith('>');
+    const text =
+      typeof metadata === 'string' ? metadata : JSON.stringify(metadata || {}, null, 2);
+    const lang = isXml ? 'xml' : 'json';
+
+    return { language: lang, html: highlightToHtml(text, lang) };
+  }, [metadata]);
+
   if (!metadata) {
     return null;
   }
-
-  const isXml =
-    typeof metadata === 'string' &&
-    metadata.trim().startsWith('<') &&
-    metadata.trim().endsWith('>');
 
   return (
     <div
@@ -147,8 +179,12 @@ const MetadataModal = ({ metadata, onClose, t }) => {
             overflowY: 'auto',
           }}
         >
+          {/* The language- class goes on the <pre> as well as the <code>
+              because that is what prism.css themes, and it is what
+              Prism.highlightElement used to copy up from the <code> before
+              highlighting moved into the render above. */}
           <pre
-            className="whitespace-pre-wrap break-words"
+            className={`language-${language} whitespace-pre-wrap break-words`}
             style={{
               maxWidth: '100%',
               fontSize: '14px',
@@ -156,11 +192,10 @@ const MetadataModal = ({ metadata, onClose, t }) => {
               margin: 0,
             }}
           >
-            <code ref={codeRef} className={`language-${isXml ? 'xml' : 'json'}`}>
-              {typeof metadata === 'string'
-                ? metadata
-                : JSON.stringify(metadata || {}, null, 2)}
-            </code>
+            <code
+              className={`language-${language}`}
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
           </pre>
         </div>
       </div>
