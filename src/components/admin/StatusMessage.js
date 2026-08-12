@@ -49,8 +49,11 @@ const StatusMessage = React.forwardRef((
   // usually missed entirely. `persistent` keeps the region mounted while empty
   // so the first message is a change rather than an insertion. Opt-in, because
   // most callers render a one-off outcome where an always-present empty node
-  // would be pointless. Empty live regions are stripped of caller styling and
-  // zeroed out by `[aria-live]:empty` in global.css so they reserve no space.
+  // would be pointless. Default tag is `<p>`, which still gets its browser
+  // margin while empty, so it'd show as a blank gap without a reset. The
+  // empty node carries its own `status-message--empty` class (not caller
+  // styling) so global.css can zero that margin/padding without reaching
+  // every other `[aria-live]` region in the app.
   if (!message && !children) {
     if (!persistent) return null;
     return (
@@ -59,6 +62,7 @@ const StatusMessage = React.forwardRef((
         id={id}
         role={isError ? 'alert' : 'status'}
         aria-live={isError ? 'assertive' : 'polite'}
+        className="status-message--empty"
         tabIndex={tabIndex}
       />
     );

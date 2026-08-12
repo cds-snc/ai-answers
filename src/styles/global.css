@@ -485,8 +485,14 @@ summary:focus,
 /* Screen reader only class */
 /* Live regions that stay mounted while empty (StatusMessage's `persistent`
    prop) so screen readers treat the first message as a change rather than an
-   insertion — they must not reserve layout space in the meantime. */
-[aria-live]:empty {
+   insertion — the default `<p>` tag still gets its browser margin while
+   empty, which would show as a blank gap on screen without this reset.
+   Scoped to `.status-message--empty` rather than the bare `[aria-live]`
+   attribute so this doesn't reach unrelated live regions elsewhere in the app
+   (e.g. ChatInterface's `.message-list`, which is legitimately empty before
+   the first message and would otherwise have its margin/padding silently
+   overridden by this rule's higher specificity). */
+.status-message--empty:empty {
   margin: 0;
   padding: 0;
 }

@@ -45,8 +45,10 @@ describe('StatusMessage', () => {
     }));
 
     // Caller spacing on an invisible node would reserve layout space for
-    // nothing; global.css also zeroes [aria-live]:empty.
-    expect(container.querySelector('[role="status"]').className).toBe('');
+    // nothing, so it's replaced with the fixed `status-message--empty` class
+    // instead — global.css scopes its margin/padding reset to that class
+    // rather than every `[aria-live]` region in the app.
+    expect(container.querySelector('[role="status"]').className).toBe('status-message--empty');
   });
 
   it('forwards a ref so callers can move focus to the message', () => {
