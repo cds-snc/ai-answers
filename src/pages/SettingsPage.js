@@ -1203,7 +1203,9 @@ const SettingsPage = ({ lang = 'en' }) => {
         />
         <StatusMessage message={auditError ? t('settings.auditHistory.error') : null} isError />
         {auditEntries.length > 0 ? (
-          <div className="table-scroll">
+          // Wide table scrolls in its own container so the page body never
+          // scrolls sideways. tabIndex makes the scroll region keyboard-reachable.
+          <div className="table-scroll" tabIndex={0}>
             <table className="settings-audit-table">
               <caption className="sr-only">{t('settings.auditHistory.title')}</caption>
               <thead>
