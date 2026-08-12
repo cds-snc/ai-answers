@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.184.0](https://github.com/cds-snc/ai-answers/compare/v1.183.0...v1.184.0) (2026-08-12)
+
+
+### Features
+
+* italics - style guide alignment ([9efa3d6](https://github.com/cds-snc/ai-answers/commit/9efa3d65f55be9d33caaae84e282444f783918b4))
+* italics - style guide alignment ([f8b6473](https://github.com/cds-snc/ai-answers/commit/f8b6473d54d508edfa632ff79cf3f1a1925bee60))
+
+
+### Bug Fixes
+
+* add nav aria-label to settings ([39c7975](https://github.com/cds-snc/ai-answers/commit/39c797546f07257d882ea993afca51463ed17398))
+* admin utility pages a11y — nav landmarks, status messages, form fixes ([8be01cd](https://github.com/cds-snc/ai-answers/commit/8be01cdefe26ed4a40ef771437d4c4923020b16c))
+* admin utility pages a11y, nav landmarks, status messages, form fix ([3bc785d](https://github.com/cds-snc/ai-answers/commit/3bc785d799699cb2f5d2d20d9c929d6c705acd73))
+* align new-tab chat links to GcdsLink/gcds-link ([8ad9622](https://github.com/cds-snc/ai-answers/commit/8ad96225384cdc25ed89896ad7d24b23f59aa310))
+* align new-tab chat links to GcdsLink/gcds-link across the app ([24d64ba](https://github.com/cds-snc/ai-answers/commit/24d64baf9a6b8a127bdd686559f9b0e03236efdc))
+* close StatusMessage/aria gaps in admin utility pages ([da31f17](https://github.com/cds-snc/ai-answers/commit/da31f17ae857fadbef8f804f6b8c3dc4f13d8042))
+* dedupe review-link building, fix stale comments ([ad8e886](https://github.com/cds-snc/ai-answers/commit/ad8e8866425f26b01f4c558aba3d986ca7513bc7))
+* extract shared usePauseToggle hook and PauseToggleButton component ([188d7a8](https://github.com/cds-snc/ai-answers/commit/188d7a88c9a56c7d24149c681bf335ebf39bfe40))
+* heading structure correction ([45b9e3f](https://github.com/cds-snc/ai-answers/commit/45b9e3f7fc5849fb4c5a4bb0d74733cefa57ae12))
+* move analysis-page pause toggle next to the progress cards it controls ([1bdf5c1](https://github.com/cds-snc/ai-answers/commit/1bdf5c1bec5c3893866629ee401caee9c78a148e))
+* native-button aria-pressed bug in BatchItemDetail, dedupe pause-poll logic ([5b7362c](https://github.com/cds-snc/ai-answers/commit/5b7362cc38cd5d52ad9b3a859677667fc2f42fbf))
+* nav wrapper with aria-label to datasetspage ([a54cfb7](https://github.com/cds-snc/ai-answers/commit/a54cfb7e83ec65a211117eddfdd1e0075b23a7f8))
+* nav wrapper with aria-label to datasetspage ([cbcdb5d](https://github.com/cds-snc/ai-answers/commit/cbcdb5d471ed0208c2b951ea4f833a29f2f7aa06))
+* plain text no-tool-tip, dept is shown in view ([16c9042](https://github.com/cds-snc/ai-answers/commit/16c9042b0da020194ef2e22199b2660fafb0eaa2))
+* scope pause controls to genuinely unconditional auto-refreshes ([85e60c8](https://github.com/cds-snc/ai-answers/commit/85e60c87dcb5daf71728cc988c26da39af5cd2e9))
+* use native buttons for pause toggles, drop unsafe pause on dataset page ([6eec4a2](https://github.com/cds-snc/ai-answers/commit/6eec4a28beb5998d820510fee7941cafbb1f94d6))
+
 ## [1.183.0](https://github.com/cds-snc/ai-answers/compare/v1.182.0...v1.183.0) (2026-08-11)
 
 
