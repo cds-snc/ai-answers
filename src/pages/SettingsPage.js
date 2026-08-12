@@ -1203,8 +1203,8 @@ const SettingsPage = ({ lang = 'en' }) => {
         />
         <StatusMessage message={auditError ? t('settings.auditHistory.error') : null} isError />
         {auditEntries.length > 0 ? (
-          <div className="table-responsive">
-            <table>
+          <div className="table-scroll">
+            <table className="settings-audit-table">
               <caption className="sr-only">{t('settings.auditHistory.title')}</caption>
               <thead>
                 <tr>
@@ -1236,7 +1236,9 @@ const SettingsPage = ({ lang = 'en' }) => {
                         emptyLabel={t('settings.auditHistory.notApplicable')}
                       />
                     </td>
-                    <td>{new Date(entry.createdAt).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</td>
+                    <td className="settings-audit-date">
+                      {new Date(entry.createdAt).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')}
+                    </td>
                   </tr>
                 ))}
               </tbody>
