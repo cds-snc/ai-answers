@@ -10,24 +10,40 @@ import React from 'react';
 // doing. See BatchPage.js's statusMessage state for the reference usage
 // this was extracted from.
 //
-// TODO: this only standardizes the ARIA role/live-region behaviour so far.
-// Every call site still passes its own ad-hoc inline `style` (blue text,
+// `loading` is a distinct sub-type, not just isError=false: it marks an
+// in-progress state (as opposed to a completed success/info/error result),
+// so it gets its own className hook (`status-message--loading`) for a
+// future spinner/animation instead of overloading `isError` or having each
+// call site hand-roll its own loading markup. `id` is exposed so a loading
+// or error message can be the target of another element's aria-describedby
+// (e.g. a disabled button explaining why).
+//
+// TODO: this only standardizes the ARIA role/live-region behaviour so far —
+// every call site still passes its own ad-hoc inline `style` (blue text,
 // red boxes with hand-picked hex colours, differing padding/border per
-// page) instead of a shared success/error visual style. Worth folding a
-// default `variant`-based style (or GC DS tokens) into this component so
-// callers stop reinventing the colours, and dropping the `style` prop
-// once that lands.
-const StatusMessage = ({ message, isError = false, className, style, tag = 'p', children }) => {
+// page) instead of a shared visual style. Give this component a `variant`
+// prop and style each message type distinctly: success, info, warning,
+// error, loading (or more as they come up). Reuse the GC DS red/green/blue
+// -100/500/700 token triads `.dashboard-error` in admin.css already uses
+// for its box, so callers stop reinventing the colours — then drop the
+// `style` prop once call sites migrate. The `loading` variant currently has
+// no spinner markup — add one (inline, alongside/replacing the text; not a
+// popup/toast — no other part of the app uses that pattern, and it'd need
+// its own focus/dismiss/stacking handling) with prefers-reduced-motion
+// handling when a design lands.
+const StatusMessage = ({ message, isError = false, loading = false, id, className, style, tag = 'p', children }) => {
   if (!message && !children) return null;
   // children lets a caller render richer content (e.g. a follow-up bullet
   // list) than a single string — pass tag="div" alongside it, since block
   // content like a <ul> isn't valid inside the default <p>.
   const Tag = tag;
+  const variantClassName = loading ? 'status-message--loading' : undefined;
   return (
     <Tag
+      id={id}
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
-      className={className}
+      className={[className, variantClassName].filter(Boolean).join(' ') || undefined}
       style={style}
     >
       {children || message}

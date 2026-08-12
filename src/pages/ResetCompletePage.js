@@ -75,6 +75,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           label={t('reset.complete.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'reset-complete-error' : undefined}
@@ -87,6 +88,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           label={t('reset.complete.confirm')}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
+          required
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'reset-complete-error' : undefined}

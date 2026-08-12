@@ -307,9 +307,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {loading ? (
-        <div className="dashboard-loading" role="status" aria-live="polite">
-          {t('common.loading')}
-        </div>
+        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
       ) : (
       <>
 

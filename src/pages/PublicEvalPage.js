@@ -6,6 +6,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -14,12 +15,22 @@ const PublicEvalPage = ({ lang: propLang }) => {
   const lang = propLang || language || 'en';
   const { t } = useTranslations(lang);
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    setLoading(true);
+    setError('');
     DataStoreService.getPublicEvalList()
       .then(data => setRows(data.chats || []))
-      .catch(err => console.error('Failed to load list', err));
-  }, []);
+      .catch(err => {
+        console.error('Failed to load list', err);
+        // Replacer-function form avoids String.replace treating a literal $
+        // sequence in err.message as a special replacement pattern.
+        setError(t('admin.publicEval.errorLoading').replace('{message}', () => err.message || String(err)));
+      })
+      .finally(() => setLoading(false));
+  }, [t]);
 
   // Localized date formatter
   const formatDate = (dateStr) => {
@@ -43,6 +54,8 @@ const PublicEvalPage = ({ lang: propLang }) => {
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
+      <StatusMessage message={error} isError />
+      {loading && <StatusMessage loading message={t('admin.publicEval.loading')} />}
       <DataTable
         data={rows}
         columns={[

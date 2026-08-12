@@ -483,7 +483,10 @@ const DatabasePage = ({ lang }) => {
   return (
     <GcdsContainer layout="page">
       <GcdsHeading tag="h1">{t('admin.database.title')}</GcdsHeading>
-      <nav className="mb-400">
+      {/* TODO: this aria-label is hand-copied onto every admin page's own <nav> —
+          worth centralizing into a shared local nav/breadcrumb component so new
+          pages can't reintroduce the unlabeled-nav gap this fixes. */}
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsLink href={`/${lang}/admin`}>
           {t('common.backToAdmin')}
         </GcdsLink>

@@ -731,7 +731,9 @@
       "title": "Public evaluation",
       "chatId": "Chat ID",
       "department": "Department",
-      "date": "Date"
+      "date": "Date",
+      "loading": "Loading...",
+      "errorLoading": "Failed to load public evaluation list: {message}"
     },
     "session": {
       "title": "Sessions",
@@ -903,7 +905,7 @@
       "button": "Delete chat",
       "loading": "Deleting...",
       "success": "Chat deleted successfully",
-      "error": "Failed to delete chat: "
+      "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
@@ -1324,10 +1326,6 @@
     "startDate": "Start date",
     "endDate": "End date",
     "showing": "Showing:",
-    "footnoteRefSrPrefix": "Footnote ",
-    "footnotesHeading": "Footnotes",
-    "footnoteReturnSrPrefix": "Return to footnote ",
-    "footnoteReturnSrSuffix": " referrer",
     "removeFilter": "Remove filter",
     "apply": "Apply",
     "loading": "Loading..."
@@ -1497,6 +1495,7 @@
       "title": "Eval analysis",
       "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
+      "checkingEligibility": "Checking eligibility…",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
       "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
