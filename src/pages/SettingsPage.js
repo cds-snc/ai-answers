@@ -157,6 +157,14 @@ const SettingsPage = ({ lang = 'en' }) => {
     'redaction.manipulation.fr': '',
   });
 
+  // TODO(follow-up, pre-existing — not introduced by PR #1684, which only
+  // swapped the literal 'GenericGraph' for DEFAULT_WORKFLOW here): this
+  // mount-time load and the workflow dropdown's own save handler (below,
+  // around setDefaultWorkflow(v) / saveAndVerify('workflow.default', v)) both
+  // call setDefaultWorkflow with no sequencing between them. A slow initial
+  // GET that resolves after a save can revert the dropdown to the stale
+  // pre-save value. Scoped to the Settings page — tracked here for whoever
+  // picks up the separate settings-audit-history PR review, not this one.
   useEffect(() => {
     async function loadSettings() {
       const settings = await DataStoreService.getSettings(SETTINGS_LOAD_KEYS, SETTINGS_LOAD_DEFAULTS);

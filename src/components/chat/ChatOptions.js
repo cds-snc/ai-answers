@@ -33,6 +33,13 @@ const ChatOptions = ({
                 // Render blank rather than silently falling back to the first
                 // option while the configured default is still loading — an
                 // unmatched value here would misreport which workflow ran.
+                //
+                // TODO(follow-up, PR #1684 review): this `VALUES.includes(x) ? x
+                // : fallback` shape is repeated 6+ times across this file,
+                // ChatAppContainer.js, and SettingsPage.js. Per AGENTS.md's
+                // "prefer central fixes for shared semantics", a shared helper
+                // in src/config/workflows.js (e.g. `resolveWorkflow(value)` /
+                // `resolveModel(value)`) would keep it from drifting.
                 value={WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : ''}
                 onChange={handleWorkflowChange}
                 className="chat-border"

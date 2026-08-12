@@ -24,6 +24,14 @@ const FOCUSABLE_SELECTOR =
 //
 // Safe against injection: Prism escapes & and < as it tokenizes, and the
 // no-grammar fallback escapes explicitly.
+//
+// TODO(follow-up, PR #1684 review): duplicates the exported escapeHtml in
+// src/utils/chatviewer/chatViewer.js (used by buildMetadataCellHtml for the
+// same underlying feature — the table's metadata cell). That one also escapes
+// quotes; this one deliberately doesn't need to since it only feeds text-node
+// content, not an HTML attribute — but the duplication risks silent
+// divergence if one gets tightened later and the other doesn't. Worth
+// consolidating into one shared helper.
 const escapeHtml = (text) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

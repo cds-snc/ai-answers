@@ -94,6 +94,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   };
 
+  // TODO(follow-up, PR #1684 review): modelIsOverride/workflowIsOverride (below)
+  // are separate state from selectedAI/workflow rather than derived from them.
+  // The invariant "isOverride === (value came from localStorage, not the
+  // fetched default)" is only maintained by convention across every call site
+  // that touches these — handleAIToggle/handleWorkflowChange, the persist
+  // effects, the fetch-default effects. Fine today since all of it is in this
+  // one file, but fragile for the next edit; consider deriving isOverride from
+  // whether the stored key exists rather than tracking it as parallel state.
   const [selectedAI, setSelectedAI] = useState(() => readStoredOverride('selectedAI', MODEL_VALUES));
   const [modelIsOverride, setModelIsOverride] = useState(
     () => readStoredOverride('selectedAI', MODEL_VALUES) !== null
@@ -417,6 +425,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // select falls back to rendering its first option, which misreports the
   // workflow whenever workflow.default is set to anything else. Does not mark
   // the value as user-set, so it isn't persisted to localStorage.
+  //
+  // TODO(follow-up, PR #1684 review): fetched once per mount and cached for the
+  // tab's lifetime — an admin changing workflow.default in Settings won't reach
+  // an already-open tab until reload. This mirrors model.default's existing,
+  // pre-PR fetch-once behavior below, so it's consistent rather than a new
+  // regression, but the underlying "no live update" tradeoff for both is worth
+  // a deliberate decision (e.g. re-fetch on window focus, or a settings-changed
+  // event) rather than being carried forward implicitly.
   useEffect(() => {
     let mounted = true;
     const loadDefaultWorkflow = async () => {

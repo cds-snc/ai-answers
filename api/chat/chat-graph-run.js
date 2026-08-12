@@ -155,6 +155,13 @@ async function handler(req, res) {
 
   // Server-side Workflow Resolution
   let graphName;
+  // TODO(follow-up, PR #1684 review): the `|| DEFAULT_WORKFLOW` fallback is
+  // dead code on the normal path — 'workflow.default' is now seeded into
+  // SETTING_DEFAULTS, so SettingsService.get() should never return a falsy
+  // value here. It silently masks the narrow window where the in-memory
+  // settings cache hasn't been refreshed yet (rather than failing fast), which
+  // AGENTS.md's "prefer fail-fast contracts" guidance would push back on —
+  // worth an explicit cache-not-ready check/log instead of a silent fallback.
   const defaultWorkflow = SettingsService.get('workflow.default') || DEFAULT_WORKFLOW;
 
   if (req.user) {

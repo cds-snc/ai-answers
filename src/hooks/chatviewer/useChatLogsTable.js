@@ -89,6 +89,14 @@ export function useChatLogsTable({
       pageLength: 50,
       language: { ...dataTableLanguage(lang), emptyTable: t('logging.noLogs') },
       drawCallback: function () {
+        // TODO(follow-up, PR #1684 review): document-scoped, so a logs-table
+        // redraw while MetadataModal is open also re-highlights the modal's
+        // own <code> block from outside React. MetadataModal's rewrite to
+        // dangerouslySetInnerHTML was specifically meant to make React the
+        // only writer of that markup — this doesn't corrupt it (Prism's
+        // re-tokenization of already-highlighted markup is idempotent), but it
+        // contradicts that invariant and does wasted work on every redraw.
+        // Scope with Prism.highlightAllUnder(tableRef.current) instead.
         Prism.highlightAll();
 
         $(tableRef.current).css({
