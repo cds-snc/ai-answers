@@ -73,19 +73,31 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
-  // selectedAI: prefer a user-set value in localStorage; if none exists — or the
-  // stored value is no longer an available model — leave null so we fetch the
-  // current model.default from Settings. Mirrors the workflow handling below.
-  const [selectedAI, setSelectedAI] = useState(() => {
+  // A stored value is an *override*: this admin has deliberately chosen
+  // something other than what Settings says, and it sticks until they pick
+  // "use system settings" again. Without a stored value we follow the
+  // configured default, and the dropdown says so rather than naming a
+  // workflow/model that only looks like a deliberate choice.
+  const readStoredOverride = (key, allowed) => {
     try {
-      const val = localStorage.getItem(storageKey('selectedAI'));
-      return MODEL_VALUES.includes(val) ? val : null;
+      const val = localStorage.getItem(storageKey(key));
+      return allowed.includes(val) ? val : null;
     } catch (e) {
       return null;
     }
-  });
-  const initialModelFromLocalStorage = useRef(false);
-  const userSetModel = useRef(false);
+  };
+  const clearStoredOverride = (key) => {
+    try {
+      localStorage.removeItem(storageKey(key));
+    } catch (e) {
+      // ignore storage errors
+    }
+  };
+
+  const [selectedAI, setSelectedAI] = useState(() => readStoredOverride('selectedAI', MODEL_VALUES));
+  const [modelIsOverride, setModelIsOverride] = useState(
+    () => readStoredOverride('selectedAI', MODEL_VALUES) !== null
+  );
   const [selectedSearch, setSelectedSearch] = useState(() => {
     try {
       return localStorage.getItem(storageKey('selectedSearch')) || 'google';
@@ -93,24 +105,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       return 'google';
     }
   });
-  // workflow: prefer a user-set value in localStorage; if none exists — or the
-  // stored value is no longer a valid workflow — leave null so we can fetch the
-  // public default setting and avoid persisting it unless the user explicitly
-  // chooses a workflow in the UI.
-  const [workflow, setWorkflow] = useState(() => {
-    try {
-      const val = localStorage.getItem(storageKey('workflow'));
-      return WORKFLOW_VALUES.includes(val) ? val : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  // Track whether an initial value existed in localStorage and whether the user
-  // explicitly set the workflow during this session. We only persist when one
-  // of these is true so we don't overwrite the user's future changes to the
-  // public default unintentionally.
-  const initialWorkflowFromLocalStorage = useRef(false);
-  const userSetWorkflow = useRef(false);
+  const [workflow, setWorkflow] = useState(() => readStoredOverride('workflow', WORKFLOW_VALUES));
+  const [workflowIsOverride, setWorkflowIsOverride] = useState(
+    () => readStoredOverride('workflow', WORKFLOW_VALUES) !== null
+  );
   // Precedence for initial referring URL:
   // 1) saved review value (initialReferringUrl)
   // 2) pageUrl (from usePageContext)
@@ -352,10 +350,19 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }, 100);
   };
 
+  // An empty value is the "use system settings" entry: drop the stored
+  // override and null the state so the fetch effect below reloads whatever
+  // Settings currently says.
   const handleAIToggle = (e) => {
-    userSetModel.current = true;
-    setSelectedAI(e.target.value);
-    console.log('AI toggled to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('selectedAI');
+      setModelIsOverride(false);
+      setSelectedAI(null);
+      return;
+    }
+    setModelIsOverride(true);
+    setSelectedAI(value);
   };
 
   const handleSearchToggle = (e) => {
@@ -363,30 +370,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     console.log('Search toggled to:', e.target.value);
   };
 
-  // Record whether a model value existed in localStorage at mount, so a stored
-  // override keeps being persisted on later changes.
+  // Persist selection changes to localStorage. Only the admin's own choice is
+  // stored — never the fetched model.default, which must keep following the
+  // Settings value.
   useEffect(() => {
     try {
-      const val = localStorage.getItem(storageKey('selectedAI'));
-      if (MODEL_VALUES.includes(val)) initialModelFromLocalStorage.current = true;
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-  // Persist selection changes to localStorage
-  useEffect(() => {
-    try {
-      // Only persist the admin's own choice — never the fetched model.default,
-      // which must keep following the Settings value.
-      if (selectedAI !== null && selectedAI !== undefined
-        && (initialModelFromLocalStorage.current || userSetModel.current)) {
+      if (modelIsOverride && selectedAI !== null && selectedAI !== undefined) {
         localStorage.setItem(storageKey('selectedAI'), selectedAI);
       }
     } catch (e) {
       // ignore storage errors
     }
-  }, [selectedAI]);
+  }, [modelIsOverride, selectedAI]);
 
   // Fetch the configured default model family from Settings on mount.
   // AVAILABLE_MODELS[0] is the canonical fallback when model.default has never
@@ -417,17 +412,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }
   }, [selectedSearch]);
 
-  // Record whether a workflow value existed in localStorage at mount. This
-  // helps us decide whether to persist later changes.
-  useEffect(() => {
-    try {
-      const val = localStorage.getItem(storageKey('workflow'));
-      if (WORKFLOW_VALUES.includes(val)) initialWorkflowFromLocalStorage.current = true;
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
   // With no local override, load the configured default workflow so the Options
   // dropdown shows the workflow the server will actually run. Without this the
   // select falls back to rendering its first option, which misreports the
@@ -453,20 +437,29 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   useEffect(() => {
     try {
-      // Only persist workflow when it came from localStorage initially or the
-      // user explicitly changed it during this session.
-      if (workflow !== null && (initialWorkflowFromLocalStorage.current || userSetWorkflow.current)) {
+      // Only the admin's own choice is stored — never the fetched
+      // workflow.default, which must keep following the Settings value.
+      if (workflowIsOverride && workflow !== null) {
         localStorage.setItem(storageKey('workflow'), workflow);
       }
     } catch (e) {
       // ignore storage errors
     }
-  }, [workflow]);
+  }, [workflowIsOverride, workflow]);
 
+  // An empty value is the "use system settings" entry: drop the stored
+  // override and null the state so the fetch effect above reloads whatever
+  // Settings currently says.
   const handleWorkflowChange = (e) => {
-    userSetWorkflow.current = true;
-    setWorkflow(e.target.value);
-    console.log('Workflow changed to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('workflow');
+      setWorkflowIsOverride(false);
+      setWorkflow(null);
+      return;
+    }
+    setWorkflowIsOverride(true);
+    setWorkflow(value);
   };
 
   const clearInput = useCallback(() => {
@@ -1002,6 +995,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // Add handler for department changes
 
+  // The Options dropdowns below are passed an explicit override, or '' — the
+  // "use system settings" entry — when we are following Settings, so an admin
+  // can always tell which of the two they are looking at.
   return (
     <>
       <ChatInterface
@@ -1014,11 +1010,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
         handleSearchToggle={handleSearchToggle}
-        workflow={workflow}
+        workflowSelection={workflowIsOverride ? workflow : ''}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
-        selectedAI={selectedAI}
+        modelSelection={modelIsOverride ? selectedAI : ''}
         selectedSearch={selectedSearch}
         referringUrl={referringUrl}
         chatCreatedAt={chatCreatedAt}

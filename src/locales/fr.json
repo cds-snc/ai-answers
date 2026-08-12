@@ -120,6 +120,7 @@
         "model": {
           "label": "Famille de modèles :"
         },
+        "useSystemSettings": "Utiliser les paramètres système",
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }

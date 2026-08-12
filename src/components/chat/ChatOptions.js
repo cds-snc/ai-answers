@@ -1,15 +1,19 @@
 import React from 'react';
 import { GcdsDetails } from '@gcds-core/components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, MODEL_VALUES } from '../../config/workflows.js';
 
+// workflowSelection / modelSelection are what the dropdowns show, which is not
+// the same thing as what the chat will run: '' means "no override, follow the
+// system settings", and the effective value in that case lives in
+// ChatAppContainer (and is resolved server-side regardless).
 const ChatOptions = ({
   safeT,
-  selectedAI,
+  modelSelection,
   handleAIToggle,
   // selectedSearch,
   handleSearchToggle,
-  workflow,
+  workflowSelection,
   handleWorkflowChange,
   referringUrl,
   handleReferringUrlChange
@@ -29,10 +33,11 @@ const ChatOptions = ({
                 // Render blank rather than silently falling back to the first
                 // option while the configured default is still loading — an
                 // unmatched value here would misreport which workflow ran.
-                value={WORKFLOW_VALUES.includes(workflow) ? workflow : ''}
+                value={WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : ''}
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >
+                <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
                 {WORKFLOWS.map(w => (
                   <option key={w.value} value={w.value}>{safeT(w.labelKey)}</option>
                 ))}
@@ -46,10 +51,11 @@ const ChatOptions = ({
               <select
                 id="model"
                 name="model"
-                value={selectedAI || ''}
+                value={MODEL_VALUES.includes(modelSelection) ? modelSelection : ''}
                 onChange={handleAIToggle}
                 className="chat-border"
               >
+                <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
                 {AVAILABLE_MODELS.map(m => (
                   <option key={m.value} value={m.value}>{safeT(m.labelKey)}</option>
                 ))}
