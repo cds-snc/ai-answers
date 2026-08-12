@@ -775,6 +775,7 @@
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
+      "interactionCountFiltered": "{count} (+{more} more)",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
@@ -821,8 +822,7 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
-      },
-      "departmentMore": "+{count} more"
+      }
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
@@ -1235,6 +1235,8 @@
     "englishQuestion": "English question",
     "expertScore": "Expert score",
     "feedback": "Feedback",
+    "helpfulYes": "Helpful - yes",
+    "helpfulNo": "Helpful - no",
     "notAvailable": "N/A",
     "expertFeedbackTitle": "Expert evaluation",
     "expertEmail": "Expert email",
@@ -1285,6 +1287,7 @@
     "check": "Check",
     "pass": "Pass",
     "fail": "Failed",
+    "downloadSuccess": "Succeeded",
     "details": "Details",
     "fallbackCompareRaw": "Fallback compare raw",
     "expertFeedbackId": "Expert evaluation id",

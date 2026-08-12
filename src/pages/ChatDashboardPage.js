@@ -177,24 +177,31 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.interactionCount', 'Length'),
       data: 'interactionCount',
-      render: (value) => {
-        return value != null ? String(value) : '0';
+      render: (value, type, row) => {
+        const count = value != null ? value : 0;
+        // totalInteractionCount is the chat's real, unfiltered interaction
+        // count — when it's higher than the (possibly filtered) count being
+        // shown, a filter (department, answer type, eval, etc.) is hiding
+        // some of this chat's questions. Surfaces that before the reviewer
+        // clicks in and finds unrelated questions they didn't expect.
+        const total = row && row.totalInteractionCount;
+        if (total && total > count) {
+          return t('admin.chatDashboard.interactionCountFiltered', '{count} (+{more} more)')
+            .replace('{count}', String(count))
+            .replace('{more}', String(total - count));
+        }
+        return String(count);
       }
     },
     {
       title: t('admin.chatDashboard.columns.department', 'Department'),
       data: 'department',
       render: (value, type, row) => {
-        const primary = escapeHtmlAttribute(value || '');
         const allDepts = row.allDepartments || [];
-        const otherCount = allDepts.length > 1 ? allDepts.length - 1 : 0;
-
-        if (otherCount > 0) {
-          const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
-          const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
-          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
+        if (allDepts.length > 1) {
+          return allDepts.map(d => escapeHtmlAttribute(d)).join('<br>');
         }
-        return primary;
+        return escapeHtmlAttribute(value || '');
       }
     },
     {

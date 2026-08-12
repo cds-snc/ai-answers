@@ -3,6 +3,7 @@ import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
+import { formatNumber } from '../../../utils/numberFormat.js';
 
 const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber }) => {
     const [loading, setLoading] = useState(false);
@@ -198,7 +199,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 {expertTitle}
                 {hasScore && (
                     <span className="label label--summary-status normal">
-                        {t('reviewPanels.scoreSuffix').replace('{score}', () => String(expert.totalScore))}
+                        {t('reviewPanels.scoreSuffix').replace('{score}', () => formatNumber(expert.totalScore, lang))}
                     </span>
                 )}
             </summary>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
@@ -25,28 +25,48 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
         }
     }, [data, message]);
 
+    // Fetch eagerly on mount rather than waiting for the reviewer to expand
+    // the panel — this component only ever mounts for messages that already
+    // have public feedback (the render guard below), so this isn't fetching
+    // for every message on the page, only the subset that will show a
+    // pill regardless. Without this, the summary pill showed a vague
+    // "Feedback" placeholder until the reviewer opened (and re-closed) the
+    // panel once, which read as broken rather than as a real value.
+    useEffect(() => {
+        if (!message) return;
+        const interactionForFetch = message.interaction || {};
+        if (!interactionForFetch.publicFeedback && !message.publicFeedback) return;
+        handleToggle();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [message]);
+
     if (!message) return null;
 
     const interaction = message.interaction || {};
-    
+
 
     // If we fetched data, API returns { publicFeedback: pf, sentences } — normalize to use pf
     const fetchedPublicFeedback = data && (data.publicFeedback || data);
     const publicFeedback = fetchedPublicFeedback || interaction.publicFeedback || message.publicFeedback || {};
 
-    // Build title with indicator
-    const baseTitle = t('reviewPanels.publicFeedbackTitle', 'Public feedback');
-    let publicTitleSuffix = '';
-    if (fetchedPublicFeedback && fetchedPublicFeedback.feedback) {
-        // After fetch: show the actual feedback value (Yes/No)
-        publicTitleSuffix = ` \u2714 ${fetchedPublicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : fetchedPublicFeedback.feedback === 'no' ? t('common.no', 'No') : fetchedPublicFeedback.feedback}`;
-    } else if (interaction.publicFeedback) {
-        // Before fetch: publicFeedback is an ObjectId reference — just show checkmark
-        publicTitleSuffix = ' \u2714';
-    }
-    const publicTitle = withAnswerNumber(baseTitle + publicTitleSuffix);
-
     if (!interaction.publicFeedback && !message.publicFeedback) return null;
+
+    const baseTitle = t('reviewPanels.publicFeedbackTitle', 'Public feedback');
+    const publicTitle = withAnswerNumber(baseTitle);
+
+    // Text, not a bare glyph — a checkmark with no label isn't reliably
+    // announced by screen readers (WCAG 1.4.1/4.1.2). Neutral grey (not
+    // correct/error) since this is just naming which feedback panel this
+    // is, not a pass/fail verdict. Before the panel is expanded/fetched,
+    // publicFeedback.feedback isn't known yet (interaction.publicFeedback is
+    // just an ObjectId reference), so the text falls back to a generic
+    // "Feedback" label rather than guessing yes/no.
+    const feedbackValue = fetchedPublicFeedback ? fetchedPublicFeedback.feedback : null;
+    const feedbackPillText = feedbackValue === 'yes'
+        ? t('reviewPanels.helpfulYes', 'Helpful - yes')
+        : feedbackValue === 'no'
+            ? t('reviewPanels.helpfulNo', 'Helpful - no')
+            : t('reviewPanels.feedback', 'Feedback');
 
     return (
         <details className="review-details" onToggle={(e) => {
@@ -60,7 +80,10 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
                 handleToggle(e);
             }
         }}>
-            <summary>{publicTitle}</summary>
+            <summary>
+                {publicTitle}
+                <span className="label label--summary-status normal">{feedbackPillText}</span>
+            </summary>
             <div className="review-panel public-feedback-panel">
                 {loading && <div>{t('common.loading', 'Loading...')}</div>}
                 {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}

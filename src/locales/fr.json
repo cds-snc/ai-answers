@@ -775,6 +775,7 @@
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
       "resultsSummary": "Affichage de {count} chats",
       "totalCount": "Total des chats correspondants : {total}",
+      "interactionCountFiltered": "{count} (+{more} de plus)",
       "searchLabel": "Rechercher par ID de chat :",
       "searchPlaceholder": "Entrez l'ID de chat...",
       "columns": {
@@ -821,7 +822,6 @@
         },
         "contentIssue": "problème de contenu"
       },
-      "departmentMore": "+{count} de plus",
       "columnFilterPlaceholder": "Filtrer"
     },
     "evalDashboard": {
@@ -1235,6 +1235,8 @@
     "englishQuestion": "Question en anglais",
     "expertScore": "Note de l'expert",
     "feedback": "Rétroaction",
+    "helpfulYes": "Utile - oui",
+    "helpfulNo": "Utile - non",
     "expertFeedbackTitle": "Évaluation d'expert",
     "expertEmail": "Courriel de l'expert",
     "deleteExpertFeedback": "Supprimer l'évaluation d'expert",
@@ -1301,6 +1303,7 @@
     "check": "Vérification",
     "pass": "Réussite",
     "fail": "Échoué",
+    "downloadSuccess": "Réussi",
     "details": "Détails",
     "expertFeedbackId": "ID d'évaluation d'expert",
     "fallbackSourceChatId": "ID de chat source pour le repli",
