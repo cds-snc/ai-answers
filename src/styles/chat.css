@@ -171,6 +171,13 @@
 .citation-link a:focus {
     color: var(--gcds-link-focus-text) !important;
 }
+
+/* Reusable: force long unbroken URLs (no natural wrap points) to break
+   mid-word instead of overflowing their container. */
+.url-break-all {
+  word-break: break-all;
+}
+
 .citation-url-text {
   display: inline;
 }

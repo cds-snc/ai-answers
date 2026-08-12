@@ -7,19 +7,9 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 
 DataTable.use(DT);
-
-const escapeHtmlAttribute = (value) => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
 
 const formatDateForApi = (value) => {
   if (!value) return undefined;
@@ -180,9 +170,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
-        const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        return buildChatReviewLinkHtml(value, chatLang);
       }
     },
     {

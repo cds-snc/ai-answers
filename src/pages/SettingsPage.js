@@ -620,7 +620,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   return (
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
-      <nav className="mb-400">
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
       <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />

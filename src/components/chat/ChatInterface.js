@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { GcdsLink } from '@gcds-core/components-react';
 import FeedbackComponent from "./FeedbackComponent.js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ChatOptions from "./ChatOptions.js";
@@ -475,12 +476,12 @@ const ChatInterface = ({
           <span className="referring-url-label mb-300">
             <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
 
-            <a href={referringUrl}
+            <GcdsLink href={referringUrl}
               target="_blank"
-              rel="noopener noreferrer"
+              lang={lang}
             >
               {referringUrl}
-            </a>
+            </GcdsLink>
           </span>
         ) : (
           liveReferringUrlBanner
@@ -735,6 +736,7 @@ const ChatInterface = ({
                               message={message}
                               extractSentences={extractSentences}
                               t={t}
+                              lang={lang}
                               answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                             />
                             <PublicFeedbackPanel
@@ -743,7 +745,7 @@ const ChatInterface = ({
                               t={t}
                               answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
                             />
-                            <DownloadPanel message={message} t={t} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                            <DownloadPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                             <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                             <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
                           </div>
@@ -812,14 +814,14 @@ const ChatInterface = ({
                     >
                       <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
                       {referringUrl ? (
-                        <a
+                        <GcdsLink
                           href={referringUrl}
                           target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ wordBreak: "break-all" }}
+                          lang={lang}
+                          className="url-break-all"
                         >
                           {referringUrl}
-                        </a>
+                        </GcdsLink>
                       ) : (
                         <span style={{ color: "#666" }}>none</span>
                       )}
