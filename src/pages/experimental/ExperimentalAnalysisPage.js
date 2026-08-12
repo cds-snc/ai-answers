@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { usePauseToggle } from '../../hooks/usePauseToggle.js';
+import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -129,6 +131,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const isMountedRef = useRef(true);
     const previousBatchStatusesRef = useRef(new Map());
 
+    // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
+    // any batch/comparison is pending or processing, and there's no other
+    // control on this page that halts it (the runs themselves keep going
+    // server-side regardless). This poll starts/stops conditionally based on
+    // fetched data rather than on mount, so it uses usePauseToggle's
+    // guardPoll directly instead of usePausablePolling.
+    const { isPaused: isPollPaused, togglePause: toggleIsPollPaused, guardPoll } = usePauseToggle();
+
     const stopPolling = () => {
         if (pollRef.current) {
             clearInterval(pollRef.current);
@@ -193,9 +203,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 || (comparisonResult.data || []).some(batch => ['pending', 'processing'].includes(batch.status));
             if (hasActiveRuns) {
                 if (!pollRef.current) {
-                    pollRef.current = setInterval(() => {
-                        loadBatches(datasetId);
-                    }, 5000);
+                    pollRef.current = setInterval(guardPoll(() => loadBatches(datasetId)), 5000);
                 }
             } else {
                 stopPolling();
@@ -584,6 +592,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         </div>
     );
 
+    // Rendered next to the "Running status" progress cards in both tab
+    // panels — that's the content the 5s poll actually keeps auto-updating,
+    // not the static configuration form above it or the history table below
+    // (which only remounts once, as a side effect, when a run finishes).
+    const renderPauseToggle = () => (
+        <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
+    );
+
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
             <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
@@ -866,6 +882,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {(startingRun || Object.keys(batchProgress).length > 0) && (
                         <section>
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                            {renderPauseToggle()}
                             {startingRun && (
                                 <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
                                     {startingRun.name && (
@@ -950,6 +967,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 {Object.keys(comparisonProgress).length > 0 && (
                     <section className="mt-400 mb-400">
                         <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
+                        {renderPauseToggle()}
                         {renderProgressCards(comparisonProgress)}
                     </section>
                 )}

@@ -170,3 +170,20 @@ For each finding, include:
 Prefer building UI elements with CSS shortcuts over GCDS React components. CSS shortcuts produce standard HTML elements that can be tracked with analytics; GCDS React components cannot yet. Avoid introducing new GCDS React components — existing usage can be backtracked as necessary.
 
 **Exception for complex patterns behind admin auth.** On admin/partner-only pages (not public-facing), since these are internal tools where tracking through analytics isn't a requirement, and ensuring the ability to refine UX behaviour for complex chat interactions isn't a factor. For a component with significant built-in behaviour that would be substantial and error-prone to hand-roll correctly (e.g. `gcds-file-uploader`'s drag-drop, file list/remove UI, validation states, and ARIA wiring), it's reasonable to adopt the GCDS React component directly rather than reimplementing it with CSS shortcuts or GC DS tokens, over a raw HTML element. Still avoid it for simple elements (links, buttons, headings) where a CSS shortcut is just as easy and keeps analytics tracking intact.
+
+## Auto-refreshing content: pause/resume toggle (WCAG 2.2.2)
+
+Any admin/partner UI that auto-refreshes unconditionally on a timer (a polling table, a live status view) is "moving, blinking, scrolling, or auto-updating" content under WCAG 2.2.2 (Pause, Stop, Hide), and needs a way for the user to stop it. Don't hand-roll a new `setInterval`/pause `useState` for this — use the shared hook and button:
+
+- `src/hooks/usePauseToggle.js` — `usePausablePolling(fn, intervalMs, deps)` owns the whole interval lifecycle (calls `fn` on mount/dep-change and every `intervalMs`, skips ticks while paused, cleans up on unmount) for the common "fetch on mount, then keep refreshing" case. Use `usePauseToggle()` + its returned `guardPoll(fn)` directly instead if the poll starts/stops conditionally rather than on a fixed mount lifecycle (see `ExperimentalAnalysisPage.js`'s batch/comparison polling for that shape).
+- `src/components/admin/PauseToggleButton.js` — the pause/resume button rendered next to the auto-updating content, wired to the hook's `isPaused`/`togglePause`.
+
+```jsx
+const { isPaused, togglePause } = usePausablePolling(fetchThing, 10000, [fetchThing]);
+// ...
+<PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} />
+```
+
+Reference implementations: `BatchList.js`, `SessionPage.js` (both via `usePausablePolling`), `ExperimentalAnalysisPage.js` (via `usePauseToggle` + `guardPoll`, conditional poll). Static content that only refreshes as a one-off side effect of another action (not on a timer) doesn't need this.
+
+`PauseToggleButton` renders a native `<button>`, not `<GcdsButton>` — see its own file comment for why (a `GcdsButton`/`aria-pressed` timing bug through the shadow DOM) — carrying a `TODO(design)` since a designer hasn't signed off on the visual treatment yet. Use the same native-button + `.filter-button-primary`/`.filter-button-outline` pattern for any other `aria-pressed` toggle button.
