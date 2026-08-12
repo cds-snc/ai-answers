@@ -45,7 +45,7 @@ export function buildMetadataCellHtml(data, expandLabel) {
 
   return `
     <div class="metadata-wrapper">
-      <div class="metadata-content">
+      <div class="metadata-content" tabindex="0">
         <pre><code class="language-${isXML ? 'xml' : 'json'}">${escapedContent}</code></pre>
       </div>
       <button class="expand-button gcds-button gcds-button--secondary" type="button">

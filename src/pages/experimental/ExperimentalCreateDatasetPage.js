@@ -97,6 +97,8 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.createDatasetTitle')}</GcdsHeading>
+            {/* TODO: assess whether this back-link should be nav-wrapped with an
+                aria-label, matching the admin "back to admin" pattern. */}
             <div className="mb-400">
                 <GcdsLink href={getPath('experimental-datasets', lang)}>
                     {t('experimental.datasets.backToList')}

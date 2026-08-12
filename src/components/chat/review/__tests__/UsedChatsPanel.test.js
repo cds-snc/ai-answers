@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import UsedChatsPanel from '../UsedChatsPanel.js';
+
+// UsedChatsPanel renders its chat link via <GcdsLink> (real custom element,
+// shadow DOM) instead of a plain <a> — jsdom doesn't render its shadow-DOM
+// anchor, so tests can't query for it the normal way. Stub it as a plain
+// <a> like ChatDashboardPage.test.js does.
+vi.mock('@gcds-core/components-react', () => ({
+    GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
+}));
 
 const translations = {
     'reviewPanels.usedQaChatsTitle': 'Past evals used',

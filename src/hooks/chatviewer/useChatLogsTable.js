@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import $ from 'jquery';
 import Prism from 'prismjs';
 import { buildMetadataCellHtml } from '../../utils/chatviewer/chatViewer.js';
+import { captureTableFocus, restoreTableFocus } from '../../utils/chatviewer/focusRestore.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 
 export function useChatLogsTable({
@@ -22,17 +23,34 @@ export function useChatLogsTable({
       return undefined;
     }
 
+    // See ../../utils/chatviewer/focusRestore.js for why this is keyed by
+    // data-log-key rather than DOM position. tableRef.current itself gets
+    // tabindex="-1" as restoreTableFocus's last-resort landing spot when
+    // the exact element can't be recovered (e.g. the row no longer exists,
+    // or there are no logs).
+    const focusRestore = captureTableFocus(tableRef.current);
+    tableRef.current.setAttribute('tabindex', '-1');
+
     if (dataTableRef.current) {
       dataTableRef.current.destroy();
       dataTableRef.current = null;
     }
 
-    if (!logs?.length) {
-      return undefined;
-    }
-
+    // Build the table even with zero logs, rather than swapping it out for
+    // a separate "no logs" element — DataTables shows its own localized
+    // empty state (emptyTable, overridden below with our own copy) in the
+    // tbody. Keeping the table itself mounted regardless of row count is
+    // what lets the focus-capture above ever run in the first place: if
+    // ChatViewer instead unmounted <table> when logs is empty, React would
+    // remove it (and null tableRef.current) in the same commit that this
+    // effect's own logs-changed run is triggered by, before this effect's
+    // code — including the capture at the top of this function — had any
+    // chance to execute against a still-attached element.
     dataTableRef.current = $(tableRef.current).DataTable({
       data: logs,
+      createdRow: (row, rowData) => {
+        row.dataset.logKey = `${rowData.createdAt}|${rowData.message}`;
+      },
       columns: [
         {
           title: t('logging.createdAt'),
@@ -64,7 +82,7 @@ export function useChatLogsTable({
       autoWidth: false,
       scrollX: false,
       pageLength: 50,
-      language: dataTableLanguage(lang),
+      language: { ...dataTableLanguage(lang), emptyTable: t('logging.noLogs') },
       drawCallback: function () {
         Prism.highlightAll();
 
@@ -156,6 +174,8 @@ export function useChatLogsTable({
     if (logLevelRef.current && dataTableRef.current) {
       dataTableRef.current.column(1).search(logLevelRef.current, false, false).draw();
     }
+
+    restoreTableFocus(tableRef.current, focusRestore);
 
     return () => {
       if (dataTableRef.current) {

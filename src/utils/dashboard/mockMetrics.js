@@ -100,10 +100,56 @@ export const MOCK_METRICS = {
     { url: 'canada.ca/fr/services/prestations/ae.html', count: 18 },
     { url: 'canada.ca/en/health-canada/services/health-products.html', count: 11 },
   ],
+  // "Question volume by service" (PartnerDashboard.js's topProgramsData) —
+  // shape is [{ program, programFr, count, en, fr }]; sorted/sliced to
+  // TOP_PROGRAMS_LIMIT (10) client-side, so only the first 10 below actually
+  // render as bars — the rest just contribute to the 78-question classified
+  // total shown in the subtitle, same as production. Modelled on a real
+  // production sample (all-English in that sample, hence en === count,
+  // fr: 0 throughout).
+  topPrograms: [
+    { program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', count: 23, en: 23, fr: 0 },
+    { program: 'Royal Canadian Mounted Police', programFr: 'Gendarmerie royale du Canada', count: 13, en: 13, fr: 0 },
+    { program: 'AI Answers', programFr: 'Réponses IA', count: 7, en: 7, fr: 0 },
+    { program: 'Tax-free savings account (TFSA)', programFr: 'Compte d’épargne libre d’impôt (CELI)', count: 7, en: 7, fr: 0 },
+    { program: 'Employment insurance - regular benefits', programFr: 'Assurance-emploi - prestations régulières', count: 4, en: 4, fr: 0 },
+    { program: 'Business Number (BN)', programFr: 'Numéro d’entreprise (NE)', count: 3, en: 3, fr: 0 },
+    { program: 'Canada child benefit', programFr: 'Allocation canadienne pour enfants', count: 3, en: 3, fr: 0 },
+    { program: 'Military Transition Program', programFr: 'Programme de transition militaire', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Groceries and Essentials Benefit', programFr: 'Prestation canadienne pour l’épicerie et les biens essentiels', count: 2, en: 2, fr: 0 },
+    { program: 'Performance management program', programFr: 'Programme de gestion du rendement', count: 2, en: 2, fr: 0 },
+    // Below TOP_PROGRAMS_LIMIT — same count (2) as the 10th row above but
+    // listed after it, so the stable sort keeps them out of the displayed
+    // top 10 while still counting toward the 78-question classified total.
+    { program: 'GST/HST credit', programFr: 'Crédit pour la TPS/TVH', count: 2, en: 2, fr: 0 },
+    { program: 'Old Age Security', programFr: 'Sécurité de la vieillesse', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Pension Plan', programFr: 'Régime de pensions du Canada', count: 2, en: 2, fr: 0 },
+    { program: 'Disability tax credit', programFr: 'Crédit d’impôt pour personnes handicapées', count: 2, en: 2, fr: 0 },
+    { program: 'Canada Dental Benefit', programFr: 'Prestation dentaire canadienne', count: 2, en: 2, fr: 0 },
+    { program: 'Firearms licence', programFr: 'Permis d’armes à feu', count: 2, en: 2, fr: 0 },
+  ],
   answerTypeBreakdown: {
     normal: 1240,
     'clarifying-question': 186,
     'pt-muni': 73,
     'not-gc': 41,
   },
+  // Matches expertScored.hasContentIssue above: 7 total (4 needsImprovement, 3
+  // hasError). Server sorts errors first, most recent within each group.
+  // chatId is a UUID (crypto.randomUUID(), see ExperimentalBatchService.js);
+  // interactionId is a Mongo ObjectId (interactions._id) — real-length IDs so
+  // the mock preview matches production layout/wrapping.
+  contentIssueChats: [
+    { chatId: 'd9a9ae8f-f693-497c-b25a-b836f679f4f8', interactionId: '1c9d435778754754f0550a06', pageLanguage: 'en', createdAt: '2026-08-08T14:22:00Z', status: 'hasError' },
+    { chatId: 'ff8e12ab-1d6a-419e-b105-4a7cf73103af', interactionId: '8c5d238682cb43c288f7853b', pageLanguage: 'fr', createdAt: '2026-08-07T10:05:00Z', status: 'hasError' },
+    { chatId: '6a04a7c6-3f8b-4d3f-bca8-b156df9f7477', interactionId: '408cf01f3cac4d9a2792c19f', pageLanguage: 'en', createdAt: '2026-08-05T16:41:00Z', status: 'hasError' },
+    { chatId: 'ecd0beb5-1f50-4a55-8a7e-bbce16027555', interactionId: 'a754d771e912da938be8b756', pageLanguage: 'en', createdAt: '2026-08-08T09:12:00Z', status: 'needsImprovement' },
+    { chatId: 'e59a72ef-2d4e-4dfb-93cb-fe7456a671c5', interactionId: '31fd86f4a38c94d0f420dcd9', pageLanguage: 'en', createdAt: '2026-08-06T13:37:00Z', status: 'needsImprovement' },
+    { chatId: '8498df91-7fd9-4f4c-a628-d61fcf95d696', interactionId: '5e6c6e46a95cd3ed7a239449', pageLanguage: 'fr', createdAt: '2026-08-04T11:50:00Z', status: 'needsImprovement' },
+    { chatId: '39724676-4c16-4e60-9b93-b2745abe20cd', interactionId: '08bd7b1d662aa3a55baf29fb', pageLanguage: 'en', createdAt: '2026-08-02T08:29:00Z', status: 'needsImprovement' },
+  ],
+  // Matches expertScored.harmful.total above (1).
+  harmfulChats: [
+    { chatId: 'e19496bb-c253-4320-9c1f-6bbdbc73a97e', interactionId: '3f94b153ecd6fd60b20d4cab', pageLanguage: 'en', createdAt: '2026-08-07T15:03:00Z' },
+  ],
 };

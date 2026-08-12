@@ -39,6 +39,9 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                         </span>
                     )}
                 </div>
+                {/* TODO: assess whether the back-link here should be nav-wrapped with
+                    an aria-label, matching the admin "back to admin" pattern — it's
+                    mixed in with the "new run" action link, not a standalone nav. */}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
                     <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}

@@ -54,6 +54,26 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
   const tooMany = count !== null && count > (precheck?.max ?? Infinity);
   const canRun = Boolean(appliedDepartment) && !running && !precheckLoading && count !== null && !tooFew && !tooMany;
 
+  // Ties the (possibly disabled) Run analysis button to whichever
+  // explanatory text is currently showing above it, so screen reader users
+  // hear *why* it's disabled instead of just "dimmed". Mirrors the same
+  // condition order as the JSX below — only one of these is ever rendered
+  // at a time. `running` and `precheckLoading` each need their own id here
+  // too: they're async gaps where the button is aria-disabled (GcdsButton
+  // doesn't use native `disabled`, so it stays focusable) but no
+  // explanatory text was previously mounted.
+  const runButtonDescribedBy = !appliedDepartment
+    ? 'eval-analysis-select-institution'
+    : running
+      ? 'eval-analysis-running'
+      : precheckLoading
+        ? 'eval-analysis-checking'
+        : tooFew
+          ? 'eval-analysis-too-few'
+          : tooMany
+            ? 'eval-analysis-too-many'
+            : (count !== null ? 'eval-analysis-precheck-count' : undefined);
+
   const progressLabel = () => {
     if (!analysis) return t('partnerDashboard.evalAnalysis.running.preparing');
     if (analysis.status === 'classifying') {
@@ -123,17 +143,26 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         <p className="font-size-text-xsm-nr">{t('partnerDashboard.evalAnalysis.description')}</p>
 
         {!appliedDepartment && (
-          <p className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
+          <p id="eval-analysis-select-institution" className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
         )}
 
-        {appliedDepartment && count !== null && !running && (
+        {appliedDepartment && precheckLoading && (
+          <StatusMessage
+            loading
+            id="eval-analysis-checking"
+            className="font-size-text-small"
+            message={t('partnerDashboard.evalAnalysis.checkingEligibility')}
+          />
+        )}
+
+        {appliedDepartment && !precheckLoading && count !== null && !running && (
           <>
             {/* TODO: role="status"/"alert" here rely on their implicit aria-live
                 mapping (polite/assertive) rather than pairing it explicitly, unlike
                 the equivalent warnings in EvalAnalysisReport.js. Functionally the
                 same, but worth picking one convention across both files. */}
             {tooFew && (
-              <div className="dashboard-warning" role="status">
+              <div id="eval-analysis-too-few" className="dashboard-warning" role="status">
                 <span className="dashboard-warning__icon" aria-hidden="true" />
                 {t('partnerDashboard.evalAnalysis.tooFew')
                   .replace('{min}', fmtN(precheck.min))
@@ -141,7 +170,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
               </div>
             )}
             {tooMany && (
-              <div className="dashboard-warning" role="status">
+              <div id="eval-analysis-too-many" className="dashboard-warning" role="status">
                 <span className="dashboard-warning__icon" aria-hidden="true" />
                 {t('partnerDashboard.evalAnalysis.tooMany')
                   .replace('{max}', fmtN(precheck.max))
@@ -149,16 +178,26 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
               </div>
             )}
             {!tooFew && !tooMany && (
-              <p className="font-size-text-small">
+              <p id="eval-analysis-precheck-count" className="font-size-text-small">
                 {t('partnerDashboard.evalAnalysis.precheckCount').replace('{count}', fmtN(count))}
               </p>
             )}
           </>
         )}
 
+        {running && (
+          <StatusMessage
+            loading
+            id="eval-analysis-running"
+            className="font-size-text-small"
+            message={progressLabel()}
+          />
+        )}
+
         <GcdsButton
           onClick={() => runAnalysis(appliedFilters)}
           disabled={!canRun || undefined}
+          aria-describedby={runButtonDescribedBy}
           className="hydrated"
         >
           {t('partnerDashboard.evalAnalysis.runButton')}
@@ -166,7 +205,6 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {analysis && analysis.status !== 'complete' && analysis.status !== 'error' && (
           <div style={{ marginTop: 12 }}>
-            {running && <p className="font-size-text-small" role="status">{progressLabel()}</p>}
             <GcdsButton onClick={loadFullAnalysis} className="hydrated">
               {t('partnerDashboard.evalAnalysis.viewRunning')}
             </GcdsButton>

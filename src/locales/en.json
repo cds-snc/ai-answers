@@ -339,6 +339,8 @@
     "title": "Chat viewer",
     "refresh": "Refresh",
     "refreshPending": "Please wait...",
+    "refreshComplete": "Logs refreshed. {count} entries loaded.",
+    "refreshFailed": "Refresh failed. Logs were not updated.",
     "download": "Download logs (JSON)",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
@@ -729,7 +731,9 @@
       "title": "Public evaluation",
       "chatId": "Chat ID",
       "department": "Department",
-      "date": "Date"
+      "date": "Date",
+      "loading": "Loading...",
+      "errorLoading": "Failed to load public evaluation list: {message}"
     },
     "session": {
       "title": "Sessions",
@@ -901,7 +905,7 @@
       "button": "Delete chat",
       "loading": "Deleting...",
       "success": "Chat deleted successfully",
-      "error": "Failed to delete chat: "
+      "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
@@ -1175,6 +1179,11 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
+    "chartCategoryColumn": "Category",
+    "chartValueColumn": "Value",
+    "chartPercentColumn": "Percent",
+    "chartDataTableCaption": "Data for {title}",
+    "chartDataTableSummary": "Table view",
     "backToAdmin": "Back to admin",
     "close": "Close",
     "confirmDelete": "Are you sure you want to delete this data?",
@@ -1338,10 +1347,6 @@
     "startDate": "Start date",
     "endDate": "End date",
     "showing": "Showing:",
-    "footnoteRefSrPrefix": "Footnote ",
-    "footnotesHeading": "Footnotes",
-    "footnoteReturnSrPrefix": "Return to footnote ",
-    "footnoteReturnSrSuffix": " referrer",
     "removeFilter": "Remove filter",
     "apply": "Apply",
     "loading": "Loading..."
@@ -1395,6 +1400,7 @@
       "hasError": "Has answer error",
       "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
+      "totalQuestionsLabel": "Total: {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1434,14 +1440,17 @@
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
-      "satisfactionCentre": "of {total} responses",
-      "satisfactionSummary": "Public feedback (satisfaction) – {pct} helpful of {total} responses",
+      "satisfactionSubtext": "{pct} helpful of {total} responses",
+      "satisfactionTrigger": "Breakdown of public satisfaction",
+      "topRankSubtext": "#1: {label}",
       "feedbackSectionTitle": "Public feedback (satisfaction)",
       "feedbackSplitTitle": "Helpful or not",
+      "feedbackSplitSubtitle": "Total responses: {total}",
       "feedbackReasonsTitle": "Breakdown by reason",
       "feedbackBreakdownSubtitle": "Based on {total} public feedback responses",
       "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
+      "totalQuestionsLabel": "Total: {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1470,13 +1479,13 @@
     },
     "referrals": {
       "title": "Top referral pages",
-      "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation.",
+      "trigger": "All top referral pages",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     },
     "citations": {
       "title": "Top citation pages",
-      "subtitle": "Government of Canada pages AI Answers cited most often, counted by question.",
+      "trigger": "All top cited pages",
       "colUrl": "Cited page",
       "colCount": "Questions",
       "noCitations": "No citations in this period.",
@@ -1489,10 +1498,25 @@
         "notGc": "Not in GC scope answers"
       }
     },
+    "answerTypes": {
+      "trigger": "All question/answer types"
+    },
+    "contentIssueChats": {
+      "title": "Content issues by chat ID",
+      "trigger": "All chats by ID with a content issue",
+      "issueTypeCol": "Issue type",
+      "noData": "No content issues flagged in this period."
+    },
+    "harmfulChats": {
+      "title": "Harmful chats by chat ID",
+      "trigger": "See all harmful chats by ID",
+      "noData": "No harmful chats flagged in this period."
+    },
     "evalAnalysis": {
       "title": "Eval analysis",
       "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
+      "checkingEligibility": "Checking eligibility…",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
       "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",

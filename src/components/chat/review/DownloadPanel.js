@@ -1,7 +1,8 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
-const DownloadPanel = ({ message, t, answerNumber }) => {
+const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
     const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
     if (!message) return null;
@@ -39,9 +40,9 @@ const DownloadPanel = ({ message, t, answerNumber }) => {
                             <span style={{ color: succeeded ? 'green' : 'red', marginRight: '0.4rem' }}>
                                 {succeeded ? '\u2714' : '\u2718'}
                             </span>
-                            <a href={url} target="_blank" rel="noopener noreferrer" style={{ wordBreak: 'break-all' }}>
+                            <GcdsLink href={url} target="_blank" lang={lang} className="url-break-all">
                                 {url}
-                            </a>
+                            </GcdsLink>
                         </div>
                     );
                 })}

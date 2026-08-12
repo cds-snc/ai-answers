@@ -161,7 +161,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 {t('connectivity.title', 'Service Connectivity Dashboard')}
             </h1>
 
-            <nav className="mb-400">
+            <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
                 <a href={`/${lang}/admin`}>
                     {t('common.backToAdmin')}
                 </a>

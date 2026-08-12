@@ -6,14 +6,20 @@ import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import StackedBarCard from './dashboard/StackedBarCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
+import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
+  // StackedBarCard) — renders each chart's data as a real, always-visible
+  // table alongside the hover-only Recharts tooltip. Required on new charts.
+  const chartA11y = buildChartA11y(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
@@ -123,9 +129,9 @@ const PublicDashboard = ({ lang = 'en' }) => {
   const totalConversations = metrics.totalConversations || 0;
   const sq = metrics.sessionsByQuestionCount || {};
   const sessionDepthData = totalConversations > 0 ? [
-    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
-    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
-    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0, colour: COLOURS.sessionDepthScale[0], stroke: COLOURS.chartStroke },
+    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0,   colour: COLOURS.sessionDepthScale[1] },
+    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0, colour: COLOURS.sessionDepthScale[2] },
   ].filter(d => d.value > 0) : [];
 
   const responseTime = metrics.responseTime || {};
@@ -144,9 +150,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </h2>
 
       {loading ? (
-        <div className="dashboard-loading" role="status" aria-live="polite">
-          {t('common.loading')}
-        </div>
+        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
       ) : (
       <>
 
@@ -180,6 +184,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
               centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
               footer={accuracyByLangFooter}
               lang={lang}
+              a11y={chartA11y}
             />
           ) : (
             <NoDataCard
@@ -233,25 +238,34 @@ const PublicDashboard = ({ lang = 'en' }) => {
               yAxisWidth={240}
               yAxisTextAlign="right"
               marginLeft={32}
+              a11y={chartA11y}
             />
           </div>
         </div>
       )}
 
-      {/* Conversation length donut + median response time beside it.
-          Below 10 conversations the donut becomes a placeholder. */}
+      {/* Conversation length (75% width) + median response time beside it
+          (25%, height matched to conversation length via dashboard-row's
+          default flex stretch). Below 10 conversations the chart becomes a
+          placeholder. */}
       <div className="dashboard-row">
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-three-quarter">
           {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('publicDashboard.charts.engagementTitle')}
-              subtitle={t('publicDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('publicDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+            <StackedBarCard
+              data={sessionDepthData}
               lang={lang}
+              noDataLabel={t('publicDashboard.charts.noData')}
+              a11y={chartA11y}
+              a11yTitle={t('publicDashboard.charts.engagementTitle')}
+              leftContent={(
+                <div>
+                  <h3 className="card-title card-title--has-subtitle">{t('publicDashboard.charts.engagementTitle')}</h3>
+                  <p className="card-subtitle font-size-text-xsm-nr">
+                    {`${t('publicDashboard.charts.engagementSubtitle')} · ${t('publicDashboard.charts.totalQuestionsLabel').replace('{n}', fmtN(totalQuestions))}`}
+                  </p>
+                  <p className="stat-card__value stacked-bar-card__inset">{fmtN(totalConversations)} {t('publicDashboard.charts.conversations')}</p>
+                </div>
+              )}
             />
           ) : (
             <NoDataCard
@@ -260,7 +274,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
             />
           )}
         </div>
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-quarter">
           <StatCard
             label={t('publicDashboard.ops.medianResponseTime')}
             value={hasResponseTime
@@ -272,7 +286,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
           />
         </div>
       </div>
-
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">
@@ -299,35 +312,17 @@ const PublicDashboard = ({ lang = 'en' }) => {
             lang={lang}
             tooltipContent={BlockedBarTooltip}
             noDataLabel={t('blockedQueries.noData')}
+            a11y={chartA11y}
           />
         </div>
       </div>
       </>
       )}
 
-      {/* Referenced by the footnote marker in PublicDashboardPage's h1 —
-          states the userType=public restriction baked into fetchPublicMetrics
-          above. Always rendered (not gated on loading/error) since the link
-          that points here is always present too.
-          WET-BOEW's standard footnote pattern (GCWeb's wb-fnote, not shipped
-          by GC DS — reproduced in admin.css): the marker box doubles as the
-          "return to referrer" link, so there's no separate visible number. */}
-      <aside className="wb-fnote" role="note">
-        <h2>{t('dashboardFilter.footnotesHeading')}</h2>
-        <dl>
-          <dt className="wb-inv">{t('dashboardFilter.footnotesHeading')} 1</dt>
-          <dd id="public-dashboard-footnote">
-            <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
-            <p className="fn-rtn">
-              <a href="#public-dashboard-fnref">
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrPrefix')}</span>
-                1
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrSuffix')}</span>
-              </a>
-            </p>
-          </dd>
-        </dl>
-      </aside>
+      {/* States the userType=public restriction baked into fetchPublicMetrics
+          above. Always rendered (not gated on loading/error). */}
+      <hr className="mt-600 mb-200" />
+      <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
     </div>
   );
 };
