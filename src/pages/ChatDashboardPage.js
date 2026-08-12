@@ -250,7 +250,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
       data: 'referringUrl',
       render: (value) => {
-        if (!value) return '<span style="font-style: italic; color: #666;">none</span>';
+        if (!value) return '<span style="color: #666;">none</span>';
         return escapeHtmlAttribute(truncateUrl(value));
       }
     },

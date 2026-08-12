@@ -846,7 +846,7 @@ const DatabasePage = ({ lang }) => {
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
-                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8, fontStyle: 'italic' }}>
+                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
                           {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}

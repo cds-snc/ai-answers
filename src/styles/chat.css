@@ -215,16 +215,8 @@
   display: inline-block;
 }
 
-.confidence-rating {
-  font-style: italic;
-  font-size: 85%;
-  color: #555;
-  margin-top: 0.5rem;
-  margin-bottom: 0em !important;
-}
 .follow-up-prompt {
   margin-top: 1rem;
-  font-style: italic;
   color: #555;
 }
 .input-area {
@@ -889,7 +881,6 @@ textarea:focus {
   border-left: 3px solid #ddd;
   font-size: 0.95em;
   line-height: 1.4;
-  font-style: italic;
   overflow-wrap: break-word;
   /* Was inherited from the parent <legend>'s bold font shorthand; these divs
      moved out to be legend siblings (for aria-describedby), so it no longer

@@ -200,7 +200,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
             <br />
             {noMatchReason && (
               <>
-                <em>{t('eval.reason', 'Reason')}:</em> {noMatchReason}
+                <strong>{t('eval.reason', 'Reason')}:</strong> {noMatchReason}
               </>
             )}
           </p>
