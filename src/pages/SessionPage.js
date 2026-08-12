@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { usePausablePolling } from '../hooks/usePauseToggle.js';
+import PauseToggleButton from '../components/admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
@@ -61,11 +63,9 @@ const SessionPage = ({ lang: propLang }) => {
     }
   }, [t]);
 
-  useEffect(() => {
-    fetchSessions();
-    const iv = setInterval(fetchSessions, 5000);
-    return () => clearInterval(iv);
-  }, [fetchSessions]);
+  // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
+  // table.
+  const { isPaused, togglePause } = usePausablePolling(fetchSessions, 5000, [fetchSessions]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -78,6 +78,8 @@ const SessionPage = ({ lang: propLang }) => {
 
       {error && <div className="text-status--negative">{error}</div>}
       {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
+
+      <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 
       <DataTable
         data={sessions}

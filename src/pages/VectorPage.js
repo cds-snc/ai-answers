@@ -88,6 +88,13 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
   const [metadataStatusError, setMetadataStatusError] = useState(null);
+  // WCAG 2.2.2 (Pause, Stop, Hide): this poll only changes what's on screen
+  // while a backfill job is active (queued/running/stopping) — when
+  // `!job`, below returns before touching state, so an idle page is a
+  // visual no-op. The "Stop backfill" button already halts the job, which
+  // is what stops the auto-updating content, so no separate pause control
+  // is needed here (unlike BatchList/SessionPage, which refresh
+  // unconditionally regardless of any admin action).
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
