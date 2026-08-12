@@ -41,6 +41,44 @@ describe('getCellRoot', () => {
     expect(getCellRoot(undefined)).toBeNull();
   });
 
+  it('clears pre-existing non-React content (e.g. a DataTables placeholder) before the first mount', () => {
+    const cell = document.createElement('td');
+    cell.innerHTML = '<span>placeholder</span>';
+    document.body.appendChild(cell);
+
+    flush(() => getCellRoot(cell).render(<button>rendered</button>));
+
+    expect(cell.textContent).toBe('rendered');
+    expect(cell.querySelector('span')).toBeNull();
+  });
+
+  it('survives a caller clearing the cell before a later redraw finds an existing root', () => {
+    const cell = document.createElement('td');
+    document.body.appendChild(cell);
+
+    // React's commit-phase failures aren't synchronously catchable — a
+    // failed unmount is reported as an uncaught error via a window 'error'
+    // event, not thrown back through the call stack. try/catch around the
+    // call site can't detect this; only listening for the event can.
+    const onError = vi.fn();
+    window.addEventListener('error', onError);
+
+    flush(() => getCellRoot(cell).render(<button>first</button>));
+
+    // Regression scenario for the bug this test guards against: something
+    // (DataTables re-parenting, or a caller) clears the cell directly before
+    // the next redraw calls getCellRoot() again, instead of going through
+    // this module's own unmount path.
+    cell.innerHTML = '';
+
+    flush(() => getCellRoot(cell).render(<button>second</button>));
+
+    expect(cell.textContent).toBe('second');
+    expect(onError).not.toHaveBeenCalled();
+
+    window.removeEventListener('error', onError);
+  });
+
   it('survives a cell whose root was already unmounted elsewhere', () => {
     const cell = document.createElement('td');
     document.body.appendChild(cell);

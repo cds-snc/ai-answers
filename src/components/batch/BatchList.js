@@ -170,7 +170,6 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             // Totals column is after status - find it as the cell before the actions cell
             const actionsCell = row.querySelector('td:last-child');
             const totalsCell = actionsCell ? actionsCell.previousElementSibling : cells[cells.length - 2];
-            actionsCell.innerHTML = '';
             // Populate totals: prefer stats from service, fallback to 0/0
             try {
               const stats = data.stats || {};

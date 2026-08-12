@@ -299,9 +299,9 @@ const UsersPage = ({ lang }) => {
               };
             });
 
-            // Render Save and Delete buttons
+            // Render Save and Delete buttons. getCellRoot() clears any stale
+            // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
-            actionsCell.innerHTML = '';
             // Render admin delete button (only admins should reach this page)
             getCellRoot(actionsCell).render(
               <GcdsButton
