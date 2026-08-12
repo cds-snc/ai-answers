@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { usePauseToggle } from '../hooks/usePauseToggle.js';
+import { usePausablePolling } from '../hooks/usePauseToggle.js';
 import PauseToggleButton from '../components/admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -18,10 +18,6 @@ const SessionPage = ({ lang: propLang }) => {
   const [sessions, setSessions] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
-  // table. See usePauseToggle for why this returns a ref alongside the
-  // boolean.
-  const { isPaused, isPausedRef, togglePause } = usePauseToggle();
   const sessionTypeLabel = React.useCallback((value) => {
     const type = value || 'unknown';
     const labels = {
@@ -67,14 +63,9 @@ const SessionPage = ({ lang: propLang }) => {
     }
   }, [t]);
 
-  useEffect(() => {
-    fetchSessions();
-    const iv = setInterval(() => {
-      if (isPausedRef.current) return;
-      fetchSessions();
-    }, 5000);
-    return () => clearInterval(iv);
-  }, [fetchSessions, isPausedRef]);
+  // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
+  // table.
+  const { isPaused, togglePause } = usePausablePolling(fetchSessions, 5000, [fetchSessions]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">

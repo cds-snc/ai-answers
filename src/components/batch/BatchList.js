@@ -5,7 +5,7 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { usePauseToggle } from '../../hooks/usePauseToggle.js';
+import { usePausablePolling } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
@@ -18,11 +18,6 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [searchText] = useState('');
   // refreshKey forces the DataTable to remount when batches change
   const [refreshKey, setRefreshKey] = useState(0);
-  // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
-  // table, which is exactly the kind of auto-updating content that
-  // criterion requires a way to stop. See usePauseToggle for why this
-  // returns a ref alongside the boolean.
-  const { isPaused, isPausedRef, togglePause } = usePauseToggle();
   const { t } = useTranslations(lang);
 
   // Fetch all statuses
@@ -93,26 +88,20 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   );
 
   // Fetch batches
-  useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        const batches = await BatchService.getBatchList();
-        const updatedBatches = await fetchStatuses(batches) || batches || [];
-        setBatches(Array.isArray(updatedBatches) ? updatedBatches : []);
-      } catch (error) {
-        console.error('Error fetching batches:', error);
-      }
-    };
+  const fetchBatches = useCallback(async () => {
+    try {
+      const batches = await BatchService.getBatchList();
+      const updatedBatches = await fetchStatuses(batches) || batches || [];
+      setBatches(Array.isArray(updatedBatches) ? updatedBatches : []);
+    } catch (error) {
+      console.error('Error fetching batches:', error);
+    }
+  }, [fetchStatuses]);
 
-    fetchBatches();
-
-    // Poll every 10 seconds, unless the user has paused updates.
-    const intervalId = setInterval(() => {
-      if (isPausedRef.current) return;
-      fetchBatches();
-    }, 10000);
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [lang, fetchStatuses, isPausedRef]);
+  // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
+  // table, which is exactly the kind of auto-updating content that
+  // criterion requires a way to stop.
+  const { isPaused, togglePause } = usePausablePolling(fetchBatches, 10000, [lang, fetchBatches]);
 
   // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that

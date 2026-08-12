@@ -134,9 +134,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
     // any batch/comparison is pending or processing, and there's no other
     // control on this page that halts it (the runs themselves keep going
-    // server-side regardless). See usePauseToggle for why this returns a
-    // ref alongside the boolean.
-    const { isPaused: isPollPaused, isPausedRef: isPollPausedRef, togglePause: toggleIsPollPaused } = usePauseToggle();
+    // server-side regardless). This poll starts/stops conditionally based on
+    // fetched data rather than on mount, so it uses usePauseToggle's
+    // guardPoll directly instead of usePausablePolling.
+    const { isPaused: isPollPaused, togglePause: toggleIsPollPaused, guardPoll } = usePauseToggle();
 
     const stopPolling = () => {
         if (pollRef.current) {
@@ -202,10 +203,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 || (comparisonResult.data || []).some(batch => ['pending', 'processing'].includes(batch.status));
             if (hasActiveRuns) {
                 if (!pollRef.current) {
-                    pollRef.current = setInterval(() => {
-                        if (isPollPausedRef.current) return;
-                        loadBatches(datasetId);
-                    }, 5000);
+                    pollRef.current = setInterval(guardPoll(() => loadBatches(datasetId)), 5000);
                 }
             } else {
                 stopPolling();

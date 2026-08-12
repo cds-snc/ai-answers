@@ -148,23 +148,32 @@ export default function BatchItemDetail({
                 <strong>{t('experimental.results.detail.chat')}</strong>: {item.chatId || t('experimental.results.table.noChatId')}
             </div>
 
+            {/* TODO(design): needs design review. Native <button>s (not
+                <GcdsButton>), same rationale as PauseToggleButton.js:
+                GcdsButton copies aria-* attributes onto its shadow-DOM button
+                inside its own click handler, before React's state update from
+                that same click commits, so aria-pressed was always one click
+                behind for screen readers. Styled via .filter-button-primary
+                (active) / .filter-button-outline (inactive) to reproduce
+                GcdsButton's buttonRole primary/secondary look for now; a
+                designer hasn't signed off on this specific treatment. */}
             <div className="mb-300" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <GcdsButton
-                    size="small"
-                    buttonRole={detailMode ? 'secondary' : 'primary'}
+                <button
+                    type="button"
+                    className={`filter-button ${detailMode ? 'filter-button-outline' : 'filter-button-primary'}`}
                     onClick={() => setDetailMode(false)}
                     aria-pressed={!detailMode}
                 >
                     {t('experimental.results.detail.simpleView')}
-                </GcdsButton>
-                <GcdsButton
-                    size="small"
-                    buttonRole={detailMode ? 'primary' : 'secondary'}
+                </button>
+                <button
+                    type="button"
+                    className={`filter-button ${detailMode ? 'filter-button-primary' : 'filter-button-outline'}`}
                     onClick={() => setDetailMode(true)}
                     aria-pressed={detailMode}
                 >
                     {t('experimental.results.detail.detailedView')}
-                </GcdsButton>
+                </button>
             </div>
 
             <div className="overflow-auto experimental-results-table-container">
