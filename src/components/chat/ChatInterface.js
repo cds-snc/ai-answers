@@ -821,7 +821,7 @@ const ChatInterface = ({
                           {referringUrl}
                         </a>
                       ) : (
-                        <span style={{ fontStyle: "italic", color: "#666" }}>none</span>
+                        <span style={{ color: "#666" }}>none</span>
                       )}
                     </div>
                   )}

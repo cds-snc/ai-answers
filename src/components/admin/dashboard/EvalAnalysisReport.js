@@ -199,7 +199,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               {Array.isArray(theme.examples) && theme.examples.length > 0 && (
                 <ul className="font-size-text-xsm-nr" style={{ marginTop: 0 }}>
                   {theme.examples.map((ex, j) => (
-                    <li key={j}><em>{ex}</em></li>
+                    <li key={j}><strong>{ex}</strong></li>
                   ))}
                 </ul>
               )}

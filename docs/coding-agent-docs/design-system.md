@@ -49,6 +49,14 @@ Do not use inline `style={{...}}` attributes on elements. Add a CSS class instea
 
 Inline styles are only acceptable when the value is genuinely dynamic and cannot be expressed as a class (e.g. a runtime-computed width or colour).
 
+## Italics
+
+No italics (Canada.ca Content Style Guide rule). Exceptions are narrow: French/foreign words, legal references, math/scientific material, titles of works, Latin terms/abbreviations. UI labels, placeholders, status text, and quoted content don't qualify.
+
+- No `font-style: italic` (CSS or inline `style`).
+- No `<em>` for styling — it means stress emphasis, not "make it italic." Use `<strong>` or nothing.
+- No `<i>` outside the exceptions above. (Font-icon glyphs like `<i className="fa-solid fa-close">` aren't text italics — not a concern.)
+
 ## Styling hierarchy
 
 When adding any style, follow this order — stop at the first option that works:
