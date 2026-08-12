@@ -351,6 +351,25 @@
   margin-bottom: var(--gcds-spacing-200);
 }
 
+/* Extra breathing room only for a status .label sitting beside a review
+   panel's summary title text (DownloadPanel.js's Pass/Failed pill,
+   ExpertFeedbackPanel.js's score pill) — scoped here rather than on .label
+   itself, which is shared by unrelated pill usages elsewhere that don't
+   need it (e.g. DatabasePage.js, the per-row download pills). */
+.label--summary-status {
+  margin-left: var(--gcds-spacing-100);
+}
+
+/* Nudges the "Never stale" checkbox down to align with the delete button
+   beside it — the .gc-chckbxrdio.md custom checkbox's own box sits a touch
+   higher than the button's text baseline, even with the flex row's
+   align-items: center. Scoped to this one toggle, not .gc-chckbxrdio.md
+   generally, which is shared by ExpertFeedbackComponent's rating checkboxes
+   where this offset isn't wanted. */
+.never-stale-toggle {
+  margin-top: 5px;
+}
+
 .privacy-error-message, .error-message {
   padding: 0rem 1.5rem;
 }
@@ -871,8 +890,68 @@ textarea:focus {
   border-radius: 0;
 }
 
+/* aria-invalid is already set by ExpertFeedbackComponent whenever a required
+   explanation is missing post-submit, so the red border stays in sync with
+   the same state that drives the inline error message — no separate class. */
+.expert-rating-container .explanation-field textarea[aria-invalid="true"] {
+  border-color: var(--gcds-error-message-text-color);
+}
+
 .expert-rating-container .explanation-field textarea {
   min-height: 60px;
+}
+
+/* The citation explanation field is the last thing inside .citation-rating-group,
+   so its own 20px bottom margin stacks with the fieldset's built-in 0.75em
+   bottom padding AND .citation-rating-group's own 20px margin-bottom below —
+   three spacings landing in the same gap before "Better citation URL". Only
+   the redundant one is trimmed; every other .explanation-field keeps its
+   normal margin. */
+.citation-rating-group .explanation-field:last-child {
+  margin-bottom: 0;
+}
+
+/* Matches GC DS's own gcds-error-summary: full box border (all sides, not
+   just an accent edge) using its border/text/link colour tokens and real
+   h2 heading scale. Margin/padding are trimmed from GC DS's page-level
+   values (meant for a full-width top-of-page block) to fit this widget's
+   much smaller embedded context. Explicit white background since this sits
+   inside the review panel's grey expand/collapse section, not directly on
+   the page background GC DS assumes. List numbers need restoring: the
+   site-wide ol/ul reset (gcds-utility.min.css) strips them, which doesn't
+   affect the real component since it's shadow DOM (page CSS can't reach in)
+   but does affect this plain-DOM version. */
+.explanation-error-summary {
+  background-color: #fff;
+  border: var(--gcds-error-summary-border-width) solid var(--gcds-error-summary-border-color);
+  color: var(--gcds-error-summary-text);
+  margin: 0 0 1rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.explanation-error-summary__heading {
+  font: var(--gcds-font-h2-mobile);
+  margin: 0 0 0.5rem;
+}
+
+@media only screen and (width >= 48em) {
+  .explanation-error-summary__heading {
+    font: var(--gcds-font-h2);
+  }
+}
+
+.explanation-error-summary__list {
+  list-style: decimal;
+  margin: 0 0 0 1.25rem;
+  padding: 0;
+}
+
+.explanation-error-summary__list li:not(:last-child) {
+  padding-bottom: 0.4rem;
+}
+
+.explanation-error-summary a {
+  color: var(--gcds-error-summary-link-color);
 }
 
 .expert-rating-container .sentence-rating-group {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useId } from 'react';
 import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
@@ -10,6 +10,9 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
+    // Namespaces the "never stale" checkbox id so multiple panel instances
+    // (one per message) can render on one page without id collisions.
+    const uid = useId();
 
     const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
@@ -166,15 +169,15 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
 
     if (sentences.length === 0) return null;
 
-    // Build title with score indicator
+    // No checkmark here \u2014 this panel never renders without expert feedback
+    // (see the hasExpert guard below), so a "has expert feedback" glyph
+    // would be redundant with the panel's own presence. The score itself
+    // (when set) does add information, shown as a pill \u2014 same treatment as
+    // DownloadPanel.js's Pass/Failed summary pill.
     const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation';
     const hasExpert = expert && (expert._id || expert.id || expert.totalScore !== undefined);
-    const expertTitleSuffix = hasExpert
-        ? (typeof expert.totalScore !== 'undefined' && expert.totalScore !== null
-            ? ` \u2714 ${expert.totalScore}`
-            : ' \u2714')
-        : '';
-    const expertTitle = withAnswerNumber(baseTitle + expertTitleSuffix);
+    const hasScore = hasExpert && typeof expert.totalScore !== 'undefined' && expert.totalScore !== null;
+    const expertTitle = withAnswerNumber(baseTitle);
 
     if (!hasExpert) return null;
 
@@ -191,7 +194,14 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 handleToggle(e);
             }
         }}>
-            <summary>{expertTitle}</summary>
+            <summary>
+                {expertTitle}
+                {hasScore && (
+                    <span className="label label--summary-status normal">
+                        {t('reviewPanels.scoreSuffix').replace('{score}', () => String(expert.totalScore))}
+                    </span>
+                )}
+            </summary>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
@@ -269,14 +279,28 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 </tr>
                             );
                         })}
-                        {/* Citation row - map citationScore -> expert score column, suggested URL -> explanation column */}
+                        {/* Citation row - map citationScore -> expert score column. The explanation
+                            column holds two distinct fields that used to silently overwrite each
+                            other (whichever was truthy "won"): citationExplanation (why the cited
+                            URL was wrong) and expertCitationUrl (what should have been cited
+                            instead). Both are shown, each labeled, so auto-eval matching and human
+                            reviewers can tell them apart. */}
                         {(() => {
                             const efSource = (data && data.expertFeedback) || expert || {};
                             const citationScore = (typeof efSource.citationScore !== 'undefined' && efSource.citationScore !== null) ? efSource.citationScore : null;
-                            const suggestedUrl = efSource.expertCitationUrl || efSource.citationExplanation || null;
                             const scoreCell = citationScore !== null ? citationScore : (t('reviewPanels.notAvailable') || 'N/A');
-                            const explCell = suggestedUrl ? (
-                                <GcdsLink href={suggestedUrl} target="_blank" lang={lang}>{suggestedUrl}</GcdsLink>
+                            const explCell = (efSource.citationExplanation || efSource.expertCitationUrl) ? (
+                                <>
+                                    {efSource.citationExplanation && (
+                                        <div><strong>{t('reviewPanels.explanationLabel')}</strong> {efSource.citationExplanation}</div>
+                                    )}
+                                    {efSource.expertCitationUrl && (
+                                        <div>
+                                            <strong>{t('reviewPanels.suggestedCitation')}</strong>{' '}
+                                            <GcdsLink href={efSource.expertCitationUrl} target="_blank" lang={lang}>{efSource.expertCitationUrl}</GcdsLink>
+                                        </div>
+                                    )}
+                                </>
                             ) : (t('reviewPanels.notAvailable') || 'N/A');
                             return (
                                 <tr key="citation-row" className="citation-row">
@@ -307,15 +331,23 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 >
                                     {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
                                 </GcdsButton>
-                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={!!(efSource && efSource.neverStale)}
-                                        onChange={handleNeverStaleToggle}
-                                        disabled={updatingNeverStale}
-                                    />
-                                    <span>{t('reviewPanels.neverStale') || 'Never Stale'}</span>
-                                </label>
+                                {/* .gc-chckbxrdio.md — same custom checkbox visual/size used by
+                                    ExpertFeedbackComponent's rating checkboxes, in place of the
+                                    plain unstyled native checkbox this had before. Needs the
+                                    input/label as siblings (input[type=checkbox] + label::before),
+                                    not label-wraps-input, for that CSS to apply. */}
+                                <div className="gc-chckbxrdio md never-stale-toggle">
+                                    <div className="checkbox">
+                                        <input
+                                            type="checkbox"
+                                            id={`${uid}-never-stale`}
+                                            checked={!!(efSource && efSource.neverStale)}
+                                            onChange={handleNeverStaleToggle}
+                                            disabled={updatingNeverStale}
+                                        />
+                                        <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale') || 'Never Stale'}</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     );

@@ -1,8 +1,10 @@
 import React, { useState, useId } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
+import ExplanationErrorSummary from './ExplanationErrorSummary.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
@@ -47,13 +49,127 @@ const ExpertFeedbackComponent = ({
   });
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
+  // Explanation is required whenever a sentence/citation is scored anything
+  // other than "good" (the textarea only ever renders in that case).
+  //
+  // flaggedExplanationFields is a *snapshot* of which fields were missing at
+  // the moment of the last failed submit — not a live "is this field
+  // currently missing" flag. That distinction matters: without it, rating a
+  // field for the first time (e.g. sentence 2, after an earlier failed
+  // submit over sentence 1) would make its explanation box appear already
+  // in an error state, before the reviewer ever got a chance to fill it in.
+  // Only fields that were actually part of a failed submit attempt — and
+  // are still unfilled — show an error; anything newly revealed since then
+  // stays quiet until the next submit attempt evaluates it too.
+  const [submitAttemptCount, setSubmitAttemptCount] = useState(0);
+  const [flaggedExplanationFields, setFlaggedExplanationFields] = useState([]);
+  // Shared ref: attached to whichever single element should take focus on a
+  // failed submit — the summary (2+ errors) or the one field's own error
+  // message (exactly 1) — see where each is assigned below.
+  const explanationErrorRef = useFocusOnChange(submitAttemptCount);
+
+  const sentenceNeedsExplanation = (index) => {
+    const score = expertFeedback[`sentence${index}Score`];
+    return score === 80 || score === 0;
+  };
+  const citationNeedsExplanation = () => {
+    const score = expertFeedback.citationScore;
+    return score === 20 || score === 0;
+  };
+  const sentenceExplanationMissing = (index) =>
+    sentenceNeedsExplanation(index) && !expertFeedback[`sentence${index}Explanation`].trim();
+  const citationExplanationMissing = () =>
+    citationNeedsExplanation() && !expertFeedback.citationExplanation.trim();
+
+  const isExplanationMissing = (key) =>
+    key === 'citation' ? citationExplanationMissing() : sentenceExplanationMissing(Number(key.slice('sentence'.length)));
+
+  // Document order: sentences first, then citation. Used both to decide
+  // submit-time blocking (every currently-missing field) and, further down,
+  // to decide which single field gets focused when more than one is flagged.
+  const sentenceIndices = [...Array(Math.min(4, sentenceCount))].map((_, i) => i + 1);
+  const missingExplanationFields = [
+    ...sentenceIndices.filter(sentenceExplanationMissing).map((i) => `sentence${i}`),
+    ...(citationExplanationMissing() ? ['citation'] : []),
+  ];
+
+  // What's actually shown as an error: fields flagged by the last failed
+  // submit attempt that are *still* missing (re-filtered live so an error
+  // clears the moment its field is filled in, same as before) — never a
+  // field that's newly missing but hasn't been part of a submit attempt yet.
+  const visibleExplanationErrors = flaggedExplanationFields.filter(isExplanationMissing);
+  // Only set (and thus only auto-focused) in the single-error case — once
+  // there's more than one, focus goes to the summary instead, see the
+  // summaryRef effect below.
+  const firstVisibleExplanationError = visibleExplanationErrors.length === 1 ? visibleExplanationErrors[0] : null;
+  // With only one field in error, its own field name is visually redundant
+  // (the message sits right beside the one field it can possibly refer to) —
+  // shown only once there's more than one, to disambiguate between them.
+  // Screen reader users still get it either way, via .wb-inv when hidden.
+  const showFieldInMessage = visibleExplanationErrors.length > 1;
+
+  // Shared label per field key, reused by the per-field error message and
+  // the summary's jump links below, so all three always agree.
+  const explanationFieldLabel = (key) =>
+    key === 'citation' ? t('homepage.expertRating.citation') : t(`homepage.expertRating.${key}`);
+  // Two distinct templates rather than one with the field toggled in/out —
+  // hiding {field} inside a single "...required: {field}" template left a
+  // dangling colon with nothing visibly after it in the single-error case.
+  // With >1 error, splits the translated "Explanation is required: {field}"
+  // template around its placeholder, so the field name can be inserted
+  // without ever hardcoding the surrounding punctuation ourselves (the
+  // colon/spacing stays entirely inside the locale string, correct per
+  // language either way). With exactly 1 error, the plain sentence is used
+  // and the field name still appended for screen readers only (.wb-inv) —
+  // never omitted, just not visibly duplicated next to its own field.
+  const explanationErrorMessage = (key) => {
+    const fieldLabel = explanationFieldLabel(key);
+    if (showFieldInMessage) {
+      const [before, after = ''] = t('homepage.expertRating.explanationRequiredField').split('{field}');
+      return <>{before}{fieldLabel}{after}</>;
+    }
+    return (
+      <>
+        {t('homepage.expertRating.explanationRequired')}
+        <span className="wb-inv"> {fieldLabel}</span>
+      </>
+    );
+  };
+
+  // Only worth a jump-link summary once there's more than one problem to
+  // navigate between — a single missing field is already handled by its own
+  // inline error + auto-focus.
+  const explanationSummaryLinks = visibleExplanationErrors.length > 1
+    ? visibleExplanationErrors.map((key) => ({
+        fieldId: `${uid}-${key}-explanation`,
+        label: explanationFieldLabel(key),
+      }))
+    : null;
+
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
     const sentenceNumber = name.replace('Score', '');
+    const numericValue = parseInt(value);
     const updates = {
-      [name]: parseInt(value),
+      [name]: numericValue,
       [`${sentenceNumber}Harmful`]: false, // Always reset harmful when changing score
     };
+
+    // Clear stale text when the new score no longer needs an explanation —
+    // otherwise a reviewer who types one then changes their mind back to
+    // "good" would silently submit (and the review panel would display)
+    // leftover text alongside a "good" score. expertCitationUrl rides along
+    // with citationScore specifically, since its field is also now hidden
+    // once citationScore stops needing it.
+    const needsExplanation = name === 'citationScore'
+      ? (numericValue === 20 || numericValue === 0)
+      : (numericValue === 80 || numericValue === 0);
+    if (!needsExplanation) {
+      updates[`${sentenceNumber}Explanation`] = '';
+      if (name === 'citationScore') {
+        updates.expertCitationUrl = '';
+      }
+    }
 
     setExpertFeedback((prev) => ({ ...prev, ...updates }));
     clearError();
@@ -93,6 +209,12 @@ const ExpertFeedbackComponent = ({
       return;
     }
     clearError();
+
+    if (missingExplanationFields.length > 0) {
+      setFlaggedExplanationFields(missingExplanationFields);
+      setSubmitAttemptCount((n) => n + 1);
+      return;
+    }
 
     const totalScore = computeTotalScore(expertFeedback);
 
@@ -137,7 +259,7 @@ const ExpertFeedbackComponent = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="expert-rating-container">
+    <form onSubmit={handleSubmit} className="expert-rating-container" noValidate>
       <FontAwesomeIcon
         icon="fa-solid fa-close"
         className="close-icon"
@@ -154,6 +276,15 @@ const ExpertFeedbackComponent = ({
             <span className="feedback-answer-number">{answerText}</span>
           )}
         </h4>
+        {explanationSummaryLinks && (
+          <ExplanationErrorSummary
+            id={`${uid}-explanation-summary`}
+            heading={t('homepage.expertRating.explanationSummaryHeading')}
+            links={explanationSummaryLinks}
+            errorCount={submitAttemptCount}
+            inputRef={explanationErrorRef}
+          />
+        )}
         {hasError && (
           <FeedbackInlineError
             id={`${uid}-error`}
@@ -260,21 +391,32 @@ const ExpertFeedbackComponent = ({
                   </li>
                 )}
               </ul>
-              {(expertFeedback[`sentence${index + 1}Score`] === 80 ||
-                expertFeedback[`sentence${index + 1}Score`] === 0) && (
-                  <div className="explanation-field">
-                    <label htmlFor={`${uid}-sentence${index + 1}-explanation`}>
-                      {t('homepage.expertRating.options.explanation')}
-                      <textarea
-                        id={`${uid}-sentence${index + 1}-explanation`}
-                        name={`sentence${index + 1}Explanation`}
-                        value={expertFeedback[`sentence${index + 1}Explanation`]}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyPress}
-                      />
-                    </label>
-                  </div>
-                )}
+              {sentenceNeedsExplanation(index + 1) && (
+                <div className="explanation-field">
+                  {visibleExplanationErrors.includes(`sentence${index + 1}`) && (
+                    <FeedbackInlineError
+                      id={`${uid}-sentence${index + 1}-explanation-error`}
+                      message={explanationErrorMessage(`sentence${index + 1}`)}
+                      errorCount={submitAttemptCount}
+                      inputRef={firstVisibleExplanationError === `sentence${index + 1}` ? explanationErrorRef : undefined}
+                    />
+                  )}
+                  <label htmlFor={`${uid}-sentence${index + 1}-explanation`}>
+                    {t('homepage.expertRating.options.explanation')}
+                    <textarea
+                      id={`${uid}-sentence${index + 1}-explanation`}
+                      name={`sentence${index + 1}Explanation`}
+                      value={expertFeedback[`sentence${index + 1}Explanation`]}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyPress}
+                      required
+                      aria-required="true"
+                      aria-invalid={visibleExplanationErrors.includes(`sentence${index + 1}`) ? 'true' : undefined}
+                      aria-describedby={visibleExplanationErrors.includes(`sentence${index + 1}`) ? `${uid}-sentence${index + 1}-explanation-error` : undefined}
+                    />
+                  </label>
+                </div>
+              )}
             </fieldset>
           ))}
         </details>
@@ -328,8 +470,16 @@ const ExpertFeedbackComponent = ({
                 </label>
               </li>
             </ul>
-            {(expertFeedback.citationScore === 20 || expertFeedback.citationScore === 0) && (
+            {citationNeedsExplanation() && (
               <div className="explanation-field">
+                {visibleExplanationErrors.includes('citation') && (
+                  <FeedbackInlineError
+                    id={`${uid}-citation-explanation-error`}
+                    message={explanationErrorMessage('citation')}
+                    errorCount={submitAttemptCount}
+                    inputRef={firstVisibleExplanationError === 'citation' ? explanationErrorRef : undefined}
+                  />
+                )}
                 <label htmlFor={`${uid}-citation-explanation`}>
                   {t('homepage.expertRating.options.explanation')}
                   <textarea
@@ -338,25 +488,31 @@ const ExpertFeedbackComponent = ({
                     value={expertFeedback.citationExplanation}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyPress}
+                    required
+                    aria-required="true"
+                    aria-invalid={visibleExplanationErrors.includes('citation') ? 'true' : undefined}
+                    aria-describedby={visibleExplanationErrors.includes('citation') ? `${uid}-citation-explanation-error` : undefined}
                   />
                 </label>
               </div>
             )}
           </fieldset>
 
-          <div className="explanation-field">
-            <label className="expert-citation-url" htmlFor={`${uid}-expert-citation-url`}>
-              {t('homepage.expertRating.options.betterCitation')}
-              <input
-                type="url"
-                id={`${uid}-expert-citation-url`}
-                name="expertCitationUrl"
-                value={expertFeedback.expertCitationUrl}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyPress}
-              />
-            </label>
-          </div>
+          {citationNeedsExplanation() && (
+            <div className="explanation-field">
+              <label className="expert-citation-url" htmlFor={`${uid}-expert-citation-url`}>
+                {t('homepage.expertRating.options.betterCitation')}
+                <input
+                  type="url"
+                  id={`${uid}-expert-citation-url`}
+                  name="expertCitationUrl"
+                  value={expertFeedback.expertCitationUrl}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyPress}
+                />
+              </label>
+            </div>
+          )}
         </details>
       </fieldset>
       <button type="submit" className="btn-primary mrgn-lft-sm">

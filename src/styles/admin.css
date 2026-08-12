@@ -747,7 +747,14 @@
 .label {
   display: inline-block;
   padding: var(--gcds-spacing-50) var(--gcds-spacing-75);
-  border-radius: 12px;
+  /* line-height was inheriting the page's ~1.5 body value, which made the
+     pill's box noticeably taller than its 12px border-radius could round
+     off — top/bottom read as barely-rounded rectangle corners rather than
+     a pill. Tightening line-height to the text itself, plus a radius large
+     enough to round any resulting height (not just today's), keeps every
+     .label a true pill regardless of future font-size/padding tweaks. */
+  line-height: 1;
+  border-radius: 999px;
   font-size: 14px;
   font-weight: 500;
 }

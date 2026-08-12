@@ -24,21 +24,28 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
     };
 
     const hasSuccess = downloads.some(d => d.error === 'none');
-    const indicator = hasSuccess ? ' \u2714' : ' \u2718';
-
-    const title = withAnswerNumber((t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages') + indicator);
+    // Text, not a bare glyph or color alone \u2014 a checkmark/x-mark with no
+    // label isn't reliably announced by screen readers, and green/red alone
+    // fails WCAG 1.4.1 (use of color). Reuses the same Pass/Failed wording
+    // and .label.correct/.label.error pill pair already used for eval
+    // verdicts elsewhere (DatabasePage.js, SuiteGridTable.js).
+    const titleStatus = hasSuccess ? t('reviewPanels.pass') : t('reviewPanels.fail');
+    const title = withAnswerNumber(t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages');
 
     return (
         <details className="review-details">
-            <summary>{title}</summary>
+            <summary>
+                {title}
+                <span className={`label label--summary-status ${hasSuccess ? 'correct' : 'error'}`}>{titleStatus}</span>
+            </summary>
             <div className="review-panel download-panel">
                 {downloads.map((d, i) => {
                     const url = parseUrl(d.input);
                     const succeeded = d.error === 'none';
                     return (
                         <div key={i} style={{ marginBottom: '0.25rem' }}>
-                            <span style={{ color: succeeded ? 'green' : 'red', marginRight: '0.4rem' }}>
-                                {succeeded ? '\u2714' : '\u2718'}
+                            <span className={`label ${succeeded ? 'correct' : 'error'}`} style={{ marginRight: '0.4rem' }}>
+                                {succeeded ? t('reviewPanels.pass') : t('reviewPanels.fail')}
                             </span>
                             <GcdsLink href={url} target="_blank" lang={lang} className="url-break-all">
                                 {url}

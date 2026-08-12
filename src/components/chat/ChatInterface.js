@@ -536,6 +536,16 @@ const ChatInterface = ({
           const aiAnswerIndex = (message.sender === "ai" && !message.error)
             ? nonErrorAIMessages.findIndex(m => m.id === message.id)
             : null;
+          // "Answer N" only means something to an evaluating admin when
+          // there's more than one AI answer in the chat to distinguish —
+          // with just one, it's noise on every review panel title. Only
+          // affects the visible review-panel labels below; the sr-only
+          // landmark headings elsewhere in this render still use
+          // aiAnswerIndex directly, since those serve SR navigation
+          // regardless of how many answers exist.
+          const reviewAnswerNumber = (aiAnswerIndex !== null && nonErrorAIMessages.length > 1)
+            ? aiAnswerIndex + 1
+            : undefined;
           const { answerText: departmentAnswerText } = buildAnswerNumberLabel(
             t,
             aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined
@@ -721,7 +731,7 @@ const ChatInterface = ({
                                 }
                                 chatId={chatId}
                                 userMessageId={message.id}
-                                answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                                answerNumber={reviewAnswerNumber}
                                 citationUrl={citationUrl}
                                 department={message.interaction.context?.department}
                                 showSkipButton={false}
@@ -737,17 +747,17 @@ const ChatInterface = ({
                               extractSentences={extractSentences}
                               t={t}
                               lang={lang}
-                              answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                              answerNumber={reviewAnswerNumber}
                             />
                             <PublicFeedbackPanel
                               message={message}
                               extractSentences={extractSentences}
                               t={t}
-                              answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                              answerNumber={reviewAnswerNumber}
                             />
-                            <DownloadPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
-                            <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
-                            <EvalPanel message={message} t={t} lang={lang} answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined} />
+                            <DownloadPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
+                            <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
+                            <EvalPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
                           </div>
                         </div>
                       )}
@@ -770,7 +780,7 @@ const ChatInterface = ({
                           }
                           chatId={chatId}
                           userMessageId={message.id}
-                          answerNumber={aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined}
+                          answerNumber={reviewAnswerNumber}
                           citationUrl={citationUrl}
                           showSkipButton={
                             !readOnly &&
