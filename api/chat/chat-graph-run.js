@@ -4,7 +4,7 @@ import ConversationIntegrityService from '../../services/ConversationIntegritySe
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
-import { MODEL_VALUES } from '../../src/config/workflows.js';
+import { MODEL_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 
@@ -155,7 +155,7 @@ async function handler(req, res) {
 
   // Server-side Workflow Resolution
   let graphName;
-  const defaultWorkflow = SettingsService.get('workflow.default') || 'GenericGraph';
+  const defaultWorkflow = SettingsService.get('workflow.default') || DEFAULT_WORKFLOW;
 
   if (req.user) {
     // Authenticated users can choose their workflow, fallback to default if not provided

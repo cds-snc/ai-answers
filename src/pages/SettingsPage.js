@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 
 const normalizeChatTransport = (value) => (
@@ -14,7 +14,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   deploymentMode: 'CDS',
   vectorServiceType: 'imvectordb',
   'site.baseUrl': '',
-  'workflow.default': 'GenericGraph',
+  'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
@@ -70,7 +70,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
+  const [defaultWorkflow, setDefaultWorkflow] = useState(DEFAULT_WORKFLOW);
   const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
@@ -166,7 +166,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setBaseUrl(settings['site.baseUrl'] ?? '');
       const allowedWorkflows = WORKFLOW_VALUES;
       const defaultWorkflowSetting = settings['workflow.default'];
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setChatTransport(normalizeChatTransport(settings['chat.transport']));
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
@@ -702,7 +702,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               try {
                 const allowedWorkflows = WORKFLOW_VALUES;
                 const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'GenericGraph');
+                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : DEFAULT_WORKFLOW);
               } finally {
                 setSavingDefaultWorkflow(false);
               }

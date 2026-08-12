@@ -7,7 +7,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 
 import DataStoreService from '../../services/DataStoreService.js';
 import AuthService from '../../services/AuthService.js';
-import { AVAILABLE_MODELS } from '../../config/workflows.js';
+import { AVAILABLE_MODELS, MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../config/workflows.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
@@ -73,9 +73,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
-  // selectedAI: always start null so we fetch the current model.default from Settings.
-  // Only persist to localStorage when the admin explicitly picks a model in the UI.
-  const [selectedAI, setSelectedAI] = useState(null);
+  // selectedAI: prefer a user-set value in localStorage; if none exists — or the
+  // stored value is no longer an available model — leave null so we fetch the
+  // current model.default from Settings. Mirrors the workflow handling below.
+  const [selectedAI, setSelectedAI] = useState(() => {
+    try {
+      const val = localStorage.getItem(storageKey('selectedAI'));
+      return MODEL_VALUES.includes(val) ? val : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const initialModelFromLocalStorage = useRef(false);
   const userSetModel = useRef(false);
   const [selectedSearch, setSelectedSearch] = useState(() => {
     try {
@@ -84,13 +93,14 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       return 'google';
     }
   });
-  // workflow: prefer a user-set value in localStorage; if none exists, leave null
-  // so we can fetch the public default setting and avoid persisting it unless
-  // the user explicitly chooses a workflow in the UI.
+  // workflow: prefer a user-set value in localStorage; if none exists — or the
+  // stored value is no longer a valid workflow — leave null so we can fetch the
+  // public default setting and avoid persisting it unless the user explicitly
+  // chooses a workflow in the UI.
   const [workflow, setWorkflow] = useState(() => {
     try {
       const val = localStorage.getItem(storageKey('workflow'));
-      return val !== null ? val : null;
+      return WORKFLOW_VALUES.includes(val) ? val : null;
     } catch (e) {
       return null;
     }
@@ -353,11 +363,24 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     console.log('Search toggled to:', e.target.value);
   };
 
+  // Record whether a model value existed in localStorage at mount, so a stored
+  // override keeps being persisted on later changes.
+  useEffect(() => {
+    try {
+      const val = localStorage.getItem(storageKey('selectedAI'));
+      if (MODEL_VALUES.includes(val)) initialModelFromLocalStorage.current = true;
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   // Persist selection changes to localStorage
   useEffect(() => {
     try {
-      // Only persist when the admin explicitly changed the model in the UI
-      if (userSetModel.current && selectedAI !== null && selectedAI !== undefined) {
+      // Only persist the admin's own choice — never the fetched model.default,
+      // which must keep following the Settings value.
+      if (selectedAI !== null && selectedAI !== undefined
+        && (initialModelFromLocalStorage.current || userSetModel.current)) {
         localStorage.setItem(storageKey('selectedAI'), selectedAI);
       }
     } catch (e) {
@@ -375,7 +398,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         try {
           const model = await DataStoreService.getPublicSetting('model.default', null);
           if (mounted) {
-            setSelectedAI(model || AVAILABLE_MODELS[0].value);
+            setSelectedAI(MODEL_VALUES.includes(model) ? model : AVAILABLE_MODELS[0].value);
           }
         } catch (err) {
           if (mounted) setSelectedAI(AVAILABLE_MODELS[0].value);
@@ -399,13 +422,34 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   useEffect(() => {
     try {
       const val = localStorage.getItem(storageKey('workflow'));
-      if (val !== null) initialWorkflowFromLocalStorage.current = true;
+      if (WORKFLOW_VALUES.includes(val)) initialWorkflowFromLocalStorage.current = true;
     } catch (e) {
       // ignore
     }
   }, []);
 
-
+  // With no local override, load the configured default workflow so the Options
+  // dropdown shows the workflow the server will actually run. Without this the
+  // select falls back to rendering its first option, which misreports the
+  // workflow whenever workflow.default is set to anything else. Does not mark
+  // the value as user-set, so it isn't persisted to localStorage.
+  useEffect(() => {
+    let mounted = true;
+    const loadDefaultWorkflow = async () => {
+      if (workflow === null) {
+        try {
+          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', null);
+          if (mounted) {
+            setWorkflow(WORKFLOW_VALUES.includes(defaultWorkflow) ? defaultWorkflow : DEFAULT_WORKFLOW);
+          }
+        } catch (err) {
+          if (mounted) setWorkflow(DEFAULT_WORKFLOW);
+        }
+      }
+    };
+    loadDefaultWorkflow();
+    return () => { mounted = false; };
+  }, [workflow]);
 
   useEffect(() => {
     try {

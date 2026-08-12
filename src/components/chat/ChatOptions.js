@@ -1,7 +1,7 @@
 import React from 'react';
 import { GcdsDetails } from '@gcds-core/components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
-import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 
 const ChatOptions = ({
   safeT,
@@ -26,7 +26,10 @@ const ChatOptions = ({
               <select
                 id="workflow"
                 name="workflow"
-                value={workflow}
+                // Render blank rather than silently falling back to the first
+                // option while the configured default is still loading — an
+                // unmatched value here would misreport which workflow ran.
+                value={WORKFLOW_VALUES.includes(workflow) ? workflow : ''}
                 onChange={handleWorkflowChange}
                 className="chat-border"
               >

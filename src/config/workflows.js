@@ -19,3 +19,8 @@ export const AVAILABLE_MODELS = [
 
 export const WORKFLOW_VALUES = WORKFLOWS.map(w => w.value);
 export const MODEL_VALUES = AVAILABLE_MODELS.map(m => m.value);
+
+// Fallback used when the 'workflow.default' setting is missing or invalid.
+// Shared by the server-side resolver (api/chat/chat-graph-run.js), the Settings
+// page, and the chat Options dropdown so they can't drift apart.
+export const DEFAULT_WORKFLOW = 'GenericGraph';
