@@ -292,6 +292,69 @@ export function addAutoEvalLookup(pipeline) {
 }
 
 /**
+ * Shared prefix for the expert-feedback-flagged-chat list pipelines
+ * (metrics-content-issue-chats.js, metrics-harmful-chats.js): Chat →
+ * interactions → optional department filter → expertFeedback lookup,
+ * excluding blank ExpertFeedback records created solely by the neverStale
+ * flag (totalScore: null means no human scored the interaction). Callers
+ * append their own flag $match, $project (with whatever status shape they
+ * need), $sort, and $limit — those differ per list, so they stay inline
+ * rather than being folded into this helper.
+ *
+ * @param {Object} dateFilter - MongoDB date filter for createdAt
+ * @param {Array} extraFilters - Additional filter conditions to apply after unwind
+ * @param {Array} departmentFilter - Department filter conditions (context-based)
+ * @returns {Array} MongoDB aggregation pipeline stages
+ */
+export function buildFlaggedChatsBasePipeline(dateFilter, extraFilters = [], departmentFilter = []) {
+    const stages = [
+        { $match: dateFilter },
+        {
+            $lookup: {
+                from: 'interactions',
+                localField: 'interactions',
+                foreignField: '_id',
+                as: 'interactions'
+            }
+        },
+        { $unwind: '$interactions' },
+        ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
+    ];
+
+    if (departmentFilter.length > 0) {
+        stages.push(
+            {
+                $lookup: {
+                    from: 'contexts',
+                    localField: 'interactions.context',
+                    foreignField: '_id',
+                    as: 'ctx'
+                }
+            },
+            { $addFields: { department: { $ifNull: [{ $arrayElemAt: ['$ctx.department', 0] }, 'Unknown'] } } },
+            { $match: { $and: departmentFilter } },
+        );
+    }
+
+    stages.push(
+        {
+            $lookup: {
+                from: 'expertfeedbacks',
+                localField: 'interactions.expertFeedback',
+                foreignField: '_id',
+                as: 'ef'
+            }
+        },
+        { $addFields: { expertFeedback: { $arrayElemAt: ['$ef', 0] } } },
+        // Exclude blank ExpertFeedback records created solely by the neverStale
+        // flag (totalScore: null means no human scored the interaction).
+        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
+    );
+
+    return stages;
+}
+
+/**
  * Execute an aggregation with retry logic for DocumentDB low memory errors.
  * Retries up to maxRetries times with exponential backoff.
  * 

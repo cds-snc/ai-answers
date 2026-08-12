@@ -209,17 +209,48 @@ tokens.
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
 All charts are **recharts** (`BarChart`/`PieChart`), wrapped in a shared white
-card chrome (border `#e0e0e0`, radius 8, soft shadow, 15px/600 title). Match this
+card chrome (`.dashboard-card`: white background, `1px solid` border, no
+radius, no shadow — square corners throughout the dashboards). Match this
 chrome when adding a new card — don't drop a bare `<table>`/chart in. Colours
 come from `src/constants/dashboardColours.js`.
 
+**Text alternative is required on every chart.** Recharts SVGs expose their
+data only on mouse hover (the `<Tooltip>`) with no `role="img"`/text
+fallback — a straight WCAG 1.1.1 / 2.1.1 miss for keyboard and screen-reader
+users, who never trigger a hover. `DonutCard.js`, `HBarCard.js`,
+`DivergingBarCard.js`, and `StackedBarCard.js` all take an `a11y` prop that
+adds a slim "Table view" `<details>`/`<summary>` expand/collapse
+(`ChartDataToggle.js`) below the chart, revealing the same `data` array as a
+real HTML `<table>` (`ChartDataTable.js`) — the chart itself always stays
+visible; this isn't a toggle that swaps it out. Any **new** chart component
+must accept and render `a11y` the same way — don't add a chart without it.
+Build the shared `a11y` object once per dashboard page and pass it to every
+chart:
+
+```jsx
+const chartA11y = {
+  categoryLabel: t('common.chartCategoryColumn'),
+  valueLabel: t('common.chartValueColumn'),
+  percentLabel: t('common.chartPercentColumn'),
+  captionTemplate: t('common.chartDataTableCaption'),
+  rawDataTableLabel: t('common.chartDataTableSummary'),
+};
+// ...
+<HBarCard ... a11y={chartA11y} />
+```
+
+`StackedBarCard`'s `leftContent` mode replaces `title`/`subtitle`, so also
+pass `a11yTitle` (a plain translated string) so the table's caption still has
+something to reference.
+
 | File | Purpose |
 |------|---------|
-| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. |
+| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. `href` (optional) makes the whole card a same-page link (e.g. Content issues/Harmful → their chat-list section). |
+| `ChartDataToggle.js` | Slim "Table view" `<details>` wrapping `ChartDataTable.js` — rendered via each chart's `a11y` prop, see above. Not used standalone. |
+| `ChartDataTable.js` | Text-alternative `<table>` for a chart's `data`. Only ever rendered inside `ChartDataToggle.js`. |
 | `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
 | `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
 | `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on the **partner** dashboard only (the public dashboard no longer renders a satisfaction section). |
-| `BlockedQueriesTable.js` | Plain DataTable-style table (Type / Total / EN / FR) for the blocked-query counter. Used on the **technical** dashboard (all tables there); the public dashboard uses a `StatCard` + `HBarCard` instead. Row order from `BLOCK_QUERY_TYPES` (`src/constants/blockedQueryTypes.js`) — the raw per-type rows, **not** the merged public/partner grouping. |
 | `NoDataCard.js` | Placeholder card (title + short note) shown in place of a chart or donut that is below its minimum-sample threshold. Keeps the section's heading on the page instead of letting the card vanish — see [Minimum data thresholds](#layout). Message is always `common.notEnoughData`. |
 | `CountTable.js` | Plain two-column "label / count" table with row dividers, shared by the collapsible list cards. `rows` = `[{ key, label, count, href? }]` — `href` renders the label as a new-tab link. Locale-free (labels passed in resolved). |
 | `ReferralUrlsCard.js` | Collapsible (`<details>`) card wrapping a `CountTable` (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` prepended to the normalized page key). |
@@ -299,24 +330,23 @@ the only record of them. End-to-end:
   (per-type `{ total, en, fr }`). It honours date range + `userType`, and
   **ignores department on purpose** (blocks happen before the department is known).
 - **UI:** public **and** partner = `StatCard` (total) + `HBarCard` (by type, fixed
-  pipeline order, zero rows dropped); technical = `BlockedQueriesTable`. The
-  **partner** and technical dashboards track the applied department and **hide the
-  blocked-query view when a department is selected** (showing
-  `blockedQueries.deptNote` instead) — it can't be department-scoped. The public
-  dashboard has no institution filter, so its counter is always in scope and has
-  no such branch. Type order/labels:
+  pipeline order, zero rows dropped). The **partner** dashboard tracks the
+  applied department and **hides the blocked-query view when a department is
+  selected** (showing `blockedQueries.deptNote` instead) — it can't be
+  department-scoped. The public dashboard has no institution filter, so its
+  counter is always in scope and has no such branch. Type order/labels:
   `src/constants/blockedQueryTypes.js` + `blockedQueries.types.*` locale keys.
+  Technical dashboard doesn't show blocked queries at all — confirmed
+  intentional, not a gap.
 - **"Private details" is a display-only merge.** The public and partner bars group
   the two privacy guardrails (`piStage1` programmatic + `piStage2` AI detection)
   into one **Private details** row — which stage caught the query is an
   implementation detail to those audiences. The grouping lives in
   `BLOCK_QUERY_GROUPS` (`blockedQueryTypes.js`) and is summed by the shared
   `buildBlockedBarData` (`src/utils/dashboard/blockedQueryBars.js`), which both
-  dashboards call — don't rebuild the bar rows inline. The **technical**
-  dashboard deliberately keeps the raw two-row split (`BLOCK_QUERY_TYPES`) so the
-  guardrails stay debuggable. Storage, `blockType` tagging, and the metrics API
-  are untouched — they still record and return both stages separately.
-  Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
+  dashboards call — don't rebuild the bar rows inline. Storage, `blockType`
+  tagging, and the metrics API are untouched — they still record and return
+  both stages separately. Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
 - **Partner userType is deliberately NOT forced to public.** The public dashboard fixes
   `userType: 'public'` on every fetch, so its blocked counter excludes admin/
   partner test traffic. The partner dashboard intentionally does **not** do this —

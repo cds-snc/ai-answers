@@ -7,17 +7,9 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 
 DataTable.use(DT);
-
-const escapeHtmlAttribute = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
 
 const TABLE_STORAGE_KEY = `evalDashboard_tableState_v3_`;
 
@@ -118,13 +110,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
-        const safeId = escapeHtmlAttribute(value);
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        const interactionId = row.interactionId || row._id || '';
-        // target DOM ids are prefixed with 'interactionId' so include that prefix in the hash
-        const prefixed = interactionId ? `interactionId${interactionId}` : '';
-        const hash = prefixed ? `#interaction=${encodeURIComponent(prefixed)}` : '';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1${hash}" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id);
       },
       searchable: false,
       orderable: true
@@ -144,7 +131,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.action', 'Action'), data: 'action', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="font-style: italic; color: #666;">none</span>', searchable: false, orderable: true },
+    { title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : '<span style="color: #666;">none</span>', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.pageLanguage', 'Page'), data: 'pageLanguage', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail', 'Creator email'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail', 'Expert Email'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: true, orderable: true },

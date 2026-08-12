@@ -5,6 +5,19 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// EvalAnalysisReport's example-chatId link renders via <GcdsLink> (real
+// custom element, shadow DOM) — jsdom doesn't expose its shadow-DOM anchor
+// to getByRole('link'), so stub just that export as a plain <a>, same as
+// ChatDashboardPage.test.js / UsedChatsPanel.test.js. Everything else
+// (GcdsButton, etc.) still renders for real.
+vi.mock('@gcds-core/components-react', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    GcdsLink: ({ children, href, target }) => <a href={href} target={target}>{children}</a>
+  };
+});
+
 // The section talks to the eval-analysis endpoints through the client
 // service; mock it so rendering needs no network.
 vi.mock('../../../services/EvalAnalysisService.js', () => ({

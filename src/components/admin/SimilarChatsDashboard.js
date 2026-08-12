@@ -5,6 +5,7 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import VectorService from '../../services/VectorService.js';
+import { buildChatReviewLinkHtml } from '../../utils/reviewLink.js';
 
 DataTable.use(DT);
 
@@ -62,10 +63,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               {
                 title: t('vector.columns.chatId'),
                 data: 'chatId',
-                render: function(data) {
-                  const url = `/${lang}?chat=${data}&review=1`;
-                  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
-                }
+                render: (data) => buildChatReviewLinkHtml(data, lang)
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },
               { title: t('vector.columns.aiProvider'), data: 'aiProvider' },

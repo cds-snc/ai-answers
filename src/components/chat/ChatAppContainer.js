@@ -770,6 +770,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
+                    {/* Intentionally a raw <a>, not <GcdsLink>: the Adobe
+                        Analytics onClick tracker doesn't fire reliably
+                        through GcdsLink (tested), and this link needs a
+                        custom URL-based aria-label plus its own icon/URL-
+                        wrap layout — neither tried on GcdsLink.
+                        Not part of the "align to GcdsLink" TODOs elsewhere. */}
                     <a
                       href={safeHttpHref(displayUrl)}
                       target="_blank"

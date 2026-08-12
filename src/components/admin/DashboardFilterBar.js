@@ -300,6 +300,12 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       {/* Pills row — outside the bordered filter box */}
       <div className="filter-bar__pills-row">
         <span className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
+        {/* Public dashboard has no department/institution scoping at all
+            (unlike Partner's FilterPanel, which supports filtering to one) —
+            this pill makes that explicit instead of leaving it unstated.
+            Reuses the same key/wording as Partner's own default-state
+            "All institutions" pill for consistency. */}
+        <span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span>
         <span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span>
         <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
           {pillDate}

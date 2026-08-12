@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.183.0](https://github.com/cds-snc/ai-answers/compare/v1.182.0...v1.183.0) (2026-08-11)
+
+
+### Features
+
+* partner dashboard - content and harmful issue expand-collapse, visual updates, accessibility fixes ([7a90118](https://github.com/cds-snc/ai-answers/commit/7a901182e594c6a52c8efe79a3a2bbb2a590088a))
+* styling refinement ([885296b](https://github.com/cds-snc/ai-answers/commit/885296b25e87ce094c5dbea44f02b028a039963c))
+
+
+### Bug Fixes
+
+* dedupe metrics pipelines and chart a11y config, drop dead code ([a2fa10d](https://github.com/cds-snc/ai-answers/commit/a2fa10d75dda600bc06bfc0fea8c16401b88837d))
+* note limit for harmful/content issue table ([8c982a6](https://github.com/cds-snc/ai-answers/commit/8c982a6ad7116005f9def360e6b3d0cb7b6ff917))
+* text clipping on charts ([d21209c](https://github.com/cds-snc/ai-answers/commit/d21209cc71c552363118a144dc71243309d7c55e))
+* update stale comment ([87344d5](https://github.com/cds-snc/ai-answers/commit/87344d52dcf798a58253a210e86e493b2229b7bf))
+* visible data toggle for accessibility, css fixes, styling ([a1d5df1](https://github.com/cds-snc/ai-answers/commit/a1d5df13a06e542859ca7455f9ec71a7c7169dd6))
+* Vitest-hooks adding a DOM-guarded afterEach(cleanup) ([ec1a1df](https://github.com/cds-snc/ai-answers/commit/ec1a1df5c2c99800d3061b6bec061e46b131dff6))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump react-router and react-router-dom ([064b10a](https://github.com/cds-snc/ai-answers/commit/064b10ae2d8941a449bc3e879aa71d2184655ec9))
+
 ## [1.182.0](https://github.com/cds-snc/ai-answers/compare/v1.181.0...v1.182.0) (2026-08-11)
 
 

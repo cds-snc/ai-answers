@@ -1,6 +1,8 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
+import { buildChatReviewHref } from '../../../utils/reviewLink.js';
 
 const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
 const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
@@ -67,20 +69,14 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
     </div>
   );
 
-  // Same review-mode deep link the eval/chat dashboards use for chatIds, in
-  // the conversation's own language. Older stored reports have no example.
+  // Older stored reports have no example.
   const exampleLink = (example) => {
     if (!example?.chatId) return '—';
     const chatLang = example.lang === 'fr' ? 'fr' : 'en';
-    const hash = example.interactionId ? `#interaction=${encodeURIComponent(`interactionId${example.interactionId}`)}` : '';
     return (
-      <a
-        href={`/${chatLang}?chat=${encodeURIComponent(example.chatId)}&review=1${hash}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId)} target="_blank" lang={chatLang}>
         {example.chatId}
-      </a>
+      </GcdsLink>
     );
   };
 
@@ -199,7 +195,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               {Array.isArray(theme.examples) && theme.examples.length > 0 && (
                 <ul className="font-size-text-xsm-nr" style={{ marginTop: 0 }}>
                   {theme.examples.map((ex, j) => (
-                    <li key={j}><em>{ex}</em></li>
+                    <li key={j}><strong>{ex}</strong></li>
                   ))}
                 </ul>
               )}

@@ -680,7 +680,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   return (
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('settings.title')}</h1>
-      <nav className="mb-400">
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
       <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
@@ -1148,7 +1148,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
+            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langEnglish')}</h2>
 
             <label htmlFor="redaction.profanity.en" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (EN)
@@ -1167,7 +1167,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           </div>
 
           <div>
-            <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
+            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langFrench')}</h2>
 
             <label htmlFor="redaction.profanity.fr" className="mb-200 display-block mt-400">
               {t('settings.redaction.profanity')} (FR)
