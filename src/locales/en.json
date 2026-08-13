@@ -182,7 +182,6 @@
       "selectionRequired": "Please select at least one rating.",
       "explanationRequired": "Explanation is required.",
       "explanationRequiredField": "Explanation is required: {field}",
-      "explanationSummaryHeading": "Fix the following before submitting",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -1044,7 +1043,7 @@
   },
   "settings": {
     "title": "Settings",
-    "saveSuccess": "Setting saved.",
+    "saveSuccessIn": "Changes to {section} saved.",
     "saveError": "Failed to save setting.",
     "save": "Save",
     "saving": "Saving...",
@@ -1186,6 +1185,7 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
+    "errorSummaryHeading": "Fix the following",
     "chartCategoryColumn": "Category",
     "chartValueColumn": "Value",
     "chartPercentColumn": "Percent",

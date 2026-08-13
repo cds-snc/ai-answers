@@ -365,12 +365,19 @@
   background-repeat: no-repeat;
 }
 
+/* !important: chat.css has a bare, unscoped `textarea:focus { ... !important }`
+   rule (left over from chat-specific styling) that reaches every textarea
+   site-wide, including .filter-input ones here — it sets border-color:
+   transparent and outline: none, making a focused redaction textarea look
+   like it vanished. !important is the only thing that outranks another
+   !important rule regardless of selector specificity, so this has to match
+   it rather than relying on being the more specific selector. */
 .filter-input:focus,
 .filter-select:focus {
-  border-color: var(--gcds-input-focus-border);
-  box-shadow: var(--gcds-input-focus-box-shadow);
-  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
-  outline-offset: var(--gcds-input-border-width);
+  border-color: var(--gcds-input-focus-border) !important;
+  box-shadow: var(--gcds-input-focus-box-shadow) !important;
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border) !important;
+  outline-offset: var(--gcds-input-border-width) !important;
 }
 
 /* SettingsPage reuses .filter-label/.filter-input/.filter-select for the
@@ -1207,6 +1214,26 @@
   color: var(--gcds-color-blue-700);
   width: fit-content;
   font-size: var(--gcds-font-sizes-text-small);
+}
+
+/* Same box treatment again, for a completed save (e.g. SettingsPage's
+   per-section "Changes to X saved."). Uses the FA check-circle icon
+   (StatusMessage's `success` variant) rather than a GcdsIcon — GC DS's icon
+   font has no checkmark glyph — matching the existing FA precedent in
+   BatchUpload.js. */
+.dashboard-success-box {
+  background: var(--gcds-color-green-100);
+  border: 1px solid var(--gcds-color-green-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-green-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+.dashboard-success-box .fa-check-circle {
+  margin-right: var(--gcds-icon-margin-50);
 }
 
 .dashboard-warning {

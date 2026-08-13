@@ -3,6 +3,67 @@ import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
 import SettingsAuditService from './SettingsAuditService.js';
 import { DEFAULT_WORKFLOW } from '../src/config/workflows.js';
+import { parseRecipients } from './parseRecipients.js';
+
+// Lightweight "does this look like an email" check — not full RFC 5322
+// validation, just enough to catch a typo that would silently break the
+// health-alert notify email. Deliberately plain string operations rather
+// than a regex: the obvious `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` pattern is
+// ambiguous on input like "!@!.!.!.!.!." (both `[^\s@]+` groups can also
+// match the literal `.`), which CodeQL flags as a polynomial-time ReDoS
+// risk since this runs on admin-supplied input.
+const isPlausibleEmail = (value) => {
+  const atIndex = value.indexOf('@');
+  if (atIndex <= 0 || value.indexOf('@', atIndex + 1) !== -1) return false;
+  const local = value.slice(0, atIndex);
+  const domain = value.slice(atIndex + 1);
+  if (/\s/.test(local) || /\s/.test(domain)) return false;
+  const dotIndex = domain.lastIndexOf('.');
+  return dotIndex > 0 && dotIndex < domain.length - 1;
+};
+
+// Field-specific semantic checks beyond "is a non-empty string" — keyed by
+// setting key, returning an error message when invalid or null when fine.
+// Kept small and explicit rather than a generic schema system: add an entry
+// here only where a genuinely wrong value causes a real downstream failure
+// (e.g. SystemHealthMonitor silently failing to email a malformed address),
+// not as a blanket validate-everything policy.
+//
+// TODO: the plumbing (setMany's per-field validation, fieldErrors,
+// FeedbackInlineError, ExplanationErrorSummary on SettingsPage) is fully
+// wired up and working end to end, but alertRecipients is the only field
+// actually using it so far. None of these settings are "required" — the
+// point isn't to gate saving on completeness, it's to flag genuine
+// formatting problems the admin likely didn't intend: a GC Notify template
+// ID that isn't a real UUID (systemHealth.errorTemplateId/alertTemplateId,
+// twoFA.templateId, notify.resetTemplateId), a base URL that isn't a real
+// URL (site.baseUrl), a threshold/interval that's technically a number but
+// nonsensical (e.g. 0 or negative where the field means "every N minutes").
+// Extend this map field by field as those get prioritized — don't add a
+// generic "required" check, that's not what this is for.
+//
+// TODO (code-review #9): separately, the pre-batch-save version of this page
+// read a value back after every write and clamped it to an allowed set —
+// chat.transport to sse|ndjson, workflow.default to WORKFLOW_VALUES,
+// session.rateLimitPersistence to memory|redis. That clamping was lost when
+// saveAndVerify's readTransform went away; today an out-of-range value for
+// any of those three would be stored and cached verbatim. Low real-world
+// risk (the UI only ever offers those fields as fixed <select> options, so
+// this only matters if something bypasses the UI and calls the API
+// directly) but worth restoring the same way as alertRecipients: validate
+// and look into whether it's actually reachable before deciding this needs
+// fixing versus just documenting as accepted risk.
+const FIELD_VALIDATORS = {
+  'systemHealth.alertRecipients': (value) => {
+    const invalid = parseRecipients(value).filter((email) => !isPlausibleEmail(email));
+    return invalid.length > 0 ? `Not a valid email address: ${invalid.join(', ')}` : null;
+  },
+};
+
+const validateFieldFormat = (key, value) => {
+  const error = FIELD_VALIDATORS[key]?.(value);
+  if (error) throw new Error(error);
+};
 
 // The setting is already written to the cache and the database by the time the
 // audit row goes in, so a failed audit write must not fail the save — surfacing
@@ -117,6 +178,7 @@ class SettingsServiceClass {
     }
 
     value = requireString(value, 'setting value');
+    validateFieldFormat(key, value);
     // Update cache immediately
     this.cache[key] = value;
     // Persist to DB asynchronously
@@ -126,43 +188,46 @@ class SettingsServiceClass {
   }
 
   // Batched write for a section's Save button: N single-key changes committed
-  // together. Validation happens up front and synchronously for the whole
-  // array — a malformed entry throws before any DB write is attempted, so
-  // the caller (the bulk-set handler) can turn it into a clean 400 rather
-  // than a partially-applied save. Once past validation, writes are
-  // best-effort per key (Promise.allSettled, not abort-on-first-failure):
-  // each Setting.findOneAndUpdate is already independently atomic and there
-  // is no rollback available either way, so continuing the rest of the batch
-  // after one field's write fails is strictly more useful than stopping.
+  // together. Validation is best-effort per key, same as the write phase
+  // below — a bad key/value/format doesn't abort the whole batch, it's
+  // recorded in `errors` and skipped, so the fields that *are* valid still
+  // save. (Earlier versions of this method validated the whole array
+  // synchronously up front, so one bad field failed everything with no way
+  // to say which field or why — this is the fix for that.)
   async setMany(changes, auditContext = null) {
-    const validated = changes.map(({ key, value }) => {
-      const validKey = requireLiteralString(key, 'setting key');
-      if (value === '' && EMPTY_ALLOWED_SETTINGS.has(validKey)) {
-        return { key: validKey, value: '' };
+    const toWrite = [];
+    const errors = {};
+    for (const { key: rawKey, value: rawValue } of changes) {
+      try {
+        const key = requireLiteralString(rawKey, 'setting key');
+        const value = (rawValue === '' && EMPTY_ALLOWED_SETTINGS.has(key))
+          ? ''
+          : requireString(rawValue, 'setting value');
+        validateFieldFormat(key, value);
+        // Captured before any writes, so a field's previousValue reflects
+        // the pre-batch state even if another field in the same batch
+        // writes first.
+        toWrite.push({ key, value, previousValue: this.get(key) });
+      } catch (error) {
+        errors[rawKey] = error.message;
       }
-      return { key: validKey, value: requireString(value, 'setting value') };
-    });
-
-    // Captured before any writes, so a field's previousValue reflects the
-    // pre-batch state even if another field in the same batch writes first.
-    const previousValues = Object.fromEntries(validated.map(({ key }) => [key, this.get(key)]));
+    }
 
     await dbConnect();
-    const results = await Promise.allSettled(validated.map(async ({ key, value }) => {
+    const results = await Promise.allSettled(toWrite.map(async ({ key, value }) => {
       await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
       this.cache[key] = value;
       return value;
     }));
 
     const values = {};
-    const errors = {};
     const auditEntries = [];
     results.forEach((result, index) => {
-      const { key } = validated[index];
+      const { key, previousValue } = toWrite[index];
       if (result.status === 'fulfilled') {
         values[key] = result.value;
-        if (previousValues[key] !== result.value) {
-          auditEntries.push({ settingKey: key, previousValue: previousValues[key], newValue: result.value });
+        if (previousValue !== result.value) {
+          auditEntries.push({ settingKey: key, previousValue, newValue: result.value });
         }
       } else {
         errors[key] = result.reason?.message || String(result.reason);

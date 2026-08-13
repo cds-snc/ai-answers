@@ -815,6 +815,15 @@
   border-radius: 4px !important;
 }
 
+/* TODO: bare, unscoped selector — this !important rule reaches every
+   textarea site-wide, not just whatever chat/explanation context it was
+   meant for, and its transparent border-color + outline:none make a
+   focused textarea elsewhere (e.g. SettingsPage's redaction fields) look
+   like it visually vanished on focus. admin.css's .filter-input:focus now
+   has matching !importants to force a win there, but that's a workaround,
+   not a fix — scope this selector properly (or fold it into the
+   .expert-rating-container rule above it, which already covers the
+   textarea case it likely exists for) so it stops leaking. */
 textarea:focus {
   border-radius: 0 !important;
   box-shadow: none !important;

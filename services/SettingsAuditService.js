@@ -134,6 +134,16 @@ const SettingsAuditService = {
     const safeSkip = normalizePageValue(skip, 0);
     const query = buildListQuery(before);
     await dbConnect();
+    // TODO (code-review #10): countDocuments runs on every call — the
+    // initial load, every "Load more" page, and every silent post-save/
+    // post-refresh reload — even though the total usually hasn't changed
+    // since the last fetch within the same anchored view. Only the first,
+    // unanchored page (skip:0, no before) genuinely needs a fresh count;
+    // look into whether callers can pass back the total they already have
+    // (client already tracks auditTotal) for skip>0/before-anchored calls,
+    // and validate that skipping the recount there doesn't produce a wrong
+    // "hasMore" once actually tested against DocumentDB, not just reasoned
+    // about — this crosses the client/server contract, not a local-only fix.
     const [entries, total] = await Promise.all([
       AuditLog.find(query)
         // Batched section-saves write multiple rows sharing one createdAt, so

@@ -2,9 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsIcon } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import SettingsAuditValue from '../components/settings/SettingsAuditValue.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.js';
 import { formatNumber } from '../utils/numberFormat.js';
 
 const SETTINGS_LOAD_DEFAULTS = {
@@ -94,6 +97,55 @@ const SECTION_TITLE_KEYS = {
   redaction: 'settings.redaction.title',
 };
 
+// Every setting key's own field id + label locale key — drives the inline
+// FeedbackInlineError under each field (id) and the jump-link text in a
+// section's ExplanationErrorSummary (labelKey), from the single per-key
+// `errors` map setMany() returns, without hand-maintaining a second copy of
+// every field's id/label next to its JSX.
+const FIELD_META = {
+  siteStatus: { fieldId: 'site-status', labelKey: 'settings.statusLabel' },
+  'site.baseUrl': { fieldId: 'base-url', labelKey: 'settings.baseUrlLabel' },
+  deploymentMode: { fieldId: 'deployment-mode', labelKey: 'settings.deploymentModeLabel' },
+  vectorServiceType: { fieldId: 'vector-service-type', labelKey: 'settings.vectorServiceTypeLabel' },
+  'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
+  'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
+  'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
+  'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
+  'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
+  'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
+  'systemHealth.checks.search.enabled': { fieldId: 'health-search-enabled', labelKey: 'settings.health.searchEnabledLabel' },
+  'systemHealth.checks.llm.enabled': { fieldId: 'health-llm-enabled', labelKey: 'settings.health.llmEnabledLabel' },
+  'systemHealth.autoDisableOnError': { fieldId: 'health-auto-disable', labelKey: 'settings.health.autoDisableOnErrorLabel' },
+  'systemHealth.errorTemplateId': { fieldId: 'health-error-template', labelKey: 'settings.health.errorTemplateId' },
+  'systemHealth.alertTemplateId': { fieldId: 'health-alert-template', labelKey: 'settings.health.alertTemplateId' },
+  'systemHealth.failureThreshold': { fieldId: 'health-failure-threshold', labelKey: 'settings.health.failureThreshold' },
+  'systemHealth.failureWindowMinutes': { fieldId: 'health-failure-window', labelKey: 'settings.health.failureWindowMinutes' },
+  'systemHealth.intervalMinutes': { fieldId: 'health-interval', labelKey: 'settings.health.intervalMinutes' },
+  'systemHealth.fastIntervalSeconds': { fieldId: 'health-fast-interval', labelKey: 'settings.health.fastIntervalSeconds' },
+  'systemHealth.alertRecipients': { fieldId: 'health-alert-recipients', labelKey: 'settings.health.alertRecipients' },
+  'twoFA.enabled': { fieldId: 'twofa-enabled', labelKey: 'settings.twoFA.enabledLabel' },
+  'twoFA.templateId': { fieldId: 'twofa-template', labelKey: 'settings.twoFA.templateLabel' },
+  'notify.resetTemplateId': { fieldId: 'reset-template', labelKey: 'settings.notify.resetTemplateLabel' },
+  'session.managementEnabled': { fieldId: 'session-management-enabled', labelKey: 'settings.session.managementEnabled' },
+  'session.type': { fieldId: 'session-store-type', labelKey: 'settings.session.storeType' },
+  'metrics.type': { fieldId: 'metrics-store-type', labelKey: 'settings.metrics.storeType' },
+  'session.defaultTTLMinutes': { fieldId: 'session-ttl', labelKey: 'settings.session.ttlMinutes' },
+  'session.authenticatedTTLMinutes': { fieldId: 'session-auth-ttl', labelKey: 'settings.session.authTtlMinutes' },
+  'session.maxActiveSessions': { fieldId: 'session-max-sessions', labelKey: 'settings.session.maxActiveSessions' },
+  'session.rateLimitPersistence': { fieldId: 'session-rate-persistence', labelKey: 'settings.rateLimiting.persistence.label' },
+  'session.singleAnonymousChatRunEnabled': { fieldId: 'session-single-anonymous-chat-run', labelKey: 'settings.rateLimiting.singleAnonymousChatRunEnabled' },
+  'session.rateLimitCapacity': { fieldId: 'session-rate-capacity', labelKey: 'settings.rateLimiting.rateLimitCapacity' },
+  'session.rateLimitRefillPerSec': { fieldId: 'session-rate-refill', labelKey: 'settings.rateLimiting.rateLimitRefill' },
+  'session.authenticatedRateLimitCapacity': { fieldId: 'session-authenticated-rate-capacity', labelKey: 'settings.rateLimiting.authenticatedRateLimitCapacity' },
+  'session.authenticatedRateLimitRefillPerSec': { fieldId: 'session-authenticated-rate-refill', labelKey: 'settings.rateLimiting.authenticatedRateLimitRefill' },
+  'redaction.profanity.en': { fieldId: 'redaction.profanity.en', labelKey: 'settings.redaction.profanity' },
+  'redaction.threat.en': { fieldId: 'redaction.threat.en', labelKey: 'settings.redaction.threat' },
+  'redaction.manipulation.en': { fieldId: 'redaction.manipulation.en', labelKey: 'settings.redaction.manipulation' },
+  'redaction.profanity.fr': { fieldId: 'redaction.profanity.fr', labelKey: 'settings.redaction.profanity' },
+  'redaction.threat.fr': { fieldId: 'redaction.threat.fr', labelKey: 'settings.redaction.threat' },
+  'redaction.manipulation.fr': { fieldId: 'redaction.manipulation.fr', labelKey: 'settings.redaction.manipulation' },
+};
+
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [status, setStatus] = useState('available');
@@ -113,6 +165,17 @@ const SettingsPage = ({ lang = 'en' }) => {
   const auditAnchorRef = useRef(null);
   const auditCountRef = useRef(null);
   const auditRefocusRef = useRef(false);
+  // Synchronous double-click guard for "Load more" — auditLoadingMore
+  // (state) can't prevent a second click landing in the same tick, before
+  // React has re-rendered with the loading flag set; a ref updates
+  // immediately, closing that gap.
+  const auditLoadingMoreRef = useRef(false);
+  // Bumped at the start of every loadAuditHistory call. "Load more" and a
+  // section save's silent refresh can both be in flight at once; whichever
+  // started later wins — a response from a call that's no longer the latest
+  // is discarded instead of applied, so it can't overwrite/interleave with
+  // a newer one that resolved first.
+  const auditRequestIdRef = useRef(0);
   const [baseUrl, setBaseUrl] = useState('');
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
@@ -180,9 +243,39 @@ const SettingsPage = ({ lang = 'en' }) => {
   // { [section]: { text, isError } } — one save-outcome message per section,
   // replacing a single page-wide status shared by every field.
   const [sectionStatus, setSectionStatus] = useState({});
+  // { [settingKey]: message } — per-field validation errors from the last
+  // setMany() response, surfaced inline via FeedbackInlineError next to the
+  // field itself rather than only in the section's generic StatusMessage.
+  const [fieldErrors, setFieldErrors] = useState({});
+  // { [section]: number } — bumped on every save that comes back with 1+
+  // field errors, even if the same field fails again with the same message.
+  // ExplanationErrorSummary needs a change, not just a truthy value, to
+  // re-focus/re-announce on a second failed attempt (see useFocusOnChange).
+  const [sectionErrorAttempt, setSectionErrorAttempt] = useState({});
 
   const stageChange = (key, value) => {
     setPendingChanges((prev) => ({ ...prev, [key]: value }));
+    // A fresh edit supersedes whatever the last save attempt said was wrong
+    // with this field.
+    setFieldErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  // A number input cleared to empty is invalid server-side (requireString
+  // rejects '' for any key not in EMPTY_ALLOWED_SETTINGS, aborting the whole
+  // section's batch save, not just this field) — snap it to '0' once the
+  // admin leaves the field, instead of letting an empty value ever reach
+  // Save. Only fires on blur, not onChange, so mid-edit clearing (e.g.
+  // select-all + delete before typing a new number) isn't fought.
+  const defaultEmptyNumberOnBlur = (currentValue, setDisplay, key) => {
+    if (currentValue === '') {
+      setDisplay('0');
+      stageChange(key, '0');
+    }
   };
 
   const isSectionDirty = (section) => SECTION_KEYS[section].some((key) => key in pendingChanges);
@@ -257,7 +350,16 @@ const SettingsPage = ({ lang = 'en' }) => {
   // bounded by the server's own 100-row cap). Never throws — a failed load
   // surfaces through auditError instead, so callers can await it without
   // wrapping it in their own try/catch.
+  //
+  // "Load more" and a section save's silent refresh can genuinely overlap
+  // (click Load more, then immediately save before it resolves) — whichever
+  // call started later is the one whose result should win, regardless of
+  // which happens to resolve first. auditRequestIdRef tracks "the latest
+  // call that's been started"; a response is only applied if its own id is
+  // still the latest by the time it resolves, otherwise it's silently
+  // dropped rather than risking a stale/out-of-order write into auditEntries.
   const loadAuditHistory = async ({ skip = 0, append = false, silent = false, limit = 50 } = {}) => {
+    const requestId = ++auditRequestIdRef.current;
     if (append) setAuditLoadingMore(true);
     else if (!silent) setAuditLoading(true);
     setAuditError(false);
@@ -267,6 +369,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         skip,
         before: append ? auditAnchorRef.current : null,
       });
+      if (requestId !== auditRequestIdRef.current) return; // superseded by a newer call
       const entries = result.entries || [];
       setAuditEntries((current) => (append ? [...current, ...entries] : entries));
       setAuditHasMore(Boolean(result.hasMore));
@@ -278,6 +381,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       // loses their place in the table.
       if (append && !result.hasMore) auditRefocusRef.current = true;
     } catch (error) {
+      if (requestId !== auditRequestIdRef.current) return; // superseded — a newer call's outcome wins
       setAuditError(true);
     } finally {
       if (append) setAuditLoadingMore(false);
@@ -332,15 +436,31 @@ const SettingsPage = ({ lang = 'en' }) => {
         return next;
       });
       const hasErrors = Object.keys(errors).length > 0;
-      const statusText = hasErrors ? t('settings.saveError') : t('settings.saveSuccess');
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        Object.keys(values).forEach((key) => { delete next[key]; });
+        Object.entries(errors).forEach(([key, message]) => { next[key] = message; });
+        return next;
+      });
+      if (hasErrors) {
+        setSectionErrorAttempt((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
+      }
+      const statusText = hasErrors
+        ? t('settings.saveError')
+        : t('settings.saveSuccessIn').replace('{section}', () => t(SECTION_TITLE_KEYS[section]));
       setSectionStatus((prev) => ({
         ...prev,
         [section]: { text: statusText, isError: hasErrors },
       }));
       // Every save is audited, so the table below is stale the moment a
       // section saves. Ask for as many rows as are already loaded so a saved
-      // change doesn't collapse an expanded table back to the first page.
-      await loadAuditHistory({ silent: true, limit: Math.max(auditEntries.length, 50) });
+      // change doesn't collapse an expanded table back to the first page —
+      // capped at SettingsAuditService.list()'s own 100-row limit so this can
+      // never request more than the server will actually return.
+      // TODO: past 100 loaded rows this still can't show everything the admin
+      // had scrolled to — needs real pagination (bounded per-page requests)
+      // rather than "refetch everything loaded so far" to fix properly.
+      await loadAuditHistory({ silent: true, limit: Math.min(Math.max(auditEntries.length, 50), 100) });
     } catch (err) {
       setSectionStatus((prev) => ({ ...prev, [section]: { text: t('settings.saveError'), isError: true } }));
     } finally {
@@ -391,28 +511,10 @@ const SettingsPage = ({ lang = 'en' }) => {
           {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
         </GcdsButton>
         <StatusMessage
-          isError={settingsCacheStatus?.isError}
-          tag={settingsCacheStatus ? 'div' : 'p'}
-          className={
-            settingsCacheStatus?.isError
-              ? 'mt-200 dashboard-error dashboard-error--inline'
-              : settingsCacheStatus
-                ? 'mt-200 dashboard-info-box'
-                : 'mt-200'
-          }
-        >
-          {settingsCacheStatus?.isError ? (
-            <>
-              <GcdsIcon name="warning-triangle" marginRight="50" />
-              {settingsCacheStatus.text}
-            </>
-          ) : settingsCacheStatus ? (
-            <>
-              <GcdsIcon name="info-circle" marginRight="50" />
-              {settingsCacheStatus.text}
-            </>
-          ) : null}
-        </StatusMessage>
+          variant={settingsCacheStatus ? (settingsCacheStatus.isError ? 'error' : 'info') : undefined}
+          message={settingsCacheStatus?.text}
+          className={settingsCacheStatus?.isError ? 'mt-200 dashboard-error--inline' : 'mt-200'}
+        />
       </div>
       {/* Per-section "Unsaved changes" only shows while that section's
           <details> is open — a page-level one stays visible regardless of
@@ -429,17 +531,19 @@ const SettingsPage = ({ lang = 'en' }) => {
           main settled on for other admin pages' status messages, once this
           PR and any follow-up review are wrapped up — don't assume the two
           efforts landed on the same pattern just because they merged cleanly. */}
-      <StatusMessage persistent tag="div" className="mb-400 dashboard-warning-box">
-        {dirtySectionNames && (
-          <>
-            <GcdsIcon name="warning-triangle" marginRight="50" />
-            {t('settings.unsavedChangesIn').replace('{sections}', () => dirtySectionNames)}
-          </>
-        )}
-      </StatusMessage>
+      <StatusMessage
+        persistent
+        tag="div"
+        variant={dirtySectionNames ? 'warning' : undefined}
+        message={dirtySectionNames ? t('settings.unsavedChangesIn').replace('{sections}', () => dirtySectionNames) : undefined}
+        className="mb-400"
+      />
       <details>
         <summary>{t('settings.general.title')}</summary>
         <div className="settings-form-width">
+            {fieldErrors['siteStatus'] && (
+              <FeedbackInlineError id="site-status-error" message={fieldErrors['siteStatus']} announce={false} />
+            )}
           <label htmlFor="site-status" className="filter-label display-block">
             {t('settings.statusLabel')}
           </label>
@@ -449,11 +553,15 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={status}
             onChange={(e) => { const v = e.target.value; setStatus(v); stageChange('siteStatus', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['siteStatus'] ? 'site-status-error' : undefined}
           >
             <option value="available">{t('settings.statuses.available')}</option>
             <option value="unavailable">{t('settings.statuses.unavailable')}</option>
           </select>
 
+          {fieldErrors['site.baseUrl'] && (
+            <FeedbackInlineError id="base-url-error" message={fieldErrors['site.baseUrl']} announce={false} />
+          )}
           <label htmlFor="base-url" className="filter-label display-block mt-200">
             {t('settings.baseUrlLabel')}
           </label>
@@ -463,9 +571,13 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={baseUrl}
             onChange={(e) => { const v = e.target.value; setBaseUrl(v); stageChange('site.baseUrl', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['site.baseUrl'] ? 'base-url-error' : undefined}
             className="filter-input"
           />
 
+            {fieldErrors['deploymentMode'] && (
+              <FeedbackInlineError id="deployment-mode-error" message={fieldErrors['deploymentMode']} announce={false} />
+            )}
           <label htmlFor="deployment-mode" className="filter-label display-block mt-200">
             {t('settings.deploymentModeLabel')}
           </label>
@@ -475,11 +587,15 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={deploymentMode}
             onChange={(e) => { const v = e.target.value; setDeploymentMode(v); stageChange('deploymentMode', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['deploymentMode'] ? 'deployment-mode-error' : undefined}
           >
             <option value="CDS">{t('settings.deploymentMode.cds')}</option>
             <option value="Vercel">{t('settings.deploymentMode.serverless')}</option>
           </select>
 
+            {fieldErrors['vectorServiceType'] && (
+              <FeedbackInlineError id="vector-service-type-error" message={fieldErrors['vectorServiceType']} announce={false} />
+            )}
           <label htmlFor="vector-service-type" className="filter-label display-block mt-200">
             {t('settings.vectorServiceTypeLabel')}
           </label>
@@ -489,11 +605,15 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={vectorServiceType}
             onChange={(e) => { const v = e.target.value; setVectorServiceType(v); stageChange('vectorServiceType', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['vectorServiceType'] ? 'vector-service-type-error' : undefined}
           >
             <option value="imvectordb">{t('settings.vectorServiceType.imvectordb')}</option>
             <option value="documentdb">{t('settings.vectorServiceType.documentdb')}</option>
           </select>
 
+            {fieldErrors['workflow.default'] && (
+              <FeedbackInlineError id="default-workflow-error" message={fieldErrors['workflow.default']} announce={false} />
+            )}
           <label htmlFor="default-workflow" className="filter-label display-block mt-200">
             {t('settings.defaultWorkflow.label')}
           </label>
@@ -503,12 +623,16 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={defaultWorkflow}
             onChange={(e) => { const v = e.target.value; setDefaultWorkflow(v); stageChange('workflow.default', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['workflow.default'] ? 'default-workflow-error' : undefined}
           >
             {WORKFLOWS.map(w => (
               <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
             ))}
           </select>
 
+            {fieldErrors['chat.transport'] && (
+              <FeedbackInlineError id="chat-transport-error" message={fieldErrors['chat.transport']} announce={false} />
+            )}
           <label htmlFor="chat-transport" className="filter-label display-block mt-200">
             {t('settings.chatTransport.label')}
           </label>
@@ -518,11 +642,15 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={chatTransport}
             onChange={(e) => { const v = e.target.value; setChatTransport(v); stageChange('chat.transport', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['chat.transport'] ? 'chat-transport-error' : undefined}
           >
             <option value="sse">{t('settings.chatTransport.options.sse')}</option>
             <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
           </select>
 
+            {fieldErrors['model.default'] && (
+              <FeedbackInlineError id="default-model-error" message={fieldErrors['model.default']} announce={false} />
+            )}
           <label htmlFor="default-model" className="filter-label display-block mt-200">
             {t('settings.defaultModel.label')}
           </label>
@@ -532,12 +660,16 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={defaultModel}
             onChange={(e) => { const v = e.target.value; setDefaultModel(v); stageChange('model.default', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['model.default'] ? 'default-model-error' : undefined}
           >
             {AVAILABLE_MODELS.map(m => (
               <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
             ))}
           </select>
 
+            {fieldErrors['guardrail.indigenousLanguageBlocking'] && (
+              <FeedbackInlineError id="indigenous-language-blocking-error" message={fieldErrors['guardrail.indigenousLanguageBlocking']} announce={false} />
+            )}
           <label htmlFor="indigenous-language-blocking" className="filter-label display-block mt-200">
             {t('settings.indigenousLanguageBlocking.label')}
           </label>
@@ -547,6 +679,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             value={indigenousLanguageBlocking}
             onChange={(e) => { const v = e.target.value; setIndigenousLanguageBlocking(v); stageChange('guardrail.indigenousLanguageBlocking', v); }}
             disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['guardrail.indigenousLanguageBlocking'] ? 'indigenous-language-blocking-error' : undefined}
           >
             <option value="true">{t('common.on')}</option>
             <option value="false">{t('common.off')}</option>
@@ -560,6 +693,8 @@ const SettingsPage = ({ lang = 'en' }) => {
             status={sectionStatus.general}
             onSave={handleSectionSave}
             t={t}
+            fieldErrors={fieldErrors}
+            errorAttempt={sectionErrorAttempt.general || 0}
           />
         </div>
       </details>
@@ -569,6 +704,9 @@ const SettingsPage = ({ lang = 'en' }) => {
         <div className="settings-form-width">
         <p className="mb-400">{t('settings.health.description')}</p>
 
+          {fieldErrors['systemHealth.enabled'] && (
+            <FeedbackInlineError id="health-enabled-error" message={fieldErrors['systemHealth.enabled']} announce={false} />
+          )}
         <label htmlFor="health-enabled" className="filter-label display-block mt-200">
           {t('settings.health.enabledLabel')}
         </label>
@@ -578,11 +716,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthEnabled}
           onChange={(e) => { const v = e.target.value; setHealthEnabled(v); stageChange('systemHealth.enabled', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.enabled'] ? 'health-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['systemHealth.checks.database.enabled'] && (
+            <FeedbackInlineError id="health-database-enabled-error" message={fieldErrors['systemHealth.checks.database.enabled']} announce={false} />
+          )}
         <label htmlFor="health-database-enabled" className="filter-label display-block mt-200">
           {t('settings.health.databaseEnabledLabel')}
         </label>
@@ -592,11 +734,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthDatabaseEnabled}
           onChange={(e) => { const v = e.target.value; setHealthDatabaseEnabled(v); stageChange('systemHealth.checks.database.enabled', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.database.enabled'] ? 'health-database-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['systemHealth.checks.search.enabled'] && (
+            <FeedbackInlineError id="health-search-enabled-error" message={fieldErrors['systemHealth.checks.search.enabled']} announce={false} />
+          )}
         <label htmlFor="health-search-enabled" className="filter-label display-block mt-200">
           {t('settings.health.searchEnabledLabel')}
         </label>
@@ -606,11 +752,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthSearchEnabled}
           onChange={(e) => { const v = e.target.value; setHealthSearchEnabled(v); stageChange('systemHealth.checks.search.enabled', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.search.enabled'] ? 'health-search-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['systemHealth.checks.llm.enabled'] && (
+            <FeedbackInlineError id="health-llm-enabled-error" message={fieldErrors['systemHealth.checks.llm.enabled']} announce={false} />
+          )}
         <label htmlFor="health-llm-enabled" className="filter-label display-block mt-200">
           {t('settings.health.llmEnabledLabel')}
         </label>
@@ -620,11 +770,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthLlmEnabled}
           onChange={(e) => { const v = e.target.value; setHealthLlmEnabled(v); stageChange('systemHealth.checks.llm.enabled', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.llm.enabled'] ? 'health-llm-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['systemHealth.autoDisableOnError'] && (
+            <FeedbackInlineError id="health-auto-disable-error" message={fieldErrors['systemHealth.autoDisableOnError']} announce={false} />
+          )}
         <label htmlFor="health-auto-disable" className="filter-label display-block mt-200">
           {t('settings.health.autoDisableOnErrorLabel')}
         </label>
@@ -634,6 +788,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthAutoDisableOnError}
           onChange={(e) => { const v = e.target.value; setHealthAutoDisableOnError(v); stageChange('systemHealth.autoDisableOnError', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.autoDisableOnError'] ? 'health-auto-disable-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
@@ -641,6 +796,9 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <div className="health-template-grid mt-400">
           <div className="health-template-column">
+            {fieldErrors['systemHealth.errorTemplateId'] && (
+              <FeedbackInlineError id="health-error-template-error" message={fieldErrors['systemHealth.errorTemplateId']} announce={false} />
+            )}
             <label htmlFor="health-error-template" className="filter-label display-block">
               {t('settings.health.errorTemplateId')}
             </label>
@@ -650,11 +808,15 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={healthErrorTemplateId}
               onChange={(e) => { const v = e.target.value; setHealthErrorTemplateId(v); stageChange('systemHealth.errorTemplateId', v); }}
               disabled={sectionSaving.health}
+              aria-describedby={fieldErrors['systemHealth.errorTemplateId'] ? 'health-error-template-error' : undefined}
               className="filter-input"
             />
           </div>
 
           <div className="health-template-column">
+            {fieldErrors['systemHealth.alertTemplateId'] && (
+              <FeedbackInlineError id="health-alert-template-error" message={fieldErrors['systemHealth.alertTemplateId']} announce={false} />
+            )}
             <label htmlFor="health-alert-template" className="filter-label display-block">
               {t('settings.health.alertTemplateId')}
             </label>
@@ -664,11 +826,15 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={healthAlertTemplateId}
               onChange={(e) => { const v = e.target.value; setHealthAlertTemplateId(v); stageChange('systemHealth.alertTemplateId', v); }}
               disabled={sectionSaving.health}
+              aria-describedby={fieldErrors['systemHealth.alertTemplateId'] ? 'health-alert-template-error' : undefined}
               className="filter-input"
             />
           </div>
         </div>
 
+          {fieldErrors['systemHealth.failureThreshold'] && (
+            <FeedbackInlineError id="health-failure-threshold-error" message={fieldErrors['systemHealth.failureThreshold']} announce={false} />
+          )}
         <label htmlFor="health-failure-threshold" className="filter-label display-block mt-200">
           {t('settings.health.failureThreshold')}
         </label>
@@ -679,9 +845,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={healthFailureThreshold}
           onChange={(e) => { const v = e.target.value; setHealthFailureThreshold(v); stageChange('systemHealth.failureThreshold', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFailureThreshold, setHealthFailureThreshold, 'systemHealth.failureThreshold')}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.failureThreshold'] ? 'health-failure-threshold-error' : undefined}
         />
 
+          {fieldErrors['systemHealth.failureWindowMinutes'] && (
+            <FeedbackInlineError id="health-failure-window-error" message={fieldErrors['systemHealth.failureWindowMinutes']} announce={false} />
+          )}
         <label htmlFor="health-failure-window" className="filter-label display-block mt-200">
           {t('settings.health.failureWindowMinutes')}
         </label>
@@ -692,9 +863,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={healthFailureWindowSeconds}
           onChange={(e) => { const v = e.target.value; setHealthFailureWindowSeconds(v); stageChange('systemHealth.failureWindowMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFailureWindowSeconds, setHealthFailureWindowSeconds, 'systemHealth.failureWindowMinutes')}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.failureWindowMinutes'] ? 'health-failure-window-error' : undefined}
         />
 
+          {fieldErrors['systemHealth.intervalMinutes'] && (
+            <FeedbackInlineError id="health-interval-error" message={fieldErrors['systemHealth.intervalMinutes']} announce={false} />
+          )}
         <label htmlFor="health-interval" className="filter-label display-block mt-200">
           {t('settings.health.intervalMinutes')}
         </label>
@@ -705,9 +881,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={healthIntervalSeconds}
           onChange={(e) => { const v = e.target.value; setHealthIntervalSeconds(v); stageChange('systemHealth.intervalMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthIntervalSeconds, setHealthIntervalSeconds, 'systemHealth.intervalMinutes')}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.intervalMinutes'] ? 'health-interval-error' : undefined}
         />
 
+          {fieldErrors['systemHealth.fastIntervalSeconds'] && (
+            <FeedbackInlineError id="health-fast-interval-error" message={fieldErrors['systemHealth.fastIntervalSeconds']} announce={false} />
+          )}
         <label htmlFor="health-fast-interval" className="filter-label display-block mt-200">
           {t('settings.health.fastIntervalSeconds')}
         </label>
@@ -718,9 +899,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={healthFastIntervalSeconds}
           onChange={(e) => { const v = e.target.value; setHealthFastIntervalSeconds(v); stageChange('systemHealth.fastIntervalSeconds', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFastIntervalSeconds, setHealthFastIntervalSeconds, 'systemHealth.fastIntervalSeconds')}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.fastIntervalSeconds'] ? 'health-fast-interval-error' : undefined}
         />
 
+        {fieldErrors['systemHealth.alertRecipients'] && (
+          <FeedbackInlineError id="health-alert-recipients-error" message={fieldErrors['systemHealth.alertRecipients']} announce={false} />
+        )}
         <label htmlFor="health-alert-recipients" className="filter-label display-block mt-200">
           {t('settings.health.alertRecipients')}
         </label>
@@ -730,6 +916,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={healthAlertRecipients}
           onChange={(e) => { const v = e.target.value; setHealthAlertRecipients(v); stageChange('systemHealth.alertRecipients', v); }}
           disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.alertRecipients'] ? 'health-alert-recipients-error' : undefined}
           className="filter-input"
         />
 
@@ -741,6 +928,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           status={sectionStatus.health}
           onSave={handleSectionSave}
           t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.health || 0}
         />
         </div>
       </details>
@@ -748,6 +937,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.twoFA.title')}</summary>
         <div className="settings-form-width">
+          {fieldErrors['twoFA.enabled'] && (
+            <FeedbackInlineError id="twofa-enabled-error" message={fieldErrors['twoFA.enabled']} announce={false} />
+          )}
         <label htmlFor="twofa-enabled" className="filter-label display-block mt-200">
           {t('settings.twoFA.enabledLabel')}
         </label>
@@ -757,11 +949,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={twoFAEnabled}
           onChange={(e) => { const v = e.target.value; setTwoFAEnabled(v); stageChange('twoFA.enabled', v); }}
           disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['twoFA.enabled'] ? 'twofa-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['twoFA.templateId'] && (
+            <FeedbackInlineError id="twofa-template-error" message={fieldErrors['twoFA.templateId']} announce={false} />
+          )}
         <label htmlFor="twofa-template" className="filter-label display-block mt-200">
           {t('settings.twoFA.templateLabel')}
         </label>
@@ -772,8 +968,12 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={twoFATemplateId}
           onChange={(e) => { const v = e.target.value; setTwoFATemplateId(v); stageChange('twoFA.templateId', v); }}
           disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['twoFA.templateId'] ? 'twofa-template-error' : undefined}
         />
 
+          {fieldErrors['notify.resetTemplateId'] && (
+            <FeedbackInlineError id="reset-template-error" message={fieldErrors['notify.resetTemplateId']} announce={false} />
+          )}
         <label htmlFor="reset-template" className="filter-label display-block mt-200">
           {t('settings.notify.resetTemplateLabel')}
         </label>
@@ -784,6 +984,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={resetTemplateId}
           onChange={(e) => { const v = e.target.value; setResetTemplateId(v); stageChange('notify.resetTemplateId', v); }}
           disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['notify.resetTemplateId'] ? 'reset-template-error' : undefined}
         />
 
         <SectionSaveControls
@@ -794,6 +995,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           status={sectionStatus.twoFA}
           onSave={handleSectionSave}
           t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.twoFA || 0}
         />
         </div>
       </details>
@@ -801,6 +1004,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.session.title')}</summary>
         <div className="settings-form-width">
+          {fieldErrors['session.managementEnabled'] && (
+            <FeedbackInlineError id="session-management-enabled-error" message={fieldErrors['session.managementEnabled']} announce={false} />
+          )}
         <label htmlFor="session-management-enabled" className="filter-label display-block mt-200">
           {t('settings.session.managementEnabled')}
         </label>
@@ -810,11 +1016,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={sessionManagementEnabled}
           onChange={(e) => { const v = e.target.value; setSessionManagementEnabled(v); stageChange('session.managementEnabled', v); }}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.managementEnabled'] ? 'session-management-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['session.type'] && (
+            <FeedbackInlineError id="session-store-type-error" message={fieldErrors['session.type']} announce={false} />
+          )}
         <label htmlFor="session-store-type" className="filter-label display-block mt-200">
           {t('settings.session.storeType')}
         </label>
@@ -824,12 +1034,16 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={sessionStoreType}
           onChange={(e) => { const v = e.target.value; setSessionStoreType(v); stageChange('session.type', v); }}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.type'] ? 'session-store-type-error' : undefined}
         >
           <option value="memory">{t('settings.session.store.options.memory')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo')}</option>
           <option value="redis">{t('settings.session.store.options.redis')}</option>
         </select>
 
+          {fieldErrors['metrics.type'] && (
+            <FeedbackInlineError id="metrics-store-type-error" message={fieldErrors['metrics.type']} announce={false} />
+          )}
         <label htmlFor="metrics-store-type" className="filter-label display-block mt-200">
           {t('settings.metrics.storeType')}
         </label>
@@ -839,11 +1053,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={metricsStoreType}
           onChange={(e) => { const v = e.target.value; setMetricsStoreType(v); stageChange('metrics.type', v); }}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['metrics.type'] ? 'metrics-store-type-error' : undefined}
         >
           <option value="memory">{t('settings.session.store.options.memory')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo')}</option>
         </select>
 
+          {fieldErrors['session.defaultTTLMinutes'] && (
+            <FeedbackInlineError id="session-ttl-error" message={fieldErrors['session.defaultTTLMinutes']} announce={false} />
+          )}
         <label htmlFor="session-ttl" className="filter-label display-block mt-200">
           {t('settings.session.ttlMinutes')}
         </label>
@@ -854,9 +1072,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={sessionTTL}
           onChange={(e) => { const v = e.target.value; setSessionTTL(v); stageChange('session.defaultTTLMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(sessionTTL, setSessionTTL, 'session.defaultTTLMinutes')}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.defaultTTLMinutes'] ? 'session-ttl-error' : undefined}
         />
 
+          {fieldErrors['session.authenticatedTTLMinutes'] && (
+            <FeedbackInlineError id="session-auth-ttl-error" message={fieldErrors['session.authenticatedTTLMinutes']} announce={false} />
+          )}
         <label htmlFor="session-auth-ttl" className="filter-label display-block mt-200">
           {t('settings.session.authTtlMinutes')}
         </label>
@@ -867,11 +1090,16 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={sessionAuthTTL}
           onChange={(e) => { const v = e.target.value; setSessionAuthTTL(v); stageChange('session.authenticatedTTLMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(sessionAuthTTL, setSessionAuthTTL, 'session.authenticatedTTLMinutes')}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.authenticatedTTLMinutes'] ? 'session-auth-ttl-error' : undefined}
         />
 
         {/* Rate limiting moved to its own section for clarity (localized below) */}
 
+          {fieldErrors['session.maxActiveSessions'] && (
+            <FeedbackInlineError id="session-max-sessions-error" message={fieldErrors['session.maxActiveSessions']} announce={false} />
+          )}
         <label htmlFor="session-max-sessions" className="filter-label display-block mt-200">
           {t('settings.session.maxActiveSessions')}
         </label>
@@ -883,6 +1111,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={maxActiveSessions}
           onChange={(e) => { const v = e.target.value; setMaxActiveSessions(v); stageChange('session.maxActiveSessions', v); }}
           disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.maxActiveSessions'] ? 'session-max-sessions-error' : undefined}
         />
 
         {/* session.persistence moved to rate-limiting section (stored as session.rateLimitPersistence) */}
@@ -895,6 +1124,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           status={sectionStatus.session}
           onSave={handleSectionSave}
           t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.session || 0}
         />
         </div>
       </details>
@@ -902,6 +1133,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.rateLimiting.title')}</summary>
         <div className="settings-form-width">
+          {fieldErrors['session.rateLimitPersistence'] && (
+            <FeedbackInlineError id="session-rate-persistence-error" message={fieldErrors['session.rateLimitPersistence']} announce={false} />
+          )}
         <label htmlFor="session-rate-persistence" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.persistence.label')}
         </label>
@@ -911,11 +1145,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={rateLimitPersistence}
           onChange={(e) => { const v = e.target.value; setRateLimitPersistence(v); stageChange('session.rateLimitPersistence', v); }}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitPersistence'] ? 'session-rate-persistence-error' : undefined}
         >
           <option value="memory">{t('settings.session.persistence.options.memory')}</option>
           <option value="redis">{t('settings.session.persistence.options.redis')}</option>
         </select>
 
+          {fieldErrors['session.singleAnonymousChatRunEnabled'] && (
+            <FeedbackInlineError id="session-single-anonymous-chat-run-error" message={fieldErrors['session.singleAnonymousChatRunEnabled']} announce={false} />
+          )}
         <label htmlFor="session-single-anonymous-chat-run" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.singleAnonymousChatRunEnabled')}
         </label>
@@ -925,11 +1163,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           value={singleAnonymousChatRunEnabled}
           onChange={(e) => { const v = e.target.value; setSingleAnonymousChatRunEnabled(v); stageChange('session.singleAnonymousChatRunEnabled', v); }}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.singleAnonymousChatRunEnabled'] ? 'session-single-anonymous-chat-run-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
+          {fieldErrors['session.rateLimitCapacity'] && (
+            <FeedbackInlineError id="session-rate-capacity-error" message={fieldErrors['session.rateLimitCapacity']} announce={false} />
+          )}
         <label htmlFor="session-rate-capacity" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.rateLimitCapacity')}
         </label>
@@ -940,9 +1182,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={rateLimitCapacity}
           onChange={(e) => { const v = e.target.value; setRateLimitCapacity(v); stageChange('session.rateLimitCapacity', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(rateLimitCapacity, setRateLimitCapacity, 'session.rateLimitCapacity')}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitCapacity'] ? 'session-rate-capacity-error' : undefined}
         />
 
+          {fieldErrors['session.rateLimitRefillPerSec'] && (
+            <FeedbackInlineError id="session-rate-refill-error" message={fieldErrors['session.rateLimitRefillPerSec']} announce={false} />
+          )}
         <label htmlFor="session-rate-refill" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.rateLimitRefill')}
         </label>
@@ -954,9 +1201,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           step="0.1"
           value={rateLimitRefill}
           onChange={(e) => { const v = e.target.value; setRateLimitRefill(v); stageChange('session.rateLimitRefillPerSec', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(rateLimitRefill, setRateLimitRefill, 'session.rateLimitRefillPerSec')}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitRefillPerSec'] ? 'session-rate-refill-error' : undefined}
         />
 
+          {fieldErrors['session.authenticatedRateLimitCapacity'] && (
+            <FeedbackInlineError id="session-authenticated-rate-capacity-error" message={fieldErrors['session.authenticatedRateLimitCapacity']} announce={false} />
+          )}
         <label htmlFor="session-authenticated-rate-capacity" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.authenticatedRateLimitCapacity')}
         </label>
@@ -967,9 +1219,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           min="1"
           value={authenticatedRateLimitCapacity}
           onChange={(e) => { const v = e.target.value; setAuthenticatedRateLimitCapacity(v); stageChange('session.authenticatedRateLimitCapacity', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(authenticatedRateLimitCapacity, setAuthenticatedRateLimitCapacity, 'session.authenticatedRateLimitCapacity')}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.authenticatedRateLimitCapacity'] ? 'session-authenticated-rate-capacity-error' : undefined}
         />
 
+          {fieldErrors['session.authenticatedRateLimitRefillPerSec'] && (
+            <FeedbackInlineError id="session-authenticated-rate-refill-error" message={fieldErrors['session.authenticatedRateLimitRefillPerSec']} announce={false} />
+          )}
         <label htmlFor="session-authenticated-rate-refill" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.authenticatedRateLimitRefill')}
         </label>
@@ -981,7 +1238,9 @@ const SettingsPage = ({ lang = 'en' }) => {
           step="0.1"
           value={authenticatedRateLimitRefill}
           onChange={(e) => { const v = e.target.value; setAuthenticatedRateLimitRefill(v); stageChange('session.authenticatedRateLimitRefillPerSec', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(authenticatedRateLimitRefill, setAuthenticatedRateLimitRefill, 'session.authenticatedRateLimitRefillPerSec')}
           disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.authenticatedRateLimitRefillPerSec'] ? 'session-authenticated-rate-refill-error' : undefined}
         />
 
         <SectionSaveControls
@@ -992,6 +1251,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           status={sectionStatus.rateLimiting}
           onSave={handleSectionSave}
           t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.rateLimiting || 0}
         />
         </div>
       </details>
@@ -1012,6 +1273,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.profanity.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.profanity.en']}
             />
 
             <label htmlFor="redaction.threat.en" className="filter-label display-block mt-200">
@@ -1022,6 +1284,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.threat.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.threat.en']}
             />
 
             <label htmlFor="redaction.manipulation.en" className="filter-label display-block mt-200">
@@ -1032,6 +1295,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.manipulation.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.manipulation.en']}
             />
           </div>
 
@@ -1046,6 +1310,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.profanity.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.profanity.fr']}
             />
 
             <label htmlFor="redaction.threat.fr" className="filter-label display-block mt-200">
@@ -1056,6 +1321,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.threat.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.threat.fr']}
             />
 
             <label htmlFor="redaction.manipulation.fr" className="filter-label display-block mt-200">
@@ -1066,6 +1332,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.manipulation.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              error={fieldErrors['redaction.manipulation.fr']}
             />
           </div>
         </div>
@@ -1078,6 +1345,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           status={sectionStatus.redaction}
           onSave={handleSectionSave}
           t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.redaction || 0}
         />
         </div>
       </details>
@@ -1161,16 +1430,26 @@ const SettingsPage = ({ lang = 'en' }) => {
           ref={auditCountRef}
         />
         {auditHasMore ? (
-          // Deliberately not `disabled` while loading: disabling the focused
-          // button blurs it, dropping a keyboard user back to <body> on every
-          // page but the last. The label carries the busy state and the handler
-          // guards against a second click.
+          // GcdsButton's `disabled` prop maps to aria-disabled on its
+          // underlying element, not the native HTML `disabled` attribute
+          // (confirmed in gcds-button.js — it sets ariaDisabled and guards
+          // its own click handler, rather than removing the element from
+          // the tab order), so it stays focusable while disabled — no risk
+          // of dropping a keyboard user back to <body> the way native
+          // `disabled` would. Also guarded by a ref (not just the
+          // `auditLoadingMore` state) so a second click landing in the same
+          // tick, before React has committed the disabled state, still
+          // can't fire a duplicate request.
           <GcdsButton
             type="button"
             buttonRole="secondary"
+            disabled={auditLoadingMore}
             onClick={() => {
-              if (auditLoadingMore) return;
-              loadAuditHistory({ skip: auditEntries.length, append: true });
+              if (auditLoadingMoreRef.current) return;
+              auditLoadingMoreRef.current = true;
+              loadAuditHistory({ skip: auditEntries.length, append: true }).finally(() => {
+                auditLoadingMoreRef.current = false;
+              });
             }}
           >
             {auditLoadingMore ? t('settings.auditHistory.loadingMore') : t('settings.auditHistory.loadMore')}
@@ -1194,44 +1473,62 @@ const SettingsPage = ({ lang = 'en' }) => {
 // fixing the gap here (rather than on <details> itself) avoids double
 // spacing wherever a section's last child is something like a <p> that
 // already carries its own margin-bottom.
-const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t }) => (
-  <div className="mt-400 mb-400">
-    <GcdsButton
-      type="button"
-      onClick={() => onSave(section)}
-      disabled={!dirty || saving}
-      aria-label={`${t('settings.save')} ${t(titleKey)}`}
-    >
-      {saving ? t('settings.saving') : t('settings.save')}
-    </GcdsButton>
-    <StatusMessage
-      isError={status?.isError}
-      tag={status?.isError ? 'div' : 'p'}
-      className={status?.isError ? 'mt-200 dashboard-error dashboard-error--inline' : 'mt-200'}
-    >
-      {status?.isError ? (
-        <>
-          <GcdsIcon name="warning-triangle" marginRight="50" />
-          {status.text}
-        </>
-      ) : status?.text}
-    </StatusMessage>
-  </div>
-);
+const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t, fieldErrors, errorAttempt }) => {
+  // Every field in this section that came back with a per-field error on the
+  // last save — feeds both the jump-link list below and, via errorAttempt,
+  // when to re-focus/re-announce it (a second failed attempt with the exact
+  // same single field wrong wouldn't otherwise re-trigger the effect).
+  const sectionErrorLinks = SECTION_KEYS[section]
+    .filter((key) => fieldErrors[key])
+    .map((key) => ({ fieldId: FIELD_META[key].fieldId, label: t(FIELD_META[key].labelKey) }));
+  const summaryRef = useFocusOnChange(errorAttempt);
+
+  return (
+    <div className="mt-400 mb-400">
+      {sectionErrorLinks.length > 0 && (
+        <ExplanationErrorSummary
+          id={`${section}-error-summary`}
+          heading={t('common.errorSummaryHeading')}
+          links={sectionErrorLinks}
+          errorCount={errorAttempt}
+          inputRef={summaryRef}
+        />
+      )}
+      <GcdsButton
+        type="button"
+        onClick={() => onSave(section)}
+        disabled={!dirty || saving}
+      >
+        {saving ? t('settings.saving') : `${t('settings.save')} ${t(titleKey)}`}
+      </GcdsButton>
+      <StatusMessage
+        variant={status ? (status.isError ? 'error' : 'success') : undefined}
+        message={status?.text}
+        className={status?.isError ? 'mt-200 dashboard-error--inline' : 'mt-200'}
+      />
+    </div>
+  );
+};
 
 // Pure controlled textarea for a redaction field — nothing to save itself
 // anymore, staging into the parent's pendingChanges happens on every change
 // (not on blur: clicking the section's Save button before a field blurs must
 // not drop the just-typed text).
-const SettingsTextArea = ({ settingKey, value, onChange, disabled }) => (
-  <textarea
-    id={settingKey}
-    value={value}
-    onChange={(e) => onChange(settingKey, e.target.value)}
-    disabled={disabled}
-    className="filter-input"
-    rows={5}
-  />
+const SettingsTextArea = ({ settingKey, value, onChange, disabled, error }) => (
+  <>
+    {error && (
+      <FeedbackInlineError id={`${settingKey}-error`} message={error} announce={false} />
+    )}
+    <textarea
+      id={settingKey}
+      value={value}
+      onChange={(e) => onChange(settingKey, e.target.value)}
+      disabled={disabled}
+      aria-describedby={error ? `${settingKey}-error` : undefined}
+      className="filter-input"
+      rows={5}
+    />
+  </>
 );
 
 export default SettingsPage;

@@ -182,7 +182,6 @@
       "selectionRequired": "Veuillez sélectionner au moins une évaluation.",
       "explanationRequired": "Une explication est requise.",
       "explanationRequiredField": "Une explication est requise : {field}",
-      "explanationSummaryHeading": "Corrigez les éléments suivants avant de soumettre",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
@@ -1044,7 +1043,7 @@
   },
   "settings": {
     "title": "Paramètres",
-    "saveSuccess": "Paramètre enregistré.",
+    "saveSuccessIn": "Modifications de {section} enregistrées.",
     "saveError": "Échec de l'enregistrement du paramètre.",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
@@ -1186,6 +1185,7 @@
     "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
+    "errorSummaryHeading": "Corrigez les éléments suivants",
     "chartCategoryColumn": "Catégorie",
     "chartValueColumn": "Valeur",
     "chartPercentColumn": "Pourcentage",

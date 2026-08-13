@@ -12,7 +12,19 @@ vi.mock('../../../services/SettingsService.js', () => ({
 }));
 
 vi.mock('../../../services/SettingsAuditService.js', () => ({
-  default: { recordAction: mockRecordAction },
+  default: {
+    recordAction: mockRecordAction,
+    // Mirrors the real recordAuditSafely: run recordFn, log-and-swallow on
+    // failure — "still reports success when the audit write fails" below
+    // relies on this to exercise that non-fatal-audit-failure contract.
+    recordAuditSafely: async (recordFn, failureMessage) => {
+      try {
+        return await recordFn();
+      } catch (error) {
+        await mockLogError(failureMessage, 'system', error);
+      }
+    },
+  },
 }));
 
 vi.mock('../../../services/ServerLoggingService.js', () => ({

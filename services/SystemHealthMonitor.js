@@ -1,6 +1,7 @@
 import { SettingsService } from './SettingsService.js';
 import GCNotifyService from './GCNotifyService.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import { parseRecipients } from './parseRecipients.js';
 import {
   testAzureOpenAI,
   testDocumentDB,
@@ -99,13 +100,6 @@ function classifySystemFailure(error) {
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseRecipients(value) {
-  return String(value || '')
-    .split(';')
-    .map((recipient) => recipient.trim())
-    .filter(Boolean);
 }
 
 function getRuntimeEnvironment() {
@@ -564,6 +558,7 @@ export {
   classifySystemFailure,
   isConnectionFailure,
   systemHealthMonitor,
+  parseRecipients,
 };
 
 export default systemHealthMonitor;

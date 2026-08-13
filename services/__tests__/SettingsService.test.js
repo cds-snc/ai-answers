@@ -4,6 +4,7 @@ const mockDbConnect = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockFind = vi.hoisted(() => vi.fn());
 const mockFindOneAndUpdate = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockRecordSettingChange = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockRecordSettingChangeBatch = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockLogError = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('../../api/db/db-connect.js', () => ({
@@ -17,12 +18,25 @@ vi.mock('../../models/setting.js', () => ({
   },
 }));
 
-vi.mock('../SettingsAuditService.js', () => ({
-  default: { recordSettingChange: mockRecordSettingChange },
-}));
-
 vi.mock('../ServerLoggingService.js', () => ({
   default: { error: mockLogError, info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+}));
+
+vi.mock('../SettingsAuditService.js', () => ({
+  default: {
+    recordSettingChange: mockRecordSettingChange,
+    recordSettingChangeBatch: mockRecordSettingChangeBatch,
+    // Mirrors the real recordAuditSafely: run recordFn, log-and-swallow on
+    // failure — the two tests below rely on this to exercise SettingsService's
+    // "a failed audit write must not fail the save" contract.
+    recordAuditSafely: async (recordFn, failureMessage) => {
+      try {
+        return await recordFn();
+      } catch (error) {
+        await mockLogError(failureMessage, 'system', error);
+      }
+    },
+  },
 }));
 
 async function loadSettingsService() {
@@ -128,5 +142,119 @@ describe('SettingsService audit writes', () => {
     await SettingsService.set('siteStatus', 'unavailable');
 
     expect(mockRecordSettingChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('SettingsService.set field format validation', () => {
+  beforeEach(() => {
+    mockFindOneAndUpdate.mockClear();
+    mockRecordSettingChange.mockReset();
+    mockRecordSettingChange.mockResolvedValue(undefined);
+  });
+
+  it('rejects a malformed email in alertRecipients', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = { 'systemHealth.alertRecipients': '' };
+
+    await expect(
+      SettingsService.set('systemHealth.alertRecipients', 'not-an-email', {
+        actorEmail: 'admin@example.com',
+        source: 'admin',
+      })
+    ).rejects.toThrow('Not a valid email address');
+
+    // Nothing should have been written — validation runs before any DB call.
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('accepts a semicolon-separated list of valid emails', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = { 'systemHealth.alertRecipients': '' };
+
+    await SettingsService.set(
+      'systemHealth.alertRecipients',
+      'ops@example.com; admin@example.com',
+      { actorEmail: 'admin@example.com', source: 'admin' }
+    );
+
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
+      { key: 'systemHealth.alertRecipients' },
+      { value: 'ops@example.com; admin@example.com' },
+      { upsert: true }
+    );
+  });
+});
+
+describe('SettingsService.setMany', () => {
+  beforeEach(() => {
+    mockFindOneAndUpdate.mockClear();
+    mockFindOneAndUpdate.mockResolvedValue(undefined);
+    mockRecordSettingChangeBatch.mockReset();
+    mockRecordSettingChangeBatch.mockResolvedValue(undefined);
+    mockLogError.mockClear();
+  });
+
+  it('saves the valid fields in a batch even when another field fails validation', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = {
+      siteStatus: 'available',
+      'systemHealth.alertRecipients': '',
+    };
+
+    const { values, errors } = await SettingsService.setMany(
+      [
+        { key: 'siteStatus', value: 'unavailable' },
+        { key: 'systemHealth.alertRecipients', value: 'not-an-email' },
+      ],
+      { actorEmail: 'admin@example.com', source: 'admin' }
+    );
+
+    // The bad field is reported, not thrown — earlier behavior aborted the
+    // whole batch on the first bad field with no way to say which one.
+    expect(values).toEqual({ siteStatus: 'unavailable' });
+    expect(errors).toEqual({
+      'systemHealth.alertRecipients': expect.stringContaining('Not a valid email address'),
+    });
+
+    // Only the valid field was actually written and audited.
+    expect(mockFindOneAndUpdate).toHaveBeenCalledTimes(1);
+    expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
+      { key: 'siteStatus' },
+      { value: 'unavailable' },
+      { upsert: true }
+    );
+    expect(mockRecordSettingChangeBatch).toHaveBeenCalledWith({
+      actorEmail: 'admin@example.com',
+      source: 'admin',
+      entries: [{ settingKey: 'siteStatus', previousValue: 'available', newValue: 'unavailable' }],
+    });
+  });
+
+  it('reports a write failure per key without losing the other results', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = { siteStatus: 'available', deploymentMode: 'CDS' };
+    mockFindOneAndUpdate
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('DocumentDB write conflict'));
+
+    const { values, errors } = await SettingsService.setMany([
+      { key: 'siteStatus', value: 'unavailable' },
+      { key: 'deploymentMode', value: 'Vercel' },
+    ]);
+
+    expect(values).toEqual({ siteStatus: 'unavailable' });
+    expect(errors).toEqual({ deploymentMode: 'DocumentDB write conflict' });
+  });
+
+  it('never calls the audit batch write when nothing actually changed', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = { siteStatus: 'available' };
+
+    await SettingsService.setMany(
+      [{ key: 'siteStatus', value: 'available' }],
+      { actorEmail: 'admin@example.com', source: 'admin' }
+    );
+
+    expect(mockRecordSettingChangeBatch).not.toHaveBeenCalled();
   });
 });

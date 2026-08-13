@@ -80,7 +80,7 @@ describe('SettingsAuditService', () => {
 
     const query = mockFind.mock.results[0].value;
     expect(mockFind).toHaveBeenCalledWith({});
-    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(query.skip).toHaveBeenCalledWith(10);
     expect(query.limit).toHaveBeenCalledWith(25);
     expect(mockCountDocuments).toHaveBeenCalledWith({});

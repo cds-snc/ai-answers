@@ -280,3 +280,74 @@ describe('SettingsPage audit history', () => {
     });
   });
 });
+
+describe('SettingsPage field errors', () => {
+  beforeEach(() => {
+    mockGetSettings.mockClear();
+    mockSetSettings.mockClear();
+    mockGetSettingsAudit.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows the field-level error next to the field when a save partially fails', async () => {
+    // Mirrors what setMany() actually returns for a batch where one field
+    // failed validation/write and the rest succeeded — see
+    // services/__tests__/SettingsService.test.js for that contract.
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: { 'systemHealth.enabled': 'Not a valid value' },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Not a valid value')).toBeTruthy();
+    });
+
+    // The field is wired to its own error via aria-describedby, not just a
+    // generic section-level message.
+    expect(field.getAttribute('aria-describedby')).toBe('health-enabled-error');
+
+    // A field that failed stays dirty so the admin can fix and retry — a
+    // partial failure must not silently discard the edit.
+    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('clears the field error as soon as the field is edited again', async () => {
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: { 'systemHealth.enabled': 'Not a valid value' },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Not a valid value')).toBeTruthy();
+    });
+
+    fireEvent.change(field, { target: { value: 'false' } });
+
+    expect(screen.queryByText('Not a valid value')).toBeNull();
+    expect(field.getAttribute('aria-describedby')).toBeNull();
+  });
+});
