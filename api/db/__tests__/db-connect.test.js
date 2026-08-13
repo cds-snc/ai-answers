@@ -79,3 +79,18 @@ describe('db-connect DocumentDB target selection', () => {
     expect(shouldUseDirectConnectionForDocumentDb(process.env.DOCDB_URI)).toBe(false);
   });
 });
+
+describe('db-connect model registration', () => {
+  // The index management tools (api/db/db-database-management.js) enumerate
+  // mongoose.models rather than a hardcoded list, so a collection is only
+  // covered by "check index status" and "rebuild indexes" if its model has been
+  // registered. db-connect.js importing every model is what guarantees that,
+  // regardless of which handler happened to load first.
+  it('registers every model that ships with a schema-defined index', async () => {
+    await loadDbConnect();
+    const mongoose = (await import('mongoose')).default;
+
+    expect(Object.keys(mongoose.models)).toContain('AuditLog');
+    expect(mongoose.models.AuditLog.schema.indexes().length).toBeGreaterThan(0);
+  });
+});

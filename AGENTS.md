@@ -173,6 +173,7 @@ Before starting work, read the relevant reference doc:
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
 - **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
+- **Any server-side paginated/searchable table, dashboard or not (which wrapper to use, migrating a hand-rolled table):** [docs/coding-agent-docs/tables.md](docs/coding-agent-docs/tables.md)
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)
 
 ## Database query safety
@@ -220,11 +221,16 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
 // in-progress state, not a completed result — same component, own sub-type:
 <StatusMessage loading message={t('some.page.loading')} />
+// box-styled outcome (role/aria-live, box className, and icon all wired up
+// from one prop instead of the caller building them individually):
+<StatusMessage variant="success" message={t('some.page.saved')} />
 ```
 
-It renders `role="alert"`/`aria-live="assertive"` when `isError`, otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
+It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="error"`), otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
 
-Known gap (tracked as a TODO in the component itself): it only standardizes the ARIA behaviour so far — callers still each pass their own inline `style` for colour/spacing, and there's no styled variant per message type yet. Don't add another one-off inline style; if you need visual treatment beyond the default, flag it rather than copying an existing page's ad-hoc hex colours.
+`variant` (`error` | `warning` | `info` | `success`) is the box-styled outcome family — pass it with `message` as a plain string and StatusMessage builds the box `className`, `role`/`aria-live`, and a leading icon itself, using the GC DS-token box classes in `admin.css`: `dashboard-error` (red-100/500/700, failures), `dashboard-warning-box` (yellow-100/500/700, cautions like unsaved changes), `dashboard-info-box` (blue-100/500/700, neutral confirmations), `dashboard-success-box` (green-100/500/700, completed saves). Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) except `success`, which uses a raw FA `check-circle` span (`fa-solid fa-check-circle`) since GC DS's icon font has no checkmark glyph — matching the existing FA precedent in `BatchUpload.js`. `dashboard-error` additionally has a `dashboard-error--inline` modifier (`width: fit-content`) for a message that shouldn't stretch to its container's full width, passable alongside `variant="error"` via `className`. Reuse one of these four variants rather than adding a fifth box class or a page's own ad-hoc hex colours — if a genuinely new outcome type comes up, extend `StatusMessage`'s own `VARIANTS` map (a caller passing `children` instead of `message` alongside `variant` gets the box/role treatment while supplying its own richer content, e.g. a bullet list, without needing a new variant). Callers that haven't migrated to `variant` yet (still wiring up `isError`/`className`/`children` manually) are unaffected — it's additive, not a breaking change — but prefer `variant` for anything new.
+
+**Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
 
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 

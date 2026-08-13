@@ -85,6 +85,30 @@ class DataStoreService {
     }
   }
 
+  // Batched write for a section's Save button: submits every changed
+  // key/value pair in one request instead of one round trip per field.
+  // Returns `{ values, errors }` — the write is best-effort per key, so a
+  // caller applies `values` and leaves any key in `errors` staged for retry.
+  static async setSettings(changes) {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-bulk-set-handler'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ changes })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to set settings');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error setting settings:', error);
+      throw error;
+    }
+  }
+
   static async refreshSettingsCache() {
     try {
       const response = await AuthService.fetch(getApiUrl('setting-refresh-cache'), {
@@ -97,6 +121,19 @@ class DataStoreService {
       return await response.json();
     } catch (error) {
       console.error('Error refreshing settings cache:', error);
+      throw error;
+    }
+  }
+
+  static async getSettingsAudit({ limit = 50, skip = 0, search = '' } = {}) {
+    try {
+      const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+      if (search) params.set('search', search);
+      const response = await AuthService.fetch(`${getApiUrl('setting-audit')}?${params}`);
+      if (!response.ok) throw new Error('Failed to get settings audit history');
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting settings audit history:', error);
       throw error;
     }
   }

@@ -41,6 +41,8 @@ When changing `FilterPanel.js` or the backend filter logic in `getChatFilterCond
 - **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
 - **Chat Dashboard doesn't support per-column filters** (only global search). Eval Dashboard does via `columnSearch` + `initComplete` filter inputs. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`).
 
+**Shared table component**: `src/components/admin/ServerDataTable.js` is the app's one *stable*, non-dashboard-specific DataTable wrapper — its consumers include non-dashboard pages too (SettingsPage.js), so it's documented separately in [tables.md](tables.md) rather than here.
+
 ---
 
 # Public & partner card dashboards

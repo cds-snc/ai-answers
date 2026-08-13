@@ -278,7 +278,7 @@ const ExpertFeedbackComponent = ({
         {explanationSummaryLinks && (
           <ExplanationErrorSummary
             id={`${uid}-explanation-summary`}
-            heading={t('homepage.expertRating.explanationSummaryHeading')}
+            heading={t('common.errorSummaryHeading')}
             links={explanationSummaryLinks}
             errorCount={submitAttemptCount}
             inputRef={explanationErrorRef}

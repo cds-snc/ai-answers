@@ -182,7 +182,6 @@
       "selectionRequired": "Please select at least one rating.",
       "explanationRequired": "Explanation is required.",
       "explanationRequiredField": "Explanation is required: {field}",
-      "explanationSummaryHeading": "Fix the following before submitting",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -1044,8 +1043,14 @@
   },
   "settings": {
     "title": "Settings",
-    "saveSuccess": "Setting saved.",
+    "saveSuccessIn": "Changes to {section} saved.",
     "saveError": "Failed to save setting.",
+    "save": "Save",
+    "saving": "Saving...",
+    "unsavedChangesIn": "Unsaved changes in {sections}",
+    "validation": {
+      "invalidEmail": "Invalid email or ; spacing"
+    },
     "general": {
       "title": "General settings"
     },
@@ -1102,6 +1107,22 @@
       "loading": "Refreshing cache...",
       "success": "Settings cache refreshed.",
       "error": "Failed to refresh settings cache: {error}"
+    },
+    "auditHistory": {
+      "title": "Settings history",
+      "description": "Review who changed settings and when.",
+      "empty": "No settings changes have been recorded.",
+      "user": "User",
+      "action": "Action",
+      "setting": "Setting",
+      "previousValue": "Original value",
+      "newValue": "Changed value",
+      "date": "Date",
+      "notApplicable": "Not applicable",
+      "actions": {
+        "settingUpdated": "Setting updated",
+        "cacheRefreshed": "Settings cache refreshed"
+      }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
@@ -1162,6 +1183,7 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
+    "errorSummaryHeading": "Fix the following",
     "chartCategoryColumn": "Category",
     "chartValueColumn": "Value",
     "chartPercentColumn": "Percent",

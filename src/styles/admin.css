@@ -365,12 +365,45 @@
   background-repeat: no-repeat;
 }
 
+/* !important: chat.css has a bare, unscoped `textarea:focus { ... !important }`
+   rule (left over from chat-specific styling) that reaches every textarea
+   site-wide, including .filter-input ones here — it sets border-color:
+   transparent and outline: none, making a focused redaction textarea look
+   like it vanished. !important is the only thing that outranks another
+   !important rule regardless of selector specificity, so this has to match
+   it rather than relying on being the more specific selector. */
 .filter-input:focus,
 .filter-select:focus {
-  border-color: var(--gcds-input-focus-border);
-  box-shadow: var(--gcds-input-focus-box-shadow);
-  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
-  outline-offset: var(--gcds-input-border-width);
+  border-color: var(--gcds-input-focus-border) !important;
+  box-shadow: var(--gcds-input-focus-box-shadow) !important;
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border) !important;
+  outline-offset: var(--gcds-input-border-width) !important;
+}
+
+/* SettingsPage reuses .filter-label/.filter-input/.filter-select for the
+   border/focus-ring/select-arrow treatment that already matches GC DS —
+   but FilterPanel deliberately sizes those at a compact 16px for a dense
+   filter sidebar, and SettingsPage isn't that: its fields should read at
+   GC DS's normal input/label size. Scoped to .settings-page so FilterPanel,
+   ChatLogsDashboard, and ChatViewer keep their own compact sizing. */
+.settings-page .filter-label {
+  font: var(--gcds-label-font-desktop);
+}
+
+.settings-page .filter-input,
+.settings-page .filter-select {
+  font: var(--gcds-input-font-desktop);
+}
+
+/* SettingsPage's .filter-input/.filter-select fields are width:100% of
+   whatever contains them — without a cap that's the full GcdsContainer
+   layout="page" width, which reads as very wide on a large monitor.
+   Constrains just the form content, not the page shell around it.
+   Left-aligned (no margin-inline:auto) — this sits inside each <details>,
+   which is itself already left-aligned under its <summary>, so centering
+   the form within it would look inconsistent with the rest of the page. */
+.settings-form-width {
+  max-width: 50%;
 }
 
 .filter-advanced-details {
@@ -1144,6 +1177,63 @@
   padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
   margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-red-700);
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+/* .dashboard-error is a block box, so it stretches to its container's full
+   width by default — fine for a dashboard section, but SettingsPage's
+   sections are full page width, where a wide box reads oddly for a single
+   short line of text. Shrinks the box to its content instead. */
+.dashboard-error--inline {
+  width: fit-content;
+}
+
+/* Same box treatment as .dashboard-error, for a caution rather than a
+   failure (SettingsPage's page-level "Unsaved changes" banner) — GC DS has
+   no orange token family, so this uses the yellow/gold triad instead,
+   same red-100/500/700 pairing shape .dashboard-error uses. */
+.dashboard-warning-box {
+  background: var(--gcds-color-yellow-100);
+  border: 1px solid var(--gcds-color-yellow-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-yellow-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+/* Same box treatment as .dashboard-error/.dashboard-warning-box, for a
+   neutral success/info outcome (e.g. "Settings cache refreshed."). */
+.dashboard-info-box {
+  background: var(--gcds-color-blue-100);
+  border: 1px solid var(--gcds-color-blue-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-blue-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+/* Same box treatment again, for a completed save (e.g. SettingsPage's
+   per-section "Changes to X saved."). Uses the FA check-circle icon
+   (StatusMessage's `success` variant) rather than a GcdsIcon — GC DS's icon
+   font has no checkmark glyph — matching the existing FA precedent in
+   BatchUpload.js. */
+.dashboard-success-box {
+  background: var(--gcds-color-green-100);
+  border: 1px solid var(--gcds-color-green-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-green-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+.dashboard-success-box .fa-check-circle {
+  margin-right: var(--gcds-icon-margin-50);
 }
 
 .dashboard-warning {
@@ -2062,4 +2152,50 @@
   padding: var(--gcds-spacing-200, 0.5rem);
   text-align: left;
   vertical-align: top;
+}
+
+/* Settings history table (SettingsPage) — recorded setting values are arbitrary
+   text, so a cell has to survive a long unbroken value without pushing the
+   table wider than the page. */
+.settings-audit-value {
+  overflow-wrap: anywhere;
+}
+
+/* Values past the preview length collapse behind a disclosure. The global
+   details/summary rules give it form-control chrome (border, white background,
+   inset padding) that reads as a boxed widget inside a table cell — reset it
+   back to text so only the ► / ▼ marker signals the disclosure. */
+.settings-audit-value--long,
+.settings-audit-value--long[open] {
+  padding: 0;
+  margin-bottom: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.settings-audit-value--long > summary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+}
+
+/* The reset above matches global.css's `summary:focus` on specificity and wins
+   on load order (App.js imports global.css before admin.css), which silently
+   stripped the GC DS focus fill and text colour from these disclosures. Put
+   them back so a focused value looks like every other focused control. */
+.settings-audit-value--long > summary:focus {
+  background-color: var(--gcds-details-focus-background);
+  color: var(--gcds-details-focus-text);
+}
+
+/* `.table-responsive` (used by other markdown/legacy tables) isn't a class
+   this project or GC DS defines, so a table using it renders with no
+   scroll — kept here as a reusable overflow container for any plain table.
+   TOKEN NOTE: `.how-to-table-scroll` (above) solves the same overflow problem
+   for markdown pages — worth folding into `.table-scroll` next time that file
+   is touched, rather than keeping two names for one rule. */
+.table-scroll {
+  overflow-x: auto;
 }

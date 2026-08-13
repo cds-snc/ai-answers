@@ -1,6 +1,7 @@
 import { SettingsService } from './SettingsService.js';
 import GCNotifyService from './GCNotifyService.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import { parseRecipients } from './parseRecipients.js';
 import {
   testAzureOpenAI,
   testDocumentDB,
@@ -99,13 +100,6 @@ function classifySystemFailure(error) {
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseRecipients(value) {
-  return String(value || '')
-    .split(';')
-    .map((recipient) => recipient.trim())
-    .filter(Boolean);
 }
 
 function getRuntimeEnvironment() {
@@ -418,7 +412,8 @@ class SystemHealthMonitor {
   }
 
   async markUnavailable(category, count, config = this.getHealthConfig()) {
-    const wasUnavailable = String(this.readSetting(SITE_STATUS_KEY, 'available')) === UNAVAILABLE_STATUS;
+    const previousSiteStatus = this.readSetting(SITE_STATUS_KEY, 'available');
+    const wasUnavailable = String(previousSiteStatus) === UNAVAILABLE_STATUS;
     if (!this.activeOutageCategory) {
       this.activeOutageCategory = category;
     }
@@ -428,7 +423,12 @@ class SystemHealthMonitor {
       this.settingsService.cache[SITE_STATUS_KEY] = UNAVAILABLE_STATUS;
 
       try {
-        await this.settingsService.set(SITE_STATUS_KEY, UNAVAILABLE_STATUS);
+        await this.settingsService.set(SITE_STATUS_KEY, UNAVAILABLE_STATUS, {
+          actorEmail: 'System health monitor',
+          source: 'system',
+          previousValue: previousSiteStatus,
+          metadata: { category: outageCategory, count, windowMs: config.windowMs },
+        });
       } catch (error) {
         await this.loggingService.error('Failed to persist siteStatus unavailable', 'system', error);
       }
@@ -558,6 +558,7 @@ export {
   classifySystemFailure,
   isConnectionFailure,
   systemHealthMonitor,
+  parseRecipients,
 };
 
 export default systemHealthMonitor;

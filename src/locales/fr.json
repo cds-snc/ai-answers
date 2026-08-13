@@ -182,7 +182,6 @@
       "selectionRequired": "Veuillez sélectionner au moins une évaluation.",
       "explanationRequired": "Une explication est requise.",
       "explanationRequiredField": "Une explication est requise : {field}",
-      "explanationSummaryHeading": "Corrigez les éléments suivants avant de soumettre",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
@@ -1044,8 +1043,14 @@
   },
   "settings": {
     "title": "Paramètres",
-    "saveSuccess": "Paramètre enregistré.",
+    "saveSuccessIn": "Modifications de {section} enregistrées.",
     "saveError": "Échec de l'enregistrement du paramètre.",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
+    "validation": {
+      "invalidEmail": "Courriel ou espacement du « ; » invalide"
+    },
     "general": {
       "title": "Paramètres généraux"
     },
@@ -1102,6 +1107,22 @@
       "loading": "Rafraîchissement du cache...",
       "success": "Cache des paramètres rafraîchi.",
       "error": "Échec du rafraîchissement du cache des paramètres : {error}"
+    },
+    "auditHistory": {
+      "title": "Historique des paramètres",
+      "description": "Consultez qui a modifié les paramètres et à quel moment.",
+      "empty": "Aucune modification des paramètres n’a été enregistrée.",
+      "user": "Utilisateur",
+      "action": "Action",
+      "setting": "Paramètre",
+      "previousValue": "Valeur originale",
+      "newValue": "Valeur modifiée",
+      "date": "Date",
+      "notApplicable": "Sans objet",
+      "actions": {
+        "settingUpdated": "Paramètre modifié",
+        "cacheRefreshed": "Cache des paramètres rafraîchi"
+      }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
@@ -1162,6 +1183,7 @@
     "message": "Réponses IA fait l'objet de mises à niveau ou de problèmes de capacité en ce moment. Veuillez revenir plus tard."
   },
   "common": {
+    "errorSummaryHeading": "Corrigez les éléments suivants",
     "chartCategoryColumn": "Catégorie",
     "chartValueColumn": "Valeur",
     "chartPercentColumn": "Pourcentage",

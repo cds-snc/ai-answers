@@ -131,6 +131,18 @@ import { COLOURS, QUALITY_COLOURS } from 'src/constants/dashboardColours.js';
 
 Greys and borders used only for structural layout (not data encoding) may stay local.
 
+## Status/outcome message box styles
+
+`StatusMessage` (see AGENTS.md's "Announcing status, errors, and async outcomes") doesn't yet style itself — three GC DS-token box classes in `admin.css` cover this today and should be reused rather than duplicated with a new one-off style:
+
+| Class | Tokens | Use |
+|---|---|---|
+| `dashboard-error` | `--gcds-color-red-100/500/700` | Failures |
+| `dashboard-warning-box` | `--gcds-color-yellow-100/500/700` | Cautions (e.g. unsaved changes) |
+| `dashboard-info-box` | `--gcds-color-blue-100/500/700` | Neutral confirmations |
+
+Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) passed as `children`, not `message` — the box only renders once there's actual content. `dashboard-error--inline` (`width: fit-content`) keeps a short message from stretching to its container's full width. These are expected to fold into a `variant` prop on `StatusMessage` itself eventually — extend or reuse the three, don't add a fourth. The class names themselves (`dashboard-*`) are also expected to be revised/generalized once more use cases beyond dashboards clarify what the shared naming should actually be — don't treat them as final.
+
 ## GC DS utility classes
 
 Before writing any custom CSS, check whether a GCDS utility class already covers the need. The utility classes handle spacing, typography, colour, flex/grid layout, and more. Using them avoids new CSS and keeps the UI consistent.
