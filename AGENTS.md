@@ -38,6 +38,35 @@ So unless your task is **explicitly** prompt tuning directed by a maintainer:
 This applies to all coding work — bug fixes, refactors, new features,
 dashboards — not just prompt-adjacent areas.
 
+## Never drop a prompt tag that code has to inject
+
+Prompts refer to tags — `<referring-url>`, `<output-lang>`, `<searchResults>`,
+`<final-turn>` — that **code** has to inject into the messages sent to the model. The
+prompt names the tag; the message-building code supplies it. If code stops supplying one,
+**nothing fails**: no error, no thrown exception, no red test. The model simply never sees
+the tag, every instruction referencing it goes dead, and answers quietly get worse. This
+is the hardest class of bug to notice in this codebase.
+
+So, when changing anything that builds an agent's messages or payload:
+
+- **Never remove a field from a message/payload because it looks unused.** It is almost
+  certainly consumed by a prompt, not by JS. Grep the prompt files for the tag first.
+- **Carry every tag through a refactor.** When moving or rewriting message-building code,
+  diff the old and new versions for tags and payload fields before you finish.
+- Keep the two paths in sync: `services/ContextAgentService.js` (context agent) and
+  `agents/graphs/workflows/GraphWorkflowHelper.js` (`deriveContext` and
+  `sendAnswerRequest`). These are where tags get attached.
+- Cover the tag with a test asserting it appears in the outgoing message — see
+  `services/__tests__/ContextAgentService.test.js`. This is the only thing that turns a
+  silent regression into a loud one.
+
+Worked example: `<referring-url>` was passed to the context agent by the old
+`services/ContextService.js`, then lost in the migration to the graph/helper architecture.
+`contextSystemPrompt.js` kept telling the model to prioritize `<referring-url>` over
+`<searchResults>` — but the tag was never in the input, so the instruction did nothing and
+the agent matched departments off search results alone. It went unnoticed for months
+because no test and no error covered it.
+
 ## How to work well in this codebase
 
 1. **State assumptions early.** Before implementing anything non-trivial, say what you're assuming so we can catch misalignment before code is written.

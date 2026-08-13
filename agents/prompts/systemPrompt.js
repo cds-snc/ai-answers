@@ -50,7 +50,7 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
       : "<page-language>en</page-language>";
 
     // add context from contextService call into system prompt (preserve formatting)
-    const contextPrompt = `\n    Department: ${department}\n    Topic: ${topic}\n    Topic URL: ${topicUrl}\n    Department URL: ${departmentUrl}\n    Search Results: ${searchResults}\n    `;
+    const contextPrompt = `\n    <department>${department}</department>\n    <topic>${topic}</topic>\n    <topic-url>${topicUrl}</topic-url>\n    <department-url>${departmentUrl}</department-url>\n    <searchResults>\n${searchResults}\n</searchResults>\n    `;
 
     const fullPrompt = `\n      ${ROLE}\n\n      
     ## Current date\n      <current-date>${currentDate}</current-date>

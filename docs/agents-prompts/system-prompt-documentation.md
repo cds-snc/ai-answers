@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-08-05
+**Generated:** 2026-08-13
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -499,10 +499,10 @@ Question: "How do I apply for EI?"
 Output Language: eng
 Referring URL: https://www.canada.ca/en.html
 Context (from Step 1):
-  Department: EDSC-ESDC
-  Topic: Employment and Social Development
-  Department URL: https://www.canada.ca/en/employment-social-development.html
-  Search Results: [Example results]
+  <department>EDSC-ESDC</department>
+  <topic>Employment and Social Development</topic>
+  <department-url>https://www.canada.ca/en/employment-social-development.html</department-url>
+  <searchResults>[Example results]</searchResults>
 ```
 
 ### Answer System Prompt:
@@ -617,18 +617,20 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Wednesday, August 5, 2026.
+Today is Thursday, August 13, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
 
 ## Tagged context for question from previous AI service
 
-Department: EDSC-ESDC
-Topic: Employment and Social Development
-Topic URL: https://www.canada.ca/en/services/benefits.html
-Department URL: https://www.canada.ca/en/employment-social-development.html
-Search Results: [Example search results would appear here]
+<department>EDSC-ESDC</department>
+<topic>Employment and Social Development</topic>
+<topic-url>https://www.canada.ca/en/services/benefits.html</topic-url>
+<department-url>https://www.canada.ca/en/employment-social-development.html</department-url>
+<searchResults>
+[Example search results would appear here]
+</searchResults>
 
 
 

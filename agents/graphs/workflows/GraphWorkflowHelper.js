@@ -116,6 +116,7 @@ export class GraphWorkflowHelper {
       searchResults: searchResult.results || searchResult.searchResults || [],
       provider: selectedAI,
       language: lang,
+      referringUrl,
     };
 
     // Invoke Context Agent via Service directly

@@ -23,4 +23,6 @@ export const TC_SCENARIOS = `
 * Importing a vehicle https://tc.canada.ca/en/road-transportation/importing-vehicle https://tc.canada.ca/fr/transport-routier/importer-vehicule
 * Rail Grade crossings https://tc.canada.ca/en/rail-transportation/grade-crossings https://tc.canada.ca/fr/transport-ferroviaire/passages-niveau
 * Railway Operating Certificates, noise and vibration requirements, work/rest and medical rules, accounting, rates. https://tc.canada.ca/en/rail-transportation/operating-federal-railway https://tc.canada.ca/fr/transport-ferroviaire/exploitation-chemin-fer-federal
+* Pleasure craft operator card (PCOC) https://tc.canada.ca/en/marine-transportation/preparing-operate-your-vessel/pleasure-craft-operator-card-pcoc https://tc.canada.ca/fr/transport-maritime/se-preparer-utiliser-son-embarcation/carte-conducteur-embarcation-plaisance-ccep
+* Navigation and marine conditions https://tc.canada.ca/en/marine-transportation/navigation-marine-conditions https://tc.canada.ca/fr/transport-maritime/navigation-conditions-maritimes
 `;

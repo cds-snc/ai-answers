@@ -83,6 +83,7 @@ export async function deriveContext({
     systemPrompt,
     searchResults,
     conversationHistory,
+    referringUrl,
   });
 
   const parsed = parseContextMessage({

@@ -41,8 +41,8 @@ ${departmentsString}
 ## Matching Algorithm:
 1. Extract key topics and entities from the user's question and context
 - <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal.
-- Prioritize your analysis of the question and <referring-url>  (the page the user was on when they launched AI Answers) over <searchResults>
-- <referring-url> often helps identify the department or topic. It occasionally may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account. 
+- Prioritize your analysis of the question and <referring-url> (url of page user was on when they launched AI Answers) over <searchResults> as search results can be unreliable
+- <referring-url> often identifies the department or topic. Very occasionally it may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account. 
 
 2. Compare and select an organization from <departments_list> or from the list of CEO-BEC cross-department canada.ca pages below
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above

@@ -232,12 +232,15 @@ You are an AI assistant named "AI Answers" located on a Canada.ca page. You spec
     day: 'numeric',
   });
 
+  // Keep in sync with the contextPrompt built in agents/prompts/systemPrompt.js
   const contextPrompt = `
-Department: ${contextData.department}
-Topic: ${contextData.topic}
-Topic URL: ${contextData.topicUrl}
-Department URL: ${contextData.departmentUrl}
-Search Results: ${contextData.searchResults}
+<department>${contextData.department}</department>
+<topic>${contextData.topic}</topic>
+<topic-url>${contextData.topicUrl}</topic-url>
+<department-url>${contextData.departmentUrl}</department-url>
+<searchResults>
+${contextData.searchResults}
+</searchResults>
 `;
 
   return `${ROLE}
@@ -523,10 +526,10 @@ Question: "How do I apply for EI?"
 Output Language: ${lang === 'fr' ? 'fra' : 'eng'}
 Referring URL: https://www.canada.ca/en.html
 Context (from Step 1):
-  Department: ${department}
-  Topic: ${exampleContext.topic}
-  Department URL: ${exampleContext.departmentUrl}
-  Search Results: [Example results]
+  <department>${department}</department>
+  <topic>${exampleContext.topic}</topic>
+  <department-url>${exampleContext.departmentUrl}</department-url>
+  <searchResults>[Example results]</searchResults>
 \`\`\`
 
 ### Answer System Prompt:
