@@ -17,5 +17,10 @@ const auditLogSchema = new mongoose.Schema({
 
 auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ settingKey: 1, createdAt: -1 });
+// Batched section-saves write multiple rows sharing one `createdAt`, so a
+// plain createdAt sort has no way to break ties deterministically across two
+// separate paginated reads. `_id` is unique, immutable, and already present
+// on every document, making it a stable secondary sort key at no schema cost.
+auditLogSchema.index({ createdAt: -1, _id: -1 });
 
 export const AuditLog = mongoose.models.AuditLog || mongoose.model('AuditLog', auditLogSchema);

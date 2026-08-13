@@ -85,6 +85,30 @@ class DataStoreService {
     }
   }
 
+  // Batched write for a section's Save button: submits every changed
+  // key/value pair in one request instead of one round trip per field.
+  // Returns `{ values, errors }` — the write is best-effort per key, so a
+  // caller applies `values` and leaves any key in `errors` staged for retry.
+  static async setSettings(changes) {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-bulk-set-handler'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ changes })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to set settings');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error setting settings:', error);
+      throw error;
+    }
+  }
+
   static async refreshSettingsCache() {
     try {
       const response = await AuthService.fetch(getApiUrl('setting-refresh-cache'), {

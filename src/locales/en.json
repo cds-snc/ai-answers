@@ -1042,6 +1042,10 @@
     "title": "Settings",
     "saveSuccess": "Setting saved.",
     "saveError": "Failed to save setting.",
+    "save": "Save",
+    "saving": "Saving...",
+    "unsavedChanges": "Unsaved changes",
+    "unsavedChangesIn": "Unsaved changes in {sections}",
     "general": {
       "title": "General settings"
     },

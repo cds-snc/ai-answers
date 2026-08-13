@@ -10,6 +10,7 @@ const {
   mockGetSettings,
   mockGetSetting,
   mockSetSetting,
+  mockSetSettings,
   mockRefreshSettingsCache,
   mockGetSettingsAudit,
 } = vi.hoisted(() => {
@@ -68,6 +69,12 @@ const {
       Object.prototype.hasOwnProperty.call(healthSettings, key) ? healthSettings[key] : defaultValue
     )),
     mockSetSetting: vi.fn(async () => ({ message: 'Setting updated' })),
+    // Mirrors the real handler's shape: every submitted key/value succeeds
+    // and comes back in `values`, `errors` empty.
+    mockSetSettings: vi.fn(async (changes) => ({
+      values: Object.fromEntries(changes.map(({ key, value }) => [key, value])),
+      errors: {},
+    })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, hasMore: false })),
   };
@@ -78,6 +85,7 @@ vi.mock('../../services/DataStoreService.js', () => ({
     getSettings: mockGetSettings,
     getSetting: mockGetSetting,
     setSetting: mockSetSetting,
+    setSettings: mockSetSettings,
     refreshSettingsCache: mockRefreshSettingsCache,
     getSettingsAudit: mockGetSettingsAudit,
   },
@@ -92,12 +100,7 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, ...props }) => React.createElement('button', props, children),
   GcdsContainer: ({ children }) => React.createElement('div', null, children),
-  GcdsDetails: ({ children, detailsTitle }) => React.createElement(
-    'section',
-    null,
-    React.createElement('h2', null, detailsTitle),
-    children
-  ),
+  GcdsIcon: (props) => React.createElement('span', { ...props, 'aria-hidden': 'true' }),
 }));
 
 describe('SettingsPage health section', () => {
@@ -145,6 +148,7 @@ describe('SettingsPage audit history', () => {
     mockGetSettings.mockClear();
     mockGetSetting.mockClear();
     mockSetSetting.mockClear();
+    mockSetSettings.mockClear();
     mockRefreshSettingsCache.mockClear();
     mockGetSettingsAudit.mockClear();
   });
@@ -153,7 +157,23 @@ describe('SettingsPage audit history', () => {
     cleanup();
   });
 
-  it('reloads the history after a setting is saved', async () => {
+  it('does not save on change — only when the section Save button is clicked', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
+      target: { value: 'true' },
+    });
+
+    // Nothing persists until the section's Save button is clicked — this is
+    // the whole point of moving off auto-save-on-change.
+    expect(mockSetSettings).not.toHaveBeenCalled();
+  });
+
+  it('reloads the history after a section is saved', async () => {
     render(React.createElement(SettingsPage, { lang: 'en' }));
 
     await waitFor(() => {
@@ -164,8 +184,12 @@ describe('SettingsPage audit history', () => {
       target: { value: 'true' },
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+
     await waitFor(() => {
-      expect(mockSetSetting).toHaveBeenCalledWith('systemHealth.enabled', 'true');
+      expect(mockSetSettings).toHaveBeenCalledWith([
+        { key: 'systemHealth.enabled', value: 'true' },
+      ]);
     });
 
     // The saved change should show up in the table without a page reload,
@@ -174,6 +198,31 @@ describe('SettingsPage audit history', () => {
       expect(mockGetSettingsAudit).toHaveBeenCalledTimes(2);
     });
     expect(mockGetSettingsAudit).toHaveBeenLastCalledWith({ limit: 50, skip: 0, before: null });
+  });
+
+  it('enables the health Save button only while a change is pending, and disables it again once saved', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    expect(saveButton.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
+      target: { value: 'true' },
+    });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockSetSettings).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(saveButton.hasAttribute('disabled')).toBe(true);
+    });
   });
 
   it('anchors load more to the first page and announces the new count', async () => {

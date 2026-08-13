@@ -1042,6 +1042,10 @@
     "title": "Paramètres",
     "saveSuccess": "Paramètre enregistré.",
     "saveError": "Échec de l'enregistrement du paramètre.",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "unsavedChanges": "Modifications non enregistrées",
+    "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "general": {
       "title": "Paramètres généraux"
     },

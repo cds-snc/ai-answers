@@ -2,24 +2,28 @@ import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
 import SettingsAuditService from './SettingsAuditService.js';
-import ServerLoggingService from './ServerLoggingService.js';
 
 // The setting is already written to the cache and the database by the time the
 // audit row goes in, so a failed audit write must not fail the save — surfacing
-// it as an error would tell the admin a change did not happen when it did. Log
-// it instead, which is also how the health monitor treats its own failures.
+// it as an error would tell the admin a change did not happen when it did.
+// `recordAuditSafely` logs the failure instead of throwing it, which is also
+// how the health monitor treats its own failures.
 const recordAuditEntry = async (auditContext, settingKey, previousValue, newValue) => {
   if (!auditContext || previousValue === newValue) return;
-  try {
-    await SettingsAuditService.recordSettingChange({
-      ...auditContext,
-      settingKey,
-      previousValue,
-      newValue,
-    });
-  } catch (error) {
-    await ServerLoggingService.error('Failed to record settings audit entry', 'system', error);
-  }
+  await SettingsAuditService.recordAuditSafely(
+    () => SettingsAuditService.recordSettingChange({ ...auditContext, settingKey, previousValue, newValue }),
+    'Failed to record settings audit entry'
+  );
+};
+
+// Same non-fatal policy as recordAuditEntry, for a batch of fields saved
+// together by one section Save click.
+const recordAuditEntryBatch = async (auditContext, entries) => {
+  if (!auditContext || !entries || entries.length === 0) return;
+  await SettingsAuditService.recordAuditSafely(
+    () => SettingsAuditService.recordSettingChangeBatch({ ...auditContext, entries }),
+    'Failed to record settings audit batch entry'
+  );
 };
 
 // Default values for settings that must always exist.
@@ -112,6 +116,54 @@ class SettingsServiceClass {
     await dbConnect();
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
     await recordAuditEntry(auditContext, key, previousValue, value);
+  }
+
+  // Batched write for a section's Save button: N single-key changes committed
+  // together. Validation happens up front and synchronously for the whole
+  // array — a malformed entry throws before any DB write is attempted, so
+  // the caller (the bulk-set handler) can turn it into a clean 400 rather
+  // than a partially-applied save. Once past validation, writes are
+  // best-effort per key (Promise.allSettled, not abort-on-first-failure):
+  // each Setting.findOneAndUpdate is already independently atomic and there
+  // is no rollback available either way, so continuing the rest of the batch
+  // after one field's write fails is strictly more useful than stopping.
+  async setMany(changes, auditContext = null) {
+    const validated = changes.map(({ key, value }) => {
+      const validKey = requireLiteralString(key, 'setting key');
+      if (value === '' && EMPTY_ALLOWED_SETTINGS.has(validKey)) {
+        return { key: validKey, value: '' };
+      }
+      return { key: validKey, value: requireString(value, 'setting value') };
+    });
+
+    // Captured before any writes, so a field's previousValue reflects the
+    // pre-batch state even if another field in the same batch writes first.
+    const previousValues = Object.fromEntries(validated.map(({ key }) => [key, this.get(key)]));
+
+    await dbConnect();
+    const results = await Promise.allSettled(validated.map(async ({ key, value }) => {
+      await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
+      this.cache[key] = value;
+      return value;
+    }));
+
+    const values = {};
+    const errors = {};
+    const auditEntries = [];
+    results.forEach((result, index) => {
+      const { key } = validated[index];
+      if (result.status === 'fulfilled') {
+        values[key] = result.value;
+        if (previousValues[key] !== result.value) {
+          auditEntries.push({ settingKey: key, previousValue: previousValues[key], newValue: result.value });
+        }
+      } else {
+        errors[key] = result.reason?.message || String(result.reason);
+      }
+    });
+
+    await recordAuditEntryBatch(auditContext, auditEntries);
+    return { values, errors };
   }
 
   toBoolean(value, defaultValue = true) {

@@ -373,6 +373,32 @@
   outline-offset: var(--gcds-input-border-width);
 }
 
+/* SettingsPage reuses .filter-label/.filter-input/.filter-select for the
+   border/focus-ring/select-arrow treatment that already matches GC DS —
+   but FilterPanel deliberately sizes those at a compact 16px for a dense
+   filter sidebar, and SettingsPage isn't that: its fields should read at
+   GC DS's normal input/label size. Scoped to .settings-page so FilterPanel,
+   ChatLogsDashboard, and ChatViewer keep their own compact sizing. */
+.settings-page .filter-label {
+  font: var(--gcds-label-font-desktop);
+}
+
+.settings-page .filter-input,
+.settings-page .filter-select {
+  font: var(--gcds-input-font-desktop);
+}
+
+/* SettingsPage's .filter-input/.filter-select fields are width:100% of
+   whatever contains them — without a cap that's the full GcdsContainer
+   layout="page" width, which reads as very wide on a large monitor.
+   Constrains just the form content, not the page shell around it.
+   Left-aligned (no margin-inline:auto) — this sits inside each <details>,
+   which is itself already left-aligned under its <summary>, so centering
+   the form within it would look inconsistent with the rest of the page. */
+.settings-form-width {
+  max-width: 75%;
+}
+
 .filter-advanced-details {
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
@@ -1108,6 +1134,14 @@
   padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
   margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-red-700);
+}
+
+/* .dashboard-error is a block box, so it stretches to its container's full
+   width by default — fine for a dashboard section, but SettingsPage's
+   sections are full page width, where a wide box reads oddly for a single
+   short line of text. Shrinks the box to its content instead. */
+.dashboard-error--inline {
+  width: fit-content;
 }
 
 .dashboard-warning {

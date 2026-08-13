@@ -13,13 +13,19 @@ async function bulkSettingsHandler(req, res) {
     return res.status(400).json({ message: 'Keys required' });
   }
 
-  const values = {};
-  for (const rawKey of keys) {
-    const key = requireLiteralString(rawKey, 'setting key');
-    values[key] = SettingsService.get(key);
+  try {
+    const values = {};
+    for (const rawKey of keys) {
+      const key = requireLiteralString(rawKey, 'setting key');
+      values[key] = SettingsService.get(key);
+    }
+    return res.status(200).json({ values });
+  } catch (error) {
+    // requireLiteralString throws on a malformed key — catch here so bad
+    // input returns a clean 400 instead of an unhandled rejection, which
+    // would otherwise crash the whole server process.
+    return res.status(400).json({ message: error.message || 'Invalid request' });
   }
-
-  return res.status(200).json({ values });
 }
 
 export default function handler(req, res) {
