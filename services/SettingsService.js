@@ -53,16 +53,33 @@ const isPlausibleEmail = (value) => {
 // directly) but worth restoring the same way as alertRecipients: validate
 // and look into whether it's actually reachable before deciding this needs
 // fixing versus just documenting as accepted risk.
+// Each validator returns null (fine) or { i18nKey, i18nValues } describing
+// what's wrong — never a formatted sentence. This is server-side code with
+// no access to the admin's UI language, so it can't compose user-facing
+// prose itself; the frontend resolves i18nKey through t() in the admin's
+// own language before ever displaying it (see SettingsPage.js's
+// handleSectionSave). `.message` on the thrown error stays a plain English
+// summary for server logs only — never rendered to a user.
+// No separate detection for "wrong separator" (e.g. commas instead of
+// semicolons) vs. a genuinely malformed address — parseRecipients only
+// splits on ';', so a comma-separated list just becomes one unsplit entry
+// that fails isPlausibleEmail the same way a typo'd address would. Rather
+// than build detection for that, the message itself names both likely
+// causes (settings.validation.invalidEmail: "Invalid email or ; spacing").
 const FIELD_VALIDATORS = {
   'systemHealth.alertRecipients': (value) => {
-    const invalid = parseRecipients(value).filter((email) => !isPlausibleEmail(email));
-    return invalid.length > 0 ? `Not a valid email address: ${invalid.join(', ')}` : null;
+    const invalid = parseRecipients(value).some((email) => !isPlausibleEmail(email));
+    return invalid ? { i18nKey: 'settings.validation.invalidEmail' } : null;
   },
 };
 
 const validateFieldFormat = (key, value) => {
-  const error = FIELD_VALIDATORS[key]?.(value);
-  if (error) throw new Error(error);
+  const result = FIELD_VALIDATORS[key]?.(value);
+  if (!result) return;
+  const error = new Error(`Invalid value for ${key}: ${result.i18nKey}`);
+  error.i18nKey = result.i18nKey;
+  error.i18nValues = result.i18nValues;
+  throw error;
 };
 
 // The setting is already written to the cache and the database by the time the
@@ -166,13 +183,23 @@ class SettingsServiceClass {
 
   async set(key, value, auditContext = null) {
     key = requireLiteralString(key, 'setting key');
-    const previousValue = auditContext && Object.prototype.hasOwnProperty.call(auditContext, 'previousValue')
-      ? auditContext.previousValue
-      : this.get(key);
+    // An explicit auditContext.previousValue always wins — SystemHealthMonitor
+    // passes one when it already captured the pre-change value as part of its
+    // own logic, before this call. Otherwise, previousValue comes from
+    // findOneAndUpdate's own return value (Mongoose defaults to returning the
+    // pre-update document) rather than a separate this.get(key) read — a
+    // separate read taken before the write is a race: two concurrent set()
+    // calls on the same key can each capture the same stale previousValue,
+    // since neither has written yet when the other reads. findOneAndUpdate is
+    // atomic, so its return value is always the document exactly as it stood
+    // immediately before *this* write, regardless of what else is concurrently
+    // writing the same key.
+    const hasExplicitPreviousValue = auditContext && Object.prototype.hasOwnProperty.call(auditContext, 'previousValue');
     if (value === '' && EMPTY_ALLOWED_SETTINGS.has(key)) {
       this.cache[key] = '';
       await dbConnect();
-      await Setting.findOneAndUpdate({ key }, { value: '' }, { upsert: true });
+      const before = await Setting.findOneAndUpdate({ key }, { value: '' }, { upsert: true });
+      const previousValue = hasExplicitPreviousValue ? auditContext.previousValue : (before?.value ?? null);
       await recordAuditEntry(auditContext, key, previousValue, '');
       return;
     }
@@ -183,7 +210,8 @@ class SettingsServiceClass {
     this.cache[key] = value;
     // Persist to DB asynchronously
     await dbConnect();
-    await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
+    const before = await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
+    const previousValue = hasExplicitPreviousValue ? auditContext.previousValue : (before?.value ?? null);
     await recordAuditEntry(auditContext, key, previousValue, value);
   }
 
@@ -204,30 +232,43 @@ class SettingsServiceClass {
           ? ''
           : requireString(rawValue, 'setting value');
         validateFieldFormat(key, value);
-        // Captured before any writes, so a field's previousValue reflects
-        // the pre-batch state even if another field in the same batch
-        // writes first.
-        toWrite.push({ key, value, previousValue: this.get(key) });
+        toWrite.push({ key, value });
       } catch (error) {
-        errors[rawKey] = error.message;
+        // validateFieldFormat's errors carry an i18nKey (and optionally
+        // i18nValues) so the frontend can render them in the admin's own
+        // language; other errors here (requireString, etc.) don't have a
+        // translation yet — errors[rawKey] stays a plain English string for
+        // those, same as before. See FIELD_VALIDATORS' comment for why the
+        // message itself is never composed here.
+        errors[rawKey] = error.i18nKey
+          ? (error.i18nValues ? { i18nKey: error.i18nKey, i18nValues: error.i18nValues } : { i18nKey: error.i18nKey })
+          : error.message;
       }
     }
 
     await dbConnect();
+    // previousValue comes from findOneAndUpdate's own return value (the
+    // pre-update document, Mongoose's default) rather than a separate read
+    // taken before this Promise.allSettled runs — a separate read is a race:
+    // two fields in different concurrent setMany batches touching the same
+    // key could each capture the same stale previousValue, since neither
+    // write has landed when either reads. findOneAndUpdate is atomic per
+    // document, so its return value is always accurate for *this* write.
     const results = await Promise.allSettled(toWrite.map(async ({ key, value }) => {
-      await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
+      const before = await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
       this.cache[key] = value;
-      return value;
+      return { value, previousValue: before?.value ?? null };
     }));
 
     const values = {};
     const auditEntries = [];
     results.forEach((result, index) => {
-      const { key, previousValue } = toWrite[index];
+      const { key } = toWrite[index];
       if (result.status === 'fulfilled') {
-        values[key] = result.value;
-        if (previousValue !== result.value) {
-          auditEntries.push({ settingKey: key, previousValue, newValue: result.value });
+        const { value, previousValue } = result.value;
+        values[key] = value;
+        if (previousValue !== value) {
+          auditEntries.push({ settingKey: key, previousValue, newValue: value });
         }
       } else {
         errors[key] = result.reason?.message || String(result.reason);

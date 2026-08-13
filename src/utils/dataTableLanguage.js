@@ -1,3 +1,9 @@
+// TODO: every server-side DataTable in this app imports this helper, but most
+// still duplicate their own columns/options/ajax wiring rather than sharing
+// one component. components/admin/ServerDataTable.js (used by SettingsPage.js)
+// is meant to become that shared component for production pages — see its
+// own comment for the migration plan and why it's a separate, more stable
+// thing than components/experimental/ExperimentalServerDataTable.js.
 /**
  * Returns a DataTables `language` config object for the given lang.
  * English is the DataTables default so an empty object is returned.

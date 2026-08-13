@@ -82,6 +82,9 @@ describe('SettingsService audit writes', () => {
   it('records the change with the caller audit context', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { siteStatus: 'available' };
+    // Mongoose's findOneAndUpdate defaults to returning the pre-update
+    // document — previousValue comes from this, not a separate cache read.
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'available' });
 
     await SettingsService.set('siteStatus', 'unavailable', {
       actorUserId: 'user-1',
@@ -102,6 +105,7 @@ describe('SettingsService audit writes', () => {
   it('keeps the setting saved when the audit write fails', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'available' });
     mockRecordSettingChange.mockRejectedValue(new Error('audit collection unavailable'));
 
     // The setting is already persisted by the time the audit row is written, so
@@ -126,6 +130,7 @@ describe('SettingsService audit writes', () => {
   it('does not record anything when the value is unchanged', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'available' });
 
     await SettingsService.set('siteStatus', 'available', {
       actorEmail: 'admin@example.com',
@@ -133,6 +138,42 @@ describe('SettingsService audit writes', () => {
     });
 
     expect(mockRecordSettingChange).not.toHaveBeenCalled();
+  });
+
+  it('takes previousValue from the write itself, not a stale cache read', async () => {
+    const { SettingsService } = await loadSettingsService();
+    // Stale cache — see the equivalent setMany test for why this matters.
+    SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'unavailable' });
+
+    await SettingsService.set('siteStatus', 'restored', {
+      actorEmail: 'admin@example.com',
+      source: 'admin',
+    });
+
+    expect(mockRecordSettingChange).toHaveBeenCalledWith(expect.objectContaining({
+      previousValue: 'unavailable',
+      newValue: 'restored',
+    }));
+  });
+
+  it('lets an explicit auditContext.previousValue override the write result', async () => {
+    const { SettingsService } = await loadSettingsService();
+    SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'unavailable' });
+
+    // SystemHealthMonitor.js passes its own previousValue when it already
+    // captured the pre-change value as part of its own logic.
+    await SettingsService.set('siteStatus', 'restored', {
+      actorEmail: 'System health monitor',
+      source: 'system',
+      previousValue: 'captured-earlier',
+    });
+
+    expect(mockRecordSettingChange).toHaveBeenCalledWith(expect.objectContaining({
+      previousValue: 'captured-earlier',
+      newValue: 'restored',
+    }));
   });
 
   it('skips auditing entirely when no audit context is given', async () => {
@@ -156,12 +197,17 @@ describe('SettingsService.set field format validation', () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { 'systemHealth.alertRecipients': '' };
 
+    // The thrown error carries a translation key rather than a formatted
+    // sentence — this is server-side code with no access to the admin's UI
+    // language, so the frontend (not here) resolves it via t().
     await expect(
       SettingsService.set('systemHealth.alertRecipients', 'not-an-email', {
         actorEmail: 'admin@example.com',
         source: 'admin',
       })
-    ).rejects.toThrow('Not a valid email address');
+    ).rejects.toMatchObject({
+      i18nKey: 'settings.validation.invalidEmail',
+    });
 
     // Nothing should have been written — validation runs before any DB call.
     expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
@@ -200,6 +246,7 @@ describe('SettingsService.setMany', () => {
       siteStatus: 'available',
       'systemHealth.alertRecipients': '',
     };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'available' });
 
     const { values, errors } = await SettingsService.setMany(
       [
@@ -213,7 +260,7 @@ describe('SettingsService.setMany', () => {
     // whole batch on the first bad field with no way to say which one.
     expect(values).toEqual({ siteStatus: 'unavailable' });
     expect(errors).toEqual({
-      'systemHealth.alertRecipients': expect.stringContaining('Not a valid email address'),
+      'systemHealth.alertRecipients': { i18nKey: 'settings.validation.invalidEmail' },
     });
 
     // Only the valid field was actually written and audited.
@@ -246,9 +293,33 @@ describe('SettingsService.setMany', () => {
     expect(errors).toEqual({ deploymentMode: 'DocumentDB write conflict' });
   });
 
+  it('takes previousValue from the write itself, not a cache read, so a concurrent change to the same key is not misreported', async () => {
+    const { SettingsService } = await loadSettingsService();
+    // The in-memory cache still says 'available' (stale — some other
+    // concurrent request already wrote 'unavailable' to the DB and hasn't
+    // updated this process's cache yet, e.g. a race between two admin tabs).
+    // previousValue must reflect the DB's actual prior value ('unavailable'),
+    // not the stale cache read, or the audit trail would misrepresent what
+    // this write actually changed.
+    SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'unavailable' });
+
+    await SettingsService.setMany(
+      [{ key: 'siteStatus', value: 'restored' }],
+      { actorEmail: 'admin@example.com', source: 'admin' }
+    );
+
+    expect(mockRecordSettingChangeBatch).toHaveBeenCalledWith({
+      actorEmail: 'admin@example.com',
+      source: 'admin',
+      entries: [{ settingKey: 'siteStatus', previousValue: 'unavailable', newValue: 'restored' }],
+    });
+  });
+
   it('never calls the audit batch write when nothing actually changed', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { siteStatus: 'available' };
+    mockFindOneAndUpdate.mockResolvedValue({ value: 'available' });
 
     await SettingsService.setMany(
       [{ key: 'siteStatus', value: 'available' }],

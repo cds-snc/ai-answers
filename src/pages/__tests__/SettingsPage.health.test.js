@@ -380,6 +380,38 @@ describe('SettingsPage field errors', () => {
     expect(saveButton.hasAttribute('disabled')).toBe(false);
   });
 
+  it('resolves a structured { i18nKey } error (e.g. alertRecipients validation) through t()', async () => {
+    // SettingsService's field validators run server-side with no access to
+    // the admin's UI language, so they return a translation key instead of
+    // a formatted sentence — see services/SettingsService.js's
+    // FIELD_VALIDATORS comment. SettingsPage resolves it via t() before
+    // display.
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: {
+        'systemHealth.alertRecipients': { i18nKey: 'settings.validation.invalidEmail' },
+      },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('settings.health.alertRecipients'), {
+      target: { value: 'not-an-email' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+
+    // The mocked t() is an identity function, so the resolved text is the
+    // translation key itself — proving the i18nKey was actually passed
+    // through t() rather than some raw/untranslated string leaking through.
+    await waitFor(() => {
+      expect(screen.getByText('settings.validation.invalidEmail')).toBeTruthy();
+    });
+  });
+
   it('clears the field error as soon as the field is edited again', async () => {
     mockSetSettings.mockResolvedValueOnce({
       values: {},

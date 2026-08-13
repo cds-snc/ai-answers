@@ -19,11 +19,7 @@ export default function ExperimentalServerDataTable({
     initialResult = null,
     emptyTableText,
     actionsWidth,
-    autoWidth = true,
-    ordering = true,
-    pageLength = 10,
-    lengthChange = true,
-    layout
+    autoWidth = true
 }) {
     const initialResultRef = useRef(initialResult);
     const tableColumns = useMemo(() => {
@@ -38,16 +34,9 @@ export default function ExperimentalServerDataTable({
         serverSide: true,
         paging: true,
         searching: true,
-        ordering,
-        pageLength,
-        lengthChange,
+        ordering: true,
         autoWidth,
         order,
-        // DataTables 2's default layout puts the length menu top-left and the
-        // search box top-right. A caller can override either slot (e.g. to
-        // put search on the left once there's no length menu to sit next to
-        // it) without this component hardcoding one specific arrangement.
-        ...(layout ? { layout } : {}),
         language: {
             ...dataTableLanguage(lang),
             ...(emptyTableText ? { emptyTable: emptyTableText } : {})
@@ -90,7 +79,7 @@ export default function ExperimentalServerDataTable({
             actionsCell._experimentalTableRoot = root;
             root.render(renderActions(rowData));
         } : undefined
-    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, order, ordering, pageLength, renderActions, tableColumns]);
+    }), [autoWidth, emptyTableText, fetchData, lang, order, renderActions, tableColumns]);
 
     return (
         <div className={containerClassName}>

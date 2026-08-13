@@ -1048,6 +1048,9 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
+    "validation": {
+      "invalidEmail": "Courriel ou espacement du « ; » invalide"
+    },
     "general": {
       "title": "Paramètres généraux"
     },

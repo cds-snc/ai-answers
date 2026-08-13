@@ -1048,6 +1048,9 @@
     "save": "Save",
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
+    "validation": {
+      "invalidEmail": "Invalid email or ; spacing"
+    },
     "general": {
       "title": "General settings"
     },

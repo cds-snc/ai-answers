@@ -8,8 +8,15 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.js';
-import ExperimentalServerDataTable from '../components/experimental/ExperimentalServerDataTable.js';
+// ServerDataTable (components/admin/) is the first step toward consolidating
+// this app's several duplicated DataTables setups — see the longer note in
+// that file for why it's not components/experimental/ExperimentalServerData
+// Table.js (used by the two experimental pages) that Settings depends on,
+// and why ChatDashboardPage/EvalDashboardPage/etc. aren't migrated onto it
+// in this same change.
+import ServerDataTable from '../components/admin/ServerDataTable.js';
 import { escapeHtmlAttribute } from '../utils/reviewLink.js';
+import { formatLocaleDate } from '../utils/formatLocaleDate.js';
 
 // Same truncate-behind-a-disclosure treatment as the React SettingsAuditValue
 // component (previousValue/newValue can be as long as SettingsAuditService's
@@ -25,6 +32,25 @@ const renderAuditValueHtml = (value, emptyLabel) => {
   const preview = escapeHtmlAttribute(text.slice(0, AUDIT_VALUE_PREVIEW_LENGTH));
   return `<details class="settings-audit-value settings-audit-value--long"><summary>${preview}…</summary><span>${escapeHtmlAttribute(text)}</span></details>`;
 };
+
+// setMany()'s `errors` map holds either a plain (untranslated) string — for
+// errors SettingsService doesn't yet localize, e.g. a DB write failure — or
+// a { i18nKey, i18nValues } pair for field validators, which compose no
+// prose themselves since they run server-side with no access to the
+// admin's UI language. This resolves either shape to display text in the
+// admin's actual language.
+const resolveFieldError = (error, t) => {
+  if (typeof error === 'string') return error;
+  if (error && error.i18nKey) {
+    let message = t(error.i18nKey);
+    Object.entries(error.i18nValues || {}).forEach(([placeholder, value]) => {
+      message = message.replace(`{${placeholder}}`, () => value);
+    });
+    return message;
+  }
+  return String(error);
+};
+
 
 const SETTINGS_LOAD_DEFAULTS = {
   siteStatus: 'available',
@@ -176,13 +202,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
   const [settingsCacheStatus, setSettingsCacheStatus] = useState(null); // { text, isError }
-  // Forces the audit history DataTable to remount (and so re-fetch its
-  // current page from the server) after a section save or a cache refresh
-  // writes new audit rows — the same "bump a key to force a server-side
-  // DataTable to reload" pattern ExperimentalDatasetsPage.js already uses,
-  // since ExperimentalServerDataTable doesn't expose an imperative
-  // ajax.reload() escape hatch.
-  const [auditTableKey, setAuditTableKey] = useState(0);
+  // Imperative handle onto the audit history table (see ServerDataTable.js)
+  // — after a section save or a cache refresh writes new audit rows,
+  // auditTableRef.current.reload() re-fetches the current page in place
+  // without resetting whatever the admin had typed into the search box or
+  // paged to, unlike forcing a full remount via a `tableKey` bump.
+  const auditTableRef = useRef(null);
   const [baseUrl, setBaseUrl] = useState('');
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
@@ -384,7 +409,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
-  // fetchData contract for ExperimentalServerDataTable: called with
+  // fetchData contract for ServerDataTable: called with
   // DataTables' own server-side params (start/length/search), returns the
   // recordsTotal/recordsFiltered/data shape its ajax callback expects.
   // Sorting is disabled on this table (see the `ordering={false}` prop
@@ -436,7 +461,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     {
       data: 'createdAt',
       title: t('settings.auditHistory.date'),
-      render: (value) => escapeHtmlAttribute(new Date(value).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')),
+      render: (value) => escapeHtmlAttribute(formatLocaleDate(value, lang, t('settings.auditHistory.notApplicable'))),
     },
   ], [lang, t]);
 
@@ -493,7 +518,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setFieldErrors((prev) => {
         const next = { ...prev };
         Object.keys(values).forEach((key) => { delete next[key]; });
-        Object.entries(errors).forEach(([key, message]) => { next[key] = message; });
+        Object.entries(errors).forEach(([key, error]) => { next[key] = resolveFieldError(error, t); });
         return next;
       });
       if (hasErrors) {
@@ -507,9 +532,8 @@ const SettingsPage = ({ lang = 'en' }) => {
         [section]: { text: statusText, isError: hasErrors },
       }));
       // Every save is audited, so the table below is stale the moment a
-      // section saves — force it to remount, which re-fetches its current
-      // page from the server.
-      setAuditTableKey((key) => key + 1);
+      // section saves — reload it in place.
+      auditTableRef.current?.reload();
     } catch (err) {
       setSectionStatus((prev) => ({ ...prev, [section]: { text: t('settings.saveError'), isError: true } }));
     } finally {
@@ -523,7 +547,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     try {
       await DataStoreService.refreshSettingsCache();
       setSettingsCacheStatus({ text: t('settings.refreshCache.success'), isError: false });
-      setAuditTableKey((key) => key + 1);
+      auditTableRef.current?.reload();
     } catch (error) {
       setSettingsCacheStatus({
         text: t('settings.refreshCache.error').replace('{error}', () => error.message || String(error)),
@@ -1409,8 +1433,9 @@ const SettingsPage = ({ lang = 'en' }) => {
             belongs in its own tab on this page, or behind a details/summary
             disclosure — either would let a lighter "recent changes" view
             replace this full search/paginate table for the common case. */}
-        <ExperimentalServerDataTable
-          tableKey={auditTableKey}
+        <ServerDataTable
+          ref={auditTableRef}
+          tableKey="settings-audit-history"
           columns={auditColumns}
           fetchData={fetchAuditHistory}
           lang={lang}
