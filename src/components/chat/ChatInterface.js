@@ -28,11 +28,11 @@ const ChatInterface = ({
   handleReload,
   handleAIToggle,
   handleSearchToggle,
-  workflow,
+  workflowSelection,
   handleWorkflowChange,
   handleReferringUrlChange,
   formatAIResponse,
-  selectedAI,
+  modelSelection,
   selectedSearch,
   referringUrl,
   chatCreatedAt,
@@ -1014,11 +1014,11 @@ const ChatInterface = ({
           )}
           <ChatOptions
             safeT={safeT}
-            selectedAI={selectedAI}
+            modelSelection={modelSelection}
             handleAIToggle={handleAIToggle}
             selectedSearch={selectedSearch}
             handleSearchToggle={handleSearchToggle}
-            workflow={workflow}
+            workflowSelection={workflowSelection}
             handleWorkflowChange={handleWorkflowChange}
             referringUrl={referringUrl}
             handleReferringUrlChange={handleReferringUrlChange}

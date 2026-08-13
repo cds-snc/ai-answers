@@ -120,6 +120,7 @@
         "model": {
           "label": "Model family:"
         },
+        "useSystemSettings": "Use system settings",
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
         }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { createRoot } from 'react-dom/client'; // Import createRoot
+import { getCellRoot } from '../../utils/dataTableCellRoot.js';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
@@ -170,7 +170,6 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             // Totals column is after status - find it as the cell before the actions cell
             const actionsCell = row.querySelector('td:last-child');
             const totalsCell = actionsCell ? actionsCell.previousElementSibling : cells[cells.length - 2];
-            actionsCell.innerHTML = '';
             // Populate totals: prefer stats from service, fallback to 0/0
             try {
               const stats = data.stats || {};
@@ -184,17 +183,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } catch (e) {
               // ignore totals rendering errors
             }
-            // Unmount any previous root mounted on this cell to avoid memory leaks
-            try {
-              if (actionsCell._batchRoot) {
-                actionsCell._batchRoot.unmount();
-              }
-            } catch (e) {
-              // ignore unmount errors
-            }
-            const root = createRoot(actionsCell);
-            // Store the root so we can unmount later when the row is re-rendered/removed
-            actionsCell._batchRoot = root;
+            // Unmounts any previous root mounted on this cell before creating
+            // the new one, so redraws don't leak roots.
+            const root = getCellRoot(actionsCell);
 
             // If processed >= total show download/delete actions
             const stats = data.stats || {};
