@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { createRoot } from 'react-dom/client'; // Import createRoot
+import { getCellRoot } from '../../utils/dataTableCellRoot.js';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
+import { usePausablePolling } from '../../hooks/usePauseToggle.js';
+import PauseToggleButton from '../admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import BatchService from '../../services/BatchService.js';
@@ -86,22 +88,20 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   );
 
   // Fetch batches
-  useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        const batches = await BatchService.getBatchList();
-        const updatedBatches = await fetchStatuses(batches) || batches || [];
-        setBatches(Array.isArray(updatedBatches) ? updatedBatches : []);
-      } catch (error) {
-        console.error('Error fetching batches:', error);
-      }
-    };
+  const fetchBatches = useCallback(async () => {
+    try {
+      const batches = await BatchService.getBatchList();
+      const updatedBatches = await fetchStatuses(batches) || batches || [];
+      setBatches(Array.isArray(updatedBatches) ? updatedBatches : []);
+    } catch (error) {
+      console.error('Error fetching batches:', error);
+    }
+  }, [fetchStatuses]);
 
-    fetchBatches();
-
-    const intervalId = setInterval(fetchBatches, 10000); // Poll every 10 seconds
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [lang, fetchStatuses]);
+  // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
+  // table, which is exactly the kind of auto-updating content that
+  // criterion requires a way to stop.
+  const { isPaused, togglePause } = usePausablePolling(fetchBatches, 10000, [lang, fetchBatches]);
 
   // Whenever batches or local processing markers change, bump the
   // refresh key so DataTable remounts. This ensures the action buttons that
@@ -153,6 +153,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   return (
     <div>
+      <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
       <DataTable
         data={filteredBatches}
         columns={columns} // Use memoized columns
@@ -169,7 +170,6 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             // Totals column is after status - find it as the cell before the actions cell
             const actionsCell = row.querySelector('td:last-child');
             const totalsCell = actionsCell ? actionsCell.previousElementSibling : cells[cells.length - 2];
-            actionsCell.innerHTML = '';
             // Populate totals: prefer stats from service, fallback to 0/0
             try {
               const stats = data.stats || {};
@@ -183,17 +183,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             } catch (e) {
               // ignore totals rendering errors
             }
-            // Unmount any previous root mounted on this cell to avoid memory leaks
-            try {
-              if (actionsCell._batchRoot) {
-                actionsCell._batchRoot.unmount();
-              }
-            } catch (e) {
-              // ignore unmount errors
-            }
-            const root = createRoot(actionsCell);
-            // Store the root so we can unmount later when the row is re-rendered/removed
-            actionsCell._batchRoot = root;
+            // Unmounts any previous root mounted on this cell before creating
+            // the new one, so redraws don't leak roots.
+            const root = getCellRoot(actionsCell);
 
             // If processed >= total show download/delete actions
             const stats = data.stats || {};

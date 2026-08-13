@@ -120,6 +120,7 @@
         "model": {
           "label": "Model family:"
         },
+        "useSystemSettings": "Use system settings",
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)"
         }
@@ -179,6 +180,9 @@
     "expertRating": {
       "title": "Answer rating",
       "selectionRequired": "Please select at least one rating.",
+      "explanationRequired": "Explanation is required.",
+      "explanationRequiredField": "Explanation is required: {field}",
+      "explanationSummaryHeading": "Fix the following before submitting",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -191,7 +195,7 @@
         "incorrect": "Incorrect",
         "harmful": "Harmful",
         "contentIssue": "Content issue",
-        "explanation": "Please explain your rating (optional):",
+        "explanation": "Please explain your rating:",
         "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
         "harmfulDetails": {
           "summary": "When to code as harmful",
@@ -772,6 +776,7 @@
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
+      "interactionCountFiltered": "{count} (+{more} more)",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
@@ -818,8 +823,7 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
-      },
-      "departmentMore": "+{count} more"
+      }
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
@@ -1044,7 +1048,6 @@
     "saveError": "Failed to save setting.",
     "save": "Save",
     "saving": "Saving...",
-    "unsavedChanges": "Unsaved changes",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "general": {
       "title": "General settings"
@@ -1202,7 +1205,9 @@
     "off": "Off",
     "na": "N/A",
     "noDataForFilters": "No data found for the selected filters.",
-    "notEnoughData": "Not enough data available for the filters selected."
+    "notEnoughData": "Not enough data available for the filters selected.",
+    "pauseUpdates": "Pause automatic updates",
+    "resumeUpdates": "Resume automatic updates"
   },
   "eval": {
     "metric": "Metric",
@@ -1257,6 +1262,8 @@
     "englishQuestion": "English question",
     "expertScore": "Expert score",
     "feedback": "Feedback",
+    "helpfulYes": "Helpful - yes",
+    "helpfulNo": "Helpful - no",
     "notAvailable": "N/A",
     "expertFeedbackTitle": "Expert evaluation",
     "expertEmail": "Expert email",
@@ -1264,7 +1271,9 @@
     "publicFeedbackTitle": "Public feedback",
     "autoEvalTitle": "Automated evaluation",
     "explanation": "Explanation",
+    "explanationLabel": "Explanation:",
     "score": "Score",
+    "scoreSuffix": "Score: {score}",
     "reason": "Reason",
     "publicComment": "Public comment",
     "evaluation": "Evaluation",
@@ -1290,7 +1299,7 @@
     "noSentenceTraces": "No sentence match traces available.",
     "citation": "Citation",
     "totalScore": "Total score",
-    "suggestedCitation": "Suggested citation URL",
+    "suggestedCitation": "Suggested citation URL:",
     "similarityScores": "Similarity scores",
     "sentenceMatchTrace": "Sentence match trace",
     "agentUsage": "Agent usage",
@@ -1304,6 +1313,8 @@
     "fallbackCompareChecks": "Fallback compare checks",
     "check": "Check",
     "pass": "Pass",
+    "fail": "Failed",
+    "downloadSuccess": "Succeeded",
     "details": "Details",
     "fallbackCompareRaw": "Fallback compare raw",
     "expertFeedbackId": "Expert evaluation id",

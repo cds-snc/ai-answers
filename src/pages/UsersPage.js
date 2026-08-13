@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { GcdsButton, GcdsContainer, GcdsLink, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
+import { getCellRoot } from '../utils/dataTableCellRoot.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -299,12 +299,11 @@ const UsersPage = ({ lang }) => {
               };
             });
 
-            // Render Save and Delete buttons
+            // Render Save and Delete buttons. getCellRoot() clears any stale
+            // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
-            actionsCell.innerHTML = '';
-            const root = createRoot(actionsCell);
             // Render admin delete button (only admins should reach this page)
-            root.render(
+            getCellRoot(actionsCell).render(
               <GcdsButton
                 size="small"
                 buttonRole="danger"

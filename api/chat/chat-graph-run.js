@@ -4,7 +4,7 @@ import ConversationIntegrityService from '../../services/ConversationIntegritySe
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
-import { MODEL_VALUES } from '../../src/config/workflows.js';
+import { MODEL_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 
@@ -155,7 +155,14 @@ async function handler(req, res) {
 
   // Server-side Workflow Resolution
   let graphName;
-  const defaultWorkflow = SettingsService.get('workflow.default') || 'GenericGraph';
+  // TODO(follow-up, PR #1684 review): the `|| DEFAULT_WORKFLOW` fallback is
+  // dead code on the normal path — 'workflow.default' is now seeded into
+  // SETTING_DEFAULTS, so SettingsService.get() should never return a falsy
+  // value here. It silently masks the narrow window where the in-memory
+  // settings cache hasn't been refreshed yet (rather than failing fast), which
+  // AGENTS.md's "prefer fail-fast contracts" guidance would push back on —
+  // worth an explicit cache-not-ready check/log instead of a silent fallback.
+  const defaultWorkflow = SettingsService.get('workflow.default') || DEFAULT_WORKFLOW;
 
   if (req.user) {
     // Authenticated users can choose their workflow, fallback to default if not provided

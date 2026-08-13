@@ -24,13 +24,22 @@ import React from 'react';
 // page) instead of a shared visual style. Give this component a `variant`
 // prop and style each message type distinctly: success, info, warning,
 // error, loading (or more as they come up). Reuse the GC DS red/green/blue
-// -100/500/700 token triads `.dashboard-error` in admin.css already uses
-// for its box, so callers stop reinventing the colours — then drop the
-// `style` prop once call sites migrate. The `loading` variant currently has
-// no spinner markup — add one (inline, alongside/replacing the text; not a
-// popup/toast — no other part of the app uses that pattern, and it'd need
-// its own focus/dismiss/stacking handling) with prefers-reduced-motion
-// handling when a design lands.
+// -100/500/700 token triads `.dashboard-error`/`.dashboard-warning-box` in
+// admin.css already use for their boxes, so callers stop reinventing the
+// colours — then drop the `style` prop once call sites migrate. The
+// `loading` variant currently has no spinner markup — add one (inline,
+// alongside/replacing the text; not a popup/toast — no other part of the
+// app uses that pattern, and it'd need its own focus/dismiss/stacking
+// handling) with prefers-reduced-motion handling when a design lands.
+//
+// SettingsPage.js now has 3 call sites each hand-rolling the identical
+// "conditionally pick tag='div'/'p', className with/without the box
+// modifier, and children with/without a GcdsIcon+text fragment" dance for
+// an isError-vs-success message — exactly the duplication a `variant` prop
+// (e.g. variant="error" wiring up tag/className/icon internally) would
+// collapse into one line per call site. Needs a design pass to settle the
+// full variant set (success/info/warning/error/loading) and its box
+// treatment consistently, not just patched ad hoc per new caller.
 //
 // forwardRef + tabIndex exist for callers that have to move focus to the
 // message itself — e.g. SettingsPage's history count, which becomes the landing

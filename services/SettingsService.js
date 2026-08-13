@@ -2,6 +2,7 @@ import dbConnect from '../api/db/db-connect.js';
 import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
 import SettingsAuditService from './SettingsAuditService.js';
+import { DEFAULT_WORKFLOW } from '../src/config/workflows.js';
 
 // The setting is already written to the cache and the database by the time the
 // audit row goes in, so a failed audit write must not fail the save — surfacing
@@ -29,6 +30,12 @@ const recordAuditEntryBatch = async (auditContext, entries) => {
 // Default values for settings that must always exist.
 // Seeded on startup if missing from the database.
 const SETTING_DEFAULTS = {
+  // Seeded alongside model.default so an environment that has never had a
+  // workflow saved reports the value it actually runs, instead of returning
+  // null and leaving each caller to substitute its own fallback — which made
+  // "nothing is stored" look identical to "GenericGraph is stored" on the
+  // Settings page and in the chat Options dropdown.
+  'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',

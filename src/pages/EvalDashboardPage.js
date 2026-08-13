@@ -126,8 +126,27 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     },
     { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: (v, type, row) => { let html = ''; if (v) { const label = t(`admin.chatDashboard.labels.evaluation.${v}`); html += `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; } if (row && row.partnerHasContentIssue) { const contentIssueLabel = t('admin.chatDashboard.labels.contentIssue'); html += `<span class="label hasContentIssue">${escapeHtmlAttribute(contentIssueLabel)}</span>`; } return html; }, searchable: false, orderable: true },
     { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => v ? escapeHtmlAttribute(v) : '', searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v ? '<span style="color: green; font-size: 1.2em;">&#10004;</span>' : '', width: '50px', searchable: false, orderable: true },
+    {
+      title: t('admin.evalDashboard.columns.feedback', 'Feedback'), data: 'feedback', render: v => {
+        // Neutral grey, not correct/error — whether a user found an answer
+        // helpful is subjective, not a clear pass/fail outcome like the
+        // other pills in this table.
+        if (v === 'yes') return `<span class="label normal">${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}</span>`;
+        if (v === 'no') return `<span class="label normal">${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}</span>`;
+        return v ? escapeHtmlAttribute(v) : '';
+      }, searchable: false, orderable: true
+    },
+    {
+      title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v
+        // GC DS's icon set has no bare checkmark (only checkmark-circle),
+        // so this falls back to Font Awesome per the "GC DS first, FA when
+        // no GC DS equivalent exists" rule. Decorative icon + a visually-
+        // hidden text alternative, rather than relying on aria-label (which
+        // some AT/browser combinations handle inconsistently for <i> icon
+        // fonts) — same effect, more broadly reliable.
+        ? `<span class="text-status--positive"><i class="fa-solid fa-check" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`
+        : '', width: '50px', searchable: false, orderable: true
+    },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },
     { title: t('admin.evalDashboard.columns.action', 'Action'), data: 'action', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },

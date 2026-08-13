@@ -396,7 +396,7 @@
    which is itself already left-aligned under its <summary>, so centering
    the form within it would look inconsistent with the rest of the page. */
 .settings-form-width {
-  max-width: 75%;
+  max-width: 50%;
 }
 
 .filter-advanced-details {
@@ -541,6 +541,15 @@
   padding-top: 0.5rem;
 }
 
+/* TODO(css-cleanup): .filter-button is now the shared base for buttons well
+   outside FilterPanel (pause-toggle buttons on BatchList/SessionPage/
+   ExperimentalAnalysisPage use it via .filter-button-outline below). The
+   "filter-" prefix is misleading at this scope, and native-HTML button
+   styling is otherwise scattered (GcdsButton component styles, this class,
+   and one-off native <button> styles like .experimental-analysis-tab). Worth
+   consolidating into a single generically-named base (e.g. .gc-button) with
+   role modifiers (primary/secondary/outline/link) shared by every native
+   button in the app, rather than growing filter-button-* piecemeal. */
 .filter-button {
   padding: var(--gcds-button-small-padding);
   border-radius: var(--gcds-button-border-radius);
@@ -567,6 +576,22 @@
 .filter-button-secondary {
   background: none;
   border-color: transparent;
+}
+
+/* Bordered-outline look (GcdsButton's buttonRole="secondary": transparent
+   background, visible border, fills light blue on hover) — distinct from
+   .filter-button-secondary above, which is a link-style button with no
+   border. Used by src/components/admin/PauseToggleButton.js (see that file
+   for why it's a native <button>, not <GcdsButton>) — the shared pause
+   toggle rendered by BatchList, SessionPage, and ExperimentalAnalysisPage. */
+.filter-button-outline {
+  background: var(--gcds-button-secondary-default-background);
+  border-color: var(--gcds-button-secondary-default-text);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+.filter-button-outline:hover:not(:disabled) {
+  background: var(--gcds-button-secondary-hover-background);
 }
 
 /* Same link look as .filter-button-secondary, flush left and sized like the
@@ -604,6 +629,8 @@
 .filter-button-primary:focus:hover,
 .filter-button-secondary:focus,
 .filter-button-secondary:focus:hover,
+.filter-button-outline:focus,
+.filter-button-outline:focus:hover,
 .filter-pills__clear-all:focus {
   background-color: var(--gcds-details-focus-background);
   box-shadow: var(--gcds-details-focus-box-shadow);
@@ -619,7 +646,9 @@
 }
 
 .filter-button-primary:focus,
-.filter-button-primary:focus:hover {
+.filter-button-primary:focus:hover,
+.filter-button-outline:focus,
+.filter-button-outline:focus:hover {
   border-color: var(--gcds-details-focus-background);
 }
 
@@ -773,7 +802,14 @@
 .label {
   display: inline-block;
   padding: var(--gcds-spacing-50) var(--gcds-spacing-75);
-  border-radius: 12px;
+  /* line-height was inheriting the page's ~1.5 body value, which made the
+     pill's box noticeably taller than its 12px border-radius could round
+     off — top/bottom read as barely-rounded rectangle corners rather than
+     a pill. Tightening line-height to the text itself, plus a radius large
+     enough to round any resulting height (not just today's), keeps every
+     .label a true pill regardless of future font-size/padding tweaks. */
+  line-height: 1;
+  border-radius: 999px;
   font-size: 14px;
   font-weight: 500;
 }
@@ -1134,6 +1170,7 @@
   padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
   margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-red-700);
+  font-size: var(--gcds-font-sizes-text-small);
 }
 
 /* .dashboard-error is a block box, so it stretches to its container's full
@@ -1142,6 +1179,34 @@
    short line of text. Shrinks the box to its content instead. */
 .dashboard-error--inline {
   width: fit-content;
+}
+
+/* Same box treatment as .dashboard-error, for a caution rather than a
+   failure (SettingsPage's page-level "Unsaved changes" banner) — GC DS has
+   no orange token family, so this uses the yellow/gold triad instead,
+   same red-100/500/700 pairing shape .dashboard-error uses. */
+.dashboard-warning-box {
+  background: var(--gcds-color-yellow-100);
+  border: 1px solid var(--gcds-color-yellow-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-yellow-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
+/* Same box treatment as .dashboard-error/.dashboard-warning-box, for a
+   neutral success/info outcome (e.g. "Settings cache refreshed."). */
+.dashboard-info-box {
+  background: var(--gcds-color-blue-100);
+  border: 1px solid var(--gcds-color-blue-500);
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-300);
+  color: var(--gcds-color-blue-700);
+  width: fit-content;
+  font-size: var(--gcds-font-sizes-text-small);
 }
 
 .dashboard-warning {

@@ -120,6 +120,7 @@
         "model": {
           "label": "Famille de modèles :"
         },
+        "useSystemSettings": "Utiliser les paramètres système",
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }
@@ -179,6 +180,9 @@
     "expertRating": {
       "title": "Évaluation de la réponse",
       "selectionRequired": "Veuillez sélectionner au moins une évaluation.",
+      "explanationRequired": "Une explication est requise.",
+      "explanationRequiredField": "Une explication est requise : {field}",
+      "explanationSummaryHeading": "Corrigez les éléments suivants avant de soumettre",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
@@ -191,7 +195,7 @@
         "incorrect": "Incorrecte",
         "harmful": "Nuisible",
         "contentIssue": "Problème de contenu",
-        "explanation": "Veuillez expliquer votre évaluation (facultatif) :",
+        "explanation": "Veuillez expliquer votre évaluation :",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :",
         "harmfulDetails": {
           "summary": "Quand coder comme nuisible",
@@ -772,6 +776,7 @@
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
       "resultsSummary": "Affichage de {count} chats",
       "totalCount": "Total des chats correspondants : {total}",
+      "interactionCountFiltered": "{count} (+{more} de plus)",
       "searchLabel": "Rechercher par ID de chat :",
       "searchPlaceholder": "Entrez l'ID de chat...",
       "columns": {
@@ -818,7 +823,6 @@
         },
         "contentIssue": "problème de contenu"
       },
-      "departmentMore": "+{count} de plus",
       "columnFilterPlaceholder": "Filtrer"
     },
     "evalDashboard": {
@@ -1044,7 +1048,6 @@
     "saveError": "Échec de l'enregistrement du paramètre.",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
-    "unsavedChanges": "Modifications non enregistrées",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "general": {
       "title": "Paramètres généraux"
@@ -1202,7 +1205,9 @@
     "off": "Désactivé",
     "na": "S.O.",
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
-    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés."
+    "notEnoughData": "Données insuffisantes pour les filtres sélectionnés.",
+    "pauseUpdates": "Suspendre les mises à jour automatiques",
+    "resumeUpdates": "Reprendre les mises à jour automatiques"
   },
   "eval": {
     "metric": "Métrique",
@@ -1257,13 +1262,17 @@
     "englishQuestion": "Question en anglais",
     "expertScore": "Note de l'expert",
     "feedback": "Rétroaction",
+    "helpfulYes": "Utile - oui",
+    "helpfulNo": "Utile - non",
     "expertFeedbackTitle": "Évaluation d'expert",
     "expertEmail": "Courriel de l'expert",
     "deleteExpertFeedback": "Supprimer l'évaluation d'expert",
     "publicFeedbackTitle": "Rétroaction publique",
     "autoEvalTitle": "Évaluation automatisée",
     "explanation": "Explication",
+    "explanationLabel": "Explication :",
     "score": "Note",
+    "scoreSuffix": "Note : {score}",
     "reason": "Raison",
     "publicComment": "Commentaire public",
     "notAvailable": "N/D",
@@ -1281,7 +1290,7 @@
     "noSentenceTraces": "Aucune trace de correspondance de phrase disponible.",
     "citation": "Citation",
     "totalScore": "Score total",
-    "suggestedCitation": "URL de citation suggérée",
+    "suggestedCitation": "URL de citation suggérée :",
     "fallbackDetails": "Détails du repli",
     "fallbackType": "Type de repli",
     "timestamp": "Horodatage",
@@ -1320,6 +1329,8 @@
     "fallbackCompareChecks": "Vérifications de la comparaison de repli",
     "check": "Vérification",
     "pass": "Réussite",
+    "fail": "Échoué",
+    "downloadSuccess": "Réussi",
     "details": "Détails",
     "expertFeedbackId": "ID d'évaluation d'expert",
     "fallbackSourceChatId": "ID de chat source pour le repli",

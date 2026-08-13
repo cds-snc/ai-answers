@@ -337,17 +337,31 @@ const ChatViewer = ({ lang = 'en' }) => {
                       its own localized empty state (see useChatLogsTable),
                       which keeps tableRef stable so focus can be captured
                       and restored across refreshes instead of being lost to
-                      <body> when this element used to get swapped out. */}
-                  <table ref={tableRef} className="display">
-                    <thead>
-                      <tr>
-                        <th>{t('logging.createdAt')}</th>
-                        <th>{t('logging.level')}</th>
-                        <th>{t('logging.message')}</th>
-                        <th>{t('logging.metadata')}</th>
-                      </tr>
-                    </thead>
-                  </table>
+                      <body> when this element used to get swapped out.
+
+                      The wrapper div is load-bearing: DataTables re-parents
+                      <table> into its own container element, so the table is
+                      no longer where React left it. Without this div, React
+                      would try to insert the conditional download button
+                      above using the table as its reference sibling and
+                      throw NotFoundError ("The node before which the new
+                      node is to be inserted is not a child of this node").
+                      Keeping a plain div here that React treats as a leaf —
+                      no conditional children, nothing rendered alongside the
+                      table — confines every DataTables DOM mutation inside a
+                      node React never has to reach past. */}
+                  <div>
+                    <table ref={tableRef} className="display">
+                      <thead>
+                        <tr>
+                          <th>{t('logging.createdAt')}</th>
+                          <th>{t('logging.level')}</th>
+                          <th>{t('logging.message')}</th>
+                          <th>{t('logging.metadata')}</th>
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}

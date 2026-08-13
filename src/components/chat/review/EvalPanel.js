@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
-import { formatDecimal } from '../../../utils/numberFormat.js';
+import { formatDecimal, formatNumber } from '../../../utils/numberFormat.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 
 const formatDate = (d) => {
@@ -151,13 +151,14 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
     }
   };
 
-  // Build title with score indicator
+  // Text, not a bare glyph or color alone — a checkmark with no label isn't
+  // reliably announced by screen readers (WCAG 1.4.1/4.1.2). Same
+  // .label.normal pill pattern used for ExpertFeedbackPanel.js's score pill.
   const baseEvalTitle = t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation', 'Automated evaluation');
-  let evalTitleSuffix = '';
-  if (evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null) {
-    evalTitleSuffix = ` \u2714 ${evalObj.expertFeedback.totalScore}`;
-  }
-  const evalTitle = withAnswerNumber(baseEvalTitle + evalTitleSuffix);
+  const evalScore = evalObj && evalObj.expertFeedback && typeof evalObj.expertFeedback.totalScore !== 'undefined' && evalObj.expertFeedback.totalScore !== null
+    ? evalObj.expertFeedback.totalScore
+    : null;
+  const evalTitle = withAnswerNumber(baseEvalTitle);
 
   if (!evalObj) return null;
 
@@ -166,7 +167,14 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
       className="review-details"
       onToggle={handleToggle}
     >
-      <summary>{evalTitle}</summary>
+      <summary>
+        {evalTitle}
+        {evalScore !== null && (
+          <span className="label label--summary-status normal">
+            {t('reviewPanels.scoreSuffix').replace('{score}', () => formatNumber(evalScore, lang))}
+          </span>
+        )}
+      </summary>
       <div className="review-panel eval-panel">
         <div className="actions" style={{ marginBottom: '1rem' }}>
           <GcdsButton

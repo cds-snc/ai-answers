@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsIcon } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import SettingsAuditValue from '../components/settings/SettingsAuditValue.js';
 import { formatNumber } from '../utils/numberFormat.js';
@@ -12,7 +12,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   deploymentMode: 'CDS',
   vectorServiceType: 'imvectordb',
   'site.baseUrl': '',
-  'workflow.default': 'GenericGraph',
+  'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
@@ -116,7 +116,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [baseUrl, setBaseUrl] = useState('');
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
+  const [defaultWorkflow, setDefaultWorkflow] = useState(DEFAULT_WORKFLOW);
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
@@ -187,6 +187,14 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   const isSectionDirty = (section) => SECTION_KEYS[section].some((key) => key in pendingChanges);
 
+  // TODO(follow-up, pre-existing): this mount-time load and a field's own
+  // onChange (below, e.g. setDefaultWorkflow(v) via stageChange) both call
+  // setDefaultWorkflow with no sequencing between them. A slow initial GET
+  // that resolves after the user has already started editing overwrites the
+  // dropdown's displayed value with the stale loaded one, while
+  // pendingChanges still holds what they typed — display and staged value
+  // go out of sync. Same class of race as before the section-Save rework,
+  // just a different symptom (stale display instead of stale save).
   useEffect(() => {
     async function loadSettings() {
       const settings = await DataStoreService.getSettings(SETTINGS_LOAD_KEYS, SETTINGS_LOAD_DEFAULTS);
@@ -196,7 +204,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setBaseUrl(settings['site.baseUrl'] ?? '');
       const allowedWorkflows = WORKFLOW_VALUES;
       const defaultWorkflowSetting = settings['workflow.default'];
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
@@ -384,15 +392,26 @@ const SettingsPage = ({ lang = 'en' }) => {
         </GcdsButton>
         <StatusMessage
           isError={settingsCacheStatus?.isError}
-          tag={settingsCacheStatus?.isError ? 'div' : 'p'}
-          className={settingsCacheStatus?.isError ? 'mt-200 dashboard-error dashboard-error--inline' : 'mt-200'}
+          tag={settingsCacheStatus ? 'div' : 'p'}
+          className={
+            settingsCacheStatus?.isError
+              ? 'mt-200 dashboard-error dashboard-error--inline'
+              : settingsCacheStatus
+                ? 'mt-200 dashboard-info-box'
+                : 'mt-200'
+          }
         >
           {settingsCacheStatus?.isError ? (
             <>
               <GcdsIcon name="warning-triangle" marginRight="50" />
               {settingsCacheStatus.text}
             </>
-          ) : settingsCacheStatus?.text}
+          ) : settingsCacheStatus ? (
+            <>
+              <GcdsIcon name="info-circle" marginRight="50" />
+              {settingsCacheStatus.text}
+            </>
+          ) : null}
         </StatusMessage>
       </div>
       {/* Per-section "Unsaved changes" only shows while that section's
@@ -400,7 +419,17 @@ const SettingsPage = ({ lang = 'en' }) => {
           which sections are collapsed, and names which section(s) so it's
           useful even when several are dirty at once. Gives advance notice
           before the beforeunload prompt would. */}
-      <StatusMessage persistent tag="div" className="mb-400">
+      {/* TODO: this page's `persistent` StatusMessage usages (here, and the
+          audit-loading/empty message + "Showing X of Y" count below) were
+          written against StatusMessage.js as it stood mid-merge, in parallel
+          with main's own separate a11y pass over admin StatusMessage usage
+          ("close StatusMessage/aria gaps in admin utility pages"). Now that
+          both are merged, revisit whether `persistent`'s empty-node/
+          `status-message--empty` handling still matches whatever convention
+          main settled on for other admin pages' status messages, once this
+          PR and any follow-up review are wrapped up — don't assume the two
+          efforts landed on the same pattern just because they merged cleanly. */}
+      <StatusMessage persistent tag="div" className="mb-400 dashboard-warning-box">
         {dirtySectionNames && (
           <>
             <GcdsIcon name="warning-triangle" marginRight="50" />
@@ -969,11 +998,11 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.redaction.title')}</summary>
         <div>
-        <p className="mb-400">{t('settings.redaction.description')}</p>
+        <p>{t('settings.redaction.description')}</p>
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langEnglish')}</h2>
+            <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langEnglish')}</h2>
 
             <label htmlFor="redaction.profanity.en" className="filter-label display-block mt-200">
               {t('settings.redaction.profanity')} (EN)
@@ -1007,7 +1036,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           </div>
 
           <div>
-            <h2 className="heading-size-h3 mb-200">{t('settings.redaction.langFrench')}</h2>
+            <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langFrench')}</h2>
 
             <label htmlFor="redaction.profanity.fr" className="filter-label display-block mt-200">
               {t('settings.redaction.profanity')} (FR)
@@ -1160,8 +1189,13 @@ const SettingsPage = ({ lang = 'en' }) => {
 // remounting it — declaring it inside the parent's render body would give it
 // a new function identity every render, forcing a full unmount/remount of
 // every Save button on every keystroke.
+// This is always the last element inside its <details>, so its own
+// bottom margin is what keeps it off the border when the section is open —
+// fixing the gap here (rather than on <details> itself) avoids double
+// spacing wherever a section's last child is something like a <p> that
+// already carries its own margin-bottom.
 const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t }) => (
-  <div className="mt-400">
+  <div className="mt-400 mb-400">
     <GcdsButton
       type="button"
       onClick={() => onSave(section)}
@@ -1170,9 +1204,6 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
     >
       {saving ? t('settings.saving') : t('settings.save')}
     </GcdsButton>
-    {dirty && !saving && (
-      <span className="mrgn-lft-sm font-size-text-xsm-nr">{t('settings.unsavedChanges')}</span>
-    )}
     <StatusMessage
       isError={status?.isError}
       tag={status?.isError ? 'div' : 'p'}
