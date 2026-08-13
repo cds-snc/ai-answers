@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.185.0](https://github.com/cds-snc/ai-answers/compare/v1.184.0...v1.185.0) (2026-08-13)
+
+
+### Features
+
+* require expert-eval explanations, review panel accessibility gaps ([2495d61](https://github.com/cds-snc/ai-answers/commit/2495d615960ab58e758e21d7a5880984013ea786))
+* TODO review comments - review later flags ([8ffd42d](https://github.com/cds-snc/ai-answers/commit/8ffd42d2e3858fdf808809447cf73edb037fa849))
+
+
+### Bug Fixes
+
+* bug in Options on eval chat view ([667572e](https://github.com/cds-snc/ai-answers/commit/667572e17f7d3aea6b628c4d8292185e922a0b18))
+* bug in OPtions on eval chat view ([0afa10b](https://github.com/cds-snc/ai-answers/commit/0afa10b0434c05d9882689956412ffa17fabcac0))
+* eval comment to required, label adjustments, citation explanatio… ([a3bbeac](https://github.com/cds-snc/ai-answers/commit/a3bbeac04a2d6a33b6be2ca07dfe93d21df611c1))
+* settings still not matching ([99badab](https://github.com/cds-snc/ai-answers/commit/99badab30688a6e8f793a906d4e2394d89cc0ee9))
+* trace logs crash ([ff69811](https://github.com/cds-snc/ai-answers/commit/ff6981109743dd07ffe1ded468352795a2a82d12))
+* unmount DataTables cell roots safely ([8465e8d](https://github.com/cds-snc/ai-answers/commit/8465e8d613746a8e13e5a4aebfa0353231515607))
+
 ## [1.184.0](https://github.com/cds-snc/ai-answers/compare/v1.183.0...v1.184.0) (2026-08-12)
 
 
