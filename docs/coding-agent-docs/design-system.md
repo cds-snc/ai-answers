@@ -57,6 +57,10 @@ No italics (Canada.ca Content Style Guide rule). Exceptions are narrow: French/f
 - No `<em>` for styling — it means stress emphasis, not "make it italic." Use `<strong>` or nothing.
 - No `<i>` outside the exceptions above. (Font-icon glyphs like `<i className="fa-solid fa-close">` aren't text italics — not a concern.)
 
+## Icons
+
+When an icon is warranted, reach for a **GC DS icon** (`GcdsIcon`, e.g. `<GcdsIcon name="warning-triangle" />`) first. Fall back to **Font Awesome** (`FontAwesomeIcon`, `<i className="fa-solid ...">`) only when no equivalent GC DS icon exists and an icon genuinely adds value over plain text. Both are already in use across the codebase — this is about which to reach for on new UI, not a migration of existing icons.
+
 ## Styling hierarchy
 
 When adding any style, follow this order — stop at the first option that works:

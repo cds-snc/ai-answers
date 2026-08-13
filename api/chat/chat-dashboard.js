@@ -132,6 +132,18 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    // Captured before the interactions lookup/unwind/filters below narrow
+    // things down — interactions is still the chat's full ObjectId ref
+    // array here, so this is the chat's true total interaction count,
+    // regardless of any filter (e.g. department) applied later. Without
+    // this, a department-filtered chat's interactionCount reflects only
+    // the matching interactions, silently hiding that the chat has more.
+    pipeline.push({
+      $addFields: {
+        totalInteractionCount: { $size: { $ifNull: ['$interactions', []] } }
+      }
+    });
+
     // DocumentDB-safe lookups (single-field joins) with immediate projections to minimize memory
 
     // Lookup interactions - only need referringUrl, answer, context, expertFeedback, autoEval refs
@@ -312,6 +324,7 @@ async function chatDashboardHandler(req, res) {
         user: 1,
         createdAt: 1,
         pageLanguage: 1,
+        totalInteractionCount: 1,
         interactions: {
           department: '$interactions.department',
           expertEmail: '$interactions.expertEmail',
@@ -363,6 +376,10 @@ async function chatDashboardHandler(req, res) {
         creatorEmail: { $first: '$creatorEmail' },
         pageLanguage: { $first: '$pageLanguage' },
         interactionCount: { $sum: 1 },
+        // Same value on every unwound interaction row for a given chat
+        // (computed once, pre-filter, at the top of the pipeline) — $first
+        // after the _id sort above is as safe as it is for chatId/createdAt.
+        totalInteractionCount: { $first: '$totalInteractionCount' },
         redactedQuestion: { $first: '$interactions.redactedQuestion' },
         departments: {
           $addToSet: '$interactions.department'
@@ -395,6 +412,7 @@ async function chatDashboardHandler(req, res) {
         createdAt: 1,
         creatorEmail: 1,
         interactionCount: 1,
+        totalInteractionCount: 1,
         redactedQuestion: 1,
         department: {
           $let: {
@@ -585,6 +603,7 @@ async function chatDashboardHandler(req, res) {
       partnerHasContentIssue: !!chat.partnerHasContentIssue,
       userType: chat.userType || 'public',
       interactionCount: chat.interactionCount || 0,
+      totalInteractionCount: chat.totalInteractionCount || 0,
       redactedQuestion: chat.redactedQuestion || ''
     }));
 
