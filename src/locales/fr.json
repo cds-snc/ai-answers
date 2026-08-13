@@ -1108,12 +1108,7 @@
     "auditHistory": {
       "title": "Historique des paramètres",
       "description": "Consultez qui a modifié les paramètres et à quel moment.",
-      "loading": "Chargement de l’historique des paramètres...",
-      "loadingMore": "Chargement supplémentaire...",
-      "loadMore": "Charger plus",
       "empty": "Aucune modification des paramètres n’a été enregistrée.",
-      "error": "Échec du chargement de l’historique des paramètres.",
-      "showing": "Affichage de {count} modifications sur {total}.",
       "user": "Utilisateur",
       "action": "Action",
       "setting": "Paramètre",

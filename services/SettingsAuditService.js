@@ -28,19 +28,29 @@ const normalizePageValue = (value, fallback) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
-// Paging by skip alone is unstable: an entry recorded between two "load more"
-// clicks pushes every row down one, so the next page repeats a row the reader
-// has already seen. Callers pass the newest entry from their first page back as
-// `before`, which pins later pages to that same snapshot. Rejects an unusable
-// cursor rather than silently falling back to an unanchored read, which would
-// reintroduce the drift it exists to prevent.
-const buildListQuery = (before) => {
-  if (before === null || before === undefined || before === '') return {};
-  const anchor = new Date(before);
-  if (Number.isNaN(anchor.getTime())) {
-    throw new Error('Invalid before cursor for settings audit list');
-  }
-  return { createdAt: { $lte: anchor } };
+// Escapes a search term for literal use inside a RegExp — same pattern used
+// elsewhere in this codebase for search-box filtering (e.g. api/util/chat-
+// filters.js), not centralized into a shared helper yet. Without this, a
+// search term containing regex metacharacters (".", "(", etc. — routine in
+// e.g. a base URL or template ID being searched for) would be interpreted
+// as a pattern instead of literal text.
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Case-insensitive substring match across the columns the audit table
+// actually shows. No $text index on this collection — an admin-only, low-
+// volume audit log doesn't justify the write-time cost of maintaining one
+// just for this search box.
+const buildSearchQuery = (search) => {
+  const trimmed = typeof search === 'string' ? search.trim() : '';
+  if (!trimmed) return {};
+  const pattern = new RegExp(escapeRegex(trimmed), 'i');
+  return { $or: [
+    { actorEmail: pattern },
+    { settingKey: pattern },
+    { action: pattern },
+    { previousValue: pattern },
+    { newValue: pattern },
+  ] };
 };
 
 // The primary action (a setting save, a cache refresh) is already done by the
@@ -127,24 +137,27 @@ const SettingsAuditService = {
 
   recordAuditSafely,
 
-  async list({ limit = 50, skip = 0, before = null } = {}) {
+  // `limit`/`skip` are a real page window (DataTables' own server-side
+  // pagination — see SettingsPage.js), not a "load more" continuation, so
+  // plain offset pagination is fine here: the standard, accepted tradeoff
+  // every other server-side-paginated table in this app already makes (a
+  // row inserted while paging can shift what lands on the next page), not
+  // something specific to this endpoint.
+  async list({ limit = 50, skip = 0, search = '' } = {}) {
     // `.limit(0)` means "no limit" to MongoDB/Mongoose, not "zero rows" — floor
     // at 1 so a caller-supplied 0 can't silently defeat the 100-row cap below.
     const safeLimit = Math.min(Math.max(normalizePageValue(limit, 50), 1), 100);
     const safeSkip = normalizePageValue(skip, 0);
-    const query = buildListQuery(before);
+    const query = buildSearchQuery(search);
     await dbConnect();
-    // TODO (code-review #10): countDocuments runs on every call — the
-    // initial load, every "Load more" page, and every silent post-save/
-    // post-refresh reload — even though the total usually hasn't changed
-    // since the last fetch within the same anchored view. Only the first,
-    // unanchored page (skip:0, no before) genuinely needs a fresh count;
-    // look into whether callers can pass back the total they already have
-    // (client already tracks auditTotal) for skip>0/before-anchored calls,
-    // and validate that skipping the recount there doesn't produce a wrong
-    // "hasMore" once actually tested against DocumentDB, not just reasoned
-    // about — this crosses the client/server contract, not a local-only fix.
-    const [entries, total] = await Promise.all([
+    // DataTables' server-side mode expects both counts on every request:
+    // recordsFiltered (matching the current search) and recordsTotal (the
+    // whole collection, for its "filtered from N total entries" footer).
+    // The second count only runs when a search is active — without one
+    // they're the same number, so there's nothing to gain from a second
+    // query.
+    const trimmedSearch = typeof search === 'string' ? search.trim() : '';
+    const [entries, filteredTotal, total] = await Promise.all([
       AuditLog.find(query)
         // Batched section-saves write multiple rows sharing one createdAt, so
         // createdAt alone can't order them consistently across two separate
@@ -155,12 +168,13 @@ const SettingsAuditService = {
         .limit(safeLimit)
         .lean(),
       AuditLog.countDocuments(query),
+      trimmedSearch ? AuditLog.countDocuments({}) : null,
     ]);
 
     return {
       entries: entries.map(({ _id, ...entry }) => ({ id: String(_id), ...entry })),
-      total,
-      hasMore: total > safeSkip + entries.length,
+      total: trimmedSearch ? total : filteredTotal,
+      filteredTotal,
     };
   },
 };

@@ -76,7 +76,7 @@ const {
       errors: {},
     })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
-    mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, hasMore: false })),
+    mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });
 
@@ -102,6 +102,25 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => React.createElement('div', null, children),
   GcdsIcon: (props) => React.createElement('span', { ...props, 'aria-hidden': 'true' }),
 }));
+
+// The audit history table is an ExperimentalServerDataTable (see
+// src/pages/__tests__/ChatDashboardPage.test.js / EvalDashboardPages.test.js
+// for the same convention) — mocked shallowly rather than letting the real
+// jQuery DataTables library run under jsdom. Capturing the props each render
+// passes to the mock lets a test inspect the columns/options config and
+// manually drive `options.ajax` the same way the real library would.
+let lastDataTableProps = null;
+
+vi.mock('datatables.net-react', () => {
+  const MockDataTable = (props) => {
+    lastDataTableProps = props;
+    return React.createElement('div', { 'data-testid': 'audit-data-table' });
+  };
+  MockDataTable.use = vi.fn();
+  return { default: MockDataTable };
+});
+
+vi.mock('datatables.net-dt', () => ({ default: () => null }));
 
 describe('SettingsPage health section', () => {
   beforeEach(() => {
@@ -151,6 +170,7 @@ describe('SettingsPage audit history', () => {
     mockSetSettings.mockClear();
     mockRefreshSettingsCache.mockClear();
     mockGetSettingsAudit.mockClear();
+    lastDataTableProps = null;
   });
 
   afterEach(() => {
@@ -171,33 +191,6 @@ describe('SettingsPage audit history', () => {
     // Nothing persists until the section's Save button is clicked — this is
     // the whole point of moving off auto-save-on-change.
     expect(mockSetSettings).not.toHaveBeenCalled();
-  });
-
-  it('reloads the history after a section is saved', async () => {
-    render(React.createElement(SettingsPage, { lang: 'en' }));
-
-    await waitFor(() => {
-      expect(mockGetSettingsAudit).toHaveBeenCalledTimes(1);
-    });
-
-    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
-      target: { value: 'true' },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
-
-    await waitFor(() => {
-      expect(mockSetSettings).toHaveBeenCalledWith([
-        { key: 'systemHealth.enabled', value: 'true' },
-      ]);
-    });
-
-    // The saved change should show up in the table without a page reload,
-    // and the refresh starts from the newest page.
-    await waitFor(() => {
-      expect(mockGetSettingsAudit).toHaveBeenCalledTimes(2);
-    });
-    expect(mockGetSettingsAudit).toHaveBeenLastCalledWith({ limit: 50, skip: 0, before: null });
   });
 
   it('enables the health Save button only while a change is pending, and disables it again once saved', async () => {
@@ -225,59 +218,121 @@ describe('SettingsPage audit history', () => {
     });
   });
 
-  it('anchors load more to the first page and announces the new count', async () => {
-    const entry = (id, createdAt) => ({
-      id,
-      actorEmail: 'admin@example.com',
-      action: 'setting.updated',
-      settingKey: 'siteStatus',
-      previousValue: 'available',
-      newValue: 'unavailable',
-      createdAt,
+  it('clears the save-outcome message once the field is edited again', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
     });
 
-    mockGetSettingsAudit
-      .mockResolvedValueOnce({
-        entries: [entry('1', '2026-08-11T12:00:00.000Z')],
-        total: 2,
-        hasMore: true,
-      })
-      .mockResolvedValueOnce({
-        entries: [entry('2', '2026-08-10T09:00:00.000Z')],
-        total: 2,
-        hasMore: false,
-      });
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.saveSuccessIn')).toBeTruthy();
+    });
+
+    // A save-outcome message describing a state the admin has since changed
+    // again would be misleading left on screen.
+    fireEvent.change(field, { target: { value: 'false' } });
+    expect(screen.queryByText('settings.saveSuccessIn')).toBeNull();
+  });
+
+  it('drops a field from pendingChanges (and re-disables Save) once it is edited back to its original value', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+
+    // Loaded value is 'false' (see healthSettings above).
+    fireEvent.change(field, { target: { value: 'true' } });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'false' } });
+    expect(saveButton.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(saveButton);
+    expect(mockSetSettings).not.toHaveBeenCalled();
+  });
+
+  it('renders a search/paginate table with sorting disabled and 10 rows per page', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(lastDataTableProps).toBeTruthy();
+    });
+
+    expect(lastDataTableProps.options.ordering).toBe(false);
+    expect(lastDataTableProps.options.pageLength).toBe(10);
+    expect(lastDataTableProps.options.lengthChange).toBe(false);
+    expect(lastDataTableProps.options.searching).toBe(true);
+    expect(lastDataTableProps.options.serverSide).toBe(true);
+
+    const columnFields = lastDataTableProps.columns.map((column) => column.data);
+    expect(columnFields).toEqual([
+      'actorEmail', 'action', 'settingKey', 'previousValue', 'newValue', 'createdAt',
+    ]);
+  });
+
+  it('fetches a page through DataStoreService and hands back the recordsTotal/recordsFiltered shape DataTables expects', async () => {
+    mockGetSettingsAudit.mockResolvedValueOnce({
+      entries: [{
+        id: '1',
+        actorEmail: 'admin@example.com',
+        action: 'setting.updated',
+        settingKey: 'siteStatus',
+        previousValue: 'available',
+        newValue: 'unavailable',
+        createdAt: '2026-08-11T12:00:00.000Z',
+      }],
+      total: 5,
+      filteredTotal: 1,
+    });
 
     render(React.createElement(SettingsPage, { lang: 'en' }));
 
     await waitFor(() => {
-      expect(screen.getByText('settings.auditHistory.loadMore')).toBeTruthy();
+      expect(lastDataTableProps?.options?.ajax).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByText('settings.auditHistory.loadMore'));
+    const callback = vi.fn();
+    await lastDataTableProps.options.ajax(
+      { start: 10, length: 10, search: { value: 'unavailable' }, draw: 2 },
+      callback
+    );
 
-    // The next page is pinned to the newest row of the first page, so an entry
-    // recorded in between cannot shift rows into a repeat.
+    expect(mockGetSettingsAudit).toHaveBeenCalledWith({ skip: 10, limit: 10, search: 'unavailable' });
+    expect(callback).toHaveBeenCalledWith({
+      draw: 2,
+      recordsTotal: 5,
+      recordsFiltered: 1,
+      data: expect.any(Array),
+    });
+  });
+
+  it('escapes and formats each column, and truncates long values behind a disclosure', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
     await waitFor(() => {
-      expect(mockGetSettingsAudit).toHaveBeenLastCalledWith({
-        limit: 50,
-        skip: 1,
-        before: '2026-08-11T12:00:00.000Z',
-      });
+      expect(lastDataTableProps).toBeTruthy();
     });
 
-    // Disabling the focused button while loading would blur it and drop a
-    // keyboard user back to <body> on every page but the last.
-    expect(screen.queryByText('settings.auditHistory.loadMore')?.hasAttribute('disabled')).not.toBe(true);
+    const columns = Object.fromEntries(lastDataTableProps.columns.map((c) => [c.data, c]));
+    expect(columns.actorEmail.render('<b>admin@example.com</b>')).toBe('&lt;b&gt;admin@example.com&lt;/b&gt;');
+    expect(columns.action.render('settings.cache_refreshed')).toBe('settings.auditHistory.actions.cacheRefreshed');
+    expect(columns.action.render('setting.updated')).toBe('settings.auditHistory.actions.settingUpdated');
+    expect(columns.settingKey.render(null)).toBe('settings.auditHistory.notApplicable');
+    expect(columns.previousValue.render('short')).toBe('<span class="settings-audit-value">short</span>');
 
-    // Appending rows is silent for a screen reader unless the count is
-    // announced, and the Load more button unmounts on the last page.
-    const count = await screen.findByText('settings.auditHistory.showing');
-    expect(count.getAttribute('role')).toBe('status');
-    await waitFor(() => {
-      expect(screen.queryByText('settings.auditHistory.loadMore')).toBeNull();
-      expect(document.activeElement).toBe(count);
-    });
+    const longValue = 'x'.repeat(150);
+    const longHtml = columns.newValue.render(longValue);
+    expect(longHtml).toContain('<details class="settings-audit-value settings-audit-value--long">');
+    expect(longHtml).toContain('x'.repeat(120));
   });
 });
 

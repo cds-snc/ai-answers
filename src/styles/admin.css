@@ -2190,45 +2190,12 @@
   color: var(--gcds-details-focus-text);
 }
 
-/* Focus lands here when the "Load more" button unmounts on the last page.
-   Programmatic focus on a non-interactive element does not trigger
-   :focus-visible, so without this a sighted keyboard user sees nothing move. */
-.settings-audit-count:focus {
-  outline: var(--gcds-details-focus-outline);
-  outline-offset: var(--gcds-details-focus-outline-offset);
-}
-
-/* The settings history markup shipped with a `.table-responsive` wrapper and an
-   unstyled <table>. Neither this project nor GC DS defines that class, so the
-   table rendered with no borders, padding or scroll and every column ran into
-   the next. Row dividers plus generous cell padding follow the dashboard's
-   CountTable treatment (2px under the header, 1px between rows).
+/* `.table-responsive` (used by other markdown/legacy tables) isn't a class
+   this project or GC DS defines, so a table using it renders with no
+   scroll — kept here as a reusable overflow container for any plain table.
    TOKEN NOTE: `.how-to-table-scroll` (above) solves the same overflow problem
    for markdown pages — worth folding into `.table-scroll` next time that file
    is touched, rather than keeping two names for one rule. */
 .table-scroll {
   overflow-x: auto;
-}
-
-.settings-audit-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.settings-audit-table th,
-.settings-audit-table td {
-  padding: var(--gcds-spacing-200) var(--gcds-spacing-300);
-  text-align: left;
-  vertical-align: top;
-  border-bottom: 1px solid var(--gcds-border-default);
-}
-
-.settings-audit-table thead th {
-  border-bottom: 2px solid var(--gcds-border-default);
-}
-
-/* Timestamps read as one unit — wrapping them mid-value makes the column
-   harder to scan than letting it scroll with the rest of the table. */
-.settings-audit-table .settings-audit-date {
-  white-space: nowrap;
 }

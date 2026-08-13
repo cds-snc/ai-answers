@@ -1,14 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { GcdsButton, GcdsContainer, GcdsIcon } from '@gcds-core/components-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GcdsButton, GcdsContainer } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
-import SettingsAuditValue from '../components/settings/SettingsAuditValue.js';
+import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.js';
-import { formatNumber } from '../utils/numberFormat.js';
+import ExperimentalServerDataTable from '../components/experimental/ExperimentalServerDataTable.js';
+import { escapeHtmlAttribute } from '../utils/reviewLink.js';
+
+// Same truncate-behind-a-disclosure treatment as the React SettingsAuditValue
+// component (previousValue/newValue can be as long as SettingsAuditService's
+// own 2000-char cap), but building a raw HTML string instead of JSX —
+// DataTables column `render` functions insert HTML directly, not React
+// elements, so the two can't share the same component.
+const renderAuditValueHtml = (value, emptyLabel) => {
+  if (value === null || value === undefined) return escapeHtmlAttribute(emptyLabel);
+  const text = String(value);
+  if (text.length <= AUDIT_VALUE_PREVIEW_LENGTH) {
+    return `<span class="settings-audit-value">${escapeHtmlAttribute(text)}</span>`;
+  }
+  const preview = escapeHtmlAttribute(text.slice(0, AUDIT_VALUE_PREVIEW_LENGTH));
+  return `<details class="settings-audit-value settings-audit-value--long"><summary>${preview}…</summary><span>${escapeHtmlAttribute(text)}</span></details>`;
+};
 
 const SETTINGS_LOAD_DEFAULTS = {
   siteStatus: 'available',
@@ -85,6 +101,13 @@ const SECTION_KEYS = {
   ],
 };
 
+// Reverse of SECTION_KEYS — which section a given setting key belongs to.
+// Lets stageChange clear that section's stale save-outcome message without
+// every field's onChange having to know its own section name.
+const KEY_TO_SECTION = Object.fromEntries(
+  Object.entries(SECTION_KEYS).flatMap(([section, keys]) => keys.map((key) => [key, section]))
+);
+
 // Same section keys, mapped to the locale key for that section's own title —
 // lets the page-level unsaved-changes banner name which section(s) without
 // duplicating the title strings each SectionSaveControls already carries.
@@ -153,29 +176,13 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
   const [settingsCacheStatus, setSettingsCacheStatus] = useState(null); // { text, isError }
-  const [auditEntries, setAuditEntries] = useState([]);
-  const [auditLoading, setAuditLoading] = useState(true);
-  const [auditLoadingMore, setAuditLoadingMore] = useState(false);
-  const [auditError, setAuditError] = useState(false);
-  const [auditHasMore, setAuditHasMore] = useState(false);
-  const [auditTotal, setAuditTotal] = useState(0);
-  // Newest entry of the first page — later pages are read relative to it. A ref
-  // rather than state: nothing renders it, and keeping it out of the render
-  // cycle avoids making the loader depend on a value it also writes.
-  const auditAnchorRef = useRef(null);
-  const auditCountRef = useRef(null);
-  const auditRefocusRef = useRef(false);
-  // Synchronous double-click guard for "Load more" — auditLoadingMore
-  // (state) can't prevent a second click landing in the same tick, before
-  // React has re-rendered with the loading flag set; a ref updates
-  // immediately, closing that gap.
-  const auditLoadingMoreRef = useRef(false);
-  // Bumped at the start of every loadAuditHistory call. "Load more" and a
-  // section save's silent refresh can both be in flight at once; whichever
-  // started later wins — a response from a call that's no longer the latest
-  // is discarded instead of applied, so it can't overwrite/interleave with
-  // a newer one that resolved first.
-  const auditRequestIdRef = useRef(0);
+  // Forces the audit history DataTable to remount (and so re-fetch its
+  // current page from the server) after a section save or a cache refresh
+  // writes new audit rows — the same "bump a key to force a server-side
+  // DataTable to reload" pattern ExperimentalDatasetsPage.js already uses,
+  // since ExperimentalServerDataTable doesn't expose an imperative
+  // ajax.reload() escape hatch.
+  const [auditTableKey, setAuditTableKey] = useState(0);
   const [baseUrl, setBaseUrl] = useState('');
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
@@ -237,6 +244,19 @@ const SettingsPage = ({ lang = 'en' }) => {
   // one flat map for the whole page. SECTION_KEYS turns it into a per-section
   // dirty check. Cleared per-key as each field's save actually succeeds.
   const [pendingChanges, setPendingChanges] = useState({});
+  // Raw settings values as last loaded from the server, keyed by setting
+  // key — a ref (not state) since nothing renders it directly, only
+  // stageChange reads it. Lets an edit that lands back on the original value
+  // (e.g. bump a number up then back down) drop out of pendingChanges
+  // instead of leaving the section dirty for a net-zero change. Compared
+  // against the raw loaded string rather than each field's own
+  // display-normalized state (Number()/allowlist-clamped/etc.), so this can
+  // miss a revert on the handful of fields with non-trivial normalization
+  // (e.g. session store type) if the stored value itself is in an unusual
+  // form — acceptable for the common case this fixes (typing a number back
+  // to what it was) without needing to duplicate every field's own
+  // load-time transform here too.
+  const originalValuesRef = useRef({});
   const [sectionSaving, setSectionSaving] = useState({
     general: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
   });
@@ -254,13 +274,33 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [sectionErrorAttempt, setSectionErrorAttempt] = useState({});
 
   const stageChange = (key, value) => {
-    setPendingChanges((prev) => ({ ...prev, [key]: value }));
+    const original = originalValuesRef.current[key];
+    const isReverted = original !== undefined && String(original) === value;
+    setPendingChanges((prev) => {
+      if (isReverted) {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
     // A fresh edit supersedes whatever the last save attempt said was wrong
     // with this field.
     setFieldErrors((prev) => {
       if (!(key in prev)) return prev;
       const next = { ...prev };
       delete next[key];
+      return next;
+    });
+    // The section's last save-outcome message describes a state the admin
+    // has now changed again — "Changes to X saved" would otherwise keep
+    // showing next to a field edited since that save.
+    const section = KEY_TO_SECTION[key];
+    setSectionStatus((prev) => {
+      if (!section || !prev[section]) return prev;
+      const next = { ...prev };
+      delete next[section];
       return next;
     });
   };
@@ -291,6 +331,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   useEffect(() => {
     async function loadSettings() {
       const settings = await DataStoreService.getSettings(SETTINGS_LOAD_KEYS, SETTINGS_LOAD_DEFAULTS);
+      originalValuesRef.current = settings;
       setStatus(settings.siteStatus);
       setDeploymentMode(settings.deploymentMode);
       setVectorServiceType(settings.vectorServiceType);
@@ -343,61 +384,61 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
-  // `append` pages in older entries under the existing ones; `silent` refreshes
-  // in place without flashing the loading text over a table that is already on
-  // screen; `limit` lets a post-save refresh ask for as many rows as are
-  // already on screen instead of always collapsing back to the first 50 (still
-  // bounded by the server's own 100-row cap). Never throws — a failed load
-  // surfaces through auditError instead, so callers can await it without
-  // wrapping it in their own try/catch.
-  //
-  // "Load more" and a section save's silent refresh can genuinely overlap
-  // (click Load more, then immediately save before it resolves) — whichever
-  // call started later is the one whose result should win, regardless of
-  // which happens to resolve first. auditRequestIdRef tracks "the latest
-  // call that's been started"; a response is only applied if its own id is
-  // still the latest by the time it resolves, otherwise it's silently
-  // dropped rather than risking a stale/out-of-order write into auditEntries.
-  const loadAuditHistory = async ({ skip = 0, append = false, silent = false, limit = 50 } = {}) => {
-    const requestId = ++auditRequestIdRef.current;
-    if (append) setAuditLoadingMore(true);
-    else if (!silent) setAuditLoading(true);
-    setAuditError(false);
-    try {
-      const result = await DataStoreService.getSettingsAudit({
-        limit,
-        skip,
-        before: append ? auditAnchorRef.current : null,
-      });
-      if (requestId !== auditRequestIdRef.current) return; // superseded by a newer call
-      const entries = result.entries || [];
-      setAuditEntries((current) => (append ? [...current, ...entries] : entries));
-      setAuditHasMore(Boolean(result.hasMore));
-      setAuditTotal(result.total || 0);
-      // A fresh read establishes the snapshot every later page is anchored to.
-      if (!append) auditAnchorRef.current = entries[0]?.createdAt || null;
-      // The Load more button unmounts once the last page is in. Without moving
-      // focus, a keyboard user is dropped back to the top of the document and
-      // loses their place in the table.
-      if (append && !result.hasMore) auditRefocusRef.current = true;
-    } catch (error) {
-      if (requestId !== auditRequestIdRef.current) return; // superseded — a newer call's outcome wins
-      setAuditError(true);
-    } finally {
-      if (append) setAuditLoadingMore(false);
-      else if (!silent) setAuditLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAuditHistory();
+  // fetchData contract for ExperimentalServerDataTable: called with
+  // DataTables' own server-side params (start/length/search), returns the
+  // recordsTotal/recordsFiltered/data shape its ajax callback expects.
+  // Sorting is disabled on this table (see the `ordering={false}` prop
+  // below), so no orderBy/orderDir mapping is needed — the server always
+  // sorts newest-first.
+  const fetchAuditHistory = useCallback(async ({ start, length, search }) => {
+    const result = await DataStoreService.getSettingsAudit({
+      skip: start || 0,
+      limit: length || 10,
+      search: search || '',
+    });
+    return {
+      data: result.entries || [],
+      recordsTotal: result.total || 0,
+      recordsFiltered: result.filteredTotal || 0,
+    };
   }, []);
 
-  useEffect(() => {
-    if (!auditRefocusRef.current) return;
-    auditRefocusRef.current = false;
-    auditCountRef.current?.focus();
-  }, [auditEntries, auditHasMore]);
+  const auditColumns = useMemo(() => [
+    {
+      data: 'actorEmail',
+      title: t('settings.auditHistory.user'),
+      render: (value) => escapeHtmlAttribute(value || ''),
+    },
+    {
+      data: 'action',
+      title: t('settings.auditHistory.action'),
+      render: (value) => escapeHtmlAttribute(
+        value === 'settings.cache_refreshed'
+          ? t('settings.auditHistory.actions.cacheRefreshed')
+          : t('settings.auditHistory.actions.settingUpdated')
+      ),
+    },
+    {
+      data: 'settingKey',
+      title: t('settings.auditHistory.setting'),
+      render: (value) => escapeHtmlAttribute(value || t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'previousValue',
+      title: t('settings.auditHistory.previousValue'),
+      render: (value) => renderAuditValueHtml(value, t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'newValue',
+      title: t('settings.auditHistory.newValue'),
+      render: (value) => renderAuditValueHtml(value, t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'createdAt',
+      title: t('settings.auditHistory.date'),
+      render: (value) => escapeHtmlAttribute(new Date(value).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')),
+    },
+  ], [lang, t]);
 
   // Warn on tab close/refresh/URL navigation while a section has unsaved
   // changes. Attached once on mount (not re-attached on every keystroke) —
@@ -405,6 +446,13 @@ const SettingsPage = ({ lang = 'en' }) => {
   // effect keeps in sync. Note: this only covers actual browser-level
   // navigation; it does not fire for in-app route changes, and this codebase
   // has no navigation-guard pattern to hook into for that case.
+  //
+  // TODO (edge case, low priority): the browser Back/Forward buttons can
+  // restore this page from the bfcache instead of re-mounting it, so an
+  // unsaved edit can still show as dirty after navigating away and back. Fix
+  // would listen for `pageshow`/`event.persisted`; needs real cross-browser
+  // testing before landing, not just reasoning about it — out of scope for
+  // MVP.
   const pendingChangesRef = useRef(pendingChanges);
   useEffect(() => {
     pendingChangesRef.current = pendingChanges;
@@ -435,6 +483,12 @@ const SettingsPage = ({ lang = 'en' }) => {
         Object.keys(values).forEach((key) => { delete next[key]; });
         return next;
       });
+      // A saved value is the new "reverting to this counts as no change"
+      // baseline — otherwise editing a just-saved field back to its (older,
+      // pre-save) original would wrongly stay flagged as a pending change.
+      Object.entries(values).forEach(([key, value]) => {
+        originalValuesRef.current[key] = value;
+      });
       const hasErrors = Object.keys(errors).length > 0;
       setFieldErrors((prev) => {
         const next = { ...prev };
@@ -453,14 +507,9 @@ const SettingsPage = ({ lang = 'en' }) => {
         [section]: { text: statusText, isError: hasErrors },
       }));
       // Every save is audited, so the table below is stale the moment a
-      // section saves. Ask for as many rows as are already loaded so a saved
-      // change doesn't collapse an expanded table back to the first page —
-      // capped at SettingsAuditService.list()'s own 100-row limit so this can
-      // never request more than the server will actually return.
-      // TODO: past 100 loaded rows this still can't show everything the admin
-      // had scrolled to — needs real pagination (bounded per-page requests)
-      // rather than "refetch everything loaded so far" to fix properly.
-      await loadAuditHistory({ silent: true, limit: Math.min(Math.max(auditEntries.length, 50), 100) });
+      // section saves — force it to remount, which re-fetches its current
+      // page from the server.
+      setAuditTableKey((key) => key + 1);
     } catch (err) {
       setSectionStatus((prev) => ({ ...prev, [section]: { text: t('settings.saveError'), isError: true } }));
     } finally {
@@ -474,7 +523,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     try {
       await DataStoreService.refreshSettingsCache();
       setSettingsCacheStatus({ text: t('settings.refreshCache.success'), isError: false });
-      await loadAuditHistory({ silent: true, limit: Math.max(auditEntries.length, 50) });
+      setAuditTableKey((key) => key + 1);
     } catch (error) {
       setSettingsCacheStatus({
         text: t('settings.refreshCache.error').replace('{error}', () => error.message || String(error)),
@@ -1354,107 +1403,25 @@ const SettingsPage = ({ lang = 'en' }) => {
       <section className="mt-600" aria-labelledby="settings-audit-title">
         <h2 id="settings-audit-title">{t('settings.auditHistory.title')}</h2>
         <p>{t('settings.auditHistory.description')}</p>
-        {/* One polite region covers loading and empty: both describe the state
-            of the same fetch, and keeping it mounted is what makes the message
-            an announced change rather than a silent insertion. */}
-        <StatusMessage
-          persistent
-          message={
-            auditLoading
-              ? t('settings.auditHistory.loading')
-              : (!auditError && auditEntries.length === 0 ? t('settings.auditHistory.empty') : null)
-          }
+        {/* TODO (design review): this always-visible full table is a lot of
+            page real estate for something most admins only check
+            occasionally. Worth a design pass on whether settings history
+            belongs in its own tab on this page, or behind a details/summary
+            disclosure — either would let a lighter "recent changes" view
+            replace this full search/paginate table for the common case. */}
+        <ExperimentalServerDataTable
+          tableKey={auditTableKey}
+          columns={auditColumns}
+          fetchData={fetchAuditHistory}
+          lang={lang}
+          order={[]}
+          ordering={false}
+          pageLength={10}
+          lengthChange={false}
+          layout={{ topStart: 'search', topEnd: null }}
+          containerClassName="table-scroll mt-200"
+          emptyTableText={t('settings.auditHistory.empty')}
         />
-        <StatusMessage isError tag="div" className="dashboard-error dashboard-error--inline">
-          {auditError && (
-            <>
-              <GcdsIcon name="warning-triangle" marginRight="50" />
-              {t('settings.auditHistory.error')}
-            </>
-          )}
-        </StatusMessage>
-        {auditEntries.length > 0 ? (
-          // Wide table scrolls in its own container so the page body never
-          // scrolls sideways. tabIndex makes the scroll region keyboard-reachable.
-          <div className="table-scroll" tabIndex={0}>
-            <table className="settings-audit-table">
-              <caption className="sr-only">{t('settings.auditHistory.title')}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t('settings.auditHistory.user')}</th>
-                  <th scope="col">{t('settings.auditHistory.action')}</th>
-                  <th scope="col">{t('settings.auditHistory.setting')}</th>
-                  <th scope="col">{t('settings.auditHistory.previousValue')}</th>
-                  <th scope="col">{t('settings.auditHistory.newValue')}</th>
-                  <th scope="col">{t('settings.auditHistory.date')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auditEntries.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>{entry.actorEmail}</td>
-                    <td>{entry.action === 'settings.cache_refreshed'
-                      ? t('settings.auditHistory.actions.cacheRefreshed')
-                      : t('settings.auditHistory.actions.settingUpdated')}</td>
-                    <td>{entry.settingKey || t('settings.auditHistory.notApplicable')}</td>
-                    <td>
-                      <SettingsAuditValue
-                        value={entry.previousValue}
-                        emptyLabel={t('settings.auditHistory.notApplicable')}
-                      />
-                    </td>
-                    <td>
-                      <SettingsAuditValue
-                        value={entry.newValue}
-                        emptyLabel={t('settings.auditHistory.notApplicable')}
-                      />
-                    </td>
-                    <td className="settings-audit-date">
-                      {new Date(entry.createdAt).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-        <StatusMessage
-          persistent
-          message={auditEntries.length > 0
-            ? t('settings.auditHistory.showing')
-              .replace('{count}', formatNumber(auditEntries.length, lang))
-              .replace('{total}', formatNumber(auditTotal, lang))
-            : null}
-          className="mb-200 settings-audit-count"
-          tabIndex={-1}
-          ref={auditCountRef}
-        />
-        {auditHasMore ? (
-          // GcdsButton's `disabled` prop maps to aria-disabled on its
-          // underlying element, not the native HTML `disabled` attribute
-          // (confirmed in gcds-button.js — it sets ariaDisabled and guards
-          // its own click handler, rather than removing the element from
-          // the tab order), so it stays focusable while disabled — no risk
-          // of dropping a keyboard user back to <body> the way native
-          // `disabled` would. Also guarded by a ref (not just the
-          // `auditLoadingMore` state) so a second click landing in the same
-          // tick, before React has committed the disabled state, still
-          // can't fire a duplicate request.
-          <GcdsButton
-            type="button"
-            buttonRole="secondary"
-            disabled={auditLoadingMore}
-            onClick={() => {
-              if (auditLoadingMoreRef.current) return;
-              auditLoadingMoreRef.current = true;
-              loadAuditHistory({ skip: auditEntries.length, append: true }).finally(() => {
-                auditLoadingMoreRef.current = false;
-              });
-            }}
-          >
-            {auditLoadingMore ? t('settings.auditHistory.loadingMore') : t('settings.auditHistory.loadMore')}
-          </GcdsButton>
-        ) : null}
       </section>
 
     </GcdsContainer>

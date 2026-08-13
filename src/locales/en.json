@@ -1108,12 +1108,7 @@
     "auditHistory": {
       "title": "Settings history",
       "description": "Review who changed settings and when.",
-      "loading": "Loading settings history...",
-      "loadingMore": "Loading more...",
-      "loadMore": "Load more",
       "empty": "No settings changes have been recorded.",
-      "error": "Failed to load settings history.",
-      "showing": "Showing {count} of {total} changes.",
       "user": "User",
       "action": "Action",
       "setting": "Setting",

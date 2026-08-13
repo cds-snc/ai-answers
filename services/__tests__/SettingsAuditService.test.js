@@ -86,20 +86,47 @@ describe('SettingsAuditService', () => {
     expect(mockCountDocuments).toHaveBeenCalledWith({});
   });
 
-  it('anchors a paged read to entries at or older than the cursor', async () => {
-    const before = '2026-08-11T12:00:00.000Z';
+  it('filters by a case-insensitive search across the visible columns', async () => {
+    await SettingsAuditService.list({ search: 'admin@example.com' });
 
-    await SettingsAuditService.list({ limit: 50, skip: 50, before });
-
-    // Without this window, an entry recorded between two "load more" clicks
-    // shifts every later row down by one and the next page repeats a row.
-    const expectedQuery = { createdAt: { $lte: new Date(before) } };
-    expect(mockFind).toHaveBeenCalledWith(expectedQuery);
-    expect(mockCountDocuments).toHaveBeenCalledWith(expectedQuery);
+    const query = mockFind.mock.calls[0][0];
+    expect(query.$or).toEqual([
+      { actorEmail: expect.any(RegExp) },
+      { settingKey: expect.any(RegExp) },
+      { action: expect.any(RegExp) },
+      { previousValue: expect.any(RegExp) },
+      { newValue: expect.any(RegExp) },
+    ]);
+    expect(query.$or[0].actorEmail.test('ADMIN@example.com')).toBe(true);
   });
 
-  it('rejects a cursor that is not a usable date', async () => {
-    await expect(SettingsAuditService.list({ before: 'not-a-date' })).rejects.toThrow(/before/i);
-    expect(mockFind).not.toHaveBeenCalled();
+  it('escapes regex metacharacters in the search term so they match literally', async () => {
+    await SettingsAuditService.list({ search: 'a.b(c' });
+
+    const pattern = mockFind.mock.calls[0][0].$or[0].actorEmail;
+    expect(pattern.test('a.b(c')).toBe(true);
+    // An unescaped "." would match any character here too — confirms the
+    // term was escaped rather than compiled as a live regex pattern.
+    expect(pattern.test('axb(c')).toBe(false);
+  });
+
+  it('runs a second unfiltered count only when a search is active, and returns both totals', async () => {
+    mockCountDocuments.mockResolvedValueOnce(2).mockResolvedValueOnce(9);
+
+    const result = await SettingsAuditService.list({ search: 'unavailable' });
+
+    expect(mockCountDocuments).toHaveBeenCalledTimes(2);
+    expect(result.filteredTotal).toBe(2);
+    expect(result.total).toBe(9);
+  });
+
+  it('skips the extra count query when there is no search', async () => {
+    mockCountDocuments.mockResolvedValueOnce(7);
+
+    const result = await SettingsAuditService.list({});
+
+    expect(mockCountDocuments).toHaveBeenCalledTimes(1);
+    expect(result.total).toBe(7);
+    expect(result.filteredTotal).toBe(7);
   });
 });
