@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.186.0](https://github.com/cds-snc/ai-answers/compare/v1.185.0...v1.186.0) (2026-08-13)
+
+
+### Features
+
+* add settings audit history ([21c0ac1](https://github.com/cds-snc/ai-answers/commit/21c0ac1d47521b4b9b4609034883905dcc3cea1c))
+* centralized tables with settings as first consumer ([c6ed01f](https://github.com/cds-snc/ai-answers/commit/c6ed01f41926651f5a2d5fbf496d8d5a4b07e9fb))
+* merge main, align settings page with GC DS styling ([86b64e9](https://github.com/cds-snc/ai-answers/commit/86b64e9fd1251be881c4696be1d6cc834574644c))
+* pagination and search, fix dirty-states of saving ([4e0eab6](https://github.com/cds-snc/ai-answers/commit/4e0eab62c2da19b519e13c1096bad5ce234c7394))
+* settings field validation, audit race fixes, success status variant ([c0bb0a2](https://github.com/cds-snc/ai-answers/commit/c0bb0a223ae7174c28978de279caa75bd62bc81f))
+
+
+### Bug Fixes
+
+* bump js-yaml to 4.3.1 (GHSA-5p4m-2wfm-xmqj) ([80a9b82](https://github.com/cds-snc/ai-answers/commit/80a9b82707597f0d1e7c1e1ffe21943c4acf607a))
+* bump js-yaml to 4.3.1 (GHSA-5p4m-2wfm-xmqj) ([6c8a371](https://github.com/cds-snc/ai-answers/commit/6c8a3711ac302a9cc7b4ccfc692e8313248657e5))
+
 ## [1.185.0](https://github.com/cds-snc/ai-answers/compare/v1.184.0...v1.185.0) (2026-08-13)
 
 
