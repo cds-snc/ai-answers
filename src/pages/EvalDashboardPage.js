@@ -149,7 +149,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           return `<span class="text-status--positive"><i class="fa-solid fa-check" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
         }
         if (v === 'partial') {
-          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
+          // Smaller than the other two icons - a filled circle shape reads
+          // visually larger than the check/x glyphs at the same font-size.
+          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke" style="font-size: 1.2em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
         }
         if (v === 'fail') {
           return `<span class="text-status--negative"><i class="fa-solid fa-xmark" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
