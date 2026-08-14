@@ -53,12 +53,17 @@ So, when changing anything that builds an agent's messages or payload:
   certainly consumed by a prompt, not by JS. Grep the prompt files for the tag first.
 - **Carry every tag through a refactor.** When moving or rewriting message-building code,
   diff the old and new versions for tags and payload fields before you finish.
-- Keep the two paths in sync: `services/ContextAgentService.js` (context agent) and
-  `agents/graphs/workflows/GraphWorkflowHelper.js` (`deriveContext` and
-  `sendAnswerRequest`). These are where tags get attached.
+- Build every tag with the shared helpers in `api/util/prompt-tags.js` rather than
+  inlining the string. Two paths attach `<referring-url>`:
+  `services/ContextAgentService.js` (context agent) and
+  `GraphWorkflowHelper.sendAnswerRequest` (answer agent). A value can also be lost one
+  step earlier by not being *forwarded* — `GraphWorkflowHelper.deriveContext` passes
+  `referringUrl` into the context payload but builds no tag itself; both links have to
+  hold.
 - Cover the tag with a test asserting it appears in the outgoing message — see
-  `services/__tests__/ContextAgentService.test.js`. This is the only thing that turns a
-  silent regression into a loud one.
+  `services/__tests__/ContextAgentService.test.js` and the `sendAnswerRequest` block in
+  `agents/graphs/workflows/__tests__/GraphWorkflowHelper.test.js`. This is the only thing
+  that turns a silent regression into a loud one.
 
 Worked example: `<referring-url>` was passed to the context agent by the old
 `services/ContextService.js`, then lost in the migration to the graph/helper architecture.

@@ -1,5 +1,6 @@
 import { createContextAgent } from '../agents/AgentFactory.js';
 import loadContextSystemPrompt from '../agents/prompts/contextSystemPrompt.js';
+import { referringUrlTag } from '../api/util/prompt-tags.js';
 
 const invokeContextAgent = async (agentType, request) => {
   try {
@@ -39,12 +40,9 @@ const invokeContextAgent = async (agentType, request) => {
     // Add the current message, tagged with the referring URL the user launched from.
     // contextSystemPrompt.js instructs the agent to prioritize <referring-url> over
     // <searchResults> when matching a department, so the tag has to reach the model.
-    const trimmedReferringUrl = String(referringUrl || '').trim();
     messages.push({
       role: "user",
-      content: trimmedReferringUrl
-        ? `${message}\n<referring-url>${trimmedReferringUrl}</referring-url>`
-        : message,
+      content: `${message}${referringUrlTag(referringUrl)}`,
     });
 
     const answer = await contextAgent.invoke({

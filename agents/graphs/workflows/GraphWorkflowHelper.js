@@ -20,6 +20,7 @@ import { UrlValidationService } from '../../../services/UrlValidationService.js'
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
+import { referringUrlTag } from '../../../api/util/prompt-tags.js';
 
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
@@ -333,7 +334,7 @@ export class GraphWorkflowHelper {
     const outputLangToken = normalizeOutputLang(context.outputLang || context.originalLang || lang);
     const header = `\n<output-lang>${outputLangToken}</output-lang>`;
     let message = `${baseMessage}${header}`;
-    message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
+    message = `${message}${referringUrlTag(referringUrl)}`;
 
     const maxTurns = 3;
     const currentTurn = (conversationHistory || []).length + 1;

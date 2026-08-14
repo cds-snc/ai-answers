@@ -4,10 +4,12 @@ import { GraphWorkflowHelper } from '../GraphWorkflowHelper.js';
 import { SearchContextService } from '../../../../services/SearchContextService.js';
 import { invokeContextAgent } from '../../../../services/ContextAgentService.js';
 import { InteractionPersistenceService } from '../../../../services/InteractionPersistenceService.js';
+import { AnswerGenerationService } from '../../../../services/AnswerGenerationService.js';
 
 vi.mock('../../../../services/SearchContextService.js');
 vi.mock('../../../../services/ContextAgentService.js');
 vi.mock('../../../../services/InteractionPersistenceService.js');
+vi.mock('../../../../services/AnswerGenerationService.js');
 vi.mock('../../../../services/ServerLoggingService.js');
 
 // The search tools pull in gaxios, which fails to load under vitest (it require()s the
@@ -35,7 +37,7 @@ describe('GraphWorkflowHelper', () => {
             SearchContextService.search.mockResolvedValue(mockSearchResult);
 
             invokeContextAgent.mockResolvedValue({
-                message: '<topic>test topic</topic>',
+                message: '<department>EDSC-ESDC</department>',
                 model: 'gpt-4',
                 inputTokens: 10,
                 outputTokens: 10,
@@ -88,6 +90,71 @@ describe('GraphWorkflowHelper', () => {
                 'openai',
                 expect.objectContaining({ referringUrl })
             );
+        });
+    });
+
+    // The answer agent's prompts (agenticBase.js, safety.js, citationInstructions.js) all
+    // reference tags that only this method injects. Nothing throws if one goes missing, so
+    // these assertions are the only thing standing between a refactor and a silent
+    // regression. See "Never drop a prompt tag that code has to inject" in AGENTS.md.
+    describe('sendAnswerRequest', () => {
+        const sendWith = (overrides = {}) => {
+            AnswerGenerationService.generateAnswer.mockResolvedValue({ content: 'an answer' });
+            return helper.sendAnswerRequest({
+                selectedAI: 'openai',
+                conversationHistory: [],
+                lang: 'en',
+                context: { translatedQuestion: 'How do I apply?', outputLang: 'eng' },
+                chatId: 'test-chat-id',
+                ...overrides,
+            });
+        };
+
+        const sentMessage = () => AnswerGenerationService.generateAnswer.mock.calls[0][0].message;
+
+        it('appends a <referring-url> tag to the outgoing message', async () => {
+            const referringUrl = 'https://www.canada.ca/en/services/benefits.html';
+
+            await sendWith({ referringUrl });
+
+            expect(sentMessage()).toContain(`<referring-url>${referringUrl}</referring-url>`);
+        });
+
+        it('trims surrounding whitespace from the referring URL', async () => {
+            await sendWith({ referringUrl: '  https://www.canada.ca/en.html\n' });
+
+            expect(sentMessage()).toContain(
+                '<referring-url>https://www.canada.ca/en.html</referring-url>'
+            );
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['an empty string', ''],
+            ['whitespace only', '   '],
+        ])('emits no <referring-url> tag when the URL is %s', async (_label, referringUrl) => {
+            await sendWith({ referringUrl });
+
+            expect(sentMessage()).not.toContain('<referring-url>');
+        });
+
+        it('always sends an <output-lang> tag', async () => {
+            await sendWith({ referringUrl: 'https://www.canada.ca/en.html' });
+
+            expect(sentMessage()).toContain('<output-lang>eng</output-lang>');
+        });
+
+        it('sends <final-turn> once the user reaches the last allowed turn', async () => {
+            // maxTurns is 3, and currentTurn counts this question on top of the history
+            await sendWith({ conversationHistory: [{}, {}] });
+
+            expect(sentMessage()).toContain('<final-turn>true</final-turn>');
+        });
+
+        it('does not send <final-turn> on earlier turns', async () => {
+            await sendWith({ conversationHistory: [] });
+
+            expect(sentMessage()).not.toContain('<final-turn>');
         });
     });
 });

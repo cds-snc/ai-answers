@@ -1,11 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseContextMessage } from '../contextService.js';
-
-// The search tools pull in gaxios, which fails to load under vitest (it require()s the
-// ESM-only uuid package). Stub them with factories so the real modules are never imported.
-vi.mock('../../../tools/googleContextSearch.js', () => ({ contextSearch: vi.fn() }));
-vi.mock('../../../tools/canadaCaContextSearch.js', () => ({ contextSearch: vi.fn() }));
-vi.mock('../../../../services/ServerLoggingService.js');
 
 const parse = (message) => parseContextMessage({ message, searchResults: '' });
 
