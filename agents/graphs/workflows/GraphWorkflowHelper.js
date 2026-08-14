@@ -20,6 +20,7 @@ import { UrlValidationService } from '../../../services/UrlValidationService.js'
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
+import { referringUrlTag } from '../../../api/util/prompt-tags.js';
 
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
@@ -116,6 +117,7 @@ export class GraphWorkflowHelper {
       searchResults: searchResult.results || searchResult.searchResults || [],
       provider: selectedAI,
       language: lang,
+      referringUrl,
     };
 
     // Invoke Context Agent via Service directly
@@ -332,7 +334,7 @@ export class GraphWorkflowHelper {
     const outputLangToken = normalizeOutputLang(context.outputLang || context.originalLang || lang);
     const header = `\n<output-lang>${outputLangToken}</output-lang>`;
     let message = `${baseMessage}${header}`;
-    message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
+    message = `${message}${referringUrlTag(referringUrl)}`;
 
     const maxTurns = 3;
     const currentTurn = (conversationHistory || []).length + 1;
@@ -346,8 +348,6 @@ export class GraphWorkflowHelper {
       conversationHistory,
       lang,
       department: context.department,
-      topic: context.topic,
-      topicUrl: context.topicUrl,
       departmentUrl: context.departmentUrl,
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',

@@ -28,8 +28,6 @@ async function invokeAgent({
     conversationHistory = [],
     lang,
     department,
-    topic,
-    topicUrl,
     departmentUrl,
     searchResults,
     scenarioOverrideText,
@@ -39,8 +37,6 @@ async function invokeAgent({
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
         departmentUrl,
-        topic,
-        topicUrl,
         searchResults,
         scenarioOverrideText,
         similarQuestions,

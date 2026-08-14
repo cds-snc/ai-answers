@@ -1,10 +1,11 @@
 import { createContextAgent } from '../agents/AgentFactory.js';
 import loadContextSystemPrompt from '../agents/prompts/contextSystemPrompt.js';
+import { referringUrlTag } from '../api/util/prompt-tags.js';
 
 const invokeContextAgent = async (agentType, request) => {
   try {
 
-    let { chatId, message, systemPrompt, searchResults, conversationHistory = [], language = 'en' } = request;
+    let { chatId, message, systemPrompt, searchResults, conversationHistory = [], language = 'en', referringUrl = '' } = request;
 
     // Load system prompt from contextSystemPrompt.js if not provided
     if (!systemPrompt) {
@@ -36,10 +37,12 @@ const invokeContextAgent = async (agentType, request) => {
       });
     });
 
-    // Add the current message
+    // Add the current message, tagged with the referring URL the user launched from.
+    // contextSystemPrompt.js instructs the agent to prioritize <referring-url> over
+    // <searchResults> when matching a department, so the tag has to reach the model.
     messages.push({
       role: "user",
-      content: message,
+      content: `${message}${referringUrlTag(referringUrl)}`,
     });
 
     const answer = await contextAgent.invoke({

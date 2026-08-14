@@ -18,7 +18,7 @@ describe('DefaultWithLocalModel workflow', () => {
     vi.clearAllMocks();
     helper.processRedaction.mockResolvedValue({ redactedText: 'redacted' });
     helper.translateQuestion.mockResolvedValue({ translatedText: 'translated', originalLanguage: 'en' });
-    helper.deriveContext.mockResolvedValue({ topic: 'topic', department: 'dept' });
+    helper.deriveContext.mockResolvedValue({ department: 'dept' });
     helper.sendAnswerRequest.mockResolvedValue({ answerType: 'normal', content: 'generated', citationUrl: 'https://example.com' });
     helper.verifyCitation.mockResolvedValue({ url: 'https://example.com' });
     vi.spyOn(graphRequestContext, 'getStore').mockReturnValue({ user: { userId: 'user' } });
