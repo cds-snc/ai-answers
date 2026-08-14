@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.187.0](https://github.com/cds-snc/ai-answers/compare/v1.186.0...v1.187.0) (2026-08-14)
+
+
+### Features
+
+* update accessibility, design md skill ([38795c2](https://github.com/cds-snc/ai-answers/commit/38795c21a6d559a0740d7e9684d7372f6b9be7f8))
+* update accessibility, design md skill ([6064c27](https://github.com/cds-snc/ai-answers/commit/6064c278e2cc07403b4286b837297835d9062ec1))
+
+
+### Bug Fixes
+
+* fixes from PR review by Jennifer ([cc19638](https://github.com/cds-snc/ai-answers/commit/cc19638ee00332f6156f80bf50d6c5166010531c))
+* generate system prompt doc was out of date ([4187fe9](https://github.com/cds-snc/ai-answers/commit/4187fe920e5dbd53d48342b0e2f612c3c656f019))
+* more finessing of ceo-bec ([97b7bbb](https://github.com/cds-snc/ai-answers/commit/97b7bbb6d85e452cdece5e2c3bee688151fb5c4a))
+* null case was passing literal null instead of empty tags ([e07429d](https://github.com/cds-snc/ai-answers/commit/e07429df619356482dc311f7986766e92a6236ce))
+* referring-url was not passed to contextSystemPrompt ([7b39f8f](https://github.com/cds-snc/ai-answers/commit/7b39f8fd0624f811d907bbff34bf67951a745410))
+* remove topic wasting tokens ([a72b6b3](https://github.com/cds-snc/ai-answers/commit/a72b6b39e0624a9caebbeae1efb2f038adb6eecb))
+
 ## [1.186.0](https://github.com/cds-snc/ai-answers/compare/v1.185.0...v1.186.0) (2026-08-13)
 
 
