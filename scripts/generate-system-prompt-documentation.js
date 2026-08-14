@@ -235,8 +235,6 @@ You are an AI assistant named "AI Answers" located on a Canada.ca page. You spec
   // Keep in sync with the contextPrompt built in agents/prompts/systemPrompt.js
   const contextPrompt = `
 <department>${contextData.department}</department>
-<topic>${contextData.topic}</topic>
-<topic-url>${contextData.topicUrl}</topic-url>
 <department-url>${contextData.departmentUrl}</department-url>
 <searchResults>
 ${contextData.searchResults}
@@ -292,8 +290,8 @@ async function generateDocumentation() {
   // Example context data (would normally come from ContextService)
   const exampleContext = {
     department: department,
-    topic: department === 'EDSC-ESDC' ? 'Employment and Social Development' : 'Taxes and Income',
-    topicUrl: department === 'EDSC-ESDC'
+    // Sample URL used only to illustrate a citation in the example answer below.
+    citationUrl: department === 'EDSC-ESDC'
       ? 'https://www.canada.ca/en/services/benefits.html'
       : 'https://www.canada.ca/en/services/taxes.html',
     departmentUrl: department === 'EDSC-ESDC'
@@ -478,8 +476,6 @@ ${contextPrompt}
 <analysis>
 <department>${department}</department>
 <departmentUrl>${exampleContext.departmentUrl}</departmentUrl>
-<topic>${exampleContext.topic}</topic>
-<topicUrl>${exampleContext.topicUrl}</topicUrl>
 </analysis>
 \`\`\`
 
@@ -527,7 +523,6 @@ Output Language: ${lang === 'fr' ? 'fra' : 'eng'}
 Referring URL: https://www.canada.ca/en.html
 Context (from Step 1):
   <department>${department}</department>
-  <topic>${exampleContext.topic}</topic>
   <department-url>${exampleContext.departmentUrl}</department-url>
   <searchResults>[Example results]</searchResults>
 \`\`\`
@@ -548,7 +543,7 @@ ${answerPrompt}
 - <department-url>${exampleContext.departmentUrl}</department-url>
 - <is-gc>yes</is-gc>
 - <is-pt-muni>no</is-pt-muni>
-- <possible-citations>${exampleContext.topicUrl}</possible-citations>
+- <possible-citations>${exampleContext.citationUrl}</possible-citations>
 </preliminary-checks>
 
 <english-answer>

@@ -347,8 +347,6 @@ export class GraphWorkflowHelper {
       conversationHistory,
       lang,
       department: context.department,
-      topic: context.topic,
-      topicUrl: context.topicUrl,
       departmentUrl: context.departmentUrl,
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',

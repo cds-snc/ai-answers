@@ -432,8 +432,6 @@ Page Language: en
 <analysis>
 <department>EDSC-ESDC</department>
 <departmentUrl>https://www.canada.ca/en/employment-social-development.html</departmentUrl>
-<topic>Employment and Social Development</topic>
-<topicUrl>https://www.canada.ca/en/services/benefits.html</topicUrl>
 </analysis>
 ```
 
@@ -500,7 +498,6 @@ Output Language: eng
 Referring URL: https://www.canada.ca/en.html
 Context (from Step 1):
   <department>EDSC-ESDC</department>
-  <topic>Employment and Social Development</topic>
   <department-url>https://www.canada.ca/en/employment-social-development.html</department-url>
   <searchResults>[Example results]</searchResults>
 ```
@@ -625,8 +622,6 @@ Today is Thursday, August 13, 2026.
 ## Tagged context for question from previous AI service
 
 <department>EDSC-ESDC</department>
-<topic>Employment and Social Development</topic>
-<topic-url>https://www.canada.ca/en/services/benefits.html</topic-url>
 <department-url>https://www.canada.ca/en/employment-social-development.html</department-url>
 <searchResults>
 [Example search results would appear here]
