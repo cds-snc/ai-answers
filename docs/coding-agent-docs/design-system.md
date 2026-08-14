@@ -131,17 +131,21 @@ import { COLOURS, QUALITY_COLOURS } from 'src/constants/dashboardColours.js';
 
 Greys and borders used only for structural layout (not data encoding) may stay local.
 
-## Status/outcome message box styles
+## Status/outcome message states
 
-`StatusMessage` (see AGENTS.md's "Announcing status, errors, and async outcomes") doesn't yet style itself — three GC DS-token box classes in `admin.css` cover this today and should be reused rather than duplicated with a new one-off style:
+`src/components/admin/StatusMessage.js` is the single component every save/delete/import/export/test-run/upload outcome, autosave failure, loading state, or async result should render through (see AGENTS.md's "Announcing status, errors, and async outcomes" for the usage-level API — `message`/`isError`/`loading`/`variant`/`persistent`/`id`). It now has **five built-in states**, each pulling its box styling from GC DS-token classes in `admin.css` — reuse one of these, don't hand-roll a new colour/icon combination for a sixth:
 
-| Class | Tokens | Use |
-|---|---|---|
-| `dashboard-error` | `--gcds-color-red-100/500/700` | Failures |
-| `dashboard-warning-box` | `--gcds-color-yellow-100/500/700` | Cautions (e.g. unsaved changes) |
-| `dashboard-info-box` | `--gcds-color-blue-100/500/700` | Neutral confirmations |
+| State | How to render it | Class | Tokens | Icon | Use |
+|---|---|---|---|---|---|
+| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | none yet — class exists as a styling hook, no rule defined in any stylesheet | none yet — spinner is a TODO | In-progress state, not a completed result |
+| Error | `<StatusMessage variant="error" message={...} />` | `dashboard-error` | `--gcds-color-red-100/500/700` | `GcdsIcon warning-triangle` | Failures |
+| Warning | `<StatusMessage variant="warning" message={...} />` | `dashboard-warning-box` | `--gcds-color-yellow-100/500/700` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
+| Info | `<StatusMessage variant="info" message={...} />` | `dashboard-info-box` | `--gcds-color-blue-100/500/700` | `GcdsIcon info-circle` | Neutral confirmations |
+| Success | `<StatusMessage variant="success" message={...} />` | `dashboard-success-box` | `--gcds-color-green-100/500/700` | raw `fa-solid fa-check-circle` span (GC DS's icon font has no checkmark glyph, matching the existing precedent in `BatchUpload.js`) | Completed saves |
 
-Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) passed as `children`, not `message` — the box only renders once there's actual content. `dashboard-error--inline` (`width: fit-content`) keeps a short message from stretching to its container's full width. These are expected to fold into a `variant` prop on `StatusMessage` itself eventually — extend or reuse the three, don't add a fourth. The class names themselves (`dashboard-*`) are also expected to be revised/generalized once more use cases beyond dashboards clarify what the shared naming should actually be — don't treat them as final.
+`variant` builds the icon + text content itself from a plain `message` string — pass `children` instead only when the content is genuinely richer than "icon + one string" (e.g. a follow-up bullet list), in which case you're responsible for your own icon. `isError`/a manual box-modifier `className` still work but are the pre-`variant` calling convention — only still needed for call sites that haven't migrated; use `variant` for anything new. `dashboard-error--inline` (`width: fit-content`) keeps a short error from stretching to its container's full width, composable with `variant="error"` via `className`. `persistent` keeps the live region mounted while empty so a call site's *first* message is announced as a change rather than missed as an insertion — worth reaching for on anything where the first-ever outcome matters (e.g. a page's initial load error).
+
+Two open TODOs on the component itself, not blocking use: the `loading` state has no spinner markup yet (text-only), and a few older call sites still pass their own `style` prop instead of a token-backed `variant` — migrate those to `variant` as they're touched rather than copying the old pattern forward. The whole 5-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
 
 ## GC DS utility classes
 
