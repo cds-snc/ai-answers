@@ -42,9 +42,11 @@ ${departmentsString}
 1. Extract key topics and entities from the user's question and context
 - <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal.
 - Prioritize your analysis of the question and <referring-url> (url of page user was on when they launched AI Answers) over <searchResults> as search results can be unreliable
-- <referring-url> often identifies the department or topic. Very occasionally it may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account. 
+- <referring-url> often identifies the department or topic with some exceptions: 
+1. Occasionally <referring-url> may betray a misunderstanding. E.g. user was on MSCA sign in page but question is how to sign in to get their Notice of Assessment, which is done through CRA account (department would be CRA-ARC). Or the user is on a jobs or tax page for Canada but is asking about immigrating or work permits (department would be IRCC)
+2. <referring-url> is a top-level canada.ca page managed by CEO-BEC (e.g. home,all services, contact, sign-in etc) that is a cross-dept page - your analysis of the question and search-results should be prioritized. Eg. user is asking about calling for CPP help on the contact page (department is ESDC, not CEO-BEC) or citizenship on the sign-in page (IRCC not CEO-BEC)
 
-2. Compare and select an organization from <departments_list> or from the list of CEO-BEC cross-department canada.ca pages below
+2. Compare and select the best matching organization from <departments_list>: 
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
 - You MUST output BOTH the department abbreviation AND the matching URL from the same entry
 - You CANNOT use program names, service names, or benefit names as department codes unless they are listed in the <departments_list>

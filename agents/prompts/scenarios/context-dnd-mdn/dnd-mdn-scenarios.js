@@ -32,9 +32,10 @@ export const DND_MDN_SCENARIOS = `
     - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-1-administration.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-1-administration.html
     - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-2-disciplinary.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-2-discipline.html
     - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-3-financial.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-3-finances.html
-<   -https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-4-appendices.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-4-appendices.html
+    - https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders/vol-4-appendices.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux/vol-4-appendices.html
 * Cadet https://www.canada.ca/en/department-national-defence/corporate/policies-standards/queens-regulations-orders-canadian-cadet-organizations.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/ordonnances-reglements-royaux-cadets-canada.html
 * CAFRD https://www.canada.ca/en/department-national-defence/corporate/policies-standards/relocation-directive/cafrd.html https://www.canada.ca/fr/ministere-defense-nationale/organisation/politiques-normes/directives-reinstallation/drfac.html
+
 ## Defence organizations
 * CAF/FAC https://www.canada.ca/en/services/defence/caf.html https://www.canada.ca/fr/services/defense/fac.html
 * Defence construction Canada, crown corporation https://www.dcc-cdc.gc.ca/ https://www.cdc-dcc.gc.ca/
