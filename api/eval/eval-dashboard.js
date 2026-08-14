@@ -133,7 +133,13 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Lookup every tool call for the answer, not just the first
+    // Lookup every tool call for the answer, not just the first. Plain
+    // localField/foreignField array $lookup - the same shape already
+    // proven above (interactionIds -> interactions), not the newer
+    // combined pipeline form, so this introduces no new DocumentDB
+    // compatibility risk. Trade-off: joins full tool docs (including
+    // input/output) before filtering to downloadWebPage below, rather
+    // than filtering/projecting in the join itself.
     pipeline.push({
       $lookup: {
         from: 'tools',
@@ -162,6 +168,10 @@ async function evalDashboardHandler(req, res) {
       }
     });
     // hasDownload: 'success' | 'partial' | 'fail' | '' (no downloads)
+    // TODO: this classification is duplicated 3x (this $switch, plain JS in
+    // DownloadPanel.js, hardcoded again in EvalDashboardPage.js's render) -
+    // consider sharing it across the api/src boundary like getItemVerdict
+    // in batchItems.js does.
     pipeline.push({
       $addFields: {
         hasDownload: {
@@ -451,6 +461,8 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
+        // hasDownload isn't boolean anymore, but "yes"/"no" still needs to work
+        orClauses.push({ hasDownload: boolSearch ? 'success' : { $in: ['fail', ''] } });
       }
 
       pipeline.push({ $match: { $or: orClauses } });

@@ -140,6 +140,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       title: t('admin.evalDashboard.columns.download', 'Download'),
       data: 'hasDownload',
       // hasDownload: 'success' | 'partial' | 'fail' | '' (see api/eval/eval-dashboard.js)
+      // TODO: near-duplicate icon+hidden-text markup per branch - a small
+      // helper would collapse this (see matching TODO in eval-dashboard.js
+      // about the 3x-duplicated status classification).
       render: v => {
         // No GC DS check/half-circle icon, so FA + hidden text alternative
         if (v === 'success') {
@@ -147,6 +150,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         }
         if (v === 'partial') {
           return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
+        }
+        if (v === 'fail') {
+          return `<span class="text-status--negative"><i class="fa-solid fa-xmark" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
         }
         return '';
       },
