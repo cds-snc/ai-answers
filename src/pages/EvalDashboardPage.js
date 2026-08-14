@@ -137,15 +137,20 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       }, searchable: false, orderable: true
     },
     {
-      title: t('admin.evalDashboard.columns.download', 'Download'), data: 'hasDownload', render: v => v
-        // GC DS's icon set has no bare checkmark (only checkmark-circle),
-        // so this falls back to Font Awesome per the "GC DS first, FA when
-        // no GC DS equivalent exists" rule. Decorative icon + a visually-
-        // hidden text alternative, rather than relying on aria-label (which
-        // some AT/browser combinations handle inconsistently for <i> icon
-        // fonts) — same effect, more broadly reliable.
-        ? `<span class="text-status--positive"><i class="fa-solid fa-check" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`
-        : '', width: '50px', searchable: false, orderable: true
+      title: t('admin.evalDashboard.columns.download', 'Download'),
+      data: 'hasDownload',
+      // hasDownload: 'success' | 'partial' | 'fail' | '' (see api/eval/eval-dashboard.js)
+      render: v => {
+        // No GC DS check/half-circle icon, so FA + hidden text alternative
+        if (v === 'success') {
+          return `<span class="text-status--positive"><i class="fa-solid fa-check" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
+        }
+        if (v === 'partial') {
+          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke" style="font-size: 1.4em;" aria-hidden="true"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
+        }
+        return '';
+      },
+      width: '50px', searchable: false, orderable: true
     },
     { title: t('admin.evalDashboard.columns.department', 'Department'), data: 'department', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.program', 'Program'), data: 'program', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: true, orderable: true },

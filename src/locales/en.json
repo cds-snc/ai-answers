@@ -1313,6 +1313,7 @@
     "pass": "Pass",
     "fail": "Failed",
     "downloadSuccess": "Succeeded",
+    "downloadPartial": "Partial",
     "details": "Details",
     "fallbackCompareRaw": "Fallback compare raw",
     "expertFeedbackId": "Expert evaluation id",

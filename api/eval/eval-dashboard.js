@@ -125,30 +125,54 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Extract answerType and first tool ID immediately
+    // Extract answerType and the full tool ID list for this answer
     pipeline.push({
       $addFields: {
         'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
-        firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
+        answerToolIds: { $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }
       }
     });
 
-    // Lookup the first tool document to check for downloadWebPage
+    // Lookup every tool call for the answer, not just the first
     pipeline.push({
       $lookup: {
         from: 'tools',
-        localField: 'firstToolId',
+        localField: 'answerToolIds',
         foreignField: '_id',
-        as: 'firstToolDoc'
+        as: 'answerToolDocs'
       }
     });
     pipeline.push({
       $addFields: {
+        downloadTools: {
+          $filter: {
+            input: '$answerToolDocs',
+            as: 'tool',
+            cond: { $eq: ['$$tool.tool', 'downloadWebPage'] }
+          }
+        }
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        downloadSucceededCount: {
+          $size: { $filter: { input: '$downloadTools', as: 't', cond: { $eq: ['$$t.error', 'none'] } } }
+        },
+        downloadTotalCount: { $size: '$downloadTools' }
+      }
+    });
+    // hasDownload: 'success' | 'partial' | 'fail' | '' (no downloads)
+    pipeline.push({
+      $addFields: {
         hasDownload: {
-          $and: [
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.tool', 0] }, 'downloadWebPage'] },
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.error', 0] }, 'none'] }
-          ]
+          $switch: {
+            branches: [
+              { case: { $eq: ['$downloadTotalCount', 0] }, then: '' },
+              { case: { $eq: ['$downloadSucceededCount', '$downloadTotalCount'] }, then: 'success' },
+              { case: { $eq: ['$downloadSucceededCount', 0] }, then: 'fail' }
+            ],
+            default: 'partial'
+          }
         }
       }
     });
@@ -296,8 +320,11 @@ async function evalDashboardHandler(req, res) {
         contextDoc: 0,
         interactionExpertDocs: 0,
         evalExpertDocs: 0,
-        firstToolId: 0,
-        firstToolDoc: 0,
+        answerToolIds: 0,
+        answerToolDocs: 0,
+        downloadTools: 0,
+        downloadSucceededCount: 0,
+        downloadTotalCount: 0,
         publicFeedbackDoc: 0
       }
     });
@@ -388,7 +415,7 @@ async function evalDashboardHandler(req, res) {
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
         noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
-        hasDownload: { $ifNull: ['$hasDownload', false] },
+        hasDownload: { $ifNull: ['$hasDownload', ''] },
         feedback: { $ifNull: ['$feedbackValue', ''] }
       }
     });
@@ -413,7 +440,9 @@ async function evalDashboardHandler(req, res) {
         { creatorEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
         { noMatchReasonType: { $regex: esc, $options: 'i' } },
-        { feedback: { $regex: esc, $options: 'i' } }
+        { feedback: { $regex: esc, $options: 'i' } },
+        // hasDownload is a status string now, not a boolean, so it's a text match
+        { hasDownload: { $regex: esc, $options: 'i' } }
       ];
 
       // If the user searched a boolean-like term, also match boolean columns directly
@@ -422,7 +451,6 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
-        orClauses.push({ hasDownload: boolSearch });
       }
 
       pipeline.push({ $match: { $or: orClauses } });
@@ -512,7 +540,7 @@ async function evalDashboardHandler(req, res) {
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
-      hasDownload: r.hasDownload || false,
+      hasDownload: r.hasDownload || '',
       feedback: r.feedback || '',
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));

@@ -895,7 +895,8 @@
 
 .label.needsImprovement,
 .label.incomplete,
-.verdict-cell--mixed {
+.verdict-cell--mixed,
+.label.partial {
   background-color: var(--gcds-color-yellow-100);
   color: #7a5a00;
 }
