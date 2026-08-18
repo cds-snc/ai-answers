@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.188.1](https://github.com/cds-snc/ai-answers/compare/v1.188.0...v1.188.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* colour contrast, css cleanup ([b05a1c6](https://github.com/cds-snc/ai-answers/commit/b05a1c658825ecf9378171e140904e02727a0e4d))
+* colour contrast, css cleanup ([dcfee8b](https://github.com/cds-snc/ai-answers/commit/dcfee8b11478d6332894aeb36fff567adff9c529))
+* correct 2FA resend error state and reset-password validation gaps ([52d7bfe](https://github.com/cds-snc/ai-answers/commit/52d7bfe8e690985a529cd86042bbd3b28cea9b58))
+* staff account page accessibility follow-ups ([fb71728](https://github.com/cds-snc/ai-answers/commit/fb717283236f4384f93789b4b99c9daff3e45629))
+* staff account page accessibility follow-ups ([e59b7b8](https://github.com/cds-snc/ai-answers/commit/e59b7b8f3a7ddbc49f203163db40c4206032ed1b))
+
 ## [1.188.0](https://github.com/cds-snc/ai-answers/compare/v1.187.0...v1.188.0) (2026-08-18)
 
 
