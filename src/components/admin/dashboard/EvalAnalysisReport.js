@@ -3,6 +3,7 @@ import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
 import { buildChatReviewHref } from '../../../utils/reviewLink.js';
+import StatusMessage from '../StatusMessage.js';
 
 const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
 const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
@@ -125,10 +126,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   return (
     <div>
       {analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))}
-        </div>
+        <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))} />
       )}
       {/* Header: what was analyzed. Plain sections with dashboard-style
           headings — the card border/box chrome is reserved for the stat and
@@ -155,10 +153,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </p>
         )}
         {analysis.status === 'error' && (
-          <div className="dashboard-warning" role="alert">
-            <span className="dashboard-warning__icon" aria-hidden="true" />
-            {t('partnerDashboard.evalAnalysis.report.partial')}
-          </div>
+          <StatusMessage variant="warning" message={t('partnerDashboard.evalAnalysis.report.partial')} />
         )}
       </div>
 

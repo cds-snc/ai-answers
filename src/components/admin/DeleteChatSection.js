@@ -28,11 +28,25 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       setChatId('');
     } catch (error) {
       console.error('Error deleting chat:', error);
-      // Replacer-function form: a 2nd-arg function is used verbatim, so a
-      // literal $ sequence in error.message (e.g. from a stack trace) can't
-      // be misread as a String.replace special replacement pattern ($&, $`, etc.).
+      // error.message is raw, untranslated exception text — never run it
+      // through the {message} template as a plain string substitution (a FR
+      // admin would otherwise see it announced as French). Split the
+      // translated template around the placeholder instead, so the detail
+      // can be wrapped in its own lang="en" span below.
+      // TODO (for Official Languages review): the wrapped detail below is
+      // still only a pronunciation fix (WCAG 3.1.2), not a translation —
+      // error.message comes straight from the network/runtime (e.g. "Failed
+      // to fetch", a raw HTTP status line, a driver error) and has no fixed
+      // set of values to put behind a t() key. Genuinely localizing this
+      // needs DataStoreService.deleteChat (and the API route it calls) to
+      // return a stable error CODE instead of a free-text message, plus new
+      // admin.deleteChat.errors.* keys here to map code -> translated text.
+      // Flagging for a maintainer decision on whether that's worth doing.
+      const [prefix, suffix] = t('admin.deleteChat.error').split('{message}');
       setStatus({
-        text: t('admin.deleteChat.error').replace('{message}', () => error.message || String(error)),
+        prefix,
+        suffix,
+        detail: error.message || String(error),
         isError: true,
       });
     } finally {
@@ -68,7 +82,16 @@ const DeleteChatSection = ({ lang = 'en' }) => {
             : t('admin.deleteChat.button')}
         </GcdsButton>
       </div>
-      <StatusMessage message={status?.text} isError={status?.isError} />
+      {/* TODO (design review): confirm this is the right StatusMessage
+          variant/box treatment for this use case — not yet reviewed by
+          design as part of this pass's box-system migration. */}
+      {status?.isError ? (
+        <StatusMessage variant="error" className="dashboard-error--inline">
+          {status.prefix}<span lang="en">{status.detail}</span>{status.suffix}
+        </StatusMessage>
+      ) : (
+        <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} className="dashboard-error--inline" />
+      )}
     </div>
   );
 };

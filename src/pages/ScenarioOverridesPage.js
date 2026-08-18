@@ -335,7 +335,11 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
 
               {/* original default details removed — default is shown in the left diff column */}
 
-              <StatusMessage message={row.error} isError style={{ color: '#d3080c' }} />
+              <StatusMessage
+                id={`override-error-${row.departmentKey}`}
+                variant={row.error ? 'error' : undefined}
+                message={row.error}
+              />
 
               {/* Two details blocks: one for editing the override, one for viewing the side-by-side diff */}
               <details className="mb-200" open={row.editOpen} onToggle={(e) => handleFieldChange(index, { editOpen: e.target.open })}>
@@ -355,6 +359,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
                     rows={Math.max(8, (row.overrideText || row.defaultText || '').split('\n').length)}
                     ref={(el) => { if (el) textareaRefs.current[`override-${row.departmentKey}`] = el; }}
                     style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.95rem' }}
+                    aria-describedby={row.error ? `override-error-${row.departmentKey}` : undefined}
                   />
                   {/* saving indicator moved above so the details block doesn't jump */}
                 </div>

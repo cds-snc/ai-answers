@@ -1494,6 +1494,7 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
         {saving ? t('settings.saving') : `${t('settings.save')} ${t(titleKey)}`}
       </GcdsButton>
       <StatusMessage
+        persistent
         variant={status ? (status.isError ? 'error' : 'success') : undefined}
         message={status?.text}
         className={status?.isError ? 'mt-200 dashboard-error--inline' : 'mt-200'}

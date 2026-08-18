@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
-import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
@@ -150,22 +149,21 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </h2>
 
       {loading ? (
-        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('common.loading')}</span>
+          </div>
+        </div>
       ) : (
       <>
 
       {error && (
-        <StatusMessage isError tag="div" className="dashboard-error">
-          <GcdsIcon name="warning-triangle" marginRight="50" />
-          {t('publicDashboard.error')}
-        </StatusMessage>
+        <StatusMessage variant="error" message={t('publicDashboard.error')} />
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('publicDashboard.noData')}
-        </div>
+        <StatusMessage variant="info" message={t('publicDashboard.noData')} />
       )}
 
       {/* KPI row: accuracy donut on the left, stat cards on the right — questions

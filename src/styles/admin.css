@@ -62,9 +62,13 @@
   backdrop-filter: blur(2px);
 }
 
+/* TODO (design review): flex-direction changed column -> row so the spinner
+   and text sit on one line instead of stacked — a quick call made mid-pass,
+   not yet properly reviewed against the overlay's other sizing (40px
+   padding, 20px gap were tuned for a stacked layout). */
 .loading-overlay-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 20px;
   padding: 40px;
@@ -78,6 +82,20 @@
   font-size: 18px;
   font-weight: 500;
   color: #333;
+}
+
+/* StatusMessage's `loading` sub-type — same neutral, non-alarming box as
+   .section-loading-indicator below (not the red/yellow/blue/green variant
+   boxes) so a loading StatusMessage doesn't default to bare unstyled text
+   that reads like nothing happened. */
+.status-message--loading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: var(--gcds-color-grayscale-50);
+  border: 1px solid var(--gcds-color-grayscale-200);
+  font-weight: 500;
+  color: var(--gcds-color-grayscale-700);
 }
 
 /* Inline section loading indicator for progressive loading */
@@ -1182,16 +1200,29 @@
   }
 }
 
+/* Shared box shape for every StatusMessage state (the four variant boxes
+   below plus .status-message--loading above) — spacing, radius, padding,
+   and font-size are identical across all five (verified against each
+   rule's actual computed values, not assumed), so they're defined once
+   here instead of five times. */
+.dashboard-error,
+.dashboard-warning-box,
+.dashboard-info-box,
+.dashboard-success-box,
+.status-message--loading {
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-top: var(--gcds-spacing-250);
+  margin-bottom: var(--gcds-spacing-250);
+  font-size: var(--gcds-font-sizes-text-small);
+}
+
 /* Now uses the shared red-100/red-500/red-700 pairing instead of its own
    hardcoded red (#ffebee/#ef9a9a/#c62828). */
 .dashboard-error {
   background: var(--gcds-color-red-100);
   border: 1px solid var(--gcds-color-red-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-red-700);
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
 /* .dashboard-error is a block box, so it stretches to its container's full
@@ -1209,12 +1240,7 @@
 .dashboard-warning-box {
   background: var(--gcds-color-yellow-100);
   border: 1px solid var(--gcds-color-yellow-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-yellow-700);
-  width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
 /* Same box treatment as .dashboard-error/.dashboard-warning-box, for a
@@ -1222,12 +1248,7 @@
 .dashboard-info-box {
   background: var(--gcds-color-blue-100);
   border: 1px solid var(--gcds-color-blue-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-blue-700);
-  width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
 /* Same box treatment again, for a completed save (e.g. SettingsPage's
@@ -1238,68 +1259,20 @@
 .dashboard-success-box {
   background: var(--gcds-color-green-100);
   border: 1px solid var(--gcds-color-green-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-green-700);
+}
+
+/* Unlike .dashboard-error (deliberately full-width, see comment above),
+   warning/info/success all shrink to their content — shared here instead
+   of repeated on each. */
+.dashboard-warning-box,
+.dashboard-info-box,
+.dashboard-success-box {
   width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
 .dashboard-success-box .fa-check-circle {
   margin-right: var(--gcds-icon-margin-50);
-}
-
-.dashboard-warning {
-  display: grid;
-  grid-template-columns: var(--gcds-notice-icon-width) auto;
-  gap: var(--gcds-notice-icon-gap);
-  align-items: center;
-  color: var(--gcds-notice-text);
-  font-size: var(--gcds-font-sizes-text-small);
-  line-height: 1.5;
-  margin-bottom: var(--gcds-spacing-150);
-  padding: var(--gcds-spacing-100) 0;
-}
-
-.dashboard-warning__icon {
-  position: relative;
-  display: block;
-  align-self: stretch;
-  width: var(--gcds-notice-border-width);
-  min-height: 52px;
-  margin: 0 auto;
-  background: linear-gradient(
-    to bottom,
-    var(--gcds-notice-danger-text) 0 calc(50% - 1.1rem),
-    transparent calc(50% - 1.1rem) calc(50% + 1.1rem),
-    var(--gcds-notice-danger-text) calc(50% + 1.1rem) 100%
-  );
-}
-
-.dashboard-warning__icon::before {
-  content: '!';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--gcds-notice-danger-text);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.75rem;
-}
-
-.dashboard-loading {
-  color: var(--gcds-color-grayscale-700);
-  text-align: center;
-  padding: var(--gcds-spacing-500) 0;
-  margin-bottom: var(--gcds-spacing-300);
 }
 
 /* Base card chrome — shared by StatCard, DonutCard, and HBarCard */

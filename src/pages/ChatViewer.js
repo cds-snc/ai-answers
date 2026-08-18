@@ -208,11 +208,18 @@ const ChatViewer = ({ lang = 'en' }) => {
                 {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
+            {/* TODO (design review): confirm this is the right StatusMessage
+                variant/box treatment for this use case — not yet reviewed by
+                design as part of this pass's box-system migration.
+                className was "mb-0" before this migration to variant — that
+                was one of this file's already-documented undefined
+                Tailwind-style classes (see the file's other TODO on that),
+                so it was never actually zeroing any margin; dropped rather
+                than carried forward as dead weight. */}
             <StatusMessage
+              variant={refreshAnnouncement ? (refreshAnnouncementIsError ? 'error' : 'success') : undefined}
               message={refreshAnnouncement}
-              isError={refreshAnnouncementIsError}
-              tag="p"
-              className="mb-0"
+              className="dashboard-error--inline"
             />
 
             {chatId && stepTimeline && (

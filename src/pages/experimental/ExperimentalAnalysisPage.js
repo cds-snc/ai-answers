@@ -600,6 +600,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
     );
 
+    // TODO: this status line and the one in the startingRun block below both
+    // sit directly beside a real role="progressbar" element, not standing
+    // alone — StatusMessage has no `progress` variant (a bar, not a box), so
+    // forcing either into loading/info today would visually clash with the
+    // actual progress bar right next to it. Migrate once StatusMessage grows
+    // a progress-bar-aware variant instead of before then.
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
             <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
@@ -876,6 +882,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
                         </GcdsButton>
+                        {/* TODO: not migrated to StatusMessage yet — `message` is a shared
+                            bucket for both success and error text across ~13
+                            setMessage(...) call sites with no isError companion (unlike
+                            DatabasePage.js's messageIsError, added in this same pass).
+                            Converting this to variant="error"/"success" needs that same
+                            tracking added first; doing it without that would either lose
+                            the distinction or require guessing per call site. */}
                         {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
                     </section>
 

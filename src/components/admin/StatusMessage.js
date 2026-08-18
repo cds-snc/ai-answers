@@ -35,13 +35,17 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // the box/role treatment but is responsible for its own icon (an escape
 // hatch for content richer than "icon + one string").
 //
-// TODO: the `loading` variant still has no spinner markup — add one
-// (inline, alongside/replacing the text; not a popup/toast — no other part
-// of the app uses that pattern, and it'd need its own focus/dismiss/
-// stacking handling) with prefers-reduced-motion handling when a design
-// lands. Also worth a follow-up pass: some call sites still pass their own
-// `style` prop instead of a token-backed variant — migrate those too as
-// they're touched.
+// The `loading` sub-type now renders the shared `.loading-animation` spinner
+// (see .status-message--loading in admin.css, mirroring the neutral
+// .section-loading-indicator box used elsewhere) instead of bare text.
+// TODO: `.loading-animation`'s infinite CSS animation still has no
+// prefers-reduced-motion guard. Also worth a follow-up pass: some call sites
+// still pass their own `style` prop instead of a token-backed variant —
+// migrate those too as they're touched.
+// TODO (design review): none of this component's CSS — the four variant
+// boxes, the loading box, the plain isError/tag styling — has had an actual
+// design pass; it was built engineering-led to close a11y gaps. Treat every
+// class here as functional but provisional until design signs off.
 //
 // forwardRef + tabIndex exist for callers that have to move focus to the
 // message itself — e.g. SettingsPage's history count, which becomes the landing
@@ -107,6 +111,11 @@ const StatusMessage = React.forwardRef((
   const content = children || (variantConfig ? (
     <>
       <VariantIcon name={variantConfig.icon} />
+      {message}
+    </>
+  ) : loading ? (
+    <>
+      <div className="loading-animation" aria-hidden="true"></div>
       {message}
     </>
   ) : message);

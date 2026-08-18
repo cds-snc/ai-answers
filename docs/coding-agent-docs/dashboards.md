@@ -493,12 +493,35 @@ This applies to **minimum-sample** gates only. Sections gated on *presence* of d
 
 ## Conventions
 
-- **Error banners**: use `src/components/admin/StatusMessage.js`
-  (`<StatusMessage isError tag="div" className="dashboard-error">…</StatusMessage>`,
-  `children` for icon + text) instead of hand-rolling a `<div className="dashboard-error"
-  role="alert">` — it standardizes the `role`/`aria-live` announcement. All of Public,
-  Partner, Metrics, TechnicalMetrics, and the eval-analysis section already use it; match
-  that pattern for any new dashboard error banner rather than copying the old inline markup.
+- **Status messages** (errors, empty-state banners, section outcomes): use
+  `src/components/admin/StatusMessage.js`
+  (`<StatusMessage variant="..." message={...} />` — builds the icon, box className, and
+  `role`/`aria-live` from one prop; see design-system.md's "Status/outcome message states")
+  instead of hand-rolling a `<div role="alert">`/`<div role="status">`. Two variants come
+  up constantly on dashboards specifically:
+  - `variant="error"` — fetch/export failures.
+  - `variant="info"` — the "no data for the selected filters" empty state
+    (`common.noDataForFilters`), used across every dashboard listed above. Amber/`warning`
+    is reserved for genuine caution (e.g. unsaved changes) — a query that successfully
+    returned zero rows isn't a failure or a caution, so it gets `info`, not `warning`.
+  See "Loading states" below for the `loading` sub-type — a third StatusMessage pattern
+  with its own two-way split, not covered by either bullet above.
+- **Loading states — two patterns, by trigger, not by page**:
+  - **Filter-driven fetch → full-page `.loading-overlay`** (`position: fixed`,
+    blurred backdrop, blocks the whole page): `ChatDashboardPage`,
+    `EvalDashboardPage`, `AutoEvalDashboardPage`, `ChatLogsDashboard`,
+    `PublicDashboard`, `PartnerDashboard`. Use the exact JSX block from
+    `ChatDashboardPage.js` (`<div className="loading-overlay" role="status"
+    aria-live="polite">…`) for any new filter-driven dashboard fetch — don't
+    reach for `StatusMessage`'s `loading` prop here, and don't hand-roll a
+    new page-level className.
+  - **Independent per-section fetch → inline, not an overlay**:
+    `MetricsDashboard`/`TechnicalMetricsDashboard` fire several fetches in
+    parallel (6 and 2 respectively) and reveal each section as its own fetch
+    finishes, rather than waiting on the slowest one — each section shows its
+    own `.section-loading-indicator` (or `<StatusMessage loading .../>`)
+    instead. This is deliberate: collapsing it into one page-level overlay
+    would remove the progressive reveal.
 - **Locales**: each dashboard has its own `partnerDashboard.*` / `publicDashboard.*`
   namespace (`kpi`, `charts`). Duplicated keys across the two are normal. Add
   EN + FR together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).

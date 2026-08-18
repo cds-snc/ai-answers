@@ -137,7 +137,7 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 | State | How to render it | Class | Tokens | Icon | Use |
 |---|---|---|---|---|---|
-| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | none yet — class exists as a styling hook, no rule defined in any stylesheet | none yet — spinner is a TODO | In-progress state, not a completed result |
+| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | `--gcds-color-grayscale-50/200/700` | `.loading-animation` pulsing-bars spinner (shared with `.section-loading-indicator`, `prefers-reduced-motion`-aware) | In-progress state, not a completed result |
 | Error | `<StatusMessage variant="error" message={...} />` | `dashboard-error` | `--gcds-color-red-100/500/700` | `GcdsIcon warning-triangle` | Failures |
 | Warning | `<StatusMessage variant="warning" message={...} />` | `dashboard-warning-box` | `--gcds-color-yellow-100/500/700` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
 | Info | `<StatusMessage variant="info" message={...} />` | `dashboard-info-box` | `--gcds-color-blue-100/500/700` | `GcdsIcon info-circle` | Neutral confirmations |
@@ -145,7 +145,7 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 `variant` builds the icon + text content itself from a plain `message` string — pass `children` instead only when the content is genuinely richer than "icon + one string" (e.g. a follow-up bullet list), in which case you're responsible for your own icon. `isError`/a manual box-modifier `className` still work but are the pre-`variant` calling convention — only still needed for call sites that haven't migrated; use `variant` for anything new. `dashboard-error--inline` (`width: fit-content`) keeps a short error from stretching to its container's full width, composable with `variant="error"` via `className`. `persistent` keeps the live region mounted while empty so a call site's *first* message is announced as a change rather than missed as an insertion — worth reaching for on anything where the first-ever outcome matters (e.g. a page's initial load error).
 
-Two open TODOs on the component itself, not blocking use: the `loading` state has no spinner markup yet (text-only), and a few older call sites still pass their own `style` prop instead of a token-backed `variant` — migrate those to `variant` as they're touched rather than copying the old pattern forward. The whole 5-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
+One open TODO on the component itself, not blocking use: a few older call sites still pass their own `style` prop instead of a token-backed `variant` — migrate those to `variant` as they're touched rather than copying the old pattern forward. The whole 5-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
 
 ## GC DS utility classes
 

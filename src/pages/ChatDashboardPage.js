@@ -325,17 +325,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       )}
 
       <StatusMessage
+        variant={error ? 'error' : undefined}
         message={error ? `${t('admin.chatDashboard.error')} ${String(error)}` : null}
-        isError
-        tag="div"
-        className="mt-400 error"
       />
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       {hasAppliedFilters && (

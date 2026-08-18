@@ -4,6 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
+import StatusMessage from './StatusMessage.js';
 
 
 
@@ -22,6 +23,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     { value: 'json', label: t('admin.chatLogs.formats.json') },
   ], [t]);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
   const [showPanel, setShowPanel] = useState(false);
 
   // Export options
@@ -44,6 +46,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const handleApplyFilters = async (filters) => {
     // When Apply is clicked, directly trigger the export
     setExporting(true);
+    setExportError(null);
     try {
       // Build query params from filters
       const params = new URLSearchParams();
@@ -102,7 +105,12 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Export error:', error);
-      alert(t('admin.chatLogs.exportError').replace('{error}', error.message));
+      // error.message is raw, untranslated exception text — same reasoning
+      // as DeleteChatSection.js's fix: split the translated template around
+      // the placeholder and wrap just the detail in lang="en" rather than
+      // running it through .replace() as a plain string substitution.
+      const [prefix, suffix] = t('admin.chatLogs.exportError').split('{error}');
+      setExportError({ prefix, suffix, detail: error.message || String(error) });
     }
     setExporting(false);
   };
@@ -120,6 +128,15 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
             <span>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</span>
           </div>
         </div>
+      )}
+
+      {/* TODO (design review): confirm this is the right StatusMessage
+          variant/box treatment for this use case — not yet reviewed by
+          design as part of this pass's box-system migration. */}
+      {exportError && (
+        <StatusMessage variant="error">
+          {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}
+        </StatusMessage>
       )}
 
       {!showPanel && (

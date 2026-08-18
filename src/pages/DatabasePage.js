@@ -30,6 +30,14 @@ const DatabasePage = ({ lang }) => {
   const [isRepairingQaMatchScores, setIsRepairingQaMatchScores] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageIsError, setMessageIsError] = useState(false);
+  // TODO: several setMessage(...) call sites below (export success/failure,
+  // import-select-a-file, import-starting, per-chunk progress, the finalMsg
+  // build-up, and the per-check "Check {id} failed" message) still pass raw
+  // hardcoded English strings instead of t() — French admins see English
+  // text. Not fixed here: this pass only wired up messageIsError for
+  // role=alert/status; translating these needs new admin.database.* keys in
+  // both en.json and fr.json.
   const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -156,8 +164,10 @@ const DatabasePage = ({ lang }) => {
       }
       await writer.close();
       setMessage('Database exported successfully');
+      setMessageIsError(false);
     } catch (error) {
       setMessage(`Export failed: ${error.message}`);
+      setMessageIsError(true);
       console.error('Export error:', error);
     } finally {
       setIsExporting(false);
@@ -169,11 +179,13 @@ const DatabasePage = ({ lang }) => {
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
       setMessage('Please select a file to import');
+      setMessageIsError(true);
       return;
     }
 
     setIsImporting(true);
     setMessage('Starting import...');
+    setMessageIsError(false);
     // lineBuffer is managed inside the try block per chunk
     let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
@@ -265,6 +277,7 @@ const DatabasePage = ({ lang }) => {
             }
           }
           setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+          setMessageIsError(false);
           // Optional throttle between chunk uploads to avoid flooding the server
           // Only apply throttle delay if the server performed upserts for this chunk
           if (Number(importThrottleMs) > 0) {
@@ -301,6 +314,7 @@ const DatabasePage = ({ lang }) => {
           }
         }
         setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+        setMessageIsError(false);
         // Only apply throttle delay if the server performed upserts for this chunk
         if (Number(importThrottleMs) > 0) {
           const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
@@ -318,11 +332,13 @@ const DatabasePage = ({ lang }) => {
         finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
       }
       setMessage(finalMsg);
+      setMessageIsError(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = ''; // Reset file input
       }
     } catch (error) {
       setMessage(`Import failed: ${error.message}`);
+      setMessageIsError(true);
       console.error('Import error:', error);
     } finally {
       setIsImporting(false);
@@ -349,8 +365,10 @@ const DatabasePage = ({ lang }) => {
 
       const result = await response.json();
       setMessage(t('admin.database.dropIndexesSuccess').replace('{count}', result.results.success.length));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.dropIndexesError').replace('{error}', error.message));
+      setMessageIsError(true);
       console.error('Drop indexes error:', error);
     } finally {
       setIsDroppingIndexes(false);
@@ -368,8 +386,10 @@ const DatabasePage = ({ lang }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
       setMessage(t('admin.database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.deleteSystemLogsError').replace('{error}', error.message));
+      setMessageIsError(true);
     } finally {
       setIsDeletingSystemLogs(false);
     }
@@ -386,8 +406,10 @@ const DatabasePage = ({ lang }) => {
       const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
       const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
       setMessage(t('admin.database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.deleteAllBatchesError').replace('{error}', error.message));
+      setMessageIsError(true);
       console.error('Delete all batches error:', error);
     } finally {
       setIsDeletingAllBatches(false);
@@ -403,8 +425,10 @@ const DatabasePage = ({ lang }) => {
     try {
       const result = await DataStoreService.repairTimestamps();
       setMessage(t('admin.database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.repairTimestampsError').replace('{error}', error.message));
+      setMessageIsError(true);
     } finally {
       setIsRepairingTimestamps(false);
     }
@@ -419,8 +443,10 @@ const DatabasePage = ({ lang }) => {
     try {
       const result = await DataStoreService.repairExpertFeedback();
       setMessage(t('admin.database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.repairExpertFeedbackError').replace('{error}', error.message));
+      setMessageIsError(true);
     } finally {
       setIsRepairingExpertFeedback(false);
     }
@@ -433,8 +459,10 @@ const DatabasePage = ({ lang }) => {
     try {
       const result = await DataStoreService.repairQaMatchScores();
       setMessage(t('admin.database.repairQaMatchScoresSuccess').replace('{updated}', result.stats.updated).replace('{matches}', result.stats.matches));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.repairQaMatchScoresError').replace('{error}', error.message));
+      setMessageIsError(true);
     } finally {
       setIsRepairingQaMatchScores(false);
     }
@@ -447,8 +475,10 @@ const DatabasePage = ({ lang }) => {
     try {
       const result = await DataStoreService.migratePublicFeedback();
       setMessage(t('admin.database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0));
+      setMessageIsError(false);
     } catch (error) {
       setMessage(t('admin.database.migratePublicFeedbackError').replace('{error}', error.message));
+      setMessageIsError(true);
     } finally {
       setIsMigratingPublicFeedback(false);
     }
@@ -470,9 +500,11 @@ const DatabasePage = ({ lang }) => {
 
       setCreationDetails(result.results);
       setMessage(t('admin.database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount));
+      setMessageIsError(false);
     } catch (error) {
       setCreationDetails(null);
       setMessage(t('admin.database.createIndexesError').replace('{error}', error.message));
+      setMessageIsError(true);
       console.error('Create indexes error:', error);
     } finally {
       setIsCreatingIndexes(false);
@@ -494,7 +526,10 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        {countsError && <div className="text-status--negative">{countsError}</div>}
+        {/* TODO (design review): confirm this is the right StatusMessage
+            variant/box treatment for this use case — not yet reviewed by
+            design as part of this pass's box-system migration. */}
+        <StatusMessage variant={countsError ? 'error' : undefined} message={countsError} className="dashboard-error--inline" />
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
@@ -592,6 +627,7 @@ const DatabasePage = ({ lang }) => {
                       setChecksResults(prev => ({ ...prev, [check.id]: json }));
                     } catch (err) {
                       setMessage(`Check ${check.id} failed: ${err.message}`);
+                      setMessageIsError(true);
                     } finally {
                       setChecksRunning(prev => ({ ...prev, [check.id]: false }));
                     }
@@ -636,10 +672,12 @@ const DatabasePage = ({ lang }) => {
                         const json = await res.json();
                         if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
                         setMessage(t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount));
+                        setMessageIsError(false);
                         // Refresh the check results
                         setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
                       } catch (err) {
                         setMessage(t('admin.database.removeDuplicatesError').replace('{error}', err.message));
+                        setMessageIsError(true);
                       } finally {
                         setIsRemovingDuplicates(false);
                       }
@@ -662,7 +700,7 @@ const DatabasePage = ({ lang }) => {
           {t('admin.database.importDescription')}
         </GcdsText>
         {/* Show import progress message above the import button */}
-        {isImporting && <StatusMessage message={message} tag="div" style={{ margin: '12px 0', color: 'blue' }} />}
+        {isImporting && <StatusMessage variant={messageIsError ? 'error' : 'info'} message={message} />}
         <form onSubmit={handleImport} className="mb-200">
           <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
             <label>
@@ -793,6 +831,7 @@ const DatabasePage = ({ lang }) => {
               setIndexStatus(json);
             } catch (err) {
               setMessage(t('admin.database.indexStatusError').replace('{error}', err.message));
+              setMessageIsError(true);
             } finally {
               setIsCheckingIndexStatus(false);
             }
@@ -943,7 +982,7 @@ const DatabasePage = ({ lang }) => {
       </div>
 
       {/* Show other messages (not import progress) at the bottom */}
-      {!isImporting && <StatusMessage message={message} tag="div" style={{ marginTop: 16, color: 'blue' }} />}
+      {!isImporting && <StatusMessage variant={messageIsError ? 'error' : 'info'} message={message} />}
     </GcdsContainer >
   );
 };

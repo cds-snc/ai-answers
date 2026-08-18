@@ -1,5 +1,4 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -307,22 +306,21 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {loading ? (
-        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
+        <div className="loading-overlay" role="status" aria-live="polite">
+          <div className="loading-overlay-content">
+            <div className="loading-animation" aria-hidden="true"></div>
+            <span>{t('common.loading')}</span>
+          </div>
+        </div>
       ) : (
       <>
 
       {error && (
-        <StatusMessage isError tag="div" className="dashboard-error">
-          <GcdsIcon name="warning-triangle" marginRight="50" />
-          {t('partnerDashboard.error')}
-        </StatusMessage>
+        <StatusMessage variant="error" message={t('partnerDashboard.error')} />
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>

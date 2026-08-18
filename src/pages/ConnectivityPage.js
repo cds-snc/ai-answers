@@ -205,35 +205,33 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 ))}
             </section>
 
+            {/* TODO (design review): confirm this is the right StatusMessage
+                variant/box treatment for this use case — not yet reviewed by
+                design as part of this pass's box-system migration. */}
             <StatusMessage
-                message={error}
-                isError
-                tag="div"
-                style={{
-                    padding: '16px',
-                    backgroundColor: '#f8d7da',
-                    border: '1px solid #f5c6cb',
-                    borderRadius: '4px',
-                    color: '#721c24',
-                    marginBottom: '20px'
-                }}
+                variant={error ? 'error' : undefined}
+                className="dashboard-error--inline"
             >
                 {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
             </StatusMessage>
 
+            {/* TODO: these counts should go through formatNumber(n, lang) per the
+                project's number-formatting rule (AGENTS.md) — they're small today
+                but this is a raw-number template that'll silently be wrong in fr-CA
+                if these ever grow past 3 digits. */}
+            <StatusMessage
+                persistent
+                message={results
+                    ? t('connectivity.testComplete')
+                        .replace('{connected}', results.summary.connected)
+                        .replace('{errors}', results.summary.errors)
+                        .replace('{warnings}', results.summary.warnings)
+                    : undefined}
+                className="sr-only"
+            />
+
             {results && (
                 <>
-                    {/* TODO: these counts should go through formatNumber(n, lang) per the
-                        project's number-formatting rule (AGENTS.md) — they're small today
-                        but this is a raw-number template that'll silently be wrong in fr-CA
-                        if these ever grow past 3 digits. */}
-                    <StatusMessage
-                        message={t('connectivity.testComplete')
-                            .replace('{connected}', results.summary.connected)
-                            .replace('{errors}', results.summary.errors)
-                            .replace('{warnings}', results.summary.warnings)}
-                        className="sr-only"
-                    />
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
