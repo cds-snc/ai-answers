@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.188.0](https://github.com/cds-snc/ai-answers/compare/v1.187.0...v1.188.0) (2026-08-18)
+
+
+### Features
+
+* create partial downloaded pill ([3118923](https://github.com/cds-snc/ai-answers/commit/3118923e69185e2aa6ef68bfb972a394dbb08ae0))
+* design refinements pills, warning colour ([396a5b6](https://github.com/cds-snc/ai-answers/commit/396a5b6d9ffb1f88b1870c0e4e2366b5c2595689))
+* moved shared functions to prevent drift ([5af873d](https://github.com/cds-snc/ai-answers/commit/5af873d1ef7750eff2262a48bb859985d43730ed))
+
+
+### Bug Fixes
+
+* hasDownload string-status handling in eval dashboard search/sort ([964aa72](https://github.com/cds-snc/ai-answers/commit/964aa7216cd3784d0a2bd0b7dc767ef760a60eee))
+
 ## [1.187.0](https://github.com/cds-snc/ai-answers/compare/v1.186.0...v1.187.0) (2026-08-14)
 
 
