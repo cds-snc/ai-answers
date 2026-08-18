@@ -5,7 +5,7 @@ import AuthService from '../services/AuthService.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
-import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
+import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -15,7 +15,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const { error, errorCount, errorRef, setError, clearError } = useAnnouncedError();
+  const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -29,12 +29,15 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     e && e.preventDefault();
     setSuccessMessage('');
     clearError();
-    if (!password || password.length < 8) {
-      setError(t('reset.complete.passwordTooShort'));
+    if (!validate({ password, confirm }, t)) {
+      return;
+    }
+    if (password.length < 8) {
+      setError(t('reset.complete.passwordTooShort'), ['password']);
       return;
     }
     if (password !== confirm) {
-      setError(t('reset.complete.passwordMismatch'));
+      setError(t('reset.complete.passwordMismatch'), ['password', 'confirm']);
       return;
     }
     setIsLoading(true);
@@ -79,7 +82,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'reset-complete-error' : undefined}
-          ariaInvalid={!!error}
+          ariaInvalid={isFieldInvalid('password')}
           lang={lang}
         />
         <PasswordInput
@@ -92,7 +95,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
           disabled={isLoading}
           autoComplete="new-password"
           ariaDescribedBy={error ? 'reset-complete-error' : undefined}
-          ariaInvalid={!!error}
+          ariaInvalid={isFieldInvalid('confirm')}
           lang={lang}
         />
 

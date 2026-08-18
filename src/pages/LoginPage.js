@@ -72,6 +72,9 @@ const LoginPage = ({ lang = 'en' }) => {
   // with no signal to AT users that the view changed. Move focus onto the
   // new view's intro text — role="status" also announces it as a live
   // region, matching FeedbackComponent's thank-you-message pattern.
+  // NOTE: showTwoStep stays `true` across a resend (requestTwoStep calls
+  // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
+  // don't rely on it to announce resend-specific feedback.
   const twoStepIntroRef = useFocusOnChange(showTwoStep);
 
   const verifyTwoStep = async () => {
@@ -101,13 +104,13 @@ const LoginPage = ({ lang = 'en' }) => {
   const requestTwoStep = async () => {
     if (!email) return;
     setIsLoading(true);
-    clearError();
+    clearTwoStepError();
     try {
       // backend method remains send2FA
       await AuthService.send2FA(email);
       setShowTwoStep(true);
     } catch (err) {
-      setError(t('login.2fa.sendError'));
+      setTwoStepError(t('login.2fa.sendError'));
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +133,7 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
-          <p role="status" aria-live="polite" tabIndex={-1} ref={twoStepIntroRef}>
+          <p role="status" tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
           {twoStepError && (
