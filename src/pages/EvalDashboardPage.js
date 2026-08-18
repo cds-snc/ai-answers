@@ -142,7 +142,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       // hasDownload: 'success' | 'partial' | 'fail' | '' (see api/eval/eval-dashboard.js)
       // TODO: near-duplicate icon+hidden-text markup per branch - a small
       // helper would collapse this (see matching TODO in eval-dashboard.js
-      // about the 3x-duplicated status classification).
+      // about the 3x-duplicated status classification). Deliberately
+      // deferred alongside that TODO - see its comment for why.
       render: v => {
         // No GC DS check/half-circle icon, so FA + hidden text alternative
         if (v === 'success') {
@@ -309,8 +310,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 13, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'partnerEval', 'aiEval', 'feedback', 'hasDownload', 'department', 'program', 'action', 'referringUrl', 'pageLanguage', 'creatorEmail', 'expertEmail', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: columns.length - 1, dir: 'desc' };
+                    // Derived from `columns` (in scope above) rather than hand-listed, so
+                    // inserting/removing a column can't silently desync this mapping from
+                    // the actual column positions. Only the last column's row-data key
+                    // ('date') differs from the backend sort field name ('createdAt').
+                    const orderByMap = columns.map((c) => (c.data === 'date' ? 'createdAt' : c.data));
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';

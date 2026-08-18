@@ -26,13 +26,17 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
     // 'success' | 'partial' | 'fail' - matches the eval table's hasDownload status
     // TODO: duplicated 3x (this, the $switch in eval-dashboard.js, and
     // EvalDashboardPage.js's render) - share across the api/src boundary
-    // like getItemVerdict in batchItems.js.
+    // like getItemVerdict in batchItems.js. Deliberately deferred - see the
+    // matching TODO in eval-dashboard.js for why (the "pills together" work
+    // will change the classification shape itself).
     const succeededCount = downloads.filter(d => d.error === 'none').length;
     const downloadStatus = succeededCount === 0
         ? 'fail'
         : succeededCount === downloads.length ? 'success' : 'partial';
     // Text, not color alone, for WCAG 1.4.1 - reuses .label.correct/.error/.partial
     // TODO: two lookups keyed by the same three strings - could be one table.
+    // Deliberately deferred alongside the classification-duplication TODO
+    // above - same reshaping work will likely touch this too.
     const statusPillClass = { success: 'correct', partial: 'partial', fail: 'error' }[downloadStatus];
     const titleStatus = {
         success: t('reviewPanels.downloadSuccess'),

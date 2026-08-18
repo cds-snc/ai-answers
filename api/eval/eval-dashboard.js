@@ -140,6 +140,12 @@ async function evalDashboardHandler(req, res) {
     // compatibility risk. Trade-off: joins full tool docs (including
     // input/output) before filtering to downloadWebPage below, rather
     // than filtering/projecting in the join itself.
+    // TODO: a `pipeline: [{ $project: { tool: 1, error: 1 } }]` form of this
+    // $lookup would avoid shipping full tool payloads per row. Deliberately
+    // deferred - the leaner sub-pipeline $lookup form was tried and reverted
+    // earlier because it couldn't be validated against real DocumentDB;
+    // don't re-open this without running explain("executionStats") against
+    // an actual DocumentDB cluster first.
     pipeline.push({
       $lookup: {
         from: 'tools',
@@ -171,7 +177,11 @@ async function evalDashboardHandler(req, res) {
     // TODO: this classification is duplicated 3x (this $switch, plain JS in
     // DownloadPanel.js, hardcoded again in EvalDashboardPage.js's render) -
     // consider sharing it across the api/src boundary like getItemVerdict
-    // in batchItems.js does.
+    // in batchItems.js does. Deliberately deferred rather than consolidated
+    // now: the planned "show all matching pills" work changes the
+    // classification shape itself (single winner -> set of applicable
+    // states), so a shared module should be designed once that scope is
+    // defined, not built twice.
     pipeline.push({
       $addFields: {
         hasDownload: {
@@ -439,8 +449,11 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
-        // hasDownload isn't boolean anymore, but "yes"/"no" still needs to work
-        orClauses.push({ hasDownload: boolSearch ? 'success' : { $in: ['fail', ''] } });
+        // hasDownload isn't boolean anymore, but "yes"/"no" still needs to work.
+        // "yes" means "some download worked" (success or partial), so partial
+        // rows stay reachable via the same shortcut instead of only by typing
+        // the literal word "partial".
+        orClauses.push({ hasDownload: boolSearch ? { $in: ['success', 'partial'] } : { $in: ['fail', ''] } });
       }
 
       pipeline.push({ $match: { $or: orClauses } });
@@ -456,13 +469,17 @@ async function evalDashboardHandler(req, res) {
         columnSearch = null;
       }
     }
+    // Columns that hold a status string rather than a real boolean - never
+    // coerce their search value to true/false, always fall through to the
+    // regex/text branch below.
+    const stringStatusColumns = new Set(['hasDownload']);
     if (columnSearch && typeof columnSearch === 'object' && Object.keys(columnSearch).length) {
       const andClauses = [];
       for (const [col, val] of Object.entries(columnSearch)) {
         const v = String(val || '').trim();
         if (!v) continue;
         const low = v.toLowerCase();
-        if (['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
+        if (!stringStatusColumns.has(col) && ['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
           const boolVal = ['true', '1', 'yes', 'y'].includes(low);
           andClauses.push({ [col]: boolVal });
         } else {

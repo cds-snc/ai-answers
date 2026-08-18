@@ -303,6 +303,12 @@ async function chatDashboardHandler(req, res) {
         createdAt: 1,
         pageLanguage: 1,
         totalInteractionCount: 1,
+        // Inclusion-only list - any field added to 'interactions' by the two
+        // $addFields stages above (lines ~290-296 computing
+        // partnerEval/aiEval/partnerHasContentIssue, and any earlier stage
+        // adding an interactions.* field this pipeline needs downstream)
+        // must be re-listed here too, or it's silently stripped before
+        // $group. (partnerHasContentIssue was dropped this way until fixed.)
         interactions: {
           department: '$interactions.department',
           expertEmail: '$interactions.expertEmail',
