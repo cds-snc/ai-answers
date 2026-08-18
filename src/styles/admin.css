@@ -18,8 +18,11 @@
    NOT the same as .label.correct/.hasError etc. below: those are bg+text
    pill pairs with their own contrast-tuned hex per background, not a
    duplicate of this text-only set. Prefer these for new plain-text call
-   sites. --warning is #a14b00 (not a GC DS token), matching
-   .label.hasContentIssue's amber; clears 4.5:1 on both backgrounds. */
+   sites. --warning is #915700 (not a GC DS token), matching
+   .label.hasContentIssue's amber; clears 4.5:1 on both white (5.89:1) and
+   the amber pill fill (4.64:1). Was #a14b00 - same contrast tier, but a
+   higher green:red ratio (0.60 vs 0.47) so it reads as orange rather than
+   red/brown at a small icon size. */
 .text-status--positive {
   color: var(--gcds-color-green-700);
 }
@@ -29,7 +32,7 @@
 }
 
 .text-status--warning {
-  color: #a14b00;
+  color: #915700;
 }
 
 .text-status--neutral {
@@ -895,7 +898,8 @@
 
 .label.needsImprovement,
 .label.incomplete,
-.verdict-cell--mixed {
+.verdict-cell--mixed,
+.label.partial {
   background-color: var(--gcds-color-yellow-100);
   color: #7a5a00;
 }
@@ -933,10 +937,12 @@
 
 /* Content issue (amber) — independent per-sentence tag, own colour like
    .label.admin/.clarifying-question/.not-gc/.pt-muni above (no matching
-   GC DS token). #a14b00 clears 4.70:1 on #FFE0B2 (old #e65100 was 2.99:1). */
+   GC DS token). #915700 clears 4.64:1 on #FFE0B2 (old #a14b00 was 4.70:1;
+   #e65100 before that was 2.99:1) - shares .text-status--warning's hex,
+   tuned for a higher green:red ratio so it reads orange, not red/brown. */
 .label.hasContentIssue {
   background-color: #FFE0B2;
-  color: #a14b00;
+  color: #915700;
 }
 
 /* Table summary stats */

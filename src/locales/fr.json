@@ -1329,6 +1329,7 @@
     "pass": "Réussite",
     "fail": "Échoué",
     "downloadSuccess": "Réussi",
+    "downloadPartial": "Partiel",
     "details": "Détails",
     "expertFeedbackId": "ID d'évaluation d'expert",
     "fallbackSourceChatId": "ID de chat source pour le repli",

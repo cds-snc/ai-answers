@@ -90,7 +90,7 @@ describe('api/eval/eval-dashboard - per-filter pipeline creation', () => {
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
     expect(pipelineIncludes('downloadWebPage')).toBe(true);
     expect(pipelineIncludes('hasDownload')).toBe(true);
-    expect(pipelineIncludes('firstToolId')).toBe(true);
+    expect(pipelineIncludes('answerToolIds')).toBe(true);
   });
 
   it('calls aggregate exactly once, not twice', async () => {

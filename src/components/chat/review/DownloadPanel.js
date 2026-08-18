@@ -23,28 +23,33 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
         }
     };
 
-    // TODO: review and confirm \u2014 .some() means the Success pill shows if
-    // even one of several downloads succeeded, e.g. 1-of-3 still reads
-    // "Success" overall. Pre-existing logic (unchanged by this PR), but the
-    // pill treatment makes that reading more prominent than the checkmark
-    // it replaced. Confirm this is the intended meaning of "Success" here
-    // before changing it \u2014 not fixing without that confirmation.
-    const hasSuccess = downloads.some(d => d.error === 'none');
-    // Text, not a bare glyph or color alone \u2014 a checkmark/x-mark with no
-    // label isn't reliably announced by screen readers, and green/red alone
-    // fails WCAG 1.4.1 (use of color). Reuses the same .label.correct/
-    // .label.error pill pair already used for eval verdicts elsewhere
-    // (DatabasePage.js, SuiteGridTable.js) \u2014 but "Success"/"Failed" wording
-    // here specifically, not the "Pass"/"Fail" used for those verdicts,
-    // since this is a download outcome, not a scored evaluation.
-    const titleStatus = hasSuccess ? t('reviewPanels.downloadSuccess') : t('reviewPanels.fail');
+    // 'success' | 'partial' | 'fail' - matches the eval table's hasDownload status
+    // TODO: duplicated 3x (this, the $switch in eval-dashboard.js, and
+    // EvalDashboardPage.js's render) - share across the api/src boundary
+    // like getItemVerdict in batchItems.js. Deliberately deferred - see the
+    // matching TODO in eval-dashboard.js for why (the "pills together" work
+    // will change the classification shape itself).
+    const succeededCount = downloads.filter(d => d.error === 'none').length;
+    const downloadStatus = succeededCount === 0
+        ? 'fail'
+        : succeededCount === downloads.length ? 'success' : 'partial';
+    // Text, not color alone, for WCAG 1.4.1 - reuses .label.correct/.error/.partial
+    // TODO: two lookups keyed by the same three strings - could be one table.
+    // Deliberately deferred alongside the classification-duplication TODO
+    // above - same reshaping work will likely touch this too.
+    const statusPillClass = { success: 'correct', partial: 'partial', fail: 'error' }[downloadStatus];
+    const titleStatus = {
+        success: t('reviewPanels.downloadSuccess'),
+        partial: t('reviewPanels.downloadPartial'),
+        fail: t('reviewPanels.fail')
+    }[downloadStatus];
     const title = withAnswerNumber(t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages');
 
     return (
         <details className="review-details">
             <summary>
                 {title}
-                <span className={`label label--summary-status ${hasSuccess ? 'correct' : 'error'}`}>{titleStatus}</span>
+                <span className={`label label--summary-status ${statusPillClass}`}>{titleStatus}</span>
             </summary>
             <div className="review-panel download-panel">
                 {downloads.map((d, i) => {

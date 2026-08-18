@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getFeedbackDataProjection } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
 
 const HOURS_IN_DAY = 24;
@@ -125,30 +125,74 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Extract answerType and first tool ID immediately
+    // Extract answerType and the full tool ID list for this answer
     pipeline.push({
       $addFields: {
         'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
-        firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
+        answerToolIds: { $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }
       }
     });
 
-    // Lookup the first tool document to check for downloadWebPage
+    // Lookup every tool call for the answer, not just the first. Plain
+    // localField/foreignField array $lookup - the same shape already
+    // proven above (interactionIds -> interactions), not the newer
+    // combined pipeline form, so this introduces no new DocumentDB
+    // compatibility risk. Trade-off: joins full tool docs (including
+    // input/output) before filtering to downloadWebPage below, rather
+    // than filtering/projecting in the join itself.
+    // TODO: a `pipeline: [{ $project: { tool: 1, error: 1 } }]` form of this
+    // $lookup would avoid shipping full tool payloads per row. Deliberately
+    // deferred - the leaner sub-pipeline $lookup form was tried and reverted
+    // earlier because it couldn't be validated against real DocumentDB;
+    // don't re-open this without running explain("executionStats") against
+    // an actual DocumentDB cluster first.
     pipeline.push({
       $lookup: {
         from: 'tools',
-        localField: 'firstToolId',
+        localField: 'answerToolIds',
         foreignField: '_id',
-        as: 'firstToolDoc'
+        as: 'answerToolDocs'
       }
     });
     pipeline.push({
       $addFields: {
+        downloadTools: {
+          $filter: {
+            input: '$answerToolDocs',
+            as: 'tool',
+            cond: { $eq: ['$$tool.tool', 'downloadWebPage'] }
+          }
+        }
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        downloadSucceededCount: {
+          $size: { $filter: { input: '$downloadTools', as: 't', cond: { $eq: ['$$t.error', 'none'] } } }
+        },
+        downloadTotalCount: { $size: '$downloadTools' }
+      }
+    });
+    // hasDownload: 'success' | 'partial' | 'fail' | '' (no downloads)
+    // TODO: this classification is duplicated 3x (this $switch, plain JS in
+    // DownloadPanel.js, hardcoded again in EvalDashboardPage.js's render) -
+    // consider sharing it across the api/src boundary like getItemVerdict
+    // in batchItems.js does. Deliberately deferred rather than consolidated
+    // now: the planned "show all matching pills" work changes the
+    // classification shape itself (single winner -> set of applicable
+    // states), so a shared module should be designed once that scope is
+    // defined, not built twice.
+    pipeline.push({
+      $addFields: {
         hasDownload: {
-          $and: [
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.tool', 0] }, 'downloadWebPage'] },
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.error', 0] }, 'none'] }
-          ]
+          $switch: {
+            branches: [
+              { case: { $eq: ['$downloadTotalCount', 0] }, then: '' },
+              { case: { $eq: ['$downloadSucceededCount', '$downloadTotalCount'] }, then: 'success' },
+              { case: { $eq: ['$downloadSucceededCount', 0] }, then: 'fail' }
+            ],
+            default: 'partial'
+          }
         }
       }
     });
@@ -227,18 +271,7 @@ async function evalDashboardHandler(req, res) {
           overallRating: { $arrayElemAt: ['$interactionExpertDocs.overallRating', 0] }
         },
         hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] },
-        expertFeedbackData: {
-          totalScore: { $arrayElemAt: ['$interactionExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$interactionExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$interactionExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$interactionExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$interactionExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$interactionExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence4Harmful', 0] }
-        }
+        expertFeedbackData: getFeedbackDataProjection('$interactionExpertDocs', { includeContentIssue: true })
       }
     });
 
@@ -257,18 +290,7 @@ async function evalDashboardHandler(req, res) {
         evalExpert: {
           expertEmail: { $arrayElemAt: ['$evalExpertDocs.expertEmail', 0] }
         },
-        autoEvalFeedbackData: {
-          totalScore: { $arrayElemAt: ['$evalExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$evalExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$evalExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$evalExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$evalExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$evalExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence4Harmful', 0] }
-        }
+        autoEvalFeedbackData: getFeedbackDataProjection('$evalExpertDocs')
       }
     });
 
@@ -296,8 +318,11 @@ async function evalDashboardHandler(req, res) {
         contextDoc: 0,
         interactionExpertDocs: 0,
         evalExpertDocs: 0,
-        firstToolId: 0,
-        firstToolDoc: 0,
+        answerToolIds: 0,
+        answerToolDocs: 0,
+        downloadTools: 0,
+        downloadSucceededCount: 0,
+        downloadTotalCount: 0,
         publicFeedbackDoc: 0
       }
     });
@@ -388,7 +413,7 @@ async function evalDashboardHandler(req, res) {
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
         noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
-        hasDownload: { $ifNull: ['$hasDownload', false] },
+        hasDownload: { $ifNull: ['$hasDownload', ''] },
         feedback: { $ifNull: ['$feedbackValue', ''] }
       }
     });
@@ -413,7 +438,9 @@ async function evalDashboardHandler(req, res) {
         { creatorEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
         { noMatchReasonType: { $regex: esc, $options: 'i' } },
-        { feedback: { $regex: esc, $options: 'i' } }
+        { feedback: { $regex: esc, $options: 'i' } },
+        // hasDownload is a status string now, not a boolean, so it's a text match
+        { hasDownload: { $regex: esc, $options: 'i' } }
       ];
 
       // If the user searched a boolean-like term, also match boolean columns directly
@@ -422,7 +449,11 @@ async function evalDashboardHandler(req, res) {
         orClauses.push({ hasExpertEval: boolSearch });
         orClauses.push({ processed: boolSearch });
         orClauses.push({ hasMatches: boolSearch });
-        orClauses.push({ hasDownload: boolSearch });
+        // hasDownload isn't boolean anymore, but "yes"/"no" still needs to work.
+        // "yes" means "some download worked" (success or partial), so partial
+        // rows stay reachable via the same shortcut instead of only by typing
+        // the literal word "partial".
+        orClauses.push({ hasDownload: boolSearch ? { $in: ['success', 'partial'] } : { $in: ['fail', ''] } });
       }
 
       pipeline.push({ $match: { $or: orClauses } });
@@ -438,13 +469,17 @@ async function evalDashboardHandler(req, res) {
         columnSearch = null;
       }
     }
+    // Columns that hold a status string rather than a real boolean - never
+    // coerce their search value to true/false, always fall through to the
+    // regex/text branch below.
+    const stringStatusColumns = new Set(['hasDownload']);
     if (columnSearch && typeof columnSearch === 'object' && Object.keys(columnSearch).length) {
       const andClauses = [];
       for (const [col, val] of Object.entries(columnSearch)) {
         const v = String(val || '').trim();
         if (!v) continue;
         const low = v.toLowerCase();
-        if (['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
+        if (!stringStatusColumns.has(col) && ['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
           const boolVal = ['true', '1', 'yes', 'y'].includes(low);
           andClauses.push({ [col]: boolVal });
         } else {
@@ -512,7 +547,7 @@ async function evalDashboardHandler(req, res) {
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
-      hasDownload: r.hasDownload || false,
+      hasDownload: r.hasDownload || '',
       feedback: r.feedback || '',
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));
