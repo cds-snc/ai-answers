@@ -3,7 +3,6 @@ import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import UserService from '../../services/UserService.js';
-import './AdminNotifications.css';
 
 const AdminNotifications = ({ lang = 'en' }) => {
     const { t } = useTranslations(lang);

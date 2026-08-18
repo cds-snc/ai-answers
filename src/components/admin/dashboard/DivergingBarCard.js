@@ -143,7 +143,12 @@ const DivergingBarCard = ({ title, subtitle, data = [], height, lang = 'en', noD
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" domain={[-axisMax, axisMax]} allowDecimals={false} tickFormatter={fmtAxisPct} tick={{ fontSize: 16 }} />
                 <YAxis type="category" dataKey="name" width={yAxisWidth} interval={0} tick={renderYTick} />
-                <ReferenceLine x={0} stroke="#bbb" />
+                {/* #bbb was ~1.9:1 against the card background, below the
+                    3:1 minimum for a graphical object (SC 1.4.11).
+                    COLOURS.chartStroke is already verified ≥3:1 against
+                    white elsewhere in dashboardColours.js — reused here
+                    rather than picking a new grey. */}
+                <ReferenceLine x={0} stroke={COLOURS.chartStroke} />
                 <Tooltip content={<Tip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                 <Bar dataKey="neg" stackId="a" fill={COLOURS.feedbackNegative} radius={[0, 0, 0, 0]}>
                   {rows.map((row, i) => <Cell key={i} fill={row.colour || COLOURS.feedbackNegative} stroke={row.stroke || 'none'} strokeWidth={row.strokeWidth || 0} />)}

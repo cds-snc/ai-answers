@@ -8,7 +8,10 @@ const VERDICT_COLORS = {
     pass: '#2e8540',
     fail: '#d30800',
     flagged: '#d30800',
-    'needs-review': '#b07a00'
+    // #b07a00 was ~3.73:1 on white, below the 4.5:1 minimum for normal text
+    // (SC 1.4.3). #915700 is the same amber already used by admin.css's
+    // .text-status--warning / .label.hasContentIssue (~5.89:1).
+    'needs-review': '#915700'
 };
 
 const isScalar = (value) => value === null

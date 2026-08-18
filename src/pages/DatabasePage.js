@@ -494,7 +494,7 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        {countsError && <div style={{ color: 'red' }}>{countsError}</div>}
+        {countsError && <div className="text-status--negative">{countsError}</div>}
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
@@ -754,10 +754,6 @@ const DatabasePage = ({ lang }) => {
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {/* TODO: .text-secondary is not defined in any stylesheet (only the
-                      --gcds-text-secondary CSS var exists) — this code suffix renders in
-                      default text color instead of muted grey. Add a .text-secondary class
-                      or swap to var(--gcds-text-secondary) directly. */}
                   {f.code && <span className="text-secondary font-size-text-xxs-nr" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}

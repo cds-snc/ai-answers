@@ -39,6 +39,14 @@
   color: var(--gcds-color-blue-muted);
 }
 
+/* Muted secondary text (e.g. a parenthetical code/id suffix next to a
+   label). Reuses GC DS's own --gcds-text-secondary token (#595959, already
+   used directly elsewhere in this file) rather than a new hex value.
+   DatabasePage.js referenced this class name before it existed here. */
+.text-secondary {
+  color: var(--gcds-text-secondary);
+}
+
 /* Fixed loading overlay for dashboards - always visible on screen */
 .loading-overlay {
   position: fixed;
@@ -2204,4 +2212,96 @@
    is touched, rather than keeping two names for one rule. */
 .table-scroll {
   overflow-x: auto;
+}
+
+/* AdminNotifications (admin dashboard "N pending items" banner) — folded in
+   from its own AdminNotifications.css so all admin styling lives in this one
+   stylesheet, consistent with the rest of the admin section.
+   TODO: this panel predates StatusMessage's variant box treatment
+   (.dashboard-warning-box etc., using --gcds-color-yellow-100/500/700 —
+   see above) and still hand-rolls its own yellow/amber palette and
+   gradient background instead of it. Worth reviewing whether this can be
+   consolidated onto that shared warning styling rather than keeping a
+   second, slightly different amber-box pattern. */
+.admin-notifications {
+  margin-bottom: var(--gcds-spacing-400);
+}
+
+.admin-notifications-panel {
+  background: linear-gradient(135deg, #fef7e0 0%, #fef3cd 100%);
+  border: 1px solid #ffc107;
+  border-left: 4px solid #ffc107;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.admin-notifications-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #856404;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-notifications-title::before {
+  content: "⚠️";
+}
+
+.admin-notifications-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.admin-notifications-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(133, 100, 4, 0.15);
+}
+
+.admin-notifications-item:last-child {
+  border-bottom: none;
+}
+
+.admin-notifications-item--warning .admin-notifications-count {
+  /* #d97706 was ~3.19:1 against the white badge text, below the 4.5:1
+     minimum for normal-size text (SC 1.4.3). --gcds-color-yellow-700 (also
+     used by .dashboard-warning-box above) reaches ~5:1. */
+  background: var(--gcds-color-yellow-700);
+  color: white;
+}
+
+.admin-notifications-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 0.5rem;
+  background: #6b7280;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 14px;
+}
+
+.admin-notifications-label {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.admin-notifications-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.admin-notifications-action::after {
+  content: "→";
 }
