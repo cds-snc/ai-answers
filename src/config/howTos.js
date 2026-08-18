@@ -23,6 +23,24 @@ export const HOW_TOS = [
       fr: 'comment-reponses-informees-par-evaluations.md',
     },
   },
+  {
+    id: 'evaluate-answers',
+    route: 'how-to-evaluate-answers',
+    titleKey: 'admin.howTo.evaluateAnswers',
+    files: {
+      en: 'how-to-evaluate-answers.md',
+      fr: 'comment-evaluer-les-reponses.md',
+    },
+  },
+  {
+    id: 'partner-onboarding',
+    route: 'how-to-partner-onboarding',
+    titleKey: 'admin.howTo.partnerOnboarding',
+    files: {
+      en: 'how-to-partner-onboarding.md',
+      fr: 'comment-integration-des-partenaires.md',
+    },
+  },
 ];
 
 /** Directory under public/ that holds the how-to markdown and images. */

@@ -556,6 +556,8 @@
     "howTo": {
       "title": "Comment faire",
       "evalInformedAnswers": "Réponses informées par les évaluations",
+      "evaluateAnswers": "Évaluer les réponses",
+      "partnerOnboarding": "Intégration des partenaires",
       "loading": "Chargement...",
       "loadError": "Impossible de charger ce guide.",
       "notFoundTitle": "Guide introuvable",

@@ -89,6 +89,7 @@ const HowToPage = ({ lang = 'en', howToId }) => {
               </>
             ),
             h2: ({ children }) => <h2 className="mt-400 mb-300">{children}</h2>,
+            h3: ({ children }) => <h3 className="mt-400 mb-300">{children}</h3>,
             p: ({ children }) => <p className="mb-300">{children}</p>,
             // GCDS's reset applies `ol,ul{list-style:none}`, so markers have to be
             // asked for explicitly. `text-measure` matches the readable line length
