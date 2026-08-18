@@ -37,11 +37,8 @@ import { GcdsIcon } from '@gcds-core/components-react';
 //
 // The `loading` sub-type now renders the shared `.loading-animation` spinner
 // (see .status-message--loading in admin.css, mirroring the neutral
-// .section-loading-indicator box used elsewhere) instead of bare text.
-// TODO: `.loading-animation`'s infinite CSS animation still has no
-// prefers-reduced-motion guard. Also worth a follow-up pass: some call sites
-// still pass their own `style` prop instead of a token-backed variant —
-// migrate those too as they're touched.
+// .section-loading-indicator box used elsewhere) instead of bare text, with
+// a prefers-reduced-motion guard on the animation (global.css).
 // TODO (design review): none of this component's CSS — the four variant
 // boxes, the loading box, the plain isError/tag styling — has had an actual
 // design pass; it was built engineering-led to close a11y gaps. Treat every

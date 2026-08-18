@@ -266,6 +266,16 @@ It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="e
 
 **Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
 
+**`StatusMessage` vs. form-field errors:** `StatusMessage` is for page/section-level
+async outcomes with no single input they belong to. A validation error tied to one
+specific field uses a different, separate family instead —
+`src/components/chat/FeedbackInlineError.js`, `src/components/auth/AnnouncedError.js`,
+and `src/components/chat/ExplanationErrorSummary.js` — which wires the error to its
+field via `id`/`aria-describedby` and moves focus to it on submit failure (`inputRef`/
+`tabIndex={-1}`), something `StatusMessage` doesn't do. Don't reach for `StatusMessage`
+for a field-level error, and don't reach for the form-error family for a page-level
+outcome that isn't about one input.
+
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 
 ```js
