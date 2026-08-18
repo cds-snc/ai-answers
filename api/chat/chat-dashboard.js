@@ -2,7 +2,7 @@
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions } from '../util/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -238,18 +238,7 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $addFields: {
         'interactions.expertEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] },
-        'interactions.expertFeedbackData': {
-          totalScore: { $arrayElemAt: ['$expertFeedbackDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$expertFeedbackDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$expertFeedbackDocs.sentence4Harmful', 0] }
-        }
+        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true })
       }
     });
 
@@ -281,18 +270,7 @@ async function chatDashboardHandler(req, res) {
     // Extract only needed fields for aiEval computation
     pipeline.push({
       $addFields: {
-        'interactions.autoEvalFeedbackData': {
-          totalScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$autoEvalExpertFeedbackDocs.sentence4Harmful', 0] }
-        }
+        'interactions.autoEvalFeedbackData': getFeedbackDataProjection('$autoEvalExpertFeedbackDocs')
       }
     });
 
@@ -332,7 +310,8 @@ async function chatDashboardHandler(req, res) {
           redactedQuestion: '$interactions.redactedQuestion',
           answerType: '$interactions.answerType',
           partnerEval: '$interactions.partnerEval',
-          aiEval: '$interactions.aiEval'
+          aiEval: '$interactions.aiEval',
+          partnerHasContentIssue: '$interactions.partnerHasContentIssue'
         }
       }
     });

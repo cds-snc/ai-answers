@@ -81,6 +81,40 @@ const filterInteractionsByCategory = (chat, category, evaluator) => {
 // Filtering now happens in the aggregation pipeline using computed fields
 // via getPartnerEvalAggregationExpression() and getAiEvalAggregationExpression().
 
+// Shared shape for pulling an expert-feedback doc's score/harmful/content-
+// issue fields off a single-element $lookup array into a flat object -
+// the input getPartnerEvalAggregationExpression / getAiEvalAggregationExpression
+// / getPartnerContentIssueAggregationExpression below all read. docsField is
+// the $lookup's `as` array (e.g. '$interactionExpertDocs'). Previously this
+// object was copy-pasted separately in eval-dashboard.js and chat-dashboard.js
+// (4 near-identical copies total, 2 per file for partner + AI eval) - one of
+// those copies silently dropped the ContentIssue fields, so the Content
+// issue pill/filter never worked. One shared definition instead.
+// includeContentIssue defaults false: there's no AI-eval equivalent of that
+// tag (see getPartnerContentIssueAggregationExpression), so only pass true
+// for partner-facing feedback.
+export function getFeedbackDataProjection(docsField, { includeContentIssue = false } = {}) {
+  const projection = {
+    totalScore: { $arrayElemAt: [`${docsField}.totalScore`, 0] },
+    sentence1Score: { $arrayElemAt: [`${docsField}.sentence1Score`, 0] },
+    sentence2Score: { $arrayElemAt: [`${docsField}.sentence2Score`, 0] },
+    sentence3Score: { $arrayElemAt: [`${docsField}.sentence3Score`, 0] },
+    sentence4Score: { $arrayElemAt: [`${docsField}.sentence4Score`, 0] },
+    citationScore: { $arrayElemAt: [`${docsField}.citationScore`, 0] },
+    sentence1Harmful: { $arrayElemAt: [`${docsField}.sentence1Harmful`, 0] },
+    sentence2Harmful: { $arrayElemAt: [`${docsField}.sentence2Harmful`, 0] },
+    sentence3Harmful: { $arrayElemAt: [`${docsField}.sentence3Harmful`, 0] },
+    sentence4Harmful: { $arrayElemAt: [`${docsField}.sentence4Harmful`, 0] }
+  };
+  if (includeContentIssue) {
+    projection.sentence1ContentIssue = { $arrayElemAt: [`${docsField}.sentence1ContentIssue`, 0] };
+    projection.sentence2ContentIssue = { $arrayElemAt: [`${docsField}.sentence2ContentIssue`, 0] };
+    projection.sentence3ContentIssue = { $arrayElemAt: [`${docsField}.sentence3ContentIssue`, 0] };
+    projection.sentence4ContentIssue = { $arrayElemAt: [`${docsField}.sentence4ContentIssue`, 0] };
+  }
+  return projection;
+}
+
 // JS mirror of getPartnerEvalAggregationExpression below — the exact same
 // score signals and priority (harmful > hasCitationError > hasError >
 // needsImprovement > correct), for consumers that categorize in Node instead

@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getFeedbackDataProjection } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
 
 const HOURS_IN_DAY = 24;
@@ -261,18 +261,7 @@ async function evalDashboardHandler(req, res) {
           overallRating: { $arrayElemAt: ['$interactionExpertDocs.overallRating', 0] }
         },
         hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] },
-        expertFeedbackData: {
-          totalScore: { $arrayElemAt: ['$interactionExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$interactionExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$interactionExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$interactionExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$interactionExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$interactionExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence4Harmful', 0] }
-        }
+        expertFeedbackData: getFeedbackDataProjection('$interactionExpertDocs', { includeContentIssue: true })
       }
     });
 
@@ -291,18 +280,7 @@ async function evalDashboardHandler(req, res) {
         evalExpert: {
           expertEmail: { $arrayElemAt: ['$evalExpertDocs.expertEmail', 0] }
         },
-        autoEvalFeedbackData: {
-          totalScore: { $arrayElemAt: ['$evalExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$evalExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$evalExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$evalExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$evalExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$evalExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence4Harmful', 0] }
-        }
+        autoEvalFeedbackData: getFeedbackDataProjection('$evalExpertDocs')
       }
     });
 
