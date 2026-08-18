@@ -2005,6 +2005,11 @@
     "message": "We can't find the page you're looking for.",
     "homeLink": "Return to AI Answers"
   },
+  "aboutPage": {
+    "loading": "Loading...",
+    "title": "About",
+    "loadError": "Unable to load content."
+  },
   "experimental": {
     "datasets": {
       "title": "Experimental Datasets",

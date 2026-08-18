@@ -67,7 +67,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       {error && (
         <AnnouncedError id="reset-complete-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
-      <form onSubmit={submit}>
+      <form onSubmit={submit} noValidate>
         {/* No code/OTP field — link verification is sufficient to set a new password */}
         <PasswordInput
           id="password"
