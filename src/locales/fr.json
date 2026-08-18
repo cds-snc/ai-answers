@@ -2005,6 +2005,11 @@
     "message": "Nous ne trouvons pas la page que vous cherchez.",
     "homeLink": "Retourner à Réponses IA"
   },
+  "aboutPage": {
+    "loading": "Chargement...",
+    "title": "À propos",
+    "loadError": "Impossible de charger le contenu."
+  },
   "experimental": {
     "datasets": {
       "title": "Ensembles de données expérimentaux",

@@ -9,6 +9,7 @@ import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -66,6 +67,15 @@ const LoginPage = ({ lang = 'en' }) => {
     setError: setTwoStepError,
     clearError: clearTwoStepError,
   } = useAnnouncedError();
+  // The credentials form (and whatever had focus in it) unmounts when the
+  // 2FA view mounts in its place, so focus would otherwise revert to <body>
+  // with no signal to AT users that the view changed. Move focus onto the
+  // new view's intro text — role="status" also announces it as a live
+  // region, matching FeedbackComponent's thank-you-message pattern.
+  // NOTE: showTwoStep stays `true` across a resend (requestTwoStep calls
+  // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
+  // don't rely on it to announce resend-specific feedback.
+  const twoStepIntroRef = useFocusOnChange(showTwoStep);
 
   const verifyTwoStep = async () => {
     setIsLoading(true);
@@ -94,13 +104,13 @@ const LoginPage = ({ lang = 'en' }) => {
   const requestTwoStep = async () => {
     if (!email) return;
     setIsLoading(true);
-    clearError();
+    clearTwoStepError();
     try {
       // backend method remains send2FA
       await AuthService.send2FA(email);
       setShowTwoStep(true);
     } catch (err) {
-      setError(t('login.2fa.sendError'));
+      setTwoStepError(t('login.2fa.sendError'));
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +133,9 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
-          <p>{t('login.2fa.sentToEmail')}</p>
+          <p role="status" tabIndex={-1} ref={twoStepIntroRef}>
+            {t('login.2fa.sentToEmail')}
+          </p>
           {twoStepError && (
             <AnnouncedError
               id="login-2fa-error"
@@ -134,7 +146,14 @@ const LoginPage = ({ lang = 'en' }) => {
           )}
           <div className="auth-form-group">
             <label htmlFor="code">{t('login.2fa.code')}</label>
-            <input id="code" value={code} onChange={(e) => setCode(e.target.value)} disabled={isLoading} />
+            <input
+              id="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              disabled={isLoading}
+              aria-describedby={twoStepError ? 'login-2fa-error' : undefined}
+              aria-invalid={!!twoStepError}
+            />
           </div>
           <div>
             <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
