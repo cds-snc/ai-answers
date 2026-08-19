@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.189.0](https://github.com/cds-snc/ai-answers/compare/v1.188.1...v1.189.0) (2026-08-19)
+
+
+### Features
+
+* consistent StatusMessage adoption across admin ([d27aefa](https://github.com/cds-snc/ai-answers/commit/d27aefaf3893a122d2c741ee9eb1a33d3b055291))
+* sr-only announcements `nonce` prop for persistent regions ([7941e24](https://github.com/cds-snc/ai-answers/commit/7941e24bcf855cbe00d798d8ac0f8cb2d93b0489))
+* statusmessages for VectorPage ([858d225](https://github.com/cds-snc/ai-answers/commit/858d22582ec0d657cd026660311e36cfc811f672))
+
+
+### Bug Fixes
+
+* accessibility skill improvements ([dfcdff9](https://github.com/cds-snc/ai-answers/commit/dfcdff958f955caeb96976525d11c0a9fd6cb9fd))
+* address StatusMessage review findings and standardize box sizing ([b322276](https://github.com/cds-snc/ai-answers/commit/b32227644444e97612d7ba53f2e7de12f8d9acc0))
+* extend accessibility fixes to DatabasePage, ConnectivityPage, SettingsPage ([d5ca282](https://github.com/cds-snc/ai-answers/commit/d5ca282fe961353ac9619a020ebff1884559ffe1))
+* remove resolved design-review TODOs on StatusMessage call sites ([6006ea8](https://github.com/cds-snc/ai-answers/commit/6006ea89df43bc95c0ac38bf44c74eecc60444a3))
+* remove resolved design-review TODOs on StatusMessage call sites ([fe39be1](https://github.com/cds-snc/ai-answers/commit/fe39be1b6964d42ad13e5c805610e4fd51be8249))
+* use success variant for completed DatabasePage actions, flag remaining gaps ([bb66cc8](https://github.com/cds-snc/ai-answers/commit/bb66cc84f7a12f81c2fe422e4e7f2d759da96f8f))
+
 ## [1.188.1](https://github.com/cds-snc/ai-answers/compare/v1.188.0...v1.188.1) (2026-08-18)
 
 
