@@ -7,6 +7,7 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 
 DataTable.use(DT);
@@ -129,26 +130,16 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       </div>
 
       {loading && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.autoEvalDashboard.loading', 'Loading evaluations...')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={t('admin.autoEvalDashboard.loading')} />
       )}
 
       <StatusMessage
+        variant={error ? 'error' : undefined}
         message={error ? `${t('admin.autoEvalDashboard.error')} ${String(error)}` : null}
-        isError
-        tag="div"
-        className="mt-400 error"
       />
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       {hasAppliedFilters && (

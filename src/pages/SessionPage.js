@@ -8,6 +8,7 @@ import PauseToggleButton from '../components/admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -76,8 +77,8 @@ const SessionPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
 
-      {error && <div className="text-status--negative">{error}</div>}
-      {loading && <div>{t('admin.filters.loading', 'Loading...')}</div>}
+      <StatusMessage variant={error ? 'error' : undefined} message={error} />
+      {loading && <StatusMessage loading message={t('admin.filters.loading')} />}
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 

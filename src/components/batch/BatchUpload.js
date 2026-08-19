@@ -9,6 +9,7 @@ import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 import { useAnnouncedError } from '../../hooks/auth/useAnnouncedError.js';
 import AnnouncedError from '../auth/AnnouncedError.js';
+import StatusMessage from '../admin/StatusMessage.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -405,10 +406,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           )}
 
           {successMessage && (
-            <p className="thank-you" role="status">
-              <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
-              {successMessage}
-            </p>
+            <StatusMessage variant="success" message={successMessage} />
           )}
         </div>
 
@@ -438,9 +436,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         </div>
 
         {processing && (
-          <div role="status" className="mb-125">
-            {t('batch.upload.processing')}
-          </div>
+          <StatusMessage loading message={t('batch.upload.processing')} />
         )}
       </form>
     </GcdsContainer>

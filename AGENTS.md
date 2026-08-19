@@ -247,7 +247,7 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 ## Announcing status, errors, and async outcomes
 
-Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>`/`alert()` for this. A lot of the admin section had these render as plain DOM text (or a native `alert()` popup) with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
+Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, or general-purpose "still working" state on an admin page — don't hand-roll a plain `<div>`/`<p>`/`alert()` for this. A lot of the admin section had these render as plain DOM text (or a native `alert()` popup) with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
 
 ```jsx
 import StatusMessage from '../components/admin/StatusMessage.js';
@@ -262,9 +262,65 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 
 It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="error"`), otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
 
-`variant` (`error` | `warning` | `info` | `success`) is the box-styled outcome family — pass it with `message` as a plain string and StatusMessage builds the box `className`, `role`/`aria-live`, and a leading icon itself, using the GC DS-token box classes in `admin.css`: `dashboard-error` (red-100/500/700, failures), `dashboard-warning-box` (yellow-100/500/700, cautions like unsaved changes), `dashboard-info-box` (blue-100/500/700, neutral confirmations), `dashboard-success-box` (green-100/500/700, completed saves). Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) except `success`, which uses a raw FA `check-circle` span (`fa-solid fa-check-circle`) since GC DS's icon font has no checkmark glyph — matching the existing FA precedent in `BatchUpload.js`. `dashboard-error` additionally has a `dashboard-error--inline` modifier (`width: fit-content`) for a message that shouldn't stretch to its container's full width, passable alongside `variant="error"` via `className`. Reuse one of these four variants rather than adding a fifth box class or a page's own ad-hoc hex colours — if a genuinely new outcome type comes up, extend `StatusMessage`'s own `VARIANTS` map (a caller passing `children` instead of `message` alongside `variant` gets the box/role treatment while supplying its own richer content, e.g. a bullet list, without needing a new variant). Callers that haven't migrated to `variant` yet (still wiring up `isError`/`className`/`children` manually) are unaffected — it's additive, not a breaking change — but prefer `variant` for anything new.
+`variant` (`error` | `warning` | `info` | `success`) is the box-styled outcome family — pass it with `message` as a plain string and StatusMessage builds the box `className`, `role`/`aria-live`, and a leading icon itself, using the GC DS-token box classes in `admin.css`: `status-message--error-box` (red-100/500/700, failures), `status-message--warning-box` (yellow-100/500/700, cautions like unsaved changes), `status-message--info-box` (blue-100/500/700, neutral confirmations), `status-message--success-box` (green-100/500/700, completed saves). Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) except `success`, which uses a raw FA `check-circle` span (`fa-solid fa-check-circle`) since GC DS's icon font has no checkmark glyph — matching the existing FA precedent in `BatchUpload.js`. Every box state (the four variants plus `loading`) is `width: fit-content` with a `max-width: 65ch` cap by default — content in this app is line-length-restricted (~65 char), so a box never needs to stretch to fill a wide container, and a long message wraps inside a standardized width instead of growing unbounded. Reuse one of these four variants rather than adding a fifth box class or a page's own ad-hoc hex colours — if a genuinely new outcome type comes up, extend `StatusMessage`'s own `VARIANTS` map (a caller passing `children` instead of `message` alongside `variant` gets the box/role treatment while supplying its own richer content, e.g. a bullet list, without needing a new variant). Callers that haven't migrated to `variant` yet (still wiring up `isError`/`className`/`children` manually) are unaffected — it's additive, not a breaking change — but prefer `variant` for anything new.
 
 **Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
+
+**Full-page filter-loading overlay is a separate component — `src/components/admin/LoadingOverlay.js`, not `StatusMessage`.** `StatusMessage`'s `loading` is general-purpose (any page might need an inline "still working" message) and lives here on purpose. `LoadingOverlay` is narrower — a full-page backdrop that blocks the whole page while a dashboard's filter-driven fetch reloads — and stays in its own file for that reason, not because it's structurally different (it isn't; it's `role="status"` too). Determinate progress (a known total, e.g. "chunk 3 of 10") isn't either of these — a third, different thing again — and doesn't belong in `StatusMessage` as a `progress` variant or in `LoadingOverlay` as a mode; see `ExperimentalAnalysisPage.js`'s `renderProgressCards` for the established pattern (a real `role="progressbar"` + a plain `role="status"` text line, its own small component). `loading` and `variant` inside `StatusMessage` are resolved through one lookup (`resolveLook`) rather than three separate hand-synced conditionals — that used to be the failure mode here: `loading` shipped with its content/className correct but its tag-forcing conditional not updated at the same time, so its spinner ended up nested inside an invalid `<p>`. The one-lookup structure is what makes `loading` and `variant` safe to keep in the same component; it's not something to re-split without a reason.
+
+```jsx
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
+
+{loading && <LoadingOverlay message={t('some.page.loading')} />}
+```
+
+**`StatusMessage` vs. form-field errors:** `StatusMessage` is for page/section-level
+async outcomes with no single input they belong to. A validation error tied to one
+specific field uses a different, separate family instead —
+`src/components/chat/FeedbackInlineError.js`, `src/components/auth/AnnouncedError.js`,
+and `src/components/chat/ExplanationErrorSummary.js` — which wires the error to its
+field via `id`/`aria-describedby` and moves focus to it on submit failure (`inputRef`/
+`tabIndex={-1}`), something `StatusMessage` doesn't do. Don't reach for `StatusMessage`
+for a field-level error, and don't reach for the form-error family for a page-level
+outcome that isn't about one input.
+
+**`FeedbackInlineError` needs `errorCount`, or repeat identical failures go silent.**
+`FeedbackInlineError` renders `<p key={errorCount} role="alert">` — the `key` is what
+forces React to mount a fresh DOM node (and therefore re-announce/re-focus) on every
+trigger. If a call site sets its error message with plain `useState` + `setError(text)`
+instead of passing `errorCount`, then two submits in a row with the *same* invalid input
+(e.g. an empty required field clicked twice with no edit in between) produce the same
+string both times — React bails on the identical-value update, the DOM never mutates,
+and the second failure is silently un-announced to screen-reader users. This has shipped
+more than once from copying an existing field-error call site that itself never passed
+`errorCount` (`DatabasePage.js`'s `fileSelectError` is one such precedent — don't copy it
+further).
+
+For a single required-field validation (the common case: "you must fill in / select
+this"), use `src/hooks/useInlineFormError.js` instead of a bare `useState`:
+
+```jsx
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
+
+const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
+
+// on invalid submit: triggerError();  (increments errorCount even on repeat failures)
+// on valid input / value change: clearError();
+
+{hasError && (
+  <FeedbackInlineError
+    id="my-field-error"
+    message={t('my.field.error')}
+    errorCount={errorCount}
+    inputRef={errorRef}
+  />
+)}
+```
+
+See `PublicFeedbackComponent.js` / `ExpertFeedbackComponent.js` for the established
+usage. If a field's error text genuinely varies per failure (not just a fixed message),
+a bare `useState` is fine, but the `<FeedbackInlineError>` still needs an `errorCount`
+that increments on every trigger — derive it from a counter, not from the message text.
 
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 

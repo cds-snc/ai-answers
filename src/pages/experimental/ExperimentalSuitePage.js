@@ -5,6 +5,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import { useExperimentalSuiteGrid } from '../../hooks/experimental/useExperimentalSuiteGrid.js';
 import SuiteGridTable, { VERDICT_CELL_CLASSES } from '../../components/experimental/SuiteGridTable.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
 
 // Same order/verdicts as SuiteGridTable's cells; colours come from its
 // exported VERDICT_CELL_CLASSES so this legend can't drift from the grid.
@@ -53,7 +54,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
             </header>
 
             {error && (
-                <GcdsText role="alert"><strong>{t('experimental.suite.loadError')}</strong></GcdsText>
+                <StatusMessage variant="error" message={t('experimental.suite.loadError')} />
             )}
 
             {loading ? (

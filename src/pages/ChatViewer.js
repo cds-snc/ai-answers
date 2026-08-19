@@ -209,10 +209,8 @@ const ChatViewer = ({ lang = 'en' }) => {
               </GcdsButton>
             </div>
             <StatusMessage
+              variant={refreshAnnouncement ? (refreshAnnouncementIsError ? 'error' : 'success') : undefined}
               message={refreshAnnouncement}
-              isError={refreshAnnouncementIsError}
-              tag="p"
-              className="mb-0"
             />
 
             {chatId && stepTimeline && (

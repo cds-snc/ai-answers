@@ -321,10 +321,6 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
             </button>
           )}
         </span>
-        {/* Visual-only — not a live region. The page-level .dashboard-loading
-            region (PartnerDashboard.js / PublicDashboard.js) is canon for the
-            "Loading…" announcement; a second live region here would double it. */}
-        {loading && <span className="filter-bar__loading">{t('dashboardFilter.loading')}</span>}
       </div>
     </div>
   );

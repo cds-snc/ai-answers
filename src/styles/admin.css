@@ -62,9 +62,10 @@
   backdrop-filter: blur(2px);
 }
 
+/* TODO (design review, low risk): needs review for small screens. */
 .loading-overlay-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 20px;
   padding: 40px;
@@ -78,6 +79,20 @@
   font-size: 18px;
   font-weight: 500;
   color: #333;
+}
+
+/* StatusMessage's `loading` sub-type — same neutral, non-alarming box as
+   .section-loading-indicator below (not the red/yellow/blue/green variant
+   boxes) so a loading StatusMessage doesn't default to bare unstyled text
+   that reads like nothing happened. */
+.status-message--loading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: var(--gcds-color-grayscale-50);
+  border: 1px solid var(--gcds-color-grayscale-200);
+  font-weight: 500;
+  color: var(--gcds-color-grayscale-700);
 }
 
 /* Inline section loading indicator for progressive loading */
@@ -1182,52 +1197,55 @@
   }
 }
 
+/* Shared box shape for StatusMessage's four variant boxes below, plus
+   .status-message--loading above (Loading.js's LoadingStatus, not a
+   StatusMessage state anymore — see the scope note in StatusMessage.js —
+   but it still wants the exact same spacing/radius/padding, so it stays in
+   this shared rule rather than repeating the values under its own name).
+   Identical across all five (verified against each rule's actual computed
+   values, not assumed), so they're defined once here instead of five
+   times. width: fit-content so a short message doesn't
+   stretch the box to fill a wide container, capped with max-width: 65ch to
+   match this app's ~65-char line-length restriction — a long message wraps
+   inside a standardized box width instead of growing unbounded. */
+.status-message--error-box,
+.status-message--warning-box,
+.status-message--info-box,
+.status-message--success-box,
+.status-message--loading {
+  border-radius: 6px;
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-top: var(--gcds-spacing-250);
+  margin-bottom: var(--gcds-spacing-250);
+  font-size: var(--gcds-font-sizes-text-small);
+  width: fit-content;
+  max-width: 65ch;
+}
+
 /* Now uses the shared red-100/red-500/red-700 pairing instead of its own
    hardcoded red (#ffebee/#ef9a9a/#c62828). */
-.dashboard-error {
+.status-message--error-box {
   background: var(--gcds-color-red-100);
   border: 1px solid var(--gcds-color-red-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-red-700);
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
-/* .dashboard-error is a block box, so it stretches to its container's full
-   width by default — fine for a dashboard section, but SettingsPage's
-   sections are full page width, where a wide box reads oddly for a single
-   short line of text. Shrinks the box to its content instead. */
-.dashboard-error--inline {
-  width: fit-content;
-}
-
-/* Same box treatment as .dashboard-error, for a caution rather than a
+/* Same box treatment as .status-message--error-box, for a caution rather than a
    failure (SettingsPage's page-level "Unsaved changes" banner) — GC DS has
    no orange token family, so this uses the yellow/gold triad instead,
-   same red-100/500/700 pairing shape .dashboard-error uses. */
-.dashboard-warning-box {
+   same red-100/500/700 pairing shape .status-message--error-box uses. */
+.status-message--warning-box {
   background: var(--gcds-color-yellow-100);
   border: 1px solid var(--gcds-color-yellow-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-yellow-700);
-  width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
-/* Same box treatment as .dashboard-error/.dashboard-warning-box, for a
+/* Same box treatment as .status-message--error-box/.status-message--warning-box, for a
    neutral success/info outcome (e.g. "Settings cache refreshed."). */
-.dashboard-info-box {
+.status-message--info-box {
   background: var(--gcds-color-blue-100);
   border: 1px solid var(--gcds-color-blue-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-blue-700);
-  width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
 /* Same box treatment again, for a completed save (e.g. SettingsPage's
@@ -1235,71 +1253,28 @@
    (StatusMessage's `success` variant) rather than a GcdsIcon — GC DS's icon
    font has no checkmark glyph — matching the existing FA precedent in
    BatchUpload.js. */
-.dashboard-success-box {
+.status-message--success-box {
   background: var(--gcds-color-green-100);
   border: 1px solid var(--gcds-color-green-500);
-  border-radius: 6px;
-  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
-  margin-bottom: var(--gcds-spacing-300);
   color: var(--gcds-color-green-700);
-  width: fit-content;
-  font-size: var(--gcds-font-sizes-text-small);
 }
 
-.dashboard-success-box .fa-check-circle {
+.status-message--success-box .fa-check-circle {
   margin-right: var(--gcds-icon-margin-50);
 }
 
-.dashboard-warning {
-  display: grid;
-  grid-template-columns: var(--gcds-notice-icon-width) auto;
-  gap: var(--gcds-notice-icon-gap);
-  align-items: center;
-  color: var(--gcds-notice-text);
-  font-size: var(--gcds-font-sizes-text-small);
-  line-height: 1.5;
-  margin-bottom: var(--gcds-spacing-150);
-  padding: var(--gcds-spacing-100) 0;
-}
-
-.dashboard-warning__icon {
-  position: relative;
-  display: block;
-  align-self: stretch;
-  width: var(--gcds-notice-border-width);
-  min-height: 52px;
-  margin: 0 auto;
-  background: linear-gradient(
-    to bottom,
-    var(--gcds-notice-danger-text) 0 calc(50% - 1.1rem),
-    transparent calc(50% - 1.1rem) calc(50% + 1.1rem),
-    var(--gcds-notice-danger-text) calc(50% + 1.1rem) 100%
-  );
-}
-
-.dashboard-warning__icon::before {
-  content: '!';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--gcds-notice-danger-text);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.75rem;
-}
-
-.dashboard-loading {
-  color: var(--gcds-color-grayscale-700);
-  text-align: center;
-  padding: var(--gcds-spacing-500) 0;
-  margin-bottom: var(--gcds-spacing-300);
+/* DatabasePage.js's import-progress counter (the plain-text line shown
+   while a chunked import is running). Extracted from its previous inline
+   style — same margin/color, no design change — so it's a class to build
+   on later (e.g. a real progress bar) instead of inline styles. Not used
+   anywhere else.
+   TODO: color: blue is a raw named color carried over from the old inline
+   style, not a GC DS token — swap for the appropriate --gcds-color-* token
+   when this gets its design pass (see the real progress bar TODO next to
+   its call site in DatabasePage.js). */
+.status-message--progress {
+  margin: 12px 0;
+  color: blue;
 }
 
 /* Base card chrome — shared by StatCard, DonutCard, and HBarCard */
@@ -2041,11 +2016,6 @@
 }
 
 
-.filter-bar__loading {
-  font-size: 14px;
-  color: var(--gcds-text-secondary);
-}
-
 /* Auth pages (login, register, password reset) */
 .auth-login-container,
 .auth-signup-container {
@@ -2218,7 +2188,7 @@
    from its own AdminNotifications.css so all admin styling lives in this one
    stylesheet, consistent with the rest of the admin section.
    TODO: this panel predates StatusMessage's variant box treatment
-   (.dashboard-warning-box etc., using --gcds-color-yellow-100/500/700 —
+   (.status-message--warning-box etc., using --gcds-color-yellow-100/500/700 —
    see above) and still hand-rolls its own yellow/amber palette and
    gradient background instead of it. Worth reviewing whether this can be
    consolidated onto that shared warning styling rather than keeping a
@@ -2271,7 +2241,7 @@
 .admin-notifications-item--warning .admin-notifications-count {
   /* #d97706 was ~3.19:1 against the white badge text, below the 4.5:1
      minimum for normal-size text (SC 1.4.3). --gcds-color-yellow-700 (also
-     used by .dashboard-warning-box above) reaches ~5:1. */
+     used by .status-message--warning-box above) reaches ~5:1. */
   background: var(--gcds-color-yellow-700);
   color: white;
 }

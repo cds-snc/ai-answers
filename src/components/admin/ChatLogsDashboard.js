@@ -4,6 +4,8 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
+import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 
 
@@ -22,6 +24,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     { value: 'json', label: t('admin.chatLogs.formats.json') },
   ], [t]);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
   const [showPanel, setShowPanel] = useState(false);
 
   // Export options
@@ -44,6 +47,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const handleApplyFilters = async (filters) => {
     // When Apply is clicked, directly trigger the export
     setExporting(true);
+    setExportError(null);
     try {
       // Build query params from filters
       const params = new URLSearchParams();
@@ -102,7 +106,12 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Export error:', error);
-      alert(t('admin.chatLogs.exportError').replace('{error}', error.message));
+      // error.message is raw, untranslated exception text — same reasoning
+      // as DeleteChatSection.js's fix: split the translated template around
+      // the placeholder and wrap just the detail in lang="en" rather than
+      // running it through .replace() as a plain string substitution.
+      const [prefix, suffix] = t('admin.chatLogs.exportError').split('{error}');
+      setExportError({ prefix, suffix, detail: error.message || String(error) });
     }
     setExporting(false);
   };
@@ -114,12 +123,13 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   return (
     <div className="space-y-6">
       {exporting && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={<>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</>} />
+      )}
+
+      {exportError && (
+        <StatusMessage variant="error">
+          {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}
+        </StatusMessage>
       )}
 
       {!showPanel && (
@@ -137,6 +147,13 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       {showPanel && (
         <>
           {/* Export Options - Above Filter Panel */}
+          {/* TODO (design): this export table's controls need a design pass:
+              a custom calendar component for the date range (currently
+              FilterPanel's default date inputs), resize/layout improvements
+              for this section, and a clearly visible dedicated Export
+              button (the export is currently triggered via FilterPanel's
+              generic "Apply" button below, not an obviously-labelled export
+              action of its own). */}
           <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
             <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription')}</p>
 
@@ -150,7 +167,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                   id="export-view"
                   ref={exportViewRef}
                   value={selectedView}
-                  onChange={(e) => setSelectedView(e.target.value)}
+                  onChange={(e) => { setSelectedView(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >
@@ -170,7 +187,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 <select
                   id="export-format"
                   value={selectedFormat}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  onChange={(e) => { setSelectedFormat(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >

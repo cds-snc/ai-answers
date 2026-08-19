@@ -230,6 +230,16 @@ commits) — check new code follows it rather than reinventing it:
 - Live regions (`aria-live`, `role="alert"/"status"`) are used for dynamic
   content that needs to be announced (errors, async results, loading state)
   — and not overused to the point of announcement spam.
+- A live region announces a *change*, not a value. If a message is driven
+  by state with no mechanism to force a remount on a repeat identical
+  trigger, React bails on the no-op update and the second (and every later)
+  occurrence goes silently un-announced — this is decidable from the code,
+  not a maybe: report it as a real finding (SC 4.1.3) when the mechanism is
+  missing. `StatusMessage`'s `persistent` messages carry a `nonce` prop for
+  exactly this; check it's used wherever the same outcome could plausibly
+  repeat. Reserve `Needs validation:` (see "How to review") for what you
+  genuinely can't trace — a reset happening in a code path you can't
+  follow, or actual AT-timing behavior — not for this.
 - No redundant/conflicting roles (e.g. `role="button"` on an actual
   `<button>`).
 
@@ -240,6 +250,12 @@ commits) — check new code follows it rather than reinventing it:
   (`required`/`aria-required`).
 - Error messages are associated with their field (`aria-describedby`) and
   announced (see Focus management above), not conveyed by colour alone.
+- Repeat identical validation failures still get announced. A field error
+  set via plain `useState` with no changing counter goes silent on a second
+  identical failure — the same DOM-no-op problem as live regions above.
+  `FeedbackInlineError` needs a changing `errorCount` (`useInlineFormError.js`;
+  see AGENTS.md's "FeedbackInlineError needs errorCount") to force a remount
+  on every trigger, not just the first.
 - Radio/checkbox groups have a group label (`<fieldset>`/`<legend>` or
   `role="group"` + `aria-label`).
 - **Persisted changes need an explicit trigger, not just an announcement.**
@@ -306,3 +322,15 @@ commits) — check new code follows it rather than reinventing it:
 For each finding give: the file/line, what's wrong, which WCAG 2.1 AA
 success criterion it violates, and the concrete fix (not just "improve
 accessibility").
+
+Since review here is static reading, most render-mechanics questions are
+decidable from the code alone — e.g. whether a live region or inline error
+has a mechanism (`nonce`, `key={errorCount}`, a reset before the async
+call) to force a remount on a repeat trigger. Report those as real findings
+when the mechanism is missing, not as `Needs validation`. Reserve `Needs
+validation:` for what genuinely can't be traced from the code — state reset
+by a path you can't follow, or AT-timing behavior that varies by screen
+reader. Report these separately from the severity-ordered findings: the
+file/line, the specific risk, and the exact steps a human needs to take in
+a running app to check it (e.g. "click Get stats twice; confirm whether the
+sr-only announcement fires the second time").

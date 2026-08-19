@@ -166,7 +166,7 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                             : t('experimental.datasets.creatingGoldenAnswer')
                         : t('experimental.datasets.createButton')}
                 </GcdsButton>
-                <StatusMessage message={message?.text} isError={message?.type === 'error'} tag="div">
+                <StatusMessage variant={message?.type}>
                     {message && <GcdsText>{message.text}</GcdsText>}
                 </StatusMessage>
             </div>

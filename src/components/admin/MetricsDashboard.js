@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GcdsContainer, GcdsIcon, GcdsText } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -190,10 +190,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           </div>
         )}
         {error && !isLoading && (
-          <StatusMessage isError tag="div" className="dashboard-error">
-            <GcdsIcon name="warning-triangle" marginRight="50" />
-            {error}
-          </StatusMessage>
+          <StatusMessage variant="error" message={error} />
         )}
         {/* TODO: transition-opacity/duration-200/opacity-50/pointer-events-none are
             Tailwind-style class names not defined anywhere in this project's CSS —
@@ -234,10 +231,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       </div>
 
       {hasStartedLoading && !Object.values(loadingState).some(Boolean) && metrics.totalQuestions === 0 && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       {hasStartedLoading && (

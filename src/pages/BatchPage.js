@@ -148,7 +148,7 @@ const BatchPage = ({ lang = 'en' }) => {
         </GcdsLink>
       </nav>
 
-      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
+      <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
 
       <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>

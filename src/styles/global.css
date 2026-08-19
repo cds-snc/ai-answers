@@ -313,6 +313,14 @@ gcds-container:first-of-type {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .loading-animation,
+  .loading-animation:before,
+  .loading-animation:after {
+    animation: none;
+  }
+}
+
 /* detail/summary styling */
 details {
   padding-left: 1.1em;
