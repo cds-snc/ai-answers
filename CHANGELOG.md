@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.189.2](https://github.com/cds-snc/ai-answers/compare/v1.189.1...v1.189.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* restore accessible-name test coverage in FilterPanel tests ([d62ef02](https://github.com/cds-snc/ai-answers/commit/d62ef0254928850c347f5889e7344e250b4436b6))
+* use hyphen in FedDev-Ontario abbrKey to fix scenario-override and eval-analysis 400/500s ([6eaf51e](https://github.com/cds-snc/ai-answers/commit/6eaf51eb5685349213a460eae07ea6736e007ba8))
+
 ## [1.189.1](https://github.com/cds-snc/ai-answers/compare/v1.189.0...v1.189.1) (2026-08-19)
 
 
