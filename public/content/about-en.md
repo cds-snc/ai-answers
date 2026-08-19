@@ -8,7 +8,7 @@ ogImage: "og-about-en.png"
 
 ## Overview
 
-Canada.ca AI Answers is a specialized AI chat platform designed to help users of Government of Canada websites. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
+Canada.ca AI Answers is a specialized artificial intelligence (AI) chat platform designed to help users of Government of Canada websites. This custom AI service can provide brief answers to user questions from the entire online ecosystem of federal government services, programs, and websites.
 
 The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office and the Canadian Digital Service. Later, in trials on selected Canada.ca pages in 2025, the service sourced content across 60+ federal institutions to answer thousands of questions.   
 
@@ -33,7 +33,7 @@ Use the Government of Canada website link provided in the response to check your
 We attempt to ensure the accuracy of the information provided but there is a possibility that the information may contain inaccuracies, and the information may not yet reflect recent changes or fulfill your particular needs or purposes.
 
 ### Providing service in Canada's official languages
-The [Official Languages Act](https://laws-lois.justice.gc.ca/eng/acts/O-3.01/), the [Official Languages (Communications with and Services to the Public) Regulations](https://laws.justice.gc.ca/eng/regulations/SOR-92-48/index.html) and Treasury Board policy requirements establish when we use both English and French to provide services to members of the public. Choose the English or French language button at the top of the page to use the corresponding official language version of AI Answers. Questions asked and answered in a language other than English or French are provided for the convenience of our visitors.
+The [Official Languages Act](https://laws-lois.justice.gc.ca/eng/acts/O-3.01/), the [Official Languages (Communications with and Services to the Public) Regulations](https://laws.justice.gc.ca/eng/regulations/SOR-92-48/index.html) and Treasury Board policy requirements establish when we use both English and French to provide services to members of the public. Choose the English or Français language button at the top of the page to use the corresponding official language version of AI Answers. Questions asked and answered in a language other than English or French are provided for the convenience of our visitors.
 
 ### Terms
 This AI system relies on information provided on Government of Canada websites. The Government of Canada does not provide legal advice.
