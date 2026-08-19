@@ -24,12 +24,14 @@ L'essentiel du travail est l'évaluation, et les trois autres découlent de ce q
 
 1. Créez un compte. Il doit être approuvé avant que vous puissiez l'utiliser : faites-le à l'avance.
 2. Connectez-vous toujours avant de commencer — sinon les évaluations d'expert ne s'enregistrent pas.
-3. Le menu partenaire donne accès à :
-   - **Utiliser Réponses IA avec les options d'évaluation** — poser des questions et évaluer les réponses.
-   - **Voir les chats** — votre travail, celui des autres évaluateurs, et les pages que Réponses IA a lues.
-   - **Évaluer un chat public** — de vraies questions d'utilisateurs tirées des essais.
-   - **Voir les métriques de performance** et le **Tableau de bord des évaluations**.
-   - **Remplacements de scénarios**.
+3. Le menu partenaire contient tout ce dont vous avez besoin, dans cet ordre :
+   - **Utiliser Réponses IA avec les options d'évaluation** — poser vos questions et évaluer les réponses au fur et à mesure.
+   - **Tableau de bord des évaluations** — votre porte d'entrée vers les chats qui existent déjà : ce qui reste à évaluer et ce qui est fait. C'est de là que part l'essentiel de votre travail une fois que des chats sont dans le système.
+   - **Voir les chats** — tous les chats, y compris les pages que Réponses IA a lues.
+   - **Voir les métriques de performance**, **Tableau de bord partenaire**, **Voir les métriques techniques**, **Tableau de bord public** — les résultats et les tendances.
+   - **Modifier les scénarios** — les consignes propres à votre institution pour l'IA.
+   - **Voir la trace complète d'un chat** — le journal complet des événements pour un seul chat.
+   - **Voir et gérer les lots** — exécuter une série de questions d'un coup plutôt qu'une à la fois.
 
 ## Choisir les questions à évaluer
 

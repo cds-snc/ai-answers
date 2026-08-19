@@ -9,7 +9,7 @@ description: "How to score an answer sentence by sentence, rate the citation, an
 
 **Draft:** this guide is a first pass, assembled from the partner evaluation deck and the engineering docs. Send corrections to your CDS contact.
 
-This guide starts from an answer that already exists — one you just asked, or one already in the logs. For choosing which questions to ask in the first place, see [Partner onboarding](/en/how-to/partner-onboarding).
+This guide starts from a chat that already exists — one you just had, one from a batch you ran, or one asked by a user. A chat can hold several answers, and each one is evaluated separately. For choosing which questions to ask in the first place, see [Partner onboarding](/en/how-to/partner-onboarding).
 
 ## What an evaluation is
 
@@ -21,16 +21,15 @@ Evaluations do three things:
 - Point to the underlying cause — usually web content that is out of date or unclear, sometimes a scenario that needs tuning.
 - Feed back into future answers. See [Evaluation-informed answers](/en/how-to/eval-informed-answers).
 
-## Before you start
+## Open a chat
 
-You must be signed in as an admin or partner user. Accounts are approved before they can be used.
+You must be signed in as an admin or partner user to evaluate a chat.
 
-Then open the answer you're going to evaluate:
+Then open the chat you're going to evaluate:
 
-- **An answer you just asked for** — the rating options appear under it straight away.
-- **A specific chat** — paste its ID into **View chat by ID** on the admin or partner page.
-- **Answers waiting to be scored** — open **View chats** and filter on **No evaluation**.
-- **Real user questions from trials** — open **Evaluate a public chat**.
+- **Using evaluation options** — if you used AI Answers from the Partner menu, the rating options appear under each answer straight away.
+- **A specific chat** — paste its ID into **View chat by ID** on the admin page.
+- **Answers waiting to be scored** — click a chat ID in the Evaluation dashboard.
 
 ## Judge the answer
 
@@ -40,7 +39,7 @@ Under **How was this answer?**, select **Good** or **Needs improvement**.
 
 ![A four-sentence answer with its citation in review mode. Below it, the department FIN heads a "How was this answer?" bar offering Good and Needs improvement, followed by collapsed Downloaded pages and Automated evaluation panels and the chat ID](/content/admin/images/evaluate-how-was-this-answer-en.jpg)
 
-**Good** records the evaluation straight away. There is nothing else to fill in.
+**Good** records the evaluation straight away as a correct answer. There is nothing else to fill in.
 
 **Needs improvement** opens the rating form, where you rate the sentences and the citation separately.
 

@@ -9,7 +9,7 @@ description: "Comment évaluer une réponse phrase par phrase, noter la citation
 
 **Ébauche :** ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires et de la documentation technique. Envoyez vos corrections à votre personne-ressource au SNC.
 
-Ce guide part d'une réponse qui existe déjà — une que vous venez d'obtenir, ou une qui se trouve déjà dans les journaux. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
+Ce guide part d'un chat qui existe déjà — un que vous venez d'avoir, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
 
 ## Ce qu'est une évaluation
 
@@ -21,16 +21,15 @@ Les évaluations servent à trois choses :
 - Cerner la cause sous-jacente — le plus souvent du contenu web périmé ou peu clair, parfois un scénario à ajuster.
 - Alimenter les réponses futures. Voir [Réponses informées par les évaluations](/fr/comment-faire/reponses-informees-par-evaluations).
 
-## Avant de commencer
+## Ouvrir un chat
 
-Vous devez être connecté comme utilisateur administrateur ou partenaire. Les comptes doivent être approuvés avant de pouvoir servir.
+Vous devez être connecté comme utilisateur administrateur ou partenaire pour évaluer un chat.
 
-Ouvrez ensuite la réponse que vous allez évaluer :
+Ouvrez ensuite le chat que vous allez évaluer :
 
-- **Une réponse que vous venez d'obtenir** — les options d'évaluation apparaissent aussitôt sous celle-ci.
-- **Un chat précis** — collez son ID dans **Voir le chat par ID** sur la page administrateur ou partenaire.
-- **Les réponses en attente de notation** — ouvrez **Voir les chats** et filtrez sur **Aucune évaluation**.
-- **De vraies questions d'utilisateurs pendant les essais** — ouvrez **Évaluer un chat public**.
+- **Avec les options d'évaluation** — si vous avez utilisé Réponses IA à partir du menu partenaire, les options d'évaluation apparaissent aussitôt sous chaque réponse.
+- **Un chat précis** — collez son ID dans **Voir le chat par ID** sur la page administrateur.
+- **Les réponses en attente de notation** — cliquez sur un ID de chat dans le tableau de bord des évaluations.
 
 ## Juger la réponse
 
@@ -40,7 +39,7 @@ Sous **Cette réponse était-elle utile ?**, choisissez **Bonne** ou **Nécessit
 
 ![Une réponse et sa citation en mode révision. En dessous, l'institution ISED-ISDE coiffe la barre « Cette réponse était-elle utile ? » offrant Bonne et Nécessite une amélioration, suivie du panneau replié « Évaluation automatisée » et de l'ID de chat](/content/admin/images/evaluate-how-was-this-answer-fr.jpg)
 
-**Bonne** enregistre l'évaluation immédiatement. Il n'y a rien d'autre à remplir.
+**Bonne** enregistre immédiatement l'évaluation comme une réponse correcte. Il n'y a rien d'autre à remplir.
 
 **Nécessite une amélioration** ouvre le formulaire d'évaluation, où vous notez séparément les phrases et la citation.
 

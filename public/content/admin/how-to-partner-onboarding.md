@@ -24,12 +24,14 @@ Most of the work is evaluation, and the other three fall out of what evaluation 
 
 1. Sign up for an account. It has to be approved before you can use it, so do this ahead of time.
 2. Always sign in before you start — expert evaluations don't record otherwise.
-3. From the partner menu you can reach:
-   - **Use AI Answers with evaluation options** — ask questions and evaluate the answers.
-   - **View chats** — your own work, other evaluators' work, and which pages AI Answers read.
-   - **Evaluate a public chat** — real user questions from trials.
-   - **View performance metrics** and the **Evaluation dashboard**.
-   - **Edit scenarios**.
+3. The partner menu has everything you need, in this order:
+   - **Use AI Answers with evaluation options** — ask your questions and evaluate the answers as they come back.
+   - **Evaluation dashboard** — your way back into chats that already exist: what's still to evaluate, and what's been done. This is where most of your evaluating starts once you have chats in the system.
+   - **View chats** — every chat, including which pages AI Answers read.
+   - **View performance metrics**, **Partner dashboard**, **View technical metrics**, **Public dashboard** — results and trends.
+   - **Edit scenarios** — institution-specific instructions for the AI.
+   - **View full trace for a chat** — the full event log for a single chat.
+   - **View and manage batches** — run a set of questions at once instead of one at a time.
 
 ## Choose the questions to evaluate
 
