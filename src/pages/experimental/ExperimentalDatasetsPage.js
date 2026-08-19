@@ -374,7 +374,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 design as part of this pass's box-system migration. */}
                             <StatusMessage
                                 variant={message?.type}
-                                className="dashboard-error--inline"
                             >
                                 {message && (
                                     <>

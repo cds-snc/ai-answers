@@ -514,7 +514,11 @@ This applies to **minimum-sample** gates only. Sections gated on *presence* of d
     `ChatDashboardPage.js` (`<div className="loading-overlay" role="status"
     aria-live="polite">…`) for any new filter-driven dashboard fetch — don't
     reach for `StatusMessage`'s `loading` prop here, and don't hand-roll a
-    new page-level className.
+    new page-level className. This exact markup (`.loading-overlay` >
+    `.loading-overlay-content` > `.loading-animation` + text) is duplicated
+    verbatim across all 6 files with no shared component — candidate for a
+    `<LoadingOverlay message={...} />` component so a future markup change
+    (not just a CSS-only one) doesn't need editing by hand in all 6 places.
   - **Independent per-section fetch → inline, not an overlay**:
     `MetricsDashboard`/`TechnicalMetricsDashboard` fire several fetches in
     parallel (6 and 2 respectively) and reveal each section as its own fetch

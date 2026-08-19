@@ -153,7 +153,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </p>
         )}
         {analysis.status === 'error' && (
-          <StatusMessage variant="warning" message={t('partnerDashboard.evalAnalysis.report.partial')} />
+          <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.report.partial')} />
         )}
       </div>
 

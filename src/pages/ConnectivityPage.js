@@ -208,10 +208,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             {/* TODO (design review): confirm this is the right StatusMessage
                 variant/box treatment for this use case — not yet reviewed by
                 design as part of this pass's box-system migration. */}
-            <StatusMessage
-                variant={error ? 'error' : undefined}
-                className="dashboard-error--inline"
-            >
+            <StatusMessage variant={error ? 'error' : undefined}>
                 {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
             </StatusMessage>
 
@@ -219,6 +216,14 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 project's number-formatting rule (AGENTS.md) — they're small today
                 but this is a raw-number template that'll silently be wrong in fr-CA
                 if these ever grow past 3 digits. */}
+            {/* TODO: results.summary is dereferenced with no existence check — a
+                malformed API response (results truthy, .summary missing) would
+                throw during render. Pre-existing (predates the StatusMessage
+                rollout that moved this block here), so out of scope for that
+                pass — flagging rather than fixing blind. Revisit if
+                DatabasePage.js's move to a { text, isError } status shape ends
+                up establishing a shared "guard the response shape" pattern
+                worth reusing here too. */}
             <StatusMessage
                 persistent
                 message={results

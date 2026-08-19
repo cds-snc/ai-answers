@@ -154,6 +154,13 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       {showPanel && (
         <>
           {/* Export Options - Above Filter Panel */}
+          {/* TODO (design): this export table's controls need a design pass:
+              a custom calendar component for the date range (currently
+              FilterPanel's default date inputs), resize/layout improvements
+              for this section, and a clearly visible dedicated Export
+              button (the export is currently triggered via FilterPanel's
+              generic "Apply" button below, not an obviously-labelled export
+              action of its own). */}
           <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
             <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription')}</p>
 

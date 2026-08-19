@@ -70,7 +70,7 @@ describe('StatusMessage', () => {
     );
 
     const region = container.querySelector('[role="status"]');
-    expect(region.className).toContain('dashboard-success-box');
+    expect(region.className).toContain('status-message--success-box');
     expect(region.getAttribute('aria-live')).toBe('polite');
     // success uses a raw FA checkmark span, not GcdsIcon — GC DS's icon font
     // has no checkmark glyph.
@@ -86,7 +86,7 @@ describe('StatusMessage', () => {
     const region = container.querySelector('[role="alert"]');
     expect(region).toBeTruthy();
     expect(region.getAttribute('aria-live')).toBe('assertive');
-    expect(region.className).toContain('dashboard-error');
+    expect(region.className).toContain('status-message--error-box');
     expect(region.querySelector('[data-gcds-icon]').getAttribute('name')).toBe('warning-triangle');
   });
 
@@ -95,11 +95,11 @@ describe('StatusMessage', () => {
       React.createElement(StatusMessage, {
         message: 'Failed to save setting.',
         variant: 'error',
-        className: 'mt-200 dashboard-error--inline',
+        className: 'mt-200',
       })
     );
 
     const region = container.querySelector('[role="alert"]');
-    expect(region.className).toBe('mt-200 dashboard-error--inline dashboard-error');
+    expect(region.className).toBe('mt-200 status-message--error-box');
   });
 });

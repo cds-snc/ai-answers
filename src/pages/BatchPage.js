@@ -151,7 +151,7 @@ const BatchPage = ({ lang = 'en' }) => {
       {/* TODO (design review): confirm this is the right StatusMessage
           variant/box treatment for this use case — not yet reviewed by
           design as part of this pass's box-system migration. */}
-      <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} className="dashboard-error--inline" />
+      <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
 
       <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>

@@ -50,10 +50,10 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // otherwise drop focus to <body>. Both are optional; existing callers are
 // unaffected.
 const VARIANTS = {
-  error: { className: 'dashboard-error', isError: true, icon: 'warning-triangle' },
-  warning: { className: 'dashboard-warning-box', isError: false, icon: 'warning-triangle' },
-  info: { className: 'dashboard-info-box', isError: false, icon: 'info-circle' },
-  success: { className: 'dashboard-success-box', isError: false, icon: 'fa-check-circle' },
+  error: { className: 'status-message--error-box', isError: true, icon: 'warning-triangle' },
+  warning: { className: 'status-message--warning-box', isError: false, icon: 'warning-triangle' },
+  info: { className: 'status-message--info-box', isError: false, icon: 'info-circle' },
+  success: { className: 'status-message--success-box', isError: false, icon: 'fa-check-circle' },
 };
 
 const VariantIcon = ({ name }) =>
@@ -69,9 +69,12 @@ const StatusMessage = React.forwardRef((
 ) => {
   const variantConfig = variant ? VARIANTS[variant] : null;
   const resolvedIsError = variantConfig ? variantConfig.isError : isError;
-  // Box variants are always block-level content (icon + text side by side);
-  // a caller-supplied `tag` only applies when there's no variant to style.
-  const Tag = variantConfig ? 'div' : tag;
+  // Box variants and `loading` both render block-level content (icon/spinner
+  // + text side by side) — a caller-supplied `tag` only applies when neither
+  // is active. Without this, `loading`'s .loading-animation <div> renders
+  // inside the default <p>, which is invalid HTML (a block element inside a
+  // paragraph).
+  const Tag = (variantConfig || loading) ? 'div' : tag;
   const variantClassName = variantConfig
     ? variantConfig.className
     : loading

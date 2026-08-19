@@ -80,7 +80,7 @@ const SessionPage = ({ lang: propLang }) => {
       {/* TODO (design review): confirm this is the right StatusMessage
           variant/box treatment for this use case — not yet reviewed by
           design as part of this pass's box-system migration. */}
-      <StatusMessage variant={error ? 'error' : undefined} message={error} className="dashboard-error--inline" />
+      <StatusMessage variant={error ? 'error' : undefined} message={error} />
       <StatusMessage loading message={loading ? t('admin.filters.loading') : null} />
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />

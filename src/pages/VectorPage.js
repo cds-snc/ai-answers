@@ -372,7 +372,7 @@ const VectorPage = ({ lang = 'en' }) => {
             design as part of this pass's box-system migration; same
             question for this file's other two StatusMessage uses below
             (metadata status / metadata lookup). */}
-        <StatusMessage variant={error ? 'error' : undefined} message={error} className="dashboard-error--inline" />
+        <StatusMessage variant={error ? 'error' : undefined} message={error} />
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -608,7 +608,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataStatusLoading ? t('vector.metadataStatus.loading') : t('vector.metadataStatus.check')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={metadataStatusError ? 'error' : undefined} message={metadataStatusError} className="dashboard-error--inline" />
+        <StatusMessage variant={metadataStatusError ? 'error' : undefined} message={metadataStatusError} />
         {metadataStatus && (
           <div className="mb-400">
             <p><strong>{metadataStatus.complete ? t('vector.metadataStatus.complete') : t('vector.metadataStatus.incomplete')}</strong></p>
@@ -648,7 +648,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataLookupLoading ? t('vector.metadataLookup.loading') : t('vector.metadataLookup.lookup')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={metadataLookupError ? 'error' : undefined} message={metadataLookupError} className="dashboard-error--inline" />
+        <StatusMessage variant={metadataLookupError ? 'error' : undefined} message={metadataLookupError} />
         {metadataLookupResult?.chat && (
           <div className="mb-400">
             <p>

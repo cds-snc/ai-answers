@@ -219,7 +219,6 @@ const ChatViewer = ({ lang = 'en' }) => {
             <StatusMessage
               variant={refreshAnnouncement ? (refreshAnnouncementIsError ? 'error' : 'success') : undefined}
               message={refreshAnnouncement}
-              className="dashboard-error--inline"
             />
 
             {chatId && stepTimeline && (

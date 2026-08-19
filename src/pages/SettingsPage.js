@@ -586,7 +586,6 @@ const SettingsPage = ({ lang = 'en' }) => {
         <StatusMessage
           variant={settingsCacheStatus ? (settingsCacheStatus.isError ? 'error' : 'info') : undefined}
           message={settingsCacheStatus?.text}
-          className={settingsCacheStatus?.isError ? 'mt-200 dashboard-error--inline' : 'mt-200'}
         />
       </div>
       {/* Per-section "Unsaved changes" only shows while that section's
@@ -1497,7 +1496,6 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
         persistent
         variant={status ? (status.isError ? 'error' : 'success') : undefined}
         message={status?.text}
-        className={status?.isError ? 'mt-200 dashboard-error--inline' : 'mt-200'}
       />
     </div>
   );
