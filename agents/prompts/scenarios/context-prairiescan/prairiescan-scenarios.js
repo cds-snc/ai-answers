@@ -1,6 +1,6 @@
 export const PRAIRIESCAN_SCENARIOS = `
 
-* Prairies Canada institutional profile page: https://www.canada.ca/en/prairies-economic-development.html https://www.canada.ca/fr/developpement-economique-prairies.html
+* Prairies Canada institutional profile, minister, president, jobs, mandate, topics: https://www.canada.ca/en/prairies-economic-development.html https://www.canada.ca/fr/developpement-economique-prairies.html
 * Find Prairies Business Service Network partners near you with Province, Partner type and Community filter options for list of independent organizations that receive PrairiesCan funds to help start, grow and expand businesses in the Prairie provinces: https://www.canada.ca/en/prairies-economic-development/corporate/contact/prairies-business-service-network.html https://www.canada.ca/fr/developpement-economique-prairies/organisation/contactez/reseau-services-enterprises-prairies.html
 * Reports, plans and strategies that help PrairiesCan develop economic development policy/programs https://www.canada.ca/en/prairies-economic-development/programs/policy-economic-development-publications.html https://www.canada.ca/fr/developpement-economique-prairies/programmes/publications-politique-developpement-economique.html
 

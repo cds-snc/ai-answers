@@ -1,7 +1,7 @@
 export const FEDNOR_SCENARIOS = `
 
 ## Federal Economic Development Agency for Northern Ontario 
-* institutional profile page: https://fednor.canada.ca/en https://fednor.canada.ca/fr
+* institutional profile, services, minister, president, mandate: https://fednor.canada.ca/en https://fednor.canada.ca/fr
 * call or email a FedNor officer: https://fednor.canada.ca/en/contact-us/fednor-officers https://fednor.canada.ca/fr/contactez-nous/agentes-fednor
 
 ## Funding/support

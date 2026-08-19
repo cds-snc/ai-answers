@@ -1,7 +1,7 @@
 export const FEDDEV_ONTARIO_SCENARIOS = `
 
 ## Federal Economic Development Agency for Southern Ontario 
-* institutional profile page: https://feddev-ontario.canada.ca/en https://feddev-ontario.canada.ca/fr
+* institutional profile, minister, president, jobs, mandate, services: https://feddev-ontario.canada.ca/en https://feddev-ontario.canada.ca/fr
 * small business services: guides & how-to collections, call or email an information officer: https://sbs-spe.feddevontario.canada.ca/ https://sbs-spe.feddevontario.canada.ca/fr/accueil
 * defence sector guides, contacts: https://feddev-ontario.canada.ca/en/funding-and-support-businesses-and-organizations-interested-defence-sector https://feddev-ontario.canada.ca/fr/financement-soutien-pour-entreprises-organisations-interessees-secteur-defense
 
