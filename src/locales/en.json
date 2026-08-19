@@ -785,41 +785,30 @@
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
       "noResults": "Apply filters to load chat interactions.",
-      "resultsSummary": "Showing {count} chats",
-      "totalCount": "Total matching chats: {total}",
-      "interactionCountFiltered": "{count} (+{more} more)",
+      "resultsSummary": "Showing {count} questions",
+      "totalCount": "Total matching questions: {total}",
       "searchLabel": "Search by Chat or Interaction ID:",
       "searchPlaceholder": "Enter id...",
       "columnFilterPlaceholder": "Filter",
       "columns": {
         "chatId": "Chat ID",
-        "interactionCount": "Length",
         "department": "Department",
         "pageLanguage": "Page",
         "expertEmail": "Expert email",
         "creatorEmail": "Creator email",
         "language": "Language",
         "questionCount": "Questions",
-        "question": "Question 1",
+        "question": "Question",
+        "answer": "Answer",
+        "program": "Service",
+        "citationUrl": "Citation link",
         "createdAt": "Created",
         "referringUrl": "Referring URL",
         "date": "Date",
-        "userType": "User type",
-        "answerType": "Answer type",
         "partnerEval": "Partner eval",
         "aiEval": "AI eval"
       },
       "labels": {
-        "userType": {
-          "public": "public",
-          "admin": "admin"
-        },
-        "answerType": {
-          "normal": "normal",
-          "clarifying-question": "clarifying",
-          "pt-muni": "pt-muni",
-          "not-gc": "not-GC"
-        },
         "evaluation": {
           "correct": "correct",
           "needsImprovement": "needs improvement",

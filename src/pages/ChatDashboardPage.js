@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -9,6 +9,7 @@ import DashboardService from '../services/DashboardService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { normalizeAnswerText } from '../utils/answerText.js';
 
 DataTable.use(DT);
 
@@ -32,7 +33,7 @@ const getTimezoneOffsetMinutes = (value) => {
   return Number.isFinite(offset) ? offset : undefined;
 };
 
-const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
+const TABLE_STORAGE_KEY = `chatDashboard_tableState_v2_`;
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -75,36 +76,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Helper function to format date as YYYY/MM/DD (date only)
-  const formatDate = useCallback((dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}/${month}/${day}`;
-    } catch (err) {
-      console.error('Failed to format date', err);
-      return dateStr;
-    }
-  }, []);
-
-  // Map DataTables column index to API orderBy fields
-  const orderByForColumn = useCallback((colIdx) => {
-    switch (colIdx) {
-      case 0: return 'chatId';
-      case 1: return 'interactionCount';
-      case 2: return 'department';
-      case 3: return 'createdAt';
-      case 4: return 'userType';
-      case 5: return 'pageLanguage';
-      case 7: return 'referringUrl';
-      case 8: return 'answerType';
-      case 9: return 'partnerEval';
-      case 10: return 'aiEval';
-      default: return 'createdAt';
-    }
+  // Question/Answer cell text: strip pipeline-added sentence markers
+  // (<s-1>...</s-1>, added for per-sentence citation/scoring) so they never
+  // show up as literal text, and render the full content - no truncation.
+  const renderAnswerText = useCallback((value) => {
+    if (!value) return '';
+    return escapeHtmlAttribute(normalizeAnswerText(value));
   }, []);
 
   useEffect(() => {
@@ -156,12 +133,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
   const resultsSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.resultsSummary', 'Total matching chats: {count}');
+    const template = t('admin.chatDashboard.resultsSummary', 'Showing {count} questions');
     return template.replace('{count}', numberFormatter.format(recordsFiltered));
   }, [numberFormatter, recordsFiltered, t]);
 
   const totalSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.totalCount', 'Total chats in range: {total}');
+    const template = t('admin.chatDashboard.totalCount', 'Total matching questions: {total}');
     return template.replace('{total}', numberFormatter.format(recordsTotal));
   }, [numberFormatter, recordsTotal, t]);
 
@@ -169,126 +146,56 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
+      searchable: false,
+      orderable: true,
       render: (value, type, row) => {
         if (!value) return '';
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang);
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.interactionCount', 'Length'),
-      data: 'interactionCount',
-      render: (value, type, row) => {
-        const count = value != null ? value : 0;
-        // totalInteractionCount is the chat's real, unfiltered interaction
-        // count — when it's higher than the (possibly filtered) count being
-        // shown, a filter (department, answer type, eval, etc.) is hiding
-        // some of this chat's questions. Surfaces that before the reviewer
-        // clicks in and finds unrelated questions they didn't expect.
-        const total = row && row.totalInteractionCount;
-        if (total && total > count) {
-          return t('admin.chatDashboard.interactionCountFiltered', '{count} (+{more} more)')
-            .replace('{count}', String(count))
-            .replace('{more}', String(total - count));
-        }
-        return String(count);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId);
       }
     },
     {
       title: t('admin.chatDashboard.columns.department', 'Department'),
       data: 'department',
-      render: (value, type, row) => {
-        const allDepts = row.allDepartments || [];
-        if (allDepts.length > 1) {
-          return allDepts.map(d => escapeHtmlAttribute(d)).join('<br>');
-        }
-        return escapeHtmlAttribute(value || '');
-      }
+      searchable: false,
+      orderable: true,
+      render: (value) => escapeHtmlAttribute(value || '')
     },
     {
-      title: t('admin.chatDashboard.columns.date', 'Date'),
-      data: 'date',
-      render: (value) => formatDate(value)
-    },
-    {
-      title: t('admin.chatDashboard.columns.userType', 'User Type'),
-      data: 'userType',
-      render: (value) => {
-        const type = value || 'public';
-        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),
-      data: 'pageLanguage',
-      render: (value) => {
-        if (!value) return '';
-        const normalized = value.toLowerCase().includes('fr') ? 'FR' : 'EN';
-        return escapeHtmlAttribute(normalized);
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.question', 'Question 1'),
-      data: 'redactedQuestion',
+      title: t('admin.chatDashboard.columns.program', 'Service'),
+      data: 'program',
       searchable: true,
+      orderable: true,
+      render: (value, type, row) => {
+        const display = (lang === 'fr' && row && row.programFr) ? row.programFr : value;
+        return display ? escapeHtmlAttribute(display) : '';
+      }
+    },
+    {
+      title: t('admin.chatDashboard.columns.question', 'Question'),
+      data: 'redactedQuestion',
+      searchable: false,
+      orderable: false,
+      render: (value) => renderAnswerText(value)
+    },
+    {
+      title: t('admin.chatDashboard.columns.answer', 'Answer'),
+      data: 'answerContent',
+      searchable: false,
+      orderable: false,
+      render: (value) => renderAnswerText(value)
+    },
+    {
+      title: t('admin.chatDashboard.columns.citationUrl', 'Citation link'),
+      data: 'citationUrl',
+      searchable: false,
       orderable: false,
       render: (value) => {
         if (!value) return '';
-        const safe = escapeHtmlAttribute(value);
-        if (value.length > 80) {
-          const truncated = escapeHtmlAttribute(value.substring(0, 80));
-          return `<span title="${safe}">${truncated}…</span>`;
-        }
-        return safe;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
-      data: 'referringUrl',
-      render: (value) => {
-        if (!value) return '<span style="color: #666;">none</span>';
         return escapeHtmlAttribute(truncateUrl(value));
       }
-    },
-    {
-      title: t('admin.chatDashboard.columns.answerType', 'Answer Type'),
-      data: 'answerType',
-      render: (value) => {
-        const type = value || 'normal';
-        const label = t(`admin.chatDashboard.labels.answerType.${type}`, type);
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'),
-      data: 'partnerEval',
-      render: (value, type, row) => {
-        let html = '';
-        if (value) {
-          const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
-          html += `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
-        }
-        // Independent of the score category above — a chat can be "correct"
-        // and still have a content issue flagged, so this is a second badge
-        // rather than another branch of the same category.
-        if (row && row.partnerHasContentIssue) {
-          const contentIssueLabel = t('admin.chatDashboard.labels.contentIssue');
-          html += `<span class="label hasContentIssue">${escapeHtmlAttribute(contentIssueLabel)}</span>`;
-        }
-        return html;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'),
-      data: 'aiEval',
-      render: (value) => {
-        if (!value) return '';
-        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
-      }
     }
-  ]), [formatDate, truncateUrl, t]);
+  ]), [renderAnswerText, truncateUrl, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -347,8 +254,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   paging: true,
                   searching: true,
                   ordering: true,
-                  order: [[3, 'desc']], // default to date desc
-                  scrollX: true,
+                  order: [],
+                  // autoWidth (DataTables' default true) + scrollX together
+                  // pin each column to a fixed pixel width computed from a
+                  // separate header/body table pair - when a column's cell
+                  // content varies a lot in width across rows/redraws (e.g.
+                  // Question/Answer/Citation link, often empty), that pair
+                  // falls out of sync and the header drifts away from its
+                  // column's data. EvalDashboardPage.js already avoids this
+                  // (autoWidth: false, no scrollX) - matching that here.
+                  autoWidth: false,
                   stateSave: true,
                   language: {
                     ...dataTableLanguage(lang),
@@ -359,7 +274,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     try {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                        console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
                       }
                     } catch (e) {
                       // ignore
@@ -369,23 +283,83 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     try {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                        const parsed = stored ? JSON.parse(stored) : null;
-                        console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
-                        return parsed;
+                        return stored ? JSON.parse(stored) : null;
                       }
                     } catch (e) {
                       // ignore
                     }
                     return null;
                   },
+                  // Add a per-column header input for the Service column,
+                  // same mechanism EvalDashboardPage.js already uses for its
+                  // program column - loop over every searchable column so a
+                  // future searchable column picks this up automatically.
+                  initComplete: function () {
+                    try {
+                      const api = this.api();
+                      tableApiRef.current = api;
+                      api.on('xhr.dt', function (_e, _settings, json) {
+                        try {
+                          setRecordsTotal((json && json.recordsTotal) || 0);
+                          setRecordsFiltered((json && json.recordsFiltered) || 0);
+                        } catch (e) { /* ignore */ }
+                      });
+                      const debounce = (fn, wait = 300) => {
+                        let timer = null;
+                        return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); };
+                      };
+                      api.columns().every(function (idx) {
+                        const column = this;
+                        const colInfo = column.settings()[0].aoColumns[idx] || {};
+                        if (!colInfo.searchable) return;
+                        const headerEl = column.header();
+                        if (!headerEl) return;
+                        const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
+                        if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
+                        const colTitle = headerEl.textContent.trim();
+                        const filterContainer = document.createElement('div');
+                        filterContainer.className = 'dt-col-filter-container';
+                        filterContainer.style.marginTop = '4px';
+                        const input = document.createElement('input');
+                        input.type = 'search';
+                        input.className = 'dt-col-search';
+                        input.placeholder = t('admin.chatDashboard.columnFilterPlaceholder', 'Filter');
+                        input.setAttribute('aria-label', `${input.placeholder} — ${colTitle}`);
+                        input.addEventListener('input', debounce(function (e) {
+                          column.search(e.target.value);
+                          api.page('first').draw('page');
+                        }, 350));
+                        filterContainer.appendChild(input);
+                        const stopSort = (event) => event.stopPropagation();
+                        filterContainer.addEventListener('click', stopSort);
+                        filterContainer.addEventListener('mousedown', stopSort);
+                        headerEl.appendChild(filterContainer);
+                      });
+                    } catch (e) { /* ignore initComplete errors */ }
+                  },
                   ajax: async (dtParams, callback) => {
                     try {
                       setLoading(true);
                       setError(null);
-                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 3, dir: 'desc' };
-                      const orderBy = orderByForColumn(dtOrder.column);
-                      const orderDir = dtOrder.dir || 'desc';
+                      // Derived from `columns` (in scope above) rather than hand-listed, so
+                      // inserting/removing a column can't silently desync this mapping from
+                      // the actual column positions (same fix already applied in
+                      // EvalDashboardPage.js).
+                      const orderByMap = columns.map((c) => c.data);
+                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : null;
+                      const orderBy = dtOrder ? (orderByMap[dtOrder.column] || 'createdAt') : 'createdAt';
+                      const orderDir = dtOrder ? (dtOrder.dir || 'desc') : 'desc';
                       const searchValue = (dtParams.search && dtParams.search.value) || '';
+                      const columnSearches = {};
+                      if (Array.isArray(dtParams.columns)) {
+                        dtParams.columns.forEach((col) => {
+                          const val = col && col.search && String(col.search.value || '').trim();
+                          if (val) {
+                            const colName = col.data || null;
+                            if (colName) columnSearches[colName] = val;
+                          }
+                        });
+                      }
                       const currentFilters = filtersRef.current || {};
 
                       const normalizedFilters = { ...currentFilters };
@@ -407,6 +381,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       if (searchValue) {
                         query.search = searchValue;
                       }
+                      if (Object.keys(columnSearches).length) {
+                        query.columnSearch = columnSearches;
+                      }
                       const result = await DashboardService.getChatDashboard(query);
                       setRecordsTotal(result?.recordsTotal || 0);
                       setRecordsFiltered(result?.recordsFiltered || 0);
@@ -423,19 +400,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     } finally {
                       setLoading(false);
                     }
-                  },
-                  initComplete: function () {
-                    try {
-                      const api = this.api();
-                      tableApiRef.current = api;
-                      console.debug && console.debug('ChatDashboard: DataTable initComplete');
-                      api.on('xhr.dt', function (_e, _settings, json) {
-                        try {
-                          setRecordsTotal((json && json.recordsTotal) || 0);
-                          setRecordsFiltered((json && json.recordsFiltered) || 0);
-                        } catch (e) { /* ignore */ }
-                      });
-                    } catch (e) { /* ignore */ }
                   }
                 }}
               />

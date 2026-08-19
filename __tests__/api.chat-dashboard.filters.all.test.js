@@ -121,20 +121,13 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(pipelineStr).toContain('"interactions.partnerEval":"correct"');
   });
 
-  it('includes interactionCount in $group stage', async () => {
+  // Chat Dashboard now returns one row per interaction rather than one row
+  // per chat, so there's no $group stage at all anymore.
+  it('does not group interactions into a single row per chat', async () => {
     await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
     const groupStage = capturedPipeline.find(stage => stage && stage.$group);
-    expect(groupStage).toBeDefined();
-    expect(groupStage.$group.interactionCount).toEqual({ $sum: 1 });
-  });
-
-  it('includes redactedQuestion in $group stage', async () => {
-    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
-    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    const groupStage = capturedPipeline.find(stage => stage && stage.$group);
-    expect(groupStage).toBeDefined();
-    expect(groupStage.$group.redactedQuestion).toEqual({ $first: '$interactions.redactedQuestion' });
+    expect(groupStage).toBeUndefined();
   });
 
   it('includes questions collection lookup in pipeline', async () => {
@@ -148,32 +141,41 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(questionLookup.$lookup.foreignField).toBe('_id');
   });
 
-  it('includes interactionCount and redactedQuestion in final $project', async () => {
+  it('includes redactedQuestion, answerContent and citationUrl in final $project', async () => {
     await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    // Find the $project stage that has interactionCount (the final projection)
     const projectStages = capturedPipeline.filter(stage => stage && stage.$project);
-    const finalProject = projectStages.find(stage => stage.$project.interactionCount);
+    const finalProject = projectStages.find(stage => stage.$project.redactedQuestion);
     expect(finalProject).toBeDefined();
-    expect(finalProject.$project.interactionCount).toBe(1);
-    expect(finalProject.$project.redactedQuestion).toBe(1);
+    expect(finalProject.$project.redactedQuestion).toBe('$interactions.redactedQuestion');
+    expect(finalProject.$project.answerContent).toBe('$interactions.answerContent');
+    expect(finalProject.$project.citationUrl).toBe('$interactions.citationUrl');
   });
 
-  it('includes interactionCount in sortFieldMap', async () => {
+  it('includes program (the Service column) in sortFieldMap', async () => {
     await runHandler({
       startDate: new Date().toISOString(),
       endDate: new Date().toISOString(),
-      orderBy: 'interactionCount',
+      orderBy: 'program',
       start: 0,
       length: 10
     });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    // There is an earlier pre-group $sort for deterministic grouping.
-    // Assert on the later dynamic sort stage that includes interactionCount.
     const sortStage = capturedPipeline.find(
-      stage => stage && stage.$sort && Object.prototype.hasOwnProperty.call(stage.$sort, 'interactionCount')
+      stage => stage && stage.$sort && Object.prototype.hasOwnProperty.call(stage.$sort, 'program')
     );
     expect(sortStage).toBeDefined();
-    expect(sortStage.$sort.interactionCount).toBeDefined();
+    expect(sortStage.$sort.program).toBeDefined();
+  });
+
+  it('supports columnSearch filtering on the program (Service) column', async () => {
+    await runHandler({
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      columnSearch: JSON.stringify({ program: 'Passport' })
+    });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const pipelineStr = JSON.stringify(capturedPipeline);
+    expect(pipelineStr).toContain('Passport');
   });
 });
