@@ -21,7 +21,7 @@ Une erreur corrigée une fois par un expert devrait cesser de se reproduire dans
 
 ## Voir quelles évaluations ont été utilisées
 
-1. Ouvrez le chat en mode révision. Cliquez sur un ID de chat dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
+1. Ouvrez le chat en mode révision. Sélectionnez un ID de chat dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
 2. Déployez **Évaluations antérieures utilisées** sous la réponse. Ce panneau n'apparaît que si le système a trouvé des évaluations admissibles pour cette question. La plupart des questions n'en ont aucune : pour bien des réponses, il n'y a donc rien à déployer.
 
 ![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
@@ -50,7 +50,7 @@ Retirez-en une lorsque le contenu sur lequel elle reposait a changé, que le jug
 - Similarité d'au moins 0,75, ce qui est délibérément strict.
 - Évaluée depuis moins d'un an, sauf si l'évaluateur l'a marquée **Toujours valide**. L'âge compte à partir de la date d'évaluation, et non de la date de la question.
 - Aucun score d'expert minimal.
-- Jusqu'à trois correspondances sont utilisées, classées par similarité.
+- Jusqu'à 3 correspondances sont utilisées, classées par similarité.
 - À similarité égale, l'évaluation la plus récente est retenue.
 
 ## Dépannage

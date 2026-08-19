@@ -7,18 +7,18 @@ description: "Ce qu'une institution partenaire fait en se joignant à Réponses 
 
 **Public visé :** Utilisateurs partenaires qui débutent avec Réponses IA.
 
-**Ébauche :** ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires. Envoyez vos corrections à votre personne-ressource au SNC.
+**Ébauche :** Ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires. Envoyez vos corrections à votre personne-ressource au Service numérique canadien (SNC).
 
 ## Ce que fait un partenaire
 
-Quatre choses, à peu près dans cet ordre :
+Il y a 4 choses, à peu près dans cet ordre :
 
 - **Lancement** — faire déployer le projet pilote pour votre institution.
 - **Évaluation** — juger comment Réponses IA traite les questions de vos utilisateurs.
 - **Problèmes de contenu** — trouver et corriger le contenu web à l'origine des réponses erronées.
 - **Scénarios** — rédiger et tester des consignes propres à votre institution pour l'IA.
 
-L'essentiel du travail est l'évaluation, et les trois autres découlent de ce qu'elle révèle.
+L'essentiel du travail est l'évaluation, et les 3 autres découlent de ce qu'elle révèle.
 
 ## Se préparer
 
@@ -35,9 +35,9 @@ L'essentiel du travail est l'évaluation, et les trois autres découlent de ce q
 
 ## Choisir les questions à évaluer
 
-Utilisez de vraies questions d'utilisateurs, dans leurs propres mots, fautes de frappe et tournures maladroites comprises. Écartez les questions d'un ou deux mots.
+Utilisez de vraies questions d'utilisateurs, dans leurs propres mots, fautes de frappe et tournures maladroites comprises. Écartez les questions de 1 ou 2 mots.
 
-Les vraies questions proviennent du [visualiseur de rétroaction des pages](https://feedback-viewer.tbs.alpha.canada.ca/pageFeedback), accessible uniquement à partir du RPV du GC.
+Les vraies questions proviennent du [visualiseur de rétroaction des pages](https://feedback-viewer.tbs.alpha.canada.ca/pageFeedback), accessible uniquement à partir du réseau privé virtuel (RPV) du gouvernement du Canada.
 
 ### Tâches principales — visez 100 questions
 

@@ -7,18 +7,18 @@ description: "What a partner institution does when it joins AI Answers: choosing
 
 **Audience:** Partner users starting out with AI Answers.
 
-**Draft:** this guide is a first pass, assembled from the partner evaluation deck. Send corrections to your CDS contact.
+**Draft:** This guide is a first pass, assembled from the partner evaluation deck. Send corrections to your Canadian Digital Service (CDS) contact.
 
 ## What a partner does
 
-Four things, roughly in this order:
+There are 4 things, roughly in this order:
 
 - **Launch** — get the pilot deployed for your institution.
 - **Evaluation** — judge how well AI Answers handles your users' questions.
 - **Content issues** — find and fix the web content behind wrong answers.
 - **Scenarios** — write and test institution-specific instructions for the AI.
 
-Most of the work is evaluation, and the other three fall out of what evaluation turns up.
+Most of the work is evaluation, and the other 3 fall out of what evaluation turns up.
 
 ## Get set up
 
@@ -35,9 +35,9 @@ Most of the work is evaluation, and the other three fall out of what evaluation 
 
 ## Choose the questions to evaluate
 
-Use real user questions in the user's own words, including typos and awkward grammar. Skip one- and two-word questions.
+Use real user questions in the user's own words, including typos and awkward grammar. Skip questions of 1 or 2 words.
 
-Real questions come from the [page feedback viewer](https://feedback-viewer.tbs.alpha.canada.ca/pageFeedback), which is only reachable on the GC VPN.
+Real questions come from the [page feedback viewer](https://feedback-viewer.tbs.alpha.canada.ca/pageFeedback), which is only available on the Government of Canada VPN.
 
 ### Top tasks — aim for 100 questions
 

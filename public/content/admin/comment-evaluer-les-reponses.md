@@ -7,7 +7,7 @@ description: "Comment évaluer une réponse phrase par phrase, noter la citation
 
 **Public visé :** Utilisateurs administrateurs et partenaires qui réalisent des évaluations d'expert.
 
-**Ébauche :** ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires et de la documentation technique. Envoyez vos corrections à votre personne-ressource au SNC.
+**Ébauche :** Ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires et de la documentation technique. Envoyez vos corrections à votre personne-ressource au Service numérique canadien (SNC).
 
 Ce guide part d'un chat qui existe déjà — un que vous venez d'avoir, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
 
@@ -15,7 +15,7 @@ Ce guide part d'un chat qui existe déjà — un que vous venez d'avoir, un prov
 
 Une évaluation est le jugement d'un expert du domaine sur une réponse : chaque phrase est-elle exacte et claire, et la citation permet-elle à la personne de confirmer la réponse ou de passer à l'étape suivante ?
 
-Les évaluations servent à trois choses :
+Les évaluations servent à 3 choses :
 
 - Mesurer l'exactitude par institution, par tâche et par langue.
 - Cerner la cause sous-jacente — le plus souvent du contenu web périmé ou peu clair, parfois un scénario à ajuster.
@@ -29,13 +29,13 @@ Ouvrez ensuite le chat que vous allez évaluer :
 
 - **Avec les options d'évaluation** — si vous avez utilisé Réponses IA à partir du menu partenaire, les options d'évaluation apparaissent aussitôt sous chaque réponse.
 - **Un chat précis** — collez son ID dans **Voir le chat par ID** sur la page administrateur.
-- **Les réponses en attente de notation** — cliquez sur un ID de chat dans le tableau de bord des évaluations.
+- **Les réponses en attente de notation** — sélectionnez un ID de chat dans le tableau de bord des évaluations.
 
 ## Juger la réponse
 
 Servez-vous de votre connaissance du domaine. Vérifiez sur le web en cas de doute : la minute supplémentaire en vaut la peine.
 
-Sous **Cette réponse était-elle utile ?**, choisissez **Bonne** ou **Nécessite une amélioration**.
+Sous **Cette réponse était-elle utile ?**, sélectionnez **Bonne** ou **Nécessite une amélioration**.
 
 ![Une réponse et sa citation en mode révision. En dessous, l'institution ISED-ISDE coiffe la barre « Cette réponse était-elle utile ? » offrant Bonne et Nécessite une amélioration, suivie du panneau replié « Évaluation automatisée » et de l'ID de chat](/content/admin/images/evaluate-how-was-this-answer-fr.jpg)
 
@@ -57,7 +57,7 @@ Vous n'avez à évaluer que les phrases sur lesquelles vous avez quelque chose �
 
 Une explication est requise pour **Nécessite une amélioration** et **Incorrecte**. Dites ce qui ne va pas, pour que la personne qui vous relira — et l'IA — puisse le comprendre.
 
-Deux cases à cocher se trouvent sous les évaluations :
+Il y a 2 cases à cocher sous les évaluations :
 
 - **Problème de contenu** — la réponse reflète du contenu web gouvernemental qui est lui-même erroné, périmé ou peu clair. Cochez-la, que vous ayez ou non abaissé la note de la phrase.
 - **Nuisible** — apparaît dès que vous choisissez **Incorrecte**. Cochez-la lorsque le fait d'agir sur la réponse, ou de ne pas agir, pourrait causer une blessure, un dommage, une souffrance ou une perte : santé physique, santé mentale, situation financière, biens matériels, situation juridique ou environnement.
@@ -86,7 +86,7 @@ L'évaluation s'applique aussi quand la réponse n'offrait aucune citation : vou
 
 ### Soumettre
 
-Quand tout ce que vous vouliez évaluer l'est, choisissez **Soumettre l'évaluation**.
+Quand tout ce que vous vouliez évaluer l'est, sélectionnez **Soumettre l'évaluation**.
 
 ## Faire une pause et revenir plus tard
 
@@ -94,7 +94,7 @@ Si vous devez consulter un expert du domaine avant de noter :
 
 1. Notez l'ID du chat avant de fermer la fenêtre.
 2. À votre retour, allez à la page administrateur ou partenaire.
-3. Collez l'ID dans **Voir le chat par ID** et choisissez **Afficher le chat**. La réponse s'ouvre avec les options d'évaluation toujours accessibles.
+3. Collez l'ID dans **Voir le chat par ID** et sélectionnez **Afficher le chat**. La réponse s'ouvre avec les options d'évaluation toujours accessibles.
 
 ## Agir sur ce que vous constatez
 
@@ -125,7 +125,7 @@ Les évaluations cessent d'informer les réponses futures après un an, compté 
 
 Elle ne remplace que la vérification de l'âge. La correspondance de langue et la similarité s'appliquent toujours, et la suppression la retire quand même.
 
-## Comment le nombre est calculé
+## Comment le score est calculé
 
 Vos évaluations sont converties en un score sur 100. C'est un sous-produit des évaluations, et non une cible à viser : évaluez ce que vous voyez et le nombre suivra.
 

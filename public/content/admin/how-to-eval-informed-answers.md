@@ -21,7 +21,7 @@ An error an expert corrects once should stop recurring on similar questions.
 
 ## See which evaluations were used
 
-1. Open the chat in review mode. Click a chat ID from a dashboard, or paste one into **View chat by ID** on the admin page.
+1. Open the chat in review mode. Select a chat ID from a dashboard, or paste one into **View chat by ID** on the admin page.
 2. Expand **Past evals used** under the answer. This panel only appears when the system found qualifying evaluations for that question. Most questions have none, so on many answers there is nothing to expand.
 
 ![Past evals used panel expanded under an answer, listing each past chat ID and its total score](/content/admin/images/eval-informed-past-evals-used-en.jpg)
@@ -50,7 +50,7 @@ Remove one when the content it was based on has changed, the judgement was wrong
 - Similarity of at least 0.75, which is deliberately strict.
 - Evaluated within the past year, unless the evaluator marked it **Never stale**. Age counts from the evaluation date, not the question date.
 - No minimum expert score.
-- Up to three matches are used, ranked by similarity.
+- Up to 3 matches are used, ranked by similarity.
 - When matches are equally similar, the most recently evaluated one is preferred.
 
 ## Troubleshooting

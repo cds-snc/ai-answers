@@ -7,7 +7,7 @@ description: "How to score an answer sentence by sentence, rate the citation, an
 
 **Audience:** Admin and partner users doing expert evaluations.
 
-**Draft:** this guide is a first pass, assembled from the partner evaluation deck and the engineering docs. Send corrections to your CDS contact.
+**Draft:** This guide is a first pass, assembled from the partner evaluation deck and the engineering docs. Send corrections to your Canadian Digital Service (CDS) contact.
 
 This guide starts from a chat that already exists — one you just had, one from a batch you ran, or one asked by a user. A chat can hold several answers, and each one is evaluated separately. For choosing which questions to ask in the first place, see [Partner onboarding](/en/how-to/partner-onboarding).
 
@@ -15,7 +15,7 @@ This guide starts from a chat that already exists — one you just had, one from
 
 An evaluation is a subject-matter expert's judgement of one answer: whether each sentence is accurate and clear, and whether the citation lets the user confirm the answer or take the next step.
 
-Evaluations do three things:
+Evaluations do 3 things:
 
 - Measure accuracy by institution, task, and language.
 - Point to the underlying cause — usually web content that is out of date or unclear, sometimes a scenario that needs tuning.
@@ -27,9 +27,9 @@ You must be signed in as an admin or partner user to evaluate a chat.
 
 Then open the chat you're going to evaluate:
 
-- **Using evaluation options** — if you used AI Answers from the Partner menu, the rating options appear under each answer straight away.
+- **Using evaluation options** — if you used AI Answers from the partner menu, the rating options appear under each answer right away.
 - **A specific chat** — paste its ID into **View chat by ID** on the admin page.
-- **Answers waiting to be scored** — click a chat ID in the Evaluation dashboard.
+- **Answers waiting to be scored** — select a chat ID in the Evaluation dashboard.
 
 ## Judge the answer
 
@@ -37,9 +37,9 @@ Use your subject-matter knowledge. Check on the web if you aren't sure — it's 
 
 Under **How was this answer?**, select **Good** or **Needs improvement**.
 
-![A four-sentence answer with its citation in review mode. Below it, the department FIN heads a "How was this answer?" bar offering Good and Needs improvement, followed by collapsed Downloaded pages and Automated evaluation panels and the chat ID](/content/admin/images/evaluate-how-was-this-answer-en.jpg)
+![A 4-sentence answer with its citation in review mode. Below it, the department FIN heads a "How was this answer?" bar offering Good and Needs improvement, followed by collapsed Downloaded pages and Automated evaluation panels and the chat ID](/content/admin/images/evaluate-how-was-this-answer-en.jpg)
 
-**Good** records the evaluation straight away as a correct answer. There is nothing else to fill in.
+**Good** records the evaluation right away as a correct answer. There is nothing else to fill in.
 
 **Needs improvement** opens the rating form, where you rate the sentences and the citation separately.
 
@@ -57,10 +57,10 @@ You only have to rate the sentences you have something to say about — anything
 
 An explanation is required for **Needs improvement** and **Incorrect**. Say what is wrong, so the next reader — and the AI — can tell.
 
-Two checkboxes sit under the ratings:
+There are 2 checkboxes under the ratings:
 
-- **Content issue** — the answer reflects government web content that is itself wrong, out of date, or unclear. Tick it whether or not you also rated the sentence down.
-- **Harmful** — appears once you select **Incorrect**. Tick it when acting on the answer, or failing to act, could cause injury, damage, suffering, or loss: physical health, mental health, finances, material assets, legal situation, or the environment.
+- **Content issue** — the answer reflects government web content that is itself wrong, out of date, or unclear. Select it whether or not you also rated the sentence down.
+- **Harmful** — appears once you select **Incorrect**. Select it when acting on the answer, or failing to act, could cause injury, damage, suffering, or loss: physical health, mental health, finances, material assets, legal situation, or the environment.
 
 Kinds of error worth naming in your explanation:
 
@@ -121,11 +121,11 @@ Also worth removing when the content it was based on has changed, or the judgeme
 
 A **Never stale** checkbox sits beside the delete button.
 
-Evaluations stop informing future answers after a year, counted from the evaluation date. Ticking **Never stale** exempts that one from the age limit. Use it when the evaluation rests on guidance that doesn't go out of date.
+Evaluations stop informing future answers after a year, counted from the evaluation date. Selecting **Never stale** exempts that one from the age limit. Use it when the evaluation rests on guidance that doesn't go out of date.
 
 It overrides the age check only. Language match and similarity still apply, and deleting still removes it.
 
-## How the number is worked out
+## How the score is calculated
 
 Your ratings are turned into a score out of 100. It's a by-product of the ratings, not something to aim at — rate what you see and the number follows.
 
