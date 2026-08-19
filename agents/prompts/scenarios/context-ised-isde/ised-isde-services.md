@@ -3,13 +3,17 @@
 Curated list of Innovation, Science and Economic Development Canada services used
 to keep service tagging consistent across questions. One service per row.
 
-This file also covers ISED's **portfolio organizations** — the regional
-development agencies (ACOA, CED-QR, CanNor, FedDev Ontario, FedNor, PacifiCan,
-PrairiesCan), the Canadian Intellectual Property Office (CIPO-OPIC), the
-Communications Research Centre (CRC), the Competition Bureau (COBU-BUCO),
+This file also covers the ISED **portfolio organizations** that share ISED's
+scenario folder via `scenario-aliases.js` — the regional development agencies
+ACOA, CED-QR and CanNor, the Canadian Intellectual Property Office (CIPO-OPIC),
+the Communications Research Centre (CRC), the Competition Bureau (COBU-BUCO),
 Measurement Canada (MC), and the Office of the Superintendent of Bankruptcy
-(OSB-BSF) — which share ISED's scenario folder via `scenario-aliases.js` — add
-their services here too.
+(OSB-BSF) — add their services here too.
+
+The other four regional development agencies — FedDev Ontario, FedNor, PacifiCan
+and PrairiesCan — are partners with their own scenario folders; their services
+belong in `context-feddev-ontario/`, `context-fednor/`, `context-pacifican/` and
+`context-prairiescan/` respectively, not here.
 
 Health Emergency Readiness Canada (HERC-PCSC) is also listed as a service, but it
 is **not yet aliased**: it has no abbrKey in `departments_EN.js`/`departments_FR.js`,
@@ -45,10 +49,6 @@ French users. Both are stored exactly as written here.
 | Atlantic Canada Opportunities Agency (ACOA) | Agence de promotion économique du Canada atlantique (APECA) |
 | Canada Economic Development for Quebec Regions (CED) | Développement économique Canada pour les régions du Québec (DEC) |
 | Canadian Northern Economic Development Agency (CanNor) | Agence canadienne de développement économique du Nord (CanNor) |
-| Federal Economic Development Agency for Southern Ontario (FedDev Ontario) | Agence fédérale de développement économique pour le Sud de l'Ontario (FedDev Ontario) |
-| Federal Economic Development Agency for Northern Ontario (FedNor) | Agence fédérale de développement économique pour le Nord de l'Ontario (FedNor) |
-| Pacific Economic Development Canada (PacifiCan) | Développement économique Canada pour le Pacifique (PacifiCan) |
-| Prairies Economic Development Canada (PrairiesCan) | Développement économique Canada pour les Prairies (PrairiesCan) |
 | Communications Research Centre Canada (CRC) | Centre de recherches sur les communications Canada (CRC) |
 | Competition Bureau Canada | Bureau de la concurrence |
 | Measurement Canada | Mesures Canada |

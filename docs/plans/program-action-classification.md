@@ -310,12 +310,21 @@ HC-SC, IRCC, ISED-ISDE, PHAC-ASPC, SAC-ISC, STATCAN, TBS-SCT, TC.
   folder — it resolves to `HC-SC` via `resolveScenarioKey`, and the loader keys
   the file off the *resolved* abbrKey. So PHAC-ASPC programs are **merged into
   `hc-sc-services.md`**, not given their own file. Same rule for every other
-  aliased abbrKey (Defence portfolio → DND-MDN, RCAANC → SAC-ISC, RDAs →
-  ISED-ISDE): curate at the primary folder.
+  aliased abbrKey (Defence portfolio → DND-MDN, RCAANC → SAC-ISC, ACOA-APECA /
+  CED-QR / CanNor → ISED-ISDE): curate at the primary folder.
 - **Shipped wider than planned:** rather than leaving the seven data-less folders
   (AAFC-AAC, CBSA-ASFC, CDS-SNC, FIN, JUS, NRCAN-RNCAN, VAC-ACC) on model-knowledge
   fallback, every scenario folder got a `.md`. Net: **19 files**, one per folder,
   with PHAC folding into HC-SC.
+- **Since this shipped (2026-08-19):** four regional development agencies —
+  FedDev Ontario, FedNor, PacifiCan and PrairiesCan — became partners in their own
+  right, so they were removed from `SCENARIO_ALIASES` and given their own scenario
+  folders and `.md` files (**24 folders, one `.md` each** now). Their rows moved out of
+  `ised-isde-services.md`. This is the general case to watch when de-aliasing a
+  department: because `programSeedsLoader.js` resolves through `resolveScenarioKey`
+  too, dropping an alias without creating the new folder's `.md` silently empties
+  that department's seed vocabulary. The three RDAs still aliased to ISED-ISDE
+  (ACOA-APECA, CED-QR, CanNor) stay curated in `ised-isde-services.md`.
 
 ### 2. CSV cleanup rules (draft → curated)
 

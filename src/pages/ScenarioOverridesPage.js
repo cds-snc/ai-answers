@@ -11,7 +11,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 // eslint-disable-next-line import/no-unresolved
 import { diffLines } from 'diff';
 
-const SUPPORTED_DEPARTMENTS = ['AAFC-AAC', 'BAC-LAC', 'CBSA-ASFC', 'CEO-BEC', 'CDS-SNC', 'CRA-ARC', 'DND-MDN', 'ECCC', 'EDSC-ESDC', 'FIN', 'HC-SC', 'IRCC', 'ISED-ISDE', 'JUS', 'NRCan-RNCan', 'SAC-ISC', 'StatCan', 'TC', 'TBS-SCT', 'VAC-ACC'];
+const SUPPORTED_DEPARTMENTS = ['AAFC-AAC', 'BAC-LAC', 'CBSA-ASFC', 'CEO-BEC', 'CDS-SNC', 'CRA-ARC', 'DND-MDN', 'ECCC', 'EDSC-ESDC', 'FedDev Ontario', 'FedNor', 'FIN', 'HC-SC', 'IRCC', 'ISED-ISDE', 'JUS', 'NRCan-RNCan', 'PacifiCan', 'PrairiesCan', 'SAC-ISC', 'StatCan', 'TC', 'TBS-SCT', 'VAC-ACC'];
 
 // Render a simple column for diffs using the `diff` package's diffLines
 const renderDiffColumn = (oldText, newText, side = 'left') => {
