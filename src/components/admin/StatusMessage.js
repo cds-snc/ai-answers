@@ -54,6 +54,18 @@ import { GcdsIcon } from '@gcds-core/components-react';
 //     variant. See ExperimentalAnalysisPage.js's renderProgressCards for the
 //     established pattern (a real role="progressbar" + a plain role="status"
 //     text line, as its own small component).
+//
+// TODO (review): `persistent` + `className="sr-only"` is a fourth usage
+// shape — an invisible live region that exists purely to announce a change
+// sighted users would otherwise notice visually but screen reader users
+// wouldn't (ConnectivityPage.js's test-completion summary; VectorPage.js's
+// stats-loaded and docdb8-probe-complete announcements — three found in this
+// PR's scope alone). It's not really "an outcome" the way variant/loading
+// are; it's closer to a standalone accessibility primitive that happens to
+// reuse this component's role/aria-live plumbing via two props not otherwise
+// meant to combine this way. Few enough occurrences that it may not be worth
+// a dedicated component yet — flagging as a pattern to watch, not deciding
+// either way.
 // `loading` and `variant` are resolved through one lookup (resolveLook,
 // below) rather than three separate hand-synced conditionals — that used to
 // be the failure mode here: `loading` shipped with its content/className
