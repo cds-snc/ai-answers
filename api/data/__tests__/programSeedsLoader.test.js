@@ -64,12 +64,22 @@ describe('getSeedPrograms / getProgramNameMap — EDSC-ESDC now curated from .md
     expect(map.get('Old Age Security')).toBe('Sécurité de la vieillesse');
   });
 
-  it('skips en-only rows so a draft with a blank Français column has an empty map', () => {
-    // Draft .md files ship with a blank Français column; only real EN→FR pairs
-    // populate the map. IRCC still has programs but no French yet, so its map
-    // stays empty until French names are added.
-    expect(getSeedPrograms('IRCC').length).toBeGreaterThan(0);
-    expect(getProgramNameMap('IRCC').size).toBe(0);
+  it('keeps en-only rows out of the EN→FR map so English display is not clobbered', () => {
+    // Draft .md files ship with a blank Français column. The row is still a real
+    // program, so it stays in the seed list — but it must NOT enter the EN→FR
+    // map, or an en→'' entry would clobber the English fallback at display time.
+    const rows = parseProgramsMarkdown(
+      ['| English | Français |', '|---|---|', '| Draft program | |'].join('\n')
+    );
+    expect(rows).toEqual([{ en: 'Draft program', fr: '' }]);
+
+    // Asserted as an invariant rather than against a specific department: this
+    // was pinned to IRCC as "the one with no French yet", and went stale the
+    // moment IRCC was translated. No curated department may expose a blank
+    // French name, whatever its current coverage.
+    for (const dept of ['CRA-ARC', 'EDSC-ESDC', 'IRCC', 'FIN', 'PrairiesCan']) {
+      expect([...getProgramNameMap(dept).values()].filter((fr) => !fr)).toEqual([]);
+    }
   });
 });
 
@@ -85,8 +95,12 @@ describe('getSeedPrograms — empty cases', () => {
     expect(getSeedPrograms('NOT-A-DEPT')).toEqual([]);
   });
 
-  it('returns an empty list for a stub department whose .md has no program rows', () => {
-    expect(getSeedPrograms('FIN')).toEqual([]);
+  it('returns an empty list for a real department with no curated .md yet', () => {
+    // PSPC-SPAC is a valid abbrKey with no scenario folder, so there is no .md
+    // to read and the legacy PROGRAM_SEEDS_BY_DEPARTMENT fallback is empty.
+    // (Was pinned to FIN as a "stub .md with no rows"; FIN has since been
+    // curated, so use a department that is genuinely not onboarded.)
+    expect(getSeedPrograms('PSPC-SPAC')).toEqual([]);
   });
 });
 

@@ -39,6 +39,14 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-edsc-esdc/edsc-esdc-scenarios.js');
     return mod.EDSC_ESDC_SCENARIOS || '';
   },
+  'FedDev-Ontario': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-feddev-ontario/feddev-ontario-scenarios.js');
+    return mod.FEDDEV_ONTARIO_SCENARIOS || '';
+  },
+  'FedNor': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-fednor/fednor-scenarios.js');
+    return mod.FEDNOR_SCENARIOS || '';
+  },
   'FIN': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-fin/fin-scenarios.js');
     return mod.FIN_SCENARIOS || '';
@@ -62,6 +70,14 @@ const SUPPORTED_DEPARTMENTS = {
   'NRCan-RNCan': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-nrcan-rncan/nrcan-rncan-scenarios.js');
     return mod.NRCAN_RNCAN_SCENARIOS || '';
+  },
+  'PacifiCan': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-pacifican/pacifican-scenarios.js');
+    return mod.PACIFICAN_SCENARIOS || '';
+  },
+  'PrairiesCan': async () => {
+    const mod = await import('../../agents/prompts/scenarios/context-prairiescan/prairiescan-scenarios.js');
+    return mod.PRAIRIESCAN_SCENARIOS || '';
   },
   'SAC-ISC': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-sac-isc/sac-isc-scenarios.js');

@@ -557,7 +557,7 @@ export const departments_EN = [
   {
     "name": "Federal Economic Development Agency for Southern Ontario",
     "url": "https://feddev-ontario.canada.ca/en",
-    "abbrKey": "FedDev Ontario"
+    "abbrKey": "FedDev-Ontario"
   },
   {
     "name": "Federal Ombudsperson for Victims Of Crime (Office of the)",

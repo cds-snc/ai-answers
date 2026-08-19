@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-08-14
+**Generated:** 2026-08-19
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -485,12 +485,16 @@ Page Language: en
 - [`context-dnd-mdn/`](../../agents/prompts/scenarios/context-dnd-mdn/) - National Defence portfolio — shared by National Defence (DND-MDN), Canadian Forces Housing Agency (CFHA-ALFC), Defence Construction Canada (DCC-CDC), Defence Investment Agency (DIA-AID), Defence Research and Development Canada (DRDC-RDDC), Independent Review Panel for Defence Acquisition (IRPDA-CIEAD), and Office of the Ombudsman for DND and the Canadian Armed Forces (ONDCAF)
 - [`context-eccc/`](../../agents/prompts/scenarios/context-eccc/) - Environment and Climate Change Canada (ECCC)
 - [`context-edsc-esdc/`](../../agents/prompts/scenarios/context-edsc-esdc/) - Employment and Social Development Canada (EDSC-ESDC)
+- [`context-feddev-ontario/`](../../agents/prompts/scenarios/context-feddev-ontario/) - Federal Economic Development Agency for Southern Ontario (FedDev-Ontario)
+- [`context-fednor/`](../../agents/prompts/scenarios/context-fednor/) - Federal Economic Development Agency for Northern Ontario (FedNor)
 - [`context-fin/`](../../agents/prompts/scenarios/context-fin/) - Department of Finance Canada (FIN)
 - [`context-hc-sc/`](../../agents/prompts/scenarios/context-hc-sc/) - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
 - [`context-ircc/`](../../agents/prompts/scenarios/context-ircc/) - Immigration, Refugees and Citizenship Canada (IRCC)
-- [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with the seven Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), Canadian Northern Economic Development Agency (CanNor), Federal Economic Development Agency for Southern Ontario (FedDev Ontario), Federal Economic Development Agency for Northern Ontario (FedNor), Pacific Economic Development Canada (PacifiCan), and Prairies Economic Development Canada (PrairiesCan)
+- [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor)
 - [`context-jus/`](../../agents/prompts/scenarios/context-jus/) - Department of Justice Canada (JUS)
 - [`context-nrcan-rncan/`](../../agents/prompts/scenarios/context-nrcan-rncan/) - Natural Resources Canada (NRCAN-RNCAN)
+- [`context-pacifican/`](../../agents/prompts/scenarios/context-pacifican/) - Pacific Economic Development Canada (PacifiCan)
+- [`context-prairiescan/`](../../agents/prompts/scenarios/context-prairiescan/) - Prairies Economic Development Canada (PrairiesCan)
 - [`context-sac-isc/`](../../agents/prompts/scenarios/context-sac-isc/) - Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)
 - [`context-statcan/`](../../agents/prompts/scenarios/context-statcan/) - Statistics Canada (STATCAN)
 - [`context-tbs-sct/`](../../agents/prompts/scenarios/context-tbs-sct/) - Treasury Board Secretariat (TBS-SCT)
@@ -643,7 +647,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Thursday, August 13, 2026.
+Today is Wednesday, August 19, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -978,7 +982,7 @@ Additional instructions specific to the matched department (in this example: EDS
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and the seven Regional Development Agencies (ACOA-APECA, CED-QR, CanNor, FedDev Ontario, FedNor, PacifiCan, PrairiesCan); the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:
