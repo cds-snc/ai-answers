@@ -12,7 +12,7 @@
 //   CED-QR         — Canada Economic Development for Quebec Regions
 //   CanNor         — Canadian Northern Economic Development Agency
 //
-// The other four RDAs — FedDev Ontario, FedNor, PacifiCan and PrairiesCan — are
+// The other four RDAs — FedDev-Ontario, FedNor, PacifiCan and PrairiesCan — are
 // partners with their own scenario folders and do NOT resolve here.
 export const ISED_ISDE_SCENARIOS = `
 - Contacting ISED: 

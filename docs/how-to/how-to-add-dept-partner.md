@@ -21,7 +21,7 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `DND-MDN` | National Defence (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Défense nationale |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
-| `FedDev Ontario` | Federal Economic Development Agency for Southern Ontario | Agence fédérale de développement économique pour le Sud de l'Ontario |
+| `FedDev-Ontario` | Federal Economic Development Agency for Southern Ontario | Agence fédérale de développement économique pour le Sud de l'Ontario |
 | `FedNor` | Federal Economic Development Agency for Northern Ontario | Agence fédérale de développement économique pour le Nord de l'Ontario |
 | `FIN` | Finance Canada | Finances Canada |
 | `HC-SC` | Health Canada | Santé Canada |
@@ -171,7 +171,7 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
-- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF` (the other four Regional Development Agencies — `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
+- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 

@@ -10,7 +10,7 @@ the Communications Research Centre (CRC), the Competition Bureau (COBU-BUCO),
 Measurement Canada (MC), and the Office of the Superintendent of Bankruptcy
 (OSB-BSF) — add their services here too.
 
-The other four regional development agencies — FedDev Ontario, FedNor, PacifiCan
+The other four regional development agencies — FedDev-Ontario, FedNor, PacifiCan
 and PrairiesCan — are partners with their own scenario folders; their services
 belong in `context-feddev-ontario/`, `context-fednor/`, `context-pacifican/` and
 `context-prairiescan/` respectively, not here.

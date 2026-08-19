@@ -317,7 +317,7 @@ HC-SC, IRCC, ISED-ISDE, PHAC-ASPC, SAC-ISC, STATCAN, TBS-SCT, TC.
   fallback, every scenario folder got a `.md`. Net: **19 files**, one per folder,
   with PHAC folding into HC-SC.
 - **Since this shipped (2026-08-19):** four regional development agencies —
-  FedDev Ontario, FedNor, PacifiCan and PrairiesCan — became partners in their own
+  FedDev-Ontario, FedNor, PacifiCan and PrairiesCan — became partners in their own
   right, so they were removed from `SCENARIO_ALIASES` and given their own scenario
   folders and `.md` files (**24 folders, one `.md` each** now). Their rows moved out of
   `ised-isde-services.md`. This is the general case to watch when de-aliasing a

@@ -102,7 +102,7 @@ export const departments_FR = [
   {
     "name": "Agence fédérale de développement économique pour le Sud de l'Ontario",
     "url": "https://feddev-ontario.canada.ca/fr",
-    "abbrKey": "FedDev Ontario"
+    "abbrKey": "FedDev-Ontario"
   },
   {
     "name": "Agence spatiale canadienne",

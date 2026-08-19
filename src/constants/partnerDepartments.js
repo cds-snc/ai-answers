@@ -14,7 +14,7 @@ export const PARTNER_DEPARTMENTS = [
   'DND-MDN',
   'ECCC',
   'EDSC-ESDC',
-  'FedDev Ontario',
+  'FedDev-Ontario',
   'FedNor',
   'FIN',
   'HC-SC',

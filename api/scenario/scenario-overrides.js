@@ -39,7 +39,7 @@ const SUPPORTED_DEPARTMENTS = {
     const mod = await import('../../agents/prompts/scenarios/context-edsc-esdc/edsc-esdc-scenarios.js');
     return mod.EDSC_ESDC_SCENARIOS || '';
   },
-  'FedDev Ontario': async () => {
+  'FedDev-Ontario': async () => {
     const mod = await import('../../agents/prompts/scenarios/context-feddev-ontario/feddev-ontario-scenarios.js');
     return mod.FEDDEV_ONTARIO_SCENARIOS || '';
   },

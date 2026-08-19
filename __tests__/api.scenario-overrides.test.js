@@ -53,4 +53,32 @@ describe('scenario-overrides api', () => {
     expect(scenarioOverrideServiceMock.getActiveOverride).not.toHaveBeenCalled();
     expect(scenarioOverrideServiceMock.getOverridesForUser).not.toHaveBeenCalled();
   });
+
+  it('accepts "FedDev-Ontario" on GET', async () => {
+    // Regression test: FedDev-Ontario's abbrKey previously had a space
+    // ('FedDev Ontario'), which requireLiteralString's default pattern
+    // rejected, silently 400ing every request for this department. The
+    // abbrKey now uses a hyphen like the app's other RDA partners, which the
+    // default pattern already allows — no special-case validation needed.
+    scenarioOverrideServiceMock.getActiveOverride.mockResolvedValue(null);
+
+    const req = {
+      method: 'GET',
+      query: { departmentKey: 'FedDev-Ontario' },
+      user: { userId: '64fec1000000000000000001', role: 'partner' },
+    };
+    const res = makeRes();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(scenarioOverrideServiceMock.getActiveOverride).toHaveBeenCalledWith(
+      '64fec1000000000000000001',
+      'FedDev-Ontario'
+    );
+    const [payload] = res.json.mock.calls.at(-1);
+    expect(payload.departmentKey).toBe('FedDev-Ontario');
+    expect(typeof payload.defaultText).toBe('string');
+    expect(payload.defaultText.length).toBeGreaterThan(0);
+  });
 });

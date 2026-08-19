@@ -7,7 +7,7 @@
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
 //   ISED portfolio (ACOA, CED-QR, CanNor, CIPO, CRC, Competition Bureau,
 //     Measurement Canada, Superintendent of Bankruptcy) → ISED-ISDE
-//     Note: FedDev Ontario, FedNor, PacifiCan and PrairiesCan are also ISED
+//     Note: FedDev-Ontario, FedNor, PacifiCan and PrairiesCan are also ISED
 //     portfolio agencies but are NOT aliased — they are partners with their
 //     own scenario folders.
 //   Public Health Agency → HC-SC
