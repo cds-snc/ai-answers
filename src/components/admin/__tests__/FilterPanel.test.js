@@ -20,7 +20,10 @@ import 'daterangepicker';
 // locale files. Keep it that way: the French punctuation test below is only
 // meaningful against real translations. The consequence is that display copy is
 // not a safe thing to query on, so element lookups below anchor on stable ids
-// and class names instead — see getDateRangeInput.
+// and class names instead — see getDateRangeInput. Switching off label-text
+// queries drops the implicit "this control has a real accessible name" check
+// that getByLabelText used to provide, so 'keeps native label associations…'
+// below exists specifically to keep that coverage.
 import FilterPanel from '../FilterPanel.js';
 
 describe('FilterPanel', () => {
@@ -88,6 +91,22 @@ describe('FilterPanel', () => {
       expect(window.moment).toBeTypeOf('function');
     });
     expect(window.moment.localeData).toBeTypeOf('function');
+  });
+
+  it('keeps native label associations for the date-range trigger and department select', async () => {
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
+    const departmentSelect = container.querySelector('#department');
+
+    // The tests below match these controls by id, not label text, so a
+    // broken <label htmlFor> association wouldn't fail any of them — this
+    // is the one assertion that still catches that regression. `.labels`
+    // reflects the live for/id association regardless of what the label
+    // text says, so it stays valid across copy changes.
+    expect(input.labels).toHaveLength(1);
+    expect(input.labels[0].textContent.trim().length).toBeGreaterThan(0);
+    expect(departmentSelect.labels).toHaveLength(1);
+    expect(departmentSelect.labels[0].textContent.trim().length).toBeGreaterThan(0);
   });
 
   it('marks the date-range trigger as a collapsed popup by default', async () => {
