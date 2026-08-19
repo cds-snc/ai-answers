@@ -297,6 +297,11 @@ const SettingsPage = ({ lang = 'en' }) => {
   // ExplanationErrorSummary needs a change, not just a truthy value, to
   // re-focus/re-announce on a second failed attempt (see useFocusOnChange).
   const [sectionErrorAttempt, setSectionErrorAttempt] = useState({});
+  // Bumped on every save attempt (success or failure) for a section, so
+  // SectionSaveControls' persistent StatusMessage re-announces even when the
+  // outcome text is identical to the previous attempt (e.g. two saves in a
+  // row that both succeed, or a retry that hits the same error).
+  const [sectionSaveNonce, setSectionSaveNonce] = useState({});
 
   const stageChange = (key, value) => {
     const original = originalValuesRef.current[key];
@@ -531,11 +536,13 @@ const SettingsPage = ({ lang = 'en' }) => {
         ...prev,
         [section]: { text: statusText, isError: hasErrors },
       }));
+      setSectionSaveNonce((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
       // Every save is audited, so the table below is stale the moment a
       // section saves — reload it in place.
       auditTableRef.current?.reload();
     } catch (err) {
       setSectionStatus((prev) => ({ ...prev, [section]: { text: t('settings.saveError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
     } finally {
       setSectionSaving((prev) => ({ ...prev, [section]: false }));
     }
@@ -767,6 +774,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             t={t}
             fieldErrors={fieldErrors}
             errorAttempt={sectionErrorAttempt.general || 0}
+            saveNonce={sectionSaveNonce.general || 0}
           />
         </div>
       </details>
@@ -1002,6 +1010,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           t={t}
           fieldErrors={fieldErrors}
           errorAttempt={sectionErrorAttempt.health || 0}
+          saveNonce={sectionSaveNonce.health || 0}
         />
         </div>
       </details>
@@ -1069,6 +1078,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           t={t}
           fieldErrors={fieldErrors}
           errorAttempt={sectionErrorAttempt.twoFA || 0}
+          saveNonce={sectionSaveNonce.twoFA || 0}
         />
         </div>
       </details>
@@ -1198,6 +1208,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           t={t}
           fieldErrors={fieldErrors}
           errorAttempt={sectionErrorAttempt.session || 0}
+          saveNonce={sectionSaveNonce.session || 0}
         />
         </div>
       </details>
@@ -1325,6 +1336,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           t={t}
           fieldErrors={fieldErrors}
           errorAttempt={sectionErrorAttempt.rateLimiting || 0}
+          saveNonce={sectionSaveNonce.rateLimiting || 0}
         />
         </div>
       </details>
@@ -1419,6 +1431,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           t={t}
           fieldErrors={fieldErrors}
           errorAttempt={sectionErrorAttempt.redaction || 0}
+          saveNonce={sectionSaveNonce.redaction || 0}
         />
         </div>
       </details>
@@ -1464,7 +1477,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 // fixing the gap here (rather than on <details> itself) avoids double
 // spacing wherever a section's last child is something like a <p> that
 // already carries its own margin-bottom.
-const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t, fieldErrors, errorAttempt }) => {
+const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t, fieldErrors, errorAttempt, saveNonce }) => {
   // Every field in this section that came back with a per-field error on the
   // last save — feeds both the jump-link list below and, via errorAttempt,
   // when to re-focus/re-announce it (a second failed attempt with the exact
@@ -1496,6 +1509,7 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
         persistent
         variant={status ? (status.isError ? 'error' : 'success') : undefined}
         message={status?.text}
+        nonce={saveNonce}
       />
     </div>
   );

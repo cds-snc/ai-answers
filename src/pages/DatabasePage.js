@@ -9,6 +9,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -35,12 +36,6 @@ const DatabasePage = ({ lang }) => {
   // state that only ever renders in one fixed page position regardless of
   // which button was clicked (was: a single `message` state rendered near
   // the top during import and at the very bottom of the page otherwise).
-  // TODO: several messages set below (export success/failure,
-  // import-select-a-file, import-starting, per-chunk progress, the finalMsg
-  // build-up, and the per-check "Check {id} failed" message) still pass raw
-  // hardcoded English strings instead of t() — French admins see English
-  // text. Not fixed here; translating these needs new admin.database.* keys
-  // in both en.json and fr.json.
   const [exportMessage, setExportMessage] = useState(null);
   const [importMessage, setImportMessage] = useState(null);
   const [createIndexesMessage, setCreateIndexesMessage] = useState(null);
@@ -69,7 +64,10 @@ const DatabasePage = ({ lang }) => {
   // "No file selected" is a validation error tied to this field, not a
   // page-level outcome — matches SettingsPage.js's FeedbackInlineError
   // pattern (field-tied via id/aria-describedby) rather than StatusMessage.
-  const [fileSelectError, setFileSelectError] = useState(null);
+  // useInlineFormError (rather than a bare useState) is what makes repeat
+  // identical failures (e.g. clicking Import twice with no file selected)
+  // still re-announce to screen readers — see the hook's own comment.
+  const fileSelectError = useInlineFormError();
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
@@ -185,9 +183,9 @@ const DatabasePage = ({ lang }) => {
         }
       }
       await writer.close();
-      setExportMessage({ text: 'Database exported successfully', isError: false });
+      setExportMessage({ text: t('admin.database.exportSuccess'), isError: false });
     } catch (error) {
-      setExportMessage({ text: `Export failed: ${error.message}`, isError: true });
+      setExportMessage({ text: t('admin.database.exportError').replace('{error}', () => error.message), isError: true });
       console.error('Export error:', error);
     } finally {
       setIsExporting(false);
@@ -207,13 +205,13 @@ const DatabasePage = ({ lang }) => {
     event.preventDefault();
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setFileSelectError('Please select a file to import.');
+      fileSelectError.triggerError();
       return;
     }
-    setFileSelectError(null);
+    fileSelectError.clearError();
 
     setIsImporting(true);
-    setImportMessage({ text: 'Starting import...', isError: false });
+    setImportMessage({ text: t('admin.database.importStarting'), isError: false });
     // lineBuffer is managed inside the try block per chunk
     let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
@@ -304,7 +302,15 @@ const DatabasePage = ({ lang }) => {
               }
             }
           }
-          setImportMessage({ text: `Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`, isError: false });
+          setImportMessage({
+            text: t('admin.database.importChunkProgress')
+              .replace('{chunk}', chunkIndex + 1)
+              .replace('{total}', totalChunks)
+              .replace('{inserted}', accumulatedStats.inserted)
+              .replace('{failed}', accumulatedStats.failed)
+              .replace('{skipped}', accumulatedStats.skipped),
+            isError: false,
+          });
           // Optional throttle between chunk uploads to avoid flooding the server
           // Only apply throttle delay if the server performed upserts for this chunk
           if (Number(importThrottleMs) > 0) {
@@ -340,7 +346,15 @@ const DatabasePage = ({ lang }) => {
             }
           }
         }
-        setImportMessage({ text: `Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`, isError: false });
+        setImportMessage({
+          text: t('admin.database.importChunkProgress')
+            .replace('{chunk}', chunkIndex + 1)
+            .replace('{total}', totalChunks)
+            .replace('{inserted}', accumulatedStats.inserted)
+            .replace('{failed}', accumulatedStats.failed)
+            .replace('{skipped}', accumulatedStats.skipped),
+          isError: false,
+        });
         // Only apply throttle delay if the server performed upserts for this chunk
         if (Number(importThrottleMs) > 0) {
           const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
@@ -352,17 +366,23 @@ const DatabasePage = ({ lang }) => {
       }
 
       // Build final completion message, optionally include skipped example snippets
-      let finalMsg = `Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`;
-      if (accumulatedStats.skipped) finalMsg += `, Skipped: ${accumulatedStats.skipped}`;
+      let finalMsg = accumulatedStats.skipped
+        ? t('admin.database.importCompleteWithSkipped')
+          .replace('{inserted}', accumulatedStats.inserted)
+          .replace('{failed}', accumulatedStats.failed)
+          .replace('{skipped}', accumulatedStats.skipped)
+        : t('admin.database.importComplete')
+          .replace('{inserted}', accumulatedStats.inserted)
+          .replace('{failed}', accumulatedStats.failed);
       if (accumulatedStats.skippedExamples && accumulatedStats.skippedExamples.length) {
-        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
+        finalMsg += `\n${t('admin.database.importSkippedExamplesHeader')}\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
       }
       setImportMessage({ text: finalMsg, isError: false });
       if (fileInputRef.current) {
         fileInputRef.current.value = ''; // Reset file input
       }
     } catch (error) {
-      setImportMessage({ text: `Import failed: ${error.message}`, isError: true });
+      setImportMessage({ text: t('admin.database.importError').replace('{error}', () => error.message), isError: true });
       console.error('Import error:', error);
     } finally {
       setIsImporting(false);
@@ -639,7 +659,15 @@ const DatabasePage = ({ lang }) => {
                       if (!res.ok) throw new Error(json.message || 'Check failed');
                       setChecksResults(prev => ({ ...prev, [check.id]: json }));
                     } catch (err) {
-                      setChecksMessages(prev => ({ ...prev, [check.id]: { text: `Check ${check.id} failed: ${err.message}`, isError: true } }));
+                      setChecksMessages(prev => ({
+                        ...prev,
+                        [check.id]: {
+                          text: t('admin.database.checkFailed')
+                            .replace('{check}', check.id)
+                            .replace('{error}', () => err.message),
+                          isError: true,
+                        },
+                      }));
                     } finally {
                       setChecksRunning(prev => ({ ...prev, [check.id]: false }));
                     }
@@ -804,17 +832,22 @@ const DatabasePage = ({ lang }) => {
               additionally gets focus-management on repeat errors — adopt
               that if this input is ever upgraded to a real uploader
               component instead of patching the raw input further. */}
-          {fileSelectError && (
-            <FeedbackInlineError id="database-import-file-error" message={fileSelectError} />
+          {fileSelectError.hasError && (
+            <FeedbackInlineError
+              id="database-import-file-error"
+              message={t('admin.database.fileSelectError')}
+              errorCount={fileSelectError.errorCount}
+              inputRef={fileSelectError.errorRef}
+            />
           )}
           <input
             id="database-import-file"
             type="file"
             accept=".jsonl"
             ref={fileInputRef}
-            onChange={() => { setImportMessage(null); setFileSelectError(null); }}
+            onChange={() => { setImportMessage(null); fileSelectError.clearError(); }}
             className="mb-200"
-            aria-describedby={fileSelectError ? 'database-import-file-error' : undefined}
+            aria-describedby={fileSelectError.hasError ? 'database-import-file-error' : undefined}
             style={{ display: 'block' }}
           />
           <GcdsButton

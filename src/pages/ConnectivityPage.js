@@ -92,6 +92,10 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    // Bumped on every test run so StatusMessage's `nonce` forces the sr-only
+    // completion announcement to re-fire even when the result text is identical
+    // to the previous run (e.g. same connected/errors/warnings counts twice in a row).
+    const [testCompleteAnnounceNonce, setTestCompleteAnnounceNonce] = useState(0);
     const [simulatedFailures, setSimulatedFailures] = useState({
         database: false,
         search: false,
@@ -148,6 +152,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             const data = await response.json();
             setResults(data);
+            setTestCompleteAnnounceNonce((n) => n + 1);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -229,6 +234,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                         .replace('{errors}', results.summary.errors)
                         .replace('{warnings}', results.summary.warnings)
                     : undefined}
+                nonce={testCompleteAnnounceNonce}
                 className="sr-only"
             />
 
