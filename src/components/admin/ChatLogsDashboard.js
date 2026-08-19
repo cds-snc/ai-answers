@@ -130,9 +130,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* TODO (design review): confirm this is the right StatusMessage
-          variant/box treatment for this use case — not yet reviewed by
-          design as part of this pass's box-system migration. */}
       {exportError && (
         <StatusMessage variant="error">
           {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}

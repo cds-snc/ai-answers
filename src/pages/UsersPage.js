@@ -268,9 +268,6 @@ const UsersPage = ({ lang }) => {
         </GcdsText>
       </nav>
 
-      {/* TODO (design review): confirm this is the right StatusMessage
-          variant/box treatment for this use case — not yet reviewed by
-          design as part of this pass's box-system migration. */}
       <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
 
       <DataTable

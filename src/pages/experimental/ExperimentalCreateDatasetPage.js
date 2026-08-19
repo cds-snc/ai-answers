@@ -166,9 +166,6 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                             : t('experimental.datasets.creatingGoldenAnswer')
                         : t('experimental.datasets.createButton')}
                 </GcdsButton>
-                {/* TODO (design review): confirm this is the right StatusMessage
-                    variant/box treatment for this use case — not yet reviewed by
-                    design as part of this pass's box-system migration. */}
                 <StatusMessage variant={message?.type}>
                     {message && <GcdsText>{message.text}</GcdsText>}
                 </StatusMessage>

@@ -205,9 +205,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 ))}
             </section>
 
-            {/* TODO (design review): confirm this is the right StatusMessage
-                variant/box treatment for this use case — not yet reviewed by
-                design as part of this pass's box-system migration. */}
             <StatusMessage variant={error ? 'error' : undefined}>
                 {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
             </StatusMessage>

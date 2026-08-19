@@ -405,12 +405,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             </button>
           )}
 
-          {/* TODO (design review): confirm this is the right StatusMessage
-              variant/box treatment for this use case — not yet reviewed by
-              design as part of this pass's box-system migration. This is
-              the exact FA-checkmark pattern StatusMessage's own `success`
-              variant was modeled after (see StatusMessage.js's comments) —
-              variant renders that same icon internally now. */}
           {successMessage && (
             <StatusMessage variant="success" message={successMessage} />
           )}

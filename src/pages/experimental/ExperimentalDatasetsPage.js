@@ -369,9 +369,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     {uploading ? t('experimental.datasets.uploading') : t('experimental.datasets.upload')}
                                 </GcdsButton>
                             </div>
-                            {/* TODO (design review): confirm this is the right StatusMessage
-                                variant/box treatment for this use case — not yet reviewed by
-                                design as part of this pass's box-system migration. */}
                             <StatusMessage
                                 variant={message?.type}
                             >
