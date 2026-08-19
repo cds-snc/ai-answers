@@ -7,7 +7,7 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
-import { LoadingOverlay } from '../components/admin/Loading.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 
 DataTable.use(DT);

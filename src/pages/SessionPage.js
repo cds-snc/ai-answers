@@ -9,7 +9,6 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
-import { LoadingStatus } from '../components/admin/Loading.js';
 
 DataTable.use(DT);
 
@@ -79,7 +78,7 @@ const SessionPage = ({ lang: propLang }) => {
       </nav>
 
       <StatusMessage variant={error ? 'error' : undefined} message={error} />
-      {loading && <LoadingStatus message={t('admin.filters.loading')} />}
+      {loading && <StatusMessage loading message={t('admin.filters.loading')} />}
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 

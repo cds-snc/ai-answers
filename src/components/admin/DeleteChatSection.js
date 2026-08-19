@@ -13,6 +13,11 @@ const DeleteChatSection = ({ lang = 'en' }) => {
   const handleInputChange = (event) => {
     const value = event?.target?.value || '';
     setChatId(value);
+    // A stale success/error message from the last delete describes an
+    // action the admin is no longer taking, once they've started typing a
+    // new chat ID — same reasoning as SettingsPage.js's stageChange
+    // clearing a section's stale save-outcome message on edit.
+    setStatus(null);
   };
 
   const handleDelete = async (e) => {

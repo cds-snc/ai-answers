@@ -10,7 +10,6 @@ import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 import { useAnnouncedError } from '../../hooks/auth/useAnnouncedError.js';
 import AnnouncedError from '../auth/AnnouncedError.js';
 import StatusMessage from '../admin/StatusMessage.js';
-import { LoadingStatus } from '../admin/Loading.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -437,7 +436,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         </div>
 
         {processing && (
-          <LoadingStatus message={t('batch.upload.processing')} />
+          <StatusMessage loading message={t('batch.upload.processing')} />
         )}
       </form>
     </GcdsContainer>

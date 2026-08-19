@@ -1197,11 +1197,14 @@
   }
 }
 
-/* Shared box shape for every StatusMessage state (the four variant boxes
-   below plus .status-message--loading above) — spacing, radius, padding,
-   font-size, and width are identical across all five (verified against each
-   rule's actual computed values, not assumed), so they're defined once
-   here instead of five times. width: fit-content so a short message doesn't
+/* Shared box shape for StatusMessage's four variant boxes below, plus
+   .status-message--loading above (Loading.js's LoadingStatus, not a
+   StatusMessage state anymore — see the scope note in StatusMessage.js —
+   but it still wants the exact same spacing/radius/padding, so it stays in
+   this shared rule rather than repeating the values under its own name).
+   Identical across all five (verified against each rule's actual computed
+   values, not assumed), so they're defined once here instead of five
+   times. width: fit-content so a short message doesn't
    stretch the box to fill a wide container, capped with max-width: 65ch to
    match this app's ~65-char line-length restriction — a long message wraps
    inside a standardized box width instead of growing unbounded. */

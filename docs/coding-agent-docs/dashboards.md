@@ -504,30 +504,33 @@ This applies to **minimum-sample** gates only. Sections gated on *presence* of d
     (`common.noDataForFilters`), used across every dashboard listed above. Amber/`warning`
     is reserved for genuine caution (e.g. unsaved changes) — a query that successfully
     returned zero rows isn't a failure or a caution, so it gets `info`, not `warning`.
-  See "Loading states" below — `StatusMessage` doesn't have a loading state at all
-  anymore; that moved to its own component.
-- **Loading states — two patterns, by trigger, not by page** (`src/components/admin/Loading.js`,
-  not `StatusMessage.js` — see the scope note at the top of `StatusMessage.js` for why):
+  See "Loading states" below — `loading` is a `StatusMessage` prop, but the
+  full-page overlay these dashboards use is not.
+- **Loading states — two patterns, by trigger, not by page**:
   - **Filter-driven fetch → full-page `<LoadingOverlay message={...} />`**
-    (`position: fixed`, blurred backdrop, blocks the whole page — deliberately,
-    confirmed: there's nothing behind it worth keeping visible while a filtered
-    re-fetch is in flight): `ChatDashboardPage`, `EvalDashboardPage`,
-    `AutoEvalDashboardPage`, `ChatLogsDashboard`, `PublicDashboard`,
-    `PartnerDashboard`. Use `LoadingOverlay` for any new filter-driven dashboard
-    fetch — don't hand-roll the `.loading-overlay` markup again, and don't reach
-    for a `StatusMessage` prop for this (there isn't one). This used to be the
-    exact same markup copy-pasted across all 6 files with no shared component;
-    `LoadingOverlay` is that shared component now.
+    (`src/components/admin/LoadingOverlay.js` — a separate component, not a
+    `StatusMessage` prop; `position: fixed`, blurred backdrop, blocks the whole
+    page — deliberately, confirmed: there's nothing behind it worth keeping
+    visible while a filtered re-fetch is in flight): `ChatDashboardPage`,
+    `EvalDashboardPage`, `AutoEvalDashboardPage`, `ChatLogsDashboard`,
+    `PublicDashboard`, `PartnerDashboard`. Use `LoadingOverlay` for any new
+    filter-driven dashboard fetch — don't hand-roll the `.loading-overlay`
+    markup again. This used to be the exact same markup copy-pasted across all
+    6 files with no shared component; `LoadingOverlay` is that shared
+    component now. It stays a separate file rather than a `StatusMessage`
+    prop because it's narrow — specific to a filter-driven page block — not
+    because it's structurally different from `StatusMessage`'s `loading`
+    (it isn't; both are `role="status"`).
   - **Independent per-section fetch → inline, not an overlay**:
     `MetricsDashboard`/`TechnicalMetricsDashboard` fire several fetches in
     parallel (6 and 2 respectively) and reveal each section as its own fetch
     finishes, rather than waiting on the slowest one — each section shows its
     own `.section-loading-indicator` instead. This is deliberate: collapsing it
     into one page-level overlay would remove the progressive reveal. Don't
-    confuse this with `Loading.js`'s `LoadingStatus` (inline spinner + text for a
-    single page-level "still working" state, e.g. `SessionPage.js`,
-    `BatchUpload.js`) — `.section-loading-indicator` is per-section on these two
-    specific pages, a third pattern of its own.
+    confuse this with `StatusMessage`'s `loading` prop (inline spinner + text
+    for a single page-level "still working" state, e.g. `SessionPage.js`,
+    `BatchUpload.js`) — `.section-loading-indicator` is per-section on these
+    two specific pages, a third pattern of its own.
 - **Locales**: each dashboard has its own `partnerDashboard.*` / `publicDashboard.*`
   namespace (`kpi`, `charts`). Duplicated keys across the two are normal. Add
   EN + FR together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).

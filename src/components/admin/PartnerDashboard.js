@@ -20,7 +20,7 @@ import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
-import { LoadingOverlay } from './Loading.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 // Bars shown in the "question volume by program" chart. Capped client-side so
 // the API's larger MAX_PROGRAMS response stays available to other views.

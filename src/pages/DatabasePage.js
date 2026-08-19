@@ -559,9 +559,16 @@ const DatabasePage = ({ lang }) => {
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
         <label>
           {t('admin.database.tableLabel')}&nbsp;
+          {/* Every export field clears exportMessage on change — a stale
+              "Export failed"/"Export succeeded" from the last run shouldn't
+              keep showing once the admin has started changing what they're
+              about to export next. Same idea as SettingsPage.js's
+              stageChange clearing a section's stale save-outcome message on
+              edit; inline here rather than a shared helper/lookup table
+              since it's only 4 fields, not ~30 across 6 sections. */}
           <select
             value={selectedCollection}
-            onChange={e => setSelectedCollection(e.target.value)}
+            onChange={e => { setSelectedCollection(e.target.value); setExportMessage(null); }}
             style={{ minWidth: 120 }}
             disabled={isExporting || collections.length === 0}
           >
@@ -575,17 +582,17 @@ const DatabasePage = ({ lang }) => {
           </select>
         </label>
         <label>{t('admin.database.startDate')}&nbsp;
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setExportMessage(null); }} />
         </label>
         <label>{t('admin.database.endDate')}&nbsp;
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setExportMessage(null); }} />
         </label>
         <label>{t('admin.database.limitLabel')}&nbsp;
           <input
             type="number"
             min="1"
             value={exportLimit}
-            onChange={e => setExportLimit(e.target.value)}
+            onChange={e => { setExportLimit(e.target.value); setExportMessage(null); }}
             style={{ width: 100 }}
             disabled={isExporting}
           />
@@ -714,6 +721,9 @@ const DatabasePage = ({ lang }) => {
         </GcdsText>
         <form onSubmit={handleImport} className="mb-200">
           <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+            {/* Every import field (plus the file input below) clears
+                importMessage on change — same reasoning as the export
+                section above. */}
             <label>
               {t('admin.database.chunkSizeLabel')}&nbsp;
               <input
@@ -721,7 +731,7 @@ const DatabasePage = ({ lang }) => {
                 min="0.0625"
                 step="0.0625"
                 value={importChunkMB}
-                onChange={e => setImportChunkMB(e.target.value)}
+                onChange={e => { setImportChunkMB(e.target.value); setImportMessage(null); }}
                 style={{ width: 100 }}
                 disabled={isImporting}
               />
@@ -733,7 +743,7 @@ const DatabasePage = ({ lang }) => {
                 min="0"
                 step="50"
                 value={importThrottleMs}
-                onChange={e => setImportThrottleMs(e.target.value)}
+                onChange={e => { setImportThrottleMs(e.target.value); setImportMessage(null); }}
                 style={{ width: 100 }}
                 disabled={isImporting}
               />
@@ -747,6 +757,7 @@ const DatabasePage = ({ lang }) => {
                   const vals = options.filter(o => o.selected).map(o => o.value);
                   // If nothing selected, default to All
                   setImportSelectedCollections(vals.length ? vals : ['All']);
+                  setImportMessage(null);
                 }}
                 style={{ minWidth: 200, minHeight: 100 }}
                 multiple
@@ -801,6 +812,7 @@ const DatabasePage = ({ lang }) => {
             type="file"
             accept=".jsonl"
             ref={fileInputRef}
+            onChange={() => { setImportMessage(null); setFileSelectError(null); }}
             className="mb-200"
             aria-describedby={fileSelectError ? 'database-import-file-error' : undefined}
             style={{ display: 'block' }}

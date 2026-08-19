@@ -7,7 +7,6 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import DataStoreService from '../services/DataStoreService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
-import { LoadingStatus } from '../components/admin/Loading.js';
 
 DataTable.use(DT);
 
@@ -56,7 +55,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
       <StatusMessage variant={error ? 'error' : undefined} message={error} />
-      {loading && <LoadingStatus message={t('admin.publicEval.loading')} />}
+      {loading && <StatusMessage loading message={t('admin.publicEval.loading')} />}
       <DataTable
         data={rows}
         columns={[

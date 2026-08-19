@@ -5,7 +5,7 @@ import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
 import StatusMessage from './StatusMessage.js';
-import { LoadingOverlay } from './Loading.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 
 
@@ -167,7 +167,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                   id="export-view"
                   ref={exportViewRef}
                   value={selectedView}
-                  onChange={(e) => setSelectedView(e.target.value)}
+                  onChange={(e) => { setSelectedView(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >
@@ -187,7 +187,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 <select
                   id="export-format"
                   value={selectedFormat}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  onChange={(e) => { setSelectedFormat(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >

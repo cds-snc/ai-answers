@@ -914,11 +914,10 @@
       "title": "Delete an expert evaluation",
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
-      "confirm": "Confirm delete",
-      "cancel": "Cancel",
       "loading": "Deleting...",
       "success": "Expert evaluation deleted successfully",
-      "error": "Failed to delete expert evaluation: "
+      "error": "Failed to delete expert evaluation: {message}",
+      "notEvaluated": "Not evaluated."
     }
   },
   "login": {

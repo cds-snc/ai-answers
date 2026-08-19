@@ -893,11 +893,10 @@
       "title": "Supprimer une évaluation d'expert",
       "idLabel": "ID de chat",
       "button": "Supprimer l'évaluation d'expert",
-      "confirm": "Confirmer la suppression",
-      "cancel": "Annuler",
       "loading": "Suppression en cours...",
       "success": "Évaluation d'expert supprimée avec succès",
-      "error": "Échec de la suppression de l'évaluation d'expert : "
+      "error": "Échec de la suppression de l'évaluation d'expert : {message}",
+      "notEvaluated": "Non évalué."
     },
     "chatLogs": {
       "title": "Télécharger les journaux de chat",
