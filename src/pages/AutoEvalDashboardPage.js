@@ -7,6 +7,7 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { LoadingOverlay } from '../components/admin/Loading.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 
 DataTable.use(DT);
@@ -129,12 +130,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       </div>
 
       {loading && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.autoEvalDashboard.loading', 'Loading evaluations...')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={t('admin.autoEvalDashboard.loading')} />
       )}
 
       <StatusMessage

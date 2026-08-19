@@ -133,11 +133,10 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 ## Status/outcome message states
 
-`src/components/admin/StatusMessage.js` is the single component every save/delete/import/export/test-run/upload outcome, autosave failure, loading state, or async result should render through (see AGENTS.md's "Announcing status, errors, and async outcomes" for the usage-level API — `message`/`isError`/`loading`/`variant`/`persistent`/`id`). It now has **five built-in states**, each pulling its box styling from GC DS-token classes in `admin.css` — reuse one of these, don't hand-roll a new colour/icon combination for a sixth:
+`src/components/admin/StatusMessage.js` is the single component every save/delete/import/export/test-run/upload outcome or autosave failure should render through (see AGENTS.md's "Announcing status, errors, and async outcomes" for the usage-level API — `message`/`isError`/`variant`/`persistent`/`id`). It now has **four built-in states**, each pulling its box styling from GC DS-token classes in `admin.css` — reuse one of these, don't hand-roll a new colour/icon combination for a fifth:
 
 | State | How to render it | Class | Tokens | Icon | Use |
 |---|---|---|---|---|---|
-| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | `--gcds-color-grayscale-50/200/700` | `.loading-animation` pulsing-bars spinner (shared with `.section-loading-indicator`, `prefers-reduced-motion`-aware) | In-progress state, not a completed result |
 | Error | `<StatusMessage variant="error" message={...} />` | `status-message--error-box` | `--gcds-color-red-100/500/700` | `GcdsIcon warning-triangle` | Failures |
 | Warning | `<StatusMessage variant="warning" message={...} />` | `status-message--warning-box` | `--gcds-color-yellow-100/500/700` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
 | Info | `<StatusMessage variant="info" message={...} />` | `status-message--info-box` | `--gcds-color-blue-100/500/700` | `GcdsIcon info-circle` | Neutral confirmations |
@@ -145,7 +144,9 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 `variant` builds the icon + text content itself from a plain `message` string — pass `children` instead only when the content is genuinely richer than "icon + one string" (e.g. a follow-up bullet list), in which case you're responsible for your own icon. `isError`/a manual box-modifier `className` still work but are the pre-`variant` calling convention — only still needed for call sites that haven't migrated; use `variant` for anything new. Every box state defaults to `width: fit-content` capped at `max-width: 65ch` — content in this app is line-length-restricted (~65 char), so a box never needs to stretch to fill a wide container, and this is a standardized default rather than something a caller opts into per site. `persistent` keeps the live region mounted while empty so a call site's *first* message is announced as a change rather than missed as an insertion — worth reaching for on anything where the first-ever outcome matters (e.g. a page's initial load error).
 
-Every call site that fits one of the five states above should use it — plain `style`/`isError` with no `variant` is only for content that doesn't fit any of them (e.g. a compact inline indicator next to a label, not a page-level outcome). The whole 5-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
+Every call site that fits one of the four states above should use it — plain `style`/`isError` with no `variant` is only for content that doesn't fit any of them (e.g. a compact inline indicator next to a label, not a page-level outcome). The whole 4-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
+
+An in-progress ("still working") indicator is a separate component, not a `StatusMessage` state — see `src/components/admin/Loading.js`'s `LoadingStatus` (inline, `status-message--loading` class, `.loading-animation` pulsing-bars spinner, `prefers-reduced-motion`-aware) and `LoadingOverlay` (full-page/section backdrop). It used to be a `StatusMessage` `loading` sub-type; see AGENTS.md's "Announcing status, errors, and async outcomes" for why it moved out.
 
 ## GC DS utility classes
 

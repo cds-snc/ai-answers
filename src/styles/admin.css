@@ -1260,6 +1260,16 @@
   margin-right: var(--gcds-icon-margin-50);
 }
 
+/* DatabasePage.js's import-progress counter (the plain-text line shown
+   while a chunked import is running). Extracted from its previous inline
+   style — same margin/color, no design change — so it's a class to build
+   on later (e.g. a real progress bar) instead of inline styles. Not used
+   anywhere else. */
+.status-message--progress {
+  margin: 12px 0;
+  color: blue;
+}
+
 /* Base card chrome — shared by StatCard, DonutCard, and HBarCard */
 .dashboard-card {
   background: #fff;
@@ -1998,11 +2008,6 @@
   white-space: nowrap;
 }
 
-
-.filter-bar__loading {
-  font-size: 14px;
-  color: var(--gcds-text-secondary);
-}
 
 /* Auth pages (login, register, password reset) */
 .auth-login-container,

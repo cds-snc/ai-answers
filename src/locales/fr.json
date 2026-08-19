@@ -1362,8 +1362,7 @@
     "endDate": "Date de fin",
     "showing": "Résultats :",
     "removeFilter": "Supprimer le filtre",
-    "apply": "Appliquer",
-    "loading": "Chargement..."
+    "apply": "Appliquer"
   },
   "blockedQueries": {
     "title": "Requêtes bloquées",

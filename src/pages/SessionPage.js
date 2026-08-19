@@ -9,6 +9,7 @@ import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { LoadingStatus } from '../components/admin/Loading.js';
 
 DataTable.use(DT);
 
@@ -77,11 +78,8 @@ const SessionPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
 
-      {/* TODO (design review): confirm this is the right StatusMessage
-          variant/box treatment for this use case — not yet reviewed by
-          design as part of this pass's box-system migration. */}
       <StatusMessage variant={error ? 'error' : undefined} message={error} />
-      <StatusMessage loading message={loading ? t('admin.filters.loading') : null} />
+      {loading && <LoadingStatus message={t('admin.filters.loading')} />}
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 

@@ -1362,8 +1362,7 @@
     "endDate": "End date",
     "showing": "Showing:",
     "removeFilter": "Remove filter",
-    "apply": "Apply",
-    "loading": "Loading..."
+    "apply": "Apply"
   },
   "blockedQueries": {
     "title": "Blocked queries",

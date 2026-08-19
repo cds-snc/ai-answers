@@ -12,6 +12,7 @@ import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
+import { LoadingOverlay } from './Loading.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -149,12 +150,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
       </h2>
 
       {loading ? (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('common.loading')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 

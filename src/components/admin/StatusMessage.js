@@ -6,18 +6,10 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // failures, etc.). Several admin tools had this outcome rendered as plain
 // DOM text with no role at all, so screen-reader users got no indication
 // anything happened. role="alert" (assertive) is for genuine failures;
-// role="status" (polite) covers everything else — success, progress, and
-// informational results — so it doesn't interrupt whatever the user is
-// doing. See BatchPage.js's statusMessage state for the reference usage
-// this was extracted from.
-//
-// `loading` is a distinct sub-type, not just isError=false: it marks an
-// in-progress state (as opposed to a completed success/info/error result),
-// so it gets its own className hook (`status-message--loading`) for a
-// future spinner/animation instead of overloading `isError` or having each
-// call site hand-roll its own loading markup. `id` is exposed so a loading
-// or error message can be the target of another element's aria-describedby
-// (e.g. a disabled button explaining why).
+// role="status" (polite) covers everything else — success and informational
+// results — so it doesn't interrupt whatever the user is doing. See
+// BatchPage.js's statusMessage state for the reference usage this was
+// extracted from.
 //
 // `variant` is the box-styled outcome family: 'error' | 'warning' | 'info' |
 // 'success'. It wires up the box className (the GC DS red/yellow/blue/green
@@ -35,14 +27,31 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // the box/role treatment but is responsible for its own icon (an escape
 // hatch for content richer than "icon + one string").
 //
-// The `loading` sub-type now renders the shared `.loading-animation` spinner
-// (see .status-message--loading in admin.css, mirroring the neutral
-// .section-loading-indicator box used elsewhere) instead of bare text, with
-// a prefers-reduced-motion guard on the animation (global.css).
 // TODO (design review): none of this component's CSS — the four variant
-// boxes, the loading box, the plain isError/tag styling — has had an actual
-// design pass; it was built engineering-led to close a11y gaps. Treat every
-// class here as functional but provisional until design signs off.
+// boxes, the plain isError/tag styling — has had an actual design pass; it
+// was built engineering-led to close a11y gaps. Treat every class here as
+// functional but provisional until design signs off.
+//
+// Scope, deliberately: this component owns ARIA wiring + focus management +
+// styling for outcomes (error/warning/info/success) — that's the complete
+// set; it isn't expected to grow further variants. Two things that look
+// related on the surface are deliberately NOT here:
+//   - An in-progress ("still working") indicator isn't an outcome — see
+//     Loading.js's LoadingStatus (inline) / LoadingOverlay (full-page),
+//     which used to be a `loading` prop on this component. Folding it back
+//     in would reintroduce a real bug this had: `loading` and `variant` were two
+//     independent visual modes whose block-content requirement had to be
+//     reconciled by hand in three separate places (the tag, the className,
+//     the content), and one of those three was missed when `loading`
+//     shipped — its spinner <div> ended up nested inside the default <p>,
+//     invalid HTML. Splitting them into their own components makes that
+//     class of bug structurally impossible instead of just better-organized.
+//   - Determinate progress (a known total, e.g. "chunk 3 of 10") isn't an
+//     outcome or an in-progress wait either — it's a third, different thing,
+//     and doesn't belong here as a `progress` variant. See
+//     ExperimentalAnalysisPage.js's renderProgressCards for the established
+//     pattern (a real role="progressbar" + a plain role="status" text line,
+//     as its own small component).
 //
 // forwardRef + tabIndex exist for callers that have to move focus to the
 // message itself — e.g. SettingsPage's history count, which becomes the landing
@@ -63,23 +72,44 @@ const VariantIcon = ({ name }) =>
     <GcdsIcon name={name} marginRight="50" />
   );
 
+// Every "look" this component can render — a plain message or one of the
+// four variant boxes — resolves to a single object bundling everything
+// that look needs: whether it requires block-level content (forcing Tag to
+// 'div'), its CSS class, and its content (icon + message, or the caller's
+// own `children`). See the file-level comment above for why this used to
+// also cover a `loading` look and no longer does.
+function resolveLook({ variant, message, isError, children }) {
+  const variantConfig = variant ? VARIANTS[variant] : null;
+  if (variantConfig) {
+    return {
+      isError: variantConfig.isError,
+      isBlock: true,
+      className: variantConfig.className,
+      content: children || (
+        <>
+          <VariantIcon name={variantConfig.icon} />
+          {message}
+        </>
+      ),
+    };
+  }
+  return {
+    isError,
+    isBlock: false,
+    className: undefined,
+    content: children || message,
+  };
+}
+
 const StatusMessage = React.forwardRef((
-  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, persistent = false, variant, children },
+  { message, isError = false, id, className, style, tag = 'p', tabIndex, persistent = false, variant, children },
   ref
 ) => {
-  const variantConfig = variant ? VARIANTS[variant] : null;
-  const resolvedIsError = variantConfig ? variantConfig.isError : isError;
-  // Box variants and `loading` both render block-level content (icon/spinner
-  // + text side by side) — a caller-supplied `tag` only applies when neither
-  // is active. Without this, `loading`'s .loading-animation <div> renders
-  // inside the default <p>, which is invalid HTML (a block element inside a
-  // paragraph).
-  const Tag = (variantConfig || loading) ? 'div' : tag;
-  const variantClassName = variantConfig
-    ? variantConfig.className
-    : loading
-      ? 'status-message--loading'
-      : undefined;
+  const look = resolveLook({ variant, message, isError, children });
+  // Box variants render block-level content (icon + text side by side) — a
+  // caller-supplied `tag` only applies when the resolved look doesn't need
+  // block content.
+  const Tag = look.isBlock ? 'div' : tag;
 
   // Screen readers announce changes inside a live region that was already
   // present; a region inserted into the DOM with its text already in it is
@@ -97,39 +127,24 @@ const StatusMessage = React.forwardRef((
       <Tag
         ref={ref}
         id={id}
-        role={resolvedIsError ? 'alert' : 'status'}
-        aria-live={resolvedIsError ? 'assertive' : 'polite'}
+        role={look.isError ? 'alert' : 'status'}
+        aria-live={look.isError ? 'assertive' : 'polite'}
         className="status-message--empty"
         tabIndex={tabIndex}
       />
     );
   }
-  // children lets a caller render richer content (e.g. a follow-up bullet
-  // list, or its own icon) than a single string — pass tag="div" alongside
-  // it, since block content like a <ul> isn't valid inside the default <p>.
-  // Without children, a variant builds its own icon+message content.
-  const content = children || (variantConfig ? (
-    <>
-      <VariantIcon name={variantConfig.icon} />
-      {message}
-    </>
-  ) : loading ? (
-    <>
-      <div className="loading-animation" aria-hidden="true"></div>
-      {message}
-    </>
-  ) : message);
   return (
     <Tag
       ref={ref}
       id={id}
-      role={resolvedIsError ? 'alert' : 'status'}
-      aria-live={resolvedIsError ? 'assertive' : 'polite'}
-      className={[className, variantClassName].filter(Boolean).join(' ') || undefined}
+      role={look.isError ? 'alert' : 'status'}
+      aria-live={look.isError ? 'assertive' : 'polite'}
+      className={[className, look.className].filter(Boolean).join(' ') || undefined}
       style={style}
       tabIndex={tabIndex}
     >
-      {content}
+      {look.content}
     </Tag>
   );
 });

@@ -534,9 +534,6 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        {/* TODO (design review): confirm this is the right StatusMessage
-            variant/box treatment for this use case — not yet reviewed by
-            design as part of this pass's box-system migration. */}
         <StatusMessage variant={countsError ? 'error' : undefined} message={countsError} />
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
@@ -769,8 +766,25 @@ const DatabasePage = ({ lang }) => {
           {/* Positioned right above the file input itself (not at the top of
               the whole form) — it's the file the message is about, and
               during/after import it also covers per-chunk progress and the
-              final completion result. */}
-          <StatusMessage variant={importMessage ? (importMessage.isError ? 'error' : 'info') : undefined} message={importMessage?.text} />
+              final completion result. While isImporting, this is the same
+              plain text as before (moved from an inline style into
+              .status-message--progress, same margin/color, no other design
+              change), not the StatusMessage box treatment — a per-chunk
+              tick isn't a settled outcome. Once import finishes, the
+              existing StatusMessage box (info/error) shows the completion
+              result, unchanged.
+              TODO: chunkIndex/totalChunks are already known during the
+              import loop (see handleImport) — a real determinate progress
+              bar could replace this text-only counter later. If it does,
+              it should be its own small component (bar + plain
+              role="status" text, same shape as ExperimentalAnalysisPage.js's
+              renderProgressCards), not a new StatusMessage prop — see the
+              scope note in StatusMessage.js. */}
+          {isImporting ? (
+            <div role="status" aria-live="polite" className="status-message--progress">{importMessage?.text}</div>
+          ) : (
+            <StatusMessage variant={importMessage ? (importMessage.isError ? 'error' : 'info') : undefined} message={importMessage?.text} />
+          )}
           {/* TODO: this is a raw <input type="file">, so the field-tied error
               below is FeedbackInlineError + aria-describedby (matching
               SettingsPage.js's pattern) rather than a real uploader

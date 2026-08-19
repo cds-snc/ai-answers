@@ -20,6 +20,7 @@ import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
+import { LoadingOverlay } from './Loading.js';
 
 // Bars shown in the "question volume by program" chart. Capped client-side so
 // the API's larger MAX_PROGRAMS response stays available to other views.
@@ -306,12 +307,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {loading ? (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('common.loading')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 

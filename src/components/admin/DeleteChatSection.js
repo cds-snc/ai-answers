@@ -82,9 +82,6 @@ const DeleteChatSection = ({ lang = 'en' }) => {
             : t('admin.deleteChat.button')}
         </GcdsButton>
       </div>
-      {/* TODO (design review): confirm this is the right StatusMessage
-          variant/box treatment for this use case — not yet reviewed by
-          design as part of this pass's box-system migration. */}
       {status?.isError ? (
         <StatusMessage variant="error">
           {status.prefix}<span lang="en">{status.detail}</span>{status.suffix}

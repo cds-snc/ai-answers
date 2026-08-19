@@ -367,11 +367,6 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
-        {/* TODO (design review): confirm this is the right StatusMessage
-            variant/box treatment for this use case — not yet reviewed by
-            design as part of this pass's box-system migration; same
-            question for this file's other two StatusMessage uses below
-            (metadata status / metadata lookup). */}
         <StatusMessage variant={error ? 'error' : undefined} message={error} />
         {vectorStats && (
           <div className="mb-200">

@@ -5,6 +5,7 @@ import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
 import StatusMessage from './StatusMessage.js';
+import { LoadingOverlay } from './Loading.js';
 
 
 
@@ -122,17 +123,9 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   return (
     <div className="space-y-6">
       {exporting && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={<>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</>} />
       )}
 
-      {/* TODO (design review): confirm this is the right StatusMessage
-          variant/box treatment for this use case — not yet reviewed by
-          design as part of this pass's box-system migration. */}
       {exportError && (
         <StatusMessage variant="error">
           {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}

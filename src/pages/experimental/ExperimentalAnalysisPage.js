@@ -600,12 +600,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
     );
 
-    // TODO: this status line and the one in the startingRun block below both
-    // sit directly beside a real role="progressbar" element, not standing
-    // alone — StatusMessage has no `progress` variant (a bar, not a box), so
-    // forcing either into loading/info today would visually clash with the
-    // actual progress bar right next to it. Migrate once StatusMessage grows
-    // a progress-bar-aware variant instead of before then.
+    // This status line and the one in the startingRun block below both sit
+    // directly beside a real role="progressbar" element, not standing alone
+    // — StatusMessage doesn't have a `progress` variant, and deliberately
+    // shouldn't: determinate progress (a known total, like this batch's
+    // completed/failed/total) isn't an outcome (error/warning/info/success)
+    // or an indeterminate wait (loading), it's a third, different thing, and
+    // StatusMessage already had a bug where two of those "visual modes"
+    // needing block content had to be reconciled by hand. A progress bar
+    // belongs in its own small component if one gets built (bar + plain
+    // role="status" text, same shape as this), not folded into
+    // StatusMessage's props.
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
             <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>

@@ -6,6 +6,7 @@ import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
 import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
 import StatusMessage from '../StatusMessage.js';
+import { LoadingStatus } from '../Loading.js';
 
 // "Run eval analysis" section at the bottom of the partner dashboard.
 // Disabled until an institution filter is applied; the precheck endpoint
@@ -147,8 +148,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {appliedDepartment && precheckLoading && (
-          <StatusMessage
-            loading
+          <LoadingStatus
             id="eval-analysis-checking"
             className="font-size-text-small"
             message={t('partnerDashboard.evalAnalysis.checkingEligibility')}
@@ -184,8 +184,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {running && (
-          <StatusMessage
-            loading
+          <LoadingStatus
             id="eval-analysis-running"
             className="font-size-text-small"
             message={progressLabel()}
