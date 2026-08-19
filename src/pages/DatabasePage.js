@@ -620,7 +620,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
           {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
         </GcdsButton>
-        <StatusMessage variant={exportMessage ? (exportMessage.isError ? 'error' : 'info') : undefined} message={exportMessage?.text} />
+        <StatusMessage variant={exportMessage ? (exportMessage.isError ? 'error' : 'success') : undefined} message={exportMessage?.text} />
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
@@ -678,7 +678,7 @@ const DatabasePage = ({ lang }) => {
                   {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
                 </GcdsButton>
                 <StatusMessage
-                  variant={checksMessages[check.id] ? (checksMessages[check.id].isError ? 'error' : 'info') : undefined}
+                  variant={checksMessages[check.id] ? (checksMessages[check.id].isError ? 'error' : 'success') : undefined}
                   message={checksMessages[check.id]?.text}
                 />
                 <div style={{ minWidth: 220, textAlign: 'right' }}>
@@ -732,7 +732,7 @@ const DatabasePage = ({ lang }) => {
                 )}
                 {check.id === 'duplicateKeys' && (
                   <StatusMessage
-                    variant={removeDuplicatesMessage ? (removeDuplicatesMessage.isError ? 'error' : 'info') : undefined}
+                    variant={removeDuplicatesMessage ? (removeDuplicatesMessage.isError ? 'error' : 'success') : undefined}
                     message={removeDuplicatesMessage?.text}
                   />
                 )}
@@ -822,7 +822,7 @@ const DatabasePage = ({ lang }) => {
           {isImporting ? (
             <div role="status" aria-live="polite" className="status-message--progress">{importMessage?.text}</div>
           ) : (
-            <StatusMessage variant={importMessage ? (importMessage.isError ? 'error' : 'info') : undefined} message={importMessage?.text} />
+            <StatusMessage variant={importMessage ? (importMessage.isError ? 'error' : 'success') : undefined} message={importMessage?.text} />
           )}
           {/* TODO: this is a raw <input type="file">, so the field-tied error
               below is FeedbackInlineError + aria-describedby (matching
@@ -873,7 +873,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
-        <StatusMessage variant={createIndexesMessage ? (createIndexesMessage.isError ? 'error' : 'info') : undefined} message={createIndexesMessage?.text} />
+        <StatusMessage variant={createIndexesMessage ? (createIndexesMessage.isError ? 'error' : 'success') : undefined} message={createIndexesMessage?.text} />
         {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
           <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
@@ -905,7 +905,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
         </GcdsButton>
-        <StatusMessage variant={dropIndexesMessage ? (dropIndexesMessage.isError ? 'error' : 'info') : undefined} message={dropIndexesMessage?.text} />
+        <StatusMessage variant={dropIndexesMessage ? (dropIndexesMessage.isError ? 'error' : 'success') : undefined} message={dropIndexesMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -933,7 +933,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
         </GcdsButton>
-        <StatusMessage variant={indexStatusMessage ? (indexStatusMessage.isError ? 'error' : 'info') : undefined} message={indexStatusMessage?.text} />
+        <StatusMessage variant={indexStatusMessage ? (indexStatusMessage.isError ? 'error' : 'success') : undefined} message={indexStatusMessage?.text} />
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
             <div
@@ -1003,7 +1003,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
         </GcdsButton>
-        <StatusMessage variant={deleteSystemLogsMessage ? (deleteSystemLogsMessage.isError ? 'error' : 'info') : undefined} message={deleteSystemLogsMessage?.text} />
+        <StatusMessage variant={deleteSystemLogsMessage ? (deleteSystemLogsMessage.isError ? 'error' : 'success') : undefined} message={deleteSystemLogsMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -1019,7 +1019,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
         </GcdsButton>
-        <StatusMessage variant={repairTimestampsMessage ? (repairTimestampsMessage.isError ? 'error' : 'info') : undefined} message={repairTimestampsMessage?.text} />
+        <StatusMessage variant={repairTimestampsMessage ? (repairTimestampsMessage.isError ? 'error' : 'success') : undefined} message={repairTimestampsMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -1035,7 +1035,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
         </GcdsButton>
-        <StatusMessage variant={deleteAllBatchesMessage ? (deleteAllBatchesMessage.isError ? 'error' : 'info') : undefined} message={deleteAllBatchesMessage?.text} />
+        <StatusMessage variant={deleteAllBatchesMessage ? (deleteAllBatchesMessage.isError ? 'error' : 'success') : undefined} message={deleteAllBatchesMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -1051,7 +1051,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
         </GcdsButton>
-        <StatusMessage variant={repairExpertFeedbackMessage ? (repairExpertFeedbackMessage.isError ? 'error' : 'info') : undefined} message={repairExpertFeedbackMessage?.text} />
+        <StatusMessage variant={repairExpertFeedbackMessage ? (repairExpertFeedbackMessage.isError ? 'error' : 'success') : undefined} message={repairExpertFeedbackMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -1067,7 +1067,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
         </GcdsButton>
-        <StatusMessage variant={migratePublicFeedbackMessage ? (migratePublicFeedbackMessage.isError ? 'error' : 'info') : undefined} message={migratePublicFeedbackMessage?.text} />
+        <StatusMessage variant={migratePublicFeedbackMessage ? (migratePublicFeedbackMessage.isError ? 'error' : 'success') : undefined} message={migratePublicFeedbackMessage?.text} />
       </div>
 
       <div className="mb-400">
@@ -1076,7 +1076,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleRepairQaMatchScores} disabled={isRepairingQaMatchScores} buttonRole="secondary" className="mb-200">
           {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
-        <StatusMessage variant={repairQaMatchScoresMessage ? (repairQaMatchScoresMessage.isError ? 'error' : 'info') : undefined} message={repairQaMatchScoresMessage?.text} />
+        <StatusMessage variant={repairQaMatchScoresMessage ? (repairQaMatchScoresMessage.isError ? 'error' : 'success') : undefined} message={repairQaMatchScoresMessage?.text} />
       </div>
     </GcdsContainer >
   );

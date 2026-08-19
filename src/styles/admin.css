@@ -1267,7 +1267,11 @@
    while a chunked import is running). Extracted from its previous inline
    style — same margin/color, no design change — so it's a class to build
    on later (e.g. a real progress bar) instead of inline styles. Not used
-   anywhere else. */
+   anywhere else.
+   TODO: color: blue is a raw named color carried over from the old inline
+   style, not a GC DS token — swap for the appropriate --gcds-color-* token
+   when this gets its design pass (see the real progress bar TODO next to
+   its call site in DatabasePage.js). */
 .status-message--progress {
   margin: 12px 0;
   color: blue;

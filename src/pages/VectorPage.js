@@ -171,6 +171,15 @@ const VectorPage = ({ lang = 'en' }) => {
   // is what stops the auto-updating content, so no separate pause control
   // is needed here (unlike BatchList/SessionPage, which refresh
   // unconditionally regardless of any admin action).
+  //
+  // TODO: the network call itself (getMetadataBackfillJob every 5s) has no
+  // stop condition tied to the job reaching a terminal state — the
+  // same-value guards below (failed/completed) stop redundant state
+  // updates/re-renders once the message has settled, but setInterval keeps
+  // firing the request indefinitely if the admin leaves this page open
+  // without clicking "Clear metadata". Pre-existing (predates this PR),
+  // not fixed here — worth tying the interval to isActive/isDismissed if
+  // this section gets reworked.
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
