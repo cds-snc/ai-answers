@@ -8,6 +8,7 @@ import VectorService from '../../services/VectorService.js';
 import { buildChatReviewLinkHtml } from '../../utils/reviewLink.js';
 import StatusMessage from './StatusMessage.js';
 import FeedbackInlineError from '../chat/FeedbackInlineError.js';
+import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 
 DataTable.use(DT);
 
@@ -20,8 +21,17 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
   // Field-tied validation ("enter a chat ID"), not a page-level outcome —
   // FeedbackInlineError + aria-describedby, matching VectorPage.js's
   // metadata lookup pattern (see AGENTS.md's "StatusMessage vs. form-field
-  // errors").
-  const [chatIdError, setChatIdError] = useState(null);
+  // errors"). useInlineFormError (not plain useState) so errorCount
+  // increments on every triggerError(), forcing FeedbackInlineError's
+  // key={errorCount} to mount a fresh node and re-announce even a repeat
+  // identical failure — see AGENTS.md's FeedbackInlineError reuse note.
+  const {
+    hasError: hasChatIdError,
+    errorCount: chatIdErrorCount,
+    errorRef: chatIdErrorRef,
+    triggerError: triggerChatIdError,
+    clearError: clearChatIdError,
+  } = useInlineFormError();
   // Was window.alert() for both branches below — never caught by the
   // earlier StatusMessage migration pass since it was never StatusMessage
   // to begin with.
@@ -29,10 +39,10 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
 
   const fetchSimilarChats = async () => {
     if (!chatId) {
-      setChatIdError(t('vector.enterChatId'));
+      triggerChatIdError();
       return;
     }
-    setChatIdError(null);
+    clearChatIdError();
     setFetchMessage(null);
     setLoading(true);
     try {
@@ -65,8 +75,13 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         <label htmlFor="similar-chats-chat-id" className="sr-only">
           {t('vector.chatIdPlaceholder')}
         </label>
-        {chatIdError && (
-          <FeedbackInlineError id="similar-chats-chat-id-error" message={chatIdError} />
+        {hasChatIdError && (
+          <FeedbackInlineError
+            id="similar-chats-chat-id-error"
+            message={t('vector.enterChatId')}
+            errorCount={chatIdErrorCount}
+            inputRef={chatIdErrorRef}
+          />
         )}
         <input
           id="similar-chats-chat-id"
@@ -74,11 +89,11 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
           value={chatId}
           onChange={e => {
             setChatId(e.target.value);
-            setChatIdError(null);
+            clearChatIdError();
             setFetchMessage(null);
           }}
           placeholder={t('vector.chatIdPlaceholder')}
-          aria-describedby={chatIdError ? 'similar-chats-chat-id-error' : undefined}
+          aria-describedby={hasChatIdError ? 'similar-chats-chat-id-error' : undefined}
           className="input input-bordered mr-2"
         />
         <GcdsButton

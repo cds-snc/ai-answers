@@ -66,6 +66,18 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // meant to combine this way. Few enough occurrences that it may not be worth
 // a dedicated component yet — flagging as a pattern to watch, not deciding
 // either way.
+//
+// `nonce` exists for exactly these persistent+sr-only announcers: a plain
+// `message` string is only re-announced when its *value* changes, so a
+// repeated action with an identical outcome (e.g. running the same probe
+// twice with the same pass/fail result) sets the same string, React bails
+// on the no-op update, and the second occurrence is silently un-announced.
+// Passing a value that changes on every trigger (a counter, a timestamp —
+// anything, its content is never read) as `nonce` folds it into the
+// rendered element's `key`, which forces a remount — same technique as
+// FeedbackInlineError's `key={errorCount}`, generalized here since variant/
+// loading callers render a fresh one-off outcome each time and don't need
+// it. Optional; omit it for that common case.
 // `loading` and `variant` are resolved through one lookup (resolveLook,
 // below) rather than three separate hand-synced conditionals — that used to
 // be the failure mode here: `loading` shipped with its content/className
@@ -138,7 +150,7 @@ function resolveLook({ variant, loading, message, isError, children }) {
 }
 
 const StatusMessage = React.forwardRef((
-  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, persistent = false, variant, children },
+  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, persistent = false, variant, children, nonce },
   ref
 ) => {
   const look = resolveLook({ variant, loading, message, isError, children });
@@ -161,6 +173,7 @@ const StatusMessage = React.forwardRef((
     if (!persistent) return null;
     return (
       <Tag
+        key={nonce}
         ref={ref}
         id={id}
         role={look.isError ? 'alert' : 'status'}
@@ -172,6 +185,7 @@ const StatusMessage = React.forwardRef((
   }
   return (
     <Tag
+      key={nonce}
       ref={ref}
       id={id}
       role={look.isError ? 'alert' : 'status'}

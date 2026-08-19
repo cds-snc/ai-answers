@@ -230,6 +230,12 @@ commits) — check new code follows it rather than reinventing it:
 - Live regions (`aria-live`, `role="alert"/"status"`) are used for dynamic
   content that needs to be announced (errors, async results, loading state)
   — and not overused to the point of announcement spam.
+- A live region announces a *change*, not a value. If a message is set
+  directly from state that's never reset between triggers, a repeated
+  action with the same outcome could render identical text — React makes no
+  DOM mutation, and AT gets nothing after the first time. Static reading
+  can't confirm this either way — report it as `Needs validation:` (see
+  "How to review" below), not as a pass or a fail.
 - No redundant/conflicting roles (e.g. `role="button"` on an actual
   `<button>`).
 
@@ -306,3 +312,13 @@ commits) — check new code follows it rather than reinventing it:
 For each finding give: the file/line, what's wrong, which WCAG 2.1 AA
 success criterion it violates, and the concrete fix (not just "improve
 accessibility").
+
+Since review here is static reading, not a driven browser session, some
+risks can be spotted in code but not confirmed from code alone — most
+commonly, whether a live region's content actually changes on a repeat
+trigger (see ARIA usage above). Don't report these as a normal severity
+finding. Report them as a separate `Needs validation:` item instead: the
+file/line, the specific risk, and the exact steps a human needs to take in
+a running app to check it (e.g. "click Get stats twice; confirm whether the
+sr-only announcement fires the second time"). List these after the
+severity-ordered findings, not mixed into them.

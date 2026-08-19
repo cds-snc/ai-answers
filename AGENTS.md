@@ -284,6 +284,44 @@ field via `id`/`aria-describedby` and moves focus to it on submit failure (`inpu
 for a field-level error, and don't reach for the form-error family for a page-level
 outcome that isn't about one input.
 
+**`FeedbackInlineError` needs `errorCount`, or repeat identical failures go silent.**
+`FeedbackInlineError` renders `<p key={errorCount} role="alert">` — the `key` is what
+forces React to mount a fresh DOM node (and therefore re-announce/re-focus) on every
+trigger. If a call site sets its error message with plain `useState` + `setError(text)`
+instead of passing `errorCount`, then two submits in a row with the *same* invalid input
+(e.g. an empty required field clicked twice with no edit in between) produce the same
+string both times — React bails on the identical-value update, the DOM never mutates,
+and the second failure is silently un-announced to screen-reader users. This has shipped
+more than once from copying an existing field-error call site that itself never passed
+`errorCount` (`DatabasePage.js`'s `fileSelectError` is one such precedent — don't copy it
+further).
+
+For a single required-field validation (the common case: "you must fill in / select
+this"), use `src/hooks/useInlineFormError.js` instead of a bare `useState`:
+
+```jsx
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
+
+const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
+
+// on invalid submit: triggerError();  (increments errorCount even on repeat failures)
+// on valid input / value change: clearError();
+
+{hasError && (
+  <FeedbackInlineError
+    id="my-field-error"
+    message={t('my.field.error')}
+    errorCount={errorCount}
+    inputRef={errorRef}
+  />
+)}
+```
+
+See `PublicFeedbackComponent.js` / `ExpertFeedbackComponent.js` for the established
+usage. If a field's error text genuinely varies per failure (not just a fixed message),
+a bare `useState` is fine, but the `<FeedbackInlineError>` still needs an `errorCount`
+that increments on every trigger — derive it from a counter, not from the message text.
+
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 
 ```js

@@ -8,6 +8,7 @@ import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js'
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
 
 const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
 
@@ -67,6 +68,11 @@ const VectorPage = ({ lang = 'en' }) => {
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Bumped on every stats fetch so StatusMessage's `nonce` forces the
+  // sr-only "stats loaded" region to re-announce even when stats are
+  // fetched twice in a row with an identical result (same string both
+  // times, which React would otherwise treat as a no-op update).
+  const [vectorStatsAnnounceNonce, setVectorStatsAnnounceNonce] = useState(0);
   // { type: 'success' | 'error', text } per action — was window.alert() for
   // every one of these; not caught by the earlier StatusMessage migration
   // pass since these never went through StatusMessage at all (this was
@@ -84,12 +90,33 @@ const VectorPage = ({ lang = 'en' }) => {
   // gets a real, visible metadataBackfillMessage error box below — that's
   // worth interrupting for.
   const [metadataBackfillStopAnnouncement, setMetadataBackfillStopAnnouncement] = useState(null);
+  // Bumped alongside metadataBackfillStopAnnouncement — see
+  // vectorStatsAnnounceNonce above for why (stopping the same job's backfill
+  // twice in a row would otherwise produce an identical string that React
+  // wouldn't re-render for).
+  const [metadataBackfillStopAnnounceNonce, setMetadataBackfillStopAnnounceNonce] = useState(0);
   // Validation errors tied to one specific field, not an async outcome —
-  // FeedbackInlineError + aria-describedby, matching DatabasePage.js's
-  // fileSelectError, not StatusMessage (see AGENTS.md's "StatusMessage vs.
-  // form-field errors").
-  const [metadataDelayError, setMetadataDelayError] = useState(null);
-  const [metadataLookupChatIdError, setMetadataLookupChatIdError] = useState(null);
+  // FeedbackInlineError + aria-describedby, not StatusMessage (see AGENTS.md's
+  // "StatusMessage vs. form-field errors"). useInlineFormError (not a plain
+  // useState) so errorCount increments on every triggerError() call, even a
+  // repeat identical failure — that's what makes FeedbackInlineError's
+  // key={errorCount} mount a fresh DOM node and re-announce/re-focus on
+  // repeat submits, same pattern as PublicFeedbackComponent.js/
+  // ExpertFeedbackComponent.js.
+  const {
+    hasError: hasMetadataDelayError,
+    errorCount: metadataDelayErrorCount,
+    errorRef: metadataDelayErrorRef,
+    triggerError: triggerMetadataDelayError,
+    clearError: clearMetadataDelayError,
+  } = useInlineFormError();
+  const {
+    hasError: hasMetadataLookupChatIdError,
+    errorCount: metadataLookupChatIdErrorCount,
+    errorRef: metadataLookupChatIdErrorRef,
+    triggerError: triggerMetadataLookupChatIdError,
+    clearError: clearMetadataLookupChatIdError,
+  } = useInlineFormError();
   const [docdb8CapabilityResults, setDocdb8CapabilityResults] = useState({});
   const [docdb8CapabilityLoadingProbe, setDocdb8CapabilityLoadingProbe] = useState(null);
   const [docdb8CapabilityErrors, setDocdb8CapabilityErrors] = useState({});
@@ -99,6 +126,11 @@ const VectorPage = ({ lang = 'en' }) => {
   // success (the common case) was silent. persistent sr-only live regions,
   // same pattern as ConnectivityPage.js's test-completion summary.
   const [docdb8LastProbeAnnouncement, setDocdb8LastProbeAnnouncement] = useState(null);
+  // Bumped alongside docdb8LastProbeAnnouncement — see
+  // vectorStatsAnnounceNonce above for why (running the same probe twice in
+  // a row with the same pass/fail result would otherwise produce an
+  // identical string that React wouldn't re-render for).
+  const [docdb8AnnounceNonce, setDocdb8AnnounceNonce] = useState(0);
 
   // Embedding functionality state
   const [embeddingProgress, setEmbeddingProgress] = useState(null);
@@ -157,6 +189,21 @@ const VectorPage = ({ lang = 'en' }) => {
           setMetadataDelaySecondsInput(String((job.delayMs || 0) / 1000));
         }
         if (isDismissed) return;
+        // TODO (review): this write to metadataBackfillMessage races with
+        // the same state being set imperatively by handleBackfillMetadata /
+        // handleStopMetadataBackfill's success and catch paths. dismissedJobIdRef
+        // guards the Clear path against exactly this class of race, but Resume/
+        // Restart/Stop have no equivalent guard: if a poll request fired before
+        // one of those handlers ran is still in flight when the handler's own
+        // (fresher, correct) message is set, the late poll response can land
+        // after it and overwrite it with stale failed/completed text. Narrow
+        // timing window and self-corrects on the next 5s tick, so low severity
+        // as-is — but the fix (a generation counter bumped by each mutating
+        // handler and checked here before applying a poll-derived message,
+        // same idea as dismissedJobIdRef but general) belongs with whatever
+        // pass reworks this section's button-group layout, not bolted on
+        // alone.
+        //
         // A job can fail asynchronously, discovered by this poll rather than
         // a direct start/stop catch block — same failure text, same
         // metadataBackfillMessage StatusMessage, so it's actually announced
@@ -197,6 +244,7 @@ const VectorPage = ({ lang = 'en' }) => {
     try {
       const data = await VectorService.getStats();
       setVectorStats(data);
+      setVectorStatsAnnounceNonce((n) => n + 1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -292,10 +340,10 @@ const VectorPage = ({ lang = 'en' }) => {
     if (isBackfillingMetadata) return;
     const delaySeconds = Number(metadataDelaySecondsInput);
     if (!Number.isFinite(delaySeconds) || delaySeconds < 0 || delaySeconds > 300) {
-      setMetadataDelayError(t('vector.metadataDelayInvalid'));
+      triggerMetadataDelayError();
       return;
     }
-    setMetadataDelayError(null);
+    clearMetadataDelayError();
 
     setIsBackfillingMetadata(true);
     setStopMetadataBackfill(false);
@@ -333,6 +381,7 @@ const VectorPage = ({ lang = 'en' }) => {
       }
       setStopMetadataBackfill(true);
       setMetadataBackfillStopAnnouncement(t('vector.metadataBackfillStoppedAnnouncement'));
+      setMetadataBackfillStopAnnounceNonce((n) => n + 1);
     } catch (err) {
       console.error('Error stopping embedding metadata backfill:', err);
       // Was vector.metadataBackfillFailed ("Failed to backfill...") — wrong
@@ -382,13 +431,12 @@ const VectorPage = ({ lang = 'en' }) => {
     handleBackfillMetadata({ restartJobId: metadataProgress?.jobId || null });
   };
 
-  const handleRunDocdb8CapabilityTest = async (probe) => {
+  const handleRunDocdb8CapabilityTest = async (probe, probeLabel) => {
     setDocdb8CapabilityLoadingProbe(probe);
     setDocdb8CapabilityErrors((current) => ({
       ...current,
       [probe]: null,
     }));
-    const probeLabel = getDocdb8ProbeDefinitions(t).find((p) => p.key === probe)?.label || probe;
     try {
       const data = await VectorService.runDocdb8CapabilityTest(probe);
       setDocdb8CapabilityResults((current) => ({
@@ -397,9 +445,10 @@ const VectorPage = ({ lang = 'en' }) => {
       }));
       setDocdb8LastProbeAnnouncement(
         t('vector.docdb8Capability.probeComplete')
-          .replace('{label}', probeLabel)
-          .replace('{status}', data?.test?.supported ? t('vector.docdb8Capability.pass') : t('vector.docdb8Capability.fail'))
+          .replace('{label}', () => probeLabel)
+          .replace('{status}', () => (data?.test?.supported ? t('vector.docdb8Capability.pass') : t('vector.docdb8Capability.fail')))
       );
+      setDocdb8AnnounceNonce((n) => n + 1);
     } catch (err) {
       setDocdb8CapabilityErrors((current) => ({
         ...current,
@@ -407,9 +456,10 @@ const VectorPage = ({ lang = 'en' }) => {
       }));
       setDocdb8LastProbeAnnouncement(
         t('vector.docdb8Capability.probeComplete')
-          .replace('{label}', probeLabel)
-          .replace('{status}', t('vector.docdb8Capability.fail'))
+          .replace('{label}', () => probeLabel)
+          .replace('{status}', () => t('vector.docdb8Capability.fail'))
       );
+      setDocdb8AnnounceNonce((n) => n + 1);
     } finally {
       setDocdb8CapabilityLoadingProbe(null);
     }
@@ -418,10 +468,10 @@ const VectorPage = ({ lang = 'en' }) => {
   const handleMetadataLookup = async () => {
     const trimmedChatId = metadataLookupChatId.trim();
     if (!trimmedChatId) {
-      setMetadataLookupChatIdError(t('vector.metadataLookup.chatIdRequired'));
+      triggerMetadataLookupChatIdError();
       return;
     }
-    setMetadataLookupChatIdError(null);
+    clearMetadataLookupChatIdError();
     setMetadataLookupLoading(true);
     setMetadataLookupError(null);
     try {
@@ -489,7 +539,7 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <StatusMessage variant={error ? 'error' : undefined} message={error} />
         <StatusMessage variant={indexMessage?.type} message={indexMessage?.text} />
-        <StatusMessage persistent message={vectorStats ? t('vector.statsLoaded') : undefined} className="sr-only" />
+        <StatusMessage persistent message={vectorStats ? t('vector.statsLoaded') : undefined} nonce={vectorStatsAnnounceNonce} className="sr-only" />
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -504,7 +554,7 @@ const VectorPage = ({ lang = 'en' }) => {
           {docdb8ProbeDefinitions.map((probe) => (
             <GcdsButton
               key={probe.key}
-              onClick={() => handleRunDocdb8CapabilityTest(probe.key)}
+              onClick={() => handleRunDocdb8CapabilityTest(probe.key, probe.label)}
               disabled={docdb8CapabilityLoadingProbe === probe.key}
               className="mb-200 mr-200"
             >
@@ -512,7 +562,7 @@ const VectorPage = ({ lang = 'en' }) => {
             </GcdsButton>
           ))}
         </div>
-        <StatusMessage persistent message={docdb8LastProbeAnnouncement} className="sr-only" />
+        <StatusMessage persistent message={docdb8LastProbeAnnouncement} nonce={docdb8AnnounceNonce} className="sr-only" />
         <GcdsText>
           {t('vector.docdb8Capability.singleProbeDescription')}
         </GcdsText>
@@ -604,8 +654,13 @@ const VectorPage = ({ lang = 'en' }) => {
           <label htmlFor="metadata-backfill-delay-seconds" className="display-block mb-100">
             {t('vector.metadataDelayLabel')}
           </label>
-          {metadataDelayError && (
-            <FeedbackInlineError id="metadata-backfill-delay-seconds-error" message={metadataDelayError} />
+          {hasMetadataDelayError && (
+            <FeedbackInlineError
+              id="metadata-backfill-delay-seconds-error"
+              message={t('vector.metadataDelayInvalid')}
+              errorCount={metadataDelayErrorCount}
+              inputRef={metadataDelayErrorRef}
+            />
           )}
           <input
             id="metadata-backfill-delay-seconds"
@@ -616,14 +671,17 @@ const VectorPage = ({ lang = 'en' }) => {
             inputMode="numeric"
             value={metadataDelaySecondsInput}
             onChange={(e) => {
+              // Only this field's own validation error is cleared here — the
+              // job-outcome messages (backfill/clear/stop) describe the job,
+              // not this input, and shouldn't disappear just because the
+              // admin is typing a delay value with no action submitted yet
+              // (previously this hid an active "Backfill failed" message for
+              // up to 5s with no failure indication anywhere on screen).
               setMetadataDelaySecondsInput(e.target.value);
-              setMetadataDelayError(null);
-              setMetadataBackfillMessage(null);
-              setMetadataClearMessage(null);
-              setMetadataBackfillStopAnnouncement(null);
+              clearMetadataDelayError();
             }}
             disabled={isBackfillingMetadata}
-            aria-describedby={metadataDelayError ? 'metadata-backfill-delay-seconds-error' : undefined}
+            aria-describedby={hasMetadataDelayError ? 'metadata-backfill-delay-seconds-error' : undefined}
             className="mr-200"
           />
           <GcdsText>
@@ -673,7 +731,7 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <StatusMessage variant={metadataBackfillMessage?.type} message={metadataBackfillMessage?.text} />
         <StatusMessage variant={metadataClearMessage?.type} message={metadataClearMessage?.text} />
-        <StatusMessage persistent message={metadataBackfillStopAnnouncement} className="sr-only" />
+        <StatusMessage persistent message={metadataBackfillStopAnnouncement} nonce={metadataBackfillStopAnnounceNonce} className="sr-only" />
         {/* TODO (review): this "processed: X, remaining: Y, [active/stopped/
             failed]" block is a live-updating status (refreshed by the
             useEffect poll above, every 5s while a backfill job is active)
@@ -797,8 +855,13 @@ const VectorPage = ({ lang = 'en' }) => {
           <label htmlFor="metadata-lookup-chat-id" className="display-block mb-100">
             {t('vector.metadataLookup.chatIdLabel')}
           </label>
-          {metadataLookupChatIdError && (
-            <FeedbackInlineError id="metadata-lookup-chat-id-error" message={metadataLookupChatIdError} />
+          {hasMetadataLookupChatIdError && (
+            <FeedbackInlineError
+              id="metadata-lookup-chat-id-error"
+              message={t('vector.metadataLookup.chatIdRequired')}
+              errorCount={metadataLookupChatIdErrorCount}
+              inputRef={metadataLookupChatIdErrorRef}
+            />
           )}
           <input
             id="metadata-lookup-chat-id"
@@ -806,12 +869,12 @@ const VectorPage = ({ lang = 'en' }) => {
             value={metadataLookupChatId}
             onChange={(e) => {
               setMetadataLookupChatId(e.target.value);
-              setMetadataLookupChatIdError(null);
+              clearMetadataLookupChatIdError();
               setMetadataLookupError(null);
             }}
             placeholder={t('vector.chatIdPlaceholder')}
             disabled={metadataLookupLoading}
-            aria-describedby={metadataLookupChatIdError ? 'metadata-lookup-chat-id-error' : undefined}
+            aria-describedby={hasMetadataLookupChatIdError ? 'metadata-lookup-chat-id-error' : undefined}
             className="mr-200"
           />
           <GcdsButton
