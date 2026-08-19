@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.189.1](https://github.com/cds-snc/ai-answers/compare/v1.189.0...v1.189.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* Jennifer review and style guide ([be9997c](https://github.com/cds-snc/ai-answers/commit/be9997c68ff23b8054d7c5b87fbdc14ae2216b7f))
+
 ## [1.189.0](https://github.com/cds-snc/ai-answers/compare/v1.188.1...v1.189.0) (2026-08-19)
 
 
