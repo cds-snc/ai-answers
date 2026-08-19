@@ -403,7 +403,7 @@
       "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
-      "scenarioOverrides": "Remplacements de scénarios",
+      "scenarioOverrides": "Modifier les scénarios",
       "connectivity": "Connectivité du service",
       "autoEvalDashboard": "Tableau de bord des évaluations automatiques"
     },
@@ -566,6 +566,8 @@
     "howTo": {
       "title": "Comment faire",
       "evalInformedAnswers": "Réponses informées par les évaluations",
+      "evaluateAnswers": "Évaluer les réponses",
+      "partnerOnboarding": "Intégration des partenaires",
       "loading": "Chargement...",
       "loadError": "Impossible de charger ce guide.",
       "notFoundTitle": "Guide introuvable",
@@ -1949,17 +1951,17 @@
     }
   },
   "scenarioOverrides": {
-    "title": "Remplacements de scénarios",
+    "title": "Modifier et tester les scénarios",
     "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté ! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
     "description2": "Si vous êtes satisfait des modifications, alertez l'équipe Réponses IA, copiez et collez la version modifiée pour eux, et ils effectueront et publieront les modifications dans le produit Réponses IA en direct.",
     "sections": {
-      "editOverride": "Modifier le remplacement",
+      "editOverride": "Modifier",
       "visualDiff": "Différence visuelle (côte à côte)"
     },
     "table": {
       "department": "Ministère",
-      "defaultLabel": "Texte du scénario par défaut",
-      "overrideLabel": "Texte de remplacement",
+      "defaultLabel": "Texte du scénario original",
+      "overrideLabel": "Texte modifié",
       "enabled": "Appliquer les modifications",
       "showDiff": "Afficher la différence",
       "hideDiff": "Masquer la différence",
@@ -1968,12 +1970,12 @@
     },
     "status": {
       "saving": "Enregistrement...",
-      "saveSuccess": "Remplacement enregistré.",
-      "saveError": "Impossible d’enregistrer le remplacement.",
-      "loadError": "Impossible de charger les remplacements."
+      "saveSuccess": "Modifications enregistrées.",
+      "saveError": "Impossible d’enregistrer les modifications.",
+      "loadError": "Impossible de charger les modifications."
     },
     "buttons": {
-      "save": "Enregistrer le remplacement",
+      "save": "Enregistrer les modifications",
       "reset": "Réinitialiser"
     },
     "error": {

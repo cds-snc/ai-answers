@@ -566,6 +566,8 @@
     "howTo": {
       "title": "How to",
       "evalInformedAnswers": "Evaluation-informed answers",
+      "evaluateAnswers": "Evaluate answers",
+      "partnerOnboarding": "Partner onboarding",
       "loading": "Loading...",
       "loadError": "Unable to load this guide.",
       "notFoundTitle": "Guide not found",
