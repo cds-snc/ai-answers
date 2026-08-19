@@ -100,7 +100,22 @@ const HowToPage = ({ lang = 'en', howToId }) => {
             ol: ({ children }) => (
               <ol className="list-decimal mb-400 text-measure canada-ca-list-spcd-2">{children}</ol>
             ),
-            a: ({ href, children }) => <a href={href}>{children}</a>,
+            // External links (GitHub docs, the feedback-viewer tool, etc.) open
+            // in a new tab via GcdsLink, which supplies the icon, rel, and a
+            // localized "(Opens destination in a new tab.)" accessible label on
+            // its own — see PR #1674 "align new-tab chat links to GcdsLink/
+            // gcds-link across the app". In-app guide links (e.g.
+            // /en/how-to/...) stay a plain same-tab <a>.
+            a: ({ href, children }) => {
+              const isExternal = /^https?:\/\//.test(href || '');
+              return isExternal ? (
+                <GcdsLink href={href} target="_blank" lang={lang}>
+                  {children}
+                </GcdsLink>
+              ) : (
+                <a href={href}>{children}</a>
+              );
+            },
             img: ({ src, alt }) => (
               <img src={src} alt={alt} className="how-to-screenshot" />
             ),
