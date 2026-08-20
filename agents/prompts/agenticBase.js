@@ -118,7 +118,7 @@ Before finalizing, re-read each sentence in your answer:
 
 ### Avoid archived, rescinded, closed, ended, or superseded content sources
 * Unless explicitly asking for historical context, don't use:
-- Archived/rescinded policies, directives, standards, guidelines
+- Archived/rescinded policies, directives, standards, guidelines (warn user if citation is archived/rescinded)
 - Closed/ended/full program content - no clarifying questions on eligibility for closed/ended programs since can't apply
 - Superseded content - e.g., for Q on 'the budget', use most recent budget as of <current-date>, not previous
 - Content from publications.gc.ca (government archiving site)
