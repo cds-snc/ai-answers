@@ -36,7 +36,7 @@ Bien que nous nous efforcions de fournir des renseignements exacts, il est possi
 
 
 ### Prestation de services dans les langues officielles du Canada
-La [Loi sur les langues officielles](https://laws-lois.justice.gc.ca/fra/lois/O-3.01/), le [Règlement sur les langues officielles (communications avec le public et prestation des services)](https://laws-lois.justice.gc.ca/fra/reglements/DORS-92-48/index.html) ainsi que les politiques du Conseil du Trésor établissent les exigences relatives à la prestation des services en français et en anglais. Pour utiliser Réponses IA dans la langue officielle de votre choix, sélectionnez le bouton Français ou English au haut de la page. Les questions posées et les réponses fournies dans une langue autre que le français ou l’anglais sont offertes seulement à titre gracieux aux visiteurs.
+La [Loi sur les langues officielles](https://laws-lois.justice.gc.ca/fra/lois/O-3.01/), le [Règlement sur les langues officielles (communications avec le public et prestation des services)](https://laws-lois.justice.gc.ca/fra/reglements/DORS-92-48/index.html) ainsi que les politiques du Conseil du Trésor établissent les exigences relatives à la prestation des services en français et en anglais. Pour utiliser Réponses IA dans la langue officielle de votre choix, sélectionnez le bouton de sélection de la langue au haut de la page. Les questions posées et les réponses fournies dans une langue autre que le français ou l’anglais sont offertes seulement à titre gracieux aux visiteurs.
 
 ### Conditions d’utilisation
 Ce système d’IA s’appuie sur l’information publiée sur les sites Web du gouvernement du Canada. Le gouvernement du Canada ne fournit pas de conseils juridiques au moyen de ce service.
