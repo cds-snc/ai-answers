@@ -785,40 +785,29 @@
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
-      "resultsSummary": "Affichage de {count} chats",
-      "totalCount": "Total des chats correspondants : {total}",
-      "interactionCountFiltered": "{count} (+{more} de plus)",
-      "searchLabel": "Rechercher par ID de chat :",
-      "searchPlaceholder": "Entrez l'ID de chat...",
+      "noSearchResults": "Aucun résultat de recherche trouvé.",
+      "searchLabel": "Rechercher :",
+      "searchPlaceholder": "Rechercher un terme dans les colonnes (p. ex. impôts)",
+      "searchTermPillLabel": "Recherche : {term}",
       "columns": {
         "chatId": "ID de chat",
-        "interactionCount": "Longueur",
         "department": "Ministère",
         "pageLanguage": "Page",
         "expertEmail": "Courriel de l'expert",
         "creatorEmail": "Courriel du créateur",
         "language": "Langue",
         "questionCount": "Questions",
-        "question": "Question 1",
+        "question": "Question",
+        "answer": "Réponse",
+        "program": "Service",
+        "citationUrl": "Lien de citation",
         "createdAt": "Créé",
         "referringUrl": "URL de référence",
         "date": "Date",
-        "userType": "Type d'utilisateur",
-        "answerType": "Type de réponse",
         "partnerEval": "Évaluation partenaire",
         "aiEval": "Évaluation IA"
       },
       "labels": {
-        "userType": {
-          "public": "public",
-          "admin": "admin"
-        },
-        "answerType": {
-          "normal": "normal",
-          "clarifying-question": "clarification",
-          "pt-muni": "pt-muni",
-          "not-gc": "non-GC"
-        },
         "evaluation": {
           "correct": "correct",
           "needsImprovement": "nécessite amélioration",
@@ -833,8 +822,7 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
-      },
-      "columnFilterPlaceholder": "Filtrer"
+      }
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
