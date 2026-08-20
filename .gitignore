@@ -60,3 +60,7 @@ server*.log
 
 # Test artifact written to the repo root by services/comparators/__tests__/pinpoint.test.js
 model_stress_test.txt
+
+# Local-only dev scaffolding, not meant for the repo - see chat history for
+# context if this needs regenerating.
+scripts/seed-chat-dashboard-mock-data.js

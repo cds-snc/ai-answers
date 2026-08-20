@@ -107,6 +107,15 @@ async function chatDashboardHandler(req, res) {
       initialMatch.createdAt = dateRange;
     }
 
+    // TODO: cursor/batch mode (no `length` param - currently unused by any
+    // caller, the UI always sends `length`) filters on Chat._id here, but
+    // the final $project below reassigns the response's _id to the
+    // interaction's own _id, so the lastId this mode returns no longer
+    // matches what this filter expects on the next call. Dormant today
+    // since nothing exercises this path, but a live landmine for any
+    // future caller of the non-DataTables mode. Needs its own cursor field
+    // (e.g. filter on the underlying Chat _id explicitly, separate from the
+    // response row's _id) before anything relies on it again.
     let lastId = null;
     if (!isDataTablesMode && lastIdParam) {
       try {
@@ -147,6 +156,15 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+    // TODO: preserveNullAndEmptyArrays was true before this file's
+    // restructure to per-interaction rows; a chat with an empty or fully
+    // dangling `interactions` array now produces zero rows and is invisible
+    // in results/recordsTotal entirely, where it used to surface as one
+    // (mostly empty) row. Judgment call, not a clear bug: in a per-Q&A-row
+    // table there's arguably nothing to show for a chat with no
+    // interactions, but if Chat Dashboard needs to help spot broken/empty
+    // chat records, this quietly removed that visibility. Revisit if that
+    // turns out to matter.
     pipeline.push({
       $unwind: {
         path: '$interactions',
@@ -372,32 +390,32 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    // Handle search parameter for chatId (after projection, so applied against the final field)
-    const searchFilter = searchParam ? { chatId: { $regex: escapeRegex(searchParam), $options: 'i' } } : null;
-    if (searchFilter) {
-      pipeline.push({ $match: searchFilter });
-    }
-
-    // Handle per-column searches from the frontend (currently just the
-    // Service/program column) - same JSON-encoded columnSearch contract as
-    // eval-dashboard.js.
-    let columnSearch = req.query.columnSearch || null;
-    if (typeof columnSearch === 'string' && columnSearch.trim()) {
-      try {
-        columnSearch = JSON.parse(columnSearch);
-      } catch (err) {
-        console.warn('Failed to parse columnSearch filter', err);
-        columnSearch = null;
-      }
-    }
-    if (columnSearch && typeof columnSearch === 'object' && Object.keys(columnSearch).length) {
-      const andClauses = [];
-      for (const [col, val] of Object.entries(columnSearch)) {
-        const v = String(val || '').trim();
-        if (!v) continue;
-        andClauses.push({ [col]: { $regex: escapeRegex(v), $options: 'i' } });
-      }
-      if (andClauses.length) pipeline.push({ $match: { $and: andClauses } });
+    // Global search (after projection, so applied against the final,
+    // flattened fields) - matches across every displayed column, not just
+    // chatId, since the dashboard has a single search box for the whole
+    // table rather than per-column filters.
+    // TODO: this is an unanchored, case-insensitive $regex $or across 7
+    // fields (including full untruncated answerContent), with no text
+    // index, evaluated on every date-range-matched row before pagination -
+    // cost scales with total interaction volume in the date range, not
+    // page size. Fine at current admin-tool data volumes; revisit (a text
+    // index, or narrowing which fields participate) if search gets slow as
+    // data grows.
+    if (searchParam) {
+      const esc = escapeRegex(searchParam);
+      pipeline.push({
+        $match: {
+          $or: [
+            { chatId: { $regex: esc, $options: 'i' } },
+            { interactionId: { $regex: esc, $options: 'i' } },
+            { department: { $regex: esc, $options: 'i' } },
+            { program: { $regex: esc, $options: 'i' } },
+            { redactedQuestion: { $regex: esc, $options: 'i' } },
+            { answerContent: { $regex: esc, $options: 'i' } },
+            { citationUrl: { $regex: esc, $options: 'i' } }
+          ]
+        }
+      });
     }
 
     // Keep a copy of pipeline before adding sort/limit to calculate totalCount
@@ -423,12 +441,20 @@ async function chatDashboardHandler(req, res) {
     // Grouping by the chat's single, constant createdAt keeps all of a
     // chat's matching rows adjacent and in question order instead.
     // Explicit column sorts (Department, Service, etc.) keep the same
-    // chatCreatedAt/questionNumber pair as secondary tiebreakers, so rows
-    // that tie on the sorted column (e.g. same department) still cluster by
-    // chat rather than falling back to _id order alone.
+    // chatCreatedAt/chatId/questionNumber trio as secondary tiebreakers, so
+    // rows that tie on the sorted column (e.g. same department) still
+    // cluster by chat. chatId has to come BEFORE questionNumber here, not
+    // after (a $sort is lexicographic - questionNumber ahead of chatId
+    // would group every chat's Q1 together, then every chat's Q2, etc.,
+    // still interleaving whenever two chats tie on chatCreatedAt; chatId
+    // first groups by chat, then questionNumber orders within that chat's
+    // own block). It replaces the row's own post-$project _id (the
+    // interaction's id, not the chat's) as the tiebreaker specifically so
+    // two chats created in the same millisecond still group instead of
+    // interleaving.
     const sortStage = sortField === 'createdAt'
-      ? { $sort: { chatCreatedAt: orderDir, questionNumber: 1, _id: orderDir } }
-      : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, questionNumber: 1, _id: orderDir } };
+      ? { $sort: { chatCreatedAt: orderDir, chatId: orderDir, questionNumber: 1 } }
+      : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, chatId: -1, questionNumber: 1 } };
     pipeline.push(sortStage);
 
     if (isDataTablesMode) {

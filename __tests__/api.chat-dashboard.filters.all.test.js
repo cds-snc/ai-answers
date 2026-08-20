@@ -168,14 +168,39 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(sortStage.$sort.program).toBeDefined();
   });
 
-  it('supports columnSearch filtering on the program (Service) column', async () => {
+  // The Service column's own per-column filter box was removed for MVP -
+  // there's now a single global search box covering every displayed
+  // column server-side, rather than per-column filters.
+  it('matches the global search term against program (Service), not just chatId', async () => {
     await runHandler({
       startDate: new Date().toISOString(),
       endDate: new Date().toISOString(),
-      columnSearch: JSON.stringify({ program: 'Passport' })
+      search: 'Passport'
     });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    const pipelineStr = JSON.stringify(capturedPipeline);
-    expect(pipelineStr).toContain('Passport');
+    const matchStage = capturedPipeline.find(
+      (stage) => stage && stage.$match && stage.$match.$or
+    );
+    expect(matchStage).toBeDefined();
+    const programClause = matchStage.$match.$or.find((c) => c.program);
+    expect(programClause).toBeDefined();
+    expect(programClause.program.$regex).toBe('Passport');
+  });
+
+  it('matches the global search term against answerContent and citationUrl too', async () => {
+    await runHandler({
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      search: 'renew'
+    });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const matchStage = capturedPipeline.find(
+      (stage) => stage && stage.$match && stage.$match.$or
+    );
+    expect(matchStage).toBeDefined();
+    const searchedFields = matchStage.$match.$or.map((c) => Object.keys(c)[0]);
+    expect(searchedFields).toEqual(
+      expect.arrayContaining(['chatId', 'interactionId', 'department', 'program', 'redactedQuestion', 'answerContent', 'citationUrl'])
+    );
   });
 });

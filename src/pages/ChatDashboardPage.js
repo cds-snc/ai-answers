@@ -42,18 +42,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [tableKey, setTableKey] = useState(0);
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
-  const [recordsFiltered, setRecordsFiltered] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
+  // Tracks chat-group striping state across a single draw's rows (reset in
+  // preDrawCallback, mutated in createdRow as each row is built in order).
+  const chatGroupStateRef = useRef({ lastChatId: undefined, parity: 0 });
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
-    [lang]
-  );
 
   // Helper function to truncate URL to path only (max 3 segments)
   const truncateUrl = useCallback((url) => {
@@ -132,16 +130,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
-  const resultsSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.resultsSummary', 'Showing {count} questions');
-    return template.replace('{count}', numberFormatter.format(recordsFiltered));
-  }, [numberFormatter, recordsFiltered, t]);
-
-  const totalSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.totalCount', 'Total matching questions: {total}');
-    return template.replace('{total}', numberFormatter.format(recordsTotal));
-  }, [numberFormatter, recordsTotal, t]);
-
   const columns = useMemo(() => ([
     {
       title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
@@ -164,7 +152,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.program', 'Service'),
       data: 'program',
-      searchable: true,
+      searchable: false,
       orderable: true,
       render: (value, type, row) => {
         const display = (lang === 'fr' && row && row.programFr) ? row.programFr : value;
@@ -192,7 +180,15 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       orderable: false,
       render: (value) => {
         if (!value) return '';
-        return escapeHtmlAttribute(truncateUrl(value));
+        // <gcds-link> (not a plain <a>) to match every other DataTables-
+        // rendered link in this app (see buildChatReviewLinkHtml in
+        // reviewLink.js) - the custom element auto-upgrades once inserted
+        // and handles the new-tab icon/rel/accessible text itself. href is
+        // the full citation URL; the visible text stays the shorthand
+        // truncated form.
+        const safeHref = escapeHtmlAttribute(value);
+        const safeDisplay = escapeHtmlAttribute(truncateUrl(value));
+        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}">${safeDisplay}</gcds-link>`;
       }
     }
   ]), [renderAnswerText, truncateUrl, t, lang]);
@@ -218,7 +214,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           isVisible={true}
           filterLoading={loading}
           filterError={error}
-          filterResultCount={recordsTotal}
+          // While a search term is active, a zero count means the search
+          // didn't match anything - not that the filters themselves are
+          // wrong, so don't feed it into FilterPanel's own "reopen on zero
+          // results" logic (see the effect in FilterPanel.js keyed off
+          // filterResultCount === 0). Passing null there is a no-op for
+          // that effect, leaving the panel's open/closed state alone; the
+          // search-specific StatusMessage below covers this case instead.
+          filterResultCount={searchTerm ? null : recordsTotal}
           hasAppliedFilters={hasAppliedFilters}
         />
       </div>
@@ -232,22 +235,22 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         message={error ? `${t('admin.chatDashboard.error')} ${String(error)}` : null}
       />
 
-      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
+        <StatusMessage variant="info" message={t('admin.chatDashboard.noSearchResults')} />
+      )}
+
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && !searchTerm && (
         <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       {hasAppliedFilters && (
-        <div className="mt-200">
-          <div className="chat-dashboard-summary" role="status" aria-live="polite">
-            <output>{resultsSummary}</output>
-            <output>{totalSummary}</output>
-          </div>
+        <div>
           {dataTableReady && (
-            <div className="chat-dashboard-table-container">
+            <div className="chat-dashboard-table-container chat-dashboard-table-container--grouped">
               <DataTable
                 key={tableKey}
                 columns={columns}
-                className="display chat-dashboard-table"
+                className="display chat-dashboard-table chat-dashboard-table--grouped"
                 options={{
                   processing: true,
                   serverSide: true,
@@ -265,10 +268,30 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   // (autoWidth: false, no scrollX) - matching that here.
                   autoWidth: false,
                   stateSave: true,
+                  // Search, entries-per-page, and the results summary all
+                  // live together on the left (topStart, in that order),
+                  // replacing DataTables' default top-right search
+                  // placement (topEnd, left empty here) - single global
+                  // search now that the Service column's own per-column
+                  // filter box is gone; search covers every column server-
+                  // side (see the $or in api/chat/chat-dashboard.js), not
+                  // just Chat ID.
+                  // Search alone on top (the search-term pill is injected
+                  // beside it in initComplete). "Showing X to Y of Z" and
+                  // entries-per-page both sit bottom-left, above pagination -
+                  // a single native DataTables layout row, unlike stacking
+                  // it under search which never reliably worked via
+                  // DataTables' own numbered-row slots (e.g. top2Start).
+                  layout: {
+                    topStart: 'search',
+                    topEnd: {},
+                    bottomStart: { features: ['pageLength', 'info'] },
+                    bottomEnd: 'paging'
+                  },
                   language: {
                     ...dataTableLanguage(lang),
-                    search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
-                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+                    search: t('admin.chatDashboard.searchLabel', 'Search:'),
+                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Search for a term across columns (e.g. taxes)')
                   },
                   stateSaveCallback: function (settings, data) {
                     try {
@@ -283,58 +306,190 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     try {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                        return stored ? JSON.parse(stored) : null;
+                        const parsed = stored ? JSON.parse(stored) : null;
+                        // stateSave persists the whole DataTables state -
+                        // page length, sort, column order AND the search
+                        // term - across reloads. Page length/sort/column
+                        // order carrying over is expected/useful; the
+                        // search term carrying over silently re-applies a
+                        // stale search on a fresh page load, which reads as
+                        // a bug (you refresh expecting a clean table). Clear
+                        // just the search portion, keep the rest.
+                        if (parsed && parsed.search) {
+                          parsed.search.search = '';
+                        }
+                        return parsed;
                       }
                     } catch (e) {
                       // ignore
                     }
                     return null;
                   },
-                  // Add a per-column header input for the Service column,
-                  // same mechanism EvalDashboardPage.js already uses for its
-                  // program column - loop over every searchable column so a
-                  // future searchable column picks this up automatically.
+                  // Each row is one question/answer pair, not one chat - a
+                  // multi-turn chat spans several consecutive rows sharing a
+                  // chatId (see the backend's chatCreatedAt/questionNumber
+                  // sort). Plain per-row zebra striping (see .chat-dashboard-
+                  // table's nth-child rule in admin.css) would cut through
+                  // the middle of a chat's rows and make them look
+                  // unrelated. Stripe by chat GROUP instead: every row
+                  // sharing a chatId gets the same shaded/unshaded class,
+                  // alternating only when the chatId changes, plus a
+                  // top-border marker on the first row of each new group.
+                  preDrawCallback: function () {
+                    chatGroupStateRef.current = { lastChatId: undefined, parity: 0 };
+                  },
+                  createdRow: function (row, data) {
+                    const state = chatGroupStateRef.current;
+                    const chatId = data && data.chatId;
+                    const isFirstRowOfPage = state.lastChatId === undefined;
+                    if (chatId !== state.lastChatId) {
+                      if (!isFirstRowOfPage) {
+                        state.parity = state.parity === 0 ? 1 : 0;
+                        row.classList.add('chat-group-start');
+                      }
+                      state.lastChatId = chatId;
+                    }
+                    row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
+                    // Group hover: highlight every row belonging to this
+                    // chat together, not just the one under the cursor -
+                    // per-row hover looked broken on the rowspan'd Chat ID/
+                    // Department/Service cells, since a spanned cell
+                    // doesn't live in every row it visually covers, so only
+                    // hovering its own anchor row would ever light it up.
+                    // data-chat-id + a table-wide query on enter/leave (one
+                    // listener per row, trivial at page-size row counts)
+                    // lets any row in the group trigger the whole group's
+                    // highlight, anchor row included.
+                    row.dataset.chatId = chatId || '';
+                    row.addEventListener('mouseenter', () => {
+                      const table = row.closest('table');
+                      if (!table || !chatId) return;
+                      table.querySelectorAll(`tr[data-chat-id="${CSS.escape(chatId)}"]`).forEach((r) => {
+                        r.classList.add('chat-group-hover');
+                      });
+                    });
+                    row.addEventListener('mouseleave', () => {
+                      const table = row.closest('table');
+                      if (!table || !chatId) return;
+                      table.querySelectorAll(`tr[data-chat-id="${CSS.escape(chatId)}"]`).forEach((r) => {
+                        r.classList.remove('chat-group-hover');
+                      });
+                    });
+                  },
+                  // Collapse the Chat ID/Department/Service cells across a
+                  // chat's consecutive rows into single rowspan'd cells,
+                  // instead of repeating identical values on every row -
+                  // both a stronger visual grouping cue than striping
+                  // alone, and better for screen readers (one spanned cell
+                  // announced once, not the same value read out N times).
+                  // Department/Service only merge WITHIN a chat's own rows,
+                  // never across chats - two unrelated chats happening to
+                  // share a department shouldn't look like one group.
+                  // Recomputed from scratch on every draw (paging/sorting/
+                  // filtering all trigger a fresh drawCallback) rather than
+                  // incrementally patched, so it can't drift out of sync
+                  // with whatever rows are currently rendered - safe under
+                  // serverSide mode, which rebuilds row nodes per draw
+                  // rather than reusing stale cached ones.
+                  drawCallback: function () {
+                    try {
+                      const api = this.api();
+                      const rowNodes = api.rows({ page: 'current' }).nodes();
+                      const rowData = api.rows({ page: 'current' }).data().toArray();
+
+                      // valueFn returns the value consecutive rows must
+                      // share to merge; boundByChatId additionally requires
+                      // rows to belong to the same chat (used for
+                      // Department/Service so the merge never crosses a
+                      // chat boundary, even if two different chats happen
+                      // to share the same value).
+                      // extraClass marks the Chat ID column's anchor cells
+                      // specifically (regardless of span size) so the CSS
+                      // vertical divider can target that class instead of
+                      // `:first-child` - cell removal above means the DOM's
+                      // actual first <td> in a row varies (it becomes
+                      // whichever column survived removal), so position-
+                      // based selectors silently pick the wrong cell.
+                      const collapseColumn = (colIndex, valueFn, boundByChatId, extraClass) => {
+                        if (colIndex === -1) return;
+                        let i = 0;
+                        while (i < rowData.length) {
+                          let span = 1;
+                          while (
+                            i + span < rowData.length &&
+                            valueFn(rowData[i + span]) === valueFn(rowData[i]) &&
+                            (!boundByChatId || rowData[i + span].chatId === rowData[i].chatId)
+                          ) {
+                            span += 1;
+                          }
+                          const anchorCell = rowNodes[i] && rowNodes[i].cells[colIndex];
+                          if (anchorCell) {
+                            anchorCell.rowSpan = span;
+                            anchorCell.classList.toggle('row-spanned', span > 1);
+                            if (extraClass) anchorCell.classList.add(extraClass);
+                            // This span's last row is the page's actual
+                            // last row, but the anchor cell itself (where
+                            // the rowspan - and any border-bottom drawn on
+                            // it - actually lives) sits higher up, on
+                            // whichever row started the group. Without this,
+                            // the table's bottom edge has a gap under any
+                            // column still mid-span when the page ends -
+                            // the closing border only reaches the columns
+                            // that still have a real <td> on the last row.
+                            anchorCell.classList.toggle('spans-to-page-end', i + span === rowData.length);
+                          }
+                          for (let j = i + 1; j < i + span; j += 1) {
+                            const cellToRemove = rowNodes[j] && rowNodes[j].cells[colIndex];
+                            if (cellToRemove) cellToRemove.remove();
+                          }
+                          i += span;
+                        }
+                      };
+
+                      // Right-to-left by column index: removing a cell from
+                      // a row shifts every later cell's index in that same
+                      // row's live HTMLCollection, so a column must be
+                      // fully processed before any column to its left.
+                      collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
+                      collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
+                      collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
+                    } catch (e) { /* ignore drawCallback errors */ }
+                  },
                   initComplete: function () {
                     try {
                       const api = this.api();
                       tableApiRef.current = api;
-                      api.on('xhr.dt', function (_e, _settings, json) {
-                        try {
-                          setRecordsTotal((json && json.recordsTotal) || 0);
-                          setRecordsFiltered((json && json.recordsFiltered) || 0);
-                        } catch (e) { /* ignore */ }
-                      });
-                      const debounce = (fn, wait = 300) => {
-                        let timer = null;
-                        return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), wait); };
-                      };
-                      api.columns().every(function (idx) {
-                        const column = this;
-                        const colInfo = column.settings()[0].aoColumns[idx] || {};
-                        if (!colInfo.searchable) return;
-                        const headerEl = column.header();
-                        if (!headerEl) return;
-                        const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
-                        if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
-                        const colTitle = headerEl.textContent.trim();
-                        const filterContainer = document.createElement('div');
-                        filterContainer.className = 'dt-col-filter-container';
-                        filterContainer.style.marginTop = '4px';
-                        const input = document.createElement('input');
-                        input.type = 'search';
-                        input.className = 'dt-col-search';
-                        input.placeholder = t('admin.chatDashboard.columnFilterPlaceholder', 'Filter');
-                        input.setAttribute('aria-label', `${input.placeholder} — ${colTitle}`);
-                        input.addEventListener('input', debounce(function (e) {
-                          column.search(e.target.value);
-                          api.page('first').draw('page');
-                        }, 350));
-                        filterContainer.appendChild(input);
-                        const stopSort = (event) => event.stopPropagation();
-                        filterContainer.addEventListener('click', stopSort);
-                        filterContainer.addEventListener('mousedown', stopSort);
-                        headerEl.appendChild(filterContainer);
-                      });
+
+                      // Active search term shown as a dismissible pill right
+                      // beside the search box, same .filter-pill styling
+                      // FilterPanel already uses for its own active-filter
+                      // pills, so the current term is visible and clearable
+                      // without needing to select/delete the input text.
+                      const searchContainer = api.table().container().querySelector('.dt-search');
+                      if (searchContainer) {
+                        const pillEl = document.createElement('span');
+                        pillEl.className = 'filter-pill filter-pill--closable chat-dashboard-search-pill';
+                        searchContainer.insertAdjacentElement('afterend', pillEl);
+
+                        const renderSearchPill = (term) => {
+                          pillEl.innerHTML = '';
+                          pillEl.style.display = term ? '' : 'none';
+                          if (!term) return;
+                          pillEl.textContent = t('admin.chatDashboard.searchTermPillLabel', 'Search: {term}').replace('{term}', () => term);
+                          const closeBtn = document.createElement('button');
+                          closeBtn.type = 'button';
+                          closeBtn.className = 'filter-pill__close';
+                          closeBtn.setAttribute('aria-label', `${t('dashboardFilter.removeFilter', 'Remove filter')} - ${term}`);
+                          closeBtn.textContent = '×';
+                          closeBtn.addEventListener('click', () => {
+                            api.search('').draw();
+                          });
+                          pillEl.appendChild(closeBtn);
+                        };
+
+                        renderSearchPill(api.search());
+                        api.on('search.dt', () => renderSearchPill(api.search()));
+                      }
                     } catch (e) { /* ignore initComplete errors */ }
                   },
                   ajax: async (dtParams, callback) => {
@@ -350,16 +505,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       const orderBy = dtOrder ? (orderByMap[dtOrder.column] || 'createdAt') : 'createdAt';
                       const orderDir = dtOrder ? (dtOrder.dir || 'desc') : 'desc';
                       const searchValue = (dtParams.search && dtParams.search.value) || '';
-                      const columnSearches = {};
-                      if (Array.isArray(dtParams.columns)) {
-                        dtParams.columns.forEach((col) => {
-                          const val = col && col.search && String(col.search.value || '').trim();
-                          if (val) {
-                            const colName = col.data || null;
-                            if (colName) columnSearches[colName] = val;
-                          }
-                        });
-                      }
+                      setSearchTerm(searchValue);
                       const currentFilters = filtersRef.current || {};
 
                       const normalizedFilters = { ...currentFilters };
@@ -381,12 +527,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       if (searchValue) {
                         query.search = searchValue;
                       }
-                      if (Object.keys(columnSearches).length) {
-                        query.columnSearch = columnSearches;
-                      }
                       const result = await DashboardService.getChatDashboard(query);
                       setRecordsTotal(result?.recordsTotal || 0);
-                      setRecordsFiltered(result?.recordsFiltered || 0);
                       callback({
                         draw: dtParams.draw || 0,
                         recordsTotal: result?.recordsTotal || 0,

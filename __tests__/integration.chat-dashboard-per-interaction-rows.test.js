@@ -197,3 +197,94 @@ describe('Integration: chat-dashboard default sort keeps a chat\'s rows together
         ]);
     });
 });
+
+// Regression test for a real tie: two different chats created at the exact
+// same millisecond (plausible under any concurrent traffic - this needs no
+// unusual timing, just two sessions starting around the same moment). A
+// $sort's tiebreak keys are lexicographic - questionNumber ranking ahead of
+// chatId would group every tied chat's Q1 together, then every Q2, etc.,
+// still interleaving the two chats even with chatId present as a later key.
+// chatId has to be the tiebreak that comes right after chatCreatedAt, before
+// questionNumber, for a tie to still resolve into two contiguous blocks.
+describe('Integration: chat-dashboard groups chats that tie on the exact same createdAt', () => {
+    let mongoServer;
+    const dateRange = { startDate: '2020-01-01', endDate: '2030-01-01' };
+    const TIE_TIMESTAMP = new Date('2021-06-01T12:00:00.000Z');
+
+    const makeInteractionAt = async (createdAt) => {
+        const context = await Context.create({ pageLanguage: 'en', department: 'IRCC' });
+        const answer = await Answer.create({ content: 'Test answer', answerType: 'normal' });
+        return Interaction.create({
+            context: context._id,
+            answer: answer._id,
+            question: new mongoose.Types.ObjectId(),
+            createdAt,
+        });
+    };
+
+    beforeAll(async () => {
+        mongoServer = await MongoMemoryServer.create();
+        await mongoose.connect(mongoServer.getUri());
+    }, 60000);
+
+    afterAll(async () => {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
+
+    beforeEach(async () => {
+        const user = await User.create({ email: 'reviewer3@example.com', password: 'password123' });
+
+        // Both chats share the identical millisecond createdAt - the tie
+        // this test exists to cover. chatId 'tie-chat-a' sorts before
+        // 'tie-chat-b' alphabetically/numerically either way.
+        const [a1, a2] = await Promise.all([
+            makeInteractionAt(TIE_TIMESTAMP),
+            makeInteractionAt(TIE_TIMESTAMP),
+        ]);
+        const [b1, b2] = await Promise.all([
+            makeInteractionAt(TIE_TIMESTAMP),
+            makeInteractionAt(TIE_TIMESTAMP),
+        ]);
+
+        await Chat.create({
+            chatId: 'tie-chat-a',
+            user: user._id,
+            interactions: [a1._id, a2._id],
+            createdAt: TIE_TIMESTAMP,
+            pageLanguage: 'en',
+        });
+        await Chat.create({
+            chatId: 'tie-chat-b',
+            user: user._id,
+            interactions: [b1._id, b2._id],
+            createdAt: TIE_TIMESTAMP,
+            pageLanguage: 'en',
+        });
+    });
+
+    const callHandler = async (query) => {
+        const req = { method: 'GET', query: { ...dateRange, length: 50, start: 0, ...query } };
+        let jsonBody;
+        const res = {
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn((body) => { jsonBody = body; return res; }),
+        };
+        await handler(req, res);
+        return jsonBody;
+    };
+
+    it('keeps each tied chat\'s rows as one contiguous block instead of interleaving by questionNumber', async () => {
+        const body = await callHandler({});
+        const rows = body.data.filter((r) => r.chatId === 'tie-chat-a' || r.chatId === 'tie-chat-b');
+
+        expect(rows).toHaveLength(4);
+        // Whichever chat sorts first, both its rows must be adjacent (block
+        // of 2, then the other chat's block of 2) - not interleaved like
+        // [a#1, b#1, a#2, b#2], which is what grouping-by-questionNumber
+        // first would produce.
+        const chatIdSequence = rows.map((r) => r.chatId);
+        expect(chatIdSequence).toEqual([chatIdSequence[0], chatIdSequence[0], chatIdSequence[3], chatIdSequence[3]]);
+        expect(rows.map((r) => r.questionNumber)).toEqual([1, 2, 1, 2]);
+    });
+});

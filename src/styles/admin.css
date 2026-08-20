@@ -723,6 +723,20 @@
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
 }
+/* Chat Dashboard only (this container class is shared with Eval/AutoEval
+   Dashboard, hence the --grouped-scoped override rather than editing the
+   base rule above): the gap between FilterPanel's pills and the search box
+   was compounding from four separate stacked sources - this container's
+   own margin-block-start AND padding-top, plus DataTables' own
+   `div.dt-layout-row { margin: 0.75em 0 }` on the row holding the search
+   box. Zero out the two we control; the container's own padding-top is
+   left as the one remaining, intentional gap. */
+.chat-dashboard-table-container--grouped {
+  margin-block-start: 0;
+}
+.chat-dashboard-table-container--grouped div.dt-container div.dt-layout-row:first-child {
+  margin-top: 0;
+}
 
 /* Experimental tables use the full viewport so wide analysis columns do not
    create artificial gutters inside the page container. */
@@ -829,6 +843,136 @@
 /* Zebra striping for table rows */
 .chat-dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);
+}
+
+/* Chat Dashboard only: stripe by chat GROUP (every row sharing a chatId),
+   not by raw row index - a multi-turn chat spans consecutive rows and
+   per-row striping would visually split them.
+
+   DataTables' own bundled CSS (datatables.net-dt) already paints per-row
+   zebra striping AND per-row hover via an inset box-shadow on every cell -
+   not a background-color on the <tr> - keyed off selectors like
+   `table.dataTable.display > tbody > tr:nth-child(odd) > *` and
+   `tr:hover > *` (specificity 0,3,3 each). A plain background-color rule
+   on the <tr> (specificity 0,1,2) can never beat that box-shadow layer,
+   which paints on top regardless of the row's own background.
+
+   Row hover is disabled outright below, not just re-themed: it's purely
+   decorative here (no click action beyond the Chat ID link, no row
+   selection), and since Chat ID/Department/Service can rowspan across a
+   chat's rows, DataTables' per-row hover only lit up the OTHER cells of a
+   non-anchor row - the spanned cell doesn't belong to every row it visually
+   covers, so hovering looked like it was highlighting half a row.
+
+   Striping itself is driven purely by the chat-group-a/chat-group-b classes
+   (set in ChatDashboardPage.js's createdRow, alternating on chatId changes,
+   not on row index) rather than :nth-child(odd) - every row gets exactly
+   one of those two classes, so a single unconditional `tr > *` rule can
+   cancel DataTables' native stripe/hover for ALL rows at once, and
+   chat-group-b's own rule re-adds just the shaded half. Both rules match
+   DataTables' own selector shape plus BOTH of this table's own classes
+   (.chat-dashboard-table.chat-dashboard-table--grouped, both already on
+   the <table> via its className string) for one extra class of specificity
+   (0,4,3 vs DataTables' 0,3,3) - winning outright rather than relying on
+   this stylesheet loading after DataTables' CSS in the bundle, which isn't
+   guaranteed (ChatDashboardPage.js doesn't import that CSS itself; it's
+   pulled in globally by other pages that do, e.g. UsersPage.js). Neither
+   rule has :hover in its selector, so hover state changes nothing - that's
+   the point. Eval/AutoEval Dashboard are unaffected - they only carry the
+   base .chat-dashboard-table class, not this modifier. */
+table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr > * {
+  box-shadow: none;
+}
+table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.chat-group-b > * {
+  box-shadow: inset 0 0 0 9999px rgba(var(--dt-row-stripe), var(--dt-row-stripe-alpha));
+}
+/* Group hover: every row sharing a chatId highlights together (see the
+   mouseenter/mouseleave listeners in ChatDashboardPage.js's createdRow),
+   not just the row under the cursor - this is what makes the rowspan'd
+   Chat ID/Department/Service cells light up correctly, since their anchor
+   row is included in the highlighted group. Highest specificity of the
+   three box-shadow rules (extra .chat-group-hover class) so it wins over
+   both the plain and chat-group-b states while active. */
+table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.chat-group-hover > * {
+  box-shadow: inset 0 0 0 9999px rgba(var(--dt-row-hover), var(--dt-row-hover-alpha));
+}
+.chat-dashboard-table--grouped tbody tr.chat-group-start td {
+  border-top: var(--gcds-border-width-md) solid var(--gcds-border-default);
+}
+/* Chat ID/Department/Service cells collapsed via rowspan (see
+   drawCallback in ChatDashboardPage.js) - align each to the top of its
+   span rather than the browser's default middle, so it reads as a label
+   for the group instead of floating oddly centered next to the group's
+   first row. */
+.chat-dashboard-table--grouped tbody td.row-spanned {
+  vertical-align: top;
+}
+/* Close off the table's actual bottom edge. DataTables already puts a
+   border-bottom on every cell that's present in a row, so a normal last
+   row is fine - but when a Chat ID/Department/Service rowspan is still
+   open at the page's last row, that column's cell doesn't live on the last
+   row at all (it's the anchor cell higher up), so there's nothing there
+   for DataTables' rule to draw a border on - leaving a gap under that
+   column at the very end of the table. .spans-to-page-end (set in
+   ChatDashboardPage.js's drawCallback) marks that anchor cell so it gets
+   its own closing border regardless of which row it actually sits on. */
+.chat-dashboard-table--grouped tbody tr:last-child > td,
+.chat-dashboard-table--grouped tbody td.spans-to-page-end {
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+/* Solid black rule under the column headers - true black
+   (--gcds-color-black, not --gcds-text-primary's #333) and bold weight per
+   direct request.
+
+   The vertical divider that used to run after the Chat ID column (targeting
+   thead th:first-child / tbody td.chat-id-cell - .chat-id-cell is still
+   set in ChatDashboardPage.js's drawCallback if this needs to come back)
+   was removed to preview the table without it. */
+.chat-dashboard-table--grouped thead th {
+  border-bottom: var(--gcds-border-width-lg) solid var(--gcds-color-black);
+}
+/* Global search box (moved to topStart, next to the entries-per-page
+   control - see the `layout` option in ChatDashboardPage.js) - larger,
+   bolder treatment now that it's the table's single search mechanism
+   (replacing the removed per-column Service filter). The extra
+   `div.dt-container` prefix matches DataTables' own selector shape
+   (div.dt-container .dt-search input, specificity 0,2,2) for one more
+   class of specificity so this wins outright. */
+.chat-dashboard-table-container div.dt-container .dt-search input {
+  color: var(--gcds-color-black);
+  font-size: 16px;
+  margin-left: var(--gcds-spacing-200);
+  border: var(--gcds-border-width-sm) solid var(--gcds-color-black);
+  border-radius: var(--gcds-border-radius-sm);
+  padding-block: var(--gcds-spacing-100);
+  padding-inline: var(--gcds-spacing-150);
+  min-width: 24rem;
+}
+/* Hide the native type="search" clear ("x") button - the search-term pill
+   next to it already has its own labeled "x" to clear, and having both
+   right beside each other read as a confusing double-clear control.
+   WebKit/Blink-only pseudo-element; Firefox doesn't render one by default. */
+.chat-dashboard-table-container div.dt-container .dt-search input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+.chat-dashboard-table-container div.dt-container .dt-search label {
+  font-weight: 700;
+  font-size: 16px;
+  /* Literal 10px, not a --gcds-spacing token: matching DataTables' own
+     hardcoded `table.dataTable > thead > tr > th { padding: 10px }` so the
+     "Search:" label's text lines up with "Chat ID"'s text in the column
+     below - a fixed third-party value, not a GC DS spacing decision. */
+  padding-left: 10px;
+}
+/* Search-term pill (injected as a sibling of .dt-search in
+   ChatDashboardPage.js's initComplete) sits beside the search box in the
+   same flex row - just needs its own left gap so it doesn't sit flush
+   against the input. "Showing X to Y of Z" now uses DataTables' native
+   `info` layout feature at bottomStart instead of being injected here (see
+   the `layout` option) - that position doesn't have the stacking problems
+   topStart did, so no manual DOM work needed for it. */
+.chat-dashboard-table-container .chat-dashboard-search-pill {
+  margin-left: var(--gcds-spacing-200);
 }
 
 /* Base label styles */

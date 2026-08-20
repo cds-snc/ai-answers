@@ -785,10 +785,10 @@
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
-      "resultsSummary": "Affichage de {count} questions",
-      "totalCount": "Total des questions correspondantes : {total}",
-      "searchLabel": "Rechercher par ID de chat :",
-      "searchPlaceholder": "Entrez l'ID de chat...",
+      "noSearchResults": "Aucun résultat de recherche trouvé.",
+      "searchLabel": "Rechercher :",
+      "searchPlaceholder": "Rechercher un terme dans les colonnes (p. ex. impôts)",
+      "searchTermPillLabel": "Recherche : {term}",
       "columns": {
         "chatId": "ID de chat",
         "department": "Ministère",
@@ -822,8 +822,7 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
-      },
-      "columnFilterPlaceholder": "Filtrer"
+      }
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
