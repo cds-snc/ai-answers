@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.190.1](https://github.com/cds-snc/ai-answers/compare/v1.190.0...v1.190.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* restore FR blog posts section on About page, clean markdown artifacts ([8c805e6](https://github.com/cds-snc/ai-answers/commit/8c805e6236f8268e7e2901fd4d55982f78097b26))
+
 ## [1.190.0](https://github.com/cds-snc/ai-answers/compare/v1.189.2...v1.190.0) (2026-08-20)
 
 
