@@ -136,7 +136,7 @@ const AboutPage = ({ lang = 'en' }) => {
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
     systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
-    blogPosts: lang === 'fr' ? 'billets-de-blogue-sur-rponses-ia' : 'ai-answers-blog-posts',
+    blogPosts: lang === 'fr' ? 'billets-de-blogue-portant-sur-rponses-ia' : 'ai-answers-blog-posts',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
 
