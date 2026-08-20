@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.190.0](https://github.com/cds-snc/ai-answers/compare/v1.189.2...v1.190.0) (2026-08-20)
+
+
+### Features
+
+* add row grouping visuals and global search to chat dashboard ([634498a](https://github.com/cds-snc/ai-answers/commit/634498a569a63be662f50e20d2b36e7fb33bcba4))
+* restructure chat dashboard to show question/answer rows with se… ([0a4d4c9](https://github.com/cds-snc/ai-answers/commit/0a4d4c94f3a7162e306c66dd1b2cf2d2d733252e))
+* restructure chat dashboard to show question/answer rows with service filter ([5e69ab3](https://github.com/cds-snc/ai-answers/commit/5e69ab3a8560bff3bc42dcf1027b727bc800d409))
+
 ## [1.189.2](https://github.com/cds-snc/ai-answers/compare/v1.189.1...v1.189.2) (2026-08-19)
 
 
