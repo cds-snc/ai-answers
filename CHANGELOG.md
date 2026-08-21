@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.190.3](https://github.com/cds-snc/ai-answers/compare/v1.190.2...v1.190.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* add aria-label to Page language column header ([30f7a3b](https://github.com/cds-snc/ai-answers/commit/30f7a3bc85d012813fe9603a6d4ae4247a93fe34))
+* correct filter-pill regression and locale punctuation ([a265da7](https://github.com/cds-snc/ai-answers/commit/a265da7cbd8eca0098aac2150c487206026dda27))
+* overhaul chat and eval dashboard search, sort, and table layout ([44b767f](https://github.com/cds-snc/ai-answers/commit/44b767fe53105483544eb8328e15ba9947563534))
+* upgrade body-parser ([20013b4](https://github.com/cds-snc/ai-answers/commit/20013b43ba1e7fd74d3bc25e4b4064e1d56af12c))
+* upgrade body-parser ([473bab6](https://github.com/cds-snc/ai-answers/commit/473bab66ae77bfd60d6093da53931a538b87f188))
+* upgrade mongoose ([bf5a077](https://github.com/cds-snc/ai-answers/commit/bf5a077b3d132370449f36fbad78d5384068a446))
+* upgrade mongoose ([aefdf82](https://github.com/cds-snc/ai-answers/commit/aefdf826e2dadc8b5f8768aae4b2b29cfbf22a36))
+* validate DocumentDB capability probe dispatch ([018be2b](https://github.com/cds-snc/ai-answers/commit/018be2b302f51002f1bac033aa8331dca61d55b8))
+
 ## [1.190.2](https://github.com/cds-snc/ai-answers/compare/v1.190.1...v1.190.2) (2026-08-21)
 
 
