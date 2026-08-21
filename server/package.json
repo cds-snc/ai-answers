@@ -11,6 +11,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "overrides": {
+    "body-parser": "2.3.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.29.2",
     "bcryptjs": "^3.0.2",
