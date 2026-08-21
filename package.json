@@ -139,6 +139,7 @@
     ]
   },
   "overrides": {
+    "brace-expansion": "5.0.9",
     "postcss-svgo": {
       "svgo": "2.8.1"
     },
