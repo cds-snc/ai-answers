@@ -31,6 +31,16 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   const [dataTableReady, setDataTableReady] = useState(false);
   const [pageResultCount, setPageResultCount] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+  // The zero-result StatusMessage below is a plain conditional render with
+  // no nonce, so two different zero-result triggers (e.g. one filter
+  // change into another that also matches nothing) render identical text
+  // and produce no DOM change - a screen reader user gets no indication
+  // the second query even ran. nonce forces a fresh node each time (same
+  // pattern as EvalDashboardPage.js/ChatDashboardPage.js's own zero-result
+  // fix). Bumped on every ajax completion that lands on zero - a 0-result
+  // page can't be paged further, so every such completion is a genuinely
+  // new query, not a repeat draw of the same one.
+  const [zeroResultNonce, setZeroResultNonce] = useState(0);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
@@ -139,17 +149,17 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       />
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && (
         <div className="mt-200">
           {dataTableReady && (
-            <div className="chat-dashboard-table-container">
+            <div className="dashboard-table-container">
             <DataTable
               key={tableKey}
               columns={columns}
-              className="display chat-dashboard-table"
+              className="display dashboard-table"
               options={{
                 processing: true,
                 serverSide: true,
@@ -177,7 +187,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 language: {
                   ...dataTableLanguage(lang),
                   search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
-                  searchPlaceholder: t('admin.autoEvalDashboard.searchPlaceholder', 'Enter search term...')
+                  searchPlaceholder: t('admin.autoEvalDashboard.searchPlaceholder')
                 },
                 initComplete: function () {
                   try {
@@ -232,6 +242,14 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                       const stopSort = (event) => event.stopPropagation();
                       filterContainer.addEventListener('click', stopSort);
                       filterContainer.addEventListener('mousedown', stopSort);
+                      // DataTables' own header sort-activation binds both
+                      // click.DT AND keypress.DT (Enter) for keyboard
+                      // accessibility (_fnBindAction in dataTables.mjs) -
+                      // without also stopping keypress here, pressing Enter
+                      // while typing in this filter input bubbles up to that
+                      // handler and sorts the column as an unintended side
+                      // effect.
+                      filterContainer.addEventListener('keypress', stopSort);
                       headerEl.appendChild(filterContainer);
                     });
                   } catch (e) { /* ignore initComplete errors */ }
@@ -269,8 +287,33 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     const rows = Array.isArray(result?.data) ? result.data : [];
                     const start = Number.isFinite(Number(dtParams.start)) ? Number(dtParams.start) : 0;
                     const hasMore = result?.hasMore === true;
-                    const syntheticCount = start + rows.length + (hasMore ? 1 : 0);
+                    // This page shares the eval-dashboard.js endpoint with
+                    // EvalDashboardPage.js, which paginates by distinct
+                    // chatId count (not row count) for the default createdAt
+                    // sort - see useChatGroupedPagination there. Using raw
+                    // row count here for that same sort was the exact
+                    // phantom-page bug fixed on EvalDashboardPage.js: a
+                    // multi-question chat inflates row count past the
+                    // requested page length, so the synthetic total kept
+                    // implying a next page that didn't exist, and clicking
+                    // it returned nothing.
+                    //
+                    // TODO: this page hasn't otherwise been updated for
+                    // that endpoint's other recent changes (auto-eval work
+                    // is out of scope for now) - specifically, aiEval/
+                    // partnerEval no longer include hasCitationError as a
+                    // value (EvalDashboardPage.js shows it as a separate
+                    // stacking pill instead), so a citation-only-error row
+                    // here silently renders as whatever the sentence-score
+                    // fallback is instead of showing the citation problem.
+                    // Extend the same *WithoutCitation-aware pill rendering
+                    // here too when this page is revisited.
+                    const syntheticUnitCount = orderBy === 'createdAt'
+                      ? new Set(rows.map((r) => r.chatId)).size
+                      : rows.length;
+                    const syntheticCount = start + syntheticUnitCount + (hasMore ? 1 : 0);
                     setPageResultCount(syntheticCount);
+                    if (syntheticCount === 0) setZeroResultNonce((n) => n + 1);
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load auto-eval dashboard data', err);

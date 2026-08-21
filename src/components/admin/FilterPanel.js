@@ -56,7 +56,21 @@ const FilterPanel = ({
   // Collapse when results load successfully; keep open on error or no results.
   // Skipped once after a Clear so the panel stays open for the user to re-filter.
   useEffect(() => {
-    if (!hasAppliedFilters || filterLoading) return;
+    if (!hasAppliedFilters) {
+      // No results in flight or shown - some consumers (e.g. ChatDashboardPage)
+      // treat Clear as a full restart: onClearFilters resets hasAppliedFilters
+      // to false instead of re-fetching, so there's no forthcoming "clear
+      // finished" transition left for a pending skip to protect. Disarm it
+      // here rather than letting it linger armed - otherwise it silently
+      // swallows the auto-close of whatever unrelated Apply happens to be the
+      // next one to bring hasAppliedFilters back to true, not the Clear it was
+      // actually meant for. For consumers where Clear re-fetches immediately
+      // (hasAppliedFilters stays true throughout), this branch never runs, so
+      // their existing skip-then-consume flow below is unaffected.
+      skipNextAutoClose.current = false;
+      return;
+    }
+    if (filterLoading) return;
     if (skipNextAutoClose.current) {
       skipNextAutoClose.current = false;
       return;

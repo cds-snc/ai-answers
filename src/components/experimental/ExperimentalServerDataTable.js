@@ -85,7 +85,7 @@ export default function ExperimentalServerDataTable({
         <div className={containerClassName}>
             <DataTable
                 key={tableKey}
-                className="display chat-dashboard-table"
+                className="display dashboard-table"
                 columns={tableColumns}
                 options={options}
             />

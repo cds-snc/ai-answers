@@ -714,8 +714,57 @@
 
 }
 
+/* EvalDashboardPage.js's standalone pre-Apply "Find by Chat ID" box - shown
+   instead of the full table until there are results (see its own render
+   comment). A sub-component of the Filters box above, not a peer: reuses
+   its exact .filter-panel/.filter-panel-summary/.filter-panel-content
+   chrome (own box, header bar, expand/collapse) rather than inventing a
+   second visual language, just sitting directly below it. The <summary>
+   ("Find by Chat ID") names the whole box; the field's own visible label
+   ("Search Chat ID") is worded differently on purpose so it doesn't just
+   repeat the summary text right below it. Input and button stack (button
+   below, not attached) - a small secondary action under the field, not a
+   combined control. */
+.eval-quick-search {
+  margin-block-end: var(--gcds-spacing-400);
+}
+/* Opt out of .filter-panel's own closed-state treatment (shrinks to a
+   fit-content blue pill button - appropriate for the Filters panel it was
+   designed for, not wanted here) in favour of its plain open-state look,
+   kept even when collapsed: the normal default border/box-shadow, full
+   width, un-shrunk, not the pill. The extra `.filter-panel` in each
+   selector isn't redundant - it raises specificity a class above the rules
+   being overridden (same 3-class count otherwise), so this wins regardless
+   of stylesheet order. */
+.eval-quick-search.filter-panel:not([open]) {
+  /* #ddd, not --gcds-input-default-text: that token is darker than what
+     the open state actually renders (confirmed against the live page) -
+     #ddd is the real match. */
+  border: 1px solid #ddd;
+  background: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+.eval-quick-search.filter-panel:not([open]) > .filter-panel-summary {
+  width: 100%;
+  /* Same light grey fill as the open state's summary bar (base
+     .filter-panel-summary rule) - without it, the border alone (no longer
+     backed by that fill once collapsed) read as a much starker, darker
+     outline than the open state ever shows. */
+  background: #f9fafb;
+  color: var(--gcds-input-default-text);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0;
+}
+.eval-quick-search.filter-panel:not([open]) > .filter-panel-summary:hover {
+  background: #f3f4f6;
+}
+.eval-quick-search__field {
+  max-width: 40rem;
+}
+
 /* Table container with horizontal scrolling - full width breakout */
-.chat-dashboard-table-container {
+.dashboard-table-container {
   width: 90vw;
   margin-left: calc(50% - 45vw);
   margin-right: calc(50% - 45vw);
@@ -723,18 +772,18 @@
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
 }
-/* Chat Dashboard only (this container class is shared with Eval/AutoEval
-   Dashboard, hence the --grouped-scoped override rather than editing the
-   base rule above): the gap between FilterPanel's pills and the search box
-   was compounding from four separate stacked sources - this container's
-   own margin-block-start AND padding-top, plus DataTables' own
-   `div.dt-layout-row { margin: 0.75em 0 }` on the row holding the search
-   box. Zero out the two we control; the container's own padding-top is
-   left as the one remaining, intentional gap. */
-.chat-dashboard-table-container--grouped {
+/* Chat and Eval Dashboard only, so far (this container class itself is
+   shared with AutoEval Dashboard too, hence the --grouped-scoped override
+   rather than editing the base rule above): the gap between FilterPanel's
+   pills and the search box was compounding from four separate stacked
+   sources - this container's own margin-block-start AND padding-top, plus
+   DataTables' own `div.dt-layout-row { margin: 0.75em 0 }` on the row
+   holding the search box. Zero out the two we control; the container's own
+   padding-top is left as the one remaining, intentional gap. */
+.dashboard-table-container--grouped {
   margin-block-start: 0;
 }
-.chat-dashboard-table-container--grouped div.dt-container div.dt-layout-row:first-child {
+.dashboard-table-container--grouped div.dt-container div.dt-layout-row:first-child {
   margin-top: 0;
 }
 
@@ -841,13 +890,13 @@
 }
 
 /* Zebra striping for table rows */
-.chat-dashboard-table tbody tr:nth-child(odd) {
+.dashboard-table tbody tr:nth-child(odd) {
   background-color: var(--gcds-link-light);
 }
 
-/* Chat Dashboard only: stripe by chat GROUP (every row sharing a chatId),
-   not by raw row index - a multi-turn chat spans consecutive rows and
-   per-row striping would visually split them.
+/* Chat and Eval Dashboard, so far: stripe by chat GROUP (every row sharing
+   a chatId), not by raw row index - a multi-turn chat spans consecutive
+   rows and per-row striping would visually split them.
 
    DataTables' own bundled CSS (datatables.net-dt) already paints per-row
    zebra striping AND per-row hover via an inset box-shadow on every cell -
@@ -865,47 +914,114 @@
    covers, so hovering looked like it was highlighting half a row.
 
    Striping itself is driven purely by the chat-group-a/chat-group-b classes
-   (set in ChatDashboardPage.js's createdRow, alternating on chatId changes,
-   not on row index) rather than :nth-child(odd) - every row gets exactly
-   one of those two classes, so a single unconditional `tr > *` rule can
-   cancel DataTables' native stripe/hover for ALL rows at once, and
+   (set in ChatDashboardPage.js's and EvalDashboardPage.js's createdRow -
+   identical logic, ported rather than shared, since each page's DataTables
+   options object is otherwise page-specific - alternating on chatId
+   changes, not on row index) rather than :nth-child(odd) - every row gets
+   exactly one of those two classes, so a single unconditional `tr > *` rule
+   can cancel DataTables' native stripe/hover for ALL rows at once, and
    chat-group-b's own rule re-adds just the shaded half. Both rules match
    DataTables' own selector shape plus BOTH of this table's own classes
-   (.chat-dashboard-table.chat-dashboard-table--grouped, both already on
+   (.dashboard-table.dashboard-table--grouped, both already on
    the <table> via its className string) for one extra class of specificity
    (0,4,3 vs DataTables' 0,3,3) - winning outright rather than relying on
    this stylesheet loading after DataTables' CSS in the bundle, which isn't
-   guaranteed (ChatDashboardPage.js doesn't import that CSS itself; it's
-   pulled in globally by other pages that do, e.g. UsersPage.js). Neither
-   rule has :hover in its selector, so hover state changes nothing - that's
-   the point. Eval/AutoEval Dashboard are unaffected - they only carry the
-   base .chat-dashboard-table class, not this modifier. */
-table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr > * {
+   guaranteed (neither page imports that CSS itself; it's pulled in
+   globally by other pages that do, e.g. UsersPage.js). Neither rule has
+   :hover in its selector, so hover state changes nothing - that's the
+   point. AutoEval Dashboard is unaffected (for now) - it only carries the
+   base .dashboard-table class, not this modifier. */
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > * {
   box-shadow: none;
+  /* Lightened from DataTables' own border-top: 1px solid rgba(0,0,0,0.15) -
+     against the darker 0.05 zebra stripe above, the native weight read as
+     heavier/thicker by contrast. A literal sub-1px border isn't reliably
+     crisp across browsers/zoom levels, so lightened instead of thinned -
+     reads as a finer line without the rendering risk. Excludes
+     .chat-group-start below on purpose - this selector's specificity
+     (0,3,2) beats that rule's (0,2,2), so without the :not() here it was
+     clobbering the thicker group-boundary divider entirely instead of
+     just thinning the ordinary per-row ones. */
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
-table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.chat-group-b > * {
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group-start > * {
+  border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group-b > * {
   box-shadow: inset 0 0 0 9999px rgba(var(--dt-row-stripe), var(--dt-row-stripe-alpha));
 }
-/* Group hover: every row sharing a chatId highlights together (see the
-   mouseenter/mouseleave listeners in ChatDashboardPage.js's createdRow),
-   not just the row under the cursor - this is what makes the rowspan'd
-   Chat ID/Department/Service cells light up correctly, since their anchor
-   row is included in the highlighted group. Highest specificity of the
-   three box-shadow rules (extra .chat-group-hover class) so it wins over
-   both the plain and chat-group-b states while active. */
-table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.chat-group-hover > * {
-  box-shadow: inset 0 0 0 9999px rgba(var(--dt-row-hover), var(--dt-row-hover-alpha));
+/* Chat ID/Department/Service(-or-Program)/Referring URL cells collapsed via
+   rowspan (see drawCallback in ChatDashboardPage.js and
+   EvalDashboardPage.js) - centered vertically within their span (the
+   browser's own table default) so they read as belonging to every row of
+   the group equally, not anchored to just the first one. */
+.dashboard-table--grouped tbody td.row-spanned {
+  vertical-align: middle;
+  /* Vertical divider on both sides of every merged cell - scanning down a
+     merged column to see where it ends and the next one begins is hard
+     without a line to follow, especially once a cell spans several rows.
+     Both sides, not just the right: a merged block sitting next to an
+     un-merged column (e.g. Page) still shows that column's own per-row
+     horizontal lines butting up against it - a border on only one side
+     read as lopsided there. Colour matches DataTables' own per-row
+     horizontal lines (rgba(0, 0, 0, 0.15)), so this reads as the same
+     weight of divider, not a heavier one competing with them. */
+  border-right: var(--gcds-border-width-sm) solid rgba(0, 0, 0, 0.15);
+  border-left: var(--gcds-border-width-sm) solid rgba(0, 0, 0, 0.15);
 }
-.chat-dashboard-table--grouped tbody tr.chat-group-start td {
-  border-top: var(--gcds-border-width-md) solid var(--gcds-border-default);
+/* Chat ID is the table's first column - nothing sits to its left, so its
+   own border-left above just doubles up against the table's own outer
+   edge/frame right next to it. Right border stays (it still needs to
+   divide it from Department next to it). */
+.dashboard-table--grouped tbody td.chat-id-cell {
+  border-left: none;
 }
-/* Chat ID/Department/Service cells collapsed via rowspan (see
-   drawCallback in ChatDashboardPage.js) - align each to the top of its
-   span rather than the browser's default middle, so it reads as a label
-   for the group instead of floating oddly centered next to the group's
-   first row. */
-.chat-dashboard-table--grouped tbody td.row-spanned {
-  vertical-align: top;
+/* Feedback/Download/Page columns (EvalDashboardPage.js) - each holds only
+   a short, fixed-content value (an icon, or a 2-letter EN/FR code) in a
+   narrow fixed-width cell, so DataTables' default left-aligned text reads
+   as off-center against the column's own width. Centered so the content
+   sits in the middle of the column like the header above it. */
+.eval-center-cell {
+  text-align: center;
+}
+/* Feedback/Download icon hover tooltips (data-tooltip attribute, not the
+   native title attribute - see the render-function comments in
+   EvalDashboardPage.js for why: title's appear delay is fixed by the
+   browser and can't be shortened). Chrome (background/border/radius/
+   padding/font-size/shadow) comes from the shared .chart-tooltip rule
+   above; this rule is just the CSS-tooltip mechanics - positioning,
+   content, and the show/hide timing. */
+.eval-tooltip {
+  position: relative;
+}
+.eval-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  color: var(--gcds-text-primary);
+  white-space: nowrap;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  /* The icon this is attached to is a Font Awesome <i> (fa-solid), which
+     sets its own font-family: "Font Awesome 6 Free" + font-weight: 900 to
+     render its glyph - properties this ::after pseudo-element, being that
+     <i>'s own child box, inherits unless reset. Font Awesome Free's font
+     file bundles full fallback Latin letterforms (a rounded/informal
+     face, easily read as "Comic Sans"), so without this reset the tooltip
+     text silently rendered in the icon font instead of the site's. */
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  text-transform: none;
+  /* Hide instantly on mouse-out (0s delay); the hover rule below overrides
+     this delay to 0.5s so only the appear is slowed, not the disappear. */
+  transition: opacity 0.1s ease 0s;
+}
+.eval-tooltip:hover::after {
+  opacity: 1;
+  transition-delay: 0.5s;
 }
 /* Close off the table's actual bottom edge. DataTables already puts a
    border-bottom on every cell that's present in a row, so a normal last
@@ -914,31 +1030,35 @@ table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.
    row at all (it's the anchor cell higher up), so there's nothing there
    for DataTables' rule to draw a border on - leaving a gap under that
    column at the very end of the table. .spans-to-page-end (set in
-   ChatDashboardPage.js's drawCallback) marks that anchor cell so it gets
-   its own closing border regardless of which row it actually sits on. */
-.chat-dashboard-table--grouped tbody tr:last-child > td,
-.chat-dashboard-table--grouped tbody td.spans-to-page-end {
+   ChatDashboardPage.js's and EvalDashboardPage.js's drawCallback) marks
+   that anchor cell so it gets its own closing border regardless of which
+   row it actually sits on. */
+.dashboard-table--grouped tbody tr:last-child > td,
+.dashboard-table--grouped tbody td.spans-to-page-end {
   border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
 }
 /* Solid black rule under the column headers - true black
    (--gcds-color-black, not --gcds-text-primary's #333) and bold weight per
    direct request.
 
-   The vertical divider that used to run after the Chat ID column (targeting
-   thead th:first-child / tbody td.chat-id-cell - .chat-id-cell is still
-   set in ChatDashboardPage.js's drawCallback if this needs to come back)
-   was removed to preview the table without it. */
-.chat-dashboard-table--grouped thead th {
+   A vertical divider used to run after just the Chat ID column
+   (targeting .chat-id-cell, set in both pages' drawCallback for exactly
+   this) before being removed to preview the table without it - now back,
+   generalized to every merged cell via .row-spanned's own border-right
+   above rather than re-adding a Chat-ID-specific rule. */
+.dashboard-table--grouped thead th {
   border-bottom: var(--gcds-border-width-lg) solid var(--gcds-color-black);
 }
-/* Global search box (moved to topStart, next to the entries-per-page
-   control - see the `layout` option in ChatDashboardPage.js) - larger,
-   bolder treatment now that it's the table's single search mechanism
-   (replacing the removed per-column Service filter). The extra
-   `div.dt-container` prefix matches DataTables' own selector shape
-   (div.dt-container .dt-search input, specificity 0,2,2) for one more
-   class of specificity so this wins outright. */
-.chat-dashboard-table-container div.dt-container .dt-search input {
+/* Global search box (topStart - see the `layout` option in
+   ChatDashboardPage.js and EvalDashboardPage.js, both now the same zones)
+   - larger, bolder treatment now that it's the table's primary search
+   mechanism (Chat: replacing the removed per-column Service filter; Eval:
+   alongside its own per-column header filters, which are unaffected by
+   this - see dashboards.md). The extra `div.dt-container` prefix matches
+   DataTables' own selector shape (div.dt-container .dt-search input,
+   specificity 0,2,2) for one more class of specificity so this wins
+   outright. */
+.dashboard-table-container div.dt-container .dt-search input {
   color: var(--gcds-color-black);
   font-size: 16px;
   margin-left: var(--gcds-spacing-200);
@@ -952,10 +1072,10 @@ table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.
    next to it already has its own labeled "x" to clear, and having both
    right beside each other read as a confusing double-clear control.
    WebKit/Blink-only pseudo-element; Firefox doesn't render one by default. */
-.chat-dashboard-table-container div.dt-container .dt-search input[type="search"]::-webkit-search-cancel-button {
+.dashboard-table-container div.dt-container .dt-search input[type="search"]::-webkit-search-cancel-button {
   display: none;
 }
-.chat-dashboard-table-container div.dt-container .dt-search label {
+.dashboard-table-container div.dt-container .dt-search label {
   font-weight: 700;
   font-size: 16px;
   /* Literal 10px, not a --gcds-spacing token: matching DataTables' own
@@ -964,14 +1084,14 @@ table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.
      below - a fixed third-party value, not a GC DS spacing decision. */
   padding-left: 10px;
 }
-/* Search-term pill (injected as a sibling of .dt-search in
-   ChatDashboardPage.js's initComplete) sits beside the search box in the
-   same flex row - just needs its own left gap so it doesn't sit flush
-   against the input. "Showing X to Y of Z" now uses DataTables' native
-   `info` layout feature at bottomStart instead of being injected here (see
-   the `layout` option) - that position doesn't have the stacking problems
-   topStart did, so no manual DOM work needed for it. */
-.chat-dashboard-table-container .chat-dashboard-search-pill {
+/* Search-term pill (injected as a sibling of .dt-search in both
+   ChatDashboardPage.js's and EvalDashboardPage.js's initComplete) sits
+   beside the search box in the same flex row - just needs its own left gap
+   so it doesn't sit flush against the input. "Showing X to Y of Z" now uses
+   DataTables' native `info` layout feature at bottomStart instead of being
+   injected here (see the `layout` option) - that position doesn't have the
+   stacking problems topStart did, so no manual DOM work needed for it. */
+.dashboard-table-container .dashboard-search-pill {
   margin-left: var(--gcds-spacing-200);
 }
 
@@ -993,6 +1113,20 @@ table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.
 
 .label + .label {
   margin-left: var(--gcds-spacing-50);
+}
+
+/* EvalDashboardPage.js's Partner/AI Eval pills (buildEvalPillsHtml) - flex +
+   gap instead of relying on .label + .label's margin-left, which wraps down
+   with the second pill instead of resetting when it doesn't fit on one
+   line, reading as indented rather than flush-left on its own row. margin
+   reset to 0 so the two spacing mechanisms don't stack. */
+.eval-pills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gcds-spacing-50);
+}
+.eval-pills-wrap > .label + .label {
+  margin-left: 0;
 }
 
 .department-feedback-wrapper {
@@ -1752,8 +1886,12 @@ table.dataTable.chat-dashboard-table.chat-dashboard-table--grouped > tbody > tr.
   margin-right: var(--gcds-spacing-75);
 }
 
-/* Shared recharts custom tooltip chrome */
-.chart-tooltip {
+/* Shared recharts custom tooltip chrome - also the chrome for .eval-tooltip
+   (EvalDashboardPage.js's Feedback/Download icon hover tooltips, further
+   down) via ::after, so both read as the same "tooltip" visual language
+   across the admin section instead of two different-looking ones. */
+.chart-tooltip,
+.eval-tooltip::after {
   background: #fff;
   border: 1px solid var(--gcds-color-grayscale-100);
   border-radius: 6px;

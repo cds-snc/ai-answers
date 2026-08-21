@@ -126,7 +126,10 @@ What lives in which event: see [docs/architecture/using-evals-for-answers.md](do
 All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
 
 ### Locale key hygiene
-After adding, removing, or renaming locale keys, run the dead key detector:
+
+**Before adding a new locale key, check whether one already says the same thing.** For generic, non-page-specific text (status messages, announcements, common labels like "cleared", "no data", "loading"), grep `en.json` for the English string first — `common.*` already holds several of these (e.g. `common.noDataForFilters`) precisely so multiple pages/dashboards share one key instead of each defining its own copy. Adding a second key with an identical value under a page-specific namespace (e.g. `admin.evalDashboard.fooAnnouncement` duplicating `admin.chatDashboard.fooAnnouncement`) is the bug this section exists to prevent — do the reuse check *before* writing the key, not after, via the detector below. This has shipped more than once from copy-pasting an existing page's pattern into a new page without checking if the string itself could just be shared.
+
+After adding, removing, or renaming locale keys, also run the dead key detector as a backstop:
 
 ```bash
 node scripts/find-dead-locale-keys.cjs

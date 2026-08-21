@@ -10,6 +10,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 import { normalizeAnswerText } from '../utils/answerText.js';
+import { formatNumber } from '../utils/numberFormat.js';
 
 DataTable.use(DT);
 
@@ -44,6 +45,28 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  // sr-only announcement of a search narrowing the result set to a non-zero
+  // count (SC 4.1.3) - DataTables' own "Showing X to Y of Z" text has no
+  // aria-live, so a screen reader user typing a search term that goes from
+  // e.g. 50 to 3 results gets no indication anything changed. The zero-
+  // result case is already covered by the visible noSearchResults
+  // StatusMessage below. nonce is bumped alongside so a second, different
+  // search that happens to land on the same count still re-announces (same
+  // persistent+sr-only+nonce pattern as ConnectivityPage/VectorPage).
+  const [searchAnnouncement, setSearchAnnouncement] = useState('');
+  const [searchAnnounceNonce, setSearchAnnounceNonce] = useState(0);
+  // Same reasoning, opposite case: the zero-result StatusMessage below is a
+  // plain conditional render, not persistent+sr-only, but has the identical
+  // no-op-remount problem when its text is IDENTICAL across two different
+  // triggers - e.g. editing one bad search term into another bad one both
+  // render "No search results found.", so nothing in the DOM actually
+  // changes and a screen reader user gets no indication the second search
+  // even ran. Bumped on every ajax completion that lands on zero (not
+  // gated to "new search term only" like searchAnnounceNonce - a 0-result
+  // page can't be paged further, so every such completion is a genuinely
+  // new query, not a repeat draw of the same one).
+  const [zeroResultNonce, setZeroResultNonce] = useState(0);
+  const previousSearchTermRef = useRef('');
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -106,7 +129,15 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  const handleClearFilters = useCallback((filtersFromPanel) => {
+  // Clear all is a restart, not a re-apply: unlike removing a single pill or
+  // reopening the panel to change one field (both of which keep the results
+  // area showing and re-fetch with the new selection - see FilterPanel's own
+  // removeFilter/handleApply), Clear all means "I haven't chosen anything
+  // yet". So this resets hasAppliedFilters to false - the exact same gate
+  // that hides the whole results block before the first-ever Apply - rather
+  // than silently auto-fetching the reset defaults and showing a result set
+  // the user never asked for. Nothing renders again until an explicit Apply.
+  const handleClearFilters = useCallback(() => {
     // Clear saved table state
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -116,26 +147,38 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       void e;
     }
-    setTableKey((prev) => prev + 1);
-    if (filtersFromPanel) {
-      const enrichedFilters = { ...filtersFromPanel };
-      const tzOffset = getTimezoneOffsetMinutes(enrichedFilters.startDate || enrichedFilters.endDate);
-      if (tzOffset !== undefined) {
-        enrichedFilters.timezoneOffsetMinutes = tzOffset;
-      }
-      filtersRef.current = enrichedFilters;
-    }
-    try {
-      if (tableApiRef.current) tableApiRef.current.ajax.reload();
-    } catch (e) { void e; }
-  }, [LOCAL_TABLE_STORAGE_KEY]);
+    filtersRef.current = {};
+    // Stale otherwise: the DataTable unmounts (hasAppliedFilters below gates
+    // it), but nothing else clears this ref, and a truthy leftover would
+    // fool the next handleApplyFilters' `if (tableApiRef.current)` check
+    // into calling .ajax.reload() on an already-destroyed table instead of
+    // mounting a fresh one.
+    tableApiRef.current = null;
+    setHasAppliedFilters(false);
+    setRecordsTotal(0);
+    setSearchTerm('');
+    // Clear all unmounts the whole results section (hasAppliedFilters
+    // gates it) with no other indication anything happened - the acting
+    // control (the Clear all button, inside FilterPanel) keeps focus, so
+    // this isn't a focus-loss issue like the quick-search one, but a
+    // screen reader user still gets no confirmation the reset actually
+    // took effect. Reuses the same persistent+sr-only searchAnnouncement
+    // region as the search-narrowing announcement, just for a different
+    // message - same nonce bump so it re-announces even if cleared twice
+    // in a row with nothing else changing in between.
+    setSearchAnnouncement(t('common.filtersClearedAnnouncement'));
+    setSearchAnnounceNonce((n) => n + 1);
+    previousSearchTermRef.current = '';
+    setError(null);
+    setLoading(false);
+  }, [LOCAL_TABLE_STORAGE_KEY, t]);
 
   const columns = useMemo(() => ([
     {
       title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
       searchable: false,
-      orderable: true,
+      orderable: false,
       render: (value, type, row) => {
         if (!value) return '';
         const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
@@ -205,7 +248,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <h2 className="mt-400 mb-400">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      {/* Visually hidden: the filter panel's own summary/controls already make
+          its purpose clear on screen, and this heading's copy just repeated
+          that at the cost of vertical space. Kept as a real heading (not
+          removed) so screen-reader users navigating by heading/landmark
+          still get this section announced. */}
+      <h2 className="sr-only">{t('admin.chatDashboard.timeRangeTitle')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -236,21 +284,23 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       />
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.chatDashboard.noSearchResults')} />
+        <StatusMessage variant="info" message={t('common.noSearchResults')} nonce={zeroResultNonce} />
       )}
 
+      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
+
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && (
         <div>
           {dataTableReady && (
-            <div className="chat-dashboard-table-container chat-dashboard-table-container--grouped">
+            <div className="dashboard-table-container dashboard-table-container--grouped">
               <DataTable
                 key={tableKey}
                 columns={columns}
-                className="display chat-dashboard-table chat-dashboard-table--grouped"
+                className="display dashboard-table dashboard-table--grouped"
                 options={{
                   processing: true,
                   serverSide: true,
@@ -290,8 +340,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   },
                   language: {
                     ...dataTableLanguage(lang),
-                    search: t('admin.chatDashboard.searchLabel', 'Search:'),
-                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Search for a term across columns (e.g. taxes)')
+                    search: t('common.searchLabel'),
+                    searchPlaceholder: t('common.searchPlaceholder')
                   },
                   stateSaveCallback: function (settings, data) {
                     try {
@@ -309,14 +359,22 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         const parsed = stored ? JSON.parse(stored) : null;
                         // stateSave persists the whole DataTables state -
                         // page length, sort, column order AND the search
-                        // term - across reloads. Page length/sort/column
-                        // order carrying over is expected/useful; the
-                        // search term carrying over silently re-applies a
-                        // stale search on a fresh page load, which reads as
-                        // a bug (you refresh expecting a clean table). Clear
-                        // just the search portion, keep the rest.
+                        // term - across reloads. Page length carrying over
+                        // is expected/useful; the search term carrying over
+                        // silently re-applies a stale search on a fresh
+                        // page load, which reads as a bug (you refresh
+                        // expecting a clean table) - same for sort: a stale
+                        // sort column silently overrides the table's own
+                        // default display order (createdAt desc) on refresh,
+                        // which is confusing since nothing on screen
+                        // indicates a non-default sort is active. Clear
+                        // those two, keep the rest (page length/column
+                        // visibility).
                         if (parsed && parsed.search) {
                           parsed.search.search = '';
+                        }
+                        if (parsed && parsed.order) {
+                          delete parsed.order;
                         }
                         return parsed;
                       }
@@ -350,31 +408,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       state.lastChatId = chatId;
                     }
                     row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
-                    // Group hover: highlight every row belonging to this
-                    // chat together, not just the one under the cursor -
-                    // per-row hover looked broken on the rowspan'd Chat ID/
-                    // Department/Service cells, since a spanned cell
-                    // doesn't live in every row it visually covers, so only
-                    // hovering its own anchor row would ever light it up.
-                    // data-chat-id + a table-wide query on enter/leave (one
-                    // listener per row, trivial at page-size row counts)
-                    // lets any row in the group trigger the whole group's
-                    // highlight, anchor row included.
-                    row.dataset.chatId = chatId || '';
-                    row.addEventListener('mouseenter', () => {
-                      const table = row.closest('table');
-                      if (!table || !chatId) return;
-                      table.querySelectorAll(`tr[data-chat-id="${CSS.escape(chatId)}"]`).forEach((r) => {
-                        r.classList.add('chat-group-hover');
-                      });
-                    });
-                    row.addEventListener('mouseleave', () => {
-                      const table = row.closest('table');
-                      if (!table || !chatId) return;
-                      table.querySelectorAll(`tr[data-chat-id="${CSS.escape(chatId)}"]`).forEach((r) => {
-                        r.classList.remove('chat-group-hover');
-                      });
-                    });
+                    // Group hover used to live here (highlighting every row
+                    // belonging to the same chat on mouseenter/mouseleave)
+                    // but was removed: purely decorative with nothing to
+                    // click, so it just read as a false affordance. Native
+                    // per-row hover stays disabled below rather than
+                    // reinstated - it looked broken on the rowspan'd Chat
+                    // ID/Department/Service cells (a spanned cell doesn't
+                    // live in every row it visually covers, so only its own
+                    // anchor row would ever light up) - so there's
+                    // deliberately no hover feedback at all now, not a
+                    // reversion to per-row.
                   },
                   // Collapse the Chat ID/Department/Service cells across a
                   // chat's consecutive rows into single rowspan'd cells,
@@ -417,6 +461,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                           let span = 1;
                           while (
                             i + span < rowData.length &&
+                            // Merging on an empty value (several consecutive
+                            // blank cells) doesn't convey anything - just a
+                            // divider-bordered box around nothing. Leave those
+                            // as ordinary, unmerged single-row cells instead.
+                            valueFn(rowData[i]) &&
                             valueFn(rowData[i + span]) === valueFn(rowData[i]) &&
                             (!boundByChatId || rowData[i + span].chatId === rowData[i].chatId)
                           ) {
@@ -460,6 +509,18 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       const api = this.api();
                       tableApiRef.current = api;
 
+                      // DataTables doesn't add scope="col" to the header
+                      // cells it generates from `columns` on its own (this is
+                      // a real WCAG 1.3.1 gap in the library, not something a
+                      // config option turns on) - set it once here rather
+                      // than per-column above. Headers are only built once on
+                      // init (serverSide mode only redraws the body per
+                      // page), and this instance is recreated from scratch on
+                      // every tableKey remount, so it can't drift out of sync.
+                      api.columns().header().each((header) => {
+                        header.setAttribute('scope', 'col');
+                      });
+
                       // Active search term shown as a dismissible pill right
                       // beside the search box, same .filter-pill styling
                       // FilterPanel already uses for its own active-filter
@@ -468,14 +529,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       const searchContainer = api.table().container().querySelector('.dt-search');
                       if (searchContainer) {
                         const pillEl = document.createElement('span');
-                        pillEl.className = 'filter-pill filter-pill--closable chat-dashboard-search-pill';
+                        pillEl.className = 'filter-pill filter-pill--closable dashboard-search-pill';
                         searchContainer.insertAdjacentElement('afterend', pillEl);
 
                         const renderSearchPill = (term) => {
                           pillEl.innerHTML = '';
                           pillEl.style.display = term ? '' : 'none';
                           if (!term) return;
-                          pillEl.textContent = t('admin.chatDashboard.searchTermPillLabel', 'Search: {term}').replace('{term}', () => term);
+                          pillEl.textContent = t('common.searchTermPillLabel').replace('{term}', () => term);
                           const closeBtn = document.createElement('button');
                           closeBtn.type = 'button';
                           closeBtn.className = 'filter-pill__close';
@@ -528,7 +589,31 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         query.search = searchValue;
                       }
                       const result = await DashboardService.getChatDashboard(query);
-                      setRecordsTotal(result?.recordsTotal || 0);
+                      const total = result?.recordsTotal || 0;
+                      setRecordsTotal(total);
+
+                      // Only re-announce on an actual new search term, not on
+                      // every draw (paging/sorting a still-active search
+                      // shouldn't repeat "N results" on every page turn).
+                      if (searchValue !== previousSearchTermRef.current) {
+                        previousSearchTermRef.current = searchValue;
+                        if (searchValue && total > 0) {
+                          setSearchAnnouncement(
+                            t('admin.chatDashboard.searchResultsAnnouncement').replace('{count}', () => formatNumber(total, lang))
+                          );
+                          setSearchAnnounceNonce((n) => n + 1);
+                        }
+                      }
+                      // zeroResultNonce - see its own comment above - bumped
+                      // on every completion that lands on zero, not gated to
+                      // "new search term" like searchAnnounceNonce: a
+                      // 0-result page can't be paged further, so there's no
+                      // "just re-drawing the same query" case to filter out
+                      // here the way there is for the non-zero count above.
+                      if (total === 0) {
+                        setZeroResultNonce((n) => n + 1);
+                      }
+
                       callback({
                         draw: dtParams.draw || 0,
                         recordsTotal: result?.recordsTotal || 0,
@@ -544,7 +629,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     }
                   }
                 }}
-              />
+              >
+                <caption className="sr-only">{t('admin.chatDashboard.title')}</caption>
+              </DataTable>
             </div>
           )}
         </div>
