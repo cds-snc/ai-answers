@@ -25,8 +25,18 @@ ambiguous whether "everything" means the diff or the whole app.
   equivalent tracked note) pointing at the WCAG criterion, rather than
   blocking the PR on unrelated pre-existing debt, unless the fix is trivial
   enough to bundle in. Say explicitly which findings are which.
-- **Targeted review** — the user names a specific page/component/route;
-  scope to that.
+- **Targeted review** — the user names a specific page/component/route.
+  Read the named file in full, then recursively follow its own imports into
+  every shared component, hook, and util it actually renders or calls
+  (`FilterPanel.js`, `StatusMessage.js`, shared DataTables helpers, etc.) —
+  apply the full checklist (Sections 1-8) to those too, not just the named
+  file's own JSX. A bug in a shared component is a bug in every page that
+  targets it; scoping to "just this page" without checking what it
+  consumes is how shared-component bugs go unnoticed. If a finding turns up
+  in a shared file, apply the "propagate confirmed anti-patterns" rule (see
+  Full app audit) even for an otherwise-targeted review — grep the rest of
+  the app for that shared file's other consumers and note them, since they
+  inherit the same bug.
 - **Full app audit** — triggered by phrasing like "audit everything",
   "whole app", "full accessibility audit", or an explicit `full` arg, and
   by named-area shortcuts (see below). Covers every route in scope, not
@@ -218,6 +228,17 @@ commits) — check new code follows it rather than reinventing it:
 - On validation error, focus moves to the error summary/first invalid field.
 - On dynamic content changes (route change, modal open/close, async content
   swap), focus moves somewhere sensible and isn't silently lost to `<body>`.
+- For every dismiss/clear/toggle/remove-style control, check whether its own
+  `onClick` changes state that the control's *own* render condition depends
+  on — a conditional `{x && <Control/>}`, a ternary swapping it for
+  something else, or a style/class change like `display: none`. If so,
+  explicit focus redirection is required in that same handler (or a
+  `useEffect` keyed to the same state) — don't assume a general "focus
+  dropped to `<body>`" finding already covers every instance of this in a
+  file just because one instance was found and fixed nearby. Check each
+  control independently: a "Clear all" button, an individual pill's own
+  remove button, and a search-clear pill can each have this bug
+  independently even inside the same component.
 - Focus is visible — never `outline: none` without a replacement that meets
   contrast requirements (GC DS focus tokens, e.g. `var(--gcds-focus-border)`,
   already provide this — flag any custom override that suppresses it).
@@ -309,6 +330,11 @@ commits) — check new code follows it rather than reinventing it:
 1. `git diff` (or `git diff main...HEAD`) to get the changed UI files.
 2. Read each changed component/page in full — don't pattern-match on diff
    hunks alone, since a11y bugs are often about what's *missing*.
+   When a finding depends on a derived value ("this reduces to zero," "this
+   list becomes empty," "this condition can never be true"), trace the
+   actual derivation function — don't infer the mechanism from what seems
+   plausible. A wrong mechanism can make a real finding's severity or
+   trigger conditions inaccurate even when the underlying bug is genuine.
 3. Where feasible, actually drive the change: tab through it, check it with
    a browser accessibility tree inspector, and skim console/axe warnings if
    the dev server is running. Static reading catches structural issues but

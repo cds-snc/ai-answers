@@ -166,9 +166,9 @@ Rules:
 - These helpers apply to dashboards, tables, batch lists, and any other UI that surfaces counts, totals, or percentages.
 
 ### French punctuation spacing
-French requires a space before `:`, `;`, `!`, and `?` (e.g. `"Assigné à :"`, `"Continuer ?"`) — English does not. This has slipped through review before in two forms:
-- A static `fr.json` string typed without the space (e.g. `"...utile?"` instead of `"...utile ?"`).
-- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`/`"?"`/`"!"`.
+Per the official Government of Canada style guide (*The Canadian Style*, TERMIUM Plus §17.07), Canadian French requires a space only before the colon `:` (e.g. `"Assigné à :"`) — English does not. Unlike France French, Canadian French does **not** put a space before `;`, `!`, or `?` (e.g. `"Continuer?"`, not `"Continuer ?"`). This has slipped through review before in two forms:
+- A static `fr.json` string typed without the space before `:` (e.g. `"Assigné à:"` instead of `"Assigné à :"`).
+- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`.
 
 ### PR review checklist — official languages
 Every PR that touches UI components, pages, or locale files must be verified against these before merging.
@@ -181,7 +181,7 @@ Every PR that touches UI components, pages, or locale files must be verified aga
 - [ ] French translations are real translations — not copied English text or placeholders
 - [ ] All numbers displayed to users go through `formatNumber(n, lang)` — no raw `.toLocaleString()`, `toString()`, or unformatted numeric values
 - [ ] All percentages displayed to users go through `formatPercent(n, lang)` — no `+ '%'`, `'0%'`, or `'100%'` string literals
-- [ ] French text has a space before `:`, `;`, `!`, `?` — check both static `fr.json` values and any JS that concatenates punctuation onto a label at runtime
+- [ ] French text has a space before `:` only (not before `;`, `!`, `?`) — check both static `fr.json` values and any JS that concatenates punctuation onto a label at runtime
 
 **Flag but don't block:**
 - Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
