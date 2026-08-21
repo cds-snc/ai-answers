@@ -784,9 +784,9 @@
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "viewChatById": "View chat by ID",
-      "sortActivateAscending": "{column} : activate for ascending sort",
-      "sortActivateDescending": "{column} : activate for descending sort",
-      "sortRemove": "{column} : activate to remove sort"
+      "sortActivateAscending": "{column}: activate for ascending sort",
+      "sortActivateDescending": "{column}: activate for descending sort",
+      "sortRemove": "{column}: activate to remove sort"
     },
     "chatDashboard": {
       "title": "Chat dashboard",

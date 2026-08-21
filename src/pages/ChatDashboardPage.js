@@ -576,7 +576,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                           pillEl.innerHTML = '';
                           pillEl.style.display = term ? '' : 'none';
                           if (!term) return;
-                          pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter', 'Remove filter')} - ${term}`);
+                          pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter')} - ${term}`);
                           pillEl.onclick = () => {
                             api.search('').draw();
                           };
