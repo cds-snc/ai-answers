@@ -844,6 +844,7 @@
         "program": "Service",
         "action": "Action",
         "pageLanguage": "Page",
+        "pageLanguageAriaLabel": "Page language",
         "creatorEmail": "Creator",
         "expertEmail": "Expert",
         "feedback": "Public",

@@ -767,6 +767,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     if (questionNumberHeader) {
                       questionNumberHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.questionNumberAriaLabel'));
                     }
+                    // Page language header shows just "Page" (kept short so
+                    // the column stays narrow, same reasoning as Q # above)
+                    // - aria-label carries the spelled-out meaning instead.
+                    const pageLanguageHeader = api.column(columns.findIndex((c) => c.data === 'pageLanguage')).header();
+                    if (pageLanguageHeader) {
+                      pageLanguageHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.pageLanguageAriaLabel'));
+                    }
 
                     // Active search term shown as a dismissible pill right
                     // beside the search box, same .filter-pill styling
