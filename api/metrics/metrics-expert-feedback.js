@@ -153,6 +153,22 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         );
     }
 
+    // TODO: correct/needsImprovement/hasError/hasCitationError/harmful below
+    // count '$category', which is a single priority-ordered value (harmful >
+    // hasCitationError > hasError > needsImprovement > correct) - an
+    // evaluation with BOTH a sentence error and a citation issue is counted
+    // only under hasCitationError, never hasError, so "Has answer error"
+    // can undercount the true number of evaluations with a sentence error.
+    // EvalDashboardPage.js's Partner/AI Eval pills had the identical
+    // masking problem and got a dedicated (non-shared) fix - see
+    // getHasCitationErrorAggregationExpression / *WithoutCitation in
+    // api/util/chat-filters.js. Whether these summary counts should also
+    // become non-exclusive (an eval counted in both hasError AND
+    // hasCitationError when it has both) is an open product question, not
+    // yet decided - same "confirm with the team" status as that pills work.
+    // Note hasContentIssueError below already avoids this exact trap by
+    // counting the raw $hasErrorSignal instead of $category - that's the
+    // precedent a fix here would likely follow.
     stages.push({
         $group: {
             _id: null,

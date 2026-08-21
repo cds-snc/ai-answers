@@ -226,6 +226,24 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           // boolean for its own chart). Hidden here rather than offering a
           // choice that would silently match nothing. See FilterPanel's own
           // showEvalLogic prop comment.
+          //
+          // TODO: "No evaluation" is NOT hidden the same way, but has the
+          // identical problem - parseRequestFilters passes it straight
+          // through as the literal { category: 'noEval' }, which the
+          // aggregation never actually produces (a no-eval row's category
+          // is null, not the string 'noEval'), so selecting that checkbox
+          // here silently returns zero rows every time. getChatFilterConditions
+          // (Chat/Eval Dashboard) handles this correctly today - this path
+          // never got the same treatment.
+          //
+          // Bigger question raised alongside that bug: given how much of
+          // the full advanced FilterPanel doesn't cleanly apply here already
+          // (evalLogic off, Content issue hidden, now a broken noEval too),
+          // is reusing the whole shared FilterPanel even the right fit for
+          // this dashboard, or would a smaller, dedicated filter set (only
+          // the filters that actually work/make sense for these charts)
+          // serve it better? Worth evaluating, not just patching noEval in
+          // isolation.
           showEvalLogic={false}
         />
       </div>
@@ -437,6 +455,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             <SectionWrapper isLoading={loadingState.expert} title={t('metrics.dashboard.expertScored.title')} error={errorState.expert}>
               <GcdsText className="mb-300">{t('metrics.dashboard.expertScored.description')}</GcdsText>
               <div className="bg-gray-50 p-4 rounded-lg">
+                {/* TODO: "Has answer error" below can undercount - see the
+                    long comment above the $group stage in
+                    api/metrics/metrics-expert-feedback.js that computes
+                    hasError/hasCitationError. An evaluation with both a
+                    sentence error and a citation issue only counts under
+                    Citation issue, never here. Same open "should these
+                    stack instead of being mutually exclusive" question as
+                    EvalDashboardPage.js's Partner/AI Eval pills - not yet
+                    decided. */}
                 <DataTable
                   data={[
                     {

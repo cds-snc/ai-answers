@@ -307,20 +307,24 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
             "All institutions" pill for consistency. */}
         <span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span>
         <span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span>
-        <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
-          {pillDate}
-          {!isDefault && (
-            <button
-              type="button"
-              className="filter-pill__close"
-              onClick={handleReset}
-              aria-label={t('dashboardFilter.removeFilter')}
-              disabled={loading}
-            >
-              ×
-            </button>
-          )}
-        </span>
+        {isDefault ? (
+          <span className="filter-pill filter-pill--info">{pillDate}</span>
+        ) : (
+          // Whole pill is the close target, not just the small × - see
+          // FilterPanel.js's identical pattern for why (real <button>,
+          // not a span wrapping one; × is a purely visual aria-hidden
+          // span carried by this button's own aria-label).
+          <button
+            type="button"
+            className="filter-pill filter-pill--closable"
+            onClick={handleReset}
+            aria-label={`${t('dashboardFilter.removeFilter')} - ${pillDate}`}
+            disabled={loading}
+          >
+            {pillDate}
+            <span className="filter-pill__close" aria-hidden="true">×</span>
+          </button>
+        )}
       </div>
     </div>
   );

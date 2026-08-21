@@ -56,7 +56,21 @@ const FilterPanel = ({
   // Collapse when results load successfully; keep open on error or no results.
   // Skipped once after a Clear so the panel stays open for the user to re-filter.
   useEffect(() => {
-    if (!hasAppliedFilters || filterLoading) return;
+    if (!hasAppliedFilters) {
+      // No results in flight or shown - some consumers (e.g. ChatDashboardPage)
+      // treat Clear as a full restart: onClearFilters resets hasAppliedFilters
+      // to false instead of re-fetching, so there's no forthcoming "clear
+      // finished" transition left for a pending skip to protect. Disarm it
+      // here rather than letting it linger armed - otherwise it silently
+      // swallows the auto-close of whatever unrelated Apply happens to be the
+      // next one to bring hasAppliedFilters back to true, not the Clear it was
+      // actually meant for. For consumers where Clear re-fetches immediately
+      // (hasAppliedFilters stays true throughout), this branch never runs, so
+      // their existing skip-then-consume flow below is unaffected.
+      skipNextAutoClose.current = false;
+      return;
+    }
+    if (filterLoading) return;
     if (skipNextAutoClose.current) {
       skipNextAutoClose.current = false;
       return;
@@ -1140,22 +1154,32 @@ const FilterPanel = ({
     {pills.length > 0 && (
       <div className="filter-bar__pills-row">
         {pills.map(pill => (
-          <span
-            key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
-            className={`filter-pill${pill.connector ? ' filter-pill--connector' : pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
-          >
-            {pill.label}
-            {!pill.info && (
-              <button
-                type="button"
-                className="filter-pill__close"
-                onClick={() => removeFilter(pill.key, pill.value)}
-                aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
-              >
-                ×
-              </button>
-            )}
-          </span>
+          pill.connector || pill.info ? (
+            <span
+              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+              className={`filter-pill${pill.connector ? ' filter-pill--connector' : ' filter-pill--info'}`}
+            >
+              {pill.label}
+            </span>
+          ) : (
+            // Whole pill is the close target, not just the small × - a
+            // real <button> (not a span wrapping one) so the entire
+            // label area shares one bigger click/tap target and one tab
+            // stop, instead of requiring the × specifically. The × itself
+            // is now purely visual (aria-hidden span, not its own nested
+            // button - a button inside a button is invalid HTML anyway),
+            // carried entirely by this button's own aria-label.
+            <button
+              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+              type="button"
+              className="filter-pill filter-pill--closable"
+              onClick={() => removeFilter(pill.key, pill.value)}
+              aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
+            >
+              {pill.label}
+              <span className="filter-pill__close" aria-hidden="true">×</span>
+            </button>
+          )
         ))}
         {pills.some(p => !p.info) && (
           <button

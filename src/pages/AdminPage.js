@@ -207,7 +207,7 @@ const AdminPage = ({ lang = 'en' }) => {
       {/* Quick chat lookup for admins and partners */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
-          <h2 className="mt-400 mb-200">{t('admin.viewChat.title', 'View chat by ID')}</h2>
+          <h2 className="mt-400 mb-200">{t('admin.common.viewChatById')}</h2>
           <form
             onSubmit={(e) => {
               e.preventDefault();

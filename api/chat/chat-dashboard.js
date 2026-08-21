@@ -457,24 +457,86 @@ async function chatDashboardHandler(req, res) {
       : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, chatId: -1, questionNumber: 1 } };
     pipeline.push(sortStage);
 
-    if (isDataTablesMode) {
+    const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
+
+    // Group-based pagination only applies to the default date sort;
+    // explicit column sorts intentionally fall back to row-based
+    // pagination (see below) - not a bug if a chat's rows end up apart
+    // from each other in that mode.
+    //
+    // Group-based (never-split-a-chat) pagination only applies to the
+    // default view (no explicit column sort - date order, where a chat
+    // really is one unit worth keeping together). An explicit sort by a
+    // per-question field (Department/Program/Service) is deliberately
+    // scoped to individual interactions, not whole chats - "sort by
+    // Department = IRCC" means show me the IRCC questions first, not every
+    // other question in the same conversation dragged along with them,
+    // same as how a search match doesn't pull in its chat's unrelated
+    // siblings either. So those sorts fall back to plain row-based
+    // pagination below, and a chat's rows can end up apart from each other
+    // (or split across a page) in that mode - that's correct there, not
+    // the bug this feature exists to prevent. See the matching, more
+    // detailed comment in api/eval/eval-dashboard.js for the full
+    // reasoning (single continuous aggregation so the $lookup joins above
+    // still run exactly once, no $setWindowFields, etc.) - not repeated
+    // here.
+    //
+    // TODO: if this turns out to cost more than expected in practice (real
+    // DocumentDB, not local dev), it's fine to strip this back out for
+    // Chat Dashboard specifically (revert to the plain row-based
+    // $skip/$limit) and revisit later rather than live with a slow
+    // dashboard. Eval Dashboard has the equivalent TODO.
+    const useChatGroupedPagination = isDataTablesMode && sortField === 'createdAt';
+
+    if (useChatGroupedPagination) {
+      pipeline.push({ $group: { _id: '$chatId', sortKeyValue: { $first: '$chatCreatedAt' }, rows: { $push: '$$ROOT' } } });
+      pipeline.push({ $sort: { sortKeyValue: orderDir, _id: orderDir } });
       if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
+      pipeline.push({ $unwind: '$rows' });
+      pipeline.push({ $replaceRoot: { newRoot: '$rows' } });
+    } else if (isDataTablesMode) {
+      // No +1 lookahead needed here (unlike the chat-grouped branch above)
+      // - this mode always has a real totalCount from countPipeline below,
+      // not a synthetic hasMore guess, so there's nothing to detect.
+      if (start > 0) pipeline.push({ $skip: start });
+      pipeline.push({ $limit: pageSize });
     } else {
       pipeline.push({ $limit: limit });
     }
 
-    // Build count pipeline before modifying main pipeline with sort/limit
+    // Build count pipeline before modifying main pipeline with sort/limit -
+    // counts distinct chats to match group-based pagination, or plain rows
+    // to match the row-based fallback, whichever mode is active.
     const countPipeline = pipelineBeforeSortLimit.slice();
+    if (useChatGroupedPagination) countPipeline.push({ $group: { _id: '$chatId' } });
     countPipeline.push({ $count: 'totalCount' });
 
     // Run data and count queries in parallel for better performance
-    const [results, countResult] = await Promise.all([
+    const [flatResults, countResult] = await Promise.all([
       Chat.aggregate(pipeline).allowDiskUse(true),
       Chat.aggregate(countPipeline).allowDiskUse(true)
     ]);
 
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+
+    let results = flatResults;
+    if (useChatGroupedPagination && pageSize !== null) {
+      // flatResults may include one extra chat's worth of rows (the +1
+      // lookahead group) purely so a mismatched page length here would
+      // still be caught in review - trim it back off, same as
+      // eval-dashboard.js. totalCount above is unaffected either way.
+      const seenChatIds = [];
+      for (const r of flatResults) {
+        if (seenChatIds[seenChatIds.length - 1] !== r.chatId) seenChatIds.push(r.chatId);
+      }
+      if (seenChatIds.length > pageSize) {
+        const lookaheadChatId = seenChatIds[pageSize];
+        results = flatResults.filter((r) => r.chatId !== lookaheadChatId);
+      }
+    }
+    // Row-based fallback needs no trim here - its own $limit above (no +1)
+    // already fetched exactly one page's worth.
 
     const chats = results.map((row) => ({
       _id: row._id ? String(row._id) : '',
