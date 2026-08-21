@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.190.2](https://github.com/cds-snc/ai-answers/compare/v1.190.1...v1.190.2) (2026-08-21)
+
+
+### Bug Fixes
+
+* resolve sharp branch merge conflict ([6ffba70](https://github.com/cds-snc/ai-answers/commit/6ffba7026446bee9014317e82b84bcf12bfb1969))
+* update nanoid to patched version ([1729247](https://github.com/cds-snc/ai-answers/commit/1729247f9e8ecffc44888754cd09872173c2db68))
+* update nanoid to patched version ([dd655f0](https://github.com/cds-snc/ai-answers/commit/dd655f01f25bb38c22fee63dec3cbef077926ad2))
+* upgrade brace-expansion ([36ddd89](https://github.com/cds-snc/ai-answers/commit/36ddd89cd23a5b102e12cd54d9e1a0ef10e17ad6))
+* upgrade brace-expansion ([690aeb7](https://github.com/cds-snc/ai-answers/commit/690aeb7d2901685e2df34e59cbb3655cba9d36b7))
+* upgrade ip-address ([0b6f83e](https://github.com/cds-snc/ai-answers/commit/0b6f83e37c724845ae8dfb516b5fbd892b56344b))
+* upgrade ip-address ([56c918e](https://github.com/cds-snc/ai-answers/commit/56c918e0f0fdc3641137ddb76b3a02ae1df03655))
+* upgrade ip-address ([37ecf90](https://github.com/cds-snc/ai-answers/commit/37ecf90b86043317a0b7c4f4f16a581be1b4a2c7))
+* upgrade ip-address ([191643a](https://github.com/cds-snc/ai-answers/commit/191643a4fa9df358ecc3a531df5a21705ad82f36))
+* upgrade sharp ([a16dffc](https://github.com/cds-snc/ai-answers/commit/a16dffccc7187ab2da577cd7ea9b95ebdff47ed9))
+* upgrade sharp ([717906b](https://github.com/cds-snc/ai-answers/commit/717906b359e0d6a946b2d954eaa8abd8529b690a))
+
 ## [1.190.1](https://github.com/cds-snc/ai-answers/compare/v1.190.0...v1.190.1) (2026-08-20)
 
 
