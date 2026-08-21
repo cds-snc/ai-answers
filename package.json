@@ -139,6 +139,7 @@
     ]
   },
   "overrides": {
+    "sharp": "0.35.0",
     "postcss-svgo": {
       "svgo": "2.8.1"
     },
