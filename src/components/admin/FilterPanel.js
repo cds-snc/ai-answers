@@ -1154,22 +1154,32 @@ const FilterPanel = ({
     {pills.length > 0 && (
       <div className="filter-bar__pills-row">
         {pills.map(pill => (
-          <span
-            key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
-            className={`filter-pill${pill.connector ? ' filter-pill--connector' : pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
-          >
-            {pill.label}
-            {!pill.info && (
-              <button
-                type="button"
-                className="filter-pill__close"
-                onClick={() => removeFilter(pill.key, pill.value)}
-                aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
-              >
-                ×
-              </button>
-            )}
-          </span>
+          pill.connector || pill.info ? (
+            <span
+              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+              className={`filter-pill${pill.connector ? ' filter-pill--connector' : ' filter-pill--info'}`}
+            >
+              {pill.label}
+            </span>
+          ) : (
+            // Whole pill is the close target, not just the small × - a
+            // real <button> (not a span wrapping one) so the entire
+            // label area shares one bigger click/tap target and one tab
+            // stop, instead of requiring the × specifically. The × itself
+            // is now purely visual (aria-hidden span, not its own nested
+            // button - a button inside a button is invalid HTML anyway),
+            // carried entirely by this button's own aria-label.
+            <button
+              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
+              type="button"
+              className="filter-pill filter-pill--closable"
+              onClick={() => removeFilter(pill.key, pill.value)}
+              aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
+            >
+              {pill.label}
+              <span className="filter-pill__close" aria-hidden="true">×</span>
+            </button>
+          )
         ))}
         {pills.some(p => !p.info) && (
           <button

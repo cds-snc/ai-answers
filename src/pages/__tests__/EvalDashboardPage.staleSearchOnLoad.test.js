@@ -67,9 +67,9 @@ describe('EvalDashboardPage - does not restore a stale search term on page load'
     // up. The key format is the component's own TABLE_STORAGE_KEY + lang.
     EvaluationService.getEvalDashboard.mockResolvedValueOnce({ data: [{ chatId: 'seed' }], hasMore: false });
     const { container } = render(<EvalDashboardPage lang="en" />);
-    fireEvent.change(container.querySelector('#eval-quick-search-input'), { target: { value: 'seed' } });
+    fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'seed' } });
     await act(async () => {
-      fireEvent.submit(container.querySelector('.eval-quick-search form'));
+      fireEvent.submit(container.querySelector('.eval-search-chat-id form'));
     });
     await waitFor(() => expect(lastOptions).toBeTruthy());
 

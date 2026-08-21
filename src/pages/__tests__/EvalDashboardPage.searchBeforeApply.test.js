@@ -8,7 +8,7 @@ import EvalDashboardPage from '../EvalDashboardPage.js';
 import EvaluationService from '../../services/EvaluationService.js';
 
 // Regression coverage for surfacing "Find by Chat ID" before any filter
-// Apply: only the standalone quick-search input should show at that point,
+// Apply: only the standalone chat ID search input should show at that point,
 // not the whole table (columns, per-column filters, pagination) - that
 // reads as confusing/broken before there's anything to show. Submitting it
 // runs a lightweight pre-check; a match applies the default filters and
@@ -51,10 +51,10 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsIcon: () => <span aria-hidden="true" />
 }));
 
-const submitQuickSearch = async (container, value) => {
-  fireEvent.change(container.querySelector('#eval-quick-search-input'), { target: { value } });
+const submitChatIdSearch = async (container, value) => {
+  fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value } });
   await act(async () => {
-    fireEvent.submit(container.querySelector('.eval-quick-search form'));
+    fireEvent.submit(container.querySelector('.eval-search-chat-id form'));
   });
 };
 
@@ -64,10 +64,10 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     lastOptions = null;
   });
 
-  it('shows only the standalone quick-search input before Apply, not the full table', () => {
+  it('shows only the standalone chat ID search input before Apply, not the full table', () => {
     const { container } = render(<EvalDashboardPage lang="en" />);
 
-    expect(container.querySelector('#eval-quick-search-input')).not.toBeNull();
+    expect(container.querySelector('#eval-search-chat-id-input')).not.toBeNull();
     expect(container.querySelector('[data-testid="mock-data-table"]')).toBeNull();
   });
 
@@ -75,7 +75,7 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     EvaluationService.getEvalDashboard.mockResolvedValueOnce({ data: [{ chatId: 'abc123' }], hasMore: false });
 
     const { container } = render(<EvalDashboardPage lang="en" />);
-    await submitQuickSearch(container, 'abc123');
+    await submitChatIdSearch(container, 'abc123');
 
     await waitFor(() => {
       expect(container.querySelector('[data-testid="mock-data-table"]')).not.toBeNull();
@@ -84,14 +84,14 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
 
     // The standalone box is gone once the real table (with its own search
     // box) takes over.
-    expect(container.querySelector('#eval-quick-search-input')).toBeNull();
+    expect(container.querySelector('#eval-search-chat-id-input')).toBeNull();
   });
 
   it('searches all time, unscoped to any date range, not just the default last 7 days', async () => {
     EvaluationService.getEvalDashboard.mockResolvedValueOnce({ data: [{ chatId: 'old-chat' }], hasMore: false });
 
     const { container } = render(<EvalDashboardPage lang="en" />);
-    await submitQuickSearch(container, 'old-chat');
+    await submitChatIdSearch(container, 'old-chat');
 
     const [query] = EvaluationService.getEvalDashboard.mock.calls[0];
     expect(query.filterType).toBe('preset');
@@ -115,22 +115,22 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     EvaluationService.getEvalDashboard.mockResolvedValueOnce({ data: [], hasMore: false });
 
     const { container, getByText } = render(<EvalDashboardPage lang="en" />);
-    await submitQuickSearch(container, 'no-such-id');
+    await submitChatIdSearch(container, 'no-such-id');
 
     expect(container.querySelector('[data-testid="mock-data-table"]')).toBeNull();
     expect(getByText('admin.evalDashboard.searchNotFound')).toBeTruthy();
     // The box stays up so the user can try again immediately.
-    expect(container.querySelector('#eval-quick-search-input')).not.toBeNull();
+    expect(container.querySelector('#eval-search-chat-id-input')).not.toBeNull();
   });
 
   it('clears the not-found message as soon as the user edits the search again', async () => {
     EvaluationService.getEvalDashboard.mockResolvedValueOnce({ data: [], hasMore: false });
 
     const { container, queryByText } = render(<EvalDashboardPage lang="en" />);
-    await submitQuickSearch(container, 'no-such-id');
+    await submitChatIdSearch(container, 'no-such-id');
     expect(queryByText('admin.evalDashboard.searchNotFound')).toBeTruthy();
 
-    fireEvent.change(container.querySelector('#eval-quick-search-input'), { target: { value: 'no-such-id2' } });
+    fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'no-such-id2' } });
 
     expect(queryByText('admin.evalDashboard.searchNotFound')).toBeNull();
   });
@@ -139,14 +139,14 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     const { container, getByText, queryByText } = render(<EvalDashboardPage lang="en" />);
 
     await act(async () => {
-      fireEvent.submit(container.querySelector('.eval-quick-search form'));
+      fireEvent.submit(container.querySelector('.eval-search-chat-id form'));
     });
 
     expect(EvaluationService.getEvalDashboard).not.toHaveBeenCalled();
     expect(getByText('admin.evalDashboard.searchRequired')).toBeTruthy();
-    expect(container.querySelector('#eval-quick-search-input').getAttribute('aria-describedby')).toBe('eval-quick-search-error');
+    expect(container.querySelector('#eval-search-chat-id-input').getAttribute('aria-describedby')).toBe('eval-search-chat-id-error');
 
-    fireEvent.change(container.querySelector('#eval-quick-search-input'), { target: { value: 'abc' } });
+    fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'abc' } });
 
     expect(queryByText('admin.evalDashboard.searchRequired')).toBeNull();
   });

@@ -121,10 +121,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // box, once the table exists) so this one can be read at render time to
   // seed the table's initial search when it first mounts.
   const [pendingSearch, setPendingSearch] = useState('');
-  // Set when the quick-search's own pre-check (see handleQuickSearchSubmit)
+  // Set when the chat ID search's own pre-check (see handleSearchChatIdSubmit)
   // finds nothing - distinct from pageResultCount === 0, which only ever
   // applies once the real table exists.
-  const [quickSearchNotFound, setQuickSearchNotFound] = useState(false);
+  const [searchChatIdNotFound, setSearchChatIdNotFound] = useState(false);
   // Field-tied validation ("enter a chat ID"), not a page-level outcome -
   // FeedbackInlineError + aria-describedby, matching SimilarChatsDashboard.js's
   // and VectorPage.js's identical chat-ID-lookup pattern (see AGENTS.md's
@@ -133,27 +133,27 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // FeedbackInlineError's key={errorCount} to mount a fresh node and
   // re-announce even a repeat identical failure.
   const {
-    hasError: hasQuickSearchError,
-    errorCount: quickSearchErrorCount,
-    errorRef: quickSearchErrorRef,
-    triggerError: triggerQuickSearchError,
-    clearError: clearQuickSearchError,
+    hasError: hasSearchChatIdError,
+    errorCount: searchChatIdErrorCount,
+    errorRef: searchChatIdErrorRef,
+    triggerError: triggerSearchChatIdError,
+    clearError: clearSearchChatIdError,
   } = useInlineFormError();
 
-  // A11y: on a successful quick search, handleApplyFilters unmounts the
-  // whole quick-search box - including the Search button the user just
+  // A11y: on a successful chat ID search, handleApplyFilters unmounts the
+  // whole chat ID search box - including the Search button the user just
   // activated - in the same render that mounts the results table. With no
   // focus handling, the browser's default on a focused element leaving the
   // DOM is to drop focus to <body>, right when the user most needs to land
   // on the results (SC 2.4.3). useFocusOnChange (same hook
-  // quickSearchErrorRef above already uses for the inline error) moves
+  // searchChatIdErrorRef above already uses for the inline error) moves
   // focus to the results heading below instead - a counter, not a
   // boolean, so a second search that also succeeds still re-fires the
-  // effect. Only bumped on the quick-search path specifically: a normal
+  // effect. Only bumped on the chat ID search path specifically: a normal
   // FilterPanel Apply keeps focus on its own Apply button already, so it
   // doesn't need this.
-  const [quickSearchFoundNonce, setQuickSearchFoundNonce] = useState(0);
-  const resultsHeadingRef = useFocusOnChange(quickSearchFoundNonce);
+  const [searchChatIdFoundNonce, setSearchChatIdFoundNonce] = useState(0);
+  const resultsHeadingRef = useFocusOnChange(searchChatIdFoundNonce);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
@@ -188,7 +188,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
-  // mergeDefaults=false is for the quick-search's own "found" branch below:
+  // mergeDefaults=false is for the chat ID search's own "found" branch below:
   // it needs the table to open with the exact all-time (unscoped) filters
   // the pre-check itself searched with, not the default last-7-days range
   // merged on top - merging would silently re-scope the very match that was
@@ -214,7 +214,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // something matches, proceed exactly like a normal Apply - the table
   // mounts and `pendingSearch` (still in scope) seeds its initial search
   // value, so the very first real fetch already reflects it. If nothing
-  // matches, say so and leave the quick-search box up to try again.
+  // matches, say so and leave the chat ID search box up to try again.
   //
   // Deliberately UNSCOPED - filterType/presetValue: 'all' makes the backend
   // skip its own date $match entirely (see getDateRange in
@@ -224,15 +224,15 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // no date params at all would actually be MORE restrictive, not less:
   // getDateRange's own fallback (no startDate/endDate, no preset) is a bare
   // 24-hour window.
-  const handleQuickSearchSubmit = useCallback(async (e) => {
+  const handleSearchChatIdSubmit = useCallback(async (e) => {
     e.preventDefault();
     const term = pendingSearch.trim();
     if (!term) {
-      triggerQuickSearchError();
+      triggerSearchChatIdError();
       return;
     }
-    clearQuickSearchError();
-    setQuickSearchNotFound(false);
+    clearSearchChatIdError();
+    setSearchChatIdNotFound(false);
     setLoading(true);
     setError(null);
     const unscopedFilters = { filterType: 'preset', presetValue: 'all' };
@@ -257,12 +257,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // no-data StatusMessage's condition - flashing "No data" for a
         // search that had, in fact, just found something.
         handleApplyFilters(unscopedFilters, { mergeDefaults: false });
-        // See quickSearchFoundNonce's own comment above - moves focus to
+        // See searchChatIdFoundNonce's own comment above - moves focus to
         // the results heading instead of it falling to <body> once this
         // submit button unmounts.
-        setQuickSearchFoundNonce((n) => n + 1);
+        setSearchChatIdFoundNonce((n) => n + 1);
       } else {
-        setQuickSearchNotFound(true);
+        setSearchChatIdNotFound(true);
         setLoading(false);
       }
     } catch (err) {
@@ -270,14 +270,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       setError(err.message || String(err));
       setLoading(false);
     }
-  }, [pendingSearch, handleApplyFilters, triggerQuickSearchError, clearQuickSearchError]);
+  }, [pendingSearch, handleApplyFilters, triggerSearchChatIdError, clearSearchChatIdError]);
 
   // Clear all is a restart, not a re-apply: same reasoning as
   // ChatDashboardPage.js's handleClearFilters - resets hasAppliedFilters to
   // false (the same gate that hides the whole results block, including the
   // real table's search box, before the first-ever Apply) instead of
   // silently auto-fetching the reset defaults, so nothing renders again
-  // until an explicit Apply or a submitted quick search.
+  // until an explicit Apply or a submitted chat ID search.
   const handleClearFilters = useCallback(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -295,10 +295,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     setPageResultCount(0);
     setSearchTerm('');
     setPendingSearch('');
-    setQuickSearchNotFound(false);
+    setSearchChatIdNotFound(false);
     setError(null);
     setLoading(false);
-    setClearAnnouncement(t('common.filtersClearedAnnouncement'));
+    setClearAnnouncement(t('admin.common.filtersClearedAnnouncement'));
     setClearAnnounceNonce((n) => n + 1);
   }, [LOCAL_TABLE_STORAGE_KEY, t]);
 
@@ -411,10 +411,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.evalDashboard.columns.department'), data: 'department', width: '110px', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.program'), data: 'program', width: '160px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.action'), data: 'action', width: '90px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
-    { title: t('admin.chatDashboard.columns.referringUrl'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : `<span style="color: #666;">${escapeHtmlAttribute(t('reviewPanels.none'))}</span>`, searchable: false, orderable: false },
+    { title: t('admin.chatDashboard.columns.referringUrl'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : `<span style="color: #666;">${escapeHtmlAttribute(t('reviewPanels.none'))}</span>`, searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.pageLanguage'), data: 'pageLanguage', width: '50px', className: 'eval-center-cell', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.creatorEmail'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: false },
-    { title: t('admin.evalDashboard.columns.expertEmail'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: false },
+    { title: t('admin.evalDashboard.columns.creatorEmail'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
+    { title: t('admin.evalDashboard.columns.expertEmail'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
     {
       // Not shown as a column: the date range is already a filter choice
       // (see the filter panel), so a per-row Date value is redundant on
@@ -478,7 +478,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           that the applied filters themselves are wrong (same distinction as
           ChatDashboardPage.js's noSearchResults/noDataForFilters split). */}
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && !searchTerm && (
@@ -492,56 +492,56 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           shell with nothing applied yet reads as confusing/broken (looks
           operable, isn't). Submitting applies the default filters and seeds
           the real table's search box with whatever was typed - see
-          handleQuickSearchSubmit and the `search:` option below. Hidden
+          handleSearchChatIdSubmit and the `search:` option below. Hidden
           again once results exist, since the real DataTables search box
           (same label) takes over. */}
       {!hasAppliedFilters && (
-        <details className="filter-panel eval-quick-search">
+        <details className="filter-panel eval-search-chat-id">
           <summary className="filter-panel-summary">
             <Search className="filter-panel-summary__icon" aria-hidden="true" />
-            {t('admin.evalDashboard.quickSearchLabel')}
+            {t('admin.common.viewChatById')}
           </summary>
           <div className="filter-panel-content">
             {/* noValidate: required/aria-required below are for semantics and
                 AT only - native browser validation would otherwise intercept
-                an empty submit before handleQuickSearchSubmit runs, bypassing
+                an empty submit before handleSearchChatIdSubmit runs, bypassing
                 the custom FeedbackInlineError/announcement flow (SC 3.3.2/
                 4.1.3). Only one field in this form, so no ExpertFeedbackComponent.js-
                 style risk of silently dropping an unrelated field's native check. */}
-            <form onSubmit={handleQuickSearchSubmit} noValidate>
-              <label htmlFor="eval-quick-search-input" className="filter-label">
-                {t('admin.evalDashboard.quickSearchInputLabel')}
+            <form onSubmit={handleSearchChatIdSubmit} noValidate>
+              <label htmlFor="eval-search-chat-id-input" className="filter-label">
+                {t('admin.evalDashboard.searchChatIdInputLabel')}
               </label>
-              {hasQuickSearchError && (
+              {hasSearchChatIdError && (
                 <FeedbackInlineError
-                  id="eval-quick-search-error"
+                  id="eval-search-chat-id-error"
                   message={t('admin.evalDashboard.searchRequired')}
-                  errorCount={quickSearchErrorCount}
-                  inputRef={quickSearchErrorRef}
+                  errorCount={searchChatIdErrorCount}
+                  inputRef={searchChatIdErrorRef}
                 />
               )}
-              <div className="eval-quick-search__field">
+              <div className="eval-search-chat-id__field">
                 <input
-                  id="eval-quick-search-input"
+                  id="eval-search-chat-id-input"
                   type="search"
                   className="filter-input"
                   value={pendingSearch}
                   onChange={(e) => {
                     setPendingSearch(e.target.value);
-                    setQuickSearchNotFound(false);
-                    clearQuickSearchError();
+                    setSearchChatIdNotFound(false);
+                    clearSearchChatIdError();
                   }}
-                  placeholder={t('admin.evalDashboard.quickSearchPlaceholder')}
+                  placeholder={t('admin.evalDashboard.searchChatIdPlaceholder')}
                   required
                   aria-required="true"
-                  aria-describedby={hasQuickSearchError ? 'eval-quick-search-error' : undefined}
+                  aria-describedby={hasSearchChatIdError ? 'eval-search-chat-id-error' : undefined}
                 />
               </div>
               <button type="submit" className="filter-button filter-button-primary mt-200">
                 {t('admin.evalDashboard.searchButton')}
               </button>
             </form>
-            {quickSearchNotFound && (
+            {searchChatIdNotFound && (
               <StatusMessage variant="info" message={t('admin.evalDashboard.searchNotFound')} />
             )}
           </div>
@@ -569,7 +569,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 autoWidth: false,
                 order: [[13, 'desc']],
                 // Seeds the search box with whatever was typed into the
-                // standalone pre-table quick-search (see the render below) -
+                // standalone pre-table chat ID search (see the render below) -
                 // read once here, at this mount's render, since the table
                 // only ever mounts via a genuine Apply (including the quick
                 // search's own submit, which is just handleApplyFilters).
@@ -595,8 +595,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 },
                 language: {
                   ...dataTableLanguage(lang),
-                  search: t('common.searchLabel'),
-                  searchPlaceholder: t('common.searchPlaceholder')
+                  search: t('admin.common.searchLabel'),
+                  searchPlaceholder: t('admin.common.searchPlaceholder')
                 },
                 // Chat grouping: same approach as ChatDashboardPage.js
                 // (preDrawCallback/createdRow/drawCallback below) - each row
@@ -702,6 +702,45 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
                     collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
                     collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
+
+                    // Sort-icon tooltip text (visual only - see the
+                    // thead th[data-tooltip] comment in admin.css
+                    // for why this is a sighted-user mirror, not itself an
+                    // accessibility mechanism). Runs every draw, not just
+                    // initComplete, because the text depends on aria-sort
+                    // (set by DataTables' own header-update logic, which
+                    // runs as part of every draw cycle including sort
+                    // changes) - "activate for ascending sort" needs to
+                    // flip to "activate for descending sort" the moment a
+                    // column becomes the active sort, matching GC DS's own
+                    // table pattern (see admin.css comment above the CSS
+                    // rules this feeds).
+                    api.columns().header().each((header) => {
+                      if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
+                      const orderSpan = header.querySelector('.dt-column-order');
+                      if (!orderSpan) return;
+                      const title = (header.textContent || '').trim();
+                      const currentSort = header.getAttribute('aria-sort');
+                      // DataTables' own default per-column click cycle is
+                      // 3-state, not 2 - asSorting: ['asc', 'desc', ''] in
+                      // its own defaults (neither dashboard overrides it) -
+                      // ascending, then descending, then a third click
+                      // removes sorting entirely (aria-sort is removed,
+                      // same as a column that was never sorted), then back
+                      // to ascending. Matches GC DS's own getSortTitle
+                      // exactly: asc -> "activate descending", desc ->
+                      // "activate to remove sort" (not "activate
+                      // ascending" - that was wrong here before, a two-
+                      // state assumption that didn't match this app's
+                      // actual click behaviour), unsorted -> "activate
+                      // ascending".
+                      const nextKey = currentSort === 'ascending'
+                        ? 'admin.common.sortActivateDescending'
+                        : currentSort === 'descending'
+                          ? 'admin.common.sortRemove'
+                          : 'admin.common.sortActivateAscending';
+                      header.setAttribute('data-tooltip', t(nextKey).replace('{column}', () => title));
+                    });
                   } catch (e) { /* ignore drawCallback errors */ }
                 },
                 // Add per-column header inputs
@@ -737,7 +776,12 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // same as ChatDashboardPage.js's.
                     const searchContainer = api.table().container().querySelector('.dt-search');
                     if (searchContainer) {
-                      const pillEl = document.createElement('span');
+                      // Whole pill is the close target, not just the small
+                      // × - a real <button> (not a span wrapping one), same
+                      // reasoning and CSS as FilterPanel.js's own pills
+                      // (see admin.css's .filter-pill--closable comment).
+                      const pillEl = document.createElement('button');
+                      pillEl.type = 'button';
                       pillEl.className = 'filter-pill filter-pill--closable dashboard-search-pill';
                       searchContainer.insertAdjacentElement('afterend', pillEl);
 
@@ -745,16 +789,17 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                         pillEl.innerHTML = '';
                         pillEl.style.display = term ? '' : 'none';
                         if (!term) return;
-                        pillEl.textContent = t('common.searchTermPillLabel').replace('{term}', () => term);
-                        const closeBtn = document.createElement('button');
-                        closeBtn.type = 'button';
-                        closeBtn.className = 'filter-pill__close';
-                        closeBtn.setAttribute('aria-label', `${t('dashboardFilter.removeFilter')} - ${term}`);
-                        closeBtn.textContent = '×';
-                        closeBtn.addEventListener('click', () => {
+                        pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter')} - ${term}`);
+                        pillEl.onclick = () => {
                           api.search('').draw();
-                        });
-                        pillEl.appendChild(closeBtn);
+                        };
+                        const labelSpan = document.createTextNode(t('admin.common.searchTermPillLabel').replace('{term}', () => term));
+                        pillEl.appendChild(labelSpan);
+                        const closeIcon = document.createElement('span');
+                        closeIcon.className = 'filter-pill__close';
+                        closeIcon.setAttribute('aria-hidden', 'true');
+                        closeIcon.textContent = '×';
+                        pillEl.appendChild(closeIcon);
                       };
 
                       renderSearchPill(api.search());

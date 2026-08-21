@@ -542,6 +542,7 @@ async function evalDashboardHandler(req, res) {
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType',
       creatorEmail: 'creatorEmail',
+      expertEmail: 'expertEmail',
       hasDownload: 'hasDownload',
       feedback: 'feedback'
     };

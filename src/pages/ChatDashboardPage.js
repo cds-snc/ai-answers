@@ -160,13 +160,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // Clear all unmounts the whole results section (hasAppliedFilters
     // gates it) with no other indication anything happened - the acting
     // control (the Clear all button, inside FilterPanel) keeps focus, so
-    // this isn't a focus-loss issue like the quick-search one, but a
+    // this isn't a focus-loss issue like the chat ID search one, but a
     // screen reader user still gets no confirmation the reset actually
     // took effect. Reuses the same persistent+sr-only searchAnnouncement
     // region as the search-narrowing announcement, just for a different
     // message - same nonce bump so it re-announces even if cleared twice
     // in a row with nothing else changing in between.
-    setSearchAnnouncement(t('common.filtersClearedAnnouncement'));
+    setSearchAnnouncement(t('admin.common.filtersClearedAnnouncement'));
     setSearchAnnounceNonce((n) => n + 1);
     previousSearchTermRef.current = '';
     setError(null);
@@ -284,7 +284,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       />
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
       )}
 
       <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
@@ -340,8 +340,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   },
                   language: {
                     ...dataTableLanguage(lang),
-                    search: t('common.searchLabel'),
-                    searchPlaceholder: t('common.searchPlaceholder')
+                    search: t('admin.common.searchLabel'),
+                    searchPlaceholder: t('admin.common.searchPlaceholder')
                   },
                   stateSaveCallback: function (settings, data) {
                     try {
@@ -502,6 +502,41 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
                       collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
                       collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
+
+                      // Sort-icon tooltip text (visual only - see the
+                      // thead th[data-tooltip] comment in admin.css
+                      // for why this is a sighted-user mirror, not itself
+                      // an accessibility mechanism). Runs every draw, not
+                      // just initComplete, because the text depends on
+                      // aria-sort (set by DataTables' own header-update
+                      // logic, which runs as part of every draw cycle
+                      // including sort changes) - "activate for ascending
+                      // sort" needs to flip to "activate for descending
+                      // sort" the moment a column becomes the active sort,
+                      // matching GC DS's own table pattern (see admin.css
+                      // comment above the CSS rules this feeds). Ported
+                      // rather than shared with EvalDashboardPage.js's
+                      // identical version - same reasoning as
+                      // collapseColumn above, each page's DataTables
+                      // options object is otherwise page-specific.
+                      api.columns().header().each((header) => {
+                        if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
+                        const orderSpan = header.querySelector('.dt-column-order');
+                        if (!orderSpan) return;
+                        const title = (header.textContent || '').trim();
+                        const currentSort = header.getAttribute('aria-sort');
+                        // 3-state cycle, not 2 - see the matching comment
+                        // in EvalDashboardPage.js's identical version for
+                        // why (DataTables' own default asSorting is
+                        // ['asc', 'desc', ''], a third click removes
+                        // sorting entirely).
+                        const nextKey = currentSort === 'ascending'
+                          ? 'admin.common.sortActivateDescending'
+                          : currentSort === 'descending'
+                            ? 'admin.common.sortRemove'
+                            : 'admin.common.sortActivateAscending';
+                        header.setAttribute('data-tooltip', t(nextKey).replace('{column}', () => title));
+                      });
                     } catch (e) { /* ignore drawCallback errors */ }
                   },
                   initComplete: function () {
@@ -528,7 +563,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       // without needing to select/delete the input text.
                       const searchContainer = api.table().container().querySelector('.dt-search');
                       if (searchContainer) {
-                        const pillEl = document.createElement('span');
+                        // Whole pill is the close target, not just the small
+                        // × - a real <button> (not a span wrapping one), same
+                        // reasoning and CSS as FilterPanel.js's own pills
+                        // (see admin.css's .filter-pill--closable comment).
+                        const pillEl = document.createElement('button');
+                        pillEl.type = 'button';
                         pillEl.className = 'filter-pill filter-pill--closable dashboard-search-pill';
                         searchContainer.insertAdjacentElement('afterend', pillEl);
 
@@ -536,16 +576,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                           pillEl.innerHTML = '';
                           pillEl.style.display = term ? '' : 'none';
                           if (!term) return;
-                          pillEl.textContent = t('common.searchTermPillLabel').replace('{term}', () => term);
-                          const closeBtn = document.createElement('button');
-                          closeBtn.type = 'button';
-                          closeBtn.className = 'filter-pill__close';
-                          closeBtn.setAttribute('aria-label', `${t('dashboardFilter.removeFilter', 'Remove filter')} - ${term}`);
-                          closeBtn.textContent = '×';
-                          closeBtn.addEventListener('click', () => {
+                          pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter', 'Remove filter')} - ${term}`);
+                          pillEl.onclick = () => {
                             api.search('').draw();
-                          });
-                          pillEl.appendChild(closeBtn);
+                          };
+                          const labelSpan = document.createTextNode(t('admin.common.searchTermPillLabel').replace('{term}', () => term));
+                          pillEl.appendChild(labelSpan);
+                          const closeIcon = document.createElement('span');
+                          closeIcon.className = 'filter-pill__close';
+                          closeIcon.setAttribute('aria-hidden', 'true');
+                          closeIcon.textContent = '×';
+                          pillEl.appendChild(closeIcon);
                         };
 
                         renderSearchPill(api.search());

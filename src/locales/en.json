@@ -574,7 +574,6 @@
       "notFound": "That how-to guide does not exist."
     },
     "viewChat": {
-      "title": "View chat by ID",
       "label": "Chat ID",
       "placeholder": "Enter chat id",
       "button": "View chat"
@@ -778,6 +777,17 @@
       "errorLoading": "Failed to load sessions: {status} {text}",
       "errorGeneric": "Error: {message}"
     },
+    "common": {
+      "searchLabel": "Search:",
+      "searchPlaceholder": "e.g. tax, contact, account",
+      "searchTermPillLabel": "Search: {term}",
+      "noSearchResults": "No search results found.",
+      "filtersClearedAnnouncement": "Filters cleared.",
+      "viewChatById": "View chat by ID",
+      "sortActivateAscending": "{column} : activate for ascending sort",
+      "sortActivateDescending": "{column} : activate for descending sort",
+      "sortRemove": "{column} : activate to remove sort"
+    },
     "chatDashboard": {
       "title": "Chat dashboard",
       "timeRangeTitle": "Get chat interactions for the selected period",
@@ -818,9 +828,8 @@
       "timeRangeTitle": "Get evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
-      "quickSearchLabel": "Find by chat ID",
-      "quickSearchInputLabel": "Chat ID",
-      "quickSearchPlaceholder": "Enter chat ID (partial or full)",
+      "searchChatIdInputLabel": "Chat ID",
+      "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
       "searchNotFound": "No chat found with that ID.",
       "searchRequired": "Please enter a chat ID.",
@@ -1188,11 +1197,6 @@
     "off": "Off",
     "na": "N/A",
     "noDataForFilters": "No data found for the selected filters.",
-    "filtersClearedAnnouncement": "Filters cleared.",
-    "searchLabel": "Search:",
-    "noSearchResults": "No search results found.",
-    "searchTermPillLabel": "Search: {term}",
-    "searchPlaceholder": "e.g. tax, contact, account",
     "notEnoughData": "Not enough data available for the filters selected.",
     "pauseUpdates": "Pause automatic updates",
     "resumeUpdates": "Resume automatic updates"

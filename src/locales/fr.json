@@ -574,7 +574,6 @@
       "notFound": "Ce guide n'existe pas."
     },
     "viewChat": {
-      "title": "Voir le chat par ID",
       "label": "ID de chat",
       "placeholder": "Entrez l'ID du chat",
       "button": "Afficher le chat"
@@ -778,6 +777,17 @@
       "errorLoading": "Échec du chargement des sessions : {status} {text}",
       "errorGeneric": "Erreur : {message}"
     },
+    "common": {
+      "searchLabel": "Rechercher :",
+      "searchPlaceholder": "p. ex. impôt, contact, compte",
+      "searchTermPillLabel": "Recherche : {term}",
+      "noSearchResults": "Aucun résultat de recherche trouvé.",
+      "filtersClearedAnnouncement": "Filtres réinitialisés.",
+      "viewChatById": "Voir le chat par ID",
+      "sortActivateAscending": "{column} : activer le tri croissant",
+      "sortActivateDescending": "{column} : activer le tri décroissant",
+      "sortRemove": "{column} : activer pour annuler le tri"
+    },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
@@ -818,9 +828,8 @@
       "timeRangeTitle": "Obtenir les évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
-      "quickSearchLabel": "Trouver par ID de chat",
-      "quickSearchInputLabel": "ID de chat",
-      "quickSearchPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
+      "searchChatIdInputLabel": "ID de chat",
+      "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
       "searchButton": "Rechercher l'ID de chat",
       "searchNotFound": "Aucun chat trouvé avec cet ID.",
       "searchRequired": "Veuillez entrer un identifiant de clavardage.",
@@ -1188,11 +1197,6 @@
     "off": "Désactivé",
     "na": "S.O.",
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
-    "filtersClearedAnnouncement": "Filtres réinitialisés.",
-    "searchLabel": "Rechercher :",
-    "noSearchResults": "Aucun résultat de recherche trouvé.",
-    "searchTermPillLabel": "Recherche : {term}",
-    "searchPlaceholder": "p. ex. impôt, contact, compte",
     "notEnoughData": "Données insuffisantes pour les filtres sélectionnés.",
     "pauseUpdates": "Suspendre les mises à jour automatiques",
     "resumeUpdates": "Reprendre les mises à jour automatiques"
