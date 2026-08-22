@@ -15,6 +15,9 @@ import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
 import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
+import { useActiveScenarioOverride } from '../../hooks/chat/useActiveScenarioOverride.js';
+import ScenarioSubmitInstructions from '../scenario/ScenarioSubmitInstructions.js';
+import ScenarioOverrideBanner from './ScenarioOverrideBanner.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -464,8 +467,18 @@ const ChatInterface = ({
     </span>
   ) : null;
 
-  return (
-<div className="chat-container">
+  // Issue #1048: only relevant to live testing, not the read-only chat
+  // review view (ChatViewer/EvalPanel etc. render historical chats, where a
+  // "you're testing a local override" warning wouldn't make sense).
+  const { activeOverride } = useActiveScenarioOverride({ enabled: !readOnly });
+
+  // Everything from the testing-notice banner through the chat itself down to
+  // the "how to submit" instructions, in document order. Extracted to a
+  // variable (rather than inlined below) so it can be rendered either
+  // wrapped in .scenario-override-wrapper (live chat) or bare (readOnly
+  // review, which never has an activeOverride — see the hook call above).
+  const chatBody = (
+    <>
       {/* Show referring URL at the top: always for review mode, and once the
           first message has been sent for the live chat (before that, it's
           shown above the textarea instead, as context for the message being composed).
@@ -1022,19 +1035,54 @@ const ChatInterface = ({
               </div>
             </form>
           )}
-          <ChatOptions
-            safeT={safeT}
-            modelSelection={modelSelection}
-            handleAIToggle={handleAIToggle}
-            selectedSearch={selectedSearch}
-            handleSearchToggle={handleSearchToggle}
-            workflowSelection={workflowSelection}
-            handleWorkflowChange={handleWorkflowChange}
-            referringUrl={referringUrl}
-            handleReferringUrlChange={handleReferringUrlChange}
-          />
         </section>
       )}
+    </>
+  );
+
+  // Deliberately outside chatBody/scenario-override-wrapper: the "Options"
+  // disclosure (admin/partner model/workflow/referring-URL controls) isn't
+  // part of the chat experience the scenario bubble is wrapping — it's a
+  // debug panel, set apart visually by its own top rule (the "hr" class on
+  // GcdsDetails, see ChatOptions.js). The bubble — testing notice, chat, and
+  // "return to edit"/"how to submit" — has to end above that rule, not
+  // swallow Options into the same box. Same gating condition it always had
+  // (input-area's own `!readOnly && turnCount < MAX_CONVERSATION_TURNS`).
+  const chatOptions = !readOnly && turnCount < MAX_CONVERSATION_TURNS && (
+    <ChatOptions
+      safeT={safeT}
+      modelSelection={modelSelection}
+      handleAIToggle={handleAIToggle}
+      selectedSearch={selectedSearch}
+      handleSearchToggle={handleSearchToggle}
+      workflowSelection={workflowSelection}
+      handleWorkflowChange={handleWorkflowChange}
+      referringUrl={referringUrl}
+      handleReferringUrlChange={handleReferringUrlChange}
+    />
+  );
+
+  return (
+<div className="chat-container">
+      {!readOnly ? (
+        <div
+          className={`scenario-override-wrapper${activeOverride ? '' : ' scenario-override-wrapper--empty'}`}
+        >
+          <ScenarioOverrideBanner activeOverride={activeOverride} t={safeT} />
+          {chatBody}
+          {/* "Return to edit" + "how to submit", below the chat inside the
+              same bounding box — only present while actively testing a
+              scenario, same as the banner above. */}
+          {activeOverride && (
+            <div className="scenario-override-instructions">
+              <ScenarioSubmitInstructions t={safeT} lang={lang} departmentKey={activeOverride.departmentKey} />
+            </div>
+          )}
+        </div>
+      ) : (
+        chatBody
+      )}
+      {chatOptions}
 
       {/* Accessible Scroll Down Button — page-level utility (scrolls the whole
           window toward the footer), not scoped to either section above, so it
