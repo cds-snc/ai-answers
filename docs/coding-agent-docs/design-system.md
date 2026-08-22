@@ -147,6 +147,8 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 Every call site that fits one of the five states above should use it — plain `style`/`isError` with no `variant` is only for content that doesn't fit any of them (e.g. a compact inline indicator next to a label, not a page-level outcome). The whole 5-state system (colours, icon choices, spacing) was built engineering-led, not through a design pass — functional but provisional, per `StatusMessage.js`'s own comments and AGENTS.md.
 
+**Never pass a spacing utility class (`mt-*`/`mb-*`/etc.) to `StatusMessage`.** All five box states already carry `margin-top`/`margin-bottom` (`--gcds-spacing-250`) directly on their shared CSS rule in `admin.css` — a call site adding its own `className="mt-200"` on top duplicates/fights that built-in spacing rather than adding anything. These utility classes were deliberately stripped from `StatusMessage` call sites across the codebase; don't reintroduce them on new ones.
+
 A **full-page filter-loading overlay** is a separate component, not this `loading` state — see `src/components/admin/LoadingOverlay.js`. Unlike `loading` (general-purpose, any page might need it), the overlay is specific to dashboards with a filter-driven fetch that blocks the whole page while reloading; see AGENTS.md's "Announcing status, errors, and async outcomes" for why that one stays separate while `loading` stays here.
 
 ## GC DS utility classes

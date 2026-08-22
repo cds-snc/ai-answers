@@ -327,6 +327,28 @@ usage. If a field's error text genuinely varies per failure (not just a fixed me
 a bare `useState` is fine, but the `<FeedbackInlineError>` still needs an `errorCount`
 that increments on every trigger — derive it from a counter, not from the message text.
 
+**`FeedbackInlineError` renders above the field it describes, not below.** See
+`SettingsPage.js`'s `SettingsTextArea` for the established order — the error markup comes
+first, the input second, both still linked via `aria-describedby`. Placing it after the
+field is a layout inversion of this convention, not a style choice.
+
+**Prefer rejecting the interaction over disabling the control, when the disabled reason
+needs explaining.** A `disabled` element is pulled out of the tab order, so an
+`aria-describedby` hint attached to it is practically undiscoverable to a keyboard-only or
+screen-reader user — they never land on the control to have the description read. This
+satisfies SC 4.1.2 (Name, Role, Value) in the letter — the disabled state is still
+programmatically exposed — but fails the actual point of pairing it with an explanation.
+Where the "why can't I do this" reason isn't otherwise obvious from context, keep the
+control enabled/focusable, let the interaction happen, and surface the problem via SC 3.3.1
+Error Identification instead — the same `useInlineFormError`/`FeedbackInlineError` pattern
+above, triggered from the control's own change/click handler rather than a submit handler.
+See `ScenarioOverridesPage.js`'s "use this scenario for testing" checkbox: checking it
+before an edit has been made is rejected with an inline error (React's controlled `checked`
+just snaps back since state isn't updated), not blocked by disabling the checkbox. This
+doesn't apply to every disabled control — one disabled for a self-evident reason already
+visible elsewhere on screen (e.g. a Save button disabled because nothing's been typed yet)
+isn't hiding anything and is a normal, accepted gating pattern.
+
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 
 ```js

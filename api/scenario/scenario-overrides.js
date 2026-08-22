@@ -128,7 +128,21 @@ async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      let { departmentKey } = req.query || {};
+      let { departmentKey, activeOnly } = req.query || {};
+
+      // Lightweight path for the chat-page "a local scenario is applied"
+      // banner: it only needs to know whether *any* department is currently
+      // enabled for this user, not the full default-scenario text for all 24
+      // supported departments (loadDefaultScenarios below), which this path
+      // would otherwise pull on every chat page load.
+      if (activeOnly) {
+        const overrides = await ScenarioOverrideService.getOverridesForUser(userId);
+        const active = overrides.find((item) => item?.enabled) || null;
+        return res.status(200).json({
+          active: active ? { departmentKey: active.departmentKey, updatedAt: active.updatedAt } : null,
+        });
+      }
+
       if (departmentKey != null) {
         try {
           departmentKey = requireLiteralString(departmentKey, 'department key');
@@ -142,7 +156,11 @@ async function handler(req, res) {
       const defaults = await loadDefaultScenarios(departmentKey);
 
       if (departmentKey) {
-        const override = await ScenarioOverrideService.getActiveOverride(userId, departmentKey);
+        // getOverride, not getActiveOverride: the editor needs to show a
+        // saved-but-disabled draft too (saving is decoupled from the
+        // "use this scenario for testing" checkbox), not just enabled ones —
+        // see services/ScenarioOverrideService.js's getOverride comment.
+        const override = await ScenarioOverrideService.getOverride(userId, departmentKey);
         return res.status(200).json({
           departmentKey,
           defaultText: defaults,
@@ -180,7 +198,7 @@ async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      let { departmentKey, overrideText, enabled = true } = req.body || {};
+      let { departmentKey, overrideText, enabled = true, expectedUpdatedAt = null } = req.body || {};
       try {
         departmentKey = requireLiteralString(departmentKey, 'department key');
       } catch (error) {
@@ -193,13 +211,33 @@ async function handler(req, res) {
         return res.status(400).json({ message: 'overrideText is required' });
       }
 
-      const updated = await ScenarioOverrideService.upsertOverride({
-        userId,
-        departmentKey,
-        overrideText,
-        enabled: Boolean(enabled),
-        updatedBy: userId,
-      });
+      let updated;
+      try {
+        updated = await ScenarioOverrideService.upsertOverride({
+          userId,
+          departmentKey,
+          overrideText,
+          enabled: Boolean(enabled),
+          expectedUpdatedAt,
+          updatedBy: userId,
+        });
+      } catch (error) {
+        // Another tab/window saved this department after this caller last
+        // loaded it — refuse the write instead of silently clobbering that
+        // save. 409, not 500: this is an expected concurrent-edit outcome,
+        // not a server failure.
+        if (error?.code === 'SCENARIO_OVERRIDE_CONFLICT') {
+          return res.status(409).json({ message: 'Scenario override was modified elsewhere', code: 'SCENARIO_OVERRIDE_CONFLICT' });
+        }
+        throw error;
+      }
+
+      // Enforce "one active scenario override at a time" (see
+      // disableOtherOverrides' own comment) — only once this department's
+      // save has actually succeeded, and only when it was enabled.
+      if (updated.enabled) {
+        await ScenarioOverrideService.disableOtherOverrides(userId, departmentKey);
+      }
 
       return res.status(200).json({
         departmentKey,
