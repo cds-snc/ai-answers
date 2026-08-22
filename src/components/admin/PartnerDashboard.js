@@ -281,6 +281,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
+      {/* Visually hidden - same pattern as Chat/Eval/Metrics/AutoEval
+          dashboards' matching heading: the filter panel's own summary/
+          controls already make its purpose clear on screen. Kept as a real
+          heading (not removed) so screen-reader users navigating by
+          heading/landmark still get this section announced. Previously
+          missing here entirely - every sibling dashboard using FilterPanel
+          had this, this one didn't. */}
+      <h2 className="sr-only">{t('admin.filters.title')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
