@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.190.4](https://github.com/cds-snc/ai-answers/compare/v1.190.3...v1.190.4) (2026-08-22)
+
+
+### Bug Fixes
+
+* metrics dashboard a11y and error visibility ([84b30f5](https://github.com/cds-snc/ai-answers/commit/84b30f543516238caf36ce57a4b91750aee2d720))
+* metrics dashboard accessibility, filter/loading consolidation, and service-call telemetry ([145cf63](https://github.com/cds-snc/ai-answers/commit/145cf6351f392ae174f10547d5ead454c3382520))
+* update to reflect audit corrections and refinement ([5dfe2f9](https://github.com/cds-snc/ai-answers/commit/5dfe2f940feb80acd3ff1e54acca43441408beeb))
+* update to reflect audit corrections and refinement ([b54ecc7](https://github.com/cds-snc/ai-answers/commit/b54ecc7f79471c87c95ff9c882bd56485ed72cf2))
+
 ## [1.190.3](https://github.com/cds-snc/ai-answers/compare/v1.190.2...v1.190.3) (2026-08-21)
 
 
