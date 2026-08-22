@@ -22,7 +22,17 @@ vi.mock('../ServerLoggingService.js', () => ({
     },
 }));
 
-// Mock backoff to just run the function immediately
+const { recordErrorMock, recordRetryMock } = vi.hoisted(() => ({
+    recordErrorMock: vi.fn(),
+    recordRetryMock: vi.fn(),
+}));
+vi.mock('../ServiceCallMetricsService.js', () => ({
+    default: { recordError: recordErrorMock, recordRetry: recordRetryMock },
+}));
+
+// Mock backoff to just run the function immediately, ignoring the retry
+// options and onRetry callback — SearchContextService's own error/retry
+// recording is tested directly, not backoff's.
 vi.mock('../../api/util/backoff.js', () => ({
     exponentialBackoff: (fn) => fn()
 }));
@@ -80,5 +90,34 @@ describe('SearchContextService', () => {
         });
         expect(googleContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en');
         expect(canadaContextSearch).not.toHaveBeenCalled();
+    });
+});
+
+describe('SearchContextService error recording', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({ query: 'Rewritten Query' });
+    });
+
+    it('records a search error for the canadaca provider and still throws', async () => {
+        canadaContextSearch.mockRejectedValue(new Error('search down'));
+
+        await expect(SearchContextService.search({ chatId: 'test' })).rejects.toThrow('search down');
+
+        expect(recordErrorMock).toHaveBeenCalledWith({ service: 'search', type: 'canadaca' });
+    });
+
+    it('records a search error for the google provider', async () => {
+        googleContextSearch.mockRejectedValue(new Error('search down'));
+
+        await expect(SearchContextService.search({ searchService: 'google' })).rejects.toThrow('search down');
+
+        expect(recordErrorMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
+    });
+
+    it('does not record an error when the search succeeds', async () => {
+        canadaContextSearch.mockResolvedValue(['Canada Result']);
+        await SearchContextService.search({ chatId: 'test' });
+        expect(recordErrorMock).not.toHaveBeenCalled();
     });
 });

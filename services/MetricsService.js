@@ -7,6 +7,7 @@ import {
   getPartnerEvalAggregationExpression,
   getAiEvalAggregationExpression
 } from '../api/util/chat-filters.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 
 const MAX_DOWNLOAD_POSITIONS = 5;
 
@@ -223,10 +224,23 @@ class MetricsService {
       aiEvalFilter
     );
 
-    const rows = await executeWithRetry(() => Chat.aggregate(stages).allowDiskUse(true));
+    // Search/AI-call errors aren't part of the Chat aggregation below — a
+    // hard failure aborts the graph before an interaction is persisted, so
+    // they're recorded independently (ServiceCallMetricsService). The two
+    // queries are independent, so run them concurrently.
+    const [rows, serviceCallMetrics] = await Promise.all([
+      executeWithRetry(() => Chat.aggregate(stages).allowDiskUse(true)),
+      ServiceCallMetricsService.getMetrics({
+        start: dateFilter.createdAt.$gte,
+        end: dateFilter.createdAt.$lte
+      })
+    ]);
+
     return {
       responseTime: computeResponseTimeStats(rows),
-      downloadWebPage: computeDownloadStats(rows)
+      downloadWebPage: computeDownloadStats(rows),
+      searchCalls: serviceCallMetrics.search,
+      aiServiceCalls: serviceCallMetrics.ai
     };
   }
 }

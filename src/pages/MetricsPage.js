@@ -20,7 +20,7 @@ const MetricsPage = ({ lang = 'en' }) => {
       </nav>
 
       <section id="metrics-dashboard" className="mb-600">
-        <h2 className="mt-400 mb-400">{t('metrics.timeRangeTitle')}</h2>
+        <h2 className="sr-only">{t('metrics.timeRangeTitle')}</h2>
         <MetricsDashboard lang={lang} />
       </section>
     </GcdsContainer>

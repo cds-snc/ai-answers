@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { GcdsContainer } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -8,6 +8,9 @@ import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
 import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
+import SectionLoadingIndicator from './SectionLoadingIndicator.js';
+import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
 
 DataTable.use(DT);
 
@@ -19,36 +22,65 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
     handleApplyFilters,
     handleClearFilters,
     hasStartedLoading,
+    hasAnySectionSettled,
     loadingState,
   } = useTechnicalMetrics();
+
+  // sr-only "loaded" completion announcement, counterpart to the
+  // LoadingOverlay shown until the first section settles (see render
+  // below) — same shared-persistent-region pattern as
+  // MetricsDashboard.js/ChatDashboardPage.js's Clear-all.
+  const { searchAnnouncement, searchAnnounceNonce, announce } = useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
+  const announcedCompletionRef = useRef(false);
+  const allSettled = hasStartedLoading && !Object.values(loadingState).some(Boolean);
+  // hasAnySectionSettled resets to false at the top of every fetchAll (see
+  // useTechnicalMetrics.js) - use that same transition to rearm this ref for
+  // the new cycle's own completion announcement, rather than only ever
+  // firing once across the page's lifetime.
+  useEffect(() => {
+    if (!hasAnySectionSettled) {
+      announcedCompletionRef.current = false;
+    }
+  }, [hasAnySectionSettled]);
+  useEffect(() => {
+    if (allSettled && !announcedCompletionRef.current) {
+      announcedCompletionRef.current = true;
+      announce(t('technicalMetrics.dashboard.loadedAnnouncement'));
+    }
+  }, [allSettled, announce, t]);
 
   const fmtNum = (n) => formatNumber(n, lang);
   const fmtMs = (n) => (n == null ? '–' : fmtNum(n));
   const fmtTokens = (n) => fmtNum(Math.round((n ?? 0) / 1000)) + 'K';
   const fmtPct = (num, denom) => denom ? formatPercent(Math.round((num / denom) * 100), lang) : formatPercent(0, lang);
+  // err.message is raw, untranslated exception text — wrap it in its own
+  // lang="en" span in SectionWrapper below rather than rendering it inside a
+  // translated StatusMessage, same pattern as DeleteChatSection.js.
+  // admin.common.fetchError: shared with MetricsDashboard.js's identical
+  // fetch-error template (was two duplicate page-scoped keys).
+  // TODO (Official Languages): still just a pronunciation fix, not a
+  // translation — needs the metrics-* API routes to return a stable error
+  // code instead of free text before this can be properly localized.
+  const [fetchErrorPrefix, fetchErrorSuffix] = t('admin.common.fetchError').split('{message}');
 
   const SectionWrapper = ({ children, isLoading, title, error, note }) => (
-    <div className="mb-600 relative">
+    <div className="mb-600">
       <div>
-        {title && <h3 className="mb-300">{title}</h3>}
+        {title && <h3 className="mb-0">{title}</h3>}
         {note && <p className="font-size-text-small mb-300">{note}</p>}
         {isLoading && (
-          <div className="section-loading-indicator" role="status" aria-live="polite">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('common.loading')}</span>
-          </div>
+          <SectionLoadingIndicator message={t('common.loading')} />
         )}
         {error && !isLoading && (
-          <StatusMessage variant="error" message={error} />
+          <StatusMessage variant="error">
+            {fetchErrorPrefix}<span lang="en">{error}</span>{fetchErrorSuffix}
+          </StatusMessage>
         )}
-        {/* TODO: transition-opacity/duration-200/opacity-50/pointer-events-none are
-            Tailwind-style class names not defined anywhere in this project's CSS —
-            loading never actually dims or disables this section. Same bug in
-            MetricsDashboard.js's identical SectionWrapper. Needs a real CSS class
-            or an inline style. */}
-        <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-          {children}
-        </div>
+        {/* No loading-dim/disable while a section refetches — removed rather
+            than replaced the Tailwind-shaped classes here, which were never
+            real CSS in this project. Same gap in MetricsDashboard.js's
+            identical SectionWrapper. */}
+        {children}
       </div>
     </div>
   );
@@ -60,7 +92,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
   };
 
   return (
-    <GcdsContainer size="xl" className="space-y-6">
+    <GcdsContainer size="xl">
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -82,23 +114,53 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
           // choice that would silently match nothing. See FilterPanel's own
           // showEvalLogic prop comment.
           showEvalLogic={false}
+          // "More filters" is hidden — answerType/partnerEval/aiEval are each
+          // a hard pre-aggregation $match (computed from the shared usage/
+          // expert-feedback metrics, not this page's own charts), so
+          // filtering by one collapses its own breakdown table to a 100%/0%
+          // tautology. urlEn/urlFr don't have this problem — if wanted later,
+          // re-enable via showAdvancedSection={true} showCategoryFilters={false}
+          // (both already in FilterPanel.js) rather than exposing the other
+          // three columns too.
+          showAdvancedSection={false}
         />
       </div>
 
-      {hasStartedLoading && !Object.values(loadingState).some(Boolean) && data.totalQuestions === 0 && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+      {/* Always mounted (not inside the loading-gated blocks below) — see
+          MetricsDashboard.js's matching comment on why `persistent` needs a
+          pre-existing empty live region. */}
+      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
+
+      {/* Blocks the whole results area until the first section settles
+          (success or error) — see MetricsDashboard.js's matching comment. */}
+      {hasStartedLoading && !hasAnySectionSettled && (
+        <LoadingOverlay message={t('technicalMetrics.dashboard.loading')} />
       )}
 
-      {hasStartedLoading && (
-        <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">
-          <div className="p-4">
+      {/* isEmptyPeriod also gates the tables block below — see the matching
+          comment in MetricsDashboard.js. Requires no errors anywhere:
+          totalQuestions comes from the 'usage' fetch specifically, so a
+          failed 'usage' fetch alone would also read as "0 questions". */}
+      {(() => {
+        const isEmptyPeriod = allSettled
+          && !Object.values(errorState).some(Boolean)
+          && data.totalQuestions === 0;
+        return (
+          <>
+            {isEmptyPeriod && (
+              <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+            )}
+
+            {hasAnySectionSettled && !isEmptyPeriod && (
+              <GcdsContainer size="xl" className="mb-600">
+          <div>
             <SectionWrapper
               isLoading={loadingState.technical}
               error={errorState.technical}
               title={t('technicalMetrics.dashboard.responseTime.title')}
               note={t('technicalMetrics.dashboard.responseTime.note')}
             >
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={[
                     {
@@ -141,7 +203,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               title={t('technicalMetrics.dashboard.tools.title')}
               note={t('technicalMetrics.dashboard.tools.note')}
             >
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={data.downloadWebPage.map((row) => ({
                     callNumber: row.callNumber,
@@ -176,13 +238,99 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               </div>
             </SectionWrapper>
 
+            {/* Search/AI-call errors aren't part of the Chat aggregation other
+                tables use — a hard failure aborts the graph before an
+                interaction is persisted, so they're recorded independently
+                (see ServiceCallMetricsService). Fixed rows (known providers/
+                call types) so a healthy "0 errors" period is visible too.
+                Error-rate columns divide by data.totalQuestions (the 'usage'
+                fetch, not 'technical'), so both gate on
+                loadingState.technical || loadingState.usage — same idiom as
+                MetricsDashboard.js's "Accuracy summary" table — to avoid a
+                misleading rate mid-fetch and to surface a 'usage' failure. */}
+            <SectionWrapper
+              isLoading={loadingState.technical || loadingState.usage}
+              error={errorState.technical || errorState.usage}
+              title={t('technicalMetrics.dashboard.searchCalls.title')}
+              note={t('technicalMetrics.dashboard.searchCalls.note')}
+            >
+              <div>
+                <DataTable
+                  data={['canadaca', 'google'].map((provider) => {
+                    const row = data.searchCalls?.[provider] || { errors: 0, retries: 0 };
+                    return {
+                      provider: t(`technicalMetrics.dashboard.searchCalls.provider.${provider}`),
+                      errorCount: fmtNum(row.errors),
+                      errorPercent: fmtPct(row.errors, data.totalQuestions),
+                      // Raw count, not a rate: one question's search can
+                      // retry more than once, so a % here could exceed 100%.
+                      retryCount: fmtNum(row.retries),
+                    };
+                  })}
+                  columns={[
+                    { title: t('technicalMetrics.dashboard.searchCalls.provider.title'), data: 'provider' },
+                    { title: t('technicalMetrics.dashboard.tools.errorCount'), data: 'errorCount' },
+                    { title: t('technicalMetrics.dashboard.tools.errorPercent'), data: 'errorPercent' },
+                    { title: t('technicalMetrics.dashboard.searchCalls.retryCount'), data: 'retryCount' },
+                  ]}
+                  options={{
+                    paging: false,
+                    searching: false,
+                    ordering: false,
+                    info: false,
+                    stripe: true,
+                    className: 'display',
+                    language: dataTableLanguage(lang),
+                  }}
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.searchCalls.title')}</caption>
+                </DataTable>
+              </div>
+            </SectionWrapper>
+
+            <SectionWrapper
+              isLoading={loadingState.technical || loadingState.usage}
+              error={errorState.technical || errorState.usage}
+              title={t('technicalMetrics.dashboard.aiServiceCalls.title')}
+              note={t('technicalMetrics.dashboard.aiServiceCalls.note')}
+            >
+              <div>
+                <DataTable
+                  data={['context', 'answer'].map((callType) => {
+                    const row = data.aiServiceCalls?.[callType] || { errors: 0 };
+                    return {
+                      callType: t(`technicalMetrics.dashboard.aiServiceCalls.type.${callType}`),
+                      errorCount: fmtNum(row.errors),
+                      errorPercent: fmtPct(row.errors, data.totalQuestions),
+                    };
+                  })}
+                  columns={[
+                    { title: t('technicalMetrics.dashboard.aiServiceCalls.type.title'), data: 'callType' },
+                    { title: t('technicalMetrics.dashboard.tools.errorCount'), data: 'errorCount' },
+                    { title: t('technicalMetrics.dashboard.tools.errorPercent'), data: 'errorPercent' },
+                  ]}
+                  options={{
+                    paging: false,
+                    searching: false,
+                    ordering: false,
+                    info: false,
+                    stripe: true,
+                    className: 'display',
+                    language: dataTableLanguage(lang),
+                  }}
+                >
+                  <caption className="sr-only">{t('technicalMetrics.dashboard.aiServiceCalls.title')}</caption>
+                </DataTable>
+              </div>
+            </SectionWrapper>
+
             <SectionWrapper
               isLoading={loadingState.usage}
               error={errorState.usage}
               title={t('metrics.dashboard.tokens.title')}
               note={t('metrics.dashboard.tokens.note')}
             >
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={[
                     {
@@ -273,8 +421,11 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               </div>
             </SectionWrapper>
           </div>
-        </GcdsContainer>
-      )}
+              </GcdsContainer>
+            )}
+          </>
+        );
+      })()}
     </GcdsContainer>
   );
 };

@@ -673,8 +673,7 @@
         "fallbackTypes": "Fallback types",
         "fallbackLabel": "Fallback",
         "fallbackNone": "No fallback usage data available.",
-        "refresh": "Refresh metrics",
-        "loading": "Loading metrics..."
+        "refresh": "Refresh metrics"
       },
       "date": {
         "startLabel": "Start date",
@@ -786,14 +785,17 @@
       "viewChatById": "View chat by ID",
       "sortActivateAscending": "{column}: activate for ascending sort",
       "sortActivateDescending": "{column}: activate for descending sort",
-      "sortRemove": "{column}: activate to remove sort"
+      "sortRemove": "{column}: activate to remove sort",
+      "fetchError": "Failed to load data: {message}",
+      "searchResultsAnnouncement": "{count} results found.",
+      "searchResultsUpdatedAnnouncement": "Search results updated.",
+      "metricsLoading": "Loading metrics..."
     },
     "chatDashboard": {
       "title": "Chat dashboard",
       "timeRangeTitle": "Get chat interactions for the selected period",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
-      "searchResultsAnnouncement": "{count} results found.",
       "columns": {
         "chatId": "Chat ID",
         "department": "Department",
@@ -1602,7 +1604,7 @@
     "title": "Metrics dashboard",
     "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
-      "title": "Results",
+      "loadedAnnouncement": "Metrics loaded.",
       "totalSessions": "Total sessions",
       "totalQuestions": "Total questions",
       "answerTypes": {
@@ -1626,7 +1628,6 @@
         "needsImprovement": "Needs improvement",
         "hasError": "Has answer error",
         "hasCitationError": "Citation issue",
-        "hasErrorPercent": "Has answer error (%)",
         "harmful": "Coded as harmful",
         "hasContentIssue": "Content issue flagged"
       },
@@ -1670,13 +1671,17 @@
       "accuracy": {
         "title": "Accuracy summary",
         "allEvaluations": "Total evaluations",
-        "note": "If a question has both an expert and AI evaluation, only the expert evaluation is used.",
+        "note": "When both evaluation types exist, only the expert evaluation is counted",
         "expertEvaluations": "Expert evaluations",
         "aiEvaluations": "AI evaluations",
         "totalEvaluated": "Total evaluated",
+        "totalEvaluatedEn": "EN total evaluated",
+        "totalEvaluatedFr": "FR total evaluated",
         "pctOfQuestions": "% of questions",
         "hasAnswerError": "Has answer error",
-        "accuracyPct": "Accuracy %"
+        "accuracyPct": "Accuracy %",
+        "accuracyPctEn": "EN accuracy %",
+        "accuracyPctFr": "FR accuracy %"
       },
       "questionTypes": {
         "title": "Question types"
@@ -1704,7 +1709,8 @@
     "title": "Technical metrics",
     "timeRangeTitle": "Get technical metrics for the selected period",
     "dashboard": {
-      "title": "Results",
+      "loading": "Loading technical metrics...",
+      "loadedAnnouncement": "Technical metrics loaded.",
       "metric": "Metric",
       "responseTime": {
         "title": "Total response time",
@@ -1727,6 +1733,25 @@
         "errorPercent": "Error %",
         "median": "Completed median (ms)",
         "p95": "Completed P95 (ms)"
+      },
+      "searchCalls": {
+        "title": "Search calls",
+        "note": "Errors and retries per search provider (Canada.ca/Coveo or Google), one row per provider. Error % is approximated against total questions since not every question triggers a new search. A retry happens automatically when a search call fails; errors are calls that still failed after all retries. Retries are shown as a count, not a rate, since one question's search can retry more than once.",
+        "provider": {
+          "title": "Provider",
+          "canadaca": "Canada.ca search (Coveo)",
+          "google": "Google"
+        },
+        "retryCount": "Retries"
+      },
+      "aiServiceCalls": {
+        "title": "AI service call errors",
+        "note": "Errors on the context and answer AI calls. Approximated against total questions since each question makes one of each call.",
+        "type": {
+          "title": "Call type",
+          "context": "Context call",
+          "answer": "Answer call"
+        }
       }
     }
   },

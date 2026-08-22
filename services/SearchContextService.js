@@ -2,16 +2,27 @@ import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaCo
 import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
 import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const searchFunction = searchService.toLowerCase() === 'google'
-        ? googleContextSearch
-        : canadaContextSearch;
+    const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
+    const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
 
-    return await exponentialBackoff(() => searchFunction(query, lang));
+    try {
+        return await exponentialBackoff(
+            () => searchFunction(query, lang),
+            3,
+            1000,
+            // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+            () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider })
+        );
+    } catch (error) {
+        ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        throw error;
+    }
 }
 
 function countSearchResults(resultsString) {

@@ -193,6 +193,15 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     const api = this.api();
                     tableApiRef.current = api;
+                    // TODO: no scope="col" headers, no search-term pill, no
+                    // sr-only search-results announcement here (unlike
+                    // ChatDashboardPage.js/EvalDashboardPage.js/
+                    // MetricsDashboard.js, which all share
+                    // utils/admin/dataTableAccessibility.js +
+                    // hooks/admin/useSearchAnnouncement.js). Needs
+                    // assessment: this table has per-column filter inputs
+                    // instead of one global search box, so it's not yet
+                    // decided whether/how the shared pattern should apply.
                     const debounce = (fn, wait = 300) => {
                       let t = null;
                       return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
