@@ -113,6 +113,33 @@ describe('ScenarioOverridesPage', () => {
     expect(screen.getByLabelText('scenarioOverrides.departmentSelect.label').value).toBe('');
   });
 
+  it('shows a full-page loading overlay (not a "saving" message) while a department\'s data is loading', async () => {
+    let resolveScenario;
+    mockGetDepartmentScenario.mockReturnValue(new Promise((resolve) => { resolveScenario = resolve; }));
+
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    const select = screen.getByLabelText('scenarioOverrides.departmentSelect.label');
+    fireEvent.change(select, { target: { value: 'AAFC-AAC' } });
+
+    // Nothing else is actionable on the page yet — see LoadingOverlay's own
+    // "TODO" in AGENTS.md — so this is the full-page overlay, not the
+    // status.saving text (nothing is being saved here at all).
+    const overlay = await screen.findByText('common.loading');
+    expect(overlay.closest('[role="status"]')).toBeTruthy();
+    expect(screen.queryByText('scenarioOverrides.status.saving')).toBeNull();
+
+    resolveScenario({
+      departmentKey: 'AAFC-AAC',
+      defaultText: 'Default scenario text',
+      overrideText: 'Default scenario text',
+      enabled: false,
+      updatedAt: null,
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('common.loading')).toBeNull();
+    });
+  });
+
   it('rejects checking "use this scenario for testing" before any edit with an inline error, not by disabling the control', async () => {
     mockGetDepartmentScenario.mockResolvedValue({
       departmentKey: 'AAFC-AAC',
@@ -342,6 +369,45 @@ describe('ScenarioOverridesPage', () => {
     fireEvent.click(screen.getByRole('heading', { level: 2, name: 'AAFC-AAC' }));
 
     expect(screen.queryByText('scenarioOverrides.status.saveSuccess')).toBeNull();
+  });
+
+  it('shows a full-page loading overlay while saving, and keeps the Save button\'s own label static', async () => {
+    mockGetDepartmentScenario.mockResolvedValue({
+      departmentKey: 'AAFC-AAC',
+      defaultText: 'Default scenario text',
+      overrideText: 'Default scenario text',
+      enabled: false,
+      updatedAt: null,
+    });
+    let resolveSave;
+    mockSaveOverride.mockReturnValue(new Promise((resolve) => { resolveSave = resolve; }));
+
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    await selectDepartment('AAFC-AAC');
+    const textarea = await screen.findByLabelText('scenarioOverrides.editor.label');
+    fireEvent.change(textarea, { target: { value: 'Edited text' } });
+
+    const saveButton = screen.getByRole('button', { name: 'scenarioOverrides.buttons.save' });
+    fireEvent.click(saveButton);
+
+    // The overlay carries the "in progress" message now — the button's own
+    // label doesn't swap to it any more (see the comment above these
+    // buttons in ScenarioOverridesPage.js), since everything on the page is
+    // already disabled for the same duration and a second signal on the
+    // (now-covered) button would just be redundant.
+    const overlay = await screen.findByText('scenarioOverrides.status.saving');
+    expect(overlay.closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'scenarioOverrides.buttons.save' })).toBeTruthy();
+
+    resolveSave({
+      departmentKey: 'AAFC-AAC',
+      overrideText: 'Edited text',
+      enabled: false,
+      updatedAt: new Date().toISOString(),
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('scenarioOverrides.status.saving')).toBeNull();
+    });
   });
 
   it('sends departmentKey/overrideText/enabled on save (no separate autosave path)', async () => {

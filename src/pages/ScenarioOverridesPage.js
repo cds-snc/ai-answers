@@ -5,6 +5,7 @@ import ScenarioOverrideService from '../services/ScenarioOverrideService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import ScenarioSubmitInstructions from '../components/scenario/ScenarioSubmitInstructions.js';
@@ -333,6 +334,51 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     setCopyStatus(null);
   };
 
+  // Shared by handleSave and handleEnabledChange's immediate-apply branch
+  // below — same request shape, same conflict-vs-generic error split, same
+  // saving/focus cleanup either way. Only what differs per caller is
+  // parameterized: the text/enabled values actually being sent, the
+  // success message (a static "Scenario saved." for an explicit Save vs.
+  // "now active"/"no longer active" for the checkbox), and any extra
+  // state each caller needs to update on success/error.
+  const performSave = async ({ overrideText: textToSave, enabled: enabledToSave, buildSuccessMessage, onSuccess, onError }) => {
+    setSaving(true);
+    setSaveStatus(null);
+    setCopyStatus(null);
+    try {
+      const response = await ScenarioOverrideService.saveOverride({
+        departmentKey,
+        overrideText: textToSave,
+        enabled: enabledToSave,
+        expectedUpdatedAt: updatedAt,
+      });
+      const nowEnabled = Boolean(response?.enabled ?? enabledToSave);
+      setEnabled(nowEnabled);
+      setUpdatedAt(response?.updatedAt || new Date().toISOString());
+      setDirty(false);
+      onSuccess?.(response, nowEnabled);
+      setSaveStatus({ variant: 'success', message: buildSuccessMessage(nowEnabled) });
+    } catch (error) {
+      onError?.(error);
+      // Another tab/window changed this department since this one last
+      // loaded it — a generic "try again" would just fail the same way
+      // again, so this gets its own message telling them to reload instead
+      // of retrying blind.
+      setSaveStatus({
+        variant: 'error',
+        message: error?.code === 'SCENARIO_OVERRIDE_CONFLICT'
+          ? t('scenarioOverrides.status.conflictError')
+          : t('scenarioOverrides.status.saveError'),
+      });
+    } finally {
+      setSaving(false);
+      // Runs after the disabled Save button (or the disabled checkbox) has
+      // already dropped focus to <body> — reclaims it onto the outcome
+      // message, success or error alike.
+      saveStatusRef.current?.focus?.();
+    }
+  };
+
   const handleEnabledChange = async (event) => {
     const checked = event.target.checked;
     const hasMeaningfulText = (overrideText || '').trim() !== (defaultText || '').trim();
@@ -358,40 +404,14 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     // Save click.
     if (updatedAt && !textEdited) {
       setEnabled(checked);
-      setSaving(true);
-      setSaveStatus(null);
-      setCopyStatus(null);
-      try {
-        const response = await ScenarioOverrideService.saveOverride({
-          departmentKey,
-          overrideText: (overrideText || '').trim(),
-          enabled: checked,
-          expectedUpdatedAt: updatedAt,
-        });
-        const nowEnabled = Boolean(response?.enabled ?? checked);
-        setEnabled(nowEnabled);
-        setUpdatedAt(response?.updatedAt || new Date().toISOString());
-        setDirty(false);
-        setSaveStatus({
-          variant: 'success',
-          message: nowEnabled
-            ? t('scenarioOverrides.status.enabledSuccess')
-            : t('scenarioOverrides.status.disabledSuccess'),
-        });
-      } catch (error) {
-        setEnabled(!checked);
-        // Same conflict-vs-generic split as handleSave above — another
-        // tab/window changed this department since this one last loaded it.
-        setSaveStatus({
-          variant: 'error',
-          message: error?.code === 'SCENARIO_OVERRIDE_CONFLICT'
-            ? t('scenarioOverrides.status.conflictError')
-            : t('scenarioOverrides.status.saveError'),
-        });
-      } finally {
-        setSaving(false);
-        saveStatusRef.current?.focus?.();
-      }
+      await performSave({
+        overrideText: (overrideText || '').trim(),
+        enabled: checked,
+        buildSuccessMessage: (nowEnabled) => (nowEnabled
+          ? t('scenarioOverrides.status.enabledSuccess')
+          : t('scenarioOverrides.status.disabledSuccess')),
+        onError: () => setEnabled(!checked),
+      });
       return;
     }
 
@@ -407,43 +427,18 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       setSaveStatus({ variant: 'error', message: t('scenarioOverrides.status.saveError') });
       return;
     }
-    setSaving(true);
-    setSaveStatus(null);
-    setCopyStatus(null);
-    try {
-      const response = await ScenarioOverrideService.saveOverride({
-        departmentKey,
-        overrideText: trimmed,
-        enabled,
-        expectedUpdatedAt: updatedAt,
-      });
-      const nowEnabled = Boolean(response?.enabled ?? enabled);
-      setOverrideText(typeof response?.overrideText === 'string' ? response.overrideText : trimmed);
-      setEnabled(nowEnabled);
-      setUpdatedAt(response?.updatedAt || new Date().toISOString());
-      setDirty(false);
-      // This edit has now been saved — re-checking the box after unchecking
-      // it again would need a fresh edit, same as the first time.
-      setTextEdited(false);
-      setSaveStatus({ variant: 'success', message: t('scenarioOverrides.status.saveSuccess') });
-    } catch (error) {
-      // Another tab/window saved this department since this one last loaded
-      // it — a generic "try again" would just fail the same way again, so
-      // this gets its own message telling them to reload instead of
-      // retrying blind.
-      setSaveStatus({
-        variant: 'error',
-        message: error?.code === 'SCENARIO_OVERRIDE_CONFLICT'
-          ? t('scenarioOverrides.status.conflictError')
-          : t('scenarioOverrides.status.saveError'),
-      });
-    } finally {
-      setSaving(false);
-      // Runs after the disabled Save button has already dropped focus to
-      // <body> (see saveStatusRef's comment) — reclaims it onto the outcome
-      // message, success or error alike.
-      saveStatusRef.current?.focus?.();
-    }
+    await performSave({
+      overrideText: trimmed,
+      enabled,
+      buildSuccessMessage: () => t('scenarioOverrides.status.saveSuccess'),
+      onSuccess: (response) => {
+        setOverrideText(typeof response?.overrideText === 'string' ? response.overrideText : trimmed);
+        // This edit has now been saved — re-checking the box after
+        // unchecking it again would need a fresh edit, same as the first
+        // time.
+        setTextEdited(false);
+      },
+    });
   };
 
   // Deletes the saved override outright — not "discard my in-progress
@@ -510,11 +505,22 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
         <label htmlFor="scenario-department-select" className="filter-label display-block">
           {t('scenarioOverrides.departmentSelect.label')}
         </label>
+        {/* disabled during saving/reverting: nothing guarded the department
+            switch against an in-flight request landing after the user
+            switched away — the immediate-apply checkbox toggle in
+            particular never sets `dirty` (see handleEnabledChange), so
+            handleDepartmentChange's dirty-confirm guard alone couldn't
+            catch it. A stale response's setEnabled/setUpdatedAt/
+            setSaveStatus calls would silently overwrite whatever department
+            had since been loaded, and steal focus onto its status message.
+            Same self-evident-reason disabled pattern already used by the
+            checkbox and Save/Revert/Copy buttons on this page. */}
         <select
           id="scenario-department-select"
           className="filter-select settings-form-width mb-400"
           value={departmentKey}
           onChange={handleDepartmentChange}
+          disabled={saving || reverting}
         >
           <option value="">{t('scenarioOverrides.departmentSelect.placeholder')}</option>
           {SUPPORTED_DEPARTMENTS.map((dept) => (
@@ -522,8 +528,18 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
           ))}
         </select>
 
+        {/* Was previously an inline StatusMessage reusing status.saving —
+            wrong on two counts: nothing is being saved while a department's
+            data is loading (it's the department-select fetch, not Save),
+            and there's nothing else usable on screen at this point anyway
+            (the whole department-specific section below stays hidden until
+            this resolves — see the !loading && !loadError guard further
+            down), so a full-page overlay communicates that better than an
+            inline message would. common.loading, not a scenario-specific
+            key: this is a plain generic "loading" state with nothing
+            scenario-specific to say. */}
         {departmentKey && loading && (
-          <StatusMessage loading message={t('scenarioOverrides.status.saving')} />
+          <LoadingOverlay message={t('common.loading')} />
         )}
 
         {departmentKey && loadError && (
@@ -661,12 +677,30 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
                 permanently deletes the saved override, gated behind
                 window.confirm() like every other destructive admin action
                 in this codebase. */}
+            {/* Same reasoning as the department-load overlay above: every
+                other control on the page is already disabled while either
+                of these is in flight (select, checkbox, Save/Revert/Copy
+                all gate on saving || reverting), so there's nothing left to
+                do until it resolves — a full-page overlay says that more
+                clearly than an inline message would. Only one of the two
+                is ever true at a time in practice (Revert is itself
+                disabled while saving, and vice versa). */}
+            {(saving || reverting) && (
+              <LoadingOverlay message={saving ? t('scenarioOverrides.status.saving') : t('scenarioOverrides.status.reverting')} />
+            )}
+
+            {/* saving/reverting no longer swap these buttons' own labels —
+                the LoadingOverlay below covers that (there's nothing else
+                actionable on the page while either is in flight anyway, per
+                the same reasoning as the department-load overlay above), so
+                keeping a second, separate "is this in progress" signal on
+                the button itself would just be redundant. */}
             <GcdsButton
               type="button"
               onClick={handleSave}
               disabled={saving || reverting || !dirty || !overrideText.trim()}
             >
-              {saving ? t('scenarioOverrides.status.saving') : t('scenarioOverrides.buttons.save')}
+              {t('scenarioOverrides.buttons.save')}
             </GcdsButton>{' '}
             <GcdsButton
               type="button"
@@ -674,7 +708,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               onClick={handleRevert}
               disabled={saving || reverting || !updatedAt}
             >
-              {reverting ? t('scenarioOverrides.status.reverting') : t('scenarioOverrides.buttons.revert')}
+              {t('scenarioOverrides.buttons.revert')}
             </GcdsButton>{' '}
             <GcdsButton
               type="button"

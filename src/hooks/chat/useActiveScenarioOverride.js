@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ScenarioOverrideService from '../../services/ScenarioOverrideService.js';
 import { useAuth } from '../../contexts/AuthContext.js';
 
@@ -34,9 +34,23 @@ export function useActiveScenarioOverride({ enabled = true } = {}) {
   const { currentUser, loading: authLoading } = useAuth() || {};
   const [activeOverride, setActiveOverride] = useState(null);
 
+  // Both the `focus` and `visibilitychange` listeners below call refresh(),
+  // deliberately — browsers don't consistently fire one without the other
+  // across a real tab-switch-back and an OS-level app-switch-back, so both
+  // are kept for coverage. But on the common case (switching back to this
+  // tab) both fire for the *same* user action, which would otherwise double
+  // the getActiveOverrideSummary() fetch. This in-flight guard makes the
+  // second, near-simultaneous call a no-op instead.
+  const refreshingRef = useRef(false);
   const refresh = useCallback(async () => {
-    const active = await ScenarioOverrideService.getActiveOverrideSummary();
-    setActiveOverride(active);
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    try {
+      const active = await ScenarioOverrideService.getActiveOverrideSummary();
+      setActiveOverride(active);
+    } finally {
+      refreshingRef.current = false;
+    }
   }, []);
 
   // Boolean(currentUser), not currentUser itself, in the dependency array:

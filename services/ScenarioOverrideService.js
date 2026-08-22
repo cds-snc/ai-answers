@@ -5,6 +5,13 @@ import { normalizeLiteralString, normalizeObjectIdString, requireLiteralString, 
 class ScenarioOverrideServiceClass {
   constructor() {
     this.cache = new Map(); // userId -> Map(departmentKey -> override)
+    // Bumped by every invalidateCache call, any user. getOverridesForUser
+    // captures this before its await gap (dbConnect + find) and only
+    // commits the read to cache if it hasn't moved — otherwise a concurrent
+    // invalidation (a save/delete/disableOtherOverrides landing mid-read)
+    // could get silently overwritten by this call's now-stale result,
+    // re-marking the cache fullyLoaded with data that's already wrong.
+    this._invalidationGeneration = 0;
   }
 
   _getUserCache(userId) {
@@ -33,9 +40,10 @@ class ScenarioOverrideServiceClass {
       return Array.from(userCache.values());
     }
 
+    const generationAtStart = this._invalidationGeneration;
     await dbConnect();
     const overrides = await ScenarioOverride.find({ userId }).lean();
-    if (userCache) {
+    if (userCache && this._invalidationGeneration === generationAtStart) {
       userCache.clear();
       overrides.forEach((item) => {
         userCache.set(item.departmentKey, item);
@@ -204,6 +212,7 @@ class ScenarioOverrideServiceClass {
     if (!userId) {
       return;
     }
+    this._invalidationGeneration++;
     departmentKey = departmentKey ? normalizeLiteralString(departmentKey) : null;
     const userCache = this.cache.get(userId);
     if (!userCache) {

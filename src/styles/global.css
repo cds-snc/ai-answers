@@ -486,8 +486,20 @@ summary:focus,
 
 .hr {
   padding-top: 30px;
-  margin-top: 30px;
+  margin-top: 60px;
   border-top: 1px solid #ccc;
+}
+
+/* .hr (ChatOptions.js's "Options" disclosure) directly follows
+   .scenario-override-wrapper in the DOM on the live chat page. When that
+   wrapper is actually showing an active override, its own bottom margin
+   already provides separation, so .hr's full 60px on top of that reads as
+   too much combined gap — tighten it just for that adjacent case. Every
+   other .hr (no active override — the wrapper collapses to zero via
+   --empty and shouldn't affect what follows it — or read-only views where
+   .hr may not follow the wrapper at all) keeps the original 60px. */
+.scenario-override-wrapper:not(.scenario-override-wrapper--empty) + .hr {
+  margin-top: 30px;
 }
 
 /* Screen reader only class */

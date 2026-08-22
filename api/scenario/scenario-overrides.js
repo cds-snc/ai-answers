@@ -135,7 +135,11 @@ async function handler(req, res) {
       // enabled for this user, not the full default-scenario text for all 24
       // supported departments (loadDefaultScenarios below), which this path
       // would otherwise pull on every chat page load.
-      if (activeOnly) {
+      // Query params are always strings — `if (activeOnly)` would treat the
+      // literal string 'false' as truthy. Only the one in-repo caller ever
+      // sends 'true' today, but a direct/future ?activeOnly=false request
+      // shouldn't silently take the active-only branch.
+      if (activeOnly === 'true') {
         const overrides = await ScenarioOverrideService.getOverridesForUser(userId);
         const active = overrides.find((item) => item?.enabled) || null;
         return res.status(200).json({
@@ -211,6 +215,20 @@ async function handler(req, res) {
         return res.status(400).json({ message: 'overrideText is required' });
       }
 
+      // The editor UI only lets a user check "use this scenario for
+      // testing" when overrideText actually differs from the department's
+      // default (see ScenarioOverridesPage.js's hasMeaningfulText) — that's
+      // a client-side-only rule, so re-enforce it here. Without this, a
+      // direct POST with enabled:true and default-matching text is accepted
+      // and still runs disableOtherOverrides below, silently turning off
+      // the user's other real enabled override for no actual change.
+      if (Boolean(enabled)) {
+        const defaultText = await loadDefaultScenarios(departmentKey);
+        if (typeof defaultText === 'string' && defaultText.trim() === overrideText.trim()) {
+          return res.status(400).json({ message: 'overrideText must differ from the department default to enable testing' });
+        }
+      }
+
       let updated;
       try {
         updated = await ScenarioOverrideService.upsertOverride({
@@ -234,9 +252,20 @@ async function handler(req, res) {
 
       // Enforce "one active scenario override at a time" (see
       // disableOtherOverrides' own comment) — only once this department's
-      // save has actually succeeded, and only when it was enabled.
+      // save has actually succeeded, and only when it was enabled. Own
+      // try/catch: this runs after upsertOverride has already committed, so
+      // a failure here must not turn into a 500 for a save that genuinely
+      // succeeded — the client would see a false failure, then a confusing
+      // "modified elsewhere" conflict on retry (its stale expectedUpdatedAt
+      // no longer matches the save that actually went through). Log and
+      // continue instead; worst case is a stale other-department override
+      // stays enabled until the next save touches it.
       if (updated.enabled) {
-        await ScenarioOverrideService.disableOtherOverrides(userId, departmentKey);
+        try {
+          await ScenarioOverrideService.disableOtherOverrides(userId, departmentKey);
+        } catch (error) {
+          console.error('scenario overrides disableOtherOverrides error (save itself succeeded):', error);
+        }
       }
 
       return res.status(200).json({

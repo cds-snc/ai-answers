@@ -4,7 +4,6 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 class ScenarioOverrideServiceClass {
   constructor() {
     this.overrideCache = new Map();
-    this.listCache = null;
   }
 
   _isAuthenticated() {
@@ -21,7 +20,6 @@ class ScenarioOverrideServiceClass {
     } else {
       this.overrideCache.clear();
     }
-    this.listCache = null;
   }
 
   async getOverrideForDepartment(departmentKey) {
@@ -55,7 +53,7 @@ class ScenarioOverrideServiceClass {
   // Full scenario record for one department — default text, current
   // override text, enabled state, and last-saved time — used by the Scenario
   // overrides admin page's single-department editor. Deliberately not cached
-  // (unlike getOverrideForDepartment/listOverrides below): that page always
+  // (unlike getOverrideForDepartment above): that page always
   // wants the freshest state for whichever department is selected, since
   // saving one department can flip another department's enabled state on the
   // server (see disableOtherOverrides in services/ScenarioOverrideService.js).
@@ -81,7 +79,7 @@ class ScenarioOverrideServiceClass {
   // Cheap check for "does this signed-in user have any department's scenario
   // override active right now" — backs the chat-page banner (issue #1048).
   // Bypasses AuthService.fetch's normal caching layer entirely (no
-  // overrideCache/listCache involved) since the banner needs to notice a
+  // overrideCache involved) since the banner needs to notice a
   // save made in another tab; see useActiveScenarioOverride's
   // visibilitychange/focus refetch.
   async getActiveOverrideSummary() {
@@ -99,34 +97,6 @@ class ScenarioOverrideServiceClass {
     } catch (error) {
       console.error('ScenarioOverrideService getActiveOverrideSummary error:', error);
       return null;
-    }
-  }
-
-  async listOverrides() {
-    if (!this._isAuthenticated()) {
-      return [];
-    }
-    if (this.listCache) {
-      return this.listCache;
-    }
-    try {
-      const response = await AuthService.fetch(getApiUrl('scenario-overrides'));
-      if (!response.ok) {
-        throw new Error('Failed to load scenario overrides');
-      }
-      const data = await response.json();
-      const overrides = Array.isArray(data?.overrides) ? data.overrides : [];
-      this.listCache = overrides;
-      overrides.forEach((item) => {
-        if (item && typeof item.departmentKey === 'string') {
-          this.overrideCache.set(item.departmentKey, item.enabled ? item.overrideText : null);
-        }
-      });
-      return overrides;
-    } catch (error) {
-      console.error('ScenarioOverrideService listOverrides error:', error);
-      this.listCache = [];
-      return [];
     }
   }
 
@@ -160,7 +130,6 @@ class ScenarioOverrideServiceClass {
     // enough — clear everything rather than leave another department's
     // cached entry stale.
     this.overrideCache.clear();
-    this.listCache = null;
     return data;
   }
 

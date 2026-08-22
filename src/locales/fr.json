@@ -1972,7 +1972,7 @@
       "loadError": "Impossible de charger le scénario de ce ministère.",
       "unsavedChangesConfirm": "Vous avez des modifications non enregistrées. Changer de ministère et les abandonner?",
       "reverting": "Rétablissement…",
-      "revertConfirm": "Cette action supprimera définitivement vos modifications enregistrées et rétablira le scénario original. Continuer ?",
+      "revertConfirm": "Cette action supprimera définitivement vos modifications enregistrées et rétablira le scénario original. Continuer?",
       "revertSuccess": "Scénario rétabli à sa valeur par défaut.",
       "revertError": "Impossible de rétablir ce scénario. Veuillez réessayer.",
       "enabledSuccess": "Ce scénario est maintenant actif.",
