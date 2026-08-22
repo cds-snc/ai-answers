@@ -183,11 +183,6 @@ const isRegisteredApiRoute = (method, pathName) => {
   });
 };
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
-
 // Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
 app.use('/api', (req, res, next) => {
   if (!isRegisteredApiRoute(req.method, req.originalUrl.split('?')[0])) {
@@ -248,7 +243,14 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Unified chat availability endpoint
-app.get('/api/chat/chat-session-availability', chatSessionAvailabilityHandler);
+// This public status check is consumed by canada.ca from a different origin.
+// It intentionally does not allow credentials: the response exposes only
+// general availability, and wildcard origins cannot be combined with cookies.
+app.get(
+  '/api/chat/chat-session-availability',
+  cors({ origin: '*', credentials: false }),
+  chatSessionAvailabilityHandler
+);
 
 // Ensure a visitor fingerprint (hashed) is present in the session for all requests
 app.use('/api', botFingerprintPresence);
