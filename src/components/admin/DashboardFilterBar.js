@@ -201,6 +201,11 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
     onApplyRef.current({ startDate: allTimeStart, endDate: todayStr() });
+    // isDefault flips to true right after this, swapping the just-clicked
+    // <button> pill for a plain non-interactive <span> - same "focused
+    // element disappears" gap handleCustomApply already avoids by landing
+    // here too.
+    customToggleRef.current?.focus();
   };
 
   const isDefault = appliedPreset === 'allTime';

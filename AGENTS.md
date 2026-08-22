@@ -116,7 +116,11 @@ What lives in which event: see [docs/architecture/using-evals-for-answers.md](do
 ## Official languages
 **English users and admins and partners must be served in English. French users and admins and partners must be served in French.** This applies to all pages and tools — public-facing, admin, and partner.
 
-**Never hardcode user-facing text in components or pages.** All text visible to users must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new text (column headers, labels, buttons, messages, placeholders, error messages, status messages, option labels, etc.), always add the corresponding key to both locale files in the same PR — don't rely on the fallback string in `t('key', 'fallback')` or `t('key') || 'fallback'`.
+**Never hardcode user-facing text in components or pages.** All text visible to users must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new text (column headers, labels, buttons, messages, placeholders, error messages, status messages, option labels, etc.), always add the corresponding key to both locale files in the same PR.
+
+**A `t()` call whose fallback argument you're writing or editing must not have one — write `t('some.key')`, never `t('some.key', 'Fallback text')` or `t('some.key') || 'Fallback text'`.** A fallback is not a harmless safety net just because the real key exists in both locale files today — it's exactly what fires if that key is ever mistyped, renamed, or its FR entry goes missing in a later edit, and the app degrades to silently showing English instead of failing loudly. That's the one outcome an Official Languages review can't catch by grepping for missing keys. Add the real key to both `en.json` and `fr.json` in the same PR instead.
+
+This covers brand-new call sites *and* any existing call's fallback argument you're actively editing (e.g. syncing its wording to a locale-key rename) — editing the argument makes it your line, not a pre-existing one you're leaving alone. It does not mean retroactively stripping a fallback from some other pre-existing call in a file you're touching for an unrelated reason — leave those and flag them as a drive-by instead of silently rewriting them.
 
 ### Exceptions
 - **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
@@ -124,6 +128,15 @@ What lives in which event: see [docs/architecture/using-evals-for-answers.md](do
 
 ### Sentence case
 All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+
+### Content style guide
+When writing a non-trivial amount of new user-facing copy — a paragraph of explanatory text, an alert/warning/status message, a confirm-dialog body, anything longer than a short label — check it against the [Canada.ca content style guide](https://design.canada.ca/style-guide/index.html) (this is also where the sentence-case rule above comes from). Core rules that matter most for this codebase:
+- **Plain language**: familiar words, active voice, positive phrasing over negative where possible (negative phrasing is fine for genuinely safety/data-loss-critical warnings, e.g. destructive-action confirms).
+- **Short sentences**: aim under ~15–20 words each; split up anything longer rather than stacking clauses.
+- **Second person, direct address**: "you"/"your" for the reader, "we" for the Government of Canada as a whole, where the copy is speaking to a person at all (not always applicable to terse admin/system copy).
+- **No end punctuation on titles/headings/table captions** in English (French keeps its own punctuation rules — see below).
+- **Numbers**: digits for 10 and up, ages, dates, percentages; spell out zero to nine in narrative text.
+It's a useful sanity check for any user-facing copy, not just long-form text — just not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
 
 ### Locale key hygiene
 
@@ -174,7 +187,7 @@ Per the official Government of Canada style guide (*The Canadian Style*, TERMIUM
 Every PR that touches UI components, pages, or locale files must be verified against these before merging.
 
 **Must fix before merging:**
-- [ ] No hardcoded user-facing strings in components or pages (no `'English text'` literals, no `|| 'fallback'` patterns, no `lang === 'en' ? '...' : '...'` inline conditionals)
+- [ ] No hardcoded user-facing strings in components or pages (no `'English text'` literals, no `t('key', 'fallback')` or `t('key') || 'fallback'` patterns on any call site you wrote or edited, no `lang === 'en' ? '...' : '...'` inline conditionals)
 - [ ] All translation calls use `t()` or `safeT()` — not raw string literals (`safeT` is a wrapper around `t()` used in chat components that unwraps object results to a plain string; same locale key rules apply)
 - [ ] Every new `t('key')` call has a matching entry in **both** `en.json` and `fr.json`
 - [ ] `node scripts/find-dead-locale-keys.cjs` reports **0 parity gaps**

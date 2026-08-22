@@ -18,7 +18,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
       </nav>
 
       <section id="technical-metrics-dashboard" className="mb-600">
-        <h2 className="mt-400 mb-400">{t('technicalMetrics.timeRangeTitle')}</h2>
+        <h2 className="sr-only">{t('technicalMetrics.timeRangeTitle')}</h2>
         <TechnicalMetricsDashboard lang={lang} />
       </section>
     </GcdsContainer>
@@ -27,7 +27,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
 
 export default function ProtectedTechnicalMetricsPage(props) {
   return (
-    <RoleProtectedRoute roles={["admin", "partner"]} lang={props.lang}>
+    <RoleProtectedRoute roles={["admin"]} lang={props.lang}>
       <TechnicalMetricsPage {...props} />
     </RoleProtectedRoute>
   );

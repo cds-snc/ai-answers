@@ -81,10 +81,13 @@
   color: #333;
 }
 
-/* StatusMessage's `loading` sub-type — same neutral, non-alarming box as
-   .section-loading-indicator below (not the red/yellow/blue/green variant
-   boxes) so a loading StatusMessage doesn't default to bare unstyled text
-   that reads like nothing happened. */
+/* StatusMessage's `loading` sub-type — a neutral, non-alarming box (not the
+   red/yellow/blue/green variant boxes) so a loading StatusMessage doesn't
+   default to bare unstyled text that reads like nothing happened.
+   MetricsDashboard.js/TechnicalMetricsDashboard.js's SectionWrapper used to
+   hand-roll its own near-identical .section-loading-indicator (hardcoded
+   hex colours) instead of using this — migrated to <StatusMessage loading>
+   so this is the one loading box style, on real GC DS tokens. */
 .status-message--loading {
   display: flex;
   align-items: center;
@@ -95,22 +98,22 @@
   color: var(--gcds-color-grayscale-700);
 }
 
-/* Inline section loading indicator for progressive loading */
+/* SectionLoadingIndicator.js - the *other* loading look, deliberately not a
+   StatusMessage. Metrics/TechnicalMetricsDashboard.js's SectionWrapper used
+   this box style until several of them mounting at once (one per section)
+   turned out to mean several simultaneous role="status" announcements -
+   see the component's own comment. Now purely visual chrome: smaller text,
+   smaller spinner (.loading-animation--small below), no box/background. */
 .section-loading-indicator {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  gap: var(--gcds-spacing-100);
+  font-size: var(--gcds-font-sizes-text-xsm-nr);
+  color: var(--gcds-color-grayscale-700);
 }
 
-.section-loading-indicator span {
-  font-size: 14px;
-  font-weight: 500;
-  color: #495057;
+.loading-animation.loading-animation--small {
+  font-size: 2px;
 }
 
 /* Metadata and code styling */
@@ -761,6 +764,43 @@
 }
 .eval-search-chat-id__field {
   max-width: 40rem;
+}
+
+/* Search box + entries-per-page/pagination focus styling, split out from
+   .dashboard-table-container below for tables that shouldn't take its 90vw
+   full-viewport breakout width (e.g. MetricsDashboard.js's Institution
+   breakdown table, which stays inside the page's normal container like
+   every other table on that page). Sort-header styling needs no separate
+   rule here at all - table.dataTable.dashboard-table's own selectors
+   further down key off the <table>'s className, not this container, so
+   adding just "dashboard-table" to the DataTable's className already gets
+   it. Declarations below are copied from .dashboard-table-container's own
+   .dt-search/.dt-length rules (keep both in sync if either changes). */
+.metrics-table-container div.dt-container .dt-search input {
+  color: var(--gcds-color-black);
+  font-size: 16px;
+  margin-left: var(--gcds-spacing-200);
+  border: var(--gcds-border-width-sm) solid var(--gcds-color-black);
+  border-radius: var(--gcds-border-radius-sm);
+  padding-block: var(--gcds-spacing-100);
+  padding-inline: var(--gcds-spacing-150);
+  min-width: 24rem;
+}
+.metrics-table-container div.dt-container .dt-search input:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
+}
+.metrics-table-container div.dt-container .dt-length select:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
+}
+.metrics-table-container div.dt-container .dt-search input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+.metrics-table-container div.dt-container .dt-search label {
+  font-weight: 700;
+  font-size: 16px;
+  padding-left: 10px;
 }
 
 /* Table container with horizontal scrolling - full width breakout */

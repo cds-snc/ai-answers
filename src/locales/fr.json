@@ -673,8 +673,7 @@
         "fallbackTypes": "Types de repli",
         "fallbackLabel": "Repli",
         "fallbackNone": "Aucune donnée d'utilisation de repli disponible.",
-        "refresh": "Actualiser les métriques",
-        "loading": "Chargement des métriques..."
+        "refresh": "Actualiser les métriques"
       },
       "date": {
         "startLabel": "Date de début",
@@ -786,14 +785,17 @@
       "viewChatById": "Voir le chat par ID",
       "sortActivateAscending": "{column} : activer le tri croissant",
       "sortActivateDescending": "{column} : activer le tri décroissant",
-      "sortRemove": "{column} : activer pour annuler le tri"
+      "sortRemove": "{column} : activer pour annuler le tri",
+      "fetchError": "Échec du chargement des données : {message}",
+      "searchResultsAnnouncement": "{count} résultats trouvés.",
+      "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
+      "metricsLoading": "Chargement des métriques..."
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
-      "searchResultsAnnouncement": "{count} résultats trouvés.",
       "columns": {
         "chatId": "ID de chat",
         "department": "Ministère",
@@ -1602,7 +1604,7 @@
     "title": "Tableau de bord des métriques",
     "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
-      "title": "Résultats",
+      "loadedAnnouncement": "Métriques chargées.",
       "totalSessions": "Total des sessions",
       "totalQuestions": "Total des questions",
       "answerTypes": {
@@ -1626,7 +1628,6 @@
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur de réponse",
         "hasCitationError": "Problème de citation",
-        "hasErrorPercent": "Contient une erreur de réponse (%)",
         "harmful": "Codé comme nuisible",
         "hasContentIssue": "Problème de contenu signalé"
       },
@@ -1670,13 +1671,17 @@
       "accuracy": {
         "title": "Résumé de l'exactitude",
         "allEvaluations": "Total des évaluations",
-        "note": "Si une question a à la fois une évaluation d'expert et une évaluation IA, seule l'évaluation d'expert est utilisée.",
+        "note": "Si les deux types d'évaluation existent, seule l'évaluation d'expert est comptée",
         "expertEvaluations": "Évaluations des experts",
         "aiEvaluations": "Évaluations IA",
         "totalEvaluated": "Total évalué",
+        "totalEvaluatedEn": "Total évalué EN",
+        "totalEvaluatedFr": "Total évalué FR",
         "pctOfQuestions": "% des questions",
         "hasAnswerError": "Contient une erreur de réponse",
-        "accuracyPct": "% d'exactitude"
+        "accuracyPct": "% d'exactitude",
+        "accuracyPctEn": "% d'exactitude EN",
+        "accuracyPctFr": "% d'exactitude FR"
       },
       "questionTypes": {
         "title": "Types de questions"
@@ -1704,7 +1709,8 @@
     "title": "Métriques techniques",
     "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
     "dashboard": {
-      "title": "Résultats",
+      "loading": "Chargement des métriques techniques...",
+      "loadedAnnouncement": "Métriques techniques chargées.",
       "metric": "Métrique",
       "responseTime": {
         "title": "Temps de réponse total",
@@ -1727,6 +1733,25 @@
         "errorPercent": "% d'erreurs",
         "median": "Médiane des complétés (ms)",
         "p95": "P95 des complétés (ms)"
+      },
+      "searchCalls": {
+        "title": "Appels de recherche",
+        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google), une ligne par fournisseur. Le % d'erreurs est estimé par rapport au total des questions, puisque chaque question ne déclenche pas nécessairement une nouvelle recherche. Une nouvelle tentative se produit automatiquement lorsqu'un appel de recherche échoue; les erreurs sont des appels ayant échoué même après toutes les tentatives. Les nouvelles tentatives sont affichées sous forme de nombre, et non de taux, puisque la recherche d'une question peut faire l'objet de plus d'une nouvelle tentative.",
+        "provider": {
+          "title": "Fournisseur",
+          "canadaca": "Recherche Canada.ca (Coveo)",
+          "google": "Google"
+        },
+        "retryCount": "Nouvelles tentatives"
+      },
+      "aiServiceCalls": {
+        "title": "Erreurs d'appels au service IA",
+        "note": "Erreurs sur les appels IA de contexte et de réponse. Estimation par rapport au total des questions, puisque chaque question déclenche un appel de chaque type.",
+        "type": {
+          "title": "Type d'appel",
+          "context": "Appel de contexte",
+          "answer": "Appel de réponse"
+        }
       }
     }
   },

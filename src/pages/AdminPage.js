@@ -79,11 +79,6 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={getPath('technical-metrics', lang)}>
-                {t('admin.navigation.technicalMetrics')}
-              </GcdsLink>
-            </li>
-            <li>
               <GcdsLink href={getPath('scenario-overrides', lang)}>
                 {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
               </GcdsLink>
@@ -130,7 +125,12 @@ const AdminPage = ({ lang = 'en' }) => {
               </li>
               <li>
                 <GcdsLink href={getPath('auto-eval-dashboard', lang)}>
-                  {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
+                  {t('admin.navigation.autoEvalDashboard')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={getPath('technical-metrics', lang)}>
+                  {t('admin.navigation.technicalMetrics')}
                 </GcdsLink>
               </li>
               <li>

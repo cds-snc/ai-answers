@@ -1,5 +1,6 @@
 import { createChatAgent } from '../agents/AgentFactory.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { ToolTrackingHandler } from '../agents/ToolTrackingHandler.js';
 import { buildAnswerSystemPrompt } from '../agents/prompts/systemPrompt.js';
 import ConversationIntegrityService from './ConversationIntegrityService.js';
@@ -96,12 +97,15 @@ export const AnswerGenerationService = {
                 lastError = e;
                 ServerLoggingService.error(`Attempt ${attempt + 1} failed:`, chatId, e);
                 if (attempt < NUM_RETRIES - 1) {
+                    // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+                    ServiceCallMetricsService.recordRetry({ service: 'ai', type: 'answer' });
                     const delay = Math.pow(2, attempt) * BASE_DELAY;
                     await new Promise((r) => setTimeout(r, delay));
                 }
             }
         }
         ServerLoggingService.error('All retry attempts failed', chatId, lastError);
+        ServiceCallMetricsService.recordError({ service: 'ai', type: 'answer' });
         throw new Error(`Failed after retries: ${lastError?.message}`);
     }
 };

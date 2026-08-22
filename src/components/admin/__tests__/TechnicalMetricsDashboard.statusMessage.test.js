@@ -6,7 +6,10 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import TechnicalMetricsDashboard from '../TechnicalMetricsDashboard.js';
 
-const mockT = (key) => key;
+const TRANSLATIONS = {
+  'admin.common.fetchError': 'Failed to load data: {message}',
+};
+const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
@@ -35,6 +38,11 @@ const baseHook = {
   handleApplyFilters: vi.fn(),
   handleClearFilters: vi.fn(),
   hasStartedLoading: true,
+  // These tests all model a state where fetches have already resolved
+  // (errorState/data are populated) — hasAnySectionSettled: true reflects
+  // that, matching the LoadingOverlay-then-grid handoff in
+  // TechnicalMetricsDashboard.js/useTechnicalMetrics.js.
+  hasAnySectionSettled: true,
   loadingState: {},
 };
 
@@ -54,7 +62,11 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
 
     const alerts = await screen.findAllByRole('alert');
     expect(alerts.length).toBeGreaterThan(0);
-    expect(alerts[0].textContent).toBe('boom');
+    expect(alerts[0].textContent).toBe('Failed to load data: boom');
+
+    const enSpan = alerts[0].querySelector('span[lang="en"]');
+    expect(enSpan).toBeTruthy();
+    expect(enSpan.textContent).toBe('boom');
   });
 
   it('shows no alert when there are no section errors', () => {
@@ -66,5 +78,35 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
     render(<TechnicalMetricsDashboard lang="en" />);
 
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('suppresses all tables and shows only the info banner on a genuinely empty period', () => {
+    mockUseTechnicalMetrics.mockReturnValue({
+      ...baseHook,
+      data: { ...baseHook.data, totalQuestions: 0 },
+      errorState: { technical: null, usage: null },
+    });
+
+    render(<TechnicalMetricsDashboard lang="en" />);
+
+    expect(screen.getByText('common.noDataForFilters')).toBeTruthy();
+    expect(screen.queryByText('technicalMetrics.dashboard.responseTime.title')).toBeNull();
+  });
+
+  it('still renders the tables (and the error) when a section errors, even though that leaves totalQuestions at 0', () => {
+    // Regression test: totalQuestions comes from the 'usage' fetch, so a
+    // failed fetch alone also reads as "0 questions" — the tables block
+    // must not be suppressed in that case, or the error message (and any
+    // real data from other, successful fetches) would be hidden too.
+    mockUseTechnicalMetrics.mockReturnValue({
+      ...baseHook,
+      data: { ...baseHook.data, totalQuestions: 0 },
+      errorState: { technical: 'boom', usage: null },
+    });
+
+    render(<TechnicalMetricsDashboard lang="en" />);
+
+    expect(screen.queryAllByRole('alert').length).toBeGreaterThan(0);
+    expect(screen.getByText('technicalMetrics.dashboard.responseTime.title')).toBeTruthy();
   });
 });

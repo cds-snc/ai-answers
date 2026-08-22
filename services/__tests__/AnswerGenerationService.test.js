@@ -18,6 +18,13 @@ vi.mock('../ServerLoggingService.js', () => ({
         error: vi.fn(),
     },
 }));
+const { recordErrorMock, recordRetryMock } = vi.hoisted(() => ({
+    recordErrorMock: vi.fn(),
+    recordRetryMock: vi.fn(),
+}));
+vi.mock('../ServiceCallMetricsService.js', () => ({
+    default: { recordError: recordErrorMock, recordRetry: recordRetryMock },
+}));
 
 const mockAgent = {
     callbacks: [],
@@ -77,6 +84,10 @@ describe('AnswerGenerationService', () => {
 
         expect(mockAgent.invoke).toHaveBeenCalledTimes(3);
         expect(result.content).toBe('Recovered');
+        // 2 failed attempts before the successful 3rd => 2 retries recorded, no error
+        expect(recordRetryMock).toHaveBeenCalledTimes(2);
+        expect(recordRetryMock).toHaveBeenCalledWith({ service: 'ai', type: 'answer' });
+        expect(recordErrorMock).not.toHaveBeenCalled();
     });
 
     it('should throw after max retries', async () => {
@@ -87,6 +98,9 @@ describe('AnswerGenerationService', () => {
             .rejects.toThrow('Failed after retries: Persistent Error');
 
         expect(mockAgent.invoke).toHaveBeenCalledTimes(3);
+        // 2 retries between the 3 attempts, then a final recorded error
+        expect(recordRetryMock).toHaveBeenCalledTimes(2);
+        expect(recordErrorMock).toHaveBeenCalledWith({ service: 'ai', type: 'answer' });
     });
 
     it('should handle mixed conversation history types robustly', async () => {

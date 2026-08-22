@@ -11,6 +11,8 @@ import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
 import { normalizeAnswerText } from '../utils/answerText.js';
 import { formatNumber } from '../utils/numberFormat.js';
+import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 
 DataTable.use(DT);
 
@@ -45,28 +47,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  // sr-only announcement of a search narrowing the result set to a non-zero
-  // count (SC 4.1.3) - DataTables' own "Showing X to Y of Z" text has no
-  // aria-live, so a screen reader user typing a search term that goes from
-  // e.g. 50 to 3 results gets no indication anything changed. The zero-
-  // result case is already covered by the visible noSearchResults
-  // StatusMessage below. nonce is bumped alongside so a second, different
-  // search that happens to land on the same count still re-announces (same
-  // persistent+sr-only+nonce pattern as ConnectivityPage/VectorPage).
-  const [searchAnnouncement, setSearchAnnouncement] = useState('');
-  const [searchAnnounceNonce, setSearchAnnounceNonce] = useState(0);
-  // Same reasoning, opposite case: the zero-result StatusMessage below is a
-  // plain conditional render, not persistent+sr-only, but has the identical
-  // no-op-remount problem when its text is IDENTICAL across two different
-  // triggers - e.g. editing one bad search term into another bad one both
-  // render "No search results found.", so nothing in the DOM actually
-  // changes and a screen reader user gets no indication the second search
-  // even ran. Bumped on every ajax completion that lands on zero (not
-  // gated to "new search term only" like searchAnnounceNonce - a 0-result
-  // page can't be paged further, so every such completion is a genuinely
-  // new query, not a repeat draw of the same one).
-  const [zeroResultNonce, setZeroResultNonce] = useState(0);
-  const previousSearchTermRef = useRef('');
+  // sr-only search-narrowing announcement + visible zero-result message
+  // (SC 4.1.3) - shared with MetricsDashboard.js.
+  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+    useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -166,12 +150,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // region as the search-narrowing announcement, just for a different
     // message - same nonce bump so it re-announces even if cleared twice
     // in a row with nothing else changing in between.
-    setSearchAnnouncement(t('admin.common.filtersClearedAnnouncement'));
-    setSearchAnnounceNonce((n) => n + 1);
-    previousSearchTermRef.current = '';
+    announce(t('admin.common.filtersClearedAnnouncement'));
+    resetSearchAnnouncement();
     setError(null);
     setLoading(false);
-  }, [LOCAL_TABLE_STORAGE_KEY, t]);
+  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
 
   const columns = useMemo(() => ([
     {
@@ -540,59 +523,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     } catch (e) { /* ignore drawCallback errors */ }
                   },
                   initComplete: function () {
-                    try {
-                      const api = this.api();
-                      tableApiRef.current = api;
-
-                      // DataTables doesn't add scope="col" to the header
-                      // cells it generates from `columns` on its own (this is
-                      // a real WCAG 1.3.1 gap in the library, not something a
-                      // config option turns on) - set it once here rather
-                      // than per-column above. Headers are only built once on
-                      // init (serverSide mode only redraws the body per
-                      // page), and this instance is recreated from scratch on
-                      // every tableKey remount, so it can't drift out of sync.
-                      api.columns().header().each((header) => {
-                        header.setAttribute('scope', 'col');
-                      });
-
-                      // Active search term shown as a dismissible pill right
-                      // beside the search box, same .filter-pill styling
-                      // FilterPanel already uses for its own active-filter
-                      // pills, so the current term is visible and clearable
-                      // without needing to select/delete the input text.
-                      const searchContainer = api.table().container().querySelector('.dt-search');
-                      if (searchContainer) {
-                        // Whole pill is the close target, not just the small
-                        // × - a real <button> (not a span wrapping one), same
-                        // reasoning and CSS as FilterPanel.js's own pills
-                        // (see admin.css's .filter-pill--closable comment).
-                        const pillEl = document.createElement('button');
-                        pillEl.type = 'button';
-                        pillEl.className = 'filter-pill filter-pill--closable dashboard-search-pill';
-                        searchContainer.insertAdjacentElement('afterend', pillEl);
-
-                        const renderSearchPill = (term) => {
-                          pillEl.innerHTML = '';
-                          pillEl.style.display = term ? '' : 'none';
-                          if (!term) return;
-                          pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter')} - ${term}`);
-                          pillEl.onclick = () => {
-                            api.search('').draw();
-                          };
-                          const labelSpan = document.createTextNode(t('admin.common.searchTermPillLabel').replace('{term}', () => term));
-                          pillEl.appendChild(labelSpan);
-                          const closeIcon = document.createElement('span');
-                          closeIcon.className = 'filter-pill__close';
-                          closeIcon.setAttribute('aria-hidden', 'true');
-                          closeIcon.textContent = '×';
-                          pillEl.appendChild(closeIcon);
-                        };
-
-                        renderSearchPill(api.search());
-                        api.on('search.dt', () => renderSearchPill(api.search()));
-                      }
-                    } catch (e) { /* ignore initComplete errors */ }
+                    const api = this.api();
+                    tableApiRef.current = api;
+                    wireTableAccessibility(api, { t });
                   },
                   ajax: async (dtParams, callback) => {
                     try {
@@ -633,27 +566,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       const total = result?.recordsTotal || 0;
                       setRecordsTotal(total);
 
-                      // Only re-announce on an actual new search term, not on
-                      // every draw (paging/sorting a still-active search
-                      // shouldn't repeat "N results" on every page turn).
-                      if (searchValue !== previousSearchTermRef.current) {
-                        previousSearchTermRef.current = searchValue;
-                        if (searchValue && total > 0) {
-                          setSearchAnnouncement(
-                            t('admin.chatDashboard.searchResultsAnnouncement').replace('{count}', () => formatNumber(total, lang))
-                          );
-                          setSearchAnnounceNonce((n) => n + 1);
-                        }
-                      }
-                      // zeroResultNonce - see its own comment above - bumped
-                      // on every completion that lands on zero, not gated to
-                      // "new search term" like searchAnnounceNonce: a
-                      // 0-result page can't be paged further, so there's no
-                      // "just re-drawing the same query" case to filter out
-                      // here the way there is for the non-zero count above.
-                      if (total === 0) {
-                        setZeroResultNonce((n) => n + 1);
-                      }
+                      noteSearchResult(searchValue, total);
 
                       callback({
                         draw: dtParams.draw || 0,

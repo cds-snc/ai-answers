@@ -13,6 +13,9 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { formatNumber } from '../utils/numberFormat.js';
+import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 
 DataTable.use(DT);
 
@@ -91,25 +94,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   const [tableKey, setTableKey] = useState(0);
   const [dataTableReady, setDataTableReady] = useState(false);
   const [pageResultCount, setPageResultCount] = useState(0);
-  // The zero-result StatusMessages below are plain conditional renders with
-  // no nonce, so two different zero-result triggers (e.g. one search term
-  // edited into another that also matches nothing) render identical text
-  // and produce no DOM change - a screen reader user gets no indication
-  // the second query even ran. nonce forces a fresh node each time (same
-  // fix as ChatDashboardPage.js/AutoEvalDashboardPage.js's own zero-result
-  // StatusMessages). Bumped on every ajax completion that lands on zero -
-  // a 0-result page can't be paged further, so every such completion is a
-  // genuinely new query, not a repeat draw of the same one.
-  const [zeroResultNonce, setZeroResultNonce] = useState(0);
-  // sr-only announcement that Clear all actually took effect (SC 4.1.3) -
-  // handleClearFilters below unmounts the whole results section with no
-  // other indication anything happened, same gap ChatDashboardPage.js's
-  // Clear all had and fixed via this identical persistent+sr-only+nonce
-  // StatusMessage pattern. nonce so two Clears in a row (nothing else
-  // changing in between) still re-announce instead of no-op'ing on the
-  // identical message.
-  const [clearAnnouncement, setClearAnnouncement] = useState('');
-  const [clearAnnounceNonce, setClearAnnounceNonce] = useState(0);
+  // sr-only search-narrowing announcement + visible zero-result message
+  // (SC 4.1.3) - shared with ChatDashboardPage.js/MetricsDashboard.js.
+  // syntheticCount (see the ajax callback below) is a pagination trick, not
+  // a real count, so search completions pass count: null here and get the
+  // count-less "results updated" message instead of "N results found".
+  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+    useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   // Tracked so a zero-result global search doesn't feed FilterPanel's own
   // "reopen on zero results" effect - see the filterResultCount prop below
   // (same guard as ChatDashboardPage.js's).
@@ -298,9 +289,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     setSearchChatIdNotFound(false);
     setError(null);
     setLoading(false);
-    setClearAnnouncement(t('admin.common.filtersClearedAnnouncement'));
-    setClearAnnounceNonce((n) => n + 1);
-  }, [LOCAL_TABLE_STORAGE_KEY, t]);
+    announce(t('admin.common.filtersClearedAnnouncement'));
+    resetSearchAnnouncement();
+  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
 
   const columns = useMemo(() => ([
     {
@@ -443,7 +434,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           screen-reader users navigating by heading/landmark still get this
           section announced. */}
       <h2 className="sr-only">{t('admin.evalDashboard.timeRangeTitle')}</h2>
-      <StatusMessage persistent message={clearAnnouncement} nonce={clearAnnounceNonce} className="sr-only" />
+      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -748,18 +739,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     const api = this.api();
                     tableApiRef.current = api;
+                    wireTableAccessibility(api, { t });
 
-                    // DataTables doesn't add scope="col" to the header
-                    // cells it generates from `columns` on its own (a real
-                    // WCAG 1.3.1 gap in the library) - set it once here,
-                    // same fix as ChatDashboardPage.js's. Headers are only
-                    // built once on init (serverSide mode only redraws the
-                    // body per page), and this instance is recreated from
-                    // scratch on every tableKey remount, so it can't drift
-                    // out of sync.
-                    api.columns().header().each((header) => {
-                      header.setAttribute('scope', 'col');
-                    });
                     // Q # header shows just "#" (see the column comment
                     // above) - aria-label carries the spelled-out meaning
                     // for screen-reader users instead.
@@ -774,45 +755,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     if (pageLanguageHeader) {
                       pageLanguageHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.pageLanguageAriaLabel'));
                     }
-
-                    // Active search term shown as a dismissible pill right
-                    // beside the search box, same .filter-pill styling
-                    // FilterPanel already uses for its own active-filter
-                    // pills, so the current term is visible and clearable
-                    // without needing to select/delete the input text -
-                    // same as ChatDashboardPage.js's.
-                    const searchContainer = api.table().container().querySelector('.dt-search');
-                    if (searchContainer) {
-                      // Whole pill is the close target, not just the small
-                      // × - a real <button> (not a span wrapping one), same
-                      // reasoning and CSS as FilterPanel.js's own pills
-                      // (see admin.css's .filter-pill--closable comment).
-                      const pillEl = document.createElement('button');
-                      pillEl.type = 'button';
-                      pillEl.className = 'filter-pill filter-pill--closable dashboard-search-pill';
-                      searchContainer.insertAdjacentElement('afterend', pillEl);
-
-                      const renderSearchPill = (term) => {
-                        pillEl.innerHTML = '';
-                        pillEl.style.display = term ? '' : 'none';
-                        if (!term) return;
-                        pillEl.setAttribute('aria-label', `${t('dashboardFilter.removeFilter')} - ${term}`);
-                        pillEl.onclick = () => {
-                          api.search('').draw();
-                        };
-                        const labelSpan = document.createTextNode(t('admin.common.searchTermPillLabel').replace('{term}', () => term));
-                        pillEl.appendChild(labelSpan);
-                        const closeIcon = document.createElement('span');
-                        closeIcon.className = 'filter-pill__close';
-                        closeIcon.setAttribute('aria-hidden', 'true');
-                        closeIcon.textContent = '×';
-                        pillEl.appendChild(closeIcon);
-                      };
-
-                      renderSearchPill(api.search());
-                      api.on('search.dt', () => renderSearchPill(api.search()));
-                    }
-
                   } catch (e) { /* ignore initComplete errors */ }
                 },
                 // ajax collects per-column searches and sends them to backend
@@ -872,7 +814,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                       : rows.length;
                     const syntheticCount = start + syntheticUnitCount + (hasMore ? 1 : 0);
                     setPageResultCount(syntheticCount);
-                    if (syntheticCount === 0) setZeroResultNonce((n) => n + 1);
+                    // count: null - syntheticCount above is a pagination
+                    // trick (avoids a real COUNT query), not a trustworthy
+                    // result count, so the sr-only announcement uses the
+                    // count-less "results updated" message instead of "N
+                    // results found". TODO: pass the real count once a cheap
+                    // one is available from the backend.
+                    noteSearchResult(searchValue, syntheticCount === 0 ? 0 : null);
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load eval dashboard data', err);
