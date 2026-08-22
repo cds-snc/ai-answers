@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
-import { GcdsContainer, GcdsLink, GcdsButton } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
+import ViewChatByIdSection from '../components/admin/ViewChatByIdSection.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
@@ -14,8 +14,6 @@ import { HOW_TOS } from '../config/howTos.js';
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
-  const navigate = useNavigate();
-  const [lookupChatId, setLookupChatId] = useState('');
 
   const handleLogout = () => {
     logout();
@@ -188,9 +186,10 @@ const AdminPage = ({ lang = 'en' }) => {
       {/* How-to guides, rendered in-app from public/content/admin/ */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
+          <h2 className="mt-400 mb-200">{t('admin.howTo.title')}</h2>
           <details>
-            <summary>{t('admin.howTo.title')}</summary>
-            <ul className="list-none p-0">
+            <summary>{t('admin.howTo.trigger')}</summary>
+            <ul className="list-disc canada-ca-list-spcd-1 mt-200">
               {HOW_TOS.map((howTo) => (
                 <li key={howTo.id}>
                   {/* New tab so the guide stays open alongside the page it describes */}
@@ -204,41 +203,21 @@ const AdminPage = ({ lang = 'en' }) => {
         </section>
       </RoleBasedContent>
 
-      {/* Quick chat lookup for admins and partners */}
+      {/* Chat ID utilities for admins and partners: one real heading (not
+          repeated per row - see SettingsPage.js's own accordion for the
+          "one visible label per row, no separate heading" look this
+          matches), three collapsed-by-default <details> rows underneath it,
+          each row's own <summary> text the row's only label. ViewChatByIdSection.js/
+          DeleteChatSection.js/DeleteExpertEval.js each render their own
+          <details> row the same way, as standalone reusable components. */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
-          <h2 className="mt-400 mb-200">{t('admin.common.viewChatById')}</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!lookupChatId) return;
-              navigate(`/${lang}?chat=${encodeURIComponent(lookupChatId)}&review=1`);
-            }}
-          >
-            <label htmlFor="view-chat-id" className="sr-only">
-              {t('admin.viewChat.label', 'Chat ID')}
-            </label>
-            <div className="flex gap-400">
-              <input
-                id="view-chat-id"
-                name="view-chat-id"
-                type="text"
-                className="form-control"
-                value={lookupChatId}
-                onChange={(e) => setLookupChatId(e.target.value)}
-                placeholder={t('admin.viewChat.placeholder', 'Enter chat id')}
-              />
-              <GcdsButton type="submit" disabled={!lookupChatId.trim()}>
-                {t('admin.viewChat.button', 'View chat')}
-              </GcdsButton>
-            </div>
-          </form>
+          <h2 className="mt-400 mb-200">{t('admin.chatTools.title')}</h2>
+          <ViewChatByIdSection lang={lang} />
+          <DeleteChatSection lang={lang} />
+          <DeleteExpertEval lang={lang} />
         </section>
       </RoleBasedContent>
-
-      <DeleteChatSection lang={lang} />
-
-      <DeleteExpertEval lang={lang} />
 
       <section id="chat-logs" className="mb-600">
         <h2 className="mt-400 mb-400">{t('admin.chatLogs.title', 'Recent Chat Interactions')}</h2>

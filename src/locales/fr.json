@@ -564,7 +564,8 @@
       "viewUsers": "Voir et gérer les utilisateurs"
     },
     "howTo": {
-      "title": "Comment faire",
+      "title": "Guides pratiques",
+      "trigger": "Voir tous les guides pratiques pour les partenaires",
       "evalInformedAnswers": "Réponses informées par les évaluations",
       "evaluateAnswers": "Évaluer les réponses",
       "partnerOnboarding": "Intégration des partenaires",
@@ -573,10 +574,15 @@
       "notFoundTitle": "Guide introuvable",
       "notFound": "Ce guide n'existe pas."
     },
+    "chatTools": {
+      "title": "Afficher et supprimer des chats par ID"
+    },
     "viewChat": {
       "label": "ID de chat",
-      "placeholder": "Entrez l'ID du chat",
-      "button": "Afficher le chat"
+      "button": "Afficher le chat",
+      "loading": "Recherche en cours...",
+      "notFound": "Aucun chat trouvé avec cet ID",
+      "invalidFormat": "Format d'ID de chat invalide"
     },
     "evalPage": {
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
@@ -783,6 +789,8 @@
       "noSearchResults": "Aucun résultat de recherche trouvé.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "viewChatById": "Voir le chat par ID",
+      "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
+      "chatIdPlaceholder": "Entrez l'ID complet du chat",
       "sortActivateAscending": "{column} : activer le tri croissant",
       "sortActivateDescending": "{column} : activer le tri décroissant",
       "sortRemove": "{column} : activer pour annuler le tri",
@@ -834,7 +842,6 @@
       "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
       "searchButton": "Rechercher l'ID de chat",
       "searchNotFound": "Aucun chat trouvé avec cet ID.",
-      "searchRequired": "Veuillez entrer un identifiant de clavardage.",
       "resultsHeading": "Résultats de l'évaluation",
       "columns": {
         "chatId": "ID de chat",

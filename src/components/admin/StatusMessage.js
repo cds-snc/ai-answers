@@ -32,8 +32,12 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // checkmark span (`fa-solid fa-check-circle`) instead of GcdsIcon, matching
 // the existing precedent in BatchUpload.js — GC DS's icon font has no
 // checkmark glyph. A caller that passes `children` alongside `variant` gets
-// the box/role treatment but is responsible for its own icon (an escape
-// hatch for content richer than "icon + one string").
+// the box/role treatment AND the same icon `message` would have gotten —
+// `children` is only an escape hatch for content richer than one string
+// (e.g. a raw exception detail that needs its own <span lang="en">), not a
+// way to opt out of the icon. (It used to be — see resolveLook's own
+// comment for why that shipped 5 icon-less error boxes before this fixed
+// it at the root.)
 //
 // TODO (design review): none of this component's CSS — the four variant
 // boxes, the loading box, the plain isError/tag styling — has had an actual
@@ -120,10 +124,20 @@ function resolveLook({ variant, loading, message, isError, children }) {
       isError: variantConfig.isError,
       isBlock: true,
       className: variantConfig.className,
-      content: children || (
+      // Icon is unconditional — every real `children` caller in this
+      // codebase only reaches for `children` to wrap part of the text in
+      // e.g. <span lang="en">, never for a genuinely icon-less shape, and
+      // the old `children || (icon + message)` short-circuited the icon
+      // out entirely whenever `children` was passed. That was the actual
+      // cause behind 5 separate call sites shipping error boxes with no
+      // icon (found by inspection, not by design) - fixed at the root
+      // instead of leaving it as a footgun every future caller can still
+      // hit. `children` still exists for richer content than one string;
+      // it just no longer implies "and also drop the icon."
+      content: (
         <>
           <VariantIcon name={variantConfig.icon} />
-          {message}
+          {children || message}
         </>
       ),
     };
@@ -133,10 +147,17 @@ function resolveLook({ variant, loading, message, isError, children }) {
       isError,
       isBlock: true,
       className: 'status-message--loading',
-      content: children || (
+      // Same fix as the variant branch above, same reasoning: the spinner
+      // shouldn't be conditional on whether the caller used `message` or
+      // `children` for the text. No current `loading` caller passes
+      // `children` (all three use `message`), so this was a latent
+      // version of the exact bug fixed above, not yet a live one — fixed
+      // anyway rather than leaving the same footgun for the first future
+      // caller that does.
+      content: (
         <>
           <div className="loading-animation" aria-hidden="true"></div>
-          {message}
+          {children || message}
         </>
       ),
     };

@@ -40,7 +40,7 @@ describe('DeleteExpertEval error/success announcements', () => {
   });
 
   const startDelete = () => {
-    fireEvent.change(screen.getByPlaceholderText('Chat ID'), { target: { value: 'abc123' } });
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'abc123' } });
     fireEvent.click(screen.getByText('Delete expert evaluation'));
   };
 
@@ -130,7 +130,7 @@ describe('DeleteExpertEval error/success announcements', () => {
     startDelete();
     await screen.findByRole('alert');
 
-    fireEvent.change(screen.getByPlaceholderText('Chat ID'), { target: { value: 'def456' } });
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'def456' } });
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });

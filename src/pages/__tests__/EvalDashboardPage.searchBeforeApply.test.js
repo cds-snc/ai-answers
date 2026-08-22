@@ -143,11 +143,11 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     });
 
     expect(EvaluationService.getEvalDashboard).not.toHaveBeenCalled();
-    expect(getByText('admin.evalDashboard.searchRequired')).toBeTruthy();
+    expect(getByText('admin.common.chatIdRequired')).toBeTruthy();
     expect(container.querySelector('#eval-search-chat-id-input').getAttribute('aria-describedby')).toBe('eval-search-chat-id-error');
 
     fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'abc' } });
 
-    expect(queryByText('admin.evalDashboard.searchRequired')).toBeNull();
+    expect(queryByText('admin.common.chatIdRequired')).toBeNull();
   });
 });

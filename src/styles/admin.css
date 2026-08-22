@@ -766,6 +766,37 @@
   max-width: 40rem;
 }
 
+/* Same shape as .eval-search-chat-id__field above (matching max-width, on
+   a wrapping <div> rather than the input itself) - ChatIdLookupField.js's
+   own input. Block-level wrapper, not just a width cap: without it, once
+   the input stops being width:100% (which forced the button below it by
+   consuming the whole line), the input and its inline-level GcdsButton
+   sibling had room to sit side by side again in normal flow. Wrapping the
+   input in its own block guarantees the button starts on a new line
+   regardless of either element's own display type. */
+.chat-id-lookup-field {
+  max-width: 40rem;
+}
+
+/* ChatLogsDashboard.js's export View/Format dropdowns. Previously
+   `className="flex items-center gap-4 flex-wrap"` on the row and
+   `className="export-control-group"` on each field - none of those
+   classes were ever defined anywhere in this project's CSS (Tailwind-style
+   names with nothing behind them), so the row had no flex/gap/wrap at all
+   and each .filter-select (which *is* real, width:100%) just stretched
+   full-width and stacked with plain block-level spacing between them -
+   read as "too much space", not a deliberate gap. */
+.export-controls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-400);
+  flex-wrap: wrap;
+}
+
+.export-control-group {
+  max-width: 16rem;
+}
+
 /* Search box + entries-per-page/pagination focus styling, split out from
    .dashboard-table-container below for tables that shouldn't take its 90vw
    full-viewport breakout width (e.g. MetricsDashboard.js's Institution

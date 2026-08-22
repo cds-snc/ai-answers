@@ -564,7 +564,8 @@
       "viewUsers": "View and manage users"
     },
     "howTo": {
-      "title": "How to",
+      "title": "How to guides",
+      "trigger": "See all partner how tos",
       "evalInformedAnswers": "Evaluation-informed answers",
       "evaluateAnswers": "Evaluate answers",
       "partnerOnboarding": "Partner onboarding",
@@ -573,10 +574,15 @@
       "notFoundTitle": "Guide not found",
       "notFound": "That how-to guide does not exist."
     },
+    "chatTools": {
+      "title": "View and delete chats by ID"
+    },
     "viewChat": {
       "label": "Chat ID",
-      "placeholder": "Enter chat id",
-      "button": "View chat"
+      "button": "View chat",
+      "loading": "Looking up...",
+      "notFound": "No chat found with that ID",
+      "invalidFormat": "Invalid chat ID format"
     },
     "evalPage": {
       "similarityTitle": "Similarity-based expert feedback transfer",
@@ -783,6 +789,8 @@
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "viewChatById": "View chat by ID",
+      "chatIdRequired": "Please enter a chat ID.",
+      "chatIdPlaceholder": "Enter full chat ID",
       "sortActivateAscending": "{column}: activate for ascending sort",
       "sortActivateDescending": "{column}: activate for descending sort",
       "sortRemove": "{column}: activate to remove sort",
@@ -834,7 +842,6 @@
       "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
       "searchNotFound": "No chat found with that ID.",
-      "searchRequired": "Please enter a chat ID.",
       "resultsHeading": "Evaluation results",
       "columns": {
         "chatId": "Chat ID",
