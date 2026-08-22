@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { tool } from "@langchain/core/tools";
+import { retryOnTransientError } from '../../api/util/transient-retry.js';
 
 const customsearch = google.customsearch('v1');
 
@@ -24,39 +25,6 @@ function sanitizeErrorForLogging(error) {
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 250;
-
-/**
- * Transient transport/network failures (e.g. node-fetch "Premature close" from a
- * dropped keep-alive socket, connection resets, timeouts, 5xx) are worth retrying;
- * client errors (4xx, missing config) are not.
- */
-function isRetryableSearchError(error) {
-    if (!error) return false;
-
-    const status = error.status ?? error.code ?? error.response?.status;
-    if (typeof status === 'number' && status >= 500) return true;
-
-    const code = String(error.code ?? '').toUpperCase();
-    const retryableCodes = [
-        'ECONNRESET',
-        'ETIMEDOUT',
-        'ECONNREFUSED',
-        'EPIPE',
-        'ENOTFOUND',
-        'EAI_AGAIN',
-        'ERR_STREAM_PREMATURE_CLOSE',
-    ];
-    if (retryableCodes.includes(code)) return true;
-
-    const message = String(error.message ?? '').toLowerCase();
-    return (
-        message.includes('premature close') ||
-        message.includes('socket hang up') ||
-        message.includes('network socket disconnected')
-    );
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
 /**
@@ -111,22 +79,19 @@ const contextSearch = async (query, lang) => {
             searchOptions.lr = lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
         }
 
-        let res;
-        for (let attempt = 1; attempt <= MAX_SEARCH_ATTEMPTS; attempt++) {
-            try {
-                res = await customsearch.cse.list(searchOptions);
-                break;
-            } catch (attemptError) {
-                if (attempt >= MAX_SEARCH_ATTEMPTS || !isRetryableSearchError(attemptError)) {
-                    throw attemptError;
-                }
-                console.warn(
-                    `Google search attempt ${attempt} failed with a transient error, retrying:`,
-                    maskSecretValue(attemptError.message)
-                );
-                await sleep(RETRY_BASE_DELAY_MS * attempt);
+        const res = await retryOnTransientError(
+            () => customsearch.cse.list(searchOptions),
+            {
+                attempts: MAX_SEARCH_ATTEMPTS,
+                baseDelayMs: RETRY_BASE_DELAY_MS,
+                onRetry: ({ error, attempt }) => {
+                    console.warn(
+                        `Google search attempt ${attempt} failed with a transient error, retrying:`,
+                        maskSecretValue(error.message)
+                    );
+                },
             }
-        }
+        );
 
         const results = res.data;
         const extractedResults = extractSearchResults(results);
