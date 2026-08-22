@@ -433,7 +433,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           clear on screen. Kept as a real heading (not removed) so
           screen-reader users navigating by heading/landmark still get this
           section announced. */}
-      <h2 className="sr-only">{t('admin.evalDashboard.timeRangeTitle')}</h2>
+      <h2 className="sr-only">{t('admin.filters.title')}</h2>
       <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel

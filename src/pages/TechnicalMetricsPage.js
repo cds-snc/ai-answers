@@ -18,7 +18,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
       </nav>
 
       <section id="technical-metrics-dashboard" className="mb-600">
-        <h2 className="sr-only">{t('technicalMetrics.timeRangeTitle')}</h2>
+        <h2 className="sr-only">{t('admin.filters.title')}</h2>
         <TechnicalMetricsDashboard lang={lang} />
       </section>
     </GcdsContainer>
