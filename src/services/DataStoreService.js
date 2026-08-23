@@ -318,6 +318,14 @@ class DataStoreService {
   static async getChat(chatId) {
     try {
       const response = await AuthService.fetch(getApiUrl(`db-chat?chatId=${chatId}`));
+      // 404 (db-chat.js's own "Chat not found") is a real, expected outcome
+      // for this call's two admin-tool callers (existence pre-check before
+      // delete, direct lookup-by-ID) — return the same { chat: null } shape
+      // they already check for on success, rather than throwing. Any other
+      // non-ok status (500, auth failure, etc.) still throws below, so
+      // callers can tell "doesn't exist" apart from "the lookup itself
+      // failed" instead of both collapsing into one generic error.
+      if (response.status === 404) return { chat: null };
       if (!response.ok) throw new Error('Failed to fetch chat');
       return await response.json();
     } catch (error) {

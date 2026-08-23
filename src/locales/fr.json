@@ -387,9 +387,8 @@
     }
   },
   "admin": {
-    "title": "Administration de Réponses IA",
-    "partnerTitle": "Tableau de bord partenaire Réponses IA",
-    "backToAdmin": "Retour à l'administration",
+    "title": "Accueil administrateur de Réponses IA",
+    "partnerTitle": "Accueil partenaire de Réponses IA",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
@@ -407,7 +406,6 @@
       "publicDashboard": "Tableau de bord public",
       "partnerDashboard": "Tableau de bord partenaire",
       "technicalMetrics": "Voir les métriques techniques",
-      "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
@@ -573,7 +571,8 @@
       "viewUsers": "Voir et gérer les utilisateurs"
     },
     "howTo": {
-      "title": "Comment faire",
+      "title": "Guides pratiques",
+      "trigger": "Voir tous les guides pratiques pour les partenaires",
       "evalInformedAnswers": "Réponses informées par les évaluations",
       "evaluateAnswers": "Évaluer les réponses",
       "partnerOnboarding": "Intégration des partenaires",
@@ -582,10 +581,14 @@
       "notFoundTitle": "Guide introuvable",
       "notFound": "Ce guide n'existe pas."
     },
+    "chatTools": {
+      "title": "Afficher et supprimer des chats par ID"
+    },
     "viewChat": {
       "label": "ID de chat",
-      "placeholder": "Entrez l'ID du chat",
-      "button": "Afficher le chat"
+      "button": "Afficher le chat",
+      "loading": "Recherche en cours...",
+      "invalidFormat": "Format d'ID de chat invalide"
     },
     "evalPage": {
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
@@ -705,6 +708,7 @@
     },
     "filters": {
       "title": "Filtres",
+      "sectionHeading": "Choisir des options de filtrage",
       "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
@@ -792,17 +796,21 @@
       "noSearchResults": "Aucun résultat de recherche trouvé.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "viewChatById": "Voir le chat par ID",
+      "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
+      "chatIdPlaceholder": "Entrez l'ID complet du chat",
+      "chatNotFound": "Aucun chat trouvé avec cet ID.",
+      "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "sortActivateAscending": "{column} : activer le tri croissant",
       "sortActivateDescending": "{column} : activer le tri décroissant",
       "sortRemove": "{column} : activer pour annuler le tri",
       "fetchError": "Échec du chargement des données : {message}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
-      "metricsLoading": "Chargement des métriques..."
+      "metricsLoading": "Chargement des métriques...",
+      "resultsHeading": "Résultats"
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
-      "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "columns": {
@@ -836,15 +844,11 @@
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
-      "timeRangeTitle": "Obtenir les évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "searchChatIdInputLabel": "ID de chat",
       "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
       "searchButton": "Rechercher l'ID de chat",
-      "searchNotFound": "Aucun chat trouvé avec cet ID.",
-      "searchRequired": "Veuillez entrer un identifiant de clavardage.",
-      "resultsHeading": "Résultats de l'évaluation",
       "columns": {
         "chatId": "ID de chat",
         "questionNumber": "#",
@@ -866,7 +870,6 @@
     "autoEvalDashboard": {
       "title": "Tableau de bord des évaluations automatiques",
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
-      "timeRangeTitle": "Obtenir les auto-évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -893,7 +896,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer le chat",
       "loading": "Suppression en cours...",
-      "success": "Chat supprimé avec succès",
+      "success": "{chatId} supprimé avec succès.",
       "error": "Échec de la suppression du chat : {message}"
     },
     "deleteExpertEval": {
@@ -901,7 +904,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer l'évaluation d'expert",
       "loading": "Suppression en cours...",
-      "success": "Évaluation d'expert supprimée avec succès",
+      "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
       "error": "Échec de la suppression de l'évaluation d'expert : {message}",
       "notEvaluated": "Non évalué."
     },
@@ -1398,7 +1401,7 @@
     }
   },
   "publicDashboard": {
-    "title": "Tableau de bord public Réponses IA",
+    "title": "Tableau de bord public",
     "usersOnlyPill": "Utilisateurs du public seulement",
     "footnote": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
     "overviewTitle": "Aperçu",
@@ -1613,7 +1616,6 @@
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
-    "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "loadedAnnouncement": "Métriques chargées.",
       "totalSessions": "Total des sessions",
@@ -1718,7 +1720,6 @@
   },
   "technicalMetrics": {
     "title": "Métriques techniques",
-    "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
     "dashboard": {
       "loading": "Chargement des métriques techniques...",
       "loadedAnnouncement": "Métriques techniques chargées.",

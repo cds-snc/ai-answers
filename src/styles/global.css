@@ -228,6 +228,11 @@ gcds-details {
   margin-bottom: 1.25em;
 }
 
+/* -2 above: long/bulleted-paragraph items. -1 here: short-sentence items. */
+.canada-ca-list-spcd-1 li {
+  margin-bottom: 0.625em;
+}
+
 .flex-center {
   display: flex;
   align-items: center;

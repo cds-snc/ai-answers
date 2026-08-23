@@ -387,9 +387,8 @@
     }
   },
   "admin": {
-    "title": "AI Answers Admin",
-    "partnerTitle": "AI Answers Partner dashboard",
-    "backToAdmin": "Back to admin",
+    "title": "AI Answers admin home",
+    "partnerTitle": "AI Answers partner home",
     "navigation": {
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
@@ -407,7 +406,6 @@
       "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
       "technicalMetrics": "View technical metrics",
-      "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
       "logout": "Sign out",
@@ -573,7 +571,8 @@
       "viewUsers": "View and manage users"
     },
     "howTo": {
-      "title": "How to",
+      "title": "How to guides",
+      "trigger": "See all partner how tos",
       "evalInformedAnswers": "Evaluation-informed answers",
       "evaluateAnswers": "Evaluate answers",
       "partnerOnboarding": "Partner onboarding",
@@ -582,10 +581,14 @@
       "notFoundTitle": "Guide not found",
       "notFound": "That how-to guide does not exist."
     },
+    "chatTools": {
+      "title": "View and delete chats by ID"
+    },
     "viewChat": {
       "label": "Chat ID",
-      "placeholder": "Enter chat id",
-      "button": "View chat"
+      "button": "View chat",
+      "loading": "Looking up...",
+      "invalidFormat": "Invalid chat ID format"
     },
     "evalPage": {
       "similarityTitle": "Similarity-based expert feedback transfer",
@@ -705,6 +708,7 @@
     },
     "filters": {
       "title": "Filters",
+      "sectionHeading": "Choose filter options",
       "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
@@ -792,17 +796,21 @@
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "viewChatById": "View chat by ID",
+      "chatIdRequired": "Please enter a chat ID.",
+      "chatIdPlaceholder": "Enter full chat ID",
+      "chatNotFound": "No chat found with that ID.",
+      "fetchFailed": "Failed to load data. Please try again.",
       "sortActivateAscending": "{column}: activate for ascending sort",
       "sortActivateDescending": "{column}: activate for descending sort",
       "sortRemove": "{column}: activate to remove sort",
       "fetchError": "Failed to load data: {message}",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
-      "metricsLoading": "Loading metrics..."
+      "metricsLoading": "Loading metrics...",
+      "resultsHeading": "Results"
     },
     "chatDashboard": {
       "title": "Chat dashboard",
-      "timeRangeTitle": "Get chat interactions for the selected period",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
       "columns": {
@@ -836,15 +844,11 @@
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
-      "timeRangeTitle": "Get evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "searchChatIdInputLabel": "Chat ID",
       "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
-      "searchNotFound": "No chat found with that ID.",
-      "searchRequired": "Please enter a chat ID.",
-      "resultsHeading": "Evaluation results",
       "columns": {
         "chatId": "Chat ID",
         "questionNumber": "#",
@@ -866,7 +870,6 @@
     "autoEvalDashboard": {
       "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
-      "timeRangeTitle": "Get auto-evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "resultsSummary": "Total matching evaluations: {count}",
@@ -914,7 +917,7 @@
       "idLabel": "Chat ID",
       "button": "Delete chat",
       "loading": "Deleting...",
-      "success": "Chat deleted successfully",
+      "success": "{chatId} deleted successfully.",
       "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
@@ -922,7 +925,7 @@
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
       "loading": "Deleting...",
-      "success": "Expert evaluation deleted successfully",
+      "success": "Deleted {count} expert feedback record(s) for {chatId}.",
       "error": "Failed to delete expert evaluation: {message}",
       "notEvaluated": "Not evaluated."
     }
@@ -1398,7 +1401,7 @@
     }
   },
   "publicDashboard": {
-    "title": "AI Answers Public dashboard",
+    "title": "Public dashboard",
     "usersOnlyPill": "Public users only",
     "footnote": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",
@@ -1613,7 +1616,6 @@
   },
   "metrics": {
     "title": "Metrics dashboard",
-    "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "loadedAnnouncement": "Metrics loaded.",
       "totalSessions": "Total sessions",
@@ -1718,7 +1720,6 @@
   },
   "technicalMetrics": {
     "title": "Technical metrics",
-    "timeRangeTitle": "Get technical metrics for the selected period",
     "dashboard": {
       "loading": "Loading technical metrics...",
       "loadedAnnouncement": "Technical metrics loaded.",

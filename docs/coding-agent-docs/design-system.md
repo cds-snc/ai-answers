@@ -139,7 +139,7 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 |---|---|---|---|---|---|
 | Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | `--gcds-color-grayscale-50/200/700` | `.loading-animation` pulsing-bars spinner (shared with `.section-loading-indicator`, `prefers-reduced-motion`-aware) | In-progress state, not a completed result |
 | Error | `<StatusMessage variant="error" message={...} />` | `status-message--error-box` | `--gcds-color-red-100/500/700` | `GcdsIcon warning-triangle` | Failures |
-| Warning | `<StatusMessage variant="warning" message={...} />` | `status-message--warning-box` | `--gcds-color-yellow-100/500/700` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
+| Warning | `<StatusMessage variant="warning" message={...} />` | `status-message--warning-box` | `--gcds-color-yellow-100/500/750` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
 | Info | `<StatusMessage variant="info" message={...} />` | `status-message--info-box` | `--gcds-color-blue-100/500/700` | `GcdsIcon info-circle` | Neutral confirmations |
 | Success | `<StatusMessage variant="success" message={...} />` | `status-message--success-box` | `--gcds-color-green-100/500/700` | raw `fa-solid fa-check-circle` span (GC DS's icon font has no checkmark glyph, matching the existing precedent in `BatchUpload.js`) | Completed saves |
 
