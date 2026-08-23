@@ -378,9 +378,8 @@
     }
   },
   "admin": {
-    "title": "AI Answers Admin",
-    "partnerTitle": "AI Answers Partner dashboard",
-    "backToAdmin": "Back to admin",
+    "title": "AI Answers admin home",
+    "partnerTitle": "AI Answers partner home",
     "navigation": {
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
@@ -398,7 +397,6 @@
       "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
       "technicalMetrics": "View technical metrics",
-      "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
       "logout": "Sign out",
@@ -564,7 +562,8 @@
       "viewUsers": "View and manage users"
     },
     "howTo": {
-      "title": "How to",
+      "title": "How to guides",
+      "trigger": "See all partner how tos",
       "evalInformedAnswers": "Evaluation-informed answers",
       "evaluateAnswers": "Evaluate answers",
       "partnerOnboarding": "Partner onboarding",
@@ -573,10 +572,15 @@
       "notFoundTitle": "Guide not found",
       "notFound": "That how-to guide does not exist."
     },
+    "chatTools": {
+      "title": "View and delete chats by ID"
+    },
     "viewChat": {
       "label": "Chat ID",
-      "placeholder": "Enter chat id",
-      "button": "View chat"
+      "button": "View chat",
+      "loading": "Looking up...",
+      "notFound": "No chat found with that ID",
+      "invalidFormat": "Invalid chat ID format"
     },
     "evalPage": {
       "similarityTitle": "Similarity-based expert feedback transfer",
@@ -783,6 +787,8 @@
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "viewChatById": "View chat by ID",
+      "chatIdRequired": "Please enter a chat ID.",
+      "chatIdPlaceholder": "Enter full chat ID",
       "sortActivateAscending": "{column}: activate for ascending sort",
       "sortActivateDescending": "{column}: activate for descending sort",
       "sortRemove": "{column}: activate to remove sort",
@@ -834,7 +840,6 @@
       "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
       "searchNotFound": "No chat found with that ID.",
-      "searchRequired": "Please enter a chat ID.",
       "resultsHeading": "Evaluation results",
       "columns": {
         "chatId": "Chat ID",
@@ -905,7 +910,7 @@
       "idLabel": "Chat ID",
       "button": "Delete chat",
       "loading": "Deleting...",
-      "success": "Chat deleted successfully",
+      "success": "{chatId} deleted successfully",
       "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
@@ -913,7 +918,7 @@
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
       "loading": "Deleting...",
-      "success": "Expert evaluation deleted successfully",
+      "success": "Deleted {count} expert feedback record(s) for {chatId}",
       "error": "Failed to delete expert evaluation: {message}",
       "notEvaluated": "Not evaluated."
     }
@@ -1387,7 +1392,7 @@
     }
   },
   "publicDashboard": {
-    "title": "AI Answers Public dashboard",
+    "title": "AI Answers public dashboard",
     "usersOnlyPill": "Public users only",
     "footnote": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",

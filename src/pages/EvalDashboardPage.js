@@ -506,7 +506,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
               {hasSearchChatIdError && (
                 <FeedbackInlineError
                   id="eval-search-chat-id-error"
-                  message={t('admin.evalDashboard.searchRequired')}
+                  message={t('admin.common.chatIdRequired')}
                   errorCount={searchChatIdErrorCount}
                   inputRef={searchChatIdErrorRef}
                 />
