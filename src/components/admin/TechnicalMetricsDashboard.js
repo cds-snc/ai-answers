@@ -66,7 +66,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
   const SectionWrapper = ({ children, isLoading, title, error, note }) => (
     <div className="mb-600">
       <div>
-        {title && <h3 className="mb-0">{title}</h3>}
+        {title && <h2 className="mb-0">{title}</h2>}
         {note && <p className="font-size-text-small mb-300">{note}</p>}
         {isLoading && (
           <SectionLoadingIndicator message={t('common.loading')} />

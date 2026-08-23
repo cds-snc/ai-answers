@@ -115,7 +115,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
 
   return (
     <div className="mb-600">
-      <h3 className="mb-0">{t('metrics.dashboard.userScored.title')}</h3>
+      <h2 className="mb-0">{t('metrics.dashboard.userScored.title')}</h2>
       <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
       <div>
         {/* Totals Table */}
@@ -160,7 +160,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             applies zebra/hover regardless, so this table currently looks
             slightly different from the plain Totals table above it. */}
         <div style={{ marginTop: '2rem' }}>
-          <h4>{t('metrics.dashboard.userScored.reasonTableTitle')}</h4>
+          <h3>{t('metrics.dashboard.userScored.reasonTableTitle')}</h3>
           <div className="metrics-table-container">
           <DataTable
             className="display dashboard-table"

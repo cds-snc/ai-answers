@@ -231,12 +231,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      {/* Visually hidden: the filter panel's own summary/controls already make
-          its purpose clear on screen, and this heading's copy just repeated
-          that at the cost of vertical space. Kept as a real heading (not
-          removed) so screen-reader users navigating by heading/landmark
-          still get this section announced. */}
-      <h2 className="sr-only">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      {/* Visually hidden: FilterPanel's own <summary> isn't heading-navigable
+          (it's a disclosure toggle, not a heading), so this gives
+          screen-reader users a heading/landmark entry point into the filter
+          section. Distinct text from FilterPanel's "Filters" summary label
+          so the two don't read as an identical back-to-back announcement. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -280,6 +280,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         <div>
           {dataTableReady && (
             <div className="dashboard-table-container dashboard-table-container--grouped">
+              {/* Sibling of the Filters h2 above, not nested under it - matches
+                  EvalDashboardPage.js's resultsHeading. Previously nothing
+                  filled this role, so the table had no heading-navigation stop
+                  of its own at all. */}
+              <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
               <DataTable
                 key={tableKey}
                 columns={columns}
