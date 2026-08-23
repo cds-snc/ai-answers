@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.190.4](https://github.com/cds-snc/ai-answers/compare/v1.190.3...v1.190.4) (2026-08-23)
+
+
+### Bug Fixes
+
+* address code-review findings on admin chat-ID tools ([d9bf452](https://github.com/cds-snc/ai-answers/commit/d9bf452d83e66016e615159731dfac620034060a))
+* admin page accessibility rebuild — chat-ID tools, H1 wording, bilingual messages ([8262847](https://github.com/cds-snc/ai-answers/commit/82628477487dac24cbf71e35f45f76901836ca2d))
+* batch pages accessibility overhaul (live regions, focus, pause c… ([cc48149](https://github.com/cds-snc/ai-answers/commit/cc481490d29eb5b571393675c44d13283d39d2ce))
+* batch pages accessibility overhaul (live regions, focus, pause control) ([f92c1c3](https://github.com/cds-snc/ai-answers/commit/f92c1c3642ffbad113f2c765d4365e4083f7898c))
+* bump warning-box text to yellow-750 for AA contrast ([683cba6](https://github.com/cds-snc/ai-answers/commit/683cba656697d57c3c9d46a48386f9002e4eef48))
+* bump warning-box text to yellow-750 for AA contrast ([3889f9b](https://github.com/cds-snc/ai-answers/commit/3889f9b4e0b56f9de6c1a80049895d54ef47ae73))
+* correct heading structure across admin dashboards ([3b98cbb](https://github.com/cds-snc/ai-answers/commit/3b98cbb9124d97bd8ff5049a3d5aad04acea4640))
+* distinguish sr-only filter heading text ([bab5b6c](https://github.com/cds-snc/ai-answers/commit/bab5b6c61f8c3608646c07f882e4555bd6455af2))
+* metrics dashboard a11y and error visibility ([84b30f5](https://github.com/cds-snc/ai-answers/commit/84b30f543516238caf36ce57a4b91750aee2d720))
+* metrics dashboard accessibility, filter/loading consolidation, and service-call telemetry ([145cf63](https://github.com/cds-snc/ai-answers/commit/145cf6351f392ae174f10547d5ead454c3382520))
+* update to reflect audit corrections and refinement ([5dfe2f9](https://github.com/cds-snc/ai-answers/commit/5dfe2f940feb80acd3ff1e54acca43441408beeb))
+* update to reflect audit corrections and refinement ([b54ecc7](https://github.com/cds-snc/ai-answers/commit/b54ecc7f79471c87c95ff9c882bd56485ed72cf2))
+
 ## [1.190.3](https://github.com/cds-snc/ai-answers/compare/v1.190.2...v1.190.3) (2026-08-21)
 
 
