@@ -812,6 +812,23 @@
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
 }
+/* overflow-x: auto above makes this a scrollable region, which browsers
+   treat as implicitly keyboard-focusable (so arrow keys can scroll it when
+   the table is wider than the viewport lets it show, e.g. BatchList.js's 9
+   columns) - that's correct and shouldn't be removed (SC 2.1.1). Left
+   unstyled, focusing it drew the browser's raw default outline around the
+   whole 90vw breakout box - at that width, and outset (the default outline
+   position, outside the box) against this container's own negative
+   centering margins above, it reads as a huge, misplaced rectangle rather
+   than a focus ring on anything in particular. Same GC DS focus token as
+   the rest of this file, drawn inset (negative offset) instead of outset so
+   it hugs the container's own visible edge - still clearly visible, just
+   contained to the box it's actually indicating instead of floating past
+   it. */
+.dashboard-table-container:focus-visible {
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
+  outline-offset: calc(-1 * var(--gcds-input-outline-width));
+}
 /* Chat and Eval Dashboard only, so far (this container class itself is
    shared with AutoEval Dashboard too, hence the --grouped-scoped override
    rather than editing the base rule above): the gap between FilterPanel's
@@ -1015,6 +1032,27 @@ table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_1,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_2,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_3 {
+  box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
+}
+/* Same blue highlight, for plain (non-grouped) .dashboard-table instances -
+   BatchList.js currently, the only other .dashboard-table consumer, and
+   deliberately without --grouped (no rowspan grouping to conflict with, see
+   this class's own comment in BatchList.js). This table doesn't have the
+   chat-group-a/b box-shadow conflict the rule above exists to work around,
+   so it doesn't need that rule's specificity/source-order reasoning either
+   - just the same solid pale-blue tint. This was the actual reason the
+   sorted-column highlight never showed up here: DataTables' own native
+   .sorting_1/2/3 (targeted correctly, confirmed by a direct test) resolves
+   to a near-invisible ~2% black tint by design, same as the --grouped
+   comment above already explains - there was simply no rule giving a plain
+   .dashboard-table the same real colour the grouped one gets. :not(),
+   not just a second identical-looking rule, so a table can't ever match
+   both this and the --grouped rule above at once (it only ever carries one
+   of the two class combinations, but this keeps that explicit rather than
+   relying on it staying true). */
+table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .sorting_1,
+table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .sorting_2,
+table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .sorting_3 {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
 }
 /* Chat ID/Department/Service(-or-Program)/Referring URL cells collapsed via
@@ -1456,6 +1494,11 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   border-radius: 999px;
   font-size: 14px;
   font-weight: 500;
+  /* inline-block still wraps text by default once its column narrows -
+     a pill breaking onto two lines loses its rounded-pill shape entirely
+     and just looks broken. Pills are always short status/eval words, never
+     long-form content, so nowrap is safe everywhere this class is used. */
+  white-space: nowrap;
 }
 
 .label + .label {
@@ -1500,9 +1543,12 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* User type labels — shared with DatabasePage.js's .label.building
-   ("building" has no neutral tier of its own below). */
+   ("building" has no neutral tier of its own below), and BatchList.js's
+   in_progress status pill below (same "actively working" meaning as
+   building's blue tier). */
 .label.public,
-.label.building {
+.label.building,
+.label.in_progress {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
 }
@@ -1517,8 +1563,10 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   color: #00695C;
 }
 
-/* Answer type labels */
-.label.normal {
+/* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
+   the batch's default, not-yet-started state. */
+.label.normal,
+.label.uploaded {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
@@ -1536,9 +1584,11 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 /* Evaluation labels + DatabasePage.js index-build status share one
    good/caution/error tier. SuiteGridTable.js's pass/mixed/error verdict
    cells reuse these same classes below — only its flagged/missing cells
-   are their own thing, see that file. */
+   are their own thing, see that file. BatchList.js's processed status pill
+   joins the same green tier — same "done, no issues" meaning. */
 .label.correct,
 .label.complete,
+.label.processed,
 .verdict-cell--pass {
   background-color: #d8eeca;
   color: #1d4d27;
@@ -1547,7 +1597,8 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 .label.needsImprovement,
 .label.incomplete,
 .verdict-cell--mixed,
-.label.partial {
+.label.partial,
+.label.unknown {
   background-color: var(--gcds-color-yellow-100);
   color: #7a5a00;
 }
@@ -2939,4 +2990,127 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
 
 .admin-notifications-action::after {
   content: "→";
+}
+
+/* BatchUpload.js's step-2 form card. Deliberately its own class, not built
+   on chat.css's .feedback-reason-card (which PublicFeedbackComponent.js/
+   ExpertFeedbackComponent.js also use) — an earlier version of this class
+   shared the base rule and overrode just the border with a modifier, but
+   that still meant an edit to the shared class's background/padding would
+   silently reach this card too, with nothing here signalling that to
+   whoever made it. Full duplication instead: no border (unlike the chat
+   version), everything else copied rather than inherited, so this card's
+   own look is genuinely independent of the chat feedback cards' — change
+   one without the other changing underneath it. */
+.batch-upload-card {
+  background-color: var(--gcds-bg-white);
+}
+
+/* .zebra-stable-on-hover - general-purpose utility for any `display`-class
+   DataTable (dataTables.dataTables.css) that wants its zebra stripe to look
+   identical whether or not the pointer is over the row, not specific to
+   BatchList.js (its first consumer) - add the class to any other table that
+   wants the same thing. DataTables' `display` class ships a row-hover
+   shading effect layered *on top of* the zebra striping below
+   (`table.dataTable.display > tbody > tr:hover > *`, an inset box-shadow).
+   Neutralizing only the box-shadow (not background-color)
+   is deliberate: the zebra stripe itself is a separate, unconditional
+   background-color rule below on tr:nth-child(odd), so removing just the
+   shadow leaves a striped row's own colour untouched on hover instead of
+   flashing it to transparent - "no hover effect" means the row looks
+   exactly the same whether or not the pointer is over it, stripe included.
+   One extra class was meant to raise specificity above DataTables' own
+   selector, same reasoning as the border override above - except DataTables
+   also has a *more specific* hover rule for whichever column is currently
+   sorted (tr:hover > .sorting_1/2/3, its own extra class from the sort
+   state) that ties this rule's specificity exactly, so which one wins on
+   that column depends on the two stylesheets' load order rather than
+   losing outright - not reliable either way. !important sidesteps the tie
+   instead of trying to out-specify a selector that can always add one more
+   class. Doesn't touch the *separate*, non-:hover rule that gives the
+   sorted column its persistent tint at rest (table.dataTable.display >
+   tbody tr > .sorting_1, no :hover in that selector) - that one's supposed
+   to stay exactly as-is; only the extra boost DataTables adds on top of it
+   while hovering is what this removes.
+
+   `none` outright (what this rule used to say) was wrong for striped (odd)
+   rows specifically: DataTables' own zebra stripe is ALSO box-shadow
+   (table.dataTable.display > tbody > tr:nth-child(odd) > *, a faint
+   --dt-row-stripe tint) - box-shadow doesn't stack across separate rules,
+   whichever one wins applies its whole value, so blanking it to `none` on
+   hover erased the stripe's own tint too, not just the extra hover
+   darkening layered on top of it - a striped row visibly flashed to plain
+   white the instant the pointer crossed it. Restoring each row's own
+   *non-hover* shadow instead of removing it keeps the stripe intact while
+   still cancelling the hover-specific change - split by nth-child so odd
+   rows get their stripe's exact value back and even rows (no stripe to
+   begin with) get `none`, matching what each already looks like outside
+   :hover. */
+table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover:nth-child(odd) > * {
+  box-shadow: inset 0 0 0 9999px rgba(var(--dt-row-stripe), var(--dt-row-stripe-alpha)) !important;
+}
+table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover:nth-child(even) > * {
+  box-shadow: none !important;
+}
+/* Same "nothing changes on hover" intent as the two rules above, but the two
+   rules above didn't know about the sorted-column blue tint (further down
+   this file, table.dataTable.dashboard-table:not(.dashboard-table--grouped)
+   > tbody > tr > .sorting_1/2/3) when they were written - `> *` matches
+   every cell in the row indiscriminately, including a .sorting_1-classed
+   one, so hovering the sorted column was overwriting its blue with the
+   plain stripe/none value instead of leaving it alone. One more class
+   (.sorting_1/2/3) in the selector makes these win over the two rules
+   above for that specific cell; !important still needed for the same
+   reason as those two, to beat DataTables' own same-specificity hover+sort
+   rule rather than gamble on stylesheet load order. */
+table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_1,
+table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_2,
+table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_3 {
+  box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1) !important;
+}
+
+/* BatchList.js's visible "paused" design element - sits under the pause
+   button, above the table (in normal flow, not absolutely positioned over
+   any part of the table itself). aria-hidden in the markup: the real
+   announcement is the sr-only persistent StatusMessage rendered alongside
+   it, this is the sighted-user half only. Same neutral grayscale-50/200/700
+   triad as .status-message--loading elsewhere in this file, not any of
+   StatusMessage's own error/warning/info/success box tokens - deliberately
+   its own look ("paused" isn't one of those outcomes), not a StatusMessage
+   variant box reused for something StatusMessage itself only announces. */
+.dashboard-table-paused-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gcds-spacing-100);
+  /* inline-flex sits it on the same line as PauseToggleButton (a plain
+     <button>, inline-block by default) right before it - margin-left, not
+     padding, since padding would grow the pill's own box (and its border)
+     rather than just putting space between it and the button. */
+  margin-left: var(--gcds-spacing-200);
+  background-color: var(--gcds-color-grayscale-50);
+  border: 1px solid var(--gcds-color-grayscale-200);
+  color: var(--gcds-color-grayscale-700);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+}
+
+/* .table-row-actions - generic, reusable wrapper for a row of GcdsButtons
+   packed into one table cell (BatchList.js's Actions column is the first
+   consumer, meant for others too). GcdsButton's own "small" text size
+   (--gcds-button-small-font-desktop, 1.125rem/18px) reads large stacked
+   several-in-a-row inside a table cell; this drops it to 1rem/16px.
+   Overriding a CSS custom property on this wrapper - not a font-size rule
+   on the buttons themselves - is the only way to reach in: GcdsButton's own
+   `font: var(--gcds-button-small-font-desktop)` rule lives inside its
+   shadow DOM, invisible to an outside selector, but custom properties
+   (unlike regular CSS properties) inherit through shadow boundaries, so
+   redefining the same variable here on an ancestor light-DOM element
+   reaches the shadow-DOM rule that consumes it. Padding is untouched (a
+   separate, fixed token - 0.375rem/1rem - not derived from font-size), so
+   this only shrinks the glyphs, not the ~41px-tall tap target underneath
+   them, which stays clear of the 24px WCAG 2.5.8 minimum either way. */
+.table-row-actions {
+  --gcds-button-small-font-desktop: 400 1rem/155% "Noto Sans", sans-serif;
 }

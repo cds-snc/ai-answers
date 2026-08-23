@@ -242,6 +242,56 @@ commits) — check new code follows it rather than reinventing it:
 - Focus is visible — never `outline: none` without a replacement that meets
   contrast requirements (GC DS focus tokens, e.g. `var(--gcds-focus-border)`,
   already provide this — flag any custom override that suppresses it).
+- **A focus-restoration mechanism that removes the interacted-with content
+  entirely (not just re-renders it) needs its own explicit fallback target —
+  don't assume the general remount-consumption path covers this case too.**
+  A common shape: click a control → arm a ref/flag with the clicked item's id
+  → a later redraw/remount consumes it and refocuses. This works when the
+  item survives the redraw (edited, reordered, status-changed). It
+  structurally cannot work when the action's own *success* removes the item
+  from the next render (a delete, a dismiss that also deletes) — nothing
+  ever redraws that id again, so the consuming side never fires and focus
+  drops to `<body>`. This is decidable from the code: find the success path,
+  confirm whether the item is still present in the data the next render
+  works from, and if not, confirm a *different*, explicit redirect exists
+  for that specific branch (e.g. a nearby always-mounted control) rather
+  than reusing the generic redraw-consumption logic. Real example: a delete
+  handler's `finally` block still called the shared re-fetch, and the
+  reviewer's first pass confirmed *a* button gets focused after Process/
+  Cancel — but never separately checked delete's own success path, where the
+  row genuinely never comes back.
+- **When a focus-restoration mechanism picks a target by querying "the first
+  interactive element" rather than the specific one that was clicked, check
+  whether that set's order or membership can vary.** `querySelector('button,
+  [tabindex]')`-style fallbacks silently refocus the *wrong* control whenever
+  the clicked item isn't reliably first — e.g. a row's action buttons differ
+  by status (Cancel before Delete in one branch, Delete alone in another), so
+  clicking Delete and having it fail can land focus on Cancel instead. This
+  is a real, reportable imprecision distinct from "focus dropped to body" —
+  it doesn't fail SC 2.4.3 outright (focus *did* move somewhere sensible-
+  looking) but it's the wrong somewhere, confusing for a keyboard/AT user who
+  clicked one specific thing. Look for whether the restoration mechanism
+  tracks *which* action was clicked (a key/id alongside the item id) or only
+  *that* something was clicked — the latter is the tell.
+- **A focus redirect issued from a handler running in one React root can
+  lose a real timing race against self-focusing content in a *different*
+  React root**, if that content is mounted via its own `createRoot`/manual
+  `root.render()` (a common pattern for cell-level renders inside a
+  non-React table library like DataTables). The separate root's own commit
+  is scheduled independently — a synchronous `.focus()` call issued from an
+  async callback elsewhere can execute *before* that commit lands, and then
+  the other root's self-focusing element (e.g. a "Processing…" placeholder
+  with its own focus-on-mount ref) steals focus right back immediately
+  after. Symptom: a redirect that appears to work when traced through the
+  code, but doesn't hold in a running app or a real test — the target
+  briefly receives focus, then loses it. Not reliably catchable by reasoning
+  about microtask order alone (a second, third microtask tick doesn't fix
+  it) — the redirect needs to run *after* the other root's commit, which
+  generally means a macrotask (`setTimeout`), not another `await`/`Promise.
+  resolve()`. Flag any synchronous or microtask-deferred focus redirect that
+  competes with a separately-rooted self-focusing element as `Needs
+  validation:` at minimum, and as a real finding if a quick trace confirms
+  the other root's commit isn't already guaranteed to have landed first.
 
 ### 4. ARIA usage
 - ARIA attributes are used to *supplement*, not replace, semantics — flag
@@ -261,6 +311,21 @@ commits) — check new code follows it rather than reinventing it:
   repeat. Reserve `Needs validation:` (see "How to review") for what you
   genuinely can't trace — a reset happening in a code path you can't
   follow, or actual AT-timing behavior — not for this.
+- **When the same live-region pattern is duplicated across multiple
+  sections/tabs/instances of one page (one `StatusMessage` per list, per
+  panel, per filter group), check whether the `nonce`/remount-forcing
+  counter is scoped per-instance or shared globally across all of them.** A
+  shared counter means an unrelated change in instance A still bumps the
+  counter instance B's `key`/`nonce` reads too, forcing B to remount even
+  though its own content never changed — and a remount with content already
+  populated is exactly the "fresh insertion" pattern AT generally
+  re-announces, so B's stale, already-heard message gets spoken again for no
+  reason tied to anything the user just did. This is decidable from the
+  code: find every place the nonce state updates, and confirm each `<Status
+  Message nonce={...}>` call site reads a value that only changes when
+  *that* call site's own message does. Report as a real finding (SC 4.1.3)
+  when a single counter/state variable feeds more than one independently-
+  positioned live region.
 - No redundant/conflicting roles (e.g. `role="button"` on an actual
   `<button>`).
 
@@ -344,6 +409,27 @@ commits) — check new code follows it rather than reinventing it:
    unreachable control > missing form label / broken focus management >
    missing ARIA reference > contrast/colour-only signal > minor semantic
    nit.
+5. **When a fix touches focus restoration or a live region, check whether
+   the diff's own test asserts against an independently-known-correct
+   target, not against "whatever the same selector logic the implementation
+   uses would also find."** A test that greps `document.activeElement`
+   against `container.querySelector('button, [tabindex]')` — the exact same
+   first-match query the code under test uses — passes as long as focus
+   lands on *something* the selector matches, even the wrong something; it
+   can never catch a wrong-target bug because it never independently names
+   the target (e.g. "the button whose text is literally 'Delete'"). This is
+   a real gap in test coverage worth calling out on its own, separate from
+   whether the underlying focus behavior itself is correct — a passing
+   suite next to this pattern is not evidence the fix works.
+6. **A fix confirmed by re-reading the conversation is not the same claim as
+   a fix confirmed by re-reading the file.** When re-verifying a finding —
+   your own from earlier in this session, or one handed off by another
+   review — re-read the current file content directly rather than trusting
+   that a fix which was correctly reasoned through in discussion actually
+   landed on disk. Mid-conversation, "traced the right fix" and "wrote the
+   right fix" are easy to conflate, especially across a task switch or a
+   long back-and-forth; grep the file for the specific line/pattern the fix
+   was supposed to introduce before reporting it as done.
 
 For each finding give: the file/line, what's wrong, which WCAG 2.1 AA
 success criterion it violates, and the concrete fix (not just "improve

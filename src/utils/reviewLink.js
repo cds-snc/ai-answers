@@ -8,21 +8,19 @@
 // HTML string for DataTables render functions, which render raw HTML
 // rather than JSX.
 
+import { escapeHtml } from './htmlEscape.js';
+
 const buildInteractionHash = (interactionId) => {
   if (!interactionId) return '';
   return `#interaction=${encodeURIComponent(`interactionId${interactionId}`)}`;
 };
 
-// Escapes a value for safe interpolation into an HTML attribute/text
-// context. Also used by DataTables columns unrelated to this link.
-export const escapeHtmlAttribute = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
+// Re-exported under this file's existing name so its consumers
+// (ChatDashboardPage.js, EvalDashboardPage.js, UsersPage.js) don't need to
+// change their imports - see htmlEscape.js for the actual implementation,
+// shared with labelPill.js. Not actually specific to links; kept here only
+// for import-compatibility with existing callers.
+export const escapeHtmlAttribute = escapeHtml;
 
 // For React <GcdsLink href={...}>.
 export const buildChatReviewHref = (chatId, lang, interactionId) =>
