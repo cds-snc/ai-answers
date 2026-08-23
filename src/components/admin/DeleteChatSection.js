@@ -22,14 +22,21 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       // translated template around the placeholder instead, so the detail
       // can be wrapped in its own lang="en" span.
       // TODO (for Official Languages review): the wrapped detail below is
-      // still only a pronunciation fix (WCAG 3.1.2), not a translation —
-      // error.message comes straight from the network/runtime (e.g. "Failed
-      // to fetch", a raw HTTP status line, a driver error) and has no fixed
-      // set of values to put behind a t() key. Genuinely localizing this
-      // needs DataStoreService.deleteChat (and the API route it calls) to
-      // return a stable error CODE instead of a free-text message, plus new
-      // admin.deleteChat.errors.* keys here to map code -> translated text.
-      // Flagging for a maintainer decision on whether that's worth doing.
+      // still only a pronunciation fix (WCAG 3.1.2), not a translation.
+      // Most of what lands here really is unbounded (network drop, an
+      // unexpected 500, "Failed to fetch") with no fixed set of values to
+      // put behind a t() key — but at least one case IS bounded: the 404
+      // race (pre-check passed, then the chat was deleted before this call
+      // completed — api/chat/chat-delete.js throws 'Chat not found.' for
+      // that) is a known, known-value outcome, same reasoning as
+      // DeleteExpertEval.js's admin.deleteExpertEval.notEvaluated case.
+      // Genuinely localizing this needs DataStoreService.deleteChat (and
+      // the API route it calls) to return a stable error CODE instead of
+      // just message text, so this catch block can route the bounded case
+      // to a real t() key and leave lang="en" only for the genuinely
+      // unbounded remainder. Flagging for a maintainer decision on whether
+      // that's worth doing — touches both layers plus a test rewrite, not
+      // just this file.
       const [prefix, suffix] = t('admin.deleteChat.error').split('{message}');
       return { isError: true, prefix, detail: <span lang="en">{error.message || String(error)}</span>, suffix };
     }

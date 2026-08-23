@@ -579,7 +579,6 @@
       "label": "Chat ID",
       "button": "View chat",
       "loading": "Looking up...",
-      "notFound": "No chat found with that ID",
       "invalidFormat": "Invalid chat ID format"
     },
     "evalPage": {
@@ -789,6 +788,8 @@
       "viewChatById": "View chat by ID",
       "chatIdRequired": "Please enter a chat ID.",
       "chatIdPlaceholder": "Enter full chat ID",
+      "chatNotFound": "No chat found with that ID.",
+      "fetchFailed": "Failed to load data. Please try again.",
       "sortActivateAscending": "{column}: activate for ascending sort",
       "sortActivateDescending": "{column}: activate for descending sort",
       "sortRemove": "{column}: activate to remove sort",
@@ -839,7 +840,6 @@
       "searchChatIdInputLabel": "Chat ID",
       "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
-      "searchNotFound": "No chat found with that ID.",
       "resultsHeading": "Evaluation results",
       "columns": {
         "chatId": "Chat ID",
@@ -910,7 +910,7 @@
       "idLabel": "Chat ID",
       "button": "Delete chat",
       "loading": "Deleting...",
-      "success": "{chatId} deleted successfully",
+      "success": "{chatId} deleted successfully.",
       "error": "Failed to delete chat: {message}"
     },
     "deleteExpertEval": {
@@ -918,7 +918,7 @@
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
       "loading": "Deleting...",
-      "success": "Deleted {count} expert feedback record(s) for {chatId}",
+      "success": "Deleted {count} expert feedback record(s) for {chatId}.",
       "error": "Failed to delete expert evaluation: {message}",
       "notEvaluated": "Not evaluated."
     }
@@ -1392,7 +1392,7 @@
     }
   },
   "publicDashboard": {
-    "title": "AI Answers public dashboard",
+    "title": "Public dashboard",
     "usersOnlyPill": "Public users only",
     "footnote": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",

@@ -762,18 +762,15 @@
 .eval-search-chat-id.filter-panel:not([open]) > .filter-panel-summary:hover {
   background: #f3f4f6;
 }
-.eval-search-chat-id__field {
-  max-width: 40rem;
-}
-
-/* Same shape as .eval-search-chat-id__field above (matching max-width, on
-   a wrapping <div> rather than the input itself) - ChatIdLookupField.js's
-   own input. Block-level wrapper, not just a width cap: without it, once
-   the input stops being width:100% (which forced the button below it by
-   consuming the whole line), the input and its inline-level GcdsButton
-   sibling had room to sit side by side again in normal flow. Wrapping the
-   input in its own block guarantees the button starts on a new line
-   regardless of either element's own display type. */
+/* Shared by EvalDashboardPage.js's search field and ChatIdLookupField.js's
+   own input - both are block-level wrappers around a chat-ID input, not
+   just a width cap: without it, once the input stops being width:100%
+   (which forced the button below it by consuming the whole line), the
+   input and its inline-level GcdsButton sibling had room to sit side by
+   side again in normal flow. Wrapping the input in its own block
+   guarantees the button starts on a new line regardless of either
+   element's own display type. */
+.eval-search-chat-id__field,
 .chat-id-lookup-field {
   max-width: 40rem;
 }

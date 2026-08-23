@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import DeleteChatSection from '../DeleteChatSection.js';
 
 const TRANSLATIONS = {
-  'admin.deleteChat.success': '{chatId} deleted successfully',
+  'admin.deleteChat.success': '{chatId} deleted successfully.',
   'admin.deleteChat.error': 'Failed to delete chat: {message}',
   'admin.deleteChat.idLabel': 'Chat ID',
   'admin.deleteChat.title': 'Delete a chat from the logs',
@@ -77,7 +77,7 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
 
-    const expectedText = `${VALID_CHAT_ID} deleted successfully`;
+    const expectedText = `${VALID_CHAT_ID} deleted successfully.`;
     await waitFor(() => {
       expect(screen.getByText(expectedText)).toBeTruthy();
     });
@@ -96,7 +96,7 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
     await waitFor(() => {
-      expect(screen.getByText('admin.viewChat.notFound')).toBeTruthy();
+      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
     });
     expect(screen.getByLabelText('Chat ID').value).toBe(VALID_CHAT_ID);
 
@@ -104,7 +104,7 @@ describe('DeleteChatSection error/success announcements', () => {
     // the toggle event has to be dispatched directly.
     fireEvent(container.querySelector('details'), new Event('toggle'));
 
-    expect(screen.queryByText('admin.viewChat.notFound')).toBeNull();
+    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
     expect(screen.getByLabelText('Chat ID').value).toBe('');
   });
 
@@ -118,8 +118,28 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.click(screen.getByText('Delete chat'));
 
     await waitFor(() => {
-      expect(screen.getByText('admin.viewChat.notFound')).toBeTruthy();
+      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
     });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockDeleteChat).not.toHaveBeenCalled();
+  });
+
+  it('shows a distinct "lookup failed" message, not "not found", when the existence check itself fails', async () => {
+    // getChat() throwing (real outage, distinct from its own { chat: null }
+    // 404 handling) must not read as "this chat doesn't exist" — that was
+    // the actual bug: both cases collapsed into the same not-found text.
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockGetChat.mockRejectedValue(new Error('Failed to fetch'));
+
+    render(<DeleteChatSection lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
+    fireEvent.click(screen.getByText('Delete chat'));
+
+    await waitFor(() => {
+      expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
+    });
+    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteChat).not.toHaveBeenCalled();
   });

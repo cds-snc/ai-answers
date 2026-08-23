@@ -13,7 +13,7 @@ const TRANSLATIONS = {
   'admin.deleteExpertEval.loading': 'Deleting...',
   'admin.deleteExpertEval.error': 'Failed to delete expert evaluation: {message}',
   'admin.deleteExpertEval.notEvaluated': 'Not evaluated.',
-  'admin.deleteExpertEval.success': 'Deleted {count} expert feedback record(s) for {chatId}',
+  'admin.deleteExpertEval.success': 'Deleted {count} expert feedback record(s) for {chatId}.',
   'common.confirmDelete': 'Are you sure you want to delete this data?',
 };
 const mockT = (key) => TRANSLATIONS[key] || key;
@@ -59,8 +59,12 @@ describe('DeleteExpertEval error/success announcements', () => {
   };
 
   // Every "delete proceeds" test needs the existence pre-check to resolve as
-  // found first, or it never reaches window.confirm()/onDelete at all.
-  const chatExists = () => mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
+  // found *and* have expert feedback (validateChat's real precondition for
+  // this consumer — see DeleteExpertEval.js), or it never reaches
+  // window.confirm()/onDelete at all.
+  const chatExists = () => mockGetChat.mockResolvedValue({
+    chat: { chatId: VALID_CHAT_ID, interactions: [{ expertFeedback: { id: 'ef1' } }] },
+  });
 
   it('asks for confirmation via window.confirm before deleting', async () => {
     chatExists();
@@ -99,7 +103,7 @@ describe('DeleteExpertEval error/success announcements', () => {
     // `persistent` prop / this PR's a11y fix), so findByRole('status') would
     // resolve to the still-empty region before the delete result lands —
     // wait for the actual text instead.
-    const status = await screen.findByText(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}`);
+    const status = await screen.findByText(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}.`);
     expect(status.closest('[role="status"]')).not.toBeNull();
     expect(status.closest('.status-message--success-box')).not.toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -177,8 +181,40 @@ describe('DeleteExpertEval error/success announcements', () => {
     startDelete();
 
     await waitFor(() => {
-      expect(screen.getByText('admin.viewChat.notFound')).toBeTruthy();
+      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
     });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
+  });
+
+  it('shows "not evaluated" and skips the confirm dialog when the chat exists but has no expert feedback', async () => {
+    // The real precondition for this consumer isn't "does the chat exist"
+    // (a chat can exist with zero expert feedback) — validateChat checks
+    // the actual thing, from the same getChat() response, no second request.
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID, interactions: [{ question: 'q' }] } });
+
+    render(<DeleteExpertEval lang="en" />);
+    startDelete();
+
+    await waitFor(() => {
+      expect(screen.getByText('Not evaluated.')).toBeTruthy();
+    });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
+  });
+
+  it('shows a distinct "lookup failed" message, not "not found", when the existence check itself fails', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockGetChat.mockRejectedValue(new Error('Failed to fetch'));
+
+    render(<DeleteExpertEval lang="en" />);
+    startDelete();
+
+    await waitFor(() => {
+      expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
+    });
+    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteExpertEval).not.toHaveBeenCalled();
   });

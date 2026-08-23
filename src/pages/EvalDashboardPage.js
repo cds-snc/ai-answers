@@ -533,7 +533,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
               </button>
             </form>
             {searchChatIdNotFound && (
-              <StatusMessage variant="info" message={t('admin.evalDashboard.searchNotFound')} />
+              <StatusMessage variant="info" message={t('admin.common.chatNotFound')} />
             )}
           </div>
         </details>

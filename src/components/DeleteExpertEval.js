@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import EvaluationService from '../services/EvaluationService.js';
 import DeleteByChatIdSection from './admin/DeleteByChatIdSection.js';
+import { formatNumber } from '../utils/numberFormat.js';
 
 const DeleteExpertEval = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -11,11 +12,12 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       const data = await EvaluationService.deleteExpertEval(chatId);
       if (data.deletedCount > 0) {
         // data.message is server-built, untranslated English text — use the
-        // translated key instead. deletedCount/chatId are a number and a
-        // UUID-validated string, so plain replace is safe here (no `$` risk
-        // like raw exception text below).
+        // translated key instead. chatId is a UUID-validated string (no `$`
+        // risk like raw exception text below); the count goes through
+        // formatNumber per AGENTS.md — French/English format numbers
+        // differently, even a small one like this.
         const text = t('admin.deleteExpertEval.success')
-          .replace('{count}', data.deletedCount)
+          .replace('{count}', formatNumber(data.deletedCount, lang))
           .replace('{chatId}', chatId);
         return { isError: false, text };
       }
@@ -34,6 +36,19 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       // admin would otherwise hear it announced as French). Split the
       // translated template around the placeholder instead, so the detail
       // can be wrapped in its own lang="en" span (mirrors DeleteChatSection.js).
+      //
+      // TODO (Official Languages): this treats every failure here as
+      // unbounded free text, but the 404 race case specifically (the
+      // pre-check passed, then the chat was deleted before this call
+      // completed — EvaluationService.deleteExpertEval throws 'Chat not
+      // found.' for that, services/EvaluationService.js:89) is actually a
+      // known, bounded outcome and could be a real translated key instead
+      // of a lang="en"-wrapped English string — same reasoning as
+      // admin.deleteExpertEval.notEvaluated just above. Needs the backend
+      // to return a stable error code (not just message text) so this catch
+      // block can tell that case apart from a genuinely unbounded failure
+      // (network drop, unexpected 500). Not done: touches both layers plus
+      // a test rewrite, not just this file — see PR discussion.
       const [prefix, suffix] = t('admin.deleteExpertEval.error').split('{message}');
       return { isError: true, prefix, detail: <span lang="en">{err.message || String(err)}</span>, suffix };
     }
@@ -48,6 +63,12 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       loadingLabelKey="admin.deleteExpertEval.loading"
       fieldId="expertEvalChatId"
       onDelete={handleDelete}
+      // The chat existing isn't this consumer's real precondition — it can
+      // exist with zero expert feedback. getChat()'s response already fully
+      // populates expertFeedback per interaction (db-chat.js), so this
+      // checks the thing that actually matters, from data already fetched.
+      validateChat={(chat) => chat.interactions?.some((i) => i.expertFeedback)}
+      invalidChatMessageKey="admin.deleteExpertEval.notEvaluated"
     />
   );
 };
