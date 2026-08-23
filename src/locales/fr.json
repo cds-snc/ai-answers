@@ -246,7 +246,6 @@
         "step3a": "Sélectionnez la langue du fichier de lot.",
         "step3b": "(c.-à-d. la langue de la page que le lot simule)",
         "reviewIncomplete": "Après un téléversement réussi, lancez le traitement et/ou suivez la progression de votre lot ci-dessous.",
-        "incompleteLinkText": "Accéder à la section Lots incomplets",
         "step6": "Lorsque c'est terminé (si le traitement est interrompu et n'est pas terminé, cliquez à nouveau sur le bouton Traiter), il sera déplacé vers la section Lots terminés. Vous pouvez télécharger le fichier à partir de là.",
         "step7": "Tous les clavardages exécutés dans le lot seront disponibles pour évaluation dans le Tableau de bord d'évaluation et le Visualiseur de clavardage avec l'adresse courriel de la personne qui a soumis le lot."
       },
@@ -292,6 +291,7 @@
       }
     },
     "list": {
+      "searchPlaceholder": "Nom du lot ou ID du lot",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -309,19 +309,28 @@
         "process": "Traiter",
         "delete": "Supprimer",
         "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce lot ?",
+        "confirmDeleteNamed": "Êtes-vous sûr de vouloir supprimer « {name} » ?",
         "cancel": "Annuler",
         "deleteSuccess": "Lot supprimé.",
         "deleteError": "Échec de la suppression du lot.",
+        "deleteErrorNamed": "Échec de la suppression de « {name} ».",
         "exportSuccess": "Lot exporté.",
         "exportEmpty": "Aucune conversation trouvée à exporter pour ce lot.",
+        "exportEmptyNamed": "Aucune conversation trouvée à exporter pour « {name} ».",
         "exportError": "Échec de l'exportation du lot.",
+        "exportErrorNamed": "Échec de l'exportation de « {name} ».",
         "processError": "Échec du traitement du lot.",
+        "processErrorNamed": "Échec du traitement de « {name} ».",
         "processSuccess": "Traitement du lot terminé.",
         "cancelSuccess": "Lot annulé.",
-        "cancelError": "Échec de l'annulation du lot."
+        "cancelError": "Échec de l'annulation du lot.",
+        "cancelErrorNamed": "Échec de l'annulation de « {name} »."
       },
+      "completedAnnouncement": "Terminé : {names}.",
+      "deletedAnnouncement": "Supprimé : {name}.",
       "types": {
-        "client": "Client"
+        "client": "Client",
+        "chat": "Clavardage"
       },
       "statuses": {
         "in_progress": "En cours",
@@ -1205,7 +1214,9 @@
     "noDataForFilters": "Aucune donnée trouvée pour les filtres sélectionnés.",
     "notEnoughData": "Données insuffisantes pour les filtres sélectionnés.",
     "pauseUpdates": "Suspendre les mises à jour automatiques",
-    "resumeUpdates": "Reprendre les mises à jour automatiques"
+    "resumeUpdates": "Reprendre les mises à jour automatiques",
+    "pausedIndicator": "Mises à jour suspendues",
+    "resumedIndicator": "Mises à jour automatiques reprises"
   },
   "eval": {
     "metric": "Métrique",

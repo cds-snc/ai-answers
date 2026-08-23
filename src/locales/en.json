@@ -246,7 +246,6 @@
         "step3a": "Select the language of the batch file.",
         "step3b": "(i.e. the language of the page the batch is simulating)",
         "reviewIncomplete": "After a successful upload, initiate processing and/or check on your batch's progress below.",
-        "incompleteLinkText": "Go to the Incomplete batches section",
         "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
         "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
@@ -292,6 +291,7 @@
       }
     },
     "list": {
+      "searchPlaceholder": "Batch name or batch ID",
       "columns": {
         "batchId": "Batch ID",
         "totals": "Totals",
@@ -309,19 +309,28 @@
         "process": "Process",
         "delete": "Delete",
         "confirmDelete": "Are you sure you want to delete this batch?",
+        "confirmDeleteNamed": "Are you sure you want to delete \"{name}\"?",
         "cancel": "Cancel",
         "deleteSuccess": "Batch deleted.",
         "deleteError": "Failed to delete batch.",
+        "deleteErrorNamed": "Failed to delete \"{name}\".",
         "exportSuccess": "Batch exported.",
         "exportEmpty": "No chats found to export for this batch.",
+        "exportEmptyNamed": "No chats found to export for \"{name}\".",
         "exportError": "Failed to export batch.",
+        "exportErrorNamed": "Failed to export \"{name}\".",
         "processError": "Failed to process batch.",
+        "processErrorNamed": "Failed to process \"{name}\".",
         "processSuccess": "Batch processing finished.",
         "cancelSuccess": "Batch cancelled.",
-        "cancelError": "Failed to cancel batch."
+        "cancelError": "Failed to cancel batch.",
+        "cancelErrorNamed": "Failed to cancel \"{name}\"."
       },
+      "completedAnnouncement": "Completed: {names}.",
+      "deletedAnnouncement": "Deleted: {name}.",
       "types": {
-        "client": "Client"
+        "client": "Client",
+        "chat": "Chat"
       },
       "statuses": {
         "in_progress": "In progress",
@@ -1205,7 +1214,9 @@
     "noDataForFilters": "No data found for the selected filters.",
     "notEnoughData": "Not enough data available for the filters selected.",
     "pauseUpdates": "Pause automatic updates",
-    "resumeUpdates": "Resume automatic updates"
+    "resumeUpdates": "Resume automatic updates",
+    "pausedIndicator": "Updates paused",
+    "resumedIndicator": "Automatic updates resumed"
   },
   "eval": {
     "metric": "Metric",

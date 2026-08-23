@@ -247,7 +247,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         <GcdsStepper currentStep={2} totalSteps={3} tag="h3">
           {t('batch.upload.steps.step2Title')}
         </GcdsStepper>
-        <div className="feedback-reason-card mb-500">
+        <div className="batch-upload-card mb-500">
           <div className="mt-300 mb-250">
             <GcdsInput
               inputId="batchName"
@@ -425,9 +425,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             {t('batch.upload.steps.step3Title')}
           </GcdsStepper>
           <p className="mb-100">{t('batch.upload.instructions.reviewIncomplete')}</p>
-          <p className="mb-200">
-            <a href="#running-evaluation">{t('batch.upload.instructions.incompleteLinkText')}</a>
-          </p>
           <details className="mb-250">
             <summary className="mb-200">{t('batch.upload.instructions.tipsTitle')}</summary>
             <p>{t('batch.upload.instructions.step6')}</p>
