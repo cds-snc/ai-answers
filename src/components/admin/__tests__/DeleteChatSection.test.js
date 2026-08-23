@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import DeleteChatSection from '../DeleteChatSection.js';
 
 const TRANSLATIONS = {
-  'admin.deleteChat.success': 'Chat deleted successfully',
+  'admin.deleteChat.success': '{chatId} deleted successfully.',
   'admin.deleteChat.error': 'Failed to delete chat: {message}',
   'admin.deleteChat.idLabel': 'Chat ID',
   'admin.deleteChat.title': 'Delete a chat from the logs',
@@ -20,10 +20,19 @@ vi.mock('../../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
-const { mockDeleteChat } = vi.hoisted(() => ({ mockDeleteChat: vi.fn() }));
-vi.mock('../../../services/DataStoreService.js', () => ({
-  default: { deleteChat: mockDeleteChat },
+const { mockDeleteChat, mockGetChat } = vi.hoisted(() => ({
+  mockDeleteChat: vi.fn(),
+  mockGetChat: vi.fn(),
 }));
+vi.mock('../../../services/DataStoreService.js', () => ({
+  default: { deleteChat: mockDeleteChat, getChat: mockGetChat },
+}));
+
+// A well-formed chat ID (matches isValidChatIdFormat's uuidv4 pattern) -
+// DeleteByChatIdSection.js now confirms the chat exists (DataStoreService
+// .getChat) before the confirm dialog, so every test below needs both a
+// syntactically valid ID and a resolved getChat mock, not just deleteChat.
+const VALID_CHAT_ID = 'abcdef12-3456-4789-8abc-def012345678';
 
 vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, onClick, disabled }) => (
@@ -36,16 +45,18 @@ describe('DeleteChatSection error/success announcements', () => {
   afterEach(() => {
     cleanup();
     mockDeleteChat.mockReset();
+    mockGetChat.mockReset();
     vi.restoreAllMocks();
   });
 
   it('wraps the untranslated error detail in a lang="en" span, inside role="alert"', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
     mockDeleteChat.mockRejectedValue(new Error('Failed to fetch'));
 
     render(<DeleteChatSection lang="fr" />);
 
-    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'abc123' } });
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
 
     const alert = await screen.findByRole('alert');
@@ -58,17 +69,92 @@ describe('DeleteChatSection error/success announcements', () => {
 
   it('announces a successful delete as role="status", not role="alert"', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
     mockDeleteChat.mockResolvedValue({});
 
     render(<DeleteChatSection lang="en" />);
 
-    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'abc123' } });
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
+    fireEvent.click(screen.getByText('Delete chat'));
+
+    const expectedText = `${VALID_CHAT_ID} deleted successfully.`;
+    await waitFor(() => {
+      expect(screen.getByText(expectedText)).toBeTruthy();
+    });
+    expect(screen.getByText(expectedText).closest('[role="status"]')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears the stale message and the typed chat ID when the row is collapsed', async () => {
+    // "Not found" (unlike a successful delete) deliberately leaves the typed
+    // ID in place — the field only clearing via the toggle, not as a
+    // byproduct of the result itself, is what this test needs to isolate.
+    mockGetChat.mockResolvedValue({ chat: null });
+
+    const { container } = render(<DeleteChatSection lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
+    fireEvent.click(screen.getByText('Delete chat'));
+    await waitFor(() => {
+      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
+    });
+    expect(screen.getByLabelText('Chat ID').value).toBe(VALID_CHAT_ID);
+
+    // jsdom doesn't simulate native <details> open/close from a click, so
+    // the toggle event has to be dispatched directly.
+    fireEvent(container.querySelector('details'), new Event('toggle'));
+
+    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
+    expect(screen.getByLabelText('Chat ID').value).toBe('');
+  });
+
+  it('shows "not found" and skips the confirm dialog when the chat does not exist', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockGetChat.mockResolvedValue({ chat: null });
+
+    render(<DeleteChatSection lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
 
     await waitFor(() => {
-      expect(screen.getByText('Chat deleted successfully')).toBeTruthy();
+      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
     });
-    expect(screen.getByText('Chat deleted successfully').closest('[role="status"]')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockDeleteChat).not.toHaveBeenCalled();
+  });
+
+  it('shows a distinct "lookup failed" message, not "not found", when the existence check itself fails', async () => {
+    // getChat() throwing (real outage, distinct from its own { chat: null }
+    // 404 handling) must not read as "this chat doesn't exist" — that was
+    // the actual bug: both cases collapsed into the same not-found text.
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockGetChat.mockRejectedValue(new Error('Failed to fetch'));
+
+    render(<DeleteChatSection lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
+    fireEvent.click(screen.getByText('Delete chat'));
+
+    await waitFor(() => {
+      expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
+    });
+    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockDeleteChat).not.toHaveBeenCalled();
+  });
+
+  it('flags a malformed chat ID as an inline error instead of looking it up', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+
+    render(<DeleteChatSection lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'not-a-real-id' } });
+    fireEvent.click(screen.getByText('Delete chat'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('admin.viewChat.invalidFormat');
+    expect(mockGetChat).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 });

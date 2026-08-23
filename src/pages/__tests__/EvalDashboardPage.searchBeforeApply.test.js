@@ -118,7 +118,7 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     await submitChatIdSearch(container, 'no-such-id');
 
     expect(container.querySelector('[data-testid="mock-data-table"]')).toBeNull();
-    expect(getByText('admin.evalDashboard.searchNotFound')).toBeTruthy();
+    expect(getByText('admin.common.chatNotFound')).toBeTruthy();
     // The box stays up so the user can try again immediately.
     expect(container.querySelector('#eval-search-chat-id-input')).not.toBeNull();
   });
@@ -128,11 +128,11 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
 
     const { container, queryByText } = render(<EvalDashboardPage lang="en" />);
     await submitChatIdSearch(container, 'no-such-id');
-    expect(queryByText('admin.evalDashboard.searchNotFound')).toBeTruthy();
+    expect(queryByText('admin.common.chatNotFound')).toBeTruthy();
 
     fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'no-such-id2' } });
 
-    expect(queryByText('admin.evalDashboard.searchNotFound')).toBeNull();
+    expect(queryByText('admin.common.chatNotFound')).toBeNull();
   });
 
   it('shows a validation error on an empty submit instead of querying, and clears it once the user types', async () => {
@@ -143,11 +143,11 @@ describe('EvalDashboardPage - search-by-ID surfaced before Apply', () => {
     });
 
     expect(EvaluationService.getEvalDashboard).not.toHaveBeenCalled();
-    expect(getByText('admin.evalDashboard.searchRequired')).toBeTruthy();
+    expect(getByText('admin.common.chatIdRequired')).toBeTruthy();
     expect(container.querySelector('#eval-search-chat-id-input').getAttribute('aria-describedby')).toBe('eval-search-chat-id-error');
 
     fireEvent.change(container.querySelector('#eval-search-chat-id-input'), { target: { value: 'abc' } });
 
-    expect(queryByText('admin.evalDashboard.searchRequired')).toBeNull();
+    expect(queryByText('admin.common.chatIdRequired')).toBeNull();
   });
 });

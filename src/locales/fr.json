@@ -378,9 +378,8 @@
     }
   },
   "admin": {
-    "title": "Administration de Réponses IA",
-    "partnerTitle": "Tableau de bord partenaire Réponses IA",
-    "backToAdmin": "Retour à l'administration",
+    "title": "Accueil administrateur de Réponses IA",
+    "partnerTitle": "Accueil partenaire de Réponses IA",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
@@ -398,7 +397,6 @@
       "publicDashboard": "Tableau de bord public",
       "partnerDashboard": "Tableau de bord partenaire",
       "technicalMetrics": "Voir les métriques techniques",
-      "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
@@ -564,7 +562,8 @@
       "viewUsers": "Voir et gérer les utilisateurs"
     },
     "howTo": {
-      "title": "Comment faire",
+      "title": "Guides pratiques",
+      "trigger": "Voir tous les guides pratiques pour les partenaires",
       "evalInformedAnswers": "Réponses informées par les évaluations",
       "evaluateAnswers": "Évaluer les réponses",
       "partnerOnboarding": "Intégration des partenaires",
@@ -573,10 +572,14 @@
       "notFoundTitle": "Guide introuvable",
       "notFound": "Ce guide n'existe pas."
     },
+    "chatTools": {
+      "title": "Afficher et supprimer des chats par ID"
+    },
     "viewChat": {
       "label": "ID de chat",
-      "placeholder": "Entrez l'ID du chat",
-      "button": "Afficher le chat"
+      "button": "Afficher le chat",
+      "loading": "Recherche en cours...",
+      "invalidFormat": "Format d'ID de chat invalide"
     },
     "evalPage": {
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
@@ -784,6 +787,10 @@
       "noSearchResults": "Aucun résultat de recherche trouvé.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "viewChatById": "Voir le chat par ID",
+      "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
+      "chatIdPlaceholder": "Entrez l'ID complet du chat",
+      "chatNotFound": "Aucun chat trouvé avec cet ID.",
+      "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "sortActivateAscending": "{column} : activer le tri croissant",
       "sortActivateDescending": "{column} : activer le tri décroissant",
       "sortRemove": "{column} : activer pour annuler le tri",
@@ -833,8 +840,6 @@
       "searchChatIdInputLabel": "ID de chat",
       "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
       "searchButton": "Rechercher l'ID de chat",
-      "searchNotFound": "Aucun chat trouvé avec cet ID.",
-      "searchRequired": "Veuillez entrer un identifiant de clavardage.",
       "columns": {
         "chatId": "ID de chat",
         "questionNumber": "#",
@@ -882,7 +887,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer le chat",
       "loading": "Suppression en cours...",
-      "success": "Chat supprimé avec succès",
+      "success": "{chatId} supprimé avec succès.",
       "error": "Échec de la suppression du chat : {message}"
     },
     "deleteExpertEval": {
@@ -890,7 +895,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer l'évaluation d'expert",
       "loading": "Suppression en cours...",
-      "success": "Évaluation d'expert supprimée avec succès",
+      "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
       "error": "Échec de la suppression de l'évaluation d'expert : {message}",
       "notEvaluated": "Non évalué."
     },
@@ -1385,7 +1390,7 @@
     }
   },
   "publicDashboard": {
-    "title": "Tableau de bord public Réponses IA",
+    "title": "Tableau de bord public",
     "usersOnlyPill": "Utilisateurs du public seulement",
     "footnote": "Les données comprennent uniquement les questions des utilisateurs du public. Les questions des comptes partenaires et administrateurs connectés pour tester et évaluer sont exclues.",
     "overviewTitle": "Aperçu",

@@ -762,8 +762,36 @@
 .eval-search-chat-id.filter-panel:not([open]) > .filter-panel-summary:hover {
   background: #f3f4f6;
 }
-.eval-search-chat-id__field {
+/* Shared by EvalDashboardPage.js's search field and ChatIdLookupField.js's
+   own input - both are block-level wrappers around a chat-ID input, not
+   just a width cap: without it, once the input stops being width:100%
+   (which forced the button below it by consuming the whole line), the
+   input and its inline-level GcdsButton sibling had room to sit side by
+   side again in normal flow. Wrapping the input in its own block
+   guarantees the button starts on a new line regardless of either
+   element's own display type. */
+.eval-search-chat-id__field,
+.chat-id-lookup-field {
   max-width: 40rem;
+}
+
+/* ChatLogsDashboard.js's export View/Format dropdowns. Previously
+   `className="flex items-center gap-4 flex-wrap"` on the row and
+   `className="export-control-group"` on each field - none of those
+   classes were ever defined anywhere in this project's CSS (Tailwind-style
+   names with nothing behind them), so the row had no flex/gap/wrap at all
+   and each .filter-select (which *is* real, width:100%) just stretched
+   full-width and stacked with plain block-level spacing between them -
+   read as "too much space", not a deliberate gap. */
+.export-controls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-400);
+  flex-wrap: wrap;
+}
+
+.export-control-group {
+  max-width: 16rem;
 }
 
 /* Search box + entries-per-page/pagination focus styling, split out from
@@ -2944,4 +2972,49 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
 
 .admin-notifications-action::after {
   content: "→";
+}
+
+/* Split/"stacked" h1 — small eyebrow (aka kicker/overline) label above a
+   large role title. A Canada.ca Specifications/GCWeb pattern (design.canada.ca
+   renders it as `h1 span.stacked`, using flex-direction: column-reverse to
+   visually flip a DOM order that writes the big title first); GC DS doesn't
+   have an equivalent heading variant yet, so this is hand-built rather than
+   token-driven for the eyebrow's own size/weight — everything else (the h1's
+   own bold title size and its red underline) already comes from GC DS as-is,
+   this only adds the small label above it.
+   TOKEN SUGGESTION: GC DS could add a "kicker"/eyebrow slot or size token to
+   GcdsHeading for exactly this — a small secondary label above the heading
+   text, sized off something like --gcds-heading-h4-desktop/-mobile the way
+   this class approximates by hand. */
+.canada-ca-h1-stacked__eyebrow,
+.canada-ca-h1-stacked__title {
+  display: block;
+}
+
+.canada-ca-h1-stacked__eyebrow {
+  font-family: "Lato", sans-serif;
+  font-size: 1.6875rem; /* matches --gcds-heading-h4-desktop's size */
+  line-height: 133%;
+  font-weight: 500;
+  color: var(--gcds-heading-role-secondary);
+  margin-bottom: var(--gcds-heading-spacing-25);
+}
+
+@media (max-width: 47.9375em) {
+  .canada-ca-h1-stacked__eyebrow {
+    font-size: 1.5rem; /* matches --gcds-heading-h4-mobile's size */
+  }
+}
+
+/* GcdsButton's own shadow CSS sets `transition: all .15s ease-in-out` on its
+   button part. Inside a native <details> (chat-ID lookup/delete rows, how-to
+   guides), the button is hidden until the panel opens — its first paint then
+   also gets caught by that `all` transition, producing a visible "pop" as
+   the button's final styles appear to animate in rather than just render.
+   Scoping the transition down to only the properties that should actually
+   animate (hover/focus feedback) via ::part(button) keeps that feedback
+   without the pop. */
+details gcds-button::part(button) {
+  transition: background-color .15s ease-in-out, color .15s ease-in-out,
+    border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
