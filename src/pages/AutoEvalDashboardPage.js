@@ -136,11 +136,11 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       </nav>
 
       {/* Visually hidden - same as Chat/Eval/Metrics dashboards' matching
-          heading: the filter panel's own summary/controls already make its
-          purpose clear on screen. Kept as a real heading (not removed) so
-          screen-reader users navigating by heading/landmark still get this
-          section announced. */}
-      <h2 className="sr-only">{t('admin.filters.title')}</h2>
+          heading: FilterPanel's own <summary> isn't heading-navigable, so
+          this gives screen-reader users a heading/landmark entry point into
+          the filter section. Distinct text from FilterPanel's "Filters"
+          summary label. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <div className="mb-600">
         <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={pageResultCount} hasAppliedFilters={hasAppliedFilters} />
       </div>

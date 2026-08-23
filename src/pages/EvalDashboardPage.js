@@ -429,11 +429,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       </nav>
 
       {/* Visually hidden - same as ChatDashboardPage.js's matching heading:
-          the filter panel's own summary/controls already make its purpose
-          clear on screen. Kept as a real heading (not removed) so
-          screen-reader users navigating by heading/landmark still get this
-          section announced. */}
-      <h2 className="sr-only">{t('admin.filters.title')}</h2>
+          FilterPanel's own <summary> isn't heading-navigable, so this gives
+          screen-reader users a heading/landmark entry point into the filter
+          section. Distinct text from FilterPanel's "Filters" summary label. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel
@@ -545,7 +544,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 to tab TO here) - only a programmatic .focus() target, via
                 resultsHeadingRef/useFocusOnChange above. */}
             <h2 ref={resultsHeadingRef} tabIndex={-1} className="sr-only">
-              {t('admin.evalDashboard.resultsHeading')}
+              {t('admin.common.resultsHeading')}
             </h2>
             <DataTable
               key={tableKey}

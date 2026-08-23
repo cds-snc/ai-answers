@@ -696,6 +696,7 @@
     },
     "filters": {
       "title": "Filters",
+      "sectionHeading": "Choose filter options",
       "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
@@ -834,7 +835,6 @@
       "searchButton": "Search for chat ID",
       "searchNotFound": "No chat found with that ID.",
       "searchRequired": "Please enter a chat ID.",
-      "resultsHeading": "Evaluation results",
       "columns": {
         "chatId": "Chat ID",
         "questionNumber": "#",

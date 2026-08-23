@@ -696,6 +696,7 @@
     },
     "filters": {
       "title": "Filtres",
+      "sectionHeading": "Choisir des options de filtrage",
       "clearAll": "Tout effacer",
       "apply": "Appliquer",
       "loading": "Chargement...",
@@ -834,7 +835,6 @@
       "searchButton": "Rechercher l'ID de chat",
       "searchNotFound": "Aucun chat trouvé avec cet ID.",
       "searchRequired": "Veuillez entrer un identifiant de clavardage.",
-      "resultsHeading": "Résultats de l'évaluation",
       "columns": {
         "chatId": "ID de chat",
         "questionNumber": "#",
