@@ -789,11 +789,11 @@
       "fetchError": "Failed to load data: {message}",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
-      "metricsLoading": "Loading metrics..."
+      "metricsLoading": "Loading metrics...",
+      "resultsHeading": "Results"
     },
     "chatDashboard": {
       "title": "Chat dashboard",
-      "timeRangeTitle": "Get chat interactions for the selected period",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
       "columns": {
@@ -827,7 +827,6 @@
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
-      "timeRangeTitle": "Get evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "searchChatIdInputLabel": "Chat ID",
@@ -857,7 +856,6 @@
     "autoEvalDashboard": {
       "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
-      "timeRangeTitle": "Get auto-evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
       "resultsSummary": "Total matching evaluations: {count}",
@@ -1602,7 +1600,6 @@
   },
   "metrics": {
     "title": "Metrics dashboard",
-    "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
       "loadedAnnouncement": "Metrics loaded.",
       "totalSessions": "Total sessions",
@@ -1707,7 +1704,6 @@
   },
   "technicalMetrics": {
     "title": "Technical metrics",
-    "timeRangeTitle": "Get technical metrics for the selected period",
     "dashboard": {
       "loading": "Loading technical metrics...",
       "loadedAnnouncement": "Technical metrics loaded.",

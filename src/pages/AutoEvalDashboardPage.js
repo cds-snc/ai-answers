@@ -9,6 +9,7 @@ import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
 
 DataTable.use(DT);
 
@@ -134,7 +135,12 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <h2 className="mt-400 mb-400">{t('admin.autoEvalDashboard.timeRangeTitle')}</h2>
+      {/* Visually hidden - same as Chat/Eval/Metrics dashboards' matching
+          heading: the filter panel's own summary/controls already make its
+          purpose clear on screen. Kept as a real heading (not removed) so
+          screen-reader users navigating by heading/landmark still get this
+          section announced. */}
+      <h2 className="sr-only">{t('admin.filters.title')}</h2>
       <div className="mb-600">
         <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={pageResultCount} hasAppliedFilters={hasAppliedFilters} />
       </div>
@@ -193,15 +199,18 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                   try {
                     const api = this.api();
                     tableApiRef.current = api;
-                    // TODO: no scope="col" headers, no search-term pill, no
-                    // sr-only search-results announcement here (unlike
-                    // ChatDashboardPage.js/EvalDashboardPage.js/
-                    // MetricsDashboard.js, which all share
-                    // utils/admin/dataTableAccessibility.js +
-                    // hooks/admin/useSearchAnnouncement.js). Needs
-                    // assessment: this table has per-column filter inputs
+                    // scope="col" headers only - wireTableAccessibility's
+                    // search-term pill/announcement half is a no-op here (it
+                    // bails out once it finds no .dt-search container), which
+                    // is correct: this table has per-column filter inputs
                     // instead of one global search box, so it's not yet
-                    // decided whether/how the shared pattern should apply.
+                    // decided whether/how that half of the shared pattern
+                    // (utils/admin/dataTableAccessibility.js +
+                    // hooks/admin/useSearchAnnouncement.js, used by
+                    // ChatDashboardPage.js/EvalDashboardPage.js/
+                    // MetricsDashboard.js) should apply to a per-column-filter
+                    // table like this one.
+                    wireTableAccessibility(api, { t });
                     const debounce = (fn, wait = 300) => {
                       let t = null;
                       return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };

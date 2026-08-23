@@ -789,11 +789,11 @@
       "fetchError": "Échec du chargement des données : {message}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
-      "metricsLoading": "Chargement des métriques..."
+      "metricsLoading": "Chargement des métriques...",
+      "resultsHeading": "Résultats"
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
-      "timeRangeTitle": "Obtenir les interactions de clavardage pour la période sélectionnée",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "columns": {
@@ -827,7 +827,6 @@
     },
     "evalDashboard": {
       "title": "Tableau de bord des évaluations",
-      "timeRangeTitle": "Obtenir les évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "searchChatIdInputLabel": "ID de chat",
@@ -857,7 +856,6 @@
     "autoEvalDashboard": {
       "title": "Tableau de bord des évaluations automatiques",
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
-      "timeRangeTitle": "Obtenir les auto-évaluations pour la période sélectionnée",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
@@ -1602,7 +1600,6 @@
   },
   "metrics": {
     "title": "Tableau de bord des métriques",
-    "timeRangeTitle": "Obtenir les métriques d'utilisation et d'évaluation",
     "dashboard": {
       "loadedAnnouncement": "Métriques chargées.",
       "totalSessions": "Total des sessions",
@@ -1707,7 +1704,6 @@
   },
   "technicalMetrics": {
     "title": "Métriques techniques",
-    "timeRangeTitle": "Obtenir les métriques techniques pour la période sélectionnée",
     "dashboard": {
       "loading": "Chargement des métriques techniques...",
       "loadedAnnouncement": "Métriques techniques chargées.",

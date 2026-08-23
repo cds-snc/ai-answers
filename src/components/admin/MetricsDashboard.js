@@ -240,7 +240,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const SectionWrapper = ({ children, isLoading, title, error }) => (
     <div className="mb-600">
       <div>
-        {title && <h3 className="mb-0">{title}</h3>}
+        {title && <h2 className="mb-0">{title}</h2>}
         {isLoading && (
           <SectionLoadingIndicator message={t('common.loading')} />
         )}
@@ -549,7 +549,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             <SectionWrapper isLoading={loadingState.dept} title={null} error={errorState.dept}>
               <div className="mb-600">
-                <h3 className="mb-0">{t('metrics.dashboard.byDepartment.title')}</h3>
+                <h2 className="mb-0">{t('metrics.dashboard.byDepartment.title')}</h2>
                 {/* metrics-table-container (admin.css): same styled search
                     box as ChatDashboardPage.js/EvalDashboardPage.js's
                     .dashboard-table-container, minus its 90vw breakout width

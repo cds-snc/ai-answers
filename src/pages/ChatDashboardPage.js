@@ -236,7 +236,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           that at the cost of vertical space. Kept as a real heading (not
           removed) so screen-reader users navigating by heading/landmark
           still get this section announced. */}
-      <h2 className="sr-only">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      <h2 className="sr-only">{t('admin.filters.title')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -280,6 +280,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         <div>
           {dataTableReady && (
             <div className="dashboard-table-container dashboard-table-container--grouped">
+              {/* Sibling of the Filters h2 above, not nested under it - matches
+                  EvalDashboardPage.js's resultsHeading. Previously nothing
+                  filled this role, so the table had no heading-navigation stop
+                  of its own at all. */}
+              <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
               <DataTable
                 key={tableKey}
                 columns={columns}
