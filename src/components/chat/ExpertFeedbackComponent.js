@@ -8,6 +8,7 @@ import ExplanationErrorSummary from './ExplanationErrorSummary.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { resolveDisplayContent, toLangAttr } from '../../utils/answerLanguage.js';
 import OriginalLanguagePill from './review/OriginalLanguagePill.js';
+import { detectUrlLanguage } from '../../utils/dashboard/urlLanguage.js';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
 // if there are somehow 5 sentences, the 5th sentence is ignored _YES THIS IS A HACK
@@ -456,7 +457,16 @@ const ExpertFeedbackComponent = ({
                 can rate its absence as good, needs improvement, or incorrect
                 (e.g. an answer that should have cited a source but didn't). */}
             <div className="citation-text mb-200" id={`${uid}-citation-text`}>
-              {citationUrl || t('homepage.expertRating.citationNoneProvided')}
+              {citationUrl ? (
+                // Real content pulled straight from the source, not the
+                // reviewer's own conversation - tag it with the URL's own
+                // language (detectUrlLanguage, from its /en//fr/ path
+                // segment), same as the citation link fix elsewhere in this
+                // PR (CountTable.js), not the admin UI's lang.
+                <span lang={detectUrlLanguage(citationUrl, lang)}>{citationUrl}</span>
+              ) : (
+                t('homepage.expertRating.citationNoneProvided')
+              )}
             </div>
             <ul className="list-unstyled lst-spcd-2">
               <li className="radio">

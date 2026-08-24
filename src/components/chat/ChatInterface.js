@@ -16,6 +16,7 @@ import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
 import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { detectUrlLanguage } from '../../utils/dashboard/urlLanguage.js';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useActiveScenarioOverride } from '../../hooks/chat/useActiveScenarioOverride.js';
 import ScenarioSubmitInstructions from '../scenario/ScenarioSubmitInstructions.js';
@@ -515,13 +516,22 @@ const ChatInterface = ({
       {referringUrl && (readOnly || messages.length > 0) && (
         readOnly ? (
           <span className="referring-url-label mb-300">
-            <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
+            {/* Admin-facing label (review mode only) - follows the admin's own
+                toggle language, same as every other piece of review chrome
+                (adminT). The URL itself is real content from the user's
+                actual page, split the same way as CountTable.js's citation
+                links: GcdsLink's own `lang` drives its "(opens in a new
+                tab)" hint (admin chrome, effectiveAdminLang), while the
+                nested span carries the URL's own detected language
+                (detectUrlLanguage) so the text itself is pronounced
+                correctly regardless of the admin's current UI language. */}
+            <b>{safeAdminT("homepage.chat.input.referringURL")}</b>{" "}
 
             <GcdsLink href={referringUrl}
               target="_blank"
-              lang={lang}
+              lang={effectiveAdminLang}
             >
-              {referringUrl}
+              <span lang={detectUrlLanguage(referringUrl, lang)}>{referringUrl}</span>
             </GcdsLink>
           </span>
         ) : (
@@ -931,16 +941,23 @@ const ChatInterface = ({
                     >
                       <strong>{adminT("homepage.chat.review.referringUrl")}</strong>{" "}
                       {referringUrl ? (
+                        // Same split as CountTable.js's citation links: GcdsLink's own
+                        // `lang` drives its auto-generated "(opens in a new tab)" hint,
+                        // which is admin chrome and should announce in the admin's own
+                        // language - while the URL text itself is real content from the
+                        // user's actual page, tagged with its own detected language
+                        // (detectUrlLanguage) so it's pronounced correctly regardless of
+                        // what the admin dashboard happens to be set to.
                         <GcdsLink
                           href={referringUrl}
                           target="_blank"
-                          lang={lang}
+                          lang={effectiveAdminLang}
                           className="url-break-all"
                         >
-                          {referringUrl}
+                          <span lang={detectUrlLanguage(referringUrl, lang)}>{referringUrl}</span>
                         </GcdsLink>
                       ) : (
-                        <span style={{ color: "#666" }}>none</span>
+                        <span style={{ color: "#666" }}>{adminT('reviewPanels.none')}</span>
                       )}
                     </div>
                   )}
