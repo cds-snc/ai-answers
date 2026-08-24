@@ -2678,6 +2678,17 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   color: var(--gcds-text-primary);
 }
 
+/* Wraps 2+ pills that need to sit together inline with breathing room
+   between them - e.g. OriginalLanguagePill.js's language pill plus its
+   FR-only "English only" companion pill. Same 6px gap as
+   .filter-bar__pills-row, for visual consistency with the rest of the pill
+   system, but flex-wrap isn't needed here (always just 1-2 short pills). */
+.pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* GC DS–style filter pill */
 .filter-pill {
   display: inline-flex;

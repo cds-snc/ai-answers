@@ -109,9 +109,12 @@ describe('EvalAnalysisReport', () => {
     // "vs others" column removed deliberately (sensitivity); flag stays.
     expect(screen.queryByText('vs others')).toBeNull();
     // Example chatId links to review mode in a new tab, deep-linked to the
-    // evaluated interaction; groups without a stored example render a dash.
+    // evaluated interaction, routed to the example's own (EN/FR breakdown
+    // row) language - here 'en', same as the admin's own `lang`, which
+    // still rides along separately as the adminLang query param; groups
+    // without a stored example render a dash.
     const link = screen.getByRole('link', { name: 'chat-abc' });
-    expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1#interaction=interactionId' + encodeURIComponent('int-1'));
+    expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1&adminLang=en#interaction=interactionId' + encodeURIComponent('int-1'));
     expect(link.getAttribute('target')).toBe('_blank');
     expect(screen.getByText('—')).toBeTruthy();
   });

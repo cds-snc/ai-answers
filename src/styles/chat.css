@@ -462,6 +462,18 @@
   text-decoration: underline;
 }
 
+/* .font-size-text-sm-nr (global.css) has no !important of its own, so
+   .feedback-link's 18px !important above would win regardless - today
+   that's a coincidental match (both currently resolve to 18px), but tying
+   this to the token via a compound selector (one class more specific, wins
+   outright regardless of file load order) means the "See translation" link
+   (FeedbackComponent.js) actually tracks --gcds-font-sizes-text-small if
+   that token ever changes, instead of silently drifting from .feedback-
+   link's own hardcoded magic number. */
+.feedback-link.font-size-text-sm-nr {
+  font-size: var(--gcds-font-sizes-text-small) !important;
+}
+
 .feedback-link:hover {
   color: var(--gcds-link-hover);
   text-decoration-thickness: var(--gcds-link-hover-decoration-thickness);
@@ -478,9 +490,19 @@
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
+  /* Native <button> UA stylesheets default to text-align: center - fine for
+     a short single-line label, but a longer wrapped one (e.g. the "See
+     translation" link's full sentence) centers its second+ line instead of
+     staying left-aligned like real inline link text would. */
+  text-align: left;
 }
 
-.feedback-link.button-as-link:first-of-type::before {
+/* Explicit rating classes rather than :first-of-type/:nth-of-type(2) - those
+   matched on structural position, not meaning, so a non-rating control (e.g.
+   "See translation") placed first in the group picked up a thumbs-up icon it
+   has no business showing. Apply feedback-icon-up/-down only to buttons that
+   are actually a Good/Needs improvement (or Yes/No) choice. */
+.feedback-link.button-as-link.feedback-icon-up::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f164"; /* thumbs-up */
@@ -489,7 +511,7 @@
   display: inline-block;
 }
 
-.feedback-link.button-as-link:nth-of-type(2)::before {
+.feedback-link.button-as-link.feedback-icon-down::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f165"; /* thumbs-down */

@@ -5,7 +5,7 @@ import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import VectorService from '../../services/VectorService.js';
-import { buildChatReviewLinkHtml } from '../../utils/reviewLink.js';
+import { buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../../utils/reviewLink.js';
 import StatusMessage from './StatusMessage.js';
 import FeedbackInlineError from '../chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
@@ -117,7 +117,12 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               {
                 title: t('vector.columns.chatId'),
                 data: 'chatId',
-                render: (data) => buildChatReviewLinkHtml(data, lang)
+                // Route to the chat's own pageLanguage (already shown in the
+                // adjacent Page language column below), not this dashboard's
+                // own current UI language - see the same note in
+                // ChatDashboardPage.js. The admin's own language rides along
+                // separately as the adminLang query param (4th arg).
+                render: (data, type, row) => buildChatReviewLinkHtml(data, chatLangFromPageLanguage(row.pageLanguage), null, lang)
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },
               { title: t('vector.columns.aiProvider'), data: 'aiProvider' },
