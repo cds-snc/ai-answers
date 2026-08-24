@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.191.2](https://github.com/cds-snc/ai-answers/compare/v1.191.1...v1.191.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* serialize authentication requests ([d4461f5](https://github.com/cds-snc/ai-answers/commit/d4461f584a8c85ec0f2f3f56144265c439405ad9))
+* wait for logout before redirecting ([5069d80](https://github.com/cds-snc/ai-answers/commit/5069d8022098958307c9ea11b54a3f597e06e113))
+* wait for logout before redirecting ([f285e04](https://github.com/cds-snc/ai-answers/commit/f285e04459415eed979ec60ded8617046b43407f))
+
 ## [1.191.1](https://github.com/cds-snc/ai-answers/compare/v1.191.0...v1.191.1) (2026-08-24)
 
 
