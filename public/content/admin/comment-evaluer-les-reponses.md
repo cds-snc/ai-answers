@@ -9,7 +9,7 @@ description: "Comment évaluer une réponse phrase par phrase, noter la citation
 
 **Ébauche :** Ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires et de la documentation technique. Envoyez vos corrections à votre personne-ressource au Service numérique canadien (SNC).
 
-Ce guide part d'un chat qui existe déjà — un que vous venez de poser, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
+Ce guide part d'un chat qui existe déjà : un que vous venez de poser, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
 
 ## Ce qu'est une évaluation
 
@@ -28,9 +28,9 @@ Vous devez être connecté comme utilisateur administrateur ou partenaire pour �
 
 Ouvrez ensuite le chat que vous allez évaluer :
 
-- **Avec les options d'évaluation** — si vous avez utilisé Réponses IA à partir du menu partenaire et posé une question, les options d'évaluation apparaissent aussitôt sous chaque réponse.
-- **Un chat précis** — collez son ID dans **Voir le chat par ID** sur la page administrateur.
-- **Les réponses en attente de notation** — sélectionnez un ID de chat dans le tableau de bord des évaluations.
+- **Avec les options d'évaluation** : Si vous avez utilisé Réponses IA à partir du menu partenaire et posé une question, les options d'évaluation apparaissent aussitôt sous chaque réponse.
+- **Un chat précis** : Collez son ID dans **Voir le chat par ID** sur la page administrateur.
+- **Les réponses en attente de notation** : Sélectionnez un ID de chat dans le tableau de bord des évaluations.
 
 ## Évaluer la réponse
 
@@ -39,6 +39,11 @@ Servez-vous de votre connaissance du domaine. Vérifiez sur le web ou consultez 
 Sous **Cette réponse était-elle utile ?**, sélectionnez **Bonne** ou **Nécessite une amélioration**.
 
 ![Une réponse et sa citation en mode révision. En dessous, l'institution ISED-ISDE coiffe la barre « Cette réponse était-elle utile ? » offrant Bonne et Nécessite une amélioration, suivie du panneau replié « Évaluation automatisée » et de l'ID de chat](/content/admin/images/evaluate-how-was-this-answer-fr.jpg)
+
+Deux panneaux peuvent apparaître sous les options d'évaluation, repliés par défaut :
+
+- **Pages téléchargées** : Apparaît seulement quand la réponse a téléchargé une page web pour trouver la réponse. Déployez-le pour voir l'URL de chaque page et si le téléchargement a réussi, réussi en partie ou échoué.
+- **Évaluation automatisée** : Apparaît seulement quand une évaluation par IA existe déjà pour cette réponse. Déployez-le pour voir le score de l'IA.
 
 **Bonne** enregistre immédiatement l'évaluation comme une réponse correcte. Il n'y a rien d'autre à remplir.
 
@@ -56,7 +61,7 @@ Une réponse compte de 1 à 4 phrases, et chacune reçoit son propre choix **Bon
 
 Vous n'avez à évaluer que les phrases sur lesquelles vous avez quelque chose à dire : celles que vous laissez telles quelles comptent comme bonnes.
 
-Une explication est requise pour **Nécessite une amélioration** et **Incorrecte**. Dites ce qui ne va pas, pour que les autres membres de l'équipe — et l'IA — puissent le comprendre.
+Une explication est requise pour **Nécessite une amélioration** et **Incorrecte**. Dites ce qui ne va pas, pour que les autres membres de l'équipe et l'IA puissent le comprendre.
 
 Il y a 2 cases à cocher sous les évaluations :
 

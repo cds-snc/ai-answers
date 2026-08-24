@@ -78,6 +78,15 @@ every gray-matter call throws. Don't reintroduce it. Note that a parse failure
 is invisible on the About page (it only renders `##` sections, so a broken
 frontmatter block silently disappears) but renders as raw text on a how-to page.
 
+### Style guide
+
+How-to guide and About page content must follow the
+[Canada.ca content style guide](https://design.canada.ca/style-guide/index.html)
+(plain language, sentence case, no em dashes: use a comma or simplify the
+sentence instead, per the guide's "Hyphen and dashes" section). Check new or
+revised text against it both while drafting and again as a final pass before
+the change ships.
+
 ### Adding a how-to guide
 
 1. Add the two markdown files to `public/content/admin/`, named in their own
