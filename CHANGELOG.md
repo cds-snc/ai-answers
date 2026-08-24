@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.191.1](https://github.com/cds-snc/ai-answers/compare/v1.191.0...v1.191.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* address PR review comments on how-to pages ([94927d6](https://github.com/cds-snc/ai-answers/commit/94927d6628237aa2ec9e654bc14654805b564946))
+* double icon bug, already part of statusmessage ([c63071e](https://github.com/cds-snc/ai-answers/commit/c63071e36b005b42343b80662c7d26c36bee2699))
+* double icon bug, already part of statusmessage ([9a5488b](https://github.com/cds-snc/ai-answers/commit/9a5488b4f3e18e680fcac8c5fc163fd88184076c))
+
 ## [1.191.0](https://github.com/cds-snc/ai-answers/compare/v1.190.4...v1.191.0) (2026-08-24)
 
 
