@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.191.3](https://github.com/cds-snc/ai-answers/compare/v1.191.2...v1.191.3) (2026-08-24)
+
+
+### Bug Fixes
+
+* complete admin-language handling for referring/citation URLs ([60a8503](https://github.com/cds-snc/ai-answers/commit/60a8503d535301803b7991b28225e70ae5649fc8))
+* language-aware display for non-EN/FR questions and answers ([7c584f2](https://github.com/cds-snc/ai-answers/commit/7c584f223c7067d0a65ea0b691f71b54bb223b35))
+
 ## [1.191.2](https://github.com/cds-snc/ai-answers/compare/v1.191.1...v1.191.2) (2026-08-24)
 
 
