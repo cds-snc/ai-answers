@@ -792,15 +792,8 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               tag="div"
               persistent
               variant={saveStatus?.variant}
-              message={saveStatus?.variant === 'error' ? saveStatus.message : undefined}
-            >
-              {saveStatus?.variant === 'success' ? (
-                <>
-                  <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
-                  {saveStatus.message}
-                </>
-              ) : undefined}
-            </StatusMessage>
+              message={saveStatus?.message}
+            />
 
             {/* Pulled out of the success message on purpose — this reflects
                 current state ("is there an active saved scenario right now"),
