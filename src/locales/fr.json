@@ -1976,6 +1976,7 @@
       "revertSuccess": "Scénario rétabli à sa valeur par défaut.",
       "revertError": "Impossible de rétablir ce scénario. Veuillez réessayer.",
       "enabledSuccess": "Ce scénario est maintenant actif.",
+      "enabledSuccessOtherDisabled": "Ce scénario est maintenant actif. Le scénario précédemment actif est maintenant désactivé.",
       "disabledSuccess": "Ce scénario n'est plus actif.",
       "conflictError": "Ce scénario a été modifié dans un autre onglet ou une autre fenêtre. Rechargez ce ministère pour voir la version la plus récente avant d'enregistrer.",
       "copied": "Copié dans le presse-papiers.",
@@ -1985,7 +1986,7 @@
     "submit": {
       "heading": "Comment soumettre votre scénario à l'équipe Réponses IA",
       "intro": "Si vous êtes satisfait des résultats des tests de ce scénario :",
-      "step1": "Communiquez avec l'équipe Réponses IA et joignez une copie du texte modifié à votre courriel.",
+      "step1": "Communiquez avec l'équipe Réponses IA à {email}, et joignez une copie du texte modifié à votre courriel.",
       "step2": "L'équipe Réponses IA examinera les modifications, puis les appliquera dans le produit Réponses IA en direct."
     },
     "error": {

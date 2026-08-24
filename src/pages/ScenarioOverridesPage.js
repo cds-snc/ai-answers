@@ -345,6 +345,18 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     setSaving(true);
     setSaveStatus(null);
     setCopyStatus(null);
+    // Only one department's override can be active at a time
+    // (disableOtherOverrides, services/ScenarioOverrideService.js) - turning
+    // this one on silently turns off whichever other department was active,
+    // if any. Capture that *before* saving (once this save lands, the
+    // summary endpoint would just report this department back). No-store
+    // fetch, not the general getDepartmentScenario cache, since staleness
+    // here would misname (or wrongly skip naming) the department that just
+    // got deactivated.
+    let previouslyActive = null;
+    if (enabledToSave) {
+      previouslyActive = await ScenarioOverrideService.getActiveOverrideSummary();
+    }
     try {
       const response = await ScenarioOverrideService.saveOverride({
         departmentKey,
@@ -357,7 +369,14 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       setUpdatedAt(response?.updatedAt || new Date().toISOString());
       setDirty(false);
       onSuccess?.(response, nowEnabled);
-      setSaveStatus({ variant: 'success', message: buildSuccessMessage(nowEnabled) });
+      // Only worth telling buildSuccessMessage about when it's genuinely a
+      // *different* department (a re-save of this same one obviously isn't
+      // "disabling" itself) - nothing was lost either way, the other
+      // department's saved text is untouched, it's just no longer the one
+      // that applies to real chats.
+      const otherKey = previouslyActive?.departmentKey;
+      const disabledOtherDepartment = (nowEnabled && otherKey && otherKey !== departmentKey) ? otherKey : null;
+      setSaveStatus({ variant: 'success', message: buildSuccessMessage(nowEnabled, disabledOtherDepartment) });
     } catch (error) {
       onError?.(error);
       // Another tab/window changed this department since this one last
@@ -407,9 +426,15 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       await performSave({
         overrideText: (overrideText || '').trim(),
         enabled: checked,
-        buildSuccessMessage: (nowEnabled) => (nowEnabled
-          ? t('scenarioOverrides.status.enabledSuccess')
-          : t('scenarioOverrides.status.disabledSuccess')),
+        // disabledOtherDepartment (performSave) is only ever set alongside
+        // nowEnabled: true - checking a genuinely different department's
+        // key is what makes it non-null in the first place.
+        buildSuccessMessage: (nowEnabled, disabledOtherDepartment) => {
+          if (!nowEnabled) return t('scenarioOverrides.status.disabledSuccess');
+          return disabledOtherDepartment
+            ? t('scenarioOverrides.status.enabledSuccessOtherDisabled')
+            : t('scenarioOverrides.status.enabledSuccess');
+        },
         onError: () => setEnabled(!checked),
       });
       return;
@@ -430,7 +455,14 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     await performSave({
       overrideText: trimmed,
       enabled,
-      buildSuccessMessage: () => t('scenarioOverrides.status.saveSuccess'),
+      // Same disabledOtherDepartment reasoning as handleEnabledChange's own
+      // buildSuccessMessage - this path reaches it too whenever a checkbox
+      // toggle was staged alongside a text edit (see the `!(updatedAt &&
+      // !textEdited)` branch above), not just via an explicit Save with no
+      // pending checkbox change.
+      buildSuccessMessage: (nowEnabled, disabledOtherDepartment) => (disabledOtherDepartment
+        ? t('scenarioOverrides.status.enabledSuccessOtherDisabled')
+        : t('scenarioOverrides.status.saveSuccess')),
       onSuccess: (response) => {
         setOverrideText(typeof response?.overrideText === 'string' ? response.overrideText : trimmed);
         // This edit has now been saved — re-checking the box after
@@ -631,8 +663,12 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
                 Only one department can be active for testing at a time
                 (disableOtherOverrides, services/ScenarioOverrideService.js)
                 — checking this one silently turns off any other department
-                this same user has enabled; that's internal plumbing the
-                person testing doesn't need surfaced as UI copy. */}
+                this same user has enabled. That used to be undiscoverable
+                internal plumbing; performSave's buildSuccessMessage now
+                names it in the same success message instead of a separate
+                notice, since in practice a tester who enabled department A,
+                moved on to department B, and checked B's box too had no way
+                to notice A had quietly gone inactive. */}
             <div className="gc-chckbxrdio md mt-200 mb-200">
               {/* Convention (see SettingsPage.js's SettingsTextArea): the
                   inline error renders above the field it describes, not

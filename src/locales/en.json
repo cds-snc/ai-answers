@@ -1976,6 +1976,7 @@
       "revertSuccess": "Reverted to the original scenario.",
       "revertError": "Unable to revert this scenario. Try again.",
       "enabledSuccess": "This scenario is now active.",
+      "enabledSuccessOtherDisabled": "This scenario is now active. The previously active scenario is now disabled.",
       "disabledSuccess": "This scenario is no longer active.",
       "conflictError": "This scenario was changed in another tab or window. Reload this department to see the latest version before saving.",
       "copied": "Copied to clipboard.",
@@ -1985,7 +1986,7 @@
     "submit": {
       "heading": "How to submit your scenario to the AI Answers team",
       "intro": "If you're happy with the test results of this scenario:",
-      "step1": "Contact the AI Answers team, and include a copy of the edited text version in your email.",
+      "step1": "Contact the AI Answers team at {email}, and include a copy of the edited text version in your email.",
       "step2": "The AI Answers team will review and then apply the changes into the live AI Answers product."
     },
     "error": {

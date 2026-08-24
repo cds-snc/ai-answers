@@ -19,10 +19,14 @@ vi.mock('../../hooks/usePageParam.js', () => ({
   usePageContext: () => ({ language: 'en' }),
 }));
 
-const { mockGetDepartmentScenario, mockSaveOverride, mockDeleteOverride } = vi.hoisted(() => ({
+const { mockGetDepartmentScenario, mockSaveOverride, mockDeleteOverride, mockGetActiveOverrideSummary } = vi.hoisted(() => ({
   mockGetDepartmentScenario: vi.fn(),
   mockSaveOverride: vi.fn(),
   mockDeleteOverride: vi.fn(),
+  // Defaults to "nothing else is active" - matches the common case for
+  // existing tests below, none of which are about the
+  // enabledSuccessOtherDisabled cross-department notice specifically.
+  mockGetActiveOverrideSummary: vi.fn(() => Promise.resolve(null)),
 }));
 
 vi.mock('../../services/ScenarioOverrideService.js', () => ({
@@ -30,6 +34,7 @@ vi.mock('../../services/ScenarioOverrideService.js', () => ({
     getDepartmentScenario: mockGetDepartmentScenario,
     saveOverride: mockSaveOverride,
     deleteOverride: mockDeleteOverride,
+    getActiveOverrideSummary: mockGetActiveOverrideSummary,
   },
 }));
 
@@ -56,6 +61,11 @@ describe('ScenarioOverridesPage', () => {
     cleanup();
     mockGetDepartmentScenario.mockReset();
     mockSaveOverride.mockReset();
+    // Re-armed with its default (not just cleared) - unlike the other two,
+    // most tests below never set their own mockGetActiveOverrideSummary
+    // behaviour at all, so a bare .mockReset() would leave it returning
+    // undefined for every test after the first.
+    mockGetActiveOverrideSummary.mockReset().mockResolvedValue(null);
   });
 
   it('shows the page-level intro even with no department selected, but hides the editor until one is', () => {
@@ -190,6 +200,66 @@ describe('ScenarioOverridesPage', () => {
     fireEvent.click(checkbox);
     expect(checkbox.checked).toBe(false);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  // Regression: only one department's override can be active at a time
+  // (disableOtherOverrides, services/ScenarioOverrideService.js) - checking
+  // this department's box used to silently turn off whichever other
+  // department was active, with no indication anything but this department
+  // changed. Names it in the same success message instead.
+  it('names the previously-active department in the success message when enabling this one silently disables it', async () => {
+    mockGetDepartmentScenario.mockResolvedValue({
+      departmentKey: 'AAFC-AAC',
+      defaultText: 'Default scenario text',
+      overrideText: 'Custom edited text',
+      enabled: false,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    mockGetActiveOverrideSummary.mockResolvedValueOnce({ departmentKey: 'CRA-ARC', updatedAt: '2026-01-01T00:00:00.000Z' });
+    mockSaveOverride.mockResolvedValueOnce({
+      departmentKey: 'AAFC-AAC',
+      overrideText: 'Custom edited text',
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    });
+
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    await selectDepartment('AAFC-AAC');
+    await screen.findByLabelText('scenarioOverrides.editor.label');
+
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    await waitFor(() => {
+      expect(screen.getByText('scenarioOverrides.status.enabledSuccessOtherDisabled')).toBeTruthy();
+    });
+    expect(screen.queryByText('scenarioOverrides.status.enabledSuccess')).toBeNull();
+  });
+
+  it('uses the plain enabled message when no other department was active to disable', async () => {
+    mockGetDepartmentScenario.mockResolvedValue({
+      departmentKey: 'AAFC-AAC',
+      defaultText: 'Default scenario text',
+      overrideText: 'Custom edited text',
+      enabled: false,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    mockSaveOverride.mockResolvedValueOnce({
+      departmentKey: 'AAFC-AAC',
+      overrideText: 'Custom edited text',
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    });
+
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    await selectDepartment('AAFC-AAC');
+    await screen.findByLabelText('scenarioOverrides.editor.label');
+
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    await waitFor(() => {
+      expect(screen.getByText('scenarioOverrides.status.enabledSuccess')).toBeTruthy();
+    });
+    expect(screen.queryByText('scenarioOverrides.status.enabledSuccessOtherDisabled')).toBeNull();
   });
 
   it('shows the test link on a plain revisit of an already-active department, not only right after saving', async () => {
