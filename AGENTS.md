@@ -284,7 +284,7 @@ It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="e
 
 **Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
 
-**Full-page filter-loading overlay is a separate component — `src/components/admin/LoadingOverlay.js`, not `StatusMessage`.** `StatusMessage`'s `loading` is general-purpose (any page might need an inline "still working" message) and lives here on purpose. `LoadingOverlay` is narrower — a full-page backdrop that blocks the whole page while a dashboard's filter-driven fetch reloads — and stays in its own file for that reason, not because it's structurally different (it isn't; it's `role="status"` too). Determinate progress (a known total, e.g. "chunk 3 of 10") isn't either of these — a third, different thing again — and doesn't belong in `StatusMessage` as a `progress` variant or in `LoadingOverlay` as a mode; see `ExperimentalAnalysisPage.js`'s `renderProgressCards` for the established pattern (a real `role="progressbar"` + a plain `role="status"` text line, its own small component). `loading` and `variant` inside `StatusMessage` are resolved through one lookup (`resolveLook`) rather than three separate hand-synced conditionals — that used to be the failure mode here: `loading` shipped with its content/className correct but its tag-forcing conditional not updated at the same time, so its spinner ended up nested inside an invalid `<p>`. The one-lookup structure is what makes `loading` and `variant` safe to keep in the same component; it's not something to re-split without a reason.
+**Full-page loading overlay is a separate component — `src/components/admin/LoadingOverlay.js`, not `StatusMessage`.** `StatusMessage`'s `loading` is general-purpose (any page might need an inline "still working" message) and lives here on purpose. `LoadingOverlay` is narrower — a full-page backdrop for when there's genuinely nothing else actionable on the page until the operation finishes (every other control is already disabled for the same duration anyway) — and stays in its own file for that reason, not because it's structurally different (it isn't; it's `role="status"` too). The original, narrower framing of this was "a dashboard's filter-driven fetch reloads" (still the most common case — `PartnerDashboard.js`, `PublicDashboard.js`, `ChatLogsDashboard.js`, `EvalDashboardPage.js`, `AutoEvalDashboardPage.js`, `ChatDashboardPage.js`), but the actual test is broader than dashboards or filters: `ScenarioOverridesPage.js` uses it for a single-department data load and for its Save/Revert actions, neither of which is a dashboard or a filter. If a page's controls are all disabled for a stretch and an inline `StatusMessage loading` is sitting next to them anyway, that's very likely a `LoadingOverlay` case instead — worth checking other pages for that same pattern opportunistically. Determinate progress (a known total, e.g. "chunk 3 of 10") isn't either of these — a third, different thing again — and doesn't belong in `StatusMessage` as a `progress` variant or in `LoadingOverlay` as a mode; see `ExperimentalAnalysisPage.js`'s `renderProgressCards` for the established pattern (a real `role="progressbar"` + a plain `role="status"` text line, its own small component). `loading` and `variant` inside `StatusMessage` are resolved through one lookup (`resolveLook`) rather than three separate hand-synced conditionals — that used to be the failure mode here: `loading` shipped with its content/className correct but its tag-forcing conditional not updated at the same time, so its spinner ended up nested inside an invalid `<p>`. The one-lookup structure is what makes `loading` and `variant` safe to keep in the same component; it's not something to re-split without a reason.
 
 ```jsx
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
@@ -339,6 +339,28 @@ See `PublicFeedbackComponent.js` / `ExpertFeedbackComponent.js` for the establis
 usage. If a field's error text genuinely varies per failure (not just a fixed message),
 a bare `useState` is fine, but the `<FeedbackInlineError>` still needs an `errorCount`
 that increments on every trigger — derive it from a counter, not from the message text.
+
+**`FeedbackInlineError` renders above the field it describes, not below.** See
+`SettingsPage.js`'s `SettingsTextArea` for the established order — the error markup comes
+first, the input second, both still linked via `aria-describedby`. Placing it after the
+field is a layout inversion of this convention, not a style choice.
+
+**Prefer rejecting the interaction over disabling the control, when the disabled reason
+needs explaining.** A `disabled` element is pulled out of the tab order, so an
+`aria-describedby` hint attached to it is practically undiscoverable to a keyboard-only or
+screen-reader user — they never land on the control to have the description read. This
+satisfies SC 4.1.2 (Name, Role, Value) in the letter — the disabled state is still
+programmatically exposed — but fails the actual point of pairing it with an explanation.
+Where the "why can't I do this" reason isn't otherwise obvious from context, keep the
+control enabled/focusable, let the interaction happen, and surface the problem via SC 3.3.1
+Error Identification instead — the same `useInlineFormError`/`FeedbackInlineError` pattern
+above, triggered from the control's own change/click handler rather than a submit handler.
+See `ScenarioOverridesPage.js`'s "use this scenario for testing" checkbox: checking it
+before an edit has been made is rejected with an inline error (React's controlled `checked`
+just snaps back since state isn't updated), not blocked by disabling the checkbox. This
+doesn't apply to every disabled control — one disabled for a self-evident reason already
+visible elsewhere on screen (e.g. a Save button disabled because nothing's been typed yet)
+isn't hiding anything and is a normal, accepted gating pattern.
 
 **Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
 

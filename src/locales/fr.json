@@ -78,6 +78,10 @@
     },
     "chat": {
       "chatId": "ID de chat",
+      "scenarioOverride": {
+        "banner": "Mise à l'essai d'un scénario {department}",
+        "manageLink": "Retourner modifier, consulter ou désactiver le scénario"
+      },
       "input": {
         "heading": "Zone de question",
         "initial": "Posez une question sur Canada.ca",
@@ -1973,38 +1977,60 @@
   },
   "scenarioOverrides": {
     "title": "Modifier et tester les scénarios",
-    "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Assurez-vous de ne pas avoir ajouté d'ambiguïté ! Restez concis pour réduire la charge cognitive de l'IA. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester. Testez avec plusieurs questions plusieurs fois.",
-    "description2": "Si vous êtes satisfait des modifications, alertez l'équipe Réponses IA, copiez et collez la version modifiée pour eux, et ils effectueront et publieront les modifications dans le produit Réponses IA en direct.",
-    "sections": {
-      "editOverride": "Modifier",
-      "visualDiff": "Différence visuelle (côte à côte)"
+    "intro": "Le test de scénarios vous permet de remplacer temporairement les instructions de scénario d'un ministère et de les essayer en direct dans Réponses IA, sans modifier ce qui est actuellement en ligne.",
+    "departmentSelect": {
+      "label": "Ministère ou institution",
+      "placeholder": "Sélectionnez un ministère, une agence, une institution, etc."
     },
-    "table": {
-      "department": "Ministère",
+    "editor": {
+      "label": "Texte du scénario"
+    },
+    "diff": {
+      "heading": "Différences côte à côte",
       "defaultLabel": "Texte du scénario original",
       "overrideLabel": "Texte modifié",
-      "enabled": "Appliquer les modifications",
-      "showDiff": "Afficher la différence",
-      "hideDiff": "Masquer la différence",
-      "diffLabel": "Différence",
+      "addedLabel": "Ajouté",
+      "removedLabel": "Supprimé"
+    },
+    "table": {
+      "enabled": "Utiliser ce scénario pour les tests",
+      "enabledError": "Veuillez d'abord apporter une modification au scénario.",
       "lastUpdated": "Dernière mise à jour"
     },
-    "status": {
-      "saving": "Enregistrement...",
-      "saveSuccess": "Modifications enregistrées.",
-      "saveError": "Impossible d’enregistrer les modifications.",
-      "loadError": "Impossible de charger les modifications."
-    },
     "buttons": {
-      "save": "Enregistrer les modifications",
-      "reset": "Réinitialiser"
+      "save": "Enregistrer",
+      "revert": "Rétablir la valeur par défaut",
+      "copy": "Copier le texte du scénario"
+    },
+    "status": {
+      "saving": "Enregistrement…",
+      "saveSuccess": "Scénario enregistré.",
+      "saveError": "Impossible d'enregistrer ce scénario. Veuillez réessayer.",
+      "loadError": "Impossible de charger le scénario de ce ministère.",
+      "unsavedChangesConfirm": "Vous avez des modifications non enregistrées. Changer de ministère et les abandonner?",
+      "reverting": "Rétablissement…",
+      "revertConfirm": "Cette action supprimera définitivement vos modifications enregistrées et rétablira le scénario original. Continuer?",
+      "revertSuccess": "Scénario rétabli à sa valeur par défaut.",
+      "revertError": "Impossible de rétablir ce scénario. Veuillez réessayer.",
+      "enabledSuccess": "Ce scénario est maintenant actif.",
+      "enabledSuccessOtherDisabled": "Ce scénario est maintenant actif. Le scénario précédemment actif est maintenant désactivé.",
+      "disabledSuccess": "Ce scénario n'est plus actif.",
+      "conflictError": "Ce scénario a été modifié dans un autre onglet ou une autre fenêtre. Rechargez ce ministère pour voir la version la plus récente avant d'enregistrer.",
+      "copied": "Copié dans le presse-papiers.",
+      "copyError": "Impossible de copier. Veuillez réessayer."
+    },
+    "testLink": "Testez votre scénario dans Réponses IA",
+    "submit": {
+      "heading": "Comment soumettre votre scénario à l'équipe Réponses IA",
+      "intro": "Si vous êtes satisfait des résultats des tests de ce scénario :",
+      "step1": "Communiquez avec l'équipe Réponses IA à {email}, et joignez une copie du texte modifié à votre courriel.",
+      "step2": "L'équipe Réponses IA examinera les modifications, puis les appliquera dans le produit Réponses IA en direct."
     },
     "error": {
       "fallback": "Une erreur est survenue lors du chargement de cette page."
     },
     "empty": {
-      "never": "Jamais",
-      "defaultMissing": "Texte par défaut indisponible."
+      "never": "Jamais"
     }
   },
   "connectivity": {

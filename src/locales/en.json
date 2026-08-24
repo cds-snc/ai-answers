@@ -78,6 +78,10 @@
     },
     "chat": {
       "chatId": "Chat ID",
+      "scenarioOverride": {
+        "banner": "Testing {department} scenario",
+        "manageLink": "Return to edit, view or disable scenario"
+      },
       "input": {
         "heading": "Question area",
         "initial": "Ask a Canada.ca question",
@@ -1973,38 +1977,60 @@
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
-    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. Make sure you haven't added ambiguity! Keep it terse to reduce cognitive load on the AI. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test. Test with multiple questions multiple times.",
-    "description2": "If you're happy with the changes, alert the AI Answers team, copy and paste the edited version for them, and they'll make and push the changes into the live AI Answers product.",
-    "sections": {
-      "editOverride": "Edit",
-      "visualDiff": "Visual diff (side-by-side)"
+    "intro": "Scenario testing lets you temporarily override a department's scenario instructions and try them out live in AI Answers, without changing what's on the live site now.",
+    "departmentSelect": {
+      "label": "Department or institution",
+      "placeholder": "Select a department, agency, institution, etc."
     },
-    "table": {
-      "department": "Department",
+    "editor": {
+      "label": "Scenario text"
+    },
+    "diff": {
+      "heading": "Differences side-by-side",
       "defaultLabel": "Original scenario text",
       "overrideLabel": "Edited text",
-      "enabled": "Apply edits",
-      "showDiff": "Show diff",
-      "hideDiff": "Hide diff",
-      "diffLabel": "Diff",
+      "addedLabel": "Added",
+      "removedLabel": "Removed"
+    },
+    "table": {
+      "enabled": "Use this scenario for testing",
+      "enabledError": "Please make a change to the scenario first.",
       "lastUpdated": "Last updated"
     },
-    "status": {
-      "saving": "Saving...",
-      "saveSuccess": "Edits saved.",
-      "saveError": "Unable to save edits.",
-      "loadError": "Unable to load edits."
-    },
     "buttons": {
-      "save": "Save edits",
-      "reset": "Reset"
+      "save": "Save",
+      "revert": "Revert to default",
+      "copy": "Copy scenario text"
+    },
+    "status": {
+      "saving": "Saving…",
+      "saveSuccess": "Scenario saved.",
+      "saveError": "Unable to save this scenario. Try again.",
+      "loadError": "Unable to load this department's scenario.",
+      "unsavedChangesConfirm": "You have unsaved changes. Switch departments and discard them?",
+      "reverting": "Reverting…",
+      "revertConfirm": "This will permanently delete your saved edits and revert to the original scenario. Continue?",
+      "revertSuccess": "Reverted to the original scenario.",
+      "revertError": "Unable to revert this scenario. Try again.",
+      "enabledSuccess": "This scenario is now active.",
+      "enabledSuccessOtherDisabled": "This scenario is now active. The previously active scenario is now disabled.",
+      "disabledSuccess": "This scenario is no longer active.",
+      "conflictError": "This scenario was changed in another tab or window. Reload this department to see the latest version before saving.",
+      "copied": "Copied to clipboard.",
+      "copyError": "Unable to copy. Try again."
+    },
+    "testLink": "Test your scenario in AI Answers",
+    "submit": {
+      "heading": "How to submit your scenario to the AI Answers team",
+      "intro": "If you're happy with the test results of this scenario:",
+      "step1": "Contact the AI Answers team at {email}, and include a copy of the edited text version in your email.",
+      "step2": "The AI Answers team will review and then apply the changes into the live AI Answers product."
     },
     "error": {
       "fallback": "An error occurred while loading this page."
     },
     "empty": {
-      "never": "Never",
-      "defaultMissing": "No default text available."
+      "never": "Never"
     }
   },
   "connectivity": {
