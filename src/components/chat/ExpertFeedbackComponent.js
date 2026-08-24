@@ -6,6 +6,8 @@ import { useAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
 import ExplanationErrorSummary from './ExplanationErrorSummary.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { resolveDisplayContent, toLangAttr } from '../../utils/answerLanguage.js';
+import OriginalLanguagePill from './review/OriginalLanguagePill.js';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
 // if there are somehow 5 sentences, the 5th sentence is ignored _YES THIS IS A HACK
@@ -16,6 +18,8 @@ const ExpertFeedbackComponent = ({
   lang = 'en',
   sentenceCount = 1,
   sentences = [],
+  questionLanguage = '',
+  sentencesEnglish = [],
   answerNumber,
   citationUrl,
   department,
@@ -139,6 +143,19 @@ const ExpertFeedbackComponent = ({
       }))
     : null;
 
+  // Same EN/FR-official-languages display rule (shown as-is; non-EN/FR
+  // collapses to English) as ExpertFeedbackPanel.js/ChatDashboardPage.js
+  // (resolveDisplayContent) -
+  // questionLanguage drives every sentence uniformly, since the AI answers
+  // in whatever language was detected for the question (agenticBase.js),
+  // not a separately-tracked language per sentence. Resolved once here
+  // (not inside the .map() below) since sentences[index] is also read
+  // directly for the aria-describedby presence check.
+  const sentenceDisplays = sentences.map((sentence, index) =>
+    resolveDisplayContent({ language: questionLanguage, original: sentence, english: sentencesEnglish[index] })
+  );
+  const isSource = sentenceDisplays.some((d) => d.isSource);
+
   const handleRadioChange = (event) => {
     const { name, value } = event.target;
     const sentenceNumber = name.replace('Score', '');
@@ -258,12 +275,17 @@ const ExpertFeedbackComponent = ({
     // (type="url") input, with no replacement check in its place. Confirm
     // whether that's an acceptable gap (optional field, trusted admin
     // input) before adding a replacement check — not adding one blind.
-    <form onSubmit={handleSubmit} className="expert-rating-container" noValidate>
+    <form onSubmit={handleSubmit} className="expert-rating-container" noValidate lang={lang}>
       <FontAwesomeIcon
         icon="fa-solid fa-close"
         className="close-icon"
         onClick={onClose}
-        onKeyDown={(e) => e.key === 'Enter' && onClose()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClose();
+          }
+        }}
         role="button"
         tabIndex={0}
         aria-label={t('common.close')}
@@ -275,6 +297,11 @@ const ExpertFeedbackComponent = ({
             <span className="feedback-answer-number">{answerText}</span>
           )}
         </h4>
+        {isSource && (
+          <div className="mb-100">
+            <OriginalLanguagePill languageCode={toLangAttr(questionLanguage)} lang={lang} t={t} />
+          </div>
+        )}
         {explanationSummaryLinks && (
           <ExplanationErrorSummary
             id={`${uid}-explanation-summary`}
@@ -307,7 +334,7 @@ const ExpertFeedbackComponent = ({
               </legend>
               {sentences[index] && (
                 <div className="sentence-text mb-200" id={`${uid}-sentence${index + 1}-text`}>
-                  "{sentences[index]}"
+                  "<span lang={sentenceDisplays[index].lang}>{sentenceDisplays[index].text}</span>"
                 </div>
               )}
               <ul className="list-unstyled lst-spcd-2">

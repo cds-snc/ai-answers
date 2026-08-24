@@ -15,6 +15,8 @@ import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
 import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
 import { useActiveScenarioOverride } from '../../hooks/chat/useActiveScenarioOverride.js';
 import ScenarioSubmitInstructions from '../scenario/ScenarioSubmitInstructions.js';
 import ScenarioOverrideBanner from './ScenarioOverrideBanner.js';
@@ -47,10 +49,13 @@ const ChatInterface = ({
   MAX_CONVERSATION_TURNS,
   t,
   lang,
+  adminLang,
   extractSentences,
   chatId,
   readOnly = false,
   userLeftChatRef,
+  onExpertFeedbackChange,
+  reappearedFeedback,
 }) => {
   // Add safeT helper function
   const safeT = useCallback(
@@ -61,6 +66,29 @@ const ChatInterface = ({
         : result;
     },
     [t]
+  );
+
+  // effectiveAdminLang/adminT/safeAdminT: a second, separately-resolved
+  // translator for the review-mode-only "admin chrome" around the
+  // transcript - the department wrapper's review panels
+  // (ExpertFeedbackPanel/PublicFeedbackPanel/DownloadPanel/UsedChatsPanel/
+  // EvalPanel/FeedbackComponent), and the Chat ID/Referring URL/Date labels.
+  // `lang` above is the chat's own language (what the end user actually saw
+  // - official-languages.md Rule 2); this is the reviewing admin's own
+  // current UI language instead. `adminLang` is only ever set by
+  // ChatAppContainer.js in review mode and otherwise defaults to `lang`, so
+  // live-chat behaviour is unchanged. Resolved once here rather than
+  // `adminLang || lang` at every call site below.
+  const effectiveAdminLang = adminLang || lang;
+  const { t: adminT } = useTranslations(effectiveAdminLang);
+  const safeAdminT = useCallback(
+    (key) => {
+      const result = adminT(key);
+      return typeof result === "object" && result !== null
+        ? result.text
+        : result;
+    },
+    [adminT]
   );
 
   // Add truncateURL helper function 
@@ -560,13 +588,20 @@ const ChatInterface = ({
             ? aiAnswerIndex + 1
             : undefined;
           const { answerText: departmentAnswerText } = buildAnswerNumberLabel(
-            t,
+            adminT,
             aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined
           );
           const userQuestionIndex = (message.sender === "user" && !message.error)
             ? sequenceableUserMessages.findIndex(m => m.id === message.id)
             : null;
           const citationUrl = getCitationUrl(message.interaction);
+          // Computed once per message rather than inline at each
+          // FeedbackComponent call site below (review-mode and live-chat
+          // both need it) - same fallback chain, just no longer duplicated
+          // verbatim. Optional chaining here (unlike the old inline
+          // versions) since this now also runs for user-sender messages,
+          // which never carry `.interaction`.
+          const englishQuestion = message.interaction?.answer?.englishQuestion || message.interaction?.question?.englishQuestion || '';
           const isLastErrorMessage =
             message.error && message.id === messages[messages.length - 1]?.id;
           // While the AI is still generating a reply, the most recent question
@@ -599,6 +634,19 @@ const ChatInterface = ({
                   {...(message.redactedText?.includes("###") && {
                     "aria-hidden": "true",
                   })}
+                  // Real detected language, not collapsed to English - this is
+                  // the actual conversation transcript (what the end user
+                  // typed), not an admin/eval tool. `message.questionLanguage`
+                  // (not `message.interaction`, which a user-sender message
+                  // never carries - see ChatAppContainer.js/HomePage.js) is
+                  // the same detected language the answer bubble tags itself
+                  // with via getAnswerLanguage(message.interaction), just
+                  // pre-resolved to a plain string at attach-time since the
+                  // two sides of one interaction share it. See
+                  // docs/coding-agent-docs/official-languages.md for why this
+                  // differs from the collapse-to-English rule used in the
+                  // eval/dashboard tools.
+                  lang={toLangAttr(message.questionLanguage)}
                 >
                   {message.text}
                 </p>
@@ -721,19 +769,19 @@ const ChatInterface = ({
                           <h3 className="sr-only">
                             {departmentAnswerText ? `${departmentAnswerText} - ` : ""}
                             {message.interaction.context?.department ||
-                              safeT("homepage.chat.review.noDepartment")}
+                              safeAdminT("homepage.chat.review.noDepartment")}
                           </h3>
                           <p className="department-label-text font-size-text-xsm-nr mb-200" aria-hidden="true">
                             <b>
                               {message.interaction.context?.department ||
-                                safeT("homepage.chat.review.noDepartment")}
+                                safeAdminT("homepage.chat.review.noDepartment")}
                             </b>
                           </p>
                           {caches &&
                             message.interaction.answer.answerType !== "question" &&
                             !message.interaction.expertFeedback && (
                               <FeedbackComponent
-                                lang={lang}
+                                lang={effectiveAdminLang}
                                 sentences={
                                   extractSentences(message.interaction.answer.content) ||
                                   []
@@ -742,6 +790,23 @@ const ChatInterface = ({
                                   extractSentences(message.interaction.answer.content)
                                     .length
                                 }
+                                // Same EN/FR-official-languages display rule (shown
+                                // as-is; non-EN/FR collapses to English) as
+                                // ExpertFeedbackPanel.js/ChatDashboardPage.js -
+                                // getAnswerLanguage handles
+                                // both the live and persisted data shapes.
+                                questionLanguage={getAnswerLanguage(message.interaction)}
+                                // TODO(sentence-pairing-risk): see the
+                                // resolveDisplayContent TODO in
+                                // answerLanguage.js - sentences/sentencesEnglish
+                                // are paired purely by array index with no
+                                // enforced guarantee of matching segmentation.
+                                sentencesEnglish={
+                                  message.interaction.answer.englishAnswer
+                                    ? extractSentences(message.interaction.answer.englishAnswer)
+                                    : []
+                                }
+                                englishQuestion={englishQuestion}
                                 chatId={chatId}
                                 userMessageId={message.id}
                                 answerNumber={reviewAnswerNumber}
@@ -752,25 +817,47 @@ const ChatInterface = ({
                                 skipButtonLabel={safeT(
                                   "homepage.chat.textarea.ariaLabel.skipfo"
                                 )}
+                                onExpertFeedbackChange={(expertFeedback) =>
+                                  onExpertFeedbackChange?.(message.id, expertFeedback)
+                                }
+                                // Only set for the one message whose expert
+                                // feedback was just deleted - tells
+                                // FeedbackComponent to move focus into
+                                // itself, since it just reappeared in place
+                                // of ExpertFeedbackPanel's summary and the
+                                // Delete button that had focus is now gone
+                                // from the DOM.
+                                reappearedAfterDeleteNonce={
+                                  reappearedFeedback?.messageId === message.id
+                                    ? reappearedFeedback.nonce
+                                    : undefined
+                                }
                               />
                             )}
                           <div className="inline-review-panels">
                             <ExpertFeedbackPanel
                               message={message}
                               extractSentences={extractSentences}
-                              t={t}
-                              lang={lang}
+                              t={adminT}
+                              lang={effectiveAdminLang}
                               answerNumber={reviewAnswerNumber}
+                              onDeleted={() => onExpertFeedbackChange?.(message.id, undefined)}
                             />
                             <PublicFeedbackPanel
                               message={message}
                               extractSentences={extractSentences}
-                              t={t}
+                              t={adminT}
                               answerNumber={reviewAnswerNumber}
                             />
-                            <DownloadPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
-                            <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
-                            <EvalPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
+                            <DownloadPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
+                            {/* lang stays the CURRENT chat's own language here, not adminLang -
+                                it routes buildChatReviewHref to a DIFFERENT matched chat, which
+                                has no known pageLanguage of its own available to this panel
+                                (UsedChatsPanel.js has the full explanation). adminLang still rides
+                                along as the link's adminLang query param, and its translated
+                                labels (t) follow the admin's language. */}
+                            <UsedChatsPanel message={message} t={adminT} lang={lang} adminLang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
+                            <EvalPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
                           </div>
                         </div>
                       )}
@@ -791,6 +878,13 @@ const ChatInterface = ({
                               )
                               : []
                           }
+                          questionLanguage={getAnswerLanguage(message.interaction)}
+                          sentencesEnglish={
+                            message.interaction.answer.englishAnswer
+                              ? extractSentences(message.interaction.answer.englishAnswer)
+                              : []
+                          }
+                          englishQuestion={englishQuestion}
                           chatId={chatId}
                           userMessageId={message.id}
                           answerNumber={reviewAnswerNumber}
@@ -812,7 +906,7 @@ const ChatInterface = ({
                     {message.sender === "ai" && !message.error && chatId && (
                       <div className="chat-id">
                         <p className="font-size-text-xxs-nr">
-                          {safeT("homepage.chat.chatId")}: {chatId}
+                          {safeAdminT("homepage.chat.chatId")}: {chatId}
                         </p>
                       </div>
                     )}
@@ -835,7 +929,7 @@ const ChatInterface = ({
                         fontSize: "0.9rem"
                       }}
                     >
-                      <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
+                      <strong>{adminT("homepage.chat.review.referringUrl")}</strong>{" "}
                       {referringUrl ? (
                         <GcdsLink
                           href={referringUrl}
@@ -1119,7 +1213,7 @@ const ChatInterface = ({
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
         <div className="admin-date">
-          <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
+          <b>{safeAdminT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
         </div>
       )}
     </div>

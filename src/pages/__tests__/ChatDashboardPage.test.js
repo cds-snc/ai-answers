@@ -35,10 +35,12 @@ vi.mock('../../services/DashboardService.js', () => ({
 // that a *specific* (e.g. outgoing, pre-Clear) instance's ajax.reload was or
 // wasn't called - the whole point of the regression test below.
 let lastOptions = null;
+let lastColumns = null;
 let mountedInstances = [];
 vi.mock('datatables.net-react', () => {
   const MockDataTable = (props) => {
     lastOptions = props.options;
+    lastColumns = props.columns;
     const apiRef = React.useRef(null);
     const firedRef = React.useRef(false);
     if (!apiRef.current) {
@@ -84,6 +86,7 @@ vi.mock('@gcds-core/components-react', () => ({
 describe('ChatDashboardPage rendering', () => {
   afterEach(() => {
     cleanup();
+    lastColumns = null;
     lastOptions = null;
     mountedInstances = [];
   });
@@ -94,6 +97,37 @@ describe('ChatDashboardPage rendering', () => {
     await waitFor(() => {
       expect(getByText(/Chat dashboard/i)).toBeTruthy();
     });
+  });
+
+  // The chatId column's review link routes to the reviewed chat's own
+  // pageLanguage, not the admin's current UI language - the transcript
+  // (answer bubbles, citation heading) must show what the end user actually
+  // saw (docs/coding-agent-docs/official-languages.md Rule 2). The admin's
+  // own language rides along separately as the `adminLang` query param, for
+  // the review page's own chrome ("How was this answer?", etc.) to use.
+  it('routes the chatId review link to the row\'s pageLanguage, carrying the admin\'s own lang as adminLang', async () => {
+    const { container } = render(<ChatDashboardPage lang="fr" />);
+
+    // Apply the default filters to mount the table (see the "Clear all" test
+    // below for the same pattern).
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => {
+      fireEvent.click(applyButton);
+    });
+    await waitFor(() => expect(lastColumns).not.toBeNull());
+
+    const chatIdColumn = lastColumns.find((c) => c.data === 'chatId');
+    // Row's own pageLanguage is 'en' - the route must land on /en/..., not
+    // the admin's own /fr (the page this dashboard itself is rendered in).
+    const html = chatIdColumn.render('chat-123', 'display', { pageLanguage: 'en', interactionId: 'int-1' });
+
+    expect(html).toContain('href="/en?chat=chat-123');
+    expect(html).not.toContain('href="/fr?chat=chat-123');
+    expect(html).toContain('adminLang=fr');
   });
 
   it('Clear all hides the results entirely rather than auto-fetching the reset defaults (restart, not re-apply)', async () => {

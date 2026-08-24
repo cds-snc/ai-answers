@@ -194,7 +194,13 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] }
+        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] },
+        // Both needed for the admin display rule (see src/utils/answerLanguage.js's
+        // resolveDisplayContent): EN/FR show redactedQuestion as-is, anything
+        // else falls back to englishQuestion - questionLanguage is what
+        // decides which.
+        'interactions.questionLanguage': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.language', 0] }, ''] },
+        'interactions.englishQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.englishQuestion', 0] }, ''] }
       }
     });
 
@@ -213,10 +219,18 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $addFields: {
         'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] },
+        // Computed once here, referenced by answerContent's own fallback
+        // below - a field added earlier in an $addFields stage is visible
+        // to a later field's expression in the same stage. Kept as its own
+        // field (not folded into answerContent) so the frontend can apply
+        // the questionLanguage-driven display rule the same way it does for
+        // the question (resolveDisplayContent), independent of
+        // answerContent's separate null-safety fallback below.
+        'interactions.englishAnswer': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.englishAnswer', 0] }, ''] },
         'interactions.answerContent': {
           $ifNull: [
             { $arrayElemAt: ['$interactionAnswer.content', 0] },
-            { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.englishAnswer', 0] }, ''] }
+            '$interactions.englishAnswer'
           ]
         },
         'interactions.citationRef': { $arrayElemAt: ['$interactionAnswer.citation', 0] }
@@ -375,7 +389,10 @@ async function chatDashboardHandler(req, res) {
         department: '$interactions.department',
         program: '$interactions.program',
         redactedQuestion: '$interactions.redactedQuestion',
+        questionLanguage: '$interactions.questionLanguage',
+        englishQuestion: '$interactions.englishQuestion',
         answerContent: '$interactions.answerContent',
+        englishAnswer: '$interactions.englishAnswer',
         citationUrl: '$interactions.citationUrl',
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
@@ -403,18 +420,17 @@ async function chatDashboardHandler(req, res) {
     // data grows.
     if (searchParam) {
       const esc = escapeRegex(searchParam);
+      const searchOr = [
+        { chatId: { $regex: esc, $options: 'i' } },
+        { interactionId: { $regex: esc, $options: 'i' } },
+        { department: { $regex: esc, $options: 'i' } },
+        { program: { $regex: esc, $options: 'i' } },
+        { redactedQuestion: { $regex: esc, $options: 'i' } },
+        { answerContent: { $regex: esc, $options: 'i' } },
+        { citationUrl: { $regex: esc, $options: 'i' } }
+      ];
       pipeline.push({
-        $match: {
-          $or: [
-            { chatId: { $regex: esc, $options: 'i' } },
-            { interactionId: { $regex: esc, $options: 'i' } },
-            { department: { $regex: esc, $options: 'i' } },
-            { program: { $regex: esc, $options: 'i' } },
-            { redactedQuestion: { $regex: esc, $options: 'i' } },
-            { answerContent: { $regex: esc, $options: 'i' } },
-            { citationUrl: { $regex: esc, $options: 'i' } }
-          ]
-        }
+        $match: { $or: searchOr }
       });
     }
 
@@ -546,7 +562,10 @@ async function chatDashboardHandler(req, res) {
       program: row.program || '',
       programFr: frForProgram(row.program),
       redactedQuestion: row.redactedQuestion || '',
+      questionLanguage: row.questionLanguage || '',
+      englishQuestion: row.englishQuestion || '',
       answerContent: row.answerContent || '',
+      englishAnswer: row.englishAnswer || '',
       citationUrl: row.citationUrl || '',
       date: row.createdAt ? row.createdAt.toISOString() : null,
       questionNumber: row.questionNumber || 0,

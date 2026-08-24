@@ -27,8 +27,10 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
+      "viewSource": "Review the English source text",
       "thankYou": "Thank you for your feedback!",
-      "error": "Error submitting feedback, contact admin."
+      "error": "Error submitting feedback, contact admin.",
+      "expertFeedbackDeletedAnnouncement": "Expert feedback deleted. You can evaluate this answer again."
     },
     "publicFeedback": {
       "send": "Send feedback",
@@ -173,6 +175,7 @@
         "heading": "Continue with this link:"
       },
       "review": {
+        "eyebrow": "Admin view",
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:",
         "noDepartment": "None"
@@ -215,7 +218,10 @@
       "submit": "Submit evaluation",
       "intro": "Rate the answer sentences and/or citation",
       "answerNumberLabel": "Answer {number}",
-      "labelWithAnswer": "{label}: {answer}"
+      "labelWithAnswer": "{label}: {answer}",
+      "sourceView": {
+        "title": "AI Answers' source text"
+      }
     }
   },
   "batch": {
@@ -800,6 +806,10 @@
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "viewChatById": "View chat by ID",
+      "originallyAskedIn": "Originally asked in: {language}",
+      "sourceText": "Source",
+      "workingTextTooltip": "AI Answers' source text",
+      "aiAnswersSource": "Source text only in English",
       "chatIdRequired": "Please enter a chat ID.",
       "chatIdPlaceholder": "Enter full chat ID",
       "chatNotFound": "No chat found with that ID.",
@@ -811,18 +821,22 @@
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
       "metricsLoading": "Loading metrics...",
-      "resultsHeading": "Results"
+      "resultsHeading": "Results",
+      "columns": {
+        "chatId": "Chat ID",
+        "department": "Department",
+        "program": "Service",
+        "pageLanguage": "Page",
+        "pageLanguageAriaLabel": "Page language"
+      }
     },
     "chatDashboard": {
       "title": "Chat dashboard",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
       "columns": {
-        "chatId": "Chat ID",
-        "department": "Department",
         "question": "Question",
         "answer": "Answer",
-        "program": "Service",
         "citationUrl": "Citation link",
         "referringUrl": "Referring URL",
         "date": "Date",
@@ -854,16 +868,11 @@
       "searchChatIdPlaceholder": "Enter chat ID (partial or full)",
       "searchButton": "Search for chat ID",
       "columns": {
-        "chatId": "Chat ID",
         "questionNumber": "#",
         "questionNumberAriaLabel": "Question number",
         "partnerEval": "Partner",
         "aiEval": "AI",
-        "department": "Department",
-        "program": "Service",
         "action": "Action",
-        "pageLanguage": "Page",
-        "pageLanguageAriaLabel": "Page language",
         "creatorEmail": "Creator",
         "expertEmail": "Expert",
         "feedback": "Public",
@@ -1271,8 +1280,7 @@
   },
   "reviewPanels": {
     "sentence": "Sentence",
-    "sentenceEnglish": "Sentence English",
-    "englishQuestion": "English question",
+    "question": "Question:",
     "expertScore": "Expert score",
     "feedback": "Feedback",
     "helpfulYes": "Helpful - yes",

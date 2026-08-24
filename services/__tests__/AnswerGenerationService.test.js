@@ -139,4 +139,38 @@ describe('AnswerGenerationService', () => {
         expect(userContent).toContain('Current');
         expect(userContent).not.toContain('Ignored raw message');
     });
+
+    // Regression: a user-sender entry should never carry `.interaction` at
+    // all (src/components/chat/ChatAppContainer.js gives it a plain
+    // questionLanguage string instead) - but the one time that contract was
+    // silently broken, the user bubble and its paired AI bubble both carried
+    // the same `.interaction` object, and this function had no sender check
+    // to fall back on, so every historical turn was pushed twice.
+    it('does not double-count a turn when a user-sender entry also carries the same interaction as its paired AI entry', async () => {
+        const fakeMessage = {
+            content: 'Response',
+            response_metadata: { tokenUsage: {}, model_name: 'gpt-4' },
+        };
+        mockAgent.invoke.mockResolvedValue({ messages: [fakeMessage] });
+
+        const sharedInteraction = {
+            question: 'Valid Question',
+            answer: { content: 'Valid Answer' },
+        };
+        const historyWithSharedInteraction = [
+            { sender: 'user', text: 'Valid Question', interaction: sharedInteraction },
+            { sender: 'ai', interaction: sharedInteraction },
+        ];
+
+        await AnswerGenerationService.generateAnswer(
+            { message: 'Current', conversationHistory: historyWithSharedInteraction },
+            'test-chat'
+        );
+
+        const messages = mockAgent.invoke.mock.calls[0][0].messages;
+        const questionOccurrences = messages.filter(m => m.content === 'Valid Question').length;
+        const answerOccurrences = messages.filter(m => m.content === 'Valid Answer').length;
+        expect(questionOccurrences).toBe(1);
+        expect(answerOccurrences).toBe(1);
+    });
 });

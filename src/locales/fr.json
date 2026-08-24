@@ -27,8 +27,10 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
+      "viewSource": "Consulter le texte source en anglais",
       "thankYou": "Merci d'avoir donné votre rétroaction !",
-      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
+      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur.",
+      "expertFeedbackDeletedAnnouncement": "Rétroaction d'expert supprimée. Vous pouvez évaluer cette réponse à nouveau."
     },
     "publicFeedback": {
       "send": "Envoyer la rétroaction",
@@ -173,6 +175,7 @@
         "heading": "Continuez avec ce lien :"
       },
       "review": {
+        "eyebrow": "Vue administrateur",
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :",
         "noDepartment": "Aucun"
@@ -215,7 +218,10 @@
       "submit": "Soumettre l'évaluation",
       "intro": "Évaluez les phrases de la réponse et/ou la citation",
       "answerNumberLabel": "Réponse {number}",
-      "labelWithAnswer": "{label} : {answer}"
+      "labelWithAnswer": "{label} : {answer}",
+      "sourceView": {
+        "title": "Texte source de Réponses IA"
+      }
     }
   },
   "batch": {
@@ -800,6 +806,10 @@
       "noSearchResults": "Aucun résultat de recherche trouvé.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "viewChatById": "Voir le chat par ID",
+      "originallyAskedIn": "Posée à l'origine en : {language}",
+      "sourceText": "Source",
+      "workingTextTooltip": "Texte source de Réponses IA",
+      "aiAnswersSource": "Texte source : en anglais seulement",
       "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
       "chatIdPlaceholder": "Entrez l'ID complet du chat",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
@@ -811,18 +821,22 @@
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
       "metricsLoading": "Chargement des métriques...",
-      "resultsHeading": "Résultats"
+      "resultsHeading": "Résultats",
+      "columns": {
+        "chatId": "ID de chat",
+        "department": "Ministère",
+        "program": "Service",
+        "pageLanguage": "Page",
+        "pageLanguageAriaLabel": "Langue de la page"
+      }
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "columns": {
-        "chatId": "ID de chat",
-        "department": "Ministère",
         "question": "Question",
         "answer": "Réponse",
-        "program": "Service",
         "citationUrl": "Lien de citation",
         "referringUrl": "URL de référence",
         "date": "Date",
@@ -854,16 +868,11 @@
       "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
       "searchButton": "Rechercher l'ID de chat",
       "columns": {
-        "chatId": "ID de chat",
         "questionNumber": "#",
         "questionNumberAriaLabel": "Numéro de question",
         "partnerEval": "Partenaire",
         "aiEval": "IA",
-        "department": "Ministère",
-        "program": "Service",
         "action": "Action",
-        "pageLanguage": "Page",
-        "pageLanguageAriaLabel": "Langue de la page",
         "creatorEmail": "Créateur",
         "expertEmail": "Expert",
         "feedback": "Public",
@@ -1271,8 +1280,7 @@
   },
   "reviewPanels": {
     "sentence": "Phrase",
-    "sentenceEnglish": "Phrase en anglais",
-    "englishQuestion": "Question en anglais",
+    "question": "Question :",
     "expertScore": "Note de l'expert",
     "feedback": "Rétroaction",
     "helpfulYes": "Utile - oui",

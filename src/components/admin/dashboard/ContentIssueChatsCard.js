@@ -1,7 +1,7 @@
 import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
 import CollapsibleCard from './CollapsibleCard.js';
-import { buildChatReviewHref } from '../../../utils/reviewLink.js';
+import { buildChatReviewHref, chatLangFromPageLanguage } from '../../../utils/reviewLink.js';
 
 // Collapsible list of chats matching some expert-feedback flag (content
 // issue, harmful, ...), server-scoped to the dashboard's current filters.
@@ -56,8 +56,13 @@ const ContentIssueChatsCard = ({
             </thead>
             <tbody>
               {chats.map((c) => {
-                const chatLang = c.pageLanguage === 'fr' ? 'fr' : 'en';
-                const href = buildChatReviewHref(c.chatId, chatLang, c.interactionId);
+                // Route to the chat's OWN pageLanguage, not the admin's
+                // current UI language - see the note in ChatDashboardPage.js.
+                // The admin's own language rides along separately as the
+                // `adminLang` query param (4th arg) for the review page's
+                // own chrome to use.
+                const chatLang = chatLangFromPageLanguage(c.pageLanguage);
+                const href = buildChatReviewHref(c.chatId, chatLang, c.interactionId, lang);
                 return (
                   <tr key={`${c.chatId}-${c.interactionId}`}>
                     <td style={{ ...cell, wordBreak: 'break-all' }}>
@@ -67,7 +72,7 @@ const ContentIssueChatsCard = ({
                           full note. Same upstream GC DS issue, not fixable
                           from our CSS (real shadow DOM, no exposed `part`
                           on that span). */}
-                      <GcdsLink href={href} target="_blank" lang={chatLang}>{c.chatId}</GcdsLink>
+                      <GcdsLink href={href} target="_blank" lang={lang}>{c.chatId}</GcdsLink>
                     </td>
                     <td style={cell}>
                       <span className={`label ${c.status}`}>{statusLabels[c.status] || c.status}</span>

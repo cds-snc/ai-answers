@@ -8,11 +8,13 @@ import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
+import { detectUrlLanguage } from '../utils/dashboard/urlLanguage.js';
 import { normalizeAnswerText } from '../utils/answerText.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
+import { resolveDisplayContent } from '../utils/answerLanguage.js';
 
 DataTable.use(DT);
 
@@ -81,13 +83,72 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Question/Answer cell text: strip pipeline-added sentence markers
-  // (<s-1>...</s-1>, added for per-sentence citation/scoring) so they never
-  // show up as literal text, and render the full content - no truncation.
-  const renderAnswerText = useCallback((value) => {
-    if (!value) return '';
-    return escapeHtmlAttribute(normalizeAnswerText(value));
-  }, []);
+  // Same EN/FR-official-languages display rule (shown as-is; non-EN/FR
+  // collapses to English) as ExpertFeedbackPanel.js (resolveDisplayContent) -
+  // questionLanguage drives
+  // both the Question and Answer columns, since the AI answers in whatever
+  // language was detected for the question (agenticBase.js), not a
+  // separately-tracked language per column. DataTables `render` returns a
+  // raw HTML string here, not JSX, so this can't reuse OriginalLanguagePill
+  // (React) directly.
+  //
+  // Wrapping div is position:relative + reserved bottom padding, icon is
+  // position:absolute within it, anchored to the wrapper's own bottom edge
+  // - a static position regardless of how many lines the text above it
+  // wraps to, instead of flowing inline right after text of varying length
+  // (which put it in a different spot every row, and inline-after-text
+  // also pushed translated rows' text down a line vs. untranslated rows'
+  // single-line cells, breaking the table's row-height rhythm).
+  //
+  // Icon font-size is on the <i> itself, not on the .eval-tooltip wrapper -
+  // .eval-tooltip::after (admin.css) has no font-size reset of its own, so
+  // it inherits whatever font-size sits on the element carrying the
+  // eval-tooltip class. Sizing the <i> instead of that wrapper keeps the
+  // tooltip text at its normal size and only enlarges the glyph. 1.3em -
+  // a modest bump over EvalDashboardPage.js's own 1.2em/1.4em icons: the
+  // icon + visible "AI text" label together carry this pill's meaning
+  // at a glance; the fuller "AI Answers' working text" explanation lives in
+  // the tooltip/accessible name below, not visibly on the pill itself -
+  // short label for scanning, full explanation on demand.
+  //
+  // .eval-tooltip/data-tooltip, not the native title attribute - same
+  // reasoning as EvalDashboardPage.js's own icon cells: title's hover
+  // delay is fixed by the browser and can't be shortened, this CSS
+  // mechanism controls it. Accessible name for the icon+"AI text" pair
+  // comes from the sibling .wb-inv span carrying the fuller explanation,
+  // not aria-label, matching that same established pattern - the icon and
+  // the visible "AI text" label both stay aria-hidden so a screen
+  // reader gets the one, fuller phrase instead of "AI text" followed
+  // redundantly by "AI Answers' working text".
+  const renderLanguageAwareText = useCallback((original, english, questionLanguage) => {
+    const resolved = resolveDisplayContent({ language: questionLanguage, original, english });
+    if (!resolved.text) return '';
+    const langAttr = resolved.lang ? ` lang="${escapeHtmlAttribute(resolved.lang)}"` : '';
+    const text = escapeHtmlAttribute(normalizeAnswerText(resolved.text));
+    if (!resolved.isSource) {
+      return `<span${langAttr}>${text}</span>`;
+    }
+    const shortLabel = escapeHtmlAttribute(t('admin.common.sourceText'));
+    // "AI Answers' working text" - not "Originally asked in: {language}"
+    // (that's the question's language; this pill is about what the cell
+    // itself is showing - the English text AI Answers worked from/with,
+    // same framing as SourceViewComponent.js's own title).
+    const fullLabel = escapeHtmlAttribute(t('admin.common.workingTextTooltip'));
+    // The pill is a direct sibling here, not nested inside the text div -
+    // its position:absolute needs to resolve against the <td> itself
+    // (position:relative via this column's createdCell, so its box always
+    // matches the row's actual height), not this div, so Question's and
+    // Answer's pills land at the exact same Y position even when one
+    // column's text runs longer than the other's in the same row.
+    return `<div style="padding-bottom: 2.2em;">` +
+      `<span${langAttr}>${text}</span>` +
+      `</div>` +
+      `<span class="filter-pill eval-tooltip" data-tooltip="${fullLabel}" style="position: absolute; bottom: 0.5em; left: 0;">` +
+      `<i class="fa-solid fa-language" style="font-size: 1.3em;" aria-hidden="true"></i>` +
+      `<span aria-hidden="true">${shortLabel}</span>` +
+      `<span class="wb-inv">${fullLabel}</span>` +
+      `</span>`;
+  }, [t]);
 
   useEffect(() => {
     setTimeout(() => setDataTableReady(true), 0);
@@ -158,25 +219,34 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
   const columns = useMemo(() => ([
     {
-      title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
+      title: t('admin.common.columns.chatId'),
       data: 'chatId',
       searchable: false,
       orderable: false,
       render: (value, type, row) => {
         if (!value) return '';
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang, row.interactionId);
+        // Route to the chat's OWN pageLanguage, not the admin's current UI
+        // language - the reviewed transcript (answer bubbles, citation
+        // heading) must show what the end user actually saw
+        // (docs/coding-agent-docs/official-languages.md Rule 2), so the
+        // route itself has to land on that language. The admin's own
+        // language is carried separately as the `adminLang` query param
+        // (4th arg) for the review page's own chrome (ExpertFeedbackPanel,
+        // "How was this answer?", Chat ID/Date/Referring URL labels) to use
+        // instead - see reviewLink.js and HomePage.js's `adminLang`.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId, lang);
       }
     },
     {
-      title: t('admin.chatDashboard.columns.department', 'Department'),
+      title: t('admin.common.columns.department'),
       data: 'department',
       searchable: false,
       orderable: true,
       render: (value) => escapeHtmlAttribute(value || '')
     },
     {
-      title: t('admin.chatDashboard.columns.program', 'Service'),
+      title: t('admin.common.columns.program'),
       data: 'program',
       searchable: false,
       orderable: true,
@@ -190,18 +260,32 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'redactedQuestion',
       searchable: false,
       orderable: false,
-      render: (value) => renderAnswerText(value)
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishQuestion, row && row.questionLanguage),
+      // position:relative belongs on the <td> itself, not a wrapper div
+      // inside it - the <td>'s own box stretches to match the row's
+      // tallest cell (normal table behaviour), a div inside it doesn't.
+      // The "Translated" pill's position:absolute needs to resolve
+      // against that actual row-height box to stay anchored to the row's
+      // real bottom edge, not just this cell's own shorter content height.
+      createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
       title: t('admin.chatDashboard.columns.answer', 'Answer'),
       data: 'answerContent',
       searchable: false,
       orderable: false,
-      render: (value) => renderAnswerText(value)
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishAnswer, row && row.questionLanguage),
+      createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
       title: t('admin.chatDashboard.columns.citationUrl', 'Citation link'),
       data: 'citationUrl',
+      // Capped so Question/Answer (no fixed width - they auto-fill
+      // remaining space) don't get squeezed by this column growing to fit
+      // a long citation URL - the visible text is already shortened via
+      // truncateUrl() below, this just stops the column itself from
+      // stretching past what that short text actually needs.
+      width: '160px',
       searchable: false,
       orderable: false,
       render: (value) => {
@@ -212,12 +296,35 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         // and handles the new-tab icon/rel/accessible text itself. href is
         // the full citation URL; the visible text stays the shorthand
         // truncated form.
+        //
+        // gcds-link's own `lang` attribute does two unrelated jobs at once:
+        // native HTML lang inheritance (how a screen reader pronounces the
+        // slotted text) AND a plain JS property read (gcds-link.js's
+        // assignLanguage/i18n[lang]) that picks which language string labels
+        // its own icon - here, the "(Opens destination in a new tab.)"
+        // accessible text. Those need different values: the outer element
+        // keeps the admin's own `lang` so that hint announces in the
+        // admin's language, and an inner span carries the citation URL's own
+        // language (detectUrlLanguage) so the truncated citation text itself
+        // is still pronounced correctly (WCAG 3.1.2) - same reasoning as
+        // CountTable.js's citation links, applied here to the raw HTML form.
         const safeHref = escapeHtmlAttribute(value);
         const safeDisplay = escapeHtmlAttribute(truncateUrl(value));
-        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}">${safeDisplay}</gcds-link>`;
+        const citationLang = escapeHtmlAttribute(detectUrlLanguage(value, lang));
+        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}"><span lang="${citationLang}">${safeDisplay}</span></gcds-link>`;
       }
     }
-  ]), [renderAnswerText, truncateUrl, t, lang]);
+    // The "Page" language column (row.pageLanguage) used to live here as
+    // the admin's only advance warning of which language route the Chat ID
+    // link would drop them on - the review page used to switch its whole
+    // chrome to that language. Now that review mode is its own page
+    // (ChatReviewPage.js), the admin's own review chrome stays in their own
+    // language regardless of the reviewed chat's pageLanguage, so that
+    // warning no longer applies - removed rather than left as a now-
+    // pointless column. row.pageLanguage itself is still used internally by
+    // the Chat ID column's render() above (chatLangFromPageLanguage) to
+    // route the transcript correctly; only the visible column is gone.
+  ]), [renderLanguageAwareText, truncateUrl, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">

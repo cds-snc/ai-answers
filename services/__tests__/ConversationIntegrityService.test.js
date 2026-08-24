@@ -39,6 +39,26 @@ describe('ConversationIntegrityService', () => {
             const serialized = ConversationIntegrityService.serializeHistory(historyWithTags);
             expect(serialized).toBe('user:Where is this?|ai:Here.');
         });
+
+        // Regression: ChatAppContainer.js retroactively attaches the same
+        // `interaction` object onto the *user* bubble too, not just the AI
+        // bubble (so the question bubble can read its own detected language).
+        // Before the sender check, a user message carrying `interaction` hit
+        // the same expand-to-Q+A branch as the AI message, doubling the
+        // user:/ai: lines and producing a different signature than the plain
+        // [user, ai] pair AnswerGenerationService originally signed.
+        it('should not double-count a user message that also carries interaction', () => {
+            const interaction = {
+                question: 'What is it?',
+                answer: { content: 'Interaction Answer' },
+            };
+            const historyBothBubblesTagged = [
+                { sender: 'user', text: 'What is it?', interaction },
+                { sender: 'ai', interaction },
+            ];
+            const serialized = ConversationIntegrityService.serializeHistory(historyBothBubblesTagged);
+            expect(serialized).toBe('user:What is it?|ai:Interaction Answer');
+        });
     });
 
     describe('calculateSignature', () => {
@@ -76,6 +96,32 @@ describe('ConversationIntegrityService', () => {
             ];
             const isValid = ConversationIntegrityService.verifyHistory(tamperedHistory, signature);
             expect(isValid).toBe(false);
+        });
+
+        // End-to-end regression for the same bug as above, at the signature
+        // level: a signature computed the way AnswerGenerationService.js does
+        // it after a turn completes - a plain [{sender, text}] pair, no
+        // `interaction` involved - must still verify against the client's
+        // resubmitted history on the *next* turn, which by then carries the
+        // same `interaction` object on both the user and ai bubble.
+        it('should verify a signature computed over a plain pair against the client\'s both-bubbles-tagged resubmission', () => {
+            const plainTurn = [
+                { sender: 'user', text: 'What is it?' },
+                { sender: 'ai', text: 'Interaction Answer' },
+            ];
+            const signature = ConversationIntegrityService.calculateSignature(plainTurn);
+
+            const interaction = {
+                question: 'What is it?',
+                answer: { content: 'Interaction Answer' },
+                historySignature: signature,
+            };
+            const resubmittedHistory = [
+                { sender: 'user', text: 'What is it?', interaction },
+                { sender: 'ai', interaction },
+            ];
+
+            expect(ConversationIntegrityService.verifyHistory(resubmittedHistory, signature)).toBe(true);
         });
     });
 });

@@ -8,7 +8,7 @@ import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
 
 DataTable.use(DT);
@@ -102,8 +102,10 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id);
+        // Route to the reviewed chat's own pageLanguage, not the admin's
+        // current UI language - see the same note in ChatDashboardPage.js.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id, lang);
       },
       searchable: true,
       orderable: true
@@ -123,7 +125,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
-  ]), [formatDate, t]);
+  ]), [formatDate, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">

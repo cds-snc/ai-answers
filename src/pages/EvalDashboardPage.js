@@ -12,7 +12,7 @@ import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
@@ -295,12 +295,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
   const columns = useMemo(() => ([
     {
-      title: t('admin.evalDashboard.columns.chatId'),
+      title: t('admin.common.columns.chatId'),
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id);
+        // Route to the reviewed chat's own pageLanguage, not the admin's
+        // current UI language - see the same note in ChatDashboardPage.js.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id, lang);
       },
       searchable: false,
       orderable: false
@@ -399,11 +401,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       },
       width: '50px', className: 'eval-center-cell', searchable: false, orderable: true
     },
-    { title: t('admin.evalDashboard.columns.department'), data: 'department', width: '110px', searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.program'), data: 'program', width: '160px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
+    { title: t('admin.common.columns.department'), data: 'department', width: '110px', searchable: false, orderable: true },
+    { title: t('admin.common.columns.program'), data: 'program', width: '160px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.action'), data: 'action', width: '90px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : `<span style="color: #666;">${escapeHtmlAttribute(t('reviewPanels.none'))}</span>`, searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.pageLanguage'), data: 'pageLanguage', width: '50px', className: 'eval-center-cell', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
+    { title: t('admin.common.columns.pageLanguage'), data: 'pageLanguage', width: '50px', className: 'eval-center-cell', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
     {
@@ -705,11 +707,28 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // column becomes the active sort, matching GC DS's own
                     // table pattern (see admin.css comment above the CSS
                     // rules this feeds).
-                    api.columns().header().each((header) => {
+                    // Columns whose visible header is shortened (e.g. "Page",
+                    // "#") get the same spelled-out text here that their
+                    // aria-label already carries (set in initComplete below)
+                    // - a sighted mouse user hovering the header has the same
+                    // ambiguity problem the aria-label exists to solve for
+                    // screen-reader users, so the visible tooltip needs the
+                    // same fix, not just the aria-label. Built from `columns`
+                    // (already in scope) rather than reading the header's own
+                    // aria-label attribute back out of the DOM, since that's
+                    // set in initComplete - which runs after this drawCallback
+                    // on the very first draw, so reading it here could work
+                    // after a later sort but show the short text on first load.
+                    const columnTitleOverrides = {
+                      pageLanguage: t('admin.common.columns.pageLanguageAriaLabel'),
+                      questionNumber: t('admin.evalDashboard.columns.questionNumberAriaLabel'),
+                    };
+                    api.columns().header().each((header, idx) => {
                       if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
                       const orderSpan = header.querySelector('.dt-column-order');
                       if (!orderSpan) return;
-                      const title = (header.textContent || '').trim();
+                      const columnData = columns[idx]?.data;
+                      const title = columnTitleOverrides[columnData] || (header.textContent || '').trim();
                       const currentSort = header.getAttribute('aria-sort');
                       // DataTables' own default per-column click cycle is
                       // 3-state, not 2 - asSorting: ['asc', 'desc', ''] in
@@ -752,7 +771,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // - aria-label carries the spelled-out meaning instead.
                     const pageLanguageHeader = api.column(columns.findIndex((c) => c.data === 'pageLanguage')).header();
                     if (pageLanguageHeader) {
-                      pageLanguageHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.pageLanguageAriaLabel'));
+                      pageLanguageHeader.setAttribute('aria-label', t('admin.common.columns.pageLanguageAriaLabel'));
                     }
                   } catch (e) { /* ignore initComplete errors */ }
                 },

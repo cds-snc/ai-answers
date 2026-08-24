@@ -1,6 +1,7 @@
 import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
 import { formatNumber } from '../../../utils/numberFormat.js';
+import { detectUrlLanguage } from '../../../utils/dashboard/urlLanguage.js';
 
 // Plain two-column "label / count" table shared by the dashboard's collapsible
 // list cards (top referral pages, top citation pages, answer-type breakdown).
@@ -34,7 +35,26 @@ const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', capt
                 // after the link text. Real shadow DOM, no exposed `part`
                 // on that span, so nothing in our own CSS can reach it. Not
                 // fixable here — let GC DS know upstream.
-                <GcdsLink href={row.href} target="_blank" lang={lang}>{row.label}</GcdsLink>
+                //
+                // GcdsLink's own `lang` prop does two unrelated jobs at once:
+                // native HTML lang inheritance (how a screen reader
+                // pronounces slotted text) AND a plain JS property read
+                // (gcds-link.js's assignLanguage/i18n[lang]) that picks which
+                // language string labels the icon it renders - here, the
+                // "(Opens destination in a new tab.)" accessible text. Those
+                // need different values: the host keeps the admin's own
+                // `lang` so that hint announces in the admin's language, and
+                // an inner span carries the row's own URL language
+                // (detectUrlLanguage) so the citation/referral title text
+                // itself is still pronounced correctly (WCAG 3.1.2) - a
+                // fixed-language Canada.ca URL, unrelated to whatever
+                // language the admin dashboard is set to. Putting
+                // detectUrlLanguage's result directly on GcdsLink instead
+                // would fix the text's pronunciation but wrongly flip the
+                // icon hint into the citation's language too.
+                <GcdsLink href={row.href} target="_blank" lang={lang}>
+                  <span lang={detectUrlLanguage(row.href, lang)}>{row.label}</span>
+                </GcdsLink>
               ) : (
                 row.label
               )}
