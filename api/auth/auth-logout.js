@@ -1,5 +1,3 @@
-import { getParentDomain } from '../util/cookie-utils.js';
-
 export default function logoutHandler(req, res) {
   // Use Passport's logout method
   req.logout((err) => {
@@ -13,11 +11,6 @@ export default function logoutHandler(req, res) {
       if (destroyErr) {
         console.error('Session destroy error:', destroyErr);
       }
-      const parentDomain = getParentDomain(req && req.get ? req.get('host') : undefined);
-      const cookieOptions = parentDomain
-        ? { domain: parentDomain, path: '/' }
-        : { path: '/' };
-      res.clearCookie('aianswers.sid', cookieOptions);
       res.status(200).json({ ok: true });
     });
   });

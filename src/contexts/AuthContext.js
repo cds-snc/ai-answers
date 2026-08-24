@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     return typeof expiry === 'number' ? expiry : null;
   }, []);
 
-  const redirectToSignin = useCallback(async (options = {}) => {
+  const redirectToSignin = useCallback((options = {}) => {
     const { clearSession = true, hardReload = true } = options;
     if (redirectingRef.current) return;
     redirectingRef.current = true;
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     const signinPath = getSigninPath();
 
     if (clearSession) {
-      await AuthService.logout();
+      AuthService.logout();
     }
 
     clearSessionTimers();
@@ -258,9 +258,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = useCallback(async () => {
+  const logout = () => {
     setLoading(true);
-    await AuthService.logout();
+    AuthService.logout();
     redirectingRef.current = false;
     sessionCheckInFlightRef.current = false;
     setSessionExpiredRedirecting(false);
@@ -284,7 +284,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       // ignore navigation errors
     }
-  }, [clearSessionTimers]);
+  };
 
   // Helper methods for role checking
   const isAdmin = () => {

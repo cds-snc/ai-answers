@@ -6,18 +6,6 @@ class AuthService {
   static unauthorizedCallback = null;
   static currentUser = null; // Cache for current user
   static sessionExpiresAt = null;
-  static authRequestQueue = Promise.resolve();
-
-  static serializeAuthRequest(request) {
-    const queuedRequest = this.authRequestQueue
-      .catch(() => undefined)
-      .then(request);
-
-    // Keep the queue usable after a failed login or network request while
-    // returning the original rejection to that request's caller.
-    this.authRequestQueue = queuedRequest.catch(() => undefined);
-    return queuedRequest;
-  }
 
   static setUnauthorizedCallback(cb) {
     this.unauthorizedCallback = cb;
@@ -58,37 +46,35 @@ class AuthService {
 
 
   // Get current user from server
-  static getCurrentUser() {
-    return this.serializeAuthRequest(async () => {
-      try {
-        const response = await fetch(getApiUrl('auth-me'), {
-          method: 'GET',
-          credentials: 'include'
-        });
+  static async getCurrentUser() {
+    try {
+      const response = await fetch(getApiUrl('auth-me'), {
+        method: 'GET',
+        credentials: 'include'
+      });
 
-        if (!response.ok) {
-          this.currentUser = null;
-          this.sessionExpiresAt = null;
-          return null;
-        }
-
-        const data = await response.json();
-        if (data.success && data.user) {
-          this.currentUser = data.user;
-          this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
-          return data.user;
-        }
-
-        this.currentUser = null;
-        this.sessionExpiresAt = null;
-        return null;
-      } catch (error) {
-        console.error('getCurrentUser error:', error);
+      if (!response.ok) {
         this.currentUser = null;
         this.sessionExpiresAt = null;
         return null;
       }
-    });
+
+      const data = await response.json();
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
+        return data.user;
+      }
+
+      this.currentUser = null;
+      this.sessionExpiresAt = null;
+      return null;
+    } catch (error) {
+      console.error('getCurrentUser error:', error);
+      this.currentUser = null;
+      this.sessionExpiresAt = null;
+      return null;
+    }
   }
 
   // Get cached user or fetch from server
@@ -102,24 +88,22 @@ class AuthService {
 
 
   static logout() {
-    return this.serializeAuthRequest(async () => {
-      // Clear cached user
-      this.currentUser = null;
-      this.sessionExpiresAt = null;
+    // Clear cached user
+    this.currentUser = null;
+    this.sessionExpiresAt = null;
 
-      try {
-        const logoutUrl = getApiUrl('auth-logout');
-        await fetch(logoutUrl, {
-          method: 'POST',
-          credentials: 'include',
-          cache: 'no-store'
-        });
-      } catch (e) {
-        // ignore
-      }
+    try {
+      const logoutUrl = getApiUrl('auth-logout');
+      fetch(logoutUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(() => { });
+    } catch (e) {
+      // ignore
+    }
 
-      this.clearClientStorage();
-    });
+    this.clearClientStorage();
   }
 
   // Clear localStorage and sessionStorage (cookies cleared by server)
@@ -152,79 +136,73 @@ class AuthService {
     return !!user && user.role === 'admin';
   }
 
-  static signup(email, password) {
-    return this.serializeAuthRequest(async () => {
-      const response = await fetch(getApiUrl('auth-signup'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Signup failed');
-      }
-
-      const data = await response.json();
-      // Cookies are set automatically by the server
-      this.currentUser = data.user;
-      this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
-      return data;
+  static async signup(email, password) {
+    const response = await fetch(getApiUrl('auth-signup'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
     });
+
+    if (!response.ok) {
+      throw new Error('Signup failed');
+    }
+
+    const data = await response.json();
+    // Cookies are set automatically by the server
+    this.currentUser = data.user;
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
+    return data;
   }
 
-  static login(email, password) {
-    return this.serializeAuthRequest(async () => {
-      const response = await fetch(getApiUrl('auth-login'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      // If backend indicates twoFA is required, do not cache user yet
-      if (data && data.twoFA) {
-        return data;
-      }
-
-      // Cookies are set automatically by the server
-      this.currentUser = data.user;
-      this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
-      return data;
+  static async login(email, password) {
+    const response = await fetch(getApiUrl('auth-login'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
     });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const data = await response.json();
+    // If backend indicates twoFA is required, do not cache user yet
+    if (data && data.twoFA) {
+      return data;
+    }
+
+    // Cookies are set automatically by the server
+    this.currentUser = data.user;
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
+    return data;
   }
 
-  static verify2FA(email, code) {
-    return this.serializeAuthRequest(async () => {
-      const response = await fetch(getApiUrl('auth-verify-2fa'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, code }),
-      });
-
-      if (!response.ok) {
-        const json = await response.json().catch(() => ({}));
-        throw new Error(json.message || json.reason || '2FA verify failed');
-      }
-
-      const data = await response.json();
-      // Cookies are set automatically by the server
-      if (data.user) {
-        this.currentUser = data.user;
-      }
-      this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
-      return data;
+  static async verify2FA(email, code) {
+    const response = await fetch(getApiUrl('auth-verify-2fa'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, code }),
     });
+
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({}));
+      throw new Error(json.message || json.reason || '2FA verify failed');
+    }
+
+    const data = await response.json();
+    // Cookies are set automatically by the server
+    if (data.user) {
+      this.currentUser = data.user;
+    }
+    this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
+    return data;
   }
 
   // Password reset: request reset link (generic response)
