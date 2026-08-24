@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.191.0](https://github.com/cds-snc/ai-answers/compare/v1.190.4...v1.191.0) (2026-08-24)
+
+
+### Features
+
+* redesign scenario override testing UI for accessibility ([a1aa388](https://github.com/cds-snc/ai-answers/commit/a1aa388337fdadbcf42414cabb1f8dad5a5e0b44))
+
+
+### Bug Fixes
+
+* notify when enabling a scenario override silently disables another ([8fe9620](https://github.com/cds-snc/ai-answers/commit/8fe96207413aee0340f10f6e1a0c1444053c1844))
+* restrict permissive CORS to availability endpoint ([6911075](https://github.com/cds-snc/ai-answers/commit/6911075667714ff22276316e012d101f00493198))
+
 ## [1.190.4](https://github.com/cds-snc/ai-answers/compare/v1.190.3...v1.190.4) (2026-08-23)
 
 
