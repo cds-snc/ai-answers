@@ -1,17 +1,19 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
-import { getPath } from '../utils/routes.js';
 
-const LogoutPage = ({ lang = 'en' }) => {
+const LogoutPage = () => {
   const { logout } = useAuth();
 
   useEffect(() => {
-    logout();
+    const performLogout = async () => {
+      await logout();
+    };
+
+    performLogout();
   }, [logout]);
 
-  // Redirect to signin page after logout
-  return <Navigate to={getPath('signin', lang)} replace />;
+  // AuthContext navigates after the server confirms logout.
+  return null;
 };
 
 export default LogoutPage;

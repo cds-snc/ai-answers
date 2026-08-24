@@ -82,20 +82,28 @@ describe('AuthService', () => {
     expect(fakeSession.cleared).toBe(true);
   });
 
-  it('logout should call server logout endpoint and clear storage', async () => {
+  it('logout should await the server logout endpoint and clear storage', async () => {
     // Spy on clearClientStorage
 
     const clearSpy = vi.spyOn(AuthService, 'clearClientStorage');
+    let resolveLogout;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveLogout = resolve;
+    }));
 
-    AuthService.logout();
+    const logoutPromise = AuthService.logout();
 
-    // fetch is fire-and-forget; ensure it was called with the mocked URL
-    expect(global.fetch).toHaveBeenCalled();
-    const calledWith = global.fetch.mock.calls[0][0];
-    expect(calledWith).toBe('/api/user/user-auth-logout');
+    expect(global.fetch).toHaveBeenCalledWith('/api/user/user-auth-logout', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    expect(clearSpy).not.toHaveBeenCalled();
 
-    // removeToken and clearClientStorage should be called synchronously
+    resolveLogout({ ok: true, status: 200 });
+    await logoutPromise;
 
+    // Callers can now navigate knowing the request has completed.
     expect(clearSpy).toHaveBeenCalled();
 
 

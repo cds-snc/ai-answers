@@ -87,18 +87,18 @@ class AuthService {
 
 
 
-  static logout() {
+  static async logout() {
     // Clear cached user
     this.currentUser = null;
     this.sessionExpiresAt = null;
 
     try {
       const logoutUrl = getApiUrl('auth-logout');
-      fetch(logoutUrl, {
+      await fetch(logoutUrl, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      }).catch(() => { });
+        cache: 'no-store'
+      });
     } catch (e) {
       // ignore
     }
