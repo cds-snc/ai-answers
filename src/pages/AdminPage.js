@@ -15,16 +15,8 @@ const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    // Force a full page reload to the signin page so the app's
-    // fingerprint initialization runs again and a new session is created.
-    try {
-      window.location.href = getPath('signin', lang);
-    } catch (e) {
-      // Fallback: reload the current page
-      try { window.location.reload(); } catch (err) { /* ignore */ }
-    }
+  const handleLogout = async () => {
+    await logout();
   };
 
   // Determine if user is partner only
