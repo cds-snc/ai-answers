@@ -9,16 +9,17 @@ description: "How to score an answer sentence by sentence, rate the citation, an
 
 **Draft:** This guide is a first pass, assembled from the partner evaluation deck and the engineering docs. Send corrections to your Canadian Digital Service (CDS) contact.
 
-This guide starts from a chat that already exists — one you just had, one from a batch you ran, or one asked by a user. A chat can hold several answers, and each one is evaluated separately. For choosing which questions to ask in the first place, see [Partner onboarding](/en/how-to/partner-onboarding).
+This guide starts from a chat that already exists — one you just asked, one from a batch you ran, or one asked by a user. A chat can hold several answers, and each one is evaluated separately. For choosing which questions to ask in the first place, see [Partner onboarding](/en/how-to/partner-onboarding).
 
 ## What an evaluation is
 
 An evaluation is a subject-matter expert's judgement of one answer: whether each sentence is accurate and clear, and whether the citation lets the user confirm the answer or take the next step.
 
-Evaluations do 3 things:
+Evaluations do 4 things:
 
-- Measure accuracy by institution, task, and language.
-- Point to the underlying cause — usually web content that is out of date or unclear, sometimes a scenario that needs tuning.
+- Measure accuracy, which allows for reporting on accuracy by department, service, language, and more.
+- Collect information on problems with answers to be used in troubleshooting content problems or scenario changes.
+- Assist in AI evaluations of similar questions.
 - Feed back into future answers. See [Evaluation-informed answers](/en/how-to/eval-informed-answers).
 
 ## Open a chat
@@ -27,13 +28,13 @@ You must be signed in as an admin or partner user to evaluate a chat.
 
 Then open the chat you're going to evaluate:
 
-- **Using evaluation options** — if you used AI Answers from the partner menu, the rating options appear under each answer right away.
+- **Using evaluation options** — if you used AI Answers from the partner menu and asked a question, the rating options appear under each answer right away.
 - **A specific chat** — paste its ID into **View chat by ID** on the admin page.
 - **Answers waiting to be scored** — select a chat ID in the Evaluation dashboard.
 
-## Judge the answer
+## Evaluate the answer
 
-Use your subject-matter knowledge. Check on the web if you aren't sure — it's worth the extra minute.
+Use your subject-matter knowledge. Check on the web or consult with subject matter experts in your department if you aren't sure. It is better to leave an answer unscored than to give it an incorrect evaluation.
 
 Under **How was this answer?**, select **Good** or **Needs improvement**.
 
@@ -47,38 +48,38 @@ Under **How was this answer?**, select **Good** or **Needs improvement**.
 
 An answer has 1 to 4 sentences, and each one gets its own **Good / Needs improvement / Incorrect** choice.
 
-- **Good:** accurate, clear, objective, non-partisan, and in the right language.
-- **Needs improvement:** not wrong, but it could be better.
-- **Incorrect:** wrong, misdirects the user, or breaks the rules the service is meant to follow.
+- **Good:** Accurate, clear, objective, non-partisan, and in the right language.
+- **Needs improvement:** Not wrong, but it could be better (for example, an important option is missing or the sentence is difficult to understand). Not to be used for wordsmithing. 
+- **Incorrect:** Wrong, misdirects the user, or breaks the rules the service is meant to follow.
 
 ![The "Rate the answer sentences and/or citation" form, showing sentence 1 quoted above its Good, Needs improvement, and Incorrect options, a Content issue checkbox, and an explanation box](/content/admin/images/evaluate-rating-form-en.jpg)
 
 You only have to rate the sentences you have something to say about — anything you leave alone counts as good.
 
-An explanation is required for **Needs improvement** and **Incorrect**. Say what is wrong, so the next reader — and the AI — can tell.
+An explanation is required for **Needs improvement** and **Incorrect**. Say what is wrong, so the other team members — and the AI — can tell. 
 
 There are 2 checkboxes under the ratings:
 
-- **Content issue** — the answer reflects government web content that is itself wrong, out of date, or unclear. Select it whether or not you also rated the sentence down.
-- **Harmful** — appears once you select **Incorrect**. Select it when acting on the answer, or failing to act, could cause injury, damage, suffering, or loss: physical health, mental health, finances, material assets, legal situation, or the environment.
+- **Content issue**: The answer reflects government web content that is itself wrong, out of date, or unclear. Select it whether or not you also rated the sentence down.
+- **Harmful**: Appears once you select **Incorrect**. Select it when acting on the answer, or failing to act, could cause injury, damage, suffering, or loss: physical health, mental health, finances, material assets, legal situation, or the environment.
 
 Kinds of error worth naming in your explanation:
 
 | Kind | What it looks like |
 |---|---|
-| Incorrect | Made-up facts, out-of-date information, misdirection, or a wrong assumption about the user. |
-| Incorrect and harmful | The user acts on it and is hurt — financially, legally, medically, or otherwise. |
-| Biased | Derogatory or stereotyping language, or an answer that would lead to unequal treatment. Fails objectivity and non-partisanship. |
+| Incorrect | Made-up information (hallucinations), out-of-date information, misdirection, or a wrong assumption about the user. |
+| Incorrect and harmful | Answer that could result in the user taking an action (or failing to take an action) that results in injury, damage, suffering or loss to the user or others. Could include physical health, mental health, financial situation, material assets, legal situation, environment.  |
+| Biased | Derogatory or stereotyping language, or an answer that would lead to unequal treatment. Fails objectivity,  non-partisanship or GBA+ requirements. |
 | Out of scope | Answers about matters that aren't the Government of Canada's. |
-| Wrong language | Answered in the other official language. |
+| Wrong language | Answered in the wrong language. |
 
 ### Rate the citation
 
 Open the **Citation** section and rate the URL the answer offered.
 
-- **Good:** lets the user confirm the answer or take the next step.
-- **Needs improvement:** only partly relevant to the question.
-- **Incorrect:** missing, irrelevant, broken, in the wrong language, or not a Government of Canada page.
+- **Good:** Lets the user confirm the answer or take the next step.
+- **Needs improvement:** Only partly relevant to the question, such as a topic page instead of the specific content page.
+- **Incorrect:** Missing, irrelevant, broken, in the wrong language, not a Government of Canada page or provides a search query URL when a good citation does exist.
 
 An explanation is required for **Needs improvement** and **Incorrect**. When you know the page that should have been cited, add it under **Better canada.ca or gc.ca citation URL**. That URL is passed to the AI on similar questions later, so it is worth filling in.
 
@@ -100,7 +101,7 @@ If you need to check with a subject-matter expert before scoring:
 
 **Web content problems.** Most wrong answers trace back to government web content that is out of date or unclear. Find where the answer came from, log it in your content issues tracker, and re-test the question once the content is fixed.
 
-**Scenario tuning.** Your institution's scenario file can give the AI specific instructions for your programs. Write the scenario in plain language and send it to your CDS contact to add. Follow the phrasing of the existing scenarios — write "the question" or "the user", not "you" (to the AI, "you" means itself). Re-test the question once it's in.
+**Scenario tuning.** Your institution's scenario file can give the AI specific instructions for your programs. Write the scenario in plain language, test it using the "edit scenarios" option (this applies the scenario only locally to your account/session) and send it to your CDS contact to add if it works as desired. Follow the phrasing of the existing scenarios — write "the question" or "the user", not "you" (to the AI, "you" means itself). Re-test the question once the change is applied.
 
 ## Fix or remove an evaluation
 

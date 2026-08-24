@@ -9,16 +9,17 @@ description: "Comment évaluer une réponse phrase par phrase, noter la citation
 
 **Ébauche :** Ce guide est une première version, assemblée à partir de la présentation destinée aux partenaires et de la documentation technique. Envoyez vos corrections à votre personne-ressource au Service numérique canadien (SNC).
 
-Ce guide part d'un chat qui existe déjà — un que vous venez d'avoir, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
+Ce guide part d'un chat qui existe déjà — un que vous venez de poser, un provenant d'un lot que vous avez exécuté, ou un dont la question a été posée par un utilisateur. Un chat peut contenir plusieurs réponses, et chacune est évaluée séparément. Pour le choix des questions à poser au départ, voir [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires).
 
 ## Ce qu'est une évaluation
 
 Une évaluation est le jugement d'un expert du domaine sur une réponse : chaque phrase est-elle exacte et claire, et la citation permet-elle à la personne de confirmer la réponse ou de passer à l'étape suivante ?
 
-Les évaluations servent à 3 choses :
+Les évaluations servent à 4 choses :
 
-- Mesurer l'exactitude par institution, par tâche et par langue.
-- Cerner la cause sous-jacente — le plus souvent du contenu web périmé ou peu clair, parfois un scénario à ajuster.
+- Mesurer l'exactitude, ce qui permet de produire des rapports sur l'exactitude par institution, par service, par langue et plus encore.
+- Recueillir de l'information sur les problèmes des réponses, utile pour résoudre des problèmes de contenu ou ajuster des scénarios.
+- Servir aux évaluations par IA de questions similaires.
 - Alimenter les réponses futures. Voir [Réponses informées par les évaluations](/fr/comment-faire/reponses-informees-par-evaluations).
 
 ## Ouvrir un chat
@@ -27,13 +28,13 @@ Vous devez être connecté comme utilisateur administrateur ou partenaire pour �
 
 Ouvrez ensuite le chat que vous allez évaluer :
 
-- **Avec les options d'évaluation** — si vous avez utilisé Réponses IA à partir du menu partenaire, les options d'évaluation apparaissent aussitôt sous chaque réponse.
+- **Avec les options d'évaluation** — si vous avez utilisé Réponses IA à partir du menu partenaire et posé une question, les options d'évaluation apparaissent aussitôt sous chaque réponse.
 - **Un chat précis** — collez son ID dans **Voir le chat par ID** sur la page administrateur.
 - **Les réponses en attente de notation** — sélectionnez un ID de chat dans le tableau de bord des évaluations.
 
-## Juger la réponse
+## Évaluer la réponse
 
-Servez-vous de votre connaissance du domaine. Vérifiez sur le web en cas de doute : la minute supplémentaire en vaut la peine.
+Servez-vous de votre connaissance du domaine. Vérifiez sur le web ou consultez des experts du domaine dans votre institution en cas de doute. Il vaut mieux laisser une réponse sans évaluation que de lui donner une évaluation incorrecte.
 
 Sous **Cette réponse était-elle utile ?**, sélectionnez **Bonne** ou **Nécessite une amélioration**.
 
@@ -47,20 +48,20 @@ Sous **Cette réponse était-elle utile ?**, sélectionnez **Bonne** ou **Néces
 
 Une réponse compte de 1 à 4 phrases, et chacune reçoit son propre choix **Bonne / Nécessite une amélioration / Incorrecte**.
 
-- **Bonne :** exacte, claire, objective, non partisane et dans la bonne langue.
-- **Nécessite une amélioration :** pas fausse, mais elle pourrait être meilleure.
-- **Incorrecte :** fausse, elle oriente mal la personne, ou elle enfreint les règles que le service doit suivre.
+- **Bonne :** Exacte, claire, objective, non partisane et dans la bonne langue.
+- **Nécessite une amélioration :** Pas fausse, mais elle pourrait être meilleure (par exemple, une option importante est absente ou la phrase est difficile à comprendre). Ne pas utiliser pour de simples questions de style.
+- **Incorrecte :** Fausse, elle oriente mal la personne, ou elle enfreint les règles que le service doit suivre.
 
 ![Le formulaire « Évaluez les phrases de la réponse et/ou la citation », montrant la phrase 1 citée au-dessus de ses options Bonne, Nécessite une amélioration et Incorrecte, une case Problème de contenu et une zone d'explication](/content/admin/images/evaluate-rating-form-fr.jpg)
 
 Vous n'avez à évaluer que les phrases sur lesquelles vous avez quelque chose à dire : celles que vous laissez telles quelles comptent comme bonnes.
 
-Une explication est requise pour **Nécessite une amélioration** et **Incorrecte**. Dites ce qui ne va pas, pour que la personne qui vous relira — et l'IA — puisse le comprendre.
+Une explication est requise pour **Nécessite une amélioration** et **Incorrecte**. Dites ce qui ne va pas, pour que les autres membres de l'équipe — et l'IA — puissent le comprendre.
 
 Il y a 2 cases à cocher sous les évaluations :
 
-- **Problème de contenu** — la réponse reflète du contenu web gouvernemental qui est lui-même erroné, périmé ou peu clair. Cochez-la, que vous ayez ou non abaissé la note de la phrase.
-- **Nuisible** — apparaît dès que vous choisissez **Incorrecte**. Cochez-la lorsque le fait d'agir sur la réponse, ou de ne pas agir, pourrait causer une blessure, un dommage, une souffrance ou une perte : santé physique, santé mentale, situation financière, biens matériels, situation juridique ou environnement.
+- **Problème de contenu** : La réponse reflète du contenu web gouvernemental qui est lui-même erroné, périmé ou peu clair. Cochez-la, que vous ayez ou non abaissé la note de la phrase.
+- **Nuisible** : Apparaît dès que vous choisissez **Incorrecte**. Cochez-la lorsque le fait d'agir sur la réponse, ou de ne pas agir, pourrait causer une blessure, un dommage, une souffrance ou une perte : santé physique, santé mentale, situation financière, biens matériels, situation juridique ou environnement.
 
 Types d'erreurs qu'il vaut la peine de nommer dans votre explication :
 
