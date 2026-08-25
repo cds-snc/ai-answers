@@ -20,6 +20,16 @@ describe('canadaCaContextSearch retry', () => {
         text: async () => 'body',
     });
 
+    // The shape native fetch actually throws: undici reports every transport
+    // failure as a bare `TypeError: fetch failed` with no `.code` of its own, and
+    // nests the real socket error in `.cause`. An earlier version of these tests
+    // rejected with a hand-rolled `Error` carrying a top-level `code` — a shape
+    // fetch never produces — so they passed while the retry path was dead.
+    const undiciFailure = (code) =>
+        Object.assign(new TypeError('fetch failed'), {
+            cause: Object.assign(new Error(`connect ${code} 127.0.0.1:443`), { code }),
+        });
+
     beforeEach(() => {
         vi.useFakeTimers();
         vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -46,7 +56,7 @@ describe('canadaCaContextSearch retry', () => {
     }
 
     it('retries a dropped socket and succeeds on the second attempt', async () => {
-        const reset = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+        const reset = undiciFailure('ECONNRESET');
         fetchMock.mockRejectedValueOnce(reset).mockResolvedValueOnce(okResponse());
 
         const { value, error } = await runWithRetries(contextSearch('q', 'en'));
@@ -78,7 +88,7 @@ describe('canadaCaContextSearch retry', () => {
     });
 
     it('gives up after 3 attempts and rethrows the last error', async () => {
-        const reset = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+        const reset = undiciFailure('ECONNRESET');
         fetchMock.mockRejectedValue(reset);
 
         const { error } = await runWithRetries(contextSearch('q', 'en'));
@@ -88,7 +98,7 @@ describe('canadaCaContextSearch retry', () => {
     });
 
     it('reports each retry to the caller-supplied onRetry', async () => {
-        const reset = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+        const reset = undiciFailure('ECONNRESET');
         fetchMock.mockRejectedValueOnce(reset).mockResolvedValueOnce(okResponse());
         const onRetry = vi.fn();
 
@@ -96,5 +106,17 @@ describe('canadaCaContextSearch retry', () => {
 
         expect(onRetry).toHaveBeenCalledTimes(1);
         expect(onRetry).toHaveBeenCalledWith(expect.objectContaining({ attempt: 1, error: reset }));
+    });
+
+    // Pins the classification rather than the retry count, so this fails loudly
+    // if isTransientNetworkError ever stops reading the cause chain: a
+    // top-level-only check sees a codeless TypeError and gives up after one try.
+    it('reads the nested cause when deciding to retry', async () => {
+        fetchMock.mockRejectedValue(undiciFailure('EAI_AGAIN'));
+
+        const { error } = await runWithRetries(contextSearch('q', 'en'));
+
+        expect(error).toBeDefined();
+        expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 });

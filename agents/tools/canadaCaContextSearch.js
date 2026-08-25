@@ -4,11 +4,17 @@ import { retryOnTransientError } from '../../api/util/transient-retry.js';
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 1000;
 
-// The fetch below passes `timeout: 30000`, which native fetch ignores, so a
-// single attempt has no hard ceiling of its own. This budget is checked after a
-// failure, before starting another attempt, so a slow-failing origin cannot have
-// its wait multiplied by MAX_SEARCH_ATTEMPTS. Failures that return fast (a reset
-// mid-read) are nowhere near it and still get every attempt.
+// Checked after a failure, before starting another attempt, so a slow-*failing*
+// origin cannot have its wait multiplied by MAX_SEARCH_ATTEMPTS. Failures that
+// return fast (a reset mid-read) are nowhere near it and still get every attempt.
+//
+// This does NOT bound a hang: the `timeout: 30000` on the fetch below is dead
+// config (native fetch ignores it, unlike node-fetch), so if Coveo accepts the
+// connection and never answers, nothing fails, nothing is checked here, and the
+// turn blocks until undici's 300s header timeout. Fixing that means an explicit
+// AbortSignal.timeout — deliberately left for the direct-API work noted on
+// contextSearch below, since it changes when a slow-but-successful search
+// becomes a failure.
 const RETRY_TIME_BUDGET_MS = 10000;
 
 /**

@@ -127,6 +127,25 @@ describe('SearchContextService error recording', () => {
         expect(result.results).toContain('Search failed:');
     });
 
+    // search() re-runs the whole rewrite-and-search when a result looks sparse,
+    // and a failed google search reads as 0 results. Without the `failed` guard
+    // an outage cost a second LLM rewrite plus a second doomed search, and
+    // recorded the error twice — while canadaca, which throws, recorded once.
+    it('does not re-search or double-count when google reports a failure', async () => {
+        googleContextSearch.mockResolvedValue({
+            failed: true,
+            results: 'Search failed: socket hang up',
+            provider: 'google',
+        });
+
+        await SearchContextService.search({ searchService: 'google' });
+
+        expect(googleContextSearch).toHaveBeenCalledTimes(1);
+        expect(recordErrorMock).toHaveBeenCalledTimes(1);
+        // The rewrite agent runs once for the initial query, never for a retry.
+        expect(AgentOrchestratorService.invokeWithStrategy).toHaveBeenCalledTimes(1);
+    });
+
     it('does not record an error for a successful search result', async () => {
         googleContextSearch.mockResolvedValue({ results: 'Title: A', provider: 'google' });
 

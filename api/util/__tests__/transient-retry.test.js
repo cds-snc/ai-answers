@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
     isTransientNetworkError,
     retryOnTransientError,
+    errorCodeChain,
 } from '../transient-retry.js';
 
 const withCode = (code, message = 'boom') => Object.assign(new Error(message), { code });
@@ -153,5 +154,78 @@ describe('isTransientNetworkError status resolution', () => {
             response: { status: 404 },
             message: 'Request failed with status code 404',
         })).toBe(false);
+    });
+});
+
+describe('isTransientNetworkError cause chain', () => {
+    // undici (native fetch) throws this exact shape for every transport failure:
+    // a codeless TypeError with the real error in `.cause`. Reading only the top
+    // level made every fetch-based caller unretryable.
+    const undiciFailure = (code) =>
+        Object.assign(new TypeError('fetch failed'), {
+            cause: Object.assign(new Error(`connect ${code} 127.0.0.1:443`), { code }),
+        });
+
+    it('finds a transient code nested in cause', () => {
+        expect(isTransientNetworkError(undiciFailure('ECONNRESET'))).toBe(true);
+    });
+
+    it('finds a transient message nested in cause', () => {
+        expect(isTransientNetworkError(
+            Object.assign(new TypeError('fetch failed'), { cause: new Error('socket hang up') })
+        )).toBe(true);
+    });
+
+    it('still rejects a permanent failure nested in cause', () => {
+        expect(isTransientNetworkError(
+            Object.assign(new TypeError('fetch failed'), {
+                cause: Object.assign(new Error('nope'), { code: 'ERR_TLS_CERT_ALTNAME_INVALID' }),
+            })
+        )).toBe(false);
+    });
+
+    it('does not match undici\'s wrapper message on its own', () => {
+        // "fetch failed" wraps refused connections and NXDOMAIN too, so matching
+        // it would retry permanent failures.
+        expect(isTransientNetworkError(new TypeError('fetch failed'))).toBe(false);
+    });
+
+    it('terminates on a self-referential cause chain', () => {
+        const looped = new Error('boom');
+        looped.cause = looped;
+        expect(isTransientNetworkError(looped)).toBe(false);
+    });
+
+    it('errorCodeChain reports every code in the chain, outermost first', () => {
+        const err = Object.assign(new Error('outer'), {
+            code: 'ERR_OUTER',
+            cause: Object.assign(new Error('inner'), { code: 'ENOTFOUND' }),
+        });
+        expect(errorCodeChain(err)).toEqual(['ERR_OUTER', 'ENOTFOUND']);
+    });
+});
+
+describe('retryOnTransientError onRetry safety', () => {
+    // exponentialBackoff documents its callback as "never allowed to throw" and
+    // wraps it. This is the replacement for that util, so it owes the same
+    // guarantee: a broken telemetry callback must not replace the network error
+    // and defeat the caller's error mapping.
+    it('survives a throwing onRetry and still returns the retried result', async () => {
+        const reset = Object.assign(new Error('reset'), { code: 'ECONNRESET' });
+        const fn = vi.fn().mockRejectedValueOnce(reset).mockResolvedValueOnce('ok');
+        const onRetry = vi.fn(() => { throw new Error('telemetry exploded'); });
+
+        await expect(retryOnTransientError(fn, { baseDelayMs: 0, onRetry })).resolves.toBe('ok');
+        expect(onRetry).toHaveBeenCalledTimes(1);
+        expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('rethrows the network error, not the callback error, when attempts run out', async () => {
+        const reset = Object.assign(new Error('reset'), { code: 'ECONNRESET' });
+        const fn = vi.fn().mockRejectedValue(reset);
+        const onRetry = vi.fn(() => { throw new Error('telemetry exploded'); });
+
+        await expect(retryOnTransientError(fn, { attempts: 2, baseDelayMs: 0, onRetry }))
+            .rejects.toBe(reset);
     });
 });

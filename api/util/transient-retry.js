@@ -26,18 +26,57 @@ export const TRANSIENT_ERROR_CODES = Object.freeze([
     'ENOTFOUND',
     'EAI_AGAIN',
     'ERR_STREAM_PREMATURE_CLOSE',
+    // undici (native fetch) raises its own timeouts under these rather than the
+    // POSIX names above.
+    'UND_ERR_SOCKET',
+    'UND_ERR_CONNECT_TIMEOUT',
+    'UND_ERR_HEADERS_TIMEOUT',
+    'UND_ERR_BODY_TIMEOUT',
 ]);
 
+// Guards against a self-referential `cause` chain. Nothing legitimate nests this
+// deep; undici uses exactly one level.
+const MAX_CAUSE_DEPTH = 5;
+
 /**
- * True when an error looks like a transient transport failure rather than a
- * deliberate rejection by the far end.
+ * Every error in `error`'s cause chain, outermost first.
+ *
+ * Exported because a caller that wants to opt *out* of retrying a specific code
+ * has to look in the same places this module does — checking only `error.code`
+ * would miss a code that native fetch buried in `.cause`.
+ *
+ * @param {unknown} error
+ * @returns {unknown[]}
+ */
+export function errorChain(error) {
+    const chain = [];
+    let current = error;
+    for (let depth = 0; current && depth <= MAX_CAUSE_DEPTH; depth++) {
+        chain.push(current);
+        current = current.cause;
+    }
+    return chain;
+}
+
+/**
+ * Uppercased `code` of every error in the chain, with the codeless ones dropped.
+ *
+ * @param {unknown} error
+ * @returns {string[]}
+ */
+export function errorCodeChain(error) {
+    return errorChain(error)
+        .map((link) => String(link.code ?? '').toUpperCase())
+        .filter(Boolean);
+}
+
+/**
+ * True when this one error — ignoring its cause chain — looks transient.
  *
  * @param {unknown} error
  * @returns {boolean}
  */
-export function isTransientNetworkError(error) {
-    if (!error) return false;
-
+function describesTransientFailure(error) {
     // axios puts an HTTP status on `.status` and `.response.status`; googleapis
     // can put one on `.code`. `.code` is checked last because it is usually a
     // string code ('ECONNRESET'), which would otherwise mask `.response.status`.
@@ -57,6 +96,29 @@ export function isTransientNetworkError(error) {
         message.includes('socket hang up') ||
         message.includes('network socket disconnected')
     );
+}
+
+/**
+ * True when an error looks like a transient transport failure rather than a
+ * deliberate rejection by the far end.
+ *
+ * The whole cause chain is inspected, not just the outermost error. undici — the
+ * engine behind native `fetch` — reports every transport failure as a bare
+ * `TypeError: fetch failed` with no `.code` at all, and puts the real socket
+ * error in `.cause`. Checking only the top level classifies every native-fetch
+ * failure as permanent, which silently disables retrying for any caller using
+ * `fetch` instead of axios.
+ *
+ * Note that undici's own wrapper message ("fetch failed") is deliberately NOT
+ * matched: it wraps refused connections and NXDOMAIN as readily as resets, so
+ * keying on it would retry permanent failures. The nested code is the signal.
+ *
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+export function isTransientNetworkError(error) {
+    if (!error) return false;
+    return errorChain(error).some(describesTransientFailure);
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -98,7 +160,13 @@ export async function retryOnTransientError(fn, options = {}) {
         } catch (error) {
             const outOfTime = Date.now() - startedAt >= maxElapsedMs;
             if (attempt >= attempts || outOfTime || !isRetryable(error)) throw error;
-            if (onRetry) onRetry({ error, attempt, attempts });
+            // Same contract as exponentialBackoff's callback: best-effort
+            // telemetry must never break the retry loop, or a throwing callback
+            // would replace the network error with its own and defeat the
+            // caller's error mapping.
+            if (onRetry) {
+                try { onRetry({ error, attempt, attempts }); } catch (_e) { /* never let a callback break the pipeline */ }
+            }
             await sleep(baseDelayMs * attempt);
         }
     }

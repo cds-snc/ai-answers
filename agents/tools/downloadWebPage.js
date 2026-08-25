@@ -8,6 +8,7 @@ import { getEncoding } from "js-tiktoken";
 import {
   retryOnTransientError,
   isTransientNetworkError,
+  errorCodeChain,
 } from "../../api/util/transient-retry.js";
 
 const tokenizer = getEncoding("cl100k_base");
@@ -36,8 +37,10 @@ export const REQUEST_TIMEOUT_MS = 5000;
 export const RETRY_TIME_BUDGET_MS = 3000;
 
 function isWorthRetrying(error) {
-  const code = String(error?.code ?? "").toUpperCase();
-  if (SETTLED_FAILURE_CODES.has(code)) return false;
+  // Reads the whole cause chain, matching isTransientNetworkError. An opt-out
+  // that only checked error.code would miss a code nested one level down and
+  // let the retry it is meant to prevent happen anyway.
+  if (errorCodeChain(error).some((code) => SETTLED_FAILURE_CODES.has(code))) return false;
   return isTransientNetworkError(error);
 }
 

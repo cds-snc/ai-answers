@@ -65,9 +65,14 @@ export const SearchContextService = {
         let searchResults = await performSearch(searchQuery, lang, searchService, chatId);
         ServerLoggingService.debug('Search results:', chatId, searchResults);
 
-        // Retry with a simplified query if search returned 0 or 1 results
+        // Retry with a simplified query if search returned 0 or 1 results.
+        // A failed search is excluded: its result text ("Search failed: ...")
+        // counts as 0, which would otherwise spend an LLM rewrite plus a second
+        // full search on an outage that is certain to fail again — and record a
+        // second error for the same outage, putting google's error count on a
+        // different scale from canadaca's, which throws and is counted once.
         const resultCount = countSearchResults(searchResults?.results);
-        if (resultCount <= 1) {
+        if (!searchResults?.failed && resultCount <= 1) {
             try {
                 ServerLoggingService.info('Search returned too few results, retrying with simplified query', chatId, {
                     failedQuery: searchQuery,
