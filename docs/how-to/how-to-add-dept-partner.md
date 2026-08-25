@@ -21,14 +21,18 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `DND-MDN` | National Defence (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Défense nationale |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
+| `FedDev-Ontario` | Federal Economic Development Agency for Southern Ontario | Agence fédérale de développement économique pour le Sud de l'Ontario |
+| `FedNor` | Federal Economic Development Agency for Northern Ontario | Agence fédérale de développement économique pour le Nord de l'Ontario |
 | `FIN` | Finance Canada | Finances Canada |
 | `HC-SC` | Health Canada | Santé Canada |
 | `IRCC` | Immigration, Refugees and Citizenship Canada | (bilingual name) |
 | `ISED-ISDE` | Innovation, Science and Economic Development Canada | Innovation, Sciences et Développement économique Canada |
 | `JUS` | Justice Canada (Department of) | Justice Canada, Ministère de la |
 | `NRCan-RNCan` | Natural Resources Canada | Ressources naturelles Canada |
-| `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
-| `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
+| `PacifiCan` | Pacific Economic Development Canada | Développement économique Canada pour le Pacifique |
+| `PHAC-ASPC` | Public Health Agency of Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Agence de la santé publique du Canada |
+| `PrairiesCan` | Prairies Economic Development Canada | Développement économique Canada pour les Prairies |
+| `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Relations Couronne-Autochtones et Affaires du Nord Canada |
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `StatCan` | Statistics Canada | Statistique Canada |
 | `TC` | Transport Canada | Transports Canada |
@@ -167,7 +171,7 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
-- **Regional Development Agencies → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan`
+- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
@@ -177,8 +181,8 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add only the canonical `abbrKey` — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
-6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
+5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add the canonical `abbrKey`, plus any alias member that is itself an official partner. Sharing a scenario file is a *prompt* decision; being in `PARTNER_DEPARTMENTS` is a *filtering* decision, and the two are independent. Add an alias member here when its own logs need to be filterable separately in the admin dashboards (as with `RCAANC-CIRNAC` and `PHAC-ASPC`); leave it out when the portfolio only ever needs the one canonical entry.
+6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry, even for alias members that appear in `PARTNER_DEPARTMENTS`. The scenario override is per scenario file, so the partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
 ---

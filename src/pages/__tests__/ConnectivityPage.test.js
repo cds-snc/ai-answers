@@ -41,6 +41,7 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, ...props }) => <button {...props}>{children}</button>,
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children, ...props }) => <p {...props}>{children}</p>,
+  GcdsIcon: ({ name }) => <span data-icon={name} />,
 }));
 
 describe('ConnectivityPage simulation controls', () => {
@@ -70,5 +71,60 @@ describe('ConnectivityPage simulation controls', () => {
     await waitFor(() => {
       expect(mockSetSetting).toHaveBeenCalledWith('connectivity.simulation.database', 'true');
     });
+  });
+});
+
+describe('ConnectivityPage StatusMessage roles', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    mockGetSetting.mockClear();
+    mockSetSetting.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+    global.fetch = originalFetch;
+  });
+
+  it('announces a failed test run as role="alert"', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'boom' }),
+    });
+
+    render(<ConnectivityPage lang="en" />);
+    await waitFor(() => screen.getByText('connectivity.runTests'));
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('boom');
+  });
+
+  it('mounts the test-summary region persistently and fills it as role="status" after a successful run', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        summary: { connected: 3, errors: 0, warnings: 0, notConfigured: 0 },
+        timestamp: new Date().toISOString(),
+        services: [],
+      }),
+    });
+
+    render(<ConnectivityPage lang="en" />);
+    await waitFor(() => screen.getByText('connectivity.runTests'));
+
+    // Persistent: the sr-only status region exists before any test has run.
+    const statusRegions = screen.getAllByRole('status');
+    expect(statusRegions.length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+
+    await waitFor(() => {
+      expect(screen.getByText('connectivity.testComplete')).toBeTruthy();
+    });
+    expect(screen.getByText('connectivity.testComplete').closest('[role="status"]')).toBeTruthy();
   });
 });

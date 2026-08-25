@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GcdsButton, GcdsIcon } from '@gcds-core/components-react';
+import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
@@ -157,25 +157,23 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {appliedDepartment && !precheckLoading && count !== null && !running && (
           <>
-            {/* TODO: role="status"/"alert" here rely on their implicit aria-live
-                mapping (polite/assertive) rather than pairing it explicitly, unlike
-                the equivalent warnings in EvalAnalysisReport.js. Functionally the
-                same, but worth picking one convention across both files. */}
             {tooFew && (
-              <div id="eval-analysis-too-few" className="dashboard-warning" role="status">
-                <span className="dashboard-warning__icon" aria-hidden="true" />
-                {t('partnerDashboard.evalAnalysis.tooFew')
+              <StatusMessage
+                id="eval-analysis-too-few"
+                variant="info"
+                message={t('partnerDashboard.evalAnalysis.tooFew')
                   .replace('{min}', fmtN(precheck.min))
                   .replace('{count}', fmtN(count))}
-              </div>
+              />
             )}
             {tooMany && (
-              <div id="eval-analysis-too-many" className="dashboard-warning" role="status">
-                <span className="dashboard-warning__icon" aria-hidden="true" />
-                {t('partnerDashboard.evalAnalysis.tooMany')
+              <StatusMessage
+                id="eval-analysis-too-many"
+                variant="info"
+                message={t('partnerDashboard.evalAnalysis.tooMany')
                   .replace('{max}', fmtN(precheck.max))
                   .replace('{count}', fmtN(count))}
-              </div>
+              />
             )}
             {!tooFew && !tooMany && (
               <p id="eval-analysis-precheck-count" className="font-size-text-small">
@@ -215,10 +213,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {runError && (
-          <StatusMessage isError tag="div" className="dashboard-error" style={{ marginTop: 12 }}>
-            <GcdsIcon name="warning-triangle" marginRight="50" />
-            {runErrorLabel()}
-          </StatusMessage>
+          <StatusMessage variant="error" message={runErrorLabel()} />
         )}
       </div>
 
@@ -284,10 +279,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           rendering nothing. */}
       {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
         <div className="dashboard-section">
-          <div className="dashboard-warning" role="status">
-            <span className="dashboard-warning__icon" aria-hidden="true" />
-            {t('partnerDashboard.evalAnalysis.report.incomplete')}
-          </div>
+          <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.incomplete')} />
         </div>
       )}
     </div>

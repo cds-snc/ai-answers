@@ -96,7 +96,11 @@ const getAlternatePath = (currentPath, currentLang) => {
 
 // Compute both the current language and the alternate lang href (preserving search/hash).
 // Returns an object: { alternateLangHref, currentLang }
-const computeAlternateLangHref = (location) => {
+// Exported for direct unit testing (App.computeAlternateLangHref.test.js) - this is
+// shared logic that drives the site-wide EN/FR header toggle for every route,
+// document.documentElement.lang, and OG/SEO metadata, so it's covered directly
+// rather than only indirectly through a full App render.
+export const computeAlternateLangHref = (location) => {
   // location is the object from react-router; pathname does not include protocol/host
   try {
     console.debug('[computeAlternateLangHref] location:', location);
@@ -145,6 +149,28 @@ const computeAlternateLangHref = (location) => {
     console.debug('[computeAlternateLangHref] hostname:', runtimeHostname, 'hostPrefix:', hostPrefix, 'hadHostPrefix:', hadHostPrefix, 'currentLang:', currentLang);
   } catch (e) {
     // ignore
+  }
+
+  const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+  const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+
+  // Review mode (?chat=...&review=1&adminLang=...): the route's own `lang`
+  // (this path segment) is pinned to the reviewed chat's own pageLanguage -
+  // WCAG 3.1.2 / official-languages.md Rule 2, never collapsed to a
+  // different language than what the end user actually saw - so it must
+  // never change on toggle. Only `adminLang` (the reviewing admin's own UI
+  // language - ChatReviewPage.js's H1/nav, this App shell's own
+  // header/footer/status banner, and ChatInterface.js's inline eval tooling
+  // all key off it, per HomePage.js's `adminLang` derivation) should follow
+  // the toggle here. The chat transcript itself (bubbles, citation heading)
+  // is keyed off `lang`, untouched by this branch, so it stays put too.
+  const searchParams = new URLSearchParams(search);
+  if (searchParams.get('review') === '1') {
+    const effectiveAdminLang = searchParams.get('adminLang') || currentLang;
+    const newAdminLang = effectiveAdminLang === 'en' ? 'fr' : 'en';
+    searchParams.set('adminLang', newAdminLang);
+    const alternateLangHref = `${path}?${searchParams.toString()}${hash || ''}`;
+    return { alternateLangHref, currentLang: effectiveAdminLang };
   }
 
   const alternatePath = getAlternatePath(path, currentLang);
@@ -441,8 +467,8 @@ export default function App() {
       { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin'] },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
       { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
       { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },

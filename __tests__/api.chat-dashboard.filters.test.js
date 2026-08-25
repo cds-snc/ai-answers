@@ -68,7 +68,11 @@ describe('api/chat/chat-dashboard filter handling', () => {
     expect(hasRefMatch).toBe(true);
   });
 
-  it('should use filtered department as primary when department filter is provided', async () => {
+  // Chat Dashboard now returns one row per interaction (question/answer
+  // pair) rather than one row per chat, so there's no cross-interaction
+  // "primary department" pick anymore — department is a direct per-row
+  // field reference.
+  it('should project department as a direct per-interaction field reference', async () => {
     let capturedPipeline;
     ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
@@ -98,23 +102,17 @@ describe('api/chat/chat-dashboard filter handling', () => {
 
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
 
-    // Find the $project stage and verify department uses the filtered value
-    const projectStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
+    const finalProject = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
       stage && stage.$project && stage.$project.department
     );
 
-    expect(projectStage).toBeDefined();
-
-    // The department projection should use the filtered department 'IRCC' in the $cond
-    const deptProjection = projectStage.$project.department;
-    expect(deptProjection).toBeDefined();
-
-    // Verify there's a conditional check that references the filter value
-    // The structure uses $let with nested $cond
-    expect(deptProjection.$let).toBeDefined();
+    expect(finalProject).toBeDefined();
+    expect(finalProject.$project.department).toBe('$interactions.department');
+    // program (the "Service" column) is projected alongside department
+    expect(finalProject.$project.program).toBe('$interactions.program');
   });
 
-  it('should include interactionCount and redactedQuestion in $group stage', async () => {
+  it('should add redactedQuestion onto interactions via $addFields', async () => {
     let capturedPipeline;
     ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
@@ -143,16 +141,19 @@ describe('api/chat/chat-dashboard filter handling', () => {
 
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
 
-    const groupStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
-      stage && stage.$group
-    );
+    const redactedQuestionStage = Array.isArray(capturedPipeline)
+      ? capturedPipeline.find(stage =>
+        stage && stage.$addFields && stage.$addFields['interactions.redactedQuestion']
+      )
+      : null;
+    expect(redactedQuestionStage).toBeDefined();
 
-    expect(groupStage).toBeDefined();
-    expect(groupStage.$group.interactionCount).toEqual({ $sum: 1 });
-    expect(groupStage.$group.redactedQuestion).toEqual({ $first: '$interactions.redactedQuestion' });
+    const finalProject = capturedPipeline.find(stage => stage && stage.$project && stage.$project.redactedQuestion);
+    expect(finalProject).toBeDefined();
+    expect(finalProject.$project.redactedQuestion).toBe('$interactions.redactedQuestion');
   });
 
-  it('should include redactedQuestion in interaction projection before $group', async () => {
+  it('should project answerContent and citationUrl as direct per-interaction fields', async () => {
     let capturedPipeline;
     ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
@@ -181,19 +182,21 @@ describe('api/chat/chat-dashboard filter handling', () => {
 
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
 
-    // Find the $project stage that shapes interactions before $group
-    // It should include redactedQuestion
-    const projectStages = Array.isArray(capturedPipeline)
-      ? capturedPipeline.filter(stage => stage && stage.$project && stage.$project.interactions)
-      : [];
-    const interactionProject = projectStages.find(stage =>
-      stage.$project.interactions && stage.$project.interactions.redactedQuestion
+    // Citation link column: a lookup into 'citations', joined off the
+    // answer's citation ref
+    const citationLookup = capturedPipeline.find(stage =>
+      stage && stage.$lookup && stage.$lookup.from === 'citations'
     );
-    expect(interactionProject).toBeDefined();
-    expect(interactionProject.$project.interactions.redactedQuestion).toBe('$interactions.redactedQuestion');
+    expect(citationLookup).toBeDefined();
+    expect(citationLookup.$lookup.localField).toBe('interactions.citationRef');
+
+    const finalProject = capturedPipeline.find(stage => stage && stage.$project && stage.$project.answerContent);
+    expect(finalProject).toBeDefined();
+    expect(finalProject.$project.answerContent).toBe('$interactions.answerContent');
+    expect(finalProject.$project.citationUrl).toBe('$interactions.citationUrl');
   });
 
-  it('should include allDepartments field in projection', async () => {
+  it('should no longer group interactions into a single row per chat', async () => {
     let capturedPipeline;
     ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
       capturedPipeline = pipeline;
@@ -222,14 +225,44 @@ describe('api/chat/chat-dashboard filter handling', () => {
 
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
 
-    // Find the $project stage and verify allDepartments is included
-    const projectStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
-      stage && stage.$project && stage.$project.allDepartments
+    const groupStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage => stage && stage.$group);
+    expect(groupStage).toBeUndefined();
+  });
+
+  it('does not add the questionLanguage match for an unrelated search term', async () => {
+    let capturedPipeline;
+    ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve([]) };
+    });
+    ChatModel.Chat.aggregate.mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+
+    const req = {
+      method: 'GET',
+      query: {
+        search: 'passport',
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }
+    };
+
+    const res = {
+      status: vi.fn(() => res),
+      json: vi.fn(() => res)
+    };
+
+    try {
+      await handler(req, res);
+    } catch (e) {
+      // ignore errors as long as aggregate was invoked
+    }
+
+    const searchMatch = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
+      stage && stage.$match && Array.isArray(stage.$match.$or) &&
+      stage.$match.$or.some(cond => cond.redactedQuestion)
     );
 
-    expect(projectStage).toBeDefined();
-    expect(projectStage.$project.allDepartments).toBeDefined();
-    // Verify it uses $filter to exclude null/empty values
-    expect(projectStage.$project.allDepartments.$filter).toBeDefined();
+    expect(searchMatch).toBeDefined();
+    expect(searchMatch.$match.$or.some(cond => cond.questionLanguage)).toBe(false);
   });
 });

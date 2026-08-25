@@ -9,12 +9,11 @@
 // two texts as single unchanged/changed blocks.
 const MAX_TOKENS = 3000;
 
-// Strip sentence markers the pipeline may add (e.g. <s-1>...</s-1>) and
-// collapse whitespace so formatting noise doesn't show up as a diff.
-export const normalizeAnswerText = (text) => String(text || '')
-    .replace(/<\/?s-\d+>/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+// Moved to utils/answerText.js once ChatDashboardPage.js (non-experimental)
+// needed the same sentence-marker stripping, so it's no longer specific to
+// this experimental diff view. Re-exported here for backward compatibility.
+import { normalizeAnswerText } from '../answerText.js';
+export { normalizeAnswerText };
 
 const tokenize = (text) => (text ? text.split(' ') : []);
 

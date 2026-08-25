@@ -1,5 +1,4 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
@@ -21,6 +20,7 @@ import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 // Bars shown in the "question volume by program" chart. Capped client-side so
 // the API's larger MAX_PROGRAMS response stays available to other views.
@@ -281,6 +281,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
+      {/* Visually hidden - same pattern as Chat/Eval/Metrics/AutoEval
+          dashboards' matching heading: FilterPanel's own <summary> isn't
+          heading-navigable, so this gives screen-reader users a
+          heading/landmark entry point into the filter section. Distinct
+          text from FilterPanel's "Filters" summary label. Previously
+          missing here entirely - every sibling dashboard using FilterPanel
+          had this, this one didn't. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -307,22 +315,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       </div>
 
       {loading ? (
-        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 
       {error && (
-        <StatusMessage isError tag="div" className="dashboard-error">
-          <GcdsIcon name="warning-triangle" marginRight="50" />
-          {t('partnerDashboard.error')}
-        </StatusMessage>
+        <StatusMessage variant="error" message={t('partnerDashboard.error')} />
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
       )}
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>

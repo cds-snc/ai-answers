@@ -89,6 +89,7 @@ const HowToPage = ({ lang = 'en', howToId }) => {
               </>
             ),
             h2: ({ children }) => <h2 className="mt-400 mb-300">{children}</h2>,
+            h3: ({ children }) => <h3 className="mt-400 mb-300">{children}</h3>,
             p: ({ children }) => <p className="mb-300">{children}</p>,
             // GCDS's reset applies `ol,ul{list-style:none}`, so markers have to be
             // asked for explicitly. `text-measure` matches the readable line length
@@ -99,7 +100,22 @@ const HowToPage = ({ lang = 'en', howToId }) => {
             ol: ({ children }) => (
               <ol className="list-decimal mb-400 text-measure canada-ca-list-spcd-2">{children}</ol>
             ),
-            a: ({ href, children }) => <a href={href}>{children}</a>,
+            // External links (GitHub docs, the feedback-viewer tool, etc.) open
+            // in a new tab via GcdsLink, which supplies the icon, rel, and a
+            // localized "(Opens destination in a new tab.)" accessible label on
+            // its own — see PR #1674 "align new-tab chat links to GcdsLink/
+            // gcds-link across the app". In-app guide links (e.g.
+            // /en/how-to/...) stay a plain same-tab <a>.
+            a: ({ href, children }) => {
+              const isExternal = /^https?:\/\//.test(href || '');
+              return isExternal ? (
+                <GcdsLink href={href} target="_blank" lang={lang}>
+                  {children}
+                </GcdsLink>
+              ) : (
+                <a href={href}>{children}</a>
+              );
+            },
             img: ({ src, alt }) => (
               <img src={src} alt={alt} className="how-to-screenshot" />
             ),

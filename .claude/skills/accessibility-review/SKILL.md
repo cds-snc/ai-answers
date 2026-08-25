@@ -25,8 +25,18 @@ ambiguous whether "everything" means the diff or the whole app.
   equivalent tracked note) pointing at the WCAG criterion, rather than
   blocking the PR on unrelated pre-existing debt, unless the fix is trivial
   enough to bundle in. Say explicitly which findings are which.
-- **Targeted review** — the user names a specific page/component/route;
-  scope to that.
+- **Targeted review** — the user names a specific page/component/route.
+  Read the named file in full, then recursively follow its own imports into
+  every shared component, hook, and util it actually renders or calls
+  (`FilterPanel.js`, `StatusMessage.js`, shared DataTables helpers, etc.) —
+  apply the full checklist (Sections 1-8) to those too, not just the named
+  file's own JSX. A bug in a shared component is a bug in every page that
+  targets it; scoping to "just this page" without checking what it
+  consumes is how shared-component bugs go unnoticed. If a finding turns up
+  in a shared file, apply the "propagate confirmed anti-patterns" rule (see
+  Full app audit) even for an otherwise-targeted review — grep the rest of
+  the app for that shared file's other consumers and note them, since they
+  inherit the same bug.
 - **Full app audit** — triggered by phrasing like "audit everything",
   "whole app", "full accessibility audit", or an explicit `full` arg, and
   by named-area shortcuts (see below). Covers every route in scope, not
@@ -218,9 +228,70 @@ commits) — check new code follows it rather than reinventing it:
 - On validation error, focus moves to the error summary/first invalid field.
 - On dynamic content changes (route change, modal open/close, async content
   swap), focus moves somewhere sensible and isn't silently lost to `<body>`.
+- For every dismiss/clear/toggle/remove-style control, check whether its own
+  `onClick` changes state that the control's *own* render condition depends
+  on — a conditional `{x && <Control/>}`, a ternary swapping it for
+  something else, or a style/class change like `display: none`. If so,
+  explicit focus redirection is required in that same handler (or a
+  `useEffect` keyed to the same state) — don't assume a general "focus
+  dropped to `<body>`" finding already covers every instance of this in a
+  file just because one instance was found and fixed nearby. Check each
+  control independently: a "Clear all" button, an individual pill's own
+  remove button, and a search-clear pill can each have this bug
+  independently even inside the same component.
 - Focus is visible — never `outline: none` without a replacement that meets
   contrast requirements (GC DS focus tokens, e.g. `var(--gcds-focus-border)`,
   already provide this — flag any custom override that suppresses it).
+- **A focus-restoration mechanism that removes the interacted-with content
+  entirely (not just re-renders it) needs its own explicit fallback target —
+  don't assume the general remount-consumption path covers this case too.**
+  A common shape: click a control → arm a ref/flag with the clicked item's id
+  → a later redraw/remount consumes it and refocuses. This works when the
+  item survives the redraw (edited, reordered, status-changed). It
+  structurally cannot work when the action's own *success* removes the item
+  from the next render (a delete, a dismiss that also deletes) — nothing
+  ever redraws that id again, so the consuming side never fires and focus
+  drops to `<body>`. This is decidable from the code: find the success path,
+  confirm whether the item is still present in the data the next render
+  works from, and if not, confirm a *different*, explicit redirect exists
+  for that specific branch (e.g. a nearby always-mounted control) rather
+  than reusing the generic redraw-consumption logic. Real example: a delete
+  handler's `finally` block still called the shared re-fetch, and the
+  reviewer's first pass confirmed *a* button gets focused after Process/
+  Cancel — but never separately checked delete's own success path, where the
+  row genuinely never comes back.
+- **When a focus-restoration mechanism picks a target by querying "the first
+  interactive element" rather than the specific one that was clicked, check
+  whether that set's order or membership can vary.** `querySelector('button,
+  [tabindex]')`-style fallbacks silently refocus the *wrong* control whenever
+  the clicked item isn't reliably first — e.g. a row's action buttons differ
+  by status (Cancel before Delete in one branch, Delete alone in another), so
+  clicking Delete and having it fail can land focus on Cancel instead. This
+  is a real, reportable imprecision distinct from "focus dropped to body" —
+  it doesn't fail SC 2.4.3 outright (focus *did* move somewhere sensible-
+  looking) but it's the wrong somewhere, confusing for a keyboard/AT user who
+  clicked one specific thing. Look for whether the restoration mechanism
+  tracks *which* action was clicked (a key/id alongside the item id) or only
+  *that* something was clicked — the latter is the tell.
+- **A focus redirect issued from a handler running in one React root can
+  lose a real timing race against self-focusing content in a *different*
+  React root**, if that content is mounted via its own `createRoot`/manual
+  `root.render()` (a common pattern for cell-level renders inside a
+  non-React table library like DataTables). The separate root's own commit
+  is scheduled independently — a synchronous `.focus()` call issued from an
+  async callback elsewhere can execute *before* that commit lands, and then
+  the other root's self-focusing element (e.g. a "Processing…" placeholder
+  with its own focus-on-mount ref) steals focus right back immediately
+  after. Symptom: a redirect that appears to work when traced through the
+  code, but doesn't hold in a running app or a real test — the target
+  briefly receives focus, then loses it. Not reliably catchable by reasoning
+  about microtask order alone (a second, third microtask tick doesn't fix
+  it) — the redirect needs to run *after* the other root's commit, which
+  generally means a macrotask (`setTimeout`), not another `await`/`Promise.
+  resolve()`. Flag any synchronous or microtask-deferred focus redirect that
+  competes with a separately-rooted self-focusing element as `Needs
+  validation:` at minimum, and as a real finding if a quick trace confirms
+  the other root's commit isn't already guaranteed to have landed first.
 
 ### 4. ARIA usage
 - ARIA attributes are used to *supplement*, not replace, semantics — flag
@@ -230,6 +301,31 @@ commits) — check new code follows it rather than reinventing it:
 - Live regions (`aria-live`, `role="alert"/"status"`) are used for dynamic
   content that needs to be announced (errors, async results, loading state)
   — and not overused to the point of announcement spam.
+- A live region announces a *change*, not a value. If a message is driven
+  by state with no mechanism to force a remount on a repeat identical
+  trigger, React bails on the no-op update and the second (and every later)
+  occurrence goes silently un-announced — this is decidable from the code,
+  not a maybe: report it as a real finding (SC 4.1.3) when the mechanism is
+  missing. `StatusMessage`'s `persistent` messages carry a `nonce` prop for
+  exactly this; check it's used wherever the same outcome could plausibly
+  repeat. Reserve `Needs validation:` (see "How to review") for what you
+  genuinely can't trace — a reset happening in a code path you can't
+  follow, or actual AT-timing behavior — not for this.
+- **When the same live-region pattern is duplicated across multiple
+  sections/tabs/instances of one page (one `StatusMessage` per list, per
+  panel, per filter group), check whether the `nonce`/remount-forcing
+  counter is scoped per-instance or shared globally across all of them.** A
+  shared counter means an unrelated change in instance A still bumps the
+  counter instance B's `key`/`nonce` reads too, forcing B to remount even
+  though its own content never changed — and a remount with content already
+  populated is exactly the "fresh insertion" pattern AT generally
+  re-announces, so B's stale, already-heard message gets spoken again for no
+  reason tied to anything the user just did. This is decidable from the
+  code: find every place the nonce state updates, and confirm each `<Status
+  Message nonce={...}>` call site reads a value that only changes when
+  *that* call site's own message does. Report as a real finding (SC 4.1.3)
+  when a single counter/state variable feeds more than one independently-
+  positioned live region.
 - No redundant/conflicting roles (e.g. `role="button"` on an actual
   `<button>`).
 
@@ -240,6 +336,12 @@ commits) — check new code follows it rather than reinventing it:
   (`required`/`aria-required`).
 - Error messages are associated with their field (`aria-describedby`) and
   announced (see Focus management above), not conveyed by colour alone.
+- Repeat identical validation failures still get announced. A field error
+  set via plain `useState` with no changing counter goes silent on a second
+  identical failure — the same DOM-no-op problem as live regions above.
+  `FeedbackInlineError` needs a changing `errorCount` (`useInlineFormError.js`;
+  see AGENTS.md's "FeedbackInlineError needs errorCount") to force a remount
+  on every trigger, not just the first.
 - Radio/checkbox groups have a group label (`<fieldset>`/`<legend>` or
   `role="group"` + `aria-label`).
 - **Persisted changes need an explicit trigger, not just an announcement.**
@@ -293,6 +395,11 @@ commits) — check new code follows it rather than reinventing it:
 1. `git diff` (or `git diff main...HEAD`) to get the changed UI files.
 2. Read each changed component/page in full — don't pattern-match on diff
    hunks alone, since a11y bugs are often about what's *missing*.
+   When a finding depends on a derived value ("this reduces to zero," "this
+   list becomes empty," "this condition can never be true"), trace the
+   actual derivation function — don't infer the mechanism from what seems
+   plausible. A wrong mechanism can make a real finding's severity or
+   trigger conditions inaccurate even when the underlying bug is genuine.
 3. Where feasible, actually drive the change: tab through it, check it with
    a browser accessibility tree inspector, and skim console/axe warnings if
    the dev server is running. Static reading catches structural issues but
@@ -302,7 +409,40 @@ commits) — check new code follows it rather than reinventing it:
    unreachable control > missing form label / broken focus management >
    missing ARIA reference > contrast/colour-only signal > minor semantic
    nit.
+5. **When a fix touches focus restoration or a live region, check whether
+   the diff's own test asserts against an independently-known-correct
+   target, not against "whatever the same selector logic the implementation
+   uses would also find."** A test that greps `document.activeElement`
+   against `container.querySelector('button, [tabindex]')` — the exact same
+   first-match query the code under test uses — passes as long as focus
+   lands on *something* the selector matches, even the wrong something; it
+   can never catch a wrong-target bug because it never independently names
+   the target (e.g. "the button whose text is literally 'Delete'"). This is
+   a real gap in test coverage worth calling out on its own, separate from
+   whether the underlying focus behavior itself is correct — a passing
+   suite next to this pattern is not evidence the fix works.
+6. **A fix confirmed by re-reading the conversation is not the same claim as
+   a fix confirmed by re-reading the file.** When re-verifying a finding —
+   your own from earlier in this session, or one handed off by another
+   review — re-read the current file content directly rather than trusting
+   that a fix which was correctly reasoned through in discussion actually
+   landed on disk. Mid-conversation, "traced the right fix" and "wrote the
+   right fix" are easy to conflate, especially across a task switch or a
+   long back-and-forth; grep the file for the specific line/pattern the fix
+   was supposed to introduce before reporting it as done.
 
 For each finding give: the file/line, what's wrong, which WCAG 2.1 AA
 success criterion it violates, and the concrete fix (not just "improve
 accessibility").
+
+Since review here is static reading, most render-mechanics questions are
+decidable from the code alone — e.g. whether a live region or inline error
+has a mechanism (`nonce`, `key={errorCount}`, a reset before the async
+call) to force a remount on a repeat trigger. Report those as real findings
+when the mechanism is missing, not as `Needs validation`. Reserve `Needs
+validation:` for what genuinely can't be traced from the code — state reset
+by a path you can't follow, or AT-timing behavior that varies by screen
+reader. Report these separately from the severity-ordered findings: the
+file/line, the specific risk, and the exact steps a human needs to take in
+a running app to check it (e.g. "click Get stats twice; confirm whether the
+sr-only announcement fires the second time").

@@ -114,19 +114,40 @@ node scripts/check-chat-logs.js <file.json> --filter similarQuestions # injected
 What lives in which event: see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing). Key ones: `node:context output` (matched department/topic), `node:similarQuestions output` (injected eval text in `metadata.similarQuestionsText`), `node:answer input/output` (what reached the LLM, what came back), `node:shortCircuit output` (whether the instant-answer path fired).
 
 ## Official languages
-**English users and admins and partners must be served in English. French users and admins and partners must be served in French.** This applies to all pages and tools — public-facing, admin, and partner.
 
-**Never hardcode user-facing text in components or pages.** All text visible to users must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new text (column headers, labels, buttons, messages, placeholders, error messages, status messages, option labels, etc.), always add the corresponding key to both locale files in the same PR — don't rely on the fallback string in `t('key', 'fallback')` or `t('key') || 'fallback'`.
+See [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)
+for the full ruleset: the core EN/FR requirement, `t()`/locale-key rules, the
+`lang`-attribute rules (including the two-part Rule 1/Rule 2 split for
+admin/eval tooling vs. the live conversation transcript), locale key parity,
+number/percentage formatting, French punctuation spacing, and the PR review
+checklist. Read it before creating or reviewing any user-facing text —
+nearly every UI change touches at least one of these. Two related things
+stay in this file instead: locale key *hygiene* below (the fuller practice
+around adding/reusing/namespacing keys — general maintenance practice, not
+itself an OL rule, even though the parity it protects is), and the content
+style guide (writing quality, not a bilingual/legal requirement at all).
 
-### Exceptions
-- **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
-- **Internal technical identifiers used as option values**: e.g. workflow names like `GenericGraph` where the value and label are the same internal enum — these are not user-facing text.
+### Content style guide
 
-### Sentence case
-All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+**Sentence case.** All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+
+When writing a non-trivial amount of new user-facing copy — a paragraph of explanatory text, an alert/warning/status message, a confirm-dialog body, anything longer than a short label — check it against the [Canada.ca content style guide](https://design.canada.ca/style-guide/index.html) (this is also where the sentence-case rule above comes from). Core rules that matter most for this codebase:
+- **Plain language**: familiar words, active voice, positive phrasing over negative where possible (negative phrasing is fine for genuinely safety/data-loss-critical warnings, e.g. destructive-action confirms).
+- **Short sentences**: aim under ~15–20 words each; split up anything longer rather than stacking clauses.
+- **Second person, direct address**: "you"/"your" for the reader, "we" for the Government of Canada as a whole, where the copy is speaking to a person at all (not always applicable to terse admin/system copy).
+- **No end punctuation on titles/headings/table captions** in English (French keeps its own punctuation rules — see [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)'s French punctuation spacing section).
+- **Numbers**: digits for 10 and up, ages, dates, percentages; spell out zero to nine in narrative text.
+It's a useful sanity check for any user-facing copy, not just long-form text — just not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
+
+**Don't over-apply the "we"/full-sentence framing to button-adjacent micro-confirmations.** The active-voice/second-person guidance above is for page-level outcomes with some distance from their trigger — a signup's pending-approval state, a password-reset confirmation, something the user might read a moment after acting. A `StatusMessage` sitting immediately next to the button that just fired (an Apply/Clear/Save right beside it) needs the opposite instinct: as terse as possible, and echoing the *same verb* the button itself uses, not a full sentence restating what happened. `"Referring URL applied."`/`"Referring URL cleared."` (matching `"Apply URL"`/`"Clear URL"`) is correct; `"We've applied the referring URL."` is the wrong register for that spot, even though it's the right one for `signup.pending`. Check which of the two a given message actually is — full-sentence "we" framing is not a blanket default for every success/error message in the app.
 
 ### Locale key hygiene
-After adding, removing, or renaming locale keys, run the dead key detector:
+
+**Before adding a new locale key, check whether one already says the same thing.** For generic, non-page-specific text (status messages, announcements, common labels like "cleared", "no data", "loading"), grep `en.json` for the English string first — `common.*` already holds several of these (e.g. `common.noDataForFilters`) precisely so multiple pages/dashboards share one key instead of each defining its own copy. Adding a second key with an identical value under a page-specific namespace (e.g. `admin.evalDashboard.fooAnnouncement` duplicating `admin.chatDashboard.fooAnnouncement`) is the bug this section exists to prevent — do the reuse check *before* writing the key, not after, via the detector below. This has shipped more than once from copy-pasting an existing page's pattern into a new page without checking if the string itself could just be shared.
+
+**`common.*` is site-wide, not admin-only — don't reuse it for admin-dashboard strings.** `common.*` is genuinely shared across both admin pages and the public-facing chat UI (`src/components/chat/`) — `common.yes`/`common.no`, `common.loading`, `common.error`, `common.close`, etc. are all used by public chat components, not just admin tooling. Shared text that only ever applies to admin dashboards (search labels/placeholders, "no results", "filters cleared", column-header conventions, etc.) belongs in **`admin.common.*`** instead — a separate namespace kept deliberately apart from `common.*` so a future edit made "for the admin dashboards" can never accidentally reach into text the public chat UI also depends on, and vice versa. When consolidating a duplicate that's genuinely admin-only, reuse/add to `admin.common.*`; only reach for top-level `common.*` when the string is (or plausibly could be) shared with the public chat experience too.
+
+After adding, removing, or renaming locale keys, also run the dead key detector as a backstop:
 
 ```bash
 node scripts/find-dead-locale-keys.cjs
@@ -135,51 +156,9 @@ node scripts/find-dead-locale-keys.cjs
 This reports:
 1. **Dead keys** — keys in `en.json`/`fr.json` with no detected usage in `src/`
 2. **Duplicate keys** — different keys with identical values (consolidation candidates)
-3. **Parity gaps** — keys present in EN but missing from FR, or vice versa
+3. **Parity gaps** — keys present in EN but missing from FR, or vice versa — this is the OL requirement itself (see [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)); the other two are general hygiene.
 
 Parity gaps must be fixed before merging. Dead keys and duplicates are cleaned up incrementally — fix a few per PR rather than all at once.
-
-### Number and percentage formatting
-
-**This is an Official Languages requirement.** French and English have different conventions for numbers and percentages (`1 000` vs `1,000`; `45 %` vs `45%`). Any component or page that displays numeric data to users must format numbers and percentages using the shared helpers in `src/utils/numberFormat.js`:
-
-```js
-import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
-
-const fmtN = (n) => formatNumber(n, lang);   // 1 000 (fr) / 1,000 (en)
-const fmtPct = (n) => formatPercent(n, lang); // 45 % (fr) / 45% (en)
-```
-
-- **`formatNumber(n, lang)`** — formats integers and large numbers with the correct thousands separator (`fr-CA` uses non-breaking space, `en-CA` uses comma). Handles `null`/`undefined` → `0`.
-- **`formatPercent(n, lang)`** — appends `%` with a non-breaking space before it in French (`45 %`), no space in English (`45%`). Takes an already-computed integer (0–100), not a fraction.
-- **`formatDecimal(n, lang, fractionDigits = 3)`** — formats a decimal number with locale-aware separators (`,` vs `.`) and a fixed number of decimal places. Pass-through for `null`/`undefined`/empty/non-numeric values.
-
-Rules:
-- Never use `+ '%'`, `'0%'`, or `'100%'` as literal strings in data displayed to users — always go through `fmtPct`.
-- Never use `n.toFixed(d)` or inline `Intl.NumberFormat` for decimal values displayed to users — always go through `formatDecimal`.
-- For DataTables columns with sorting enabled, pass raw numbers in the data object and use the `render: (d, type) => type === 'display' ? fmtN(d) : d` pattern so sorting operates on the raw value.
-- These helpers apply to dashboards, tables, batch lists, and any other UI that surfaces counts, totals, or percentages.
-
-### French punctuation spacing
-French requires a space before `:`, `;`, `!`, and `?` (e.g. `"Assigné à :"`, `"Continuer ?"`) — English does not. This has slipped through review before in two forms:
-- A static `fr.json` string typed without the space (e.g. `"...utile?"` instead of `"...utile ?"`).
-- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`/`"?"`/`"!"`.
-
-### PR review checklist — official languages
-Every PR that touches UI components, pages, or locale files must be verified against these before merging.
-
-**Must fix before merging:**
-- [ ] No hardcoded user-facing strings in components or pages (no `'English text'` literals, no `|| 'fallback'` patterns, no `lang === 'en' ? '...' : '...'` inline conditionals)
-- [ ] All translation calls use `t()` or `safeT()` — not raw string literals (`safeT` is a wrapper around `t()` used in chat components that unwraps object results to a plain string; same locale key rules apply)
-- [ ] Every new `t('key')` call has a matching entry in **both** `en.json` and `fr.json`
-- [ ] `node scripts/find-dead-locale-keys.cjs` reports **0 parity gaps**
-- [ ] French translations are real translations — not copied English text or placeholders
-- [ ] All numbers displayed to users go through `formatNumber(n, lang)` — no raw `.toLocaleString()`, `toString()`, or unformatted numeric values
-- [ ] All percentages displayed to users go through `formatPercent(n, lang)` — no `+ '%'`, `'0%'`, or `'100%'` string literals
-- [ ] French text has a space before `:`, `;`, `!`, `?` — check both static `fr.json` values and any JS that concatenates punctuation onto a label at runtime
-
-**Flag but don't block:**
-- Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
 
 ### Markdown-driven pages
 
@@ -209,6 +188,8 @@ Before starting work, read the relevant reference doc:
 - **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 - **Any server-side paginated/searchable table, dashboard or not (which wrapper to use, migrating a hand-rolled table):** [docs/coding-agent-docs/tables.md](docs/coding-agent-docs/tables.md)
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)
+- **Creating or reviewing user-facing text (copy, labels, error messages, locale keys, `lang` attributes):** [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)
+- **Rendering a save/delete/import/export/loading outcome, sr-only announcement, or form validation error:** [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md)
 
 ## Database query safety
 
@@ -247,30 +228,7 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 ## Announcing status, errors, and async outcomes
 
-Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, or async result on an admin page — don't hand-roll a plain `<div>`/`<p>`/`alert()` for this. A lot of the admin section had these render as plain DOM text (or a native `alert()` popup) with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
-
-```jsx
-import StatusMessage from '../components/admin/StatusMessage.js';
-
-<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
-// in-progress state, not a completed result — same component, own sub-type:
-<StatusMessage loading message={t('some.page.loading')} />
-// box-styled outcome (role/aria-live, box className, and icon all wired up
-// from one prop instead of the caller building them individually):
-<StatusMessage variant="success" message={t('some.page.saved')} />
-```
-
-It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="error"`), otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
-
-`variant` (`error` | `warning` | `info` | `success`) is the box-styled outcome family — pass it with `message` as a plain string and StatusMessage builds the box `className`, `role`/`aria-live`, and a leading icon itself, using the GC DS-token box classes in `admin.css`: `dashboard-error` (red-100/500/700, failures), `dashboard-warning-box` (yellow-100/500/700, cautions like unsaved changes), `dashboard-info-box` (blue-100/500/700, neutral confirmations), `dashboard-success-box` (green-100/500/700, completed saves). Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) except `success`, which uses a raw FA `check-circle` span (`fa-solid fa-check-circle`) since GC DS's icon font has no checkmark glyph — matching the existing FA precedent in `BatchUpload.js`. `dashboard-error` additionally has a `dashboard-error--inline` modifier (`width: fit-content`) for a message that shouldn't stretch to its container's full width, passable alongside `variant="error"` via `className`. Reuse one of these four variants rather than adding a fifth box class or a page's own ad-hoc hex colours — if a genuinely new outcome type comes up, extend `StatusMessage`'s own `VARIANTS` map (a caller passing `children` instead of `message` alongside `variant` gets the box/role treatment while supplying its own richer content, e.g. a bullet list, without needing a new variant). Callers that haven't migrated to `variant` yet (still wiring up `isError`/`className`/`children` manually) are unaffected — it's additive, not a breaking change — but prefer `variant` for anything new.
-
-**Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
-
-**Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
-
-```js
-t('admin.deleteChat.error').replace('{message}', () => error.message || String(error))
-```
+Read [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md) before rendering any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, sr-only announcement, or form validation error. The short version: use `src/components/admin/StatusMessage.js` for page/section-level outcomes with no single input they belong to, and the form-error family (`AnnouncedError.js`/`FeedbackInlineError.js`/`ExplanationErrorSummary.js`) for anything tied to a specific field — don't hand-roll a plain `<div>`/`<p>`/`alert()` for either. Never show a raw `err.message`/`error.message` directly to the user; the doc covers why and the two established alternatives.
 
 ## Admin page nav landmark
 

@@ -600,6 +600,17 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
     );
 
+    // This status line and the one in the startingRun block below both sit
+    // directly beside a real role="progressbar" element, not standing alone
+    // — StatusMessage doesn't have a `progress` variant, and deliberately
+    // shouldn't: determinate progress (a known total, like this batch's
+    // completed/failed/total) isn't an outcome (error/warning/info/success)
+    // or an indeterminate wait (loading), it's a third, different thing, and
+    // StatusMessage already had a bug where two of those "visual modes"
+    // needing block content had to be reconciled by hand. A progress bar
+    // belongs in its own small component if one gets built (bar + plain
+    // role="status" text, same shape as this), not folded into
+    // StatusMessage's props.
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
         <div key={id} className="border p-200 mb-200 rounded bg-light">
             <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
@@ -876,6 +887,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
                         </GcdsButton>
+                        {/* TODO: not migrated to StatusMessage yet — `message` is a shared
+                            bucket for both success and error text across ~13
+                            setMessage(...) call sites with no isError companion (unlike
+                            DatabasePage.js's messageIsError, added in this same pass).
+                            Converting this to variant="error"/"success" needs that same
+                            tracking added first; doing it without that would either lose
+                            the distinction or require guessing per call site. */}
                         {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
                     </section>
 

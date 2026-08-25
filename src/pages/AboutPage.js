@@ -20,9 +20,11 @@
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
+import { useTranslations } from '../hooks/useTranslations.js';
 import { DCTERMS } from '../config/metadata.js';
 
 const AboutPage = ({ lang = 'en' }) => {
+  const { t } = useTranslations(lang);
   const filename = lang === 'fr' ? 'about-fr.md' : 'about-en.md';
   const { frontmatter, sections, loading, error } = useMarkdownWithFrontmatter(filename);
 
@@ -113,7 +115,7 @@ const AboutPage = ({ lang = 'en' }) => {
   if (loading) {
     return (
       <div className="mb-600 container-custom">
-        <p>{lang === 'fr' ? 'Chargement...' : 'Loading...'}</p>
+        <p>{t('aboutPage.loading')}</p>
       </div>
     );
   }
@@ -122,12 +124,8 @@ const AboutPage = ({ lang = 'en' }) => {
   if (error) {
     return (
       <div className="mb-600 container-custom">
-        <h1>{lang === 'fr' ? 'À propos' : 'About'}</h1>
-        <p>
-          {lang === 'fr'
-            ? 'Impossible de charger le contenu.'
-            : 'Unable to load content.'}
-        </p>
+        <h1>{t('aboutPage.title')}</h1>
+        <p>{t('aboutPage.loadError')}</p>
       </div>
     );
   }
@@ -138,7 +136,7 @@ const AboutPage = ({ lang = 'en' }) => {
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
     systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
-    blogPosts: lang === 'fr' ? 'billets-de-blogue-sur-rponses-ia' : 'ai-answers-blog-posts',
+    blogPosts: lang === 'fr' ? 'billets-de-blogue-portant-sur-rponses-ia' : 'ai-answers-blog-posts',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
 
@@ -165,7 +163,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Accessibility and Usability Section */}
     {sections[sectionKeys.accessibility] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.accessibility].heading}</summary>
         <ReactMarkdown
           components={{
@@ -180,7 +178,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Privacy & Terms Section */}
     {sections[sectionKeys.privacy] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.privacy].heading}</summary>
         <ReactMarkdown
           components={{

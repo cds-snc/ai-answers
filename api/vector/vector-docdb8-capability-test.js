@@ -740,13 +740,27 @@ async function buildCapabilityProbeResult(probe) {
     ),
   };
 
-  const hasProbe = Object.prototype.hasOwnProperty.call(probeDefinitions, probe);
-  const runProbe = hasProbe ? probeDefinitions[probe] : null;
-  if (typeof runProbe !== 'function') {
-    throw new Error(`Unknown DocumentDB 8 capability probe: ${probe}`);
+  let test;
+  switch (probe) {
+    case 'ann_all_then_feedback_post_filter':
+      test = await probeDefinitions.ann_all_then_feedback_post_filter();
+      break;
+    case 'exact_after_feedback_lookup_match':
+      test = await probeDefinitions.exact_after_feedback_lookup_match();
+      break;
+    case 'exact_after_denormalized_match':
+      test = await probeDefinitions.exact_after_denormalized_match();
+      break;
+    case 'ann_feedback_only_collection':
+      test = await probeDefinitions.ann_feedback_only_collection();
+      break;
+    case 'node_bruteforce_feedback_subset':
+      test = await probeDefinitions.node_bruteforce_feedback_subset();
+      break;
+    default:
+      throw new Error(`Unknown DocumentDB 8 capability probe: ${probe}`);
   }
 
-  const test = await runProbe();
   return buildSingleProbeResponse({
     probe,
     sample,

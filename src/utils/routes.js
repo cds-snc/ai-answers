@@ -28,6 +28,8 @@ export const ROUTE_SLUGS = {
   vector:                  { en: 'vector',                       fr: 'vecteur' },
   connectivity:            { en: 'connectivity',                 fr: 'connectivite' },
   'how-to-eval-informed':  { en: 'how-to/eval-informed-answers',  fr: 'comment-faire/reponses-informees-par-evaluations' },
+  'how-to-evaluate-answers': { en: 'how-to/evaluate-answers',      fr: 'comment-faire/evaluer-les-reponses' },
+  'how-to-partner-onboarding': { en: 'how-to/partner-onboarding',  fr: 'comment-faire/integration-des-partenaires' },
   'experimental-datasets': { en: 'experimental/datasets',         fr: 'experimental/ensembles-de-donnees' },
   'experimental-create-dataset': { en: 'experimental/create-dataset', fr: 'experimental/creer-ensemble-de-donnees' },
   'experimental-analysis': { en: 'experimental/analysis',         fr: 'experimental/analyse' },

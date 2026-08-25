@@ -306,7 +306,7 @@ const EvalPage = ({ lang = 'en' }) => {
               </div>
             </div>
           ) : (
-            <div>{t('admin.evalPage.metrics.loading', 'Loading metrics...')}</div>
+            <div>{t('admin.common.metricsLoading')}</div>
           )}
         </div>
         <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GcdsContainer, GcdsIcon, GcdsText } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -9,6 +9,11 @@ import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';
 import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
+import SectionLoadingIndicator from './SectionLoadingIndicator.js';
+import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
+import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
+import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 
 DataTable.use(DT);
 
@@ -70,6 +75,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
+  // err.message is raw, untranslated exception text — wrap it in its own
+  // lang="en" span in SectionWrapper below rather than rendering it inside a
+  // translated StatusMessage, same pattern as DeleteChatSection.js.
+  // admin.common.fetchError: shared with TechnicalMetricsDashboard.js's
+  // identical fetch-error template (was two duplicate page-scoped keys).
+  // TODO (Official Languages): still just a pronunciation fix, not a
+  // translation — needs the metrics-* API routes to return a stable error
+  // code instead of free text before this can be properly localized.
+  const [fetchErrorPrefix, fetchErrorSuffix] = t('admin.common.fetchError').split('{message}');
   const [metrics, setMetrics] = useState(initialMetricsState);
   const [loadingState, setLoadingState] = useState({
     usage: false,
@@ -93,6 +107,20 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
   // Track if we've ever loaded data to decide when to show the dashboard vs empty state
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  // True once any one of the 6 sections has settled (success or error) this
+  // fetch cycle — drives the LoadingOverlay-then-incremental-reveal handoff
+  // below. Reset false at the top of fetchMetrics, flipped true in
+  // fetchSection's own finally (runs for every section either way).
+  const [hasAnySectionSettled, setHasAnySectionSettled] = useState(false);
+
+  // sr-only announcement of the Institution breakdown table's own search box
+  // narrowing (SC 4.1.3) — shared with ChatDashboardPage.js. Also reused
+  // below (announce()) for the one "metrics loaded" completion message, same
+  // shared-persistent-region pattern as ChatDashboardPage.js's Clear-all.
+  const { searchAnnouncement, searchAnnounceNonce, noteSearchResult, announce } = useSearchAnnouncement({ t, fmtN });
+  // Guards the completion announcement to fire once per fetch cycle, not on
+  // every render where allSettled happens to still be true.
+  const announcedCompletionRef = useRef(false);
 
   const updateLoading = useCallback((key, isLoading) => {
     setLoadingState(prev => ({ ...prev, [key]: isLoading }));
@@ -112,6 +140,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
     const f = filters || getDefaultDateRange();
     setHasStartedLoading(true);
+    setHasAnySectionSettled(false);
+    announcedCompletionRef.current = false;
 
     // Clear errors but keep stale data visible during loading (no flash)
     setErrorState({
@@ -135,11 +165,12 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       } catch (err) {
         if (!signal.aborted) {
           console.error(`${key} fetch error`, err);
-          updateError(key, err.message || 'Failed to load data');
+          updateError(key, err.message || String(err));
         }
       } finally {
         if (!signal.aborted) {
           updateLoading(key, false);
+          setHasAnySectionSettled(true);
         }
       }
     };
@@ -162,6 +193,18 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     };
   }, []);
 
+  // One "metrics loaded" sr-only announcement once every section has
+  // settled — the counterpart to the LoadingOverlay shown until the first
+  // one does (see render below). announcedCompletionRef prevents firing
+  // again on a later re-render where allSettled is still true.
+  const allSettled = hasStartedLoading && !Object.values(loadingState).some(Boolean);
+  useEffect(() => {
+    if (allSettled && !announcedCompletionRef.current) {
+      announcedCompletionRef.current = true;
+      announce(t('metrics.dashboard.loadedAnnouncement'));
+    }
+  }, [allSettled, announce, t]);
+
   const handleApplyFilters = (filters) => {
     fetchMetrics(filters);
   };
@@ -178,37 +221,45 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const secondQuestionEn = metrics.sessionsByQuestionCount.twoQuestions.en + metrics.sessionsByQuestionCount.threeQuestions.en;
   const secondQuestionFr = metrics.sessionsByQuestionCount.twoQuestions.fr + metrics.sessionsByQuestionCount.threeQuestions.fr;
 
-  // Helper for Section Wrapper to handle relative positioning for overlay
+  // Builds one Accuracy summary row from raw {total,en,fr} count objects —
+  // shared by all three rows below rather than duplicating the same
+  // total/percent arithmetic three times. Returns raw numbers, not
+  // formatted strings: see the DataTable's own columns comment for why.
+  const buildAccuracyRow = (metricLabel, total, hasError) => ({
+    metric: metricLabel,
+    totalEvaluated: total.total,
+    totalEvaluatedEn: total.en,
+    totalEvaluatedFr: total.fr,
+    pctOfQuestions: metrics.totalQuestions ? Math.round((total.total / metrics.totalQuestions) * 100) : null,
+    hasAnswerError: hasError.total,
+    accuracyPct: total.total ? 100 - Math.round((hasError.total / total.total) * 100) : 0,
+    accuracyPctEn: total.en ? 100 - Math.round((hasError.en / total.en) * 100) : 0,
+    accuracyPctFr: total.fr ? 100 - Math.round((hasError.fr / total.fr) * 100) : 0
+  });
+
   const SectionWrapper = ({ children, isLoading, title, error }) => (
-    <div className="mb-600 relative">
+    <div className="mb-600">
       <div>
-        {title && <h3 className="mb-300">{title}</h3>}
+        {title && <h2 className="mb-0">{title}</h2>}
         {isLoading && (
-          <div className="section-loading-indicator" role="status" aria-live="polite">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('common.loading', 'Loading...')}</span>
-          </div>
+          <SectionLoadingIndicator message={t('common.loading')} />
         )}
         {error && !isLoading && (
-          <StatusMessage isError tag="div" className="dashboard-error">
-            <GcdsIcon name="warning-triangle" marginRight="50" />
-            {error}
+          <StatusMessage variant="error">
+            {fetchErrorPrefix}<span lang="en">{error}</span>{fetchErrorSuffix}
           </StatusMessage>
         )}
-        {/* TODO: transition-opacity/duration-200/opacity-50/pointer-events-none are
-            Tailwind-style class names not defined anywhere in this project's CSS —
-            loading never actually dims or disables this section. Same bug in
-            TechnicalMetricsDashboard.js's identical SectionWrapper. Needs a real CSS
-            class or an inline style. */}
-        <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-          {children}
-        </div>
+        {/* No loading-dim/disable while a section refetches — removed rather
+            than replaced the Tailwind-shaped classes here, which were never
+            real CSS in this project. Same gap in
+            TechnicalMetricsDashboard.js's identical SectionWrapper. */}
+        {children}
       </div>
     </div>
   );
 
   return (
-    <GcdsContainer size="xl" className="space-y-6">
+    <GcdsContainer size="xl">
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -229,72 +280,101 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           // boolean for its own chart). Hidden here rather than offering a
           // choice that would silently match nothing. See FilterPanel's own
           // showEvalLogic prop comment.
+          //
+          // TODO: "No evaluation" is NOT hidden the same way, but has the
+          // identical problem - parseRequestFilters passes it straight
+          // through as the literal { category: 'noEval' }, which the
+          // aggregation never actually produces (a no-eval row's category
+          // is null, not the string 'noEval'), so selecting that checkbox
+          // here silently returns zero rows every time. getChatFilterConditions
+          // (Chat/Eval Dashboard) handles this correctly today - this path
+          // never got the same treatment.
+          //
+          // Bigger question raised alongside that bug: given how much of
+          // the full advanced FilterPanel doesn't cleanly apply here already
+          // (evalLogic off, Content issue hidden, now a broken noEval too),
+          // is reusing the whole shared FilterPanel even the right fit for
+          // this dashboard, or would a smaller, dedicated filter set (only
+          // the filters that actually work/make sense for these charts)
+          // serve it better? Worth evaluating, not just patching noEval in
+          // isolation.
           showEvalLogic={false}
+          // "More filters" is hidden — answerType/partnerEval/aiEval are each
+          // a hard pre-aggregation $match, so filtering by one collapses its
+          // own breakdown table (Question types, Partner/AI evaluations) to
+          // a 100%/0% tautology. urlEn/urlFr don't have this problem (a real
+          // narrowing filter, no chart breaks down by referring URL) — if
+          // wanted later, re-enable via showAdvancedSection={true}
+          // showCategoryFilters={false} (both already in FilterPanel.js)
+          // rather than exposing the other three columns too.
+          //
+          // department (Row 1, always visible) does NOT have this problem
+          // despite the same kind of $match: the Institution breakdown
+          // table's columns are each department's own internal ratio, not a
+          // share of a cross-department total, so picking one institution
+          // still shows real, meaningful numbers.
+          showAdvancedSection={false}
         />
       </div>
 
-      {hasStartedLoading && !Object.values(loadingState).some(Boolean) && metrics.totalQuestions === 0 && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+      {/* Always mounted (not inside the loading-gated blocks below) so it's
+          a pre-existing empty live region — required for `persistent` to
+          work at all (see StatusMessage.js's own comment) — before either
+          the completion announcement or the Institution breakdown table's
+          own search-narrowing announcement can ever fire into it. */}
+      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
+
+      {/* Blocks the whole results area until the first of the 6 sections
+          settles (success or error) — same LoadingOverlay pattern as
+          ChatDashboardPage.js/EvalDashboardPage.js's single-fetch tables,
+          adapted for this page's 6-concurrent-fetch shape. Once any one
+          settles, the grid below takes over and each still-pending section
+          shows its own SectionLoadingIndicator instead. */}
+      {hasStartedLoading && !hasAnySectionSettled && (
+        <LoadingOverlay message={t('admin.common.metricsLoading')} />
       )}
 
-      {hasStartedLoading && (
-        <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">
+      {/* isEmptyPeriod also gates the tables block below: a genuinely empty
+          period would otherwise render all 7 fixed-row tables full of
+          zeroed rows underneath this same banner — a redundant wall of "0"
+          repeating the one fact the banner already stated. Requires no
+          errors anywhere: totalQuestions comes from the 'usage' fetch
+          specifically, so a failed 'usage' fetch alone would also read as
+          "0 questions" — without this check, hiding the tables would hide
+          that section's error message (and any real data from the other,
+          successful fetches) instead of just skipping redundant zeros. */}
+      {(() => {
+        const isEmptyPeriod = allSettled
+          && !Object.values(errorState).some(Boolean)
+          && metrics.totalQuestions === 0;
+        return (
+          <>
+            {isEmptyPeriod && (
+              <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+            )}
 
-          <div className="p-4">
+            {hasAnySectionSettled && !isEmptyPeriod && (
+              <GcdsContainer size="xl" className="mb-600">
+
+                <div>
             {/* Table 1: Questions by position */}
             <SectionWrapper isLoading={loadingState.usage || loadingState.session} title={t('metrics.dashboard.questions.title')} error={errorState.usage || errorState.session}>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.totalQuestions'),
-                      count: fmtN(metrics.totalQuestions),
-                      percentage: fmtPct(100),
-                      enCount: fmtN(metrics.totalQuestionsEn),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.totalQuestionsEn / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.totalQuestionsFr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.totalQuestionsFr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.questions.firstQuestion'),
-                      count: fmtN(metrics.totalConversations),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.totalConversations / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.totalConversationsEn),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.totalConversationsEn / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.totalConversationsFr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.totalConversationsFr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.questions.secondQuestion'),
-                      count: fmtN(secondQuestionTotal),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((secondQuestionTotal / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(secondQuestionEn),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((secondQuestionEn / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(secondQuestionFr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((secondQuestionFr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.questions.thirdOrMore'),
-                      count: fmtN(metrics.sessionsByQuestionCount.threeQuestions.total),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.sessionsByQuestionCount.threeQuestions.total / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.sessionsByQuestionCount.threeQuestions.en),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.sessionsByQuestionCount.threeQuestions.en / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.sessionsByQuestionCount.threeQuestions.fr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.sessionsByQuestionCount.threeQuestions.fr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    }
+                    // percentage: 100 overrides buildCountPctRow's self-divide
+                    // (count === denom here) — the helper falls to 0 when the
+                    // count is genuinely 0, but this row is 100% of itself by
+                    // definition regardless of count, matching this row's
+                    // original hardcoded fmtPct(100) exactly. enPercentage/
+                    // frPercentage aren't overridden: those were already
+                    // computed (with the same 0-fallback) before this refactor.
+                    { ...buildCountPctRow(t('metrics.dashboard.totalQuestions'), { total: metrics.totalQuestions, en: metrics.totalQuestionsEn, fr: metrics.totalQuestionsFr }, metrics.totalQuestions), percentage: 100 },
+                    buildCountPctRow(t('metrics.dashboard.questions.firstQuestion'), { total: metrics.totalConversations, en: metrics.totalConversationsEn, fr: metrics.totalConversationsFr }, metrics.totalQuestions),
+                    buildCountPctRow(t('metrics.dashboard.questions.secondQuestion'), { total: secondQuestionTotal, en: secondQuestionEn, fr: secondQuestionFr }, metrics.totalQuestions),
+                    buildCountPctRow(t('metrics.dashboard.questions.thirdOrMore'), metrics.sessionsByQuestionCount.threeQuestions, metrics.totalQuestions)
                   ]}
-                  columns={[
-                    { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
-                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questions.title')}</caption>
@@ -304,44 +384,50 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Table 2: Accuracy summary */}
             <SectionWrapper isLoading={loadingState.expert || loadingState.ai || loadingState.usage} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai || errorState.usage}>
-              <p className="font-size-text-small mb-300">{t('metrics.dashboard.accuracy.note')}</p>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-300">{t('metrics.dashboard.accuracy.note')}</p>
+              <div>
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.accuracy.allEvaluations'),
-                      totalEvaluated: fmtN(metrics.expertScored.total.total + metrics.aiScored.total.total),
-                      pctOfQuestions: metrics.totalQuestions ? fmtPct(Math.round(((metrics.expertScored.total.total + metrics.aiScored.total.total) / metrics.totalQuestions) * 100)) : '-',
-                      hasAnswerError: fmtN(metrics.expertScored.hasError.total + metrics.aiScored.hasError.total),
-                      accuracyPct: (metrics.expertScored.total.total + metrics.aiScored.total.total)
-                        ? fmtPct(100 - Math.round(((metrics.expertScored.hasError.total + metrics.aiScored.hasError.total) / (metrics.expertScored.total.total + metrics.aiScored.total.total)) * 100))
-                        : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.accuracy.expertEvaluations'),
-                      totalEvaluated: fmtN(metrics.expertScored.total.total),
-                      pctOfQuestions: metrics.totalQuestions ? fmtPct(Math.round((metrics.expertScored.total.total / metrics.totalQuestions) * 100)) : '-',
-                      hasAnswerError: fmtN(metrics.expertScored.hasError.total),
-                      accuracyPct: metrics.expertScored.total.total
-                        ? fmtPct(100 - Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100))
-                        : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.accuracy.aiEvaluations'),
-                      totalEvaluated: fmtN(metrics.aiScored.total.total),
-                      pctOfQuestions: metrics.totalQuestions ? fmtPct(Math.round((metrics.aiScored.total.total / metrics.totalQuestions) * 100)) : '-',
-                      hasAnswerError: fmtN(metrics.aiScored.hasError.total),
-                      accuracyPct: metrics.aiScored.total.total
-                        ? fmtPct(100 - Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100))
-                        : fmtPct(0)
-                    }
+                    buildAccuracyRow(
+                      t('metrics.dashboard.accuracy.allEvaluations'),
+                      {
+                        total: metrics.expertScored.total.total + metrics.aiScored.total.total,
+                        en: metrics.expertScored.total.en + metrics.aiScored.total.en,
+                        fr: metrics.expertScored.total.fr + metrics.aiScored.total.fr
+                      },
+                      {
+                        total: metrics.expertScored.hasError.total + metrics.aiScored.hasError.total,
+                        en: metrics.expertScored.hasError.en + metrics.aiScored.hasError.en,
+                        fr: metrics.expertScored.hasError.fr + metrics.aiScored.hasError.fr
+                      }
+                    ),
+                    buildAccuracyRow(t('metrics.dashboard.accuracy.expertEvaluations'), metrics.expertScored.total, metrics.expertScored.hasError),
+                    buildAccuracyRow(t('metrics.dashboard.accuracy.aiEvaluations'), metrics.aiScored.total, metrics.aiScored.hasError)
                   ]}
                   columns={[
                     { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.accuracy.totalEvaluated'), data: 'totalEvaluated' },
-                    { title: t('metrics.dashboard.accuracy.pctOfQuestions'), data: 'pctOfQuestions' },
-                    { title: t('metrics.dashboard.accuracy.hasAnswerError'), data: 'hasAnswerError' },
-                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct' }
+                    // type: 'num' on every column below, all backed by raw
+                    // numbers (buildAccuracyRow above), not pre-formatted
+                    // strings: DataTables only auto-detects a column's type
+                    // (and thus its right-align class, dt-type-numeric) by
+                    // guessing from string content when no type is
+                    // declared — fragile for values like "93%"/"93 %" that
+                    // depend on locale-specific formatting. Declaring the
+                    // type explicitly skips that guesswork entirely, same
+                    // fix as the reason-breakdown table below.
+                    { title: t('metrics.dashboard.accuracy.totalEvaluated'), data: 'totalEvaluated', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+                    { title: t('metrics.dashboard.accuracy.totalEvaluatedEn'), data: 'totalEvaluatedEn', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+                    { title: t('metrics.dashboard.accuracy.totalEvaluatedFr'), data: 'totalEvaluatedFr', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+                    // pctOfQuestions is the one nullable column (buildAccuracyRow
+                    // returns null when totalQuestions is 0, no evaluations to
+                    // divide by) — '-' is display-only, non-display types get a
+                    // real number so DataTables' manual type never has to look
+                    // at the raw value at all.
+                    { title: t('metrics.dashboard.accuracy.pctOfQuestions'), data: 'pctOfQuestions', type: 'num', render: (d, type) => type === 'display' ? (d === null ? '-' : fmtPct(d)) : (d ?? 0) },
+                    { title: t('metrics.dashboard.accuracy.hasAnswerError'), data: 'hasAnswerError', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'accuracyPct', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d },
+                    { title: t('metrics.dashboard.accuracy.accuracyPctEn'), data: 'accuracyPctEn', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d },
+                    { title: t('metrics.dashboard.accuracy.accuracyPctFr'), data: 'accuracyPctFr', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d }
                   ]}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
                 >
@@ -352,28 +438,14 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Table 3: Sessions */}
             <SectionWrapper isLoading={loadingState.session} title={t('metrics.dashboard.sessions.title')} error={errorState.session}>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.totalSessions'),
-                      count: fmtN(metrics.totalConversations),
-                      percentage: fmtPct(100),
-                      enCount: fmtN(metrics.totalConversationsEn),
-                      enPercentage: metrics.totalConversations ? fmtPct(Math.round((metrics.totalConversationsEn / metrics.totalConversations) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.totalConversationsFr),
-                      frPercentage: metrics.totalConversations ? fmtPct(Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100)) : fmtPct(0)
-                    },
+                    // percentage: 100 override — see the identical comment on
+                    // Table 1's "Total questions" row above.
+                    { ...buildCountPctRow(t('metrics.dashboard.totalSessions'), { total: metrics.totalConversations, en: metrics.totalConversationsEn, fr: metrics.totalConversationsFr }, metrics.totalConversations), percentage: 100 }
                   ]}
-                  columns={[
-                    { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
-                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.sessions.title')}</caption>
@@ -383,55 +455,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Table 4: Question types */}
             <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.questionTypes.title')} error={errorState.usage}>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div>
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.answerTypes.normal'),
-                      count: fmtN(metrics.answerTypes.normal.total),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes.normal.total / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.answerTypes.normal.en),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes.normal.en / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.answerTypes.normal.fr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes.normal.fr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.answerTypes.clarifyingQuestion'),
-                      count: fmtN(metrics.answerTypes['clarifying-question'].total),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['clarifying-question'].total / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.answerTypes['clarifying-question'].en),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['clarifying-question'].en / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.answerTypes['clarifying-question'].fr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['clarifying-question'].fr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.answerTypes.ptMuni'),
-                      count: fmtN(metrics.answerTypes['pt-muni'].total),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['pt-muni'].total / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.answerTypes['pt-muni'].en),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['pt-muni'].en / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.answerTypes['pt-muni'].fr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['pt-muni'].fr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.answerTypes.notGc'),
-                      count: fmtN(metrics.answerTypes['not-gc'].total),
-                      percentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['not-gc'].total / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.answerTypes['not-gc'].en),
-                      enPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['not-gc'].en / metrics.totalQuestions) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.answerTypes['not-gc'].fr),
-                      frPercentage: metrics.totalQuestions ? fmtPct(Math.round((metrics.answerTypes['not-gc'].fr / metrics.totalQuestions) * 100)) : fmtPct(0)
-                    }
+                    buildCountPctRow(t('metrics.dashboard.answerTypes.normal'), metrics.answerTypes.normal, metrics.totalQuestions),
+                    buildCountPctRow(t('metrics.dashboard.answerTypes.clarifyingQuestion'), metrics.answerTypes['clarifying-question'], metrics.totalQuestions),
+                    buildCountPctRow(t('metrics.dashboard.answerTypes.ptMuni'), metrics.answerTypes['pt-muni'], metrics.totalQuestions),
+                    buildCountPctRow(t('metrics.dashboard.answerTypes.notGc'), metrics.answerTypes['not-gc'], metrics.totalQuestions)
                   ]}
-                  columns={[
-                    { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
-                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questionTypes.title')}</caption>
@@ -441,83 +473,30 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* Expert Scored Section */}
             <SectionWrapper isLoading={loadingState.expert} title={t('metrics.dashboard.expertScored.title')} error={errorState.expert}>
-              <GcdsText className="mb-300">{t('metrics.dashboard.expertScored.description')}</GcdsText>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.expertScored.description')}</GcdsText>
+              <div>
+                {/* TODO: "Has answer error" below can undercount - see the
+                    long comment above the $group stage in
+                    api/metrics/metrics-expert-feedback.js that computes
+                    hasError/hasCitationError. An evaluation with both a
+                    sentence error and a citation issue only counts under
+                    Citation issue, never here. Same open "should these
+                    stack instead of being mutually exclusive" question as
+                    EvalDashboardPage.js's Partner/AI Eval pills - not yet
+                    decided. */}
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.expertScored.total'),
-                      count: fmtN(metrics.expertScored.total.total),
-                      percentage: fmtPct(100),
-                      enCount: fmtN(metrics.expertScored.total.en),
-                      enPercentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.total.en / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.total.fr),
-                      frPercentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.total.fr / metrics.expertScored.total.total) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.hasError'),
-                      count: fmtN(metrics.expertScored.hasError.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.hasError.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.hasError.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.hasError.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.hasError.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.hasError.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.harmful'),
-                      count: fmtN(metrics.expertScored.harmful.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.harmful.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.harmful.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.harmful.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.harmful.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.harmful.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.hasContentIssue'),
-                      count: fmtN(metrics.expertScored.hasContentIssue.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.hasContentIssue.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.hasContentIssue.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.hasContentIssue.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.hasContentIssue.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.hasContentIssue.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.correct'),
-                      count: fmtN(metrics.expertScored.correct.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.correct.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.correct.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.correct.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.correct.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.correct.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.needsImprovement'),
-                      count: fmtN(metrics.expertScored.needsImprovement.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.needsImprovement.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.needsImprovement.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.needsImprovement.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.needsImprovement.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.needsImprovement.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.expertScored.hasCitationError'),
-                      count: fmtN(metrics.expertScored.hasCitationError.total),
-                      percentage: metrics.expertScored.total.total ? fmtPct(Math.round((metrics.expertScored.hasCitationError.total / metrics.expertScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.expertScored.hasCitationError.en),
-                      enPercentage: metrics.expertScored.total.en ? fmtPct(Math.round((metrics.expertScored.hasCitationError.en / metrics.expertScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.expertScored.hasCitationError.fr),
-                      frPercentage: metrics.expertScored.total.fr ? fmtPct(Math.round((metrics.expertScored.hasCitationError.fr / metrics.expertScored.total.fr) * 100)) : fmtPct(0)
-                    }
+                    // percentage: 100 override — see the comment on Table 1's
+                    // "Total questions" row further up.
+                    { ...buildCountPctRow(t('metrics.dashboard.expertScored.total'), metrics.expertScored.total, metrics.expertScored.total.total), percentage: 100 },
+                    buildCountPctRow(t('metrics.dashboard.expertScored.hasError'), metrics.expertScored.hasError, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.harmful'), metrics.expertScored.harmful, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.hasContentIssue'), metrics.expertScored.hasContentIssue, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.correct'), metrics.expertScored.correct, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.needsImprovement'), metrics.expertScored.needsImprovement, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.hasCitationError'), metrics.expertScored.hasCitationError, metrics.expertScored.total)
                   ]}
-                  columns={[
-                    { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
-                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{
                     paging: false,
                     searching: false,
@@ -535,65 +514,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
             {/* AI Scored Section */}
             <SectionWrapper isLoading={loadingState.ai} title={t('metrics.dashboard.aiScored.title')} error={errorState.ai}>
-              <GcdsText className="mb-300">{t('metrics.dashboard.aiScored.description')}</GcdsText>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.aiScored.description')}</GcdsText>
+              <div>
                 <DataTable
                   data={[
-                    {
-                      metric: t('metrics.dashboard.aiScored.total'),
-                      count: fmtN(metrics.aiScored.total.total),
-                      percentage: fmtPct(100),
-                      enCount: fmtN(metrics.aiScored.total.en),
-                      enPercentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.total.en / metrics.aiScored.total.total) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.aiScored.total.fr),
-                      frPercentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.total.fr / metrics.aiScored.total.total) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.aiScored.hasError'),
-                      count: fmtN(metrics.aiScored.hasError.total),
-                      percentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.hasError.total / metrics.aiScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.aiScored.hasError.en),
-                      enPercentage: metrics.aiScored.total.en ? fmtPct(Math.round((metrics.aiScored.hasError.en / metrics.aiScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.aiScored.hasError.fr),
-                      frPercentage: metrics.aiScored.total.fr ? fmtPct(Math.round((metrics.aiScored.hasError.fr / metrics.aiScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.aiScored.correct'),
-                      count: fmtN(metrics.aiScored.correct.total),
-                      percentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.correct.total / metrics.aiScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.aiScored.correct.en),
-                      enPercentage: metrics.aiScored.total.en ? fmtPct(Math.round((metrics.aiScored.correct.en / metrics.aiScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.aiScored.correct.fr),
-                      frPercentage: metrics.aiScored.total.fr ? fmtPct(Math.round((metrics.aiScored.correct.fr / metrics.aiScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.aiScored.needsImprovement'),
-                      count: fmtN(metrics.aiScored.needsImprovement.total),
-                      percentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.needsImprovement.total / metrics.aiScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.aiScored.needsImprovement.en),
-                      enPercentage: metrics.aiScored.total.en ? fmtPct(Math.round((metrics.aiScored.needsImprovement.en / metrics.aiScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.aiScored.needsImprovement.fr),
-                      frPercentage: metrics.aiScored.total.fr ? fmtPct(Math.round((metrics.aiScored.needsImprovement.fr / metrics.aiScored.total.fr) * 100)) : fmtPct(0)
-                    },
-                    {
-                      metric: t('metrics.dashboard.aiScored.hasCitationError'),
-                      count: fmtN(metrics.aiScored.hasCitationError.total),
-                      percentage: metrics.aiScored.total.total ? fmtPct(Math.round((metrics.aiScored.hasCitationError.total / metrics.aiScored.total.total) * 100)) : fmtPct(0),
-                      enCount: fmtN(metrics.aiScored.hasCitationError.en),
-                      enPercentage: metrics.aiScored.total.en ? fmtPct(Math.round((metrics.aiScored.hasCitationError.en / metrics.aiScored.total.en) * 100)) : fmtPct(0),
-                      frCount: fmtN(metrics.aiScored.hasCitationError.fr),
-                      frPercentage: metrics.aiScored.total.fr ? fmtPct(Math.round((metrics.aiScored.hasCitationError.fr / metrics.aiScored.total.fr) * 100)) : fmtPct(0)
-                    }
+                    // percentage: 100 override — see the comment on Table 1's
+                    // "Total questions" row further up.
+                    { ...buildCountPctRow(t('metrics.dashboard.aiScored.total'), metrics.aiScored.total, metrics.aiScored.total.total), percentage: 100 },
+                    buildCountPctRow(t('metrics.dashboard.aiScored.hasError'), metrics.aiScored.hasError, metrics.aiScored.total),
+                    buildCountPctRow(t('metrics.dashboard.aiScored.correct'), metrics.aiScored.correct, metrics.aiScored.total),
+                    buildCountPctRow(t('metrics.dashboard.aiScored.needsImprovement'), metrics.aiScored.needsImprovement, metrics.aiScored.total),
+                    buildCountPctRow(t('metrics.dashboard.aiScored.hasCitationError'), metrics.aiScored.hasCitationError, metrics.aiScored.total)
                   ]}
-                  columns={[
-                    { title: t('metrics.dashboard.metric'), data: 'metric' },
-                    { title: t('metrics.dashboard.count'), data: 'count' },
-                    { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-                    { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-                    { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-                    { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-                    { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{
                     paging: false,
                     searching: false,
@@ -615,43 +548,86 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             <SectionWrapper isLoading={loadingState.dept} title={null} error={errorState.dept}>
-              <div className="bg-gray-50 p-4 rounded-lg mb-600">
-                <h3 className="mb-300">{t('metrics.dashboard.byDepartment.title')}</h3>
+              <div className="mb-600">
+                <h2 className="mb-0">{t('metrics.dashboard.byDepartment.title')}</h2>
+                {/* metrics-table-container (admin.css): same styled search
+                    box as ChatDashboardPage.js/EvalDashboardPage.js's
+                    .dashboard-table-container, minus its 90vw breakout width
+                    — this table stays in the page's normal container. The
+                    sort-header icons come from the "dashboard-table"
+                    className on <DataTable> below, not this wrapper. */}
+                <div className="metrics-table-container">
                 <DataTable
+                  className="display dashboard-table"
                   data={Object.entries(metrics.byDepartment).map(([department, data]) => ({
                     department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
                     totalQuestions: data.total,
                     expertScoredTotal: data.expertScored.total,
-                    expertScoredPct: data.total ? fmtPct(Math.round((data.expertScored.total / data.total) * 100)) : fmtPct(0),
+                    expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) : 0,
                     expertScoredHasError: data.expertScored.hasError,
-                    expertScoredAccuracyPct: data.expertScored.total ? fmtPct(100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100)) : '-'
+                    // null (not '-' directly): this column has real ordering
+                    // on (unlike Accuracy summary's twin above), so the raw
+                    // sort/type value has to stay numeric-or-null, with '-'
+                    // only substituted at display time below.
+                    expertScoredAccuracyPct: data.expertScored.total ? 100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : null
                   }))}
                   columns={[
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
                     { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions', render: (d, type) => type === 'display' ? fmtN(d) : d },
                     { title: t('metrics.dashboard.expertScored.total'), data: 'expertScoredTotal', render: (d, type) => type === 'display' ? fmtN(d) : d },
-                    { title: t('metrics.dashboard.byDepartment.pctEvaluated'), data: 'expertScoredPct' },
+                    // type: 'num' below: both were pre-formatted percent
+                    // strings with no declared type, so DataTables had to
+                    // guess the column type (and thus its right-align
+                    // class) from string content — same fragile pattern
+                    // fixed on the Accuracy summary and reason-breakdown
+                    // tables above. This table also has ordering: true, so
+                    // it was silently sorting these two columns as strings
+                    // ("100%" < "9%" lexicographically) rather than numbers.
+                    { title: t('metrics.dashboard.byDepartment.pctEvaluated'), data: 'expertScoredPct', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d },
                     { title: t('metrics.dashboard.expertScored.hasError'), data: 'expertScoredHasError', render: (d, type) => type === 'display' ? fmtN(d) : d },
-                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'expertScoredAccuracyPct' }
+                    { title: t('metrics.dashboard.accuracy.accuracyPct'), data: 'expertScoredAccuracyPct', type: 'num', render: (d, type) => type === 'display' ? (d === null ? '-' : fmtPct(d)) : (d ?? 0) }
                   ]}
                   options={{
                     paging: true,
                     searching: true,
                     ordering: true,
                     info: true,
-                    pageLength: 20,
+                    // 10 matches DataTables' default lengthMenu ([10, 25, 50,
+                    // 100]) - picking a value not in that list leaves the
+                    // "entries per page" <select> with no matching <option>,
+                    // rendering blank until the user manually picks one.
+                    pageLength: 10,
                     stripe: true,
-                    className: 'display',
-                    language: dataTableLanguage(lang)
+                    // Search top-left, entries+count bottom-left — matches
+                    // ChatDashboardPage.js (EvalDashboardPage.js puts search
+                    // top-right instead).
+                    layout: {
+                      topStart: 'search',
+                      topEnd: {},
+                      bottomStart: { features: ['pageLength', 'info'] },
+                      bottomEnd: 'paging'
+                    },
+                    language: dataTableLanguage(lang),
+                    initComplete: function () {
+                      const api = this.api();
+                      wireTableAccessibility(api, { t });
+                      api.on('search.dt', () => {
+                        noteSearchResult(api.search(), api.rows({ search: 'applied' }).count());
+                      });
+                    }
                   }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.byDepartment.title')}</caption>
                 </DataTable>
+                </div>
               </div>
             </SectionWrapper>
           </div>
-        </GcdsContainer>
-      )}
+              </GcdsContainer>
+            )}
+          </>
+        );
+      })()}
     </GcdsContainer>
   );
 };

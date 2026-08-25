@@ -11,7 +11,8 @@ class DashboardService {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return;
-        params.append(key, value);
+        const normalizedValue = typeof value === 'object' ? JSON.stringify(value) : value;
+        params.append(key, normalizedValue);
       });
       const query = params.toString();
       const url = getApiUrl(`chat-dashboard${query ? `?${query}` : ''}`);

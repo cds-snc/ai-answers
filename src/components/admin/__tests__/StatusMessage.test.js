@@ -3,8 +3,8 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render } from '@testing-library/react';
-import StatusMessage from '../StatusMessage.js';
+import { act, cleanup, render, renderHook } from '@testing-library/react';
+import StatusMessage, { useSrAnnouncer } from '../StatusMessage.js';
 
 vi.mock('@gcds-core/components-react', () => ({
   GcdsIcon: (props) => React.createElement('span', { ...props, 'data-gcds-icon': true, 'aria-hidden': 'true' }),
@@ -70,7 +70,7 @@ describe('StatusMessage', () => {
     );
 
     const region = container.querySelector('[role="status"]');
-    expect(region.className).toContain('dashboard-success-box');
+    expect(region.className).toContain('status-message--success-box');
     expect(region.getAttribute('aria-live')).toBe('polite');
     // success uses a raw FA checkmark span, not GcdsIcon — GC DS's icon font
     // has no checkmark glyph.
@@ -86,7 +86,7 @@ describe('StatusMessage', () => {
     const region = container.querySelector('[role="alert"]');
     expect(region).toBeTruthy();
     expect(region.getAttribute('aria-live')).toBe('assertive');
-    expect(region.className).toContain('dashboard-error');
+    expect(region.className).toContain('status-message--error-box');
     expect(region.querySelector('[data-gcds-icon]').getAttribute('name')).toBe('warning-triangle');
   });
 
@@ -95,11 +95,67 @@ describe('StatusMessage', () => {
       React.createElement(StatusMessage, {
         message: 'Failed to save setting.',
         variant: 'error',
-        className: 'mt-200 dashboard-error--inline',
+        className: 'mt-200',
       })
     );
 
     const region = container.querySelector('[role="alert"]');
-    expect(region.className).toBe('mt-200 dashboard-error--inline dashboard-error');
+    expect(region.className).toBe('mt-200 status-message--error-box');
+  });
+});
+
+describe('useSrAnnouncer', () => {
+  it('starts with no message and nonce 0', () => {
+    const { result } = renderHook(() => useSrAnnouncer());
+
+    expect(result.current.message).toBeNull();
+    expect(result.current.nonce).toBe(0);
+  });
+
+  it('announce() sets the message and bumps the nonce', () => {
+    const { result } = renderHook(() => useSrAnnouncer());
+
+    act(() => result.current.announce('Referring URL applied'));
+
+    expect(result.current.message).toBe('Referring URL applied');
+    expect(result.current.nonce).toBe(1);
+  });
+
+  it('bumps the nonce again even when the same text fires twice in a row', () => {
+    // The whole reason nonce exists: a plain message string only re-renders
+    // consumers on a *value* change, so an identical repeat announcement
+    // would otherwise go silently un-announced to screen reader users.
+    const { result } = renderHook(() => useSrAnnouncer());
+
+    act(() => result.current.announce('Referring URL removed'));
+    act(() => result.current.announce('Referring URL removed'));
+
+    expect(result.current.message).toBe('Referring URL removed');
+    expect(result.current.nonce).toBe(2);
+  });
+
+  it('keeps announce referentially stable across re-renders', () => {
+    // useCallback with no deps — so a caller can safely put it in an effect
+    // dependency array without an exhaustive-deps warning or a re-run loop.
+    const { result, rerender } = renderHook(() => useSrAnnouncer());
+    const firstAnnounce = result.current.announce;
+
+    rerender();
+
+    expect(result.current.announce).toBe(firstAnnounce);
+  });
+
+  it('clear() resets the message without bumping the nonce', () => {
+    // Clearing a stale value isn't itself an outcome worth announcing, so
+    // it shouldn't force a re-render/re-announcement the way announce() does.
+    const { result } = renderHook(() => useSrAnnouncer());
+
+    act(() => result.current.announce('Something happened'));
+    expect(result.current.nonce).toBe(1);
+
+    act(() => result.current.clear());
+
+    expect(result.current.message).toBeNull();
+    expect(result.current.nonce).toBe(1);
   });
 });

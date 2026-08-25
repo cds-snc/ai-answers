@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
-import { GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
@@ -13,6 +12,7 @@ import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
 import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -145,27 +145,43 @@ const PublicDashboard = ({ lang = 'en' }) => {
 
       <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} minDate={minDate} />
 
-      <h2 className="dashboard-section-title">
-        {formatDateRange(appliedStartDate, appliedEndDate)}
-      </h2>
+      {/* "Overview" above owns the filter bar (this page has just the two
+          sections - Overview, Safety metrics - so it doubles as that
+          section's own intro rather than needing a separate Filters
+          heading). This h2 is the real sibling heading for the results
+          that follow - visually hidden since the visible date-range text
+          right below it already makes the section's purpose clear on
+          screen (same reasoning as the Filters/Results headings elsewhere
+          in this app), kept as a real heading so screen-reader users
+          navigating by heading/landmark still get it announced. Was
+          previously a second *visible* <h2> whose text was the computed
+          date range itself - not descriptive heading text (SC 2.4.6), and
+          genuinely empty before the first fetch resolves. A heading also
+          needs to stay the same across interactions to work as a reliable
+          landmark (a user re-navigating by heading expects "Results" to
+          mean the same thing every time) - a heading whose text is a
+          computed value that changes with every filter apply defeats that,
+          independent of the emptiness bug. The date range is a data value,
+          not a heading - shown as a prominent styled <p> instead, only
+          once there's something to show. */}
+      <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
+      {appliedStartDate && appliedEndDate && (
+        <p className="dashboard-section-title">
+          {formatDateRange(appliedStartDate, appliedEndDate)}
+        </p>
+      )}
 
       {loading ? (
-        <StatusMessage loading className="dashboard-loading" message={t('common.loading')} />
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 
       {error && (
-        <StatusMessage isError tag="div" className="dashboard-error">
-          <GcdsIcon name="warning-triangle" marginRight="50" />
-          {t('publicDashboard.error')}
-        </StatusMessage>
+        <StatusMessage variant="error" message={t('publicDashboard.error')} />
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('publicDashboard.noData')}
-        </div>
+        <StatusMessage variant="info" message={t('publicDashboard.noData')} />
       )}
 
       {/* KPI row: accuracy donut on the left, stat cards on the right — questions

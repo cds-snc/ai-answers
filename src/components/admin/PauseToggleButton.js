@@ -8,9 +8,15 @@ import React from 'react';
 // commits, so aria-pressed was always one click behind for screen readers.
 // A designer hasn't signed off on this specific treatment; revisit once
 // reviewed. Pair with usePauseToggle for the state/ref this button controls.
-export default function PauseToggleButton({ isPaused, onToggle, t, className = '' }) {
+//
+// forwardRef: a durable, always-visible, always-mounted focus target near
+// the table - e.g. BatchList.js redirects focus here after a delete, since
+// the deleted row (and whatever had focus on it) is gone and there's
+// nothing left for the usual row-remount focus-restoration to consume.
+const PauseToggleButton = React.forwardRef(({ isPaused, onToggle, t, className = '' }, ref) => {
   return (
     <button
+      ref={ref}
       type="button"
       className={`filter-button filter-button-outline${className ? ` ${className}` : ''}`}
       onClick={onToggle}
@@ -19,4 +25,8 @@ export default function PauseToggleButton({ isPaused, onToggle, t, className = '
       {isPaused ? t('common.resumeUpdates') : t('common.pauseUpdates')}
     </button>
   );
-}
+});
+
+PauseToggleButton.displayName = 'PauseToggleButton';
+
+export default PauseToggleButton;

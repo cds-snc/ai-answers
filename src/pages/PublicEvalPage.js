@@ -54,7 +54,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
-      <StatusMessage message={error} isError />
+      <StatusMessage variant={error ? 'error' : undefined} message={error} />
       {loading && <StatusMessage loading message={t('admin.publicEval.loading')} />}
       <DataTable
         data={rows}

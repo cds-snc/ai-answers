@@ -9,6 +9,7 @@ import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 import { useAnnouncedError } from '../../hooks/auth/useAnnouncedError.js';
 import AnnouncedError from '../auth/AnnouncedError.js';
+import StatusMessage from '../admin/StatusMessage.js';
 
 const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
@@ -246,7 +247,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         <GcdsStepper currentStep={2} totalSteps={3} tag="h3">
           {t('batch.upload.steps.step2Title')}
         </GcdsStepper>
-        <div className="feedback-reason-card mb-500">
+        <div className="batch-upload-card mb-500">
           <div className="mt-300 mb-250">
             <GcdsInput
               inputId="batchName"
@@ -405,10 +406,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           )}
 
           {successMessage && (
-            <p className="thank-you" role="status">
-              <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
-              {successMessage}
-            </p>
+            <StatusMessage variant="success" message={successMessage} />
           )}
         </div>
 
@@ -427,9 +425,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             {t('batch.upload.steps.step3Title')}
           </GcdsStepper>
           <p className="mb-100">{t('batch.upload.instructions.reviewIncomplete')}</p>
-          <p className="mb-200">
-            <a href="#running-evaluation">{t('batch.upload.instructions.incompleteLinkText')}</a>
-          </p>
           <details className="mb-250">
             <summary className="mb-200">{t('batch.upload.instructions.tipsTitle')}</summary>
             <p>{t('batch.upload.instructions.step6')}</p>
@@ -438,9 +433,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         </div>
 
         {processing && (
-          <div role="status" className="mb-125">
-            {t('batch.upload.processing')}
-          </div>
+          <StatusMessage loading message={t('batch.upload.processing')} />
         )}
       </form>
     </GcdsContainer>

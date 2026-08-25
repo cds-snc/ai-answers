@@ -15,7 +15,11 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <div>{children}</div>,
-  GcdsLink: ({ href, children }) => <a href={href}>{children}</a>,
+  GcdsLink: ({ href, target, lang, children }) => (
+    <a href={href} target={target} data-gcds-link lang={lang}>
+      {children}
+    </a>
+  ),
 }));
 
 const GUIDE_MARKDOWN = `---
@@ -32,6 +36,8 @@ Some intro text.
 | No panel | Nothing qualified |
 
 ![A screenshot](/content/admin/images/eval-informed-past-evals-used-en.jpg)
+
+See [an in-app guide](/en/how-to/evaluate-answers) or [an external doc](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md).
 `;
 
 describe('HowToPage', () => {
@@ -92,6 +98,22 @@ describe('HowToPage', () => {
     // The link must follow the h1, matching the other admin pages' layout.
     const heading = container.querySelector('h1');
     expect(heading.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('opens external links via GcdsLink in a new tab, and keeps in-app links as plain same-tab anchors', async () => {
+    render(<HowToPage lang="en" howToId="eval-informed-answers" />);
+
+    const inAppLink = await screen.findByRole('link', { name: 'an in-app guide' });
+    expect(inAppLink.getAttribute('href')).toBe('/en/how-to/evaluate-answers');
+    expect(inAppLink.getAttribute('target')).toBeNull();
+    expect(inAppLink.hasAttribute('data-gcds-link')).toBe(false);
+
+    const externalLink = screen.getByRole('link', { name: 'an external doc' });
+    expect(externalLink.getAttribute('href')).toBe(
+      'https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md'
+    );
+    expect(externalLink.getAttribute('target')).toBe('_blank');
+    expect(externalLink.hasAttribute('data-gcds-link')).toBe(true);
   });
 
   it('shows a not-found message for an unknown how-to id, without fetching', async () => {

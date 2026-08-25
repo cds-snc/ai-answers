@@ -7,6 +7,10 @@
  * Screenshots live in public/content/admin/images/ and are referenced from
  * the markdown with absolute paths (/content/admin/images/...).
  *
+ * ORDER MATTERS: this array is the order the guides are listed in on the admin
+ * page. Keep it in the order a partner meets them — onboard, then evaluate,
+ * then see how evaluations feed back into answers.
+ *
  * To add a new guide:
  *   1. Add the two markdown files to public/content/admin/
  *   2. Add a route entry to ROUTE_SLUGS in src/utils/routes.js
@@ -14,6 +18,24 @@
  *   4. Add the titleKey to both src/locales/en.json and src/locales/fr.json
  */
 export const HOW_TOS = [
+  {
+    id: 'partner-onboarding',
+    route: 'how-to-partner-onboarding',
+    titleKey: 'admin.howTo.partnerOnboarding',
+    files: {
+      en: 'how-to-partner-onboarding.md',
+      fr: 'comment-integration-des-partenaires.md',
+    },
+  },
+  {
+    id: 'evaluate-answers',
+    route: 'how-to-evaluate-answers',
+    titleKey: 'admin.howTo.evaluateAnswers',
+    files: {
+      en: 'how-to-evaluate-answers.md',
+      fr: 'comment-evaluer-les-reponses.md',
+    },
+  },
   {
     id: 'eval-informed-answers',
     route: 'how-to-eval-informed',

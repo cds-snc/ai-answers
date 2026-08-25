@@ -190,3 +190,59 @@ describe('ExpertFeedbackComponent — explanation required on non-good ratings',
     expect(document.querySelector('.explanation-error-summary')).toBeNull();
   });
 });
+
+// EN/FR-official-languages display rule (shown as-is; non-EN/FR collapses to
+// English) (resolveDisplayContent, src/utils/answerLanguage.js) - same rule already
+// applied to ExpertFeedbackPanel.js and ChatDashboardPage.js.
+describe('ExpertFeedbackComponent — language display', () => {
+  it('shows the original sentence untagged for English, no pill', () => {
+    renderComponent({
+      sentenceCount: 1,
+      sentences: ['Can I renew online?'],
+      questionLanguage: 'eng',
+      sentencesEnglish: ['Can I renew online?'],
+    });
+
+    const sentenceText = screen.getByText('Can I renew online?');
+    expect(sentenceText.getAttribute('lang')).toBe('en');
+    expect(screen.queryByText(/admin.common.originallyAskedIn/)).toBeNull();
+  });
+
+  it('shows the original sentence for French, tagged lang="fr" - not the English fallback', () => {
+    renderComponent({
+      sentenceCount: 1,
+      sentences: ['Puis-je renouveler en ligne?'],
+      questionLanguage: 'fra',
+      sentencesEnglish: ['Can I renew online?'],
+    });
+
+    const sentenceText = screen.getByText('Puis-je renouveler en ligne?');
+    expect(sentenceText.getAttribute('lang')).toBe('fr');
+    expect(screen.queryByText('Can I renew online?')).toBeNull();
+  });
+
+  it('collapses a non-EN/FR sentence to the English version, tags lang="en", and shows the pill below the heading', () => {
+    renderComponent({
+      sentenceCount: 1,
+      sentences: ['هل يمكنني التجديد عبر الإنترنت؟'],
+      questionLanguage: 'ara',
+      sentencesEnglish: ['Can I renew online?'],
+    });
+
+    const sentenceText = screen.getByText('Can I renew online?');
+    expect(sentenceText.getAttribute('lang')).toBe('en');
+    expect(screen.queryByText('هل يمكنني التجديد عبر الإنترنت؟')).toBeNull();
+
+    // The mocked t() just echoes its key, so this asserts presence/position
+    // rather than the real interpolated sentence.
+    const heading = screen.getByText('homepage.expertRating.intro');
+    const pill = screen.getByText(/admin.common.originallyAskedIn/);
+    expect(heading.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('does not show the pill when no language is known at all (legacy data)', () => {
+    renderComponent({ sentenceCount: 1, sentences: ['x'] }); // no questionLanguage/sentencesEnglish props
+
+    expect(screen.queryByText(/admin.common.originallyAskedIn/)).toBeNull();
+  });
+});

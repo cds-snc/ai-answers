@@ -268,7 +268,7 @@ const UsersPage = ({ lang }) => {
         </GcdsText>
       </nav>
 
-      <StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
+      <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
 
       <DataTable
         data={users}

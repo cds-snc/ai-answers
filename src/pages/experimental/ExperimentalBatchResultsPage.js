@@ -7,6 +7,7 @@ import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimen
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import BatchItemsTable from '../../components/experimental/BatchItemsTable.js';
 import BatchItemDetail from '../../components/experimental/BatchItemDetail.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
 
 const FILTERS = ['attention', 'all', 'errors'];
 
@@ -93,7 +94,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
             </header>
 
             {error && (
-                <GcdsText role="alert"><strong>{t('experimental.results.loadError')}</strong></GcdsText>
+                <StatusMessage variant="error" message={t('experimental.results.loadError')} />
             )}
 
             {/* Summary strip */}

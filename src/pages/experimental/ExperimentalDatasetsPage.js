@@ -370,15 +370,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 </GcdsButton>
                             </div>
                             <StatusMessage
-                                message={message?.text}
-                                isError={message?.type !== 'success'}
-                                tag="div"
-                                style={{
-                                    padding: '10px 14px',
-                                    borderRadius: '4px',
-                                    backgroundColor: message?.type === 'success' ? '#d4edda' : '#f8d7da',
-                                    color: message?.type === 'success' ? '#155724' : '#721c24',
-                                }}
+                                variant={message?.type}
                             >
                                 {message && (
                                     <>

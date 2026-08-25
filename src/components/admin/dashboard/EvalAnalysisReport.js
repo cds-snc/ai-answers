@@ -3,6 +3,7 @@ import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
 import { buildChatReviewHref } from '../../../utils/reviewLink.js';
+import StatusMessage from '../StatusMessage.js';
 
 const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
 const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
@@ -72,9 +73,17 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   // Older stored reports have no example.
   const exampleLink = (example) => {
     if (!example?.chatId) return '—';
+    // Route to the example's own (EN/FR breakdown row) language, not the
+    // admin's current UI language - see the note in ChatDashboardPage.js.
+    // The admin's own language rides along separately as the `adminLang`
+    // query param (4th arg) for the review page's own chrome to use. The
+    // visible text is just the opaque chatId though, not real content -
+    // its `lang` attribute (driving GcdsLink's own "opens in a new tab"
+    // hint) is admin-facing chrome, so it follows the admin's own `lang`
+    // instead of `chatLang`, same reasoning as ContentIssueChatsCard.js.
     const chatLang = example.lang === 'fr' ? 'fr' : 'en';
     return (
-      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId)} target="_blank" lang={chatLang}>
+      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId, lang)} target="_blank" lang={lang}>
         {example.chatId}
       </GcdsLink>
     );
@@ -125,10 +134,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   return (
     <div>
       {analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <div className="dashboard-warning" role="status" aria-live="polite">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))}
-        </div>
+        <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))} />
       )}
       {/* Header: what was analyzed. Plain sections with dashboard-style
           headings — the card border/box chrome is reserved for the stat and
@@ -155,10 +161,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </p>
         )}
         {analysis.status === 'error' && (
-          <div className="dashboard-warning" role="alert">
-            <span className="dashboard-warning__icon" aria-hidden="true" />
-            {t('partnerDashboard.evalAnalysis.report.partial')}
-          </div>
+          <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.report.partial')} />
         )}
       </div>
 

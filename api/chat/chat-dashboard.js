@@ -1,8 +1,9 @@
-﻿import dbConnect from '../db/db-connect.js';
+import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
+import { frForProgram } from '../util/programActionFr.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -106,11 +107,19 @@ async function chatDashboardHandler(req, res) {
       initialMatch.createdAt = dateRange;
     }
 
+    // TODO: cursor/batch mode (no `length` param - currently unused by any
+    // caller, the UI always sends `length`) filters on Chat._id here, but
+    // the final $project below reassigns the response's _id to the
+    // interaction's own _id, so the lastId this mode returns no longer
+    // matches what this filter expects on the next call. Dormant today
+    // since nothing exercises this path, but a live landmine for any
+    // future caller of the non-DataTables mode. Needs its own cursor field
+    // (e.g. filter on the underlying Chat _id explicitly, separate from the
+    // response row's _id) before anything relies on it again.
     let lastId = null;
     if (!isDataTablesMode && lastIdParam) {
       try {
         lastId = mongoose.Types.ObjectId(lastIdParam);
-        // For descending sort, get documents with _id < lastId
         initialMatch._id = { $lt: lastId };
       } catch (err) {
         return res.status(400).json({ error: 'Invalid lastId' });
@@ -121,59 +130,55 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: initialMatch });
     }
 
-    // Trim early to only the fields we need downstream
+    // Trim early to only the fields we need downstream. interactionIds is
+    // kept as a separate copy of the raw ObjectId array (mirroring
+    // eval-dashboard.js) so questionNumber can be computed via
+    // $indexOfArray after 'interactions' is overwritten with populated docs.
     pipeline.push({
       $project: {
         chatId: 1,
         user: 1,
-        interactions: 1,
+        pageLanguage: 1,
         createdAt: 1,
-        pageLanguage: 1
+        interactionIds: '$interactions'
       }
     });
 
-    // Captured before the interactions lookup/unwind/filters below narrow
-    // things down — interactions is still the chat's full ObjectId ref
-    // array here, so this is the chat's true total interaction count,
-    // regardless of any filter (e.g. department) applied later. Without
-    // this, a department-filtered chat's interactionCount reflects only
-    // the matching interactions, silently hiding that the chat has more.
-    pipeline.push({
-      $addFields: {
-        totalInteractionCount: { $size: { $ifNull: ['$interactions', []] } }
-      }
-    });
-
-    // DocumentDB-safe lookups (single-field joins) with immediate projections to minimize memory
-
-    // Lookup interactions - only need referringUrl, answer, context, expertFeedback, autoEval refs
+    // One row per interaction (question/answer pair) from here on - a
+    // multi-turn chat produces multiple rows sharing the same chatId,
+    // rather than one row per chat summarizing all of its interactions.
     pipeline.push({
       $lookup: {
         from: 'interactions',
-        localField: 'interactions',
+        localField: 'interactionIds',
         foreignField: '_id',
         as: 'interactions'
       }
     });
 
+    // TODO: preserveNullAndEmptyArrays was true before this file's
+    // restructure to per-interaction rows; a chat with an empty or fully
+    // dangling `interactions` array now produces zero rows and is invisible
+    // in results/recordsTotal entirely, where it used to surface as one
+    // (mostly empty) row. Judgment call, not a clear bug: in a per-Q&A-row
+    // table there's arguably nothing to show for a chat with no
+    // interactions, but if Chat Dashboard needs to help spot broken/empty
+    // chat records, this quietly removed that visibility. Revisit if that
+    // turns out to matter.
     pipeline.push({
       $unwind: {
         path: '$interactions',
-        preserveNullAndEmptyArrays: true
+        preserveNullAndEmptyArrays: false
       }
     });
 
-    // Project interaction to only needed fields immediately
     pipeline.push({
       $addFields: {
-        'interactions': {
-          _id: '$interactions._id',
-          question: '$interactions.question',
-          referringUrl: '$interactions.referringUrl',
-          answer: '$interactions.answer',
-          context: '$interactions.context',
-          expertFeedback: '$interactions.expertFeedback',
-          autoEval: '$interactions.autoEval'
+        questionNumber: {
+          $add: [
+            { $indexOfArray: ['$interactionIds', '$interactions._id'] },
+            1
+          ]
         }
       }
     });
@@ -189,11 +194,20 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] }
+        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] },
+        // Both needed for the admin display rule (see src/utils/answerLanguage.js's
+        // resolveDisplayContent): EN/FR show redactedQuestion as-is, anything
+        // else falls back to englishQuestion - questionLanguage is what
+        // decides which.
+        'interactions.questionLanguage': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.language', 0] }, ''] },
+        'interactions.englishQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.englishQuestion', 0] }, ''] }
       }
     });
 
-    // Lookup answers - only need answerType
+    // Lookup answers - answerType (for filtering), displayed content (falls
+    // back to englishAnswer, matching the content || englishAnswer pattern
+    // used elsewhere e.g. QuestionAnswerService.js), and the citation ref
+    // for the citations lookup below.
     pipeline.push({
       $lookup: {
         from: 'answers',
@@ -202,14 +216,53 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionAnswer'
       }
     });
-    // Extract only answerType immediately
     pipeline.push({
       $addFields: {
-        'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] }
+        'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] },
+        // Computed once here, referenced by answerContent's own fallback
+        // below - a field added earlier in an $addFields stage is visible
+        // to a later field's expression in the same stage. Kept as its own
+        // field (not folded into answerContent) so the frontend can apply
+        // the questionLanguage-driven display rule the same way it does for
+        // the question (resolveDisplayContent), independent of
+        // answerContent's separate null-safety fallback below.
+        'interactions.englishAnswer': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.englishAnswer', 0] }, ''] },
+        'interactions.answerContent': {
+          $ifNull: [
+            { $arrayElemAt: ['$interactionAnswer.content', 0] },
+            '$interactions.englishAnswer'
+          ]
+        },
+        'interactions.citationRef': { $arrayElemAt: ['$interactionAnswer.citation', 0] }
       }
     });
 
-    // Lookup contexts - only need department
+    // Lookup the citation doc for the citation link column - prefer the
+    // partner-provided URL, fall back to the AI-picked one (same priority
+    // used by metrics-citations.js).
+    pipeline.push({
+      $lookup: {
+        from: 'citations',
+        localField: 'interactions.citationRef',
+        foreignField: '_id',
+        as: 'interactionCitation'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        'interactions.citationUrl': {
+          $let: {
+            vars: {
+              provided: { $ifNull: [{ $arrayElemAt: ['$interactionCitation.providedCitationUrl', 0] }, ''] },
+              ai: { $ifNull: [{ $arrayElemAt: ['$interactionCitation.aiCitationUrl', 0] }, ''] }
+            },
+            in: { $cond: [{ $ne: ['$$provided', ''] }, '$$provided', '$$ai'] }
+          }
+        }
+      }
+    });
+
+    // Lookup contexts - department and program (the "Service" column)
     pipeline.push({
       $lookup: {
         from: 'contexts',
@@ -218,10 +271,10 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionContext'
       }
     });
-    // Extract only department immediately
     pipeline.push({
       $addFields: {
-        'interactions.department': { $ifNull: [{ $arrayElemAt: ['$interactionContext.department', 0] }, ''] }
+        'interactions.department': { $ifNull: [{ $arrayElemAt: ['$interactionContext.department', 0] }, ''] },
+        'interactions.program': { $ifNull: [{ $arrayElemAt: ['$interactionContext.program', 0] }, ''] }
       }
     });
 
@@ -234,10 +287,8 @@ async function chatDashboardHandler(req, res) {
         as: 'expertFeedbackDocs'
       }
     });
-    // Extract only needed fields immediately
     pipeline.push({
       $addFields: {
-        'interactions.expertEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] },
         'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true })
       }
     });
@@ -251,7 +302,6 @@ async function chatDashboardHandler(req, res) {
         as: 'interactionEval'
       }
     });
-    // Extract only expertFeedback ref
     pipeline.push({
       $addFields: {
         'interactions.autoEvalExpertFeedbackRef': { $arrayElemAt: ['$interactionEval.expertFeedback', 0] }
@@ -267,17 +317,17 @@ async function chatDashboardHandler(req, res) {
         as: 'autoEvalExpertFeedbackDocs'
       }
     });
-    // Extract only needed fields for aiEval computation
     pipeline.push({
       $addFields: {
         'interactions.autoEvalFeedbackData': getFeedbackDataProjection('$autoEvalExpertFeedbackDocs')
       }
     });
 
-    // Clean up temporary lookup arrays to free memory before $group
+    // Clean up temporary lookup arrays to free memory
     pipeline.push({
       $project: {
         interactionAnswer: 0,
+        interactionCitation: 0,
         interactionContext: 0,
         interactionQuestion: 0,
         expertFeedbackDocs: 0,
@@ -286,39 +336,14 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    // Compute partnerEval and aiEval using the extracted minimal data
+    // Compute partnerEval and aiEval directly for this interaction - no
+    // cross-interaction $addToSet/priority-switch needed now that each row
+    // is a single interaction rather than a summary of the whole chat.
     pipeline.push({
       $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression('$interactions.expertFeedbackData'),
         'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData'),
         'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$interactions.expertFeedbackData')
-      }
-    });
-
-    pipeline.push({
-      $project: {
-        // Inclusion-only projection to avoid invalid mixed include/exclude
-        chatId: 1,
-        user: 1,
-        createdAt: 1,
-        pageLanguage: 1,
-        totalInteractionCount: 1,
-        // Inclusion-only list - any field added to 'interactions' by the two
-        // $addFields stages above (lines ~290-296 computing
-        // partnerEval/aiEval/partnerHasContentIssue, and any earlier stage
-        // adding an interactions.* field this pipeline needs downstream)
-        // must be re-listed here too, or it's silently stripped before
-        // $group. (partnerHasContentIssue was dropped this way until fixed.)
-        interactions: {
-          department: '$interactions.department',
-          expertEmail: '$interactions.expertEmail',
-          referringUrl: '$interactions.referringUrl',
-          redactedQuestion: '$interactions.redactedQuestion',
-          answerType: '$interactions.answerType',
-          partnerEval: '$interactions.partnerEval',
-          aiEval: '$interactions.aiEval',
-          partnerHasContentIssue: '$interactions.partnerHasContentIssue'
-        }
       }
     });
 
@@ -331,13 +356,11 @@ async function chatDashboardHandler(req, res) {
         as: 'creator'
       }
     });
-
     pipeline.push({
       $addFields: {
         creatorEmail: { $ifNull: [{ $arrayElemAt: ['$creator.email', 0] }, ''] }
       }
     });
-
     pipeline.push({ $project: { creator: 0 } });
 
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
@@ -347,187 +370,68 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: { $and: andFilters } });
     }
 
-    // Handle search parameter for chatId (after grouping, so applied separately)
-    const searchFilter = searchParam ? { chatId: { $regex: escapeRegex(searchParam), $options: 'i' } } : null;
-
-    // Sort by chat _id and interaction _id so $first in $group reliably picks the earliest interaction
-    pipeline.push({ $sort: { _id: 1, 'interactions._id': 1 } });
-
-    pipeline.push({
-      $group: {
-        _id: '$_id',
-        chatId: { $first: '$chatId' },
-        createdAt: { $first: '$createdAt' },
-        creatorEmail: { $first: '$creatorEmail' },
-        pageLanguage: { $first: '$pageLanguage' },
-        interactionCount: { $sum: 1 },
-        // Same value on every unwound interaction row for a given chat
-        // (computed once, pre-filter, at the top of the pipeline) — $first
-        // after the _id sort above is as safe as it is for chatId/createdAt.
-        totalInteractionCount: { $first: '$totalInteractionCount' },
-        redactedQuestion: { $first: '$interactions.redactedQuestion' },
-        departments: {
-          $addToSet: '$interactions.department'
-        },
-        expertEmails: {
-          $addToSet: '$interactions.expertEmail'
-        },
-        referringUrls: {
-          $addToSet: '$interactions.referringUrl'
-        },
-        answerTypes: {
-          $addToSet: '$interactions.answerType'
-        },
-        partnerEvals: {
-          $addToSet: '$interactions.partnerEval'
-        },
-        aiEvals: {
-          $addToSet: '$interactions.aiEval'
-        },
-        partnerHasContentIssues: {
-          $addToSet: '$interactions.partnerHasContentIssue'
-        }
-      }
-    });
-
+    // Project fields for the UI - one row per interaction
     pipeline.push({
       $project: {
-        // keep _id so we can use it as a cursor for pagination
+        _id: '$interactions._id',
+        interactionId: { $ifNull: ['$interactions.interactionId', ''] },
         chatId: 1,
-        createdAt: 1,
-        creatorEmail: 1,
-        interactionCount: 1,
-        totalInteractionCount: 1,
-        redactedQuestion: 1,
-        department: {
-          $let: {
-            vars: {
-              filtered: {
-                $filter: {
-                  input: '$departments',
-                  as: 'dept',
-                  cond: {
-                    $and: [
-                      { $ne: ['$$dept', null] },
-                      { $ne: ['$$dept', ''] }
-                    ]
-                  }
-                }
-              }
-            },
-            in: {
-              $cond: [
-                { $gt: [{ $size: '$$filtered' }, 0] },
-                // If department filter is set and exists in filtered array, use it as primary
-                {
-                  $cond: [
-                    {
-                      $and: [
-                        { $ne: [department, ''] },
-                        { $gte: [{ $indexOfArray: ['$$filtered', department] }, 0] }
-                      ]
-                    },
-                    department,
-                    { $arrayElemAt: ['$$filtered', 0] }
-                  ]
-                },
-                ''
-              ]
-            }
-          }
-        },
-        allDepartments: {
-          $filter: {
-            input: '$departments',
-            as: 'dept',
-            cond: {
-              $and: [
-                { $ne: ['$$dept', null] },
-                { $ne: ['$$dept', ''] }
-              ]
-            }
-          }
-        },
-        expertEmail: {
-          $let: {
-            vars: {
-              filteredEmails: {
-                $filter: {
-                  input: '$expertEmails',
-                  as: 'email',
-                  cond: {
-                    $and: [
-                      { $ne: ['$$email', null] },
-                      { $ne: ['$$email', ''] }
-                    ]
-                  }
-                }
-              }
-            },
-            in: {
-              $cond: [
-                { $gt: [{ $size: '$$filteredEmails' }, 0] },
-                { $arrayElemAt: ['$$filteredEmails', 0] },
-                ''
-              ]
-            }
-          }
-        },
-        referringUrl: { $arrayElemAt: ['$referringUrls', 0] },
-        answerType: {
-          $switch: {
-            branches: [
-              { case: { $in: ['not-gc', '$answerTypes'] }, then: 'not-gc' },
-              { case: { $in: ['pt-muni', '$answerTypes'] }, then: 'pt-muni' },
-              { case: { $in: ['clarifying-question', '$answerTypes'] }, then: 'clarifying-question' },
-              { case: { $in: ['normal', '$answerTypes'] }, then: 'normal' }
-            ],
-            default: null
-          }
-        },
-        partnerEval: {
-          $switch: {
-            branches: [
-              { case: { $in: ['harmful', '$partnerEvals'] }, then: 'harmful' },
-              { case: { $in: ['hasCitationError', '$partnerEvals'] }, then: 'hasCitationError' },
-              { case: { $in: ['hasError', '$partnerEvals'] }, then: 'hasError' },
-              { case: { $in: ['needsImprovement', '$partnerEvals'] }, then: 'needsImprovement' },
-              { case: { $in: ['correct', '$partnerEvals'] }, then: 'correct' }
-            ],
-            default: null
-          }
-        },
-        aiEval: {
-          $switch: {
-            branches: [
-              { case: { $in: ['harmful', '$aiEvals'] }, then: 'harmful' },
-              { case: { $in: ['hasCitationError', '$aiEvals'] }, then: 'hasCitationError' },
-              { case: { $in: ['hasError', '$aiEvals'] }, then: 'hasError' },
-              { case: { $in: ['needsImprovement', '$aiEvals'] }, then: 'needsImprovement' },
-              { case: { $in: ['correct', '$aiEvals'] }, then: 'correct' }
-            ],
-            default: null
-          }
-        },
+        pageLanguage: 1,
+        createdAt: '$interactions.createdAt',
+        // The chat's own createdAt (distinct from the interaction-level one
+        // above) and this interaction's 1-based position within its chat -
+        // together they let the default sort cluster a multi-turn chat's
+        // rows together and in question order, instead of interleaving them
+        // with other chats' rows whenever individual interaction
+        // timestamps happen to fall in between (see the $sort stage below).
+        chatCreatedAt: '$createdAt',
+        questionNumber: 1,
+        department: '$interactions.department',
+        program: '$interactions.program',
+        redactedQuestion: '$interactions.redactedQuestion',
+        questionLanguage: '$interactions.questionLanguage',
+        englishQuestion: '$interactions.englishQuestion',
+        answerContent: '$interactions.answerContent',
+        englishAnswer: '$interactions.englishAnswer',
+        citationUrl: '$interactions.citationUrl',
+        partnerEval: '$interactions.partnerEval',
+        aiEval: '$interactions.aiEval',
+        partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
             then: 'admin',
             else: 'public'
           }
-        },
-        // True if any interaction on this chat was flagged for a content
-        // issue — independent of partnerEval's score category above, so a
-        // chat can be "correct" and still show this badge.
-        partnerHasContentIssue: { $in: [true, '$partnerHasContentIssues'] },
-        pageLanguage: 1
+        }
       }
     });
 
-
-    // Apply search filter if present (after $project stage)
-    if (searchFilter) {
-      pipeline.push({ $match: searchFilter });
+    // Global search (after projection, so applied against the final,
+    // flattened fields) - matches across every displayed column, not just
+    // chatId, since the dashboard has a single search box for the whole
+    // table rather than per-column filters.
+    // TODO: this is an unanchored, case-insensitive $regex $or across 7
+    // fields (including full untruncated answerContent), with no text
+    // index, evaluated on every date-range-matched row before pagination -
+    // cost scales with total interaction volume in the date range, not
+    // page size. Fine at current admin-tool data volumes; revisit (a text
+    // index, or narrowing which fields participate) if search gets slow as
+    // data grows.
+    if (searchParam) {
+      const esc = escapeRegex(searchParam);
+      const searchOr = [
+        { chatId: { $regex: esc, $options: 'i' } },
+        { interactionId: { $regex: esc, $options: 'i' } },
+        { department: { $regex: esc, $options: 'i' } },
+        { program: { $regex: esc, $options: 'i' } },
+        { redactedQuestion: { $regex: esc, $options: 'i' } },
+        { answerContent: { $regex: esc, $options: 'i' } },
+        { citationUrl: { $regex: esc, $options: 'i' } }
+      ];
+      pipeline.push({
+        $match: { $or: searchOr }
+      });
     }
 
     // Keep a copy of pipeline before adding sort/limit to calculate totalCount
@@ -538,58 +442,138 @@ async function chatDashboardHandler(req, res) {
       createdAt: 'createdAt',
       chatId: 'chatId',
       department: 'department',
-      expertEmail: 'expertEmail',
-      creatorEmail: 'creatorEmail',
-      pageLanguage: 'pageLanguage',
-      referringUrl: 'referringUrl',
-      userType: 'userType',
-      answerType: 'answerType',
+      program: 'program',
       partnerEval: 'partnerEval',
-      aiEval: 'aiEval',
-      interactionCount: 'interactionCount'
+      aiEval: 'aiEval'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
-    const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
+    // Default view (no column sort applied - the only way 'createdAt' is
+    // ever reached, since no visible column maps to it): sort by the CHAT's
+    // own createdAt rather than each interaction's own, with questionNumber
+    // as the tiebreaker. Sorting by each row's own interaction timestamp
+    // would interleave a multi-turn chat's rows with unrelated chats'
+    // whenever their individual interactions happen to fall in between in
+    // wall-clock time (a real conversation's turns can be minutes apart).
+    // Grouping by the chat's single, constant createdAt keeps all of a
+    // chat's matching rows adjacent and in question order instead.
+    // Explicit column sorts (Department, Service, etc.) keep the same
+    // chatCreatedAt/chatId/questionNumber trio as secondary tiebreakers, so
+    // rows that tie on the sorted column (e.g. same department) still
+    // cluster by chat. chatId has to come BEFORE questionNumber here, not
+    // after (a $sort is lexicographic - questionNumber ahead of chatId
+    // would group every chat's Q1 together, then every chat's Q2, etc.,
+    // still interleaving whenever two chats tie on chatCreatedAt; chatId
+    // first groups by chat, then questionNumber orders within that chat's
+    // own block). It replaces the row's own post-$project _id (the
+    // interaction's id, not the chat's) as the tiebreaker specifically so
+    // two chats created in the same millisecond still group instead of
+    // interleaving.
+    const sortStage = sortField === 'createdAt'
+      ? { $sort: { chatCreatedAt: orderDir, chatId: orderDir, questionNumber: 1 } }
+      : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, chatId: -1, questionNumber: 1 } };
     pipeline.push(sortStage);
 
-    if (isDataTablesMode) {
+    const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
+
+    // Group-based pagination only applies to the default date sort;
+    // explicit column sorts intentionally fall back to row-based
+    // pagination (see below) - not a bug if a chat's rows end up apart
+    // from each other in that mode.
+    //
+    // Group-based (never-split-a-chat) pagination only applies to the
+    // default view (no explicit column sort - date order, where a chat
+    // really is one unit worth keeping together). An explicit sort by a
+    // per-question field (Department/Program/Service) is deliberately
+    // scoped to individual interactions, not whole chats - "sort by
+    // Department = IRCC" means show me the IRCC questions first, not every
+    // other question in the same conversation dragged along with them,
+    // same as how a search match doesn't pull in its chat's unrelated
+    // siblings either. So those sorts fall back to plain row-based
+    // pagination below, and a chat's rows can end up apart from each other
+    // (or split across a page) in that mode - that's correct there, not
+    // the bug this feature exists to prevent. See the matching, more
+    // detailed comment in api/eval/eval-dashboard.js for the full
+    // reasoning (single continuous aggregation so the $lookup joins above
+    // still run exactly once, no $setWindowFields, etc.) - not repeated
+    // here.
+    //
+    // TODO: if this turns out to cost more than expected in practice (real
+    // DocumentDB, not local dev), it's fine to strip this back out for
+    // Chat Dashboard specifically (revert to the plain row-based
+    // $skip/$limit) and revisit later rather than live with a slow
+    // dashboard. Eval Dashboard has the equivalent TODO.
+    const useChatGroupedPagination = isDataTablesMode && sortField === 'createdAt';
+
+    if (useChatGroupedPagination) {
+      pipeline.push({ $group: { _id: '$chatId', sortKeyValue: { $first: '$chatCreatedAt' }, rows: { $push: '$$ROOT' } } });
+      pipeline.push({ $sort: { sortKeyValue: orderDir, _id: orderDir } });
       if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
+      pipeline.push({ $unwind: '$rows' });
+      pipeline.push({ $replaceRoot: { newRoot: '$rows' } });
+    } else if (isDataTablesMode) {
+      // No +1 lookahead needed here (unlike the chat-grouped branch above)
+      // - this mode always has a real totalCount from countPipeline below,
+      // not a synthetic hasMore guess, so there's nothing to detect.
+      if (start > 0) pipeline.push({ $skip: start });
+      pipeline.push({ $limit: pageSize });
     } else {
       pipeline.push({ $limit: limit });
     }
 
-    // Build count pipeline before modifying main pipeline with sort/limit
+    // Build count pipeline before modifying main pipeline with sort/limit -
+    // counts distinct chats to match group-based pagination, or plain rows
+    // to match the row-based fallback, whichever mode is active.
     const countPipeline = pipelineBeforeSortLimit.slice();
-    countPipeline.push({ $group: { _id: '$_id' } });
+    if (useChatGroupedPagination) countPipeline.push({ $group: { _id: '$chatId' } });
     countPipeline.push({ $count: 'totalCount' });
 
     // Run data and count queries in parallel for better performance
-    const [results, countResult] = await Promise.all([
+    const [flatResults, countResult] = await Promise.all([
       Chat.aggregate(pipeline).allowDiskUse(true),
       Chat.aggregate(countPipeline).allowDiskUse(true)
     ]);
 
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
-    const chats = results.map((chat) => ({
-      _id: chat._id ? String(chat._id) : '',
-      chatId: chat.chatId || '',
-      department: chat.department || '',
-      allDepartments: Array.isArray(chat.allDepartments) ? chat.allDepartments : [],
-      expertEmail: chat.expertEmail || '',
-      creatorEmail: chat.creatorEmail || '',
-      date: chat.createdAt ? chat.createdAt.toISOString() : null,
-      pageLanguage: chat.pageLanguage || '',
-      referringUrl: chat.referringUrl || '',
-      answerType: chat.answerType || '',
-      partnerEval: chat.partnerEval || '',
-      aiEval: chat.aiEval || '',
-      partnerHasContentIssue: !!chat.partnerHasContentIssue,
-      userType: chat.userType || 'public',
-      interactionCount: chat.interactionCount || 0,
-      totalInteractionCount: chat.totalInteractionCount || 0,
-      redactedQuestion: chat.redactedQuestion || ''
+    let results = flatResults;
+    if (useChatGroupedPagination && pageSize !== null) {
+      // flatResults may include one extra chat's worth of rows (the +1
+      // lookahead group) purely so a mismatched page length here would
+      // still be caught in review - trim it back off, same as
+      // eval-dashboard.js. totalCount above is unaffected either way.
+      const seenChatIds = [];
+      for (const r of flatResults) {
+        if (seenChatIds[seenChatIds.length - 1] !== r.chatId) seenChatIds.push(r.chatId);
+      }
+      if (seenChatIds.length > pageSize) {
+        const lookaheadChatId = seenChatIds[pageSize];
+        results = flatResults.filter((r) => r.chatId !== lookaheadChatId);
+      }
+    }
+    // Row-based fallback needs no trim here - its own $limit above (no +1)
+    // already fetched exactly one page's worth.
+
+    const chats = results.map((row) => ({
+      _id: row._id ? String(row._id) : '',
+      interactionId: row.interactionId || '',
+      chatId: row.chatId || '',
+      department: row.department || '',
+      program: row.program || '',
+      programFr: frForProgram(row.program),
+      redactedQuestion: row.redactedQuestion || '',
+      questionLanguage: row.questionLanguage || '',
+      englishQuestion: row.englishQuestion || '',
+      answerContent: row.answerContent || '',
+      englishAnswer: row.englishAnswer || '',
+      citationUrl: row.citationUrl || '',
+      date: row.createdAt ? row.createdAt.toISOString() : null,
+      questionNumber: row.questionNumber || 0,
+      pageLanguage: row.pageLanguage || '',
+      partnerEval: row.partnerEval || '',
+      aiEval: row.aiEval || '',
+      partnerHasContentIssue: !!row.partnerHasContentIssue,
+      userType: row.userType || 'public'
     }));
 
     if (isDataTablesMode) {

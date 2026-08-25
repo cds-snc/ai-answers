@@ -139,7 +139,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         <div className={containerClassName} tabIndex={0}>
             <DataTable
                 key={tableKey}
-                className="display chat-dashboard-table"
+                className="display dashboard-table"
                 columns={tableColumns}
                 options={options}
             />

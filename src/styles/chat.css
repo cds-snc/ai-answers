@@ -462,6 +462,18 @@
   text-decoration: underline;
 }
 
+/* .font-size-text-sm-nr (global.css) has no !important of its own, so
+   .feedback-link's 18px !important above would win regardless - today
+   that's a coincidental match (both currently resolve to 18px), but tying
+   this to the token via a compound selector (one class more specific, wins
+   outright regardless of file load order) means the "See translation" link
+   (FeedbackComponent.js) actually tracks --gcds-font-sizes-text-small if
+   that token ever changes, instead of silently drifting from .feedback-
+   link's own hardcoded magic number. */
+.feedback-link.font-size-text-sm-nr {
+  font-size: var(--gcds-font-sizes-text-small) !important;
+}
+
 .feedback-link:hover {
   color: var(--gcds-link-hover);
   text-decoration-thickness: var(--gcds-link-hover-decoration-thickness);
@@ -478,9 +490,19 @@
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
+  /* Native <button> UA stylesheets default to text-align: center - fine for
+     a short single-line label, but a longer wrapped one (e.g. the "See
+     translation" link's full sentence) centers its second+ line instead of
+     staying left-aligned like real inline link text would. */
+  text-align: left;
 }
 
-.feedback-link.button-as-link:first-of-type::before {
+/* Explicit rating classes rather than :first-of-type/:nth-of-type(2) - those
+   matched on structural position, not meaning, so a non-rating control (e.g.
+   "See translation") placed first in the group picked up a thumbs-up icon it
+   has no business showing. Apply feedback-icon-up/-down only to buttons that
+   are actually a Good/Needs improvement (or Yes/No) choice. */
+.feedback-link.button-as-link.feedback-icon-up::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f164"; /* thumbs-up */
@@ -489,7 +511,7 @@
   display: inline-block;
 }
 
-.feedback-link.button-as-link:nth-of-type(2)::before {
+.feedback-link.button-as-link.feedback-icon-down::before {
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f165"; /* thumbs-down */
@@ -1230,3 +1252,107 @@ fieldset.gc-chckbxrdio legend {
   color: #333;
   display: inline-block;
 }
+
+/* Admin-view pill on HomePage.js — same shape/sizing as .referring-url-label
+   above (border, radius, padding, font-size via that shared rule), just
+   recoloured and bolded. Deliberately reuses admin.css's .label.admin colour
+   — not a role/user-type badge (there isn't one), it's the tag the eval/chat
+   review tables already put on an interaction an admin generated. Same
+   purple here means the same thing there: this pill previews, before you've
+   even submitted anything, what colour your interaction will be tagged with
+   once it lands in that table — not just a colour picked to look right.
+   Applied alongside .referring-url-label, not instead of it. */
+.referring-url-label.admin-view-label {
+  background-color: #E1BEE7;
+  color: #6A1B9A;
+  font-weight: 700;
+  /* border-color, not border: none — keeps the same box size as the plain
+     .referring-url-label pill (removing the border entirely would shift it
+     ~2px), just makes the grey border invisible against the new fill. */
+  border-color: transparent;
+}
+
+/* Issue #1048 — testing-a-local-scenario chrome around the whole chat, not
+   just a banner. .scenario-override-wrapper is one bounding box that holds
+   the notice (top), the entire chat (middle), and the "return to edit" /
+   "how to submit" instructions (bottom), so the three read as one unit
+   instead of a floating pill above an unrelated chat. Always present in the
+   DOM; the --empty modifier collapses it to nothing visually (no border/
+   background/padding) while the banner's own role="status" node inside stays
+   mounted, same technique as .status-message--empty — a screen reader needs
+   that node present before its content changes, not inserted fresh once an
+   override activates. */
+.scenario-override-wrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: var(--gcds-border-radius-md);
+  background-color: var(--gcds-color-purple-50);
+  padding: var(--gcds-spacing-175);
+  margin-bottom: var(--gcds-spacing-300);
+}
+
+.scenario-override-wrapper--empty {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+/* The notice strip at the top of the wrapper. No border/radius/background of
+   its own — the wrapper above already supplies the box, this is just the
+   text row inside it. */
+.scenario-override-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gcds-spacing-100) var(--gcds-spacing-175);
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--gcds-color-purple-550);
+  padding-bottom: var(--gcds-spacing-175);
+}
+
+.scenario-override-banner__text {
+  font-weight: var(--gcds-font-weights-semibold);
+}
+
+.scenario-override-banner--empty {
+  padding-bottom: 0;
+  min-height: 0;
+  gap: 0;
+}
+
+/* The "return to edit" link + "how to submit" disclosure at the bottom of
+   the wrapper, visually separated from the chat above it. */
+.scenario-override-instructions {
+  margin-top: var(--gcds-spacing-175);
+  padding-top: var(--gcds-spacing-175);
+  /* Default paragraph text, not hint text — GC DS's own body-text token
+     (--gcds-font-sizes-text/-mobile), same 20px desktop / 18px mobile split
+     gcds-text's own default size uses, not a fixed non-responsive size. */
+  font-size: var(--gcds-font-sizes-text-mobile);
+  line-height: 1.55;
+  color: #333;
+}
+@media only screen and (width >= 48em) {
+  .scenario-override-instructions {
+    font-size: var(--gcds-font-sizes-text);
+  }
+}
+
+/* The "how to submit" <details> disclosure otherwise renders on a white
+   background (global.css's site-wide `details[open]`/`summary` rules), which
+   reads as a separate white card floating on the wrapper's purple
+   background rather than belonging to it. Override background/border only —
+   padding, color, the ►/▼ marker, and focus styling all stay the shared
+   global ones, this just re-tints the two rules that hardcode white.
+   :not(:focus) on summary matters: this selector and global.css's
+   `summary:focus` (line ~470) have equal specificity, and this file loads
+   after global.css in App.js, so without it this rule always won — even
+   while focused — permanently masking the focus background/outline this
+   comment claims stays untouched. */
+.scenario-override-instructions details[open],
+.scenario-override-instructions summary:not(:focus) {
+  background-color: var(--gcds-color-purple-50);
+  border-color: #d9d9d9;
+}
+

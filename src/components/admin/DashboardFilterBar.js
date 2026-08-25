@@ -201,6 +201,11 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
     onApplyRef.current({ startDate: allTimeStart, endDate: todayStr() });
+    // isDefault flips to true right after this, swapping the just-clicked
+    // <button> pill for a plain non-interactive <span> - same "focused
+    // element disappears" gap handleCustomApply already avoids by landing
+    // here too.
+    customToggleRef.current?.focus();
   };
 
   const isDefault = appliedPreset === 'allTime';
@@ -307,24 +312,24 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
             "All institutions" pill for consistency. */}
         <span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span>
         <span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span>
-        <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
-          {pillDate}
-          {!isDefault && (
-            <button
-              type="button"
-              className="filter-pill__close"
-              onClick={handleReset}
-              aria-label={t('dashboardFilter.removeFilter')}
-              disabled={loading}
-            >
-              ×
-            </button>
-          )}
-        </span>
-        {/* Visual-only — not a live region. The page-level .dashboard-loading
-            region (PartnerDashboard.js / PublicDashboard.js) is canon for the
-            "Loading…" announcement; a second live region here would double it. */}
-        {loading && <span className="filter-bar__loading">{t('dashboardFilter.loading')}</span>}
+        {isDefault ? (
+          <span className="filter-pill filter-pill--info">{pillDate}</span>
+        ) : (
+          // Whole pill is the close target, not just the small × - see
+          // FilterPanel.js's identical pattern for why (real <button>,
+          // not a span wrapping one; × is a purely visual aria-hidden
+          // span carried by this button's own aria-label).
+          <button
+            type="button"
+            className="filter-pill filter-pill--closable"
+            onClick={handleReset}
+            aria-label={`${t('dashboardFilter.removeFilter')} - ${pillDate}`}
+            disabled={loading}
+          >
+            {pillDate}
+            <span className="filter-pill__close" aria-hidden="true">×</span>
+          </button>
+        )}
       </div>
     </div>
   );
