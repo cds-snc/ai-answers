@@ -1063,8 +1063,10 @@ const ChatInterface = ({
               <div className="field-container">
                 {/* The accessible-name source for the autofocused textarea (see the
                     mount-time focus effect above) — its name must stay one atomic
-                    string. */}
-                <CanadaCaAccessibleLabel as="label" htmlFor="message" text={inputCopy} lang={lang} />
+                    string. Given an id so the textarea can reference it explicitly
+                    via aria-labelledby below (admin/partner sessions prepend
+                    admin-mode-hint ahead of it — see that block's comment). */}
+                <CanadaCaAccessibleLabel as="label" htmlFor="message" id="message-label" text={inputCopy} lang={lang} />
                 <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
@@ -1079,6 +1081,48 @@ const ChatInterface = ({
                 </span>
                 {!readOnly && messages.length === 0 && liveReferringUrlBanner}
                 {!readOnly && messages.length > 0 && isTextareaFocused && composeBoxReferringUrlEcho}
+                {/* HomePage.js's admin-view pill is sighted-only chrome, and the
+                    textarea below autofocuses on mount (see the mount-time
+                    focus effect above) — a screen reader user's focus lands
+                    directly in the textarea and never encounters the pill, so
+                    admin/partner mode would otherwise go unannounced. Wired
+                    into aria-labelledby, not aria-describedby: AT always
+                    announces a focused control's *name* before its
+                    *description*, no matter what order the description's own
+                    ids are listed in — putting this in aria-describedby (as
+                    an earlier version of this fix did) meant "Ask a
+                    Canada.ca question" was still announced first regardless.
+                    aria-labelledby, by contrast, concatenates every
+                    referenced id's text in list order to form the name
+                    itself, so listing this ahead of message-label (below)
+                    genuinely puts "Admin view..." first. Always rendered
+                    when applicable (not conditioned on messages.length like
+                    the referring-url banner) since the id must stay in the
+                    DOM for as long as it's referenced.
+
+                    Scoped entirely to isAdminOrPartner — the public chat
+                    path keeps its plain <label htmlFor> association
+                    untouched (aria-labelledby="message-label" alone
+                    resolves to the exact same name), so this carries no risk
+                    for the public view. The "testing scenario" banner
+                    (ScenarioOverrideBanner.js) isn't part of this ordering
+                    fix — it announces asynchronously via its own live
+                    region, and reliably sequencing it against this
+                    focus-time announcement needs a bigger change (delaying
+                    autofocus for admin/partner sessions). Deferred pending a
+                    decision on that tradeoff. */}
+                {!readOnly && isAdminOrPartner && (
+                  <span className="sr-only" id="admin-mode-hint">
+                    {/* Trailing period is deliberate and sr-only-local, not
+                        part of the shared adminViewLabel string (which also
+                        feeds HomePage.js's visible pill, where a trailing
+                        period isn't wanted). Without it, AT runs this
+                        straight into "Ask a Canada.ca question" with no
+                        pause between the two concatenated aria-labelledby
+                        parts. */}
+                    {safeT("homepage.chat.input.adminViewLabel")}.
+                  </span>
+                )}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}
@@ -1091,11 +1135,15 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-describedby={
-                      !readOnly && referringUrl
-                        ? "chat-input-hint displayReferringURL"
-                        : "chat-input-hint"
+                    aria-labelledby={
+                      !readOnly && isAdminOrPartner
+                        ? "admin-mode-hint message-label"
+                        : "message-label"
                     }
+                    aria-describedby={[
+                      "chat-input-hint",
+                      !readOnly && referringUrl ? "displayReferringURL" : null,
+                    ].filter(Boolean).join(" ")}
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
