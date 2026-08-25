@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.191.6](https://github.com/cds-snc/ai-answers/compare/v1.191.5...v1.191.6) (2026-08-25)
+
+
+### Bug Fixes
+
+* remove un-pausable auto-redirects, only navigate to admin when a… ([5a8cd31](https://github.com/cds-snc/ai-answers/commit/5a8cd316f830783f3bf2535fb6d0cd3004a8b17b))
+
 ## [1.191.5](https://github.com/cds-snc/ai-answers/compare/v1.191.4...v1.191.5) (2026-08-25)
 
 
