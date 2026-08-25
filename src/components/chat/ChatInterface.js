@@ -1079,6 +1079,25 @@ const ChatInterface = ({
                 </span>
                 {!readOnly && messages.length === 0 && liveReferringUrlBanner}
                 {!readOnly && messages.length > 0 && isTextareaFocused && composeBoxReferringUrlEcho}
+                {/* HomePage.js's admin-view pill is sighted-only chrome, and the
+                    textarea below autofocuses on mount (see the mount-time
+                    focus effect above) — a screen reader user's focus lands
+                    directly in the textarea and never encounters the pill, so
+                    admin/partner mode would otherwise go unannounced. Same
+                    fix as referringUrl just above: a sr-only description
+                    wired into the textarea's aria-describedby, not a live
+                    region on the pill itself (a static node already present
+                    at mount isn't reliably announced by AT on initial page
+                    load - aria-describedby on the thing that's actually
+                    getting focus is). Always rendered when applicable (not
+                    conditioned on messages.length like the referring-url
+                    banner) since the id must stay in the DOM for as long as
+                    it's referenced. */}
+                {!readOnly && isAdminOrPartner && (
+                  <span className="sr-only" id="admin-mode-hint">
+                    {safeT("homepage.chat.input.adminViewLabel")}
+                  </span>
+                )}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}
@@ -1091,11 +1110,15 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-describedby={
-                      !readOnly && referringUrl
-                        ? "chat-input-hint displayReferringURL"
-                        : "chat-input-hint"
-                    }
+                    aria-describedby={[
+                      // aria-describedby reads in id-list order, not DOM
+                      // order of the targets - admin/testing mode is
+                      // session-level context that changes how everything
+                      // else here should be read, so it goes first.
+                      !readOnly && isAdminOrPartner ? "admin-mode-hint" : null,
+                      "chat-input-hint",
+                      !readOnly && referringUrl ? "displayReferringURL" : null,
+                    ].filter(Boolean).join(" ")}
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
