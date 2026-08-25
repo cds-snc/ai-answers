@@ -16,6 +16,7 @@ import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
 import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@gcds-core/components-react';
 import StatusMessage from './components/admin/StatusMessage.js';
+import { useFocusOnChange } from './hooks/useFocusOnChange.js';
 import './styles/global.css';
 import './styles/admin.css';
 import './styles/chat.css';
@@ -405,7 +406,7 @@ const AppLayout = () => {
           tag is passed (resolveLook's isBlock: true). */}
       {currentUser && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
         <div className="container-custom mb-400">
-          <StatusMessage variant="warning" persistent>
+          <StatusMessage variant="warning" persistent className="status-message--full-width">
             {sessionWarningVisible && (
               <>
                 <p><strong>{t('auth.sessionWarning.title')}</strong></p>

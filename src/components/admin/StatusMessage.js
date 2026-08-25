@@ -192,6 +192,23 @@ const StatusMessage = React.forwardRef((
   // empty node carries its own `status-message--empty` class (not caller
   // styling) so global.css can zero that margin/padding without reaching
   // every other `[aria-live]` region in the app.
+  //
+  // aria-atomic="true" on both branches: even with `persistent` correctly
+  // keeping the same DOM node across the empty→filled transition, going
+  // from a genuinely childless element to several new child elements at
+  // once (icon + one or more paragraphs, not just a text-node change) is a
+  // structural mutation VoiceOver/Safari in particular is documented to
+  // handle unreliably when the AT has to infer what changed from a diff.
+  // aria-atomic tells it to just read the whole region on any change
+  // instead of computing that diff - the standard WAI-ARIA fix for this,
+  // not a StatusMessage-specific workaround. Applies to every caller
+  // (variant boxes, loading, and the persistent sr-only pattern) since they
+  // all render through these same two elements.
+  // Tradeoff: re-reads the *entire* region on every change, which gets
+  // verbose/repetitive for a large or frequently-updating region. Not a
+  // concern here - every StatusMessage instance holds one short message
+  // that updates rarely (a save result, a warning appearing once), never a
+  // large or rapidly-changing block.
   if (!message && !children) {
     if (!persistent) return null;
     return (
@@ -201,6 +218,7 @@ const StatusMessage = React.forwardRef((
         id={id}
         role={look.isError ? 'alert' : 'status'}
         aria-live={look.isError ? 'assertive' : 'polite'}
+        aria-atomic="true"
         className="status-message--empty"
         tabIndex={tabIndex}
       />
@@ -213,6 +231,7 @@ const StatusMessage = React.forwardRef((
       id={id}
       role={look.isError ? 'alert' : 'status'}
       aria-live={look.isError ? 'assertive' : 'polite'}
+      aria-atomic="true"
       className={[className, look.className].filter(Boolean).join(' ') || undefined}
       style={style}
       tabIndex={tabIndex}
