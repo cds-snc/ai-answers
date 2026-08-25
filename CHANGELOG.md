@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.191.4](https://github.com/cds-snc/ai-answers/compare/v1.191.3...v1.191.4) (2026-08-25)
+
+
+### Bug Fixes
+
+* add sr-only useSrAnnouncer to Statusmessages, add consumers, a11y chat-options ([930f54f](https://github.com/cds-snc/ai-answers/commit/930f54f6aa9dcf1f255eb63229fe58bcbecc26b1))
+* referring-URL Apply/Clear a11y polish, shared sr-announcer hook, status-messaging docs extraction ([41f13cf](https://github.com/cds-snc/ai-answers/commit/41f13cf09f46709a0b305f883bf2a13384afbe0c))
+
+
+### Miscellaneous Chores
+
+* remove dead handleSearchToggle pass-through, document why ([8415631](https://github.com/cds-snc/ai-answers/commit/84156311b7b18b00fdcdfaa18a58626a324ae662))
+
 ## [1.191.3](https://github.com/cds-snc/ai-answers/compare/v1.191.2...v1.191.3) (2026-08-24)
 
 
