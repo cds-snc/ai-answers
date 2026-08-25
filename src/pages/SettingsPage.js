@@ -576,7 +576,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     .join(', ');
 
   return (
-    <GcdsContainer layout="page" className="mb-600 settings-page">
+    <GcdsContainer layout="page" className="mb-600 filter-fields-full-size">
       <h1 className="mb-400">{t('settings.title')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>

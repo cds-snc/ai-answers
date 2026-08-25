@@ -149,6 +149,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [referringUrl, setReferringUrl] = useState(() => {
     return initialReferringUrl || pageUrl || clientReferrer || '';
   });
+  // Set once the user explicitly applies or clears a referring URL via
+  // ChatOptions (both go through handleReferringUrlChange below). Once true,
+  // the pageUrl-backfill effect further down must never override it again —
+  // otherwise clearing snaps straight back to pageUrl on the very next
+  // render, since that effect also runs on every referringUrl change. If the
+  // chat opened with a ?ref= URL, it should still populate initially (this
+  // flag starts false); the admin just needs to be able to change or clear
+  // it afterward and have that stick.
+  const userSetReferringUrlRef = useRef(false);
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -511,6 +520,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const handleReferringUrlChange = (e) => {
     const url = e.target.value.trim();
     console.log('Referring URL changed:', url);
+    userSetReferringUrlRef.current = true;
     setReferringUrl(url);
 
     // Parse department from manually entered URL
@@ -813,12 +823,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // If a pageUrl becomes available later and there was no saved review value,
   // prefer pageUrl over a clientReferrer. Do not override an explicit saved
-  // initialReferringUrl.
+  // initialReferringUrl, or a value the user has since applied/cleared
+  // themselves via ChatOptions (userSetReferringUrlRef) — without that guard,
+  // this effect also fires on every referringUrl change, including the one
+  // Clear itself just made, and immediately repopulates from pageUrl before
+  // the user ever sees it cleared.
   useEffect(() => {
-    // If pageUrl becomes available later and there was no saved review value,
-    // prefer pageUrl over a clientReferrer — but don't override an explicit
-    // initialReferringUrl or a user-edited referringUrl.
-    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
+    if (
+      pageUrl &&
+      !initialReferringUrl &&
+      !userSetReferringUrlRef.current &&
+      (!referringUrl || referringUrl === '')
+    ) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {

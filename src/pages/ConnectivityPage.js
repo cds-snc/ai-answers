@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -92,10 +92,11 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    // Bumped on every test run so StatusMessage's `nonce` forces the sr-only
-    // completion announcement to re-fire even when the result text is identical
-    // to the previous run (e.g. same connected/errors/warnings counts twice in a row).
-    const [testCompleteAnnounceNonce, setTestCompleteAnnounceNonce] = useState(0);
+    // useSrAnnouncer's nonce forces the sr-only completion announcement to
+    // re-fire on every test run even when the result text is identical to
+    // the previous run (e.g. same connected/errors/warnings counts twice in
+    // a row).
+    const { message: testCompleteAnnouncement, nonce: testCompleteAnnounceNonce, announce: announceTestComplete } = useSrAnnouncer();
     const [simulatedFailures, setSimulatedFailures] = useState({
         database: false,
         search: false,
@@ -152,13 +153,18 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             const data = await response.json();
             setResults(data);
-            setTestCompleteAnnounceNonce((n) => n + 1);
+            announceTestComplete(
+                t('connectivity.testComplete')
+                    .replace('{connected}', data.summary.connected)
+                    .replace('{errors}', data.summary.errors)
+                    .replace('{warnings}', data.summary.warnings)
+            );
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t, announceTestComplete]);
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -228,12 +234,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 worth reusing here too. */}
             <StatusMessage
                 persistent
-                message={results
-                    ? t('connectivity.testComplete')
-                        .replace('{connected}', results.summary.connected)
-                        .replace('{errors}', results.summary.errors)
-                        .replace('{warnings}', results.summary.warnings)
-                    : undefined}
+                message={testCompleteAnnouncement}
                 nonce={testCompleteAnnounceNonce}
                 className="sr-only"
             />

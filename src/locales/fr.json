@@ -92,6 +92,7 @@
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
         "referringPage": "Page où vous étiez :",
         "referringURL": "URL de référence :",
+        "adminViewLabel": "Vue administrateur avec options d'évaluation",
         "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous."
       },
       "textarea": {
@@ -108,7 +109,7 @@
         "reloadSessionAriaLabel": "Recharger la page — session expirée"
       },
       "options": {
-        "title": "Options",
+        "title": "Options d'évaluation",
         "aiSelection": {
           "label": "IA :",
           "anthropic": "Anthropic",
@@ -128,7 +129,12 @@
         },
         "useSystemSettings": "Utiliser les paramètres système",
         "referringUrl": {
-          "label": "URL de référence Canada.ca (facultatif)"
+          "label": "URL de référence Canada.ca (facultatif)",
+          "error": "Entrez une URL complète, commençant par https:// ou http://",
+          "applyLabel": "Appliquer l'URL",
+          "clearLabel": "Effacer l'URL",
+          "removedAnnouncement": "URL de référence effacée.",
+          "appliedAnnouncement": "URL de référence appliquée."
         }
       },
       "messages": {

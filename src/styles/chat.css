@@ -1253,6 +1253,21 @@ fieldset.gc-chckbxrdio legend {
   display: inline-block;
 }
 
+/* Admin-view pill on HomePage.js — same shape/sizing as .referring-url-label
+   above (border, radius, padding, font-size via that shared rule), just
+   recoloured and bolded to match the existing admin-dashboard user-type
+   pill (admin.css's .label.admin) instead of inventing a new colour. Applied
+   alongside .referring-url-label, not instead of it. */
+.referring-url-label.admin-view-label {
+  background-color: #E1BEE7;
+  color: #6A1B9A;
+  font-weight: 700;
+  /* border-color, not border: none — keeps the same box size as the plain
+     .referring-url-label pill (removing the border entirely would shift it
+     ~2px), just makes the grey border invisible against the new fill. */
+  border-color: transparent;
+}
+
 /* Issue #1048 — testing-a-local-scenario chrome around the whole chat, not
    just a banner. .scenario-override-wrapper is one bounding box that holds
    the notice (top), the entire chat (middle), and the "return to edit" /
@@ -1280,9 +1295,7 @@ fieldset.gc-chckbxrdio legend {
 
 /* The notice strip at the top of the wrapper. No border/radius/background of
    its own — the wrapper above already supplies the box, this is just the
-   text row inside it. border-bottom balances .scenario-override-instructions'
-   border-top below, so the chat in the middle reads as sandwiched between two
-   matching dividers rather than only separated from the bottom section. */
+   text row inside it. */
 .scenario-override-banner {
   display: flex;
   flex-wrap: wrap;
@@ -1291,7 +1304,6 @@ fieldset.gc-chckbxrdio legend {
   font-size: 18px;
   line-height: 1.55;
   color: var(--gcds-color-purple-550);
-  border-bottom: 1px solid #d9d9d9;
   padding-bottom: var(--gcds-spacing-175);
 }
 
@@ -1300,7 +1312,6 @@ fieldset.gc-chckbxrdio legend {
 }
 
 .scenario-override-banner--empty {
-  border-bottom: none;
   padding-bottom: 0;
   min-height: 0;
   gap: 0;
@@ -1309,7 +1320,6 @@ fieldset.gc-chckbxrdio legend {
 /* The "return to edit" link + "how to submit" disclosure at the bottom of
    the wrapper, visually separated from the chat above it. */
 .scenario-override-instructions {
-  border-top: 1px solid #d9d9d9;
   margin-top: var(--gcds-spacing-175);
   padding-top: var(--gcds-spacing-175);
   /* Default paragraph text, not hint text — GC DS's own body-text token

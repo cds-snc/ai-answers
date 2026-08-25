@@ -8,7 +8,7 @@ import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePausablePolling } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../admin/PauseToggleButton.js';
-import StatusMessage from '../admin/StatusMessage.js';
+import StatusMessage, { useSrAnnouncer } from '../admin/StatusMessage.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
@@ -164,18 +164,12 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // Single sr-only, persistent live region shared by every announcement this
   // component makes (pause/resume, batch completions below) - one region,
   // not one per event type, so a screen reader user doesn't have several
-  // near-simultaneous live regions competing. nonce forces a remount on
-  // every trigger (see StatusMessage.js's own doc comment) so two
-  // back-to-back announcements with coincidentally identical text - e.g.
-  // pausing twice, or two different batches sharing a name completing in
-  // separate polls - both still get announced instead of the second being a
-  // silent no-op React bails on.
-  const [announcement, setAnnouncement] = useState('');
-  const [announceNonce, setAnnounceNonce] = useState(0);
-  const announce = useCallback((message) => {
-    setAnnouncement(message);
-    setAnnounceNonce((n) => n + 1);
-  }, []);
+  // near-simultaneous live regions competing. useSrAnnouncer's nonce forces
+  // a remount on every trigger so two back-to-back announcements with
+  // coincidentally identical text - e.g. pausing twice, or two different
+  // batches sharing a name completing in separate polls - both still get
+  // announced instead of the second being a silent no-op React bails on.
+  const { message: announcement, nonce: announceNonce, announce } = useSrAnnouncer();
 
   // Tracks whether the *previous* render was paused, so the resume
   // announcement only fires on an actual paused->resumed transition, not on

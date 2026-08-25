@@ -16,6 +16,7 @@ import OutageComponent from "../components/OutageComponent.js";
 import { getPath } from "../utils/routes.js";
 import { CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
 import { getAnswerLanguage } from "../utils/answerLanguage.js";
+import { useHasAnyRole } from "../components/RoleBasedUI.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -55,6 +56,11 @@ class ErrorBoundary extends React.Component {
 const HomePage = ({ lang = "en" }) => {
   const { loading: authLoading } = useAuth();
   const { t } = useTranslations(lang);
+  // Flags a live admin/partner testing session — same role gate ChatOptions
+  // itself uses for its evaluation controls, and review mode (ChatReviewPage)
+  // is inherently admin-only already, so this only matters here, on the live
+  // entry point.
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
   const [searchParams] = useSearchParams();
   const reviewChatId = searchParams.get("chat");
   const reviewMode = searchParams.get("review") === "1";
@@ -241,6 +247,11 @@ const HomePage = ({ lang = "en" }) => {
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
+        {isAdminOrPartner && (
+          <span className="referring-url-label admin-view-label mb-300">
+            {t("homepage.chat.input.adminViewLabel")}
+          </span>
+        )}
         <CanadaCaAccessibleLabel
           as="h2"
           className="homepage-subtitle mt-0"

@@ -92,6 +92,7 @@
         "loadingHint": "AI can make mistakes, always check your answer.",
         "referringPage": "Page you were on:",
         "referringURL": "Referring URL:",
+        "adminViewLabel": "Admin view with evaluation options",
         "disclaimer": "AI can make mistakes, check the answer or ask a follow-up question below."
       },
       "textarea": {
@@ -108,7 +109,7 @@
         "reloadSessionAriaLabel": "Reload page - session expired"
       },
       "options": {
-        "title": "Options",
+        "title": "Evaluation options",
         "aiSelection": {
           "label": "AI:",
           "anthropic": "Anthropic",
@@ -128,7 +129,12 @@
         },
         "useSystemSettings": "Use system settings",
         "referringUrl": {
-          "label": "Referring Canada.ca URL (optional)"
+          "label": "Referring Canada.ca URL (optional)",
+          "error": "Enter a full URL, starting with https:// or http://",
+          "applyLabel": "Apply URL",
+          "clearLabel": "Clear URL",
+          "removedAnnouncement": "Referring URL cleared.",
+          "appliedAnnouncement": "Referring URL applied."
         }
       },
       "messages": {
