@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.191.5](https://github.com/cds-snc/ai-answers/compare/v1.191.4...v1.191.5) (2026-08-25)
+
+
+### Bug Fixes
+
+* add date ([a9c6e16](https://github.com/cds-snc/ai-answers/commit/a9c6e1665506d795451f9922fe85b151734e6f26))
+* announce admin-view mode to screen readers on chat load ([cc09e2d](https://github.com/cds-snc/ai-answers/commit/cc09e2d3d628f86febb6ad79882433a3d2b1c795))
+* announce admin-view mode to screen readers on chat load ([988e780](https://github.com/cds-snc/ai-answers/commit/988e78055d8bb1d109c2a262b77b7e87fc78bcd0))
+* pause between admin hint and label in aria-labelledby announcement ([03b2120](https://github.com/cds-snc/ai-answers/commit/03b212083f3b59c55798e594993d4c579f31d29d))
+* update FIN scenario for USA tariffs ([e66030a](https://github.com/cds-snc/ai-answers/commit/e66030a47c3dbb9f2be7cbe6273938581aacbaa3))
+* update per discuss with Annie ([87e0ffa](https://github.com/cds-snc/ai-answers/commit/87e0ffa0e29448b8c1db398af011ea5beea48b46))
+* update url to avoid ([1bc2ea9](https://github.com/cds-snc/ai-answers/commit/1bc2ea9647ba934617619fd90381b88eea7ff4e2))
+
 ## [1.191.4](https://github.com/cds-snc/ai-answers/compare/v1.191.3...v1.191.4) (2026-08-25)
 
 
