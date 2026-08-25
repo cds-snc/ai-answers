@@ -1113,7 +1113,14 @@ const ChatInterface = ({
                     decision on that tradeoff. */}
                 {!readOnly && isAdminOrPartner && (
                   <span className="sr-only" id="admin-mode-hint">
-                    {safeT("homepage.chat.input.adminViewLabel")}
+                    {/* Trailing period is deliberate and sr-only-local, not
+                        part of the shared adminViewLabel string (which also
+                        feeds HomePage.js's visible pill, where a trailing
+                        period isn't wanted). Without it, AT runs this
+                        straight into "Ask a Canada.ca question" with no
+                        pause between the two concatenated aria-labelledby
+                        parts. */}
+                    {safeT("homepage.chat.input.adminViewLabel")}.
                   </span>
                 )}
                 <div className="form-group">
