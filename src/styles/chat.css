@@ -1255,9 +1255,13 @@ fieldset.gc-chckbxrdio legend {
 
 /* Admin-view pill on HomePage.js — same shape/sizing as .referring-url-label
    above (border, radius, padding, font-size via that shared rule), just
-   recoloured and bolded to match the existing admin-dashboard user-type
-   pill (admin.css's .label.admin) instead of inventing a new colour. Applied
-   alongside .referring-url-label, not instead of it. */
+   recoloured and bolded. Deliberately reuses admin.css's .label.admin colour
+   — not a role/user-type badge (there isn't one), it's the tag the eval/chat
+   review tables already put on an interaction an admin generated. Same
+   purple here means the same thing there: this pill previews, before you've
+   even submitted anything, what colour your interaction will be tagged with
+   once it lands in that table — not just a colour picked to look right.
+   Applied alongside .referring-url-label, not instead of it. */
 .referring-url-label.admin-view-label {
   background-color: #E1BEE7;
   color: #6A1B9A;

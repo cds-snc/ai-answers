@@ -1126,7 +1126,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleSendMessage={handleSendMessage}
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
-        handleSearchToggle={handleSearchToggle}
         workflowSelection={workflowIsOverride ? workflow : ''}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}

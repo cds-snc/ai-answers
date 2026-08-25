@@ -168,6 +168,17 @@ const ChatOptions = ({
               so it was creating a visible gap even with its content hidden.
               Kept here, inert, for whenever this is re-enabled:
 
+              Re-enabling this also needs handleSearchToggle prop-threaded
+              back in — it was removed as dead pass-through (ChatOptions no
+              longer read it) once this block was commented out:
+              ChatAppContainer.js's own JSX passing it to <ChatInterface>,
+              and ChatInterface.js's own prop destructuring + its pass to
+              <ChatOptions> below. The handler/state in ChatAppContainer.js
+              itself (handleSearchToggle, selectedSearch) were left alone —
+              still genuinely live, sent to the backend on every message —
+              only the two-hop forwarding down to this now-commented-out UI
+              was removed.
+
           <div className="search-toggle" aria-hidden="true">
             <fieldset className="ai-toggle_fieldset">
               <div className="ai-toggle_container" style={{ display: 'none' }}>
