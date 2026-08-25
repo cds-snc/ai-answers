@@ -2959,6 +2959,14 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   margin-bottom: var(--gcds-spacing-400);
 }
 
+/* Region is mounted empty while there's nothing to show (see
+   AdminNotifications.js's persistent-region comment) - zero the margin so
+   that doesn't leave a visible gap. Same purpose as StatusMessage's
+   status-message--empty. */
+.admin-notifications--empty {
+  margin-bottom: 0;
+}
+
 .admin-notifications-panel {
   background: var(--gcds-color-yellow-50);
   /* Left bar only. --gcds-notice-border-width is GcdsNotice's own closest
