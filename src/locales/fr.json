@@ -958,7 +958,9 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
     "errorOccurred": "Une erreur est survenue lors de l'inscription.",
-    "submitting": "Création du compte...en attente d'approbation"
+    "submitting": "Création du compte...",
+    "pendingReceived": "Nous avons reçu votre demande de compte.",
+    "pendingActivation": "Un administrateur communiquera avec vous une fois votre compte activé et vous pourrez vous connecter."
   },
   "login": {
     "title": "Se connecter à l'administration de Réponses IA",
@@ -1022,7 +1024,7 @@
       "confirm": "Confirmer le nouveau mot de passe",
       "submit": "Définir le mot de passe",
       "submitting": "Envoi...",
-      "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
+      "success": "Nous avons mis à jour votre mot de passe.",
       "error": "Échec de la réinitialisation du mot de passe.",
       "invalid": "Lien de réinitialisation invalide.",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",

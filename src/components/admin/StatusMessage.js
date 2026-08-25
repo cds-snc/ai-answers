@@ -39,6 +39,16 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // comment for why that shipped 5 icon-less error boxes before this fixed
 // it at the root.)
 //
+// TODO (design review): the four variant boxes lay out icon + content as
+// plain inline flow (unlike .status-message--loading, which is already
+// display:flex) — fine for a one-line `message` string, but `children` with
+// a block element (e.g. RegisterPage.js's two-<p> pending-approval message)
+// forces a line break right after the icon, stranding it above the text
+// instead of beside it. Needs a content wrapper (icon + wrapper as two flex
+// items, wrapper holding however many paragraphs) to fix properly, not a
+// CSS-only patch — bundling into the design pass below rather than doing
+// it ad hoc.
+//
 // TODO (design review): none of this component's CSS — the four variant
 // boxes, the loading box, the plain isError/tag styling — has had an actual
 // design refinement pass yet; it was built code-first-accessibility-led to

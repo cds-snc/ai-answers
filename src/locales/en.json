@@ -1011,7 +1011,7 @@
       "confirm": "Confirm new password",
       "submit": "Set password",
       "submitting": "Submitting...",
-      "success": "Password updated. Redirecting to sign in...",
+      "success": "We've updated your password.",
       "error": "Failed to reset password.",
       "invalid": "Invalid reset link.",
       "passwordTooShort": "Password must be at least 8 characters.",
@@ -1029,7 +1029,9 @@
     "passwordMismatch": "Passwords do not match.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "errorOccurred": "An error occurred creating your account.",
-    "submitting": "Creating account...wait for approval"
+    "submitting": "Creating account...",
+    "pendingReceived": "We've received your account request.",
+    "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
   },
   "users": {
     "title": "Manage user accounts",
