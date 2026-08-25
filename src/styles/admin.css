@@ -2942,93 +2942,126 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
 /* AdminNotifications (admin dashboard "N pending items" banner) — folded in
    from its own AdminNotifications.css so all admin styling lives in this one
    stylesheet, consistent with the rest of the admin section.
-   TODO: this panel predates StatusMessage's variant box treatment
-   (.status-message--warning-box etc., using --gcds-color-yellow-100/500/750 —
-   see above) and still hand-rolls its own yellow/amber palette and
-   gradient background instead of it. Worth reviewing whether this can be
-   consolidated onto that shared warning styling rather than keeping a
-   second, slightly different amber-box pattern. */
+   TODO (design review): worth another look at whether this should become a
+   StatusMessage variant, but it's not a drop-in fit today - it's not a
+   generic warning box. Its layout (a stat list + an action link) doesn't
+   match StatusMessage's single-message/children shape, and its content
+   isn't uniformly "warning" either: the two item types are deliberately
+   split blue (info, --gcds-color-blue-vivid) vs. grey
+   (--gcds-color-grayscale-700), not both yellow. A StatusMessage migration
+   would need to accommodate that shape and that two-tone split, not just
+   swap classes. For now it keeps this bespoke markup, reusing GC DS tokens
+   directly, with its own role="status" aria-live="polite" + role="list"
+   wiring (AdminNotifications.js) instead of StatusMessage's built-in
+   version of the same thing. See
+   docs/coding-agent-docs/status-and-error-messaging.md. */
 .admin-notifications {
   margin-bottom: var(--gcds-spacing-400);
 }
 
-.admin-notifications-panel {
-  background: linear-gradient(135deg, #fef7e0 0%, #fef3cd 100%);
-  border: 1px solid #ffc107;
-  border-left: 4px solid #ffc107;
-  border-radius: 8px;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+/* Region is mounted empty while there's nothing to show (see
+   AdminNotifications.js's persistent-region comment) - zero the margin so
+   that doesn't leave a visible gap. Same purpose as StatusMessage's
+   status-message--empty. */
+.admin-notifications--empty {
+  margin-bottom: 0;
 }
 
-.admin-notifications-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #856404;
-  margin: 0 0 0.75rem 0;
+.admin-notifications-panel {
+  background: var(--gcds-color-yellow-50);
+  /* Left bar only. --gcds-notice-border-width is GcdsNotice's own closest
+     real token (0.375rem/6px, used internally for its icon accents) -
+     GcdsNotice itself has no border-left at all, this is the nearest
+     equivalent. yellow-500 is the most saturated step in the yellow scale
+     (no dedicated -vivid token for yellow, unlike blue) - fine here since
+     it's a border, not held to the text-contrast rules the heading/icon
+     colour below is. */
+  border-left: var(--gcds-notice-border-width) solid var(--gcds-color-yellow-500);
+  padding: 0.85rem 1.5rem;
+}
+
+.admin-notifications-heading {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.admin-notifications-title::before {
-  content: "⚠️";
+.admin-notifications-icon {
+  /* No font-size set: this inherits the ambient text size on purpose (no
+     GC DS body font-size override exists to match against - forcing in a
+     text token here would change the rendered size, not preserve it). */
+  color: var(--gcds-color-yellow-700);
+  flex-shrink: 0;
+  padding-right: var(--gcds-spacing-50);
+}
+
+.admin-notifications-title {
+  font: var(--gcds-heading-h5-desktop);
+  color: var(--gcds-color-yellow-750);
+  margin: 0;
 }
 
 .admin-notifications-list {
   list-style: none;
-  padding: 0;
-  margin: 0 0 1rem 0;
+  /* 50px has no exact GC DS spacing token - sits exactly between
+     --gcds-spacing-600 (48px) and --gcds-spacing-650 (52px), rounded down. */
+  padding-left: var(--gcds-spacing-600);
+  padding-right: var(--gcds-spacing-600);
+  margin: 0 0 var(--gcds-spacing-100) 0;
+  /* content-sized rows (not full list width), one per line */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .admin-notifications-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(133, 100, 4, 0.15);
+  padding: 0.3rem 0;
+  /* "total inactive" (the default/non-warning item) reads as neutral grey,
+     matching .label.normal/.uploaded's own grey text. */
+  color: var(--gcds-color-grayscale-700);
 }
 
-.admin-notifications-item:last-child {
-  border-bottom: none;
+/* "new users" reads as info (blue) rather than warning (yellow) - blue-vivid
+   (GC DS's actual "vivid" blue token) rather than blue-700, which read too
+   close to the grey above to tell apart at this size/weight. The
+   "--warning" name is a holdover from when this tier really was yellow -
+   worth a rename once nothing else depends on it. */
+.admin-notifications-item--warning {
+  color: var(--gcds-color-blue-vivid);
 }
 
-.admin-notifications-item--warning .admin-notifications-count {
-  /* #d97706 was ~3.19:1 against the white badge text, below the 4.5:1
-     minimum for normal-size text (SC 1.4.3). --gcds-color-yellow-700
-     reaches ~5:1. */
-  background: var(--gcds-color-yellow-700);
-  color: white;
-}
-
+/* Outline only, no fill - border: currentColor so it always matches
+   whichever colour (grey/blue-vivid) the row above sets, no separate
+   colour to keep in sync between the two item types. */
 .admin-notifications-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 28px;
   height: 28px;
-  padding: 0 0.5rem;
-  background: #6b7280;
-  color: white;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
   font-weight: 700;
-  font-size: 0.9rem;
-  border-radius: 14px;
+  color: inherit;
 }
 
 .admin-notifications-label {
-  color: #4b5563;
-  font-size: 0.95rem;
+  /* font-size comes from .font-size-text-sm-nr on the element itself
+     (global.css) - our own existing 18px utility, not redeclared here. */
+  color: inherit;
 }
 
 .admin-notifications-action {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
   font-weight: 500;
-}
-
-.admin-notifications-action::after {
-  content: "→";
+  /* font-size comes from .font-size-text-sm-nr on the element itself
+     (global.css) - our own existing 18px utility, not redeclared here. */
 }
 
 /* BatchUpload.js's step-2 form card. Deliberately its own class, not built
