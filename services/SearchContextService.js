@@ -1,6 +1,5 @@
 import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
-import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
@@ -11,14 +10,25 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
     const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
     const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
 
+    // Retry lives inside each search tool, not here: only the tool can tell a
+    // dropped socket or a 5xx from a 404 or a bad API key, and a wrapper at this
+    // level would retry all four — spending seconds of an interactive answer to
+    // return the same permanent error. The tools call back here on each attempt
+    // so the retry metric still gets recorded.
     try {
-        return await exponentialBackoff(
-            () => searchFunction(query, lang),
-            3,
-            1000,
+        const result = await searchFunction(query, lang, {
             // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
-            () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider })
-        );
+            onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
+        });
+        // The two providers report a spent-all-retries failure differently:
+        // canadaca throws (caught below), google returns `failed` with the error
+        // as its result text so the answer agent can still say the search failed.
+        // Both are errors for metrics purposes — the dashboard's own note defines
+        // this count as "calls that still failed after all retries".
+        if (result?.failed) {
+            ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        }
+        return result;
     } catch (error) {
         ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         throw error;

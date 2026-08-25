@@ -30,13 +30,6 @@ vi.mock('../ServiceCallMetricsService.js', () => ({
     default: { recordError: recordErrorMock, recordRetry: recordRetryMock },
 }));
 
-// Mock backoff to just run the function immediately, ignoring the retry
-// options and onRetry callback — SearchContextService's own error/retry
-// recording is tested directly, not backoff's.
-vi.mock('../../api/util/backoff.js', () => ({
-    exponentialBackoff: (fn) => fn()
-}));
-
 // Mock strategies and factory to avoid import errors if they have side effects or complex deps
 vi.mock('../../agents/AgentFactory.js', () => ({ createQueryRewriteAgent: vi.fn() }));
 vi.mock('../../agents/strategies/queryRewriteStrategy.js', () => ({ queryRewriteStrategy: {} }));
@@ -53,7 +46,7 @@ describe('SearchContextService', () => {
         const result = await SearchContextService.search({ chatId: 'test' });
 
         expect(AgentOrchestratorService.invokeWithStrategy).toHaveBeenCalled();
-        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en'); // Defaults to en
+        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en', expect.objectContaining({ onRetry: expect.any(Function) })); // Defaults to en
         expect(googleContextSearch).not.toHaveBeenCalled();
 
         // result should combine rewrite result and search result
@@ -81,14 +74,14 @@ describe('SearchContextService', () => {
         const result = await SearchContextService.search({
             translationData: { originalLanguage: 'fr' }
         });
-        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'fr');
+        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'fr', expect.objectContaining({ onRetry: expect.any(Function) }));
     });
 
     it('uses google search if requested', async () => {
         const result = await SearchContextService.search({
             searchService: 'google'
         });
-        expect(googleContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en');
+        expect(googleContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en', expect.objectContaining({ onRetry: expect.any(Function) }));
         expect(canadaContextSearch).not.toHaveBeenCalled();
     });
 });
@@ -115,9 +108,54 @@ describe('SearchContextService error recording', () => {
         expect(recordErrorMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
     });
 
+    // googleContextSearch deliberately does not throw — it returns the failure as
+    // its result text so the answer agent can say the search failed. That made
+    // the Google error count on the technical metrics dashboard structurally
+    // zero: the row rendered "0 errors" during a full Google outage. The tool
+    // now marks the result, and this is what keeps that marker wired up.
+    it('records a search error when google reports a failure without throwing', async () => {
+        googleContextSearch.mockResolvedValue({
+            failed: true,
+            results: 'Search failed: socket hang up',
+            provider: 'google',
+        });
+
+        const result = await SearchContextService.search({ searchService: 'google' });
+
+        expect(recordErrorMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
+        // Still returned, not thrown — the agent keeps its "search failed" text.
+        expect(result.results).toContain('Search failed:');
+    });
+
+    it('does not record an error for a successful search result', async () => {
+        googleContextSearch.mockResolvedValue({ results: 'Title: A', provider: 'google' });
+
+        await SearchContextService.search({ searchService: 'google' });
+
+        expect(recordErrorMock).not.toHaveBeenCalled();
+    });
+
     it('does not record an error when the search succeeds', async () => {
         canadaContextSearch.mockResolvedValue(['Canada Result']);
         await SearchContextService.search({ chatId: 'test' });
+        expect(recordErrorMock).not.toHaveBeenCalled();
+    });
+
+    // The retry metric is now reported by the search tool calling back through
+    // the onRetry option, so nothing throws if that wiring is dropped in a
+    // refactor — the counter just silently stops. This is what catches it.
+    it.each([
+        ['canadaca', canadaContextSearch, {}],
+        ['google', googleContextSearch, { searchService: 'google' }],
+    ])('records a retry when the %s tool reports one', async (provider, searchTool, searchArgs) => {
+        searchTool.mockImplementation(async (_query, _lang, { onRetry } = {}) => {
+            onRetry({ error: new Error('reset'), attempt: 1, attempts: 3 });
+            return ['Result'];
+        });
+
+        await SearchContextService.search({ chatId: 'test', ...searchArgs });
+
+        expect(recordRetryMock).toHaveBeenCalledWith({ service: 'search', type: provider });
         expect(recordErrorMock).not.toHaveBeenCalled();
     });
 });

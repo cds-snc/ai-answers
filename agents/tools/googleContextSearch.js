@@ -57,7 +57,15 @@ function extractSearchResults(results, numResults = 3) {
  * @param {string} lang - The language of the search query.
  * @returns {object|null} - The Google search results.
  */
-const contextSearch = async (query, lang) => {
+/**
+ * @param {string} query
+ * @param {string} lang
+ * @param {object} [options]
+ * @param {(info: {error: unknown, attempt: number, attempts: number}) => void} [options.onRetry]
+ *   Called before each retry so a caller can record the attempt (see
+ *   SearchContextService). Best-effort telemetry only.
+ */
+const contextSearch = async (query, lang, { onRetry } = {}) => {
     try {
         const CX = process.env.GOOGLE_SEARCH_ENGINE_ID;
         const API_KEY = process.env.GOOGLE_API_KEY;
@@ -84,11 +92,12 @@ const contextSearch = async (query, lang) => {
             {
                 attempts: MAX_SEARCH_ATTEMPTS,
                 baseDelayMs: RETRY_BASE_DELAY_MS,
-                onRetry: ({ error, attempt }) => {
+                onRetry: (info) => {
                     console.warn(
-                        `Google search attempt ${attempt} failed with a transient error, retrying:`,
-                        maskSecretValue(error.message)
+                        `Google search attempt ${info.attempt} failed with a transient error, retrying:`,
+                        maskSecretValue(info.error.message)
                     );
+                    if (onRetry) onRetry(info);
                 },
             }
         );
@@ -103,6 +112,13 @@ const contextSearch = async (query, lang) => {
         const sanitizedError = sanitizeErrorForLogging(error);
         console.error("Error performing Google search:", sanitizedError);
         return {
+            // Returning the failure as text rather than throwing is deliberate:
+            // the answer agent sees that the search failed and can say so,
+            // instead of the whole turn dying. `failed` exists because that
+            // choice otherwise makes a failure indistinguishable from a
+            // successful search to every caller — including the one that counts
+            // errors for the technical metrics dashboard.
+            failed: true,
             results: "Search failed: " + maskSecretValue(error.message),
             provider: "google"
         };
