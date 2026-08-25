@@ -34,17 +34,9 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 }));
 
 vi.mock('@gcds-core/components-react', () => ({
-  GcdsNotice: ({ children, noticeRole, noticeTitle, noticeTitleTag, className }) => (
-    <section
-      data-notice-role={noticeRole}
-      data-notice-title={noticeTitle}
-      data-notice-title-tag={noticeTitleTag}
-      className={className}
-    >
-      {children}
-    </section>
-  ),
-  GcdsText: ({ children }) => <div>{children}</div>,
+  // Real StatusMessage (not mocked below) renders a GcdsIcon internally for
+  // variant="warning" - stub it the same way StatusMessage.test.js does.
+  GcdsIcon: (props) => React.createElement('span', { ...props, 'data-gcds-icon': true, 'aria-hidden': 'true' }),
 }));
 
 vi.mock('../../components/auth/PasswordInput.js', () => ({
@@ -66,11 +58,23 @@ describe('LoginPage session expired notice', () => {
   it('shows a warning when redirected after a session check fails', () => {
     render(<LoginPage lang="en" />);
 
-    const notice = screen.getByText('Your session has expired. Please sign in again to continue.').closest('section');
+    // role="status"/aria-live="polite" - was GcdsNotice, which renders no
+    // role/aria-live at all (see status-and-error-messaging.md), so a
+    // screen reader got no announcement here before this fix.
+    const notice = screen.getByRole('status');
     expect(notice).toBeTruthy();
-    expect(notice?.getAttribute('data-notice-role')).toBe('warning');
-    expect(notice?.getAttribute('data-notice-title')).toBe('Session expired');
+    expect(notice.getAttribute('aria-live')).toBe('polite');
+    expect(notice.textContent).toContain('Session expired');
+    expect(notice.textContent).toContain('Your session has expired. Please sign in again to continue.');
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+  });
+
+  it('moves focus to the notice on mount, since there is no prior interaction to anchor to', () => {
+    render(<LoginPage lang="en" />);
+
+    const notice = screen.getByRole('status');
+    expect(notice.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(notice);
   });
 
   it('allows valid credentials to log in while the expiry reason is present', async () => {

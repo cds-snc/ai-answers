@@ -10,7 +10,7 @@ import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
-import { GcdsNotice, GcdsText } from '@gcds-core/components-react';
+import StatusMessage from '../components/admin/StatusMessage.js';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -22,6 +22,12 @@ const LoginPage = ({ lang = 'en' }) => {
   const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
   const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
+  // Unlike App.js's session-warning box (ambient, no focus-move needed),
+  // this is a one-time mount-time message explaining a redirect the user
+  // didn't initiate — same category ResetCompletePage.js's invalid-reset-
+  // link case gets explicit focus-move for, and for the same reason: no
+  // nearby trigger the user just interacted with to anchor their attention.
+  const sessionExpiredRef = useFocusOnChange(sessionExpired);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,15 +125,21 @@ const LoginPage = ({ lang = 'en' }) => {
   return (
     <div className="auth-login-container">
       <h1>{showTwoStep ? t('login.2fa.title') : t('login.title')}</h1>
+      {/* Was GcdsNotice — no role/aria-live in its render at all, so this
+          never announced anything (see App.js's matching comment / status-
+          and-error-messaging.md for the full reasoning). tabIndex={-1} +
+          sessionExpiredRef move focus here on mount since there's no prior
+          user interaction to anchor attention to an unexpected redirect. */}
       {sessionExpired && (
-        <GcdsNotice
-          noticeRole="warning"
-          noticeTitleTag="h2"
-          noticeTitle={t('login.sessionExpired.title')}
+        <StatusMessage
+          variant="warning"
           className="mb-400"
+          ref={sessionExpiredRef}
+          tabIndex={-1}
         >
-          <GcdsText>{t('login.sessionExpired.message')}</GcdsText>
-        </GcdsNotice>
+          <p><strong>{t('login.sessionExpired.title')}</strong></p>
+          <p>{t('login.sessionExpired.message')}</p>
+        </StatusMessage>
       )}
 
       {/* When in 2FA flow show only the 2FA UI */}

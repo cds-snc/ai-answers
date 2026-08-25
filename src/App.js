@@ -14,7 +14,8 @@ import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
 import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
-import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter, GcdsNotice, GcdsText } from '@gcds-core/components-react';
+import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@gcds-core/components-react';
+import StatusMessage from './components/admin/StatusMessage.js';
 import './styles/global.css';
 import './styles/admin.css';
 import './styles/chat.css';
@@ -382,15 +383,23 @@ const AppLayout = () => {
           )}
         </GcdsBreadcrumbs>
       </GcdsHeader>
+      {/* Was GcdsNotice — its render is a plain <section>, no role/aria-live at
+          all (verified against its compiled source), so this box got
+          silently inserted into the DOM with zero announcement to screen
+          reader users whenever sessionWarningVisible flipped true mid-task.
+          GcdsNotice is fine for static, in-page content that doesn't change;
+          this appears/disappears, so it needs StatusMessage's role="status"
+          aria-live="polite" instead. See
+          docs/coding-agent-docs/status-and-error-messaging.md. No explicit
+          focus-move — this is ambient, non-blocking info (same category as
+          other StatusMessage successes that don't move focus), not a
+          blocking error like AnnouncedError's model. */}
       {currentUser && sessionWarningVisible && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
         <div className="container-custom mb-400">
-          <GcdsNotice
-            noticeRole="warning"
-            noticeTitleTag="h2"
-            noticeTitle={t('auth.sessionWarning.title')}
-          >
-            <GcdsText>{t('auth.sessionWarning.message')}</GcdsText>
-          </GcdsNotice>
+          <StatusMessage variant="warning">
+            <p><strong>{t('auth.sessionWarning.title')}</strong></p>
+            <p>{t('auth.sessionWarning.message')}</p>
+          </StatusMessage>
         </div>
       )}
       <main id="main-content">
