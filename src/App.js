@@ -406,7 +406,7 @@ const AppLayout = () => {
           tag is passed (resolveLook's isBlock: true). */}
       {currentUser && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
         <div className="container-custom mb-400">
-          <StatusMessage variant="warning" persistent className="status-message--full-width">
+          <StatusMessage variant="warning" persistent>
             {sessionWarningVisible && (
               <>
                 <p><strong>{t('auth.sessionWarning.title')}</strong></p>
