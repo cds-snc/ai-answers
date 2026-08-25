@@ -46,7 +46,10 @@ const RegisterPage = ({ lang = 'en' }) => {
       if (data.user?.active) {
         navigate(getPath('admin', lang));
       } else {
-        setSuccessMessage(t('signup.pending'));
+        // Just a truthy flag here, not display text - the two sentences
+        // below are rendered as separate <p>s via StatusMessage's
+        // `children` escape hatch (one string can't become two paragraphs).
+        setSuccessMessage(true);
       }
     } catch {
       setSystemError(t('signup.errorOccurred'));
@@ -58,7 +61,14 @@ const RegisterPage = ({ lang = 'en' }) => {
   return (
     <div className="auth-signup-container">
       <h1>{t('signup.title')}</h1>
-      <StatusMessage variant="success" message={successMessage} />
+      <StatusMessage variant="success">
+        {successMessage && (
+          <>
+            <p>{t('signup.pendingReceived')}</p>
+            <p>{t('signup.pendingActivation')}</p>
+          </>
+        )}
+      </StatusMessage>
       <StatusMessage variant="error" message={systemError} />
       {error && (
         <AnnouncedError id="signup-error" message={error} errorCount={errorCount} inputRef={errorRef} />
@@ -113,9 +123,16 @@ const RegisterPage = ({ lang = 'en' }) => {
           </button>
         </form>
       )}
-      <div className="auth-links">
-        <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
-      </div>
+      {/* Only useful before submit (someone who landed here by mistake and
+          already has an account). Once signup succeeds, the account is
+          pending approval - there's nothing to sign into yet, an email is
+          what tells them when that changes - so the link would just be a
+          dead end here. */}
+      {!successMessage && (
+        <div className="auth-links">
+          <Link to={getPath('signin', lang)}>{t('login.form.signinLink')}</Link>
+        </div>
+      )}
     </div>
   );
 };

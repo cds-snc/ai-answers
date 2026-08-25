@@ -1024,7 +1024,8 @@
     "passwordTooShort": "Password must be at least 8 characters.",
     "errorOccurred": "An error occurred creating your account.",
     "submitting": "Creating account...",
-    "pending": "We've received your account request. An administrator must activate it before you can sign in."
+    "pendingReceived": "We've received your account request.",
+    "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
   },
   "users": {
     "title": "Manage user accounts",
