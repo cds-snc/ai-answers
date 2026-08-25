@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.191.5](https://github.com/cds-snc/ai-answers/compare/v1.191.4...v1.191.5) (2026-08-25)
+
+
+### Bug Fixes
+
+* add aria-atomic to StatusMessage ([2bcf7f3](https://github.com/cds-snc/ai-answers/commit/2bcf7f3e852fdd3a407e1cbacc606753410d3167))
+* add date ([a9c6e16](https://github.com/cds-snc/ai-answers/commit/a9c6e1665506d795451f9922fe85b151734e6f26))
+* add live-region a11y to session/admin notices, restyle AdminNoti… ([18593d9](https://github.com/cds-snc/ai-answers/commit/18593d9920951121c8ffc3a0113a2869deb0b28f))
+* add live-region a11y to session/admin notices, restyle AdminNotifications ([d1587f0](https://github.com/cds-snc/ai-answers/commit/d1587f055b61c9aa52cb428069cc31716be2550c))
+* announce admin-view mode to screen readers on chat load ([cc09e2d](https://github.com/cds-snc/ai-answers/commit/cc09e2d3d628f86febb6ad79882433a3d2b1c795))
+* announce admin-view mode to screen readers on chat load ([988e780](https://github.com/cds-snc/ai-answers/commit/988e78055d8bb1d109c2a262b77b7e87fc78bcd0))
+* announce session-warning and admin-notification live regions on insertion ([7590df2](https://github.com/cds-snc/ai-answers/commit/7590df24c53aa710298f6a9bd6cfb24e073f8c94))
+* pause between admin hint and label in aria-labelledby announcement ([03b2120](https://github.com/cds-snc/ai-answers/commit/03b212083f3b59c55798e594993d4c579f31d29d))
+* remove dangling status-message--full-width class reference ([db76d62](https://github.com/cds-snc/ai-answers/commit/db76d6271bd8ebad5f254547938489cfa2b94cf3))
+* update FIN scenario for USA tariffs ([e66030a](https://github.com/cds-snc/ai-answers/commit/e66030a47c3dbb9f2be7cbe6273938581aacbaa3))
+* update per discuss with Annie ([87e0ffa](https://github.com/cds-snc/ai-answers/commit/87e0ffa0e29448b8c1db398af011ea5beea48b46))
+* update url to avoid ([1bc2ea9](https://github.com/cds-snc/ai-answers/commit/1bc2ea9647ba934617619fd90381b88eea7ff4e2))
+
 ## [1.191.4](https://github.com/cds-snc/ai-answers/compare/v1.191.3...v1.191.4) (2026-08-25)
 
 
