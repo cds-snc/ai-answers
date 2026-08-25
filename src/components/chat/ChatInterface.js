@@ -13,6 +13,7 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
+import { useHasAnyRole } from '../RoleBasedUI.js';
 import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
@@ -33,7 +34,6 @@ const ChatInterface = ({
   handleSendMessage,
   handleReload,
   handleAIToggle,
-  handleSearchToggle,
   workflowSelection,
   handleWorkflowChange,
   handleReferringUrlChange,
@@ -82,6 +82,10 @@ const ChatInterface = ({
   // `adminLang || lang` at every call site below.
   const effectiveAdminLang = adminLang || lang;
   const { t: adminT } = useTranslations(effectiveAdminLang);
+  // Admin/partner testing via ChatOptions cares about the exact URL they
+  // applied, not the shortened public-facing display — same role gate
+  // ChatOptions itself uses for that panel.
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
   const safeAdminT = useCallback(
     (key) => {
       const result = adminT(key);
@@ -92,16 +96,28 @@ const ChatInterface = ({
     [adminT]
   );
 
-  // Add truncateURL helper function 
+  // Add truncateURL helper function
   const truncateURL = useCallback((url) => {
     if (!url) return '';
     try {
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace(/^www\./, '');
-      const pathname = urlObj.pathname;
-      const filename = pathname.split('/').pop() || '';
+      // Real path segments only (filter(Boolean) drops the empty strings
+      // split('/') leaves for a leading/trailing slash) — the previous
+      // version always appended "/.../{lastSegment}" even for a bare domain
+      // with no path at all, producing a fake "domain/.../ " with nothing
+      // actually elided.
+      const segments = urlObj.pathname.split('/').filter(Boolean);
 
-      return `${domain}/.../${filename}`;
+      if (segments.length === 0) {
+        return domain;
+      }
+      if (segments.length === 1) {
+        return `${domain}/${segments[0]}`;
+      }
+      // Only genuinely worth eliding the middle once there's more than one
+      // segment to hide.
+      return `${domain}/.../${segments[segments.length - 1]}`;
     } catch (error) {
       console.error('Invalid URL:', error);
       return url;
@@ -475,13 +491,18 @@ const ChatInterface = ({
     ? `${safeT("homepage.chat.input.referringPage")} ${buildReadableLocationLabel(referringUrl, lang) || truncateURL(referringUrl)}`
     : '';
 
+  // Full URL for admin/partner (testing via ChatOptions cares about the
+  // exact value applied); shortened domain/.../file display for everyone
+  // else, same as before.
+  const displayedReferringUrl = isAdminOrPartner ? referringUrl : truncateURL(referringUrl);
+
   // Live-chat referring-URL banner: shown at the top once the first message
   // has been sent, or above the textarea before that (see the two render
   // sites below) — same markup either way, so it's defined once here rather
   // than duplicated at both call sites.
   const liveReferringUrlBanner = referringUrl ? (
     <span className="referring-url-label mb-300" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
-      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {displayedReferringUrl}
     </span>
   ) : null;
 
@@ -492,7 +513,7 @@ const ChatInterface = ({
   // the accessible description is already announced via the persistent one.
   const composeBoxReferringUrlEcho = referringUrl ? (
     <span className="referring-url-label mb-300" aria-hidden="true">
-      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {displayedReferringUrl}
     </span>
   ) : null;
 
@@ -1154,18 +1175,16 @@ const ChatInterface = ({
   // Deliberately outside chatBody/scenario-override-wrapper: the "Options"
   // disclosure (admin/partner model/workflow/referring-URL controls) isn't
   // part of the chat experience the scenario bubble is wrapping — it's a
-  // debug panel, set apart visually by its own top rule (the "hr" class on
-  // GcdsDetails, see ChatOptions.js). The bubble — testing notice, chat, and
-  // "return to edit"/"how to submit" — has to end above that rule, not
-  // swallow Options into the same box. Same gating condition it always had
-  // (input-area's own `!readOnly && turnCount < MAX_CONVERSATION_TURNS`).
+  // debug panel. The bubble — testing notice, chat, and "return to edit"/
+  // "how to submit" — has to end above it, not swallow Options into the
+  // same box. Same gating condition it always had (input-area's own
+  // `!readOnly && turnCount < MAX_CONVERSATION_TURNS`).
   const chatOptions = !readOnly && turnCount < MAX_CONVERSATION_TURNS && (
     <ChatOptions
       safeT={safeT}
       modelSelection={modelSelection}
       handleAIToggle={handleAIToggle}
       selectedSearch={selectedSearch}
-      handleSearchToggle={handleSearchToggle}
       workflowSelection={workflowSelection}
       handleWorkflowChange={handleWorkflowChange}
       referringUrl={referringUrl}

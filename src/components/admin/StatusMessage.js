@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { GcdsIcon } from '@gcds-core/components-react';
 
 // Shared live-region pattern for announcing the outcome of an async admin
@@ -41,8 +41,9 @@ import { GcdsIcon } from '@gcds-core/components-react';
 //
 // TODO (design review): none of this component's CSS — the four variant
 // boxes, the loading box, the plain isError/tag styling — has had an actual
-// design pass; it was built engineering-led to close a11y gaps. Treat every
-// class here as functional but provisional until design signs off.
+// design refinement pass yet; it was built code-first-accessibility-led to
+// close a11y gaps. Treat every class here as functional but provisional
+// until design signs off.
 //
 // Scope, deliberately: this component owns ARIA wiring + focus management +
 // styling for outcomes (error/warning/info/success) and the general-purpose
@@ -59,17 +60,18 @@ import { GcdsIcon } from '@gcds-core/components-react';
 //     established pattern (a real role="progressbar" + a plain role="status"
 //     text line, as its own small component).
 //
-// TODO (review): `persistent` + `className="sr-only"` is a fourth usage
-// shape — an invisible live region that exists purely to announce a change
-// sighted users would otherwise notice visually but screen reader users
-// wouldn't (ConnectivityPage.js's test-completion summary; VectorPage.js's
-// stats-loaded and docdb8-probe-complete announcements — three found in this
-// PR's scope alone). It's not really "an outcome" the way variant/loading
-// are; it's closer to a standalone accessibility primitive that happens to
-// reuse this component's role/aria-live plumbing via two props not otherwise
-// meant to combine this way. Few enough occurrences that it may not be worth
-// a dedicated component yet — flagging as a pattern to watch, not deciding
-// either way.
+// `persistent` + `className="sr-only"` is a fourth usage shape — an
+// invisible live region that exists purely to announce a change sighted
+// users would otherwise notice visually but screen reader users wouldn't
+// (ConnectivityPage.js's test-completion summary; VectorPage.js's
+// stats-loaded and docdb8-probe-complete announcements; BatchPage.js's and
+// BatchList.js's completion announcements; ChatOptions.js's referring-URL
+// apply/clear). It's not really "an outcome" the way variant/loading are;
+// it's a standalone accessibility primitive that reuses this component's
+// role/aria-live plumbing via two props not otherwise meant to combine this
+// way. See AGENTS.md's "Announcing status, errors, and async outcomes"
+// (Screen-reader-only outcome announcements) for when this shape is needed,
+// and the `useSrAnnouncer` hook below for its message+nonce bookkeeping.
 //
 // `nonce` exists for exactly these persistent+sr-only announcers: a plain
 // `message` string is only re-announced when its *value* changes, so a
@@ -223,3 +225,32 @@ const StatusMessage = React.forwardRef((
 StatusMessage.displayName = 'StatusMessage';
 
 export default StatusMessage;
+
+// Companion hook for the `persistent`+sr-only usage above: owns just the
+// message+nonce bookkeeping a caller needs to drive that live region (see
+// this file's earlier comment on that usage shape). Colocated here rather
+// than under src/hooks/ — same precedent as RoleBasedUI.js's useHasRole/
+// useHasAnyRole living alongside RoleBasedContent — so a caller gets the
+// component and its bookkeeping from one import instead of two.
+//
+// `announce` takes an already-resolved string, not a locale key, so this
+// hook stays translation-agnostic — callers do `announce(t('some.key'))`.
+// `clear` resets the message without bumping `nonce` — clearing to empty
+// isn't itself an outcome worth (re-)announcing, it's a caller resetting a
+// stale value before starting a new action, same purpose as
+// useInlineFormError's `clearError`.
+export function useSrAnnouncer() {
+  const [message, setMessage] = useState(null);
+  const [nonce, setNonce] = useState(0);
+
+  const announce = useCallback((text) => {
+    setMessage(text);
+    setNonce((n) => n + 1);
+  }, []);
+
+  const clear = useCallback(() => {
+    setMessage(null);
+  }, []);
+
+  return { message, nonce, announce, clear };
+}

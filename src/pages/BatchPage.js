@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import ExportService from '../services/ExportService.js';
@@ -47,8 +47,7 @@ const BatchPage = ({ lang = 'en' }) => {
   const namedOrGeneric = (namedKey, genericKey, name) =>
     name ? t(namedKey).replace('{name}', () => name) : t(genericKey);
 
-  const [successAnnouncement, setSuccessAnnouncement] = useState('');
-  const [successNonce, setSuccessNonce] = useState(0);
+  const { message: successAnnouncement, nonce: successNonce, announce: announceSuccessRaw } = useSrAnnouncer();
   // `section` is optional only because a couple of hypothetical future
   // callers might not have one - every actual call site below always
   // passes it, since every success here is scoped to one of the two
@@ -60,12 +59,7 @@ const BatchPage = ({ lang = 'en' }) => {
   // errors per-section (see `errors` above) needs the success side to
   // clear its own section explicitly instead.
   const announceSuccess = (text, section) => {
-    setSuccessAnnouncement(text);
-    // Forces a remount even when two successes in a row produce identical
-    // text (e.g. deleting two batches back to back) - see StatusMessage.js's
-    // own doc comment on `nonce` for why a same-value update would otherwise
-    // be silently un-announced.
-    setSuccessNonce((n) => n + 1);
+    announceSuccessRaw(text);
     if (section) {
       setErrors((prev) => (prev[section] ? { ...prev, [section]: null } : prev));
     }

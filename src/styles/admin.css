@@ -409,18 +409,13 @@
   outline-offset: var(--gcds-input-border-width) !important;
 }
 
-/* SettingsPage reuses .filter-label/.filter-input/.filter-select for the
-   border/focus-ring/select-arrow treatment that already matches GC DS —
-   but FilterPanel deliberately sizes those at a compact 16px for a dense
-   filter sidebar, and SettingsPage isn't that: its fields should read at
-   GC DS's normal input/label size. Scoped to .settings-page so FilterPanel,
-   ChatLogsDashboard, and ChatViewer keep their own compact sizing. */
-.settings-page .filter-label {
+/* GC DS's normal desktop field size, vs. FilterPanel's compact 16px default. */
+.filter-fields-full-size .filter-label {
   font: var(--gcds-label-font-desktop);
 }
 
-.settings-page .filter-input,
-.settings-page .filter-select {
+.filter-fields-full-size .filter-input,
+.filter-fields-full-size .filter-select {
   font: var(--gcds-input-font-desktop);
 }
 
