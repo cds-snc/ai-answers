@@ -13,6 +13,7 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import ChatIdMatchList, { buildChatIdMatchesLabels } from '../components/admin/ChatIdMatchList.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../utils/admin/dataTableAccessibility.js';
 import { buildChatReviewHref, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import 'prismjs/themes/prism.css';
 import 'prismjs/components/prism-json.js';
@@ -576,6 +577,13 @@ const ChatViewer = ({ lang = 'en' }) => {
                     ordering: false,
                     info: false,
                     language: dataTableLanguage(lang),
+                    // DataTables doesn't set scope="col" on header cells
+                    // itself (WCAG 1.3.1) - no search box on this table, so
+                    // just the scope half of wireTableAccessibility, not the
+                    // search-pill half that goes with it.
+                    initComplete: function () {
+                      setColumnHeaderScope(this.api());
+                    },
                   }}
                 >
                   <caption className="sr-only">{t('logging.timeline.title')}</caption>
@@ -669,6 +677,12 @@ const ChatViewer = ({ lang = 'en' }) => {
                     plain (non-grouped) table - no chat-group rowspanning
                     here, so dashboard-table--grouped isn't needed. */}
                 <table ref={tableRef} className="display dashboard-table zebra-stable-on-hover">
+                  {/* Ties this table to the h2 above it for a screen reader
+                      navigating by table rather than heading (Technique H39)
+                      - same reasoning as the step-timeline table's own
+                      caption above. */}
+                  <caption className="sr-only">{t('logging.entriesHeading')}</caption>
+                  {/* scope="col" set dynamically by useChatLogsTable's initComplete, not here. */}
                   <thead>
                     <tr>
                       <th>{t('logging.createdAt')}</th>
