@@ -460,10 +460,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         <LoadingOverlay message={t('admin.evalDashboard.loading')} />
       )}
 
-      <StatusMessage
-        variant={error ? 'error' : undefined}
-        message={error ? `${t('admin.evalDashboard.error')} ${String(error)}` : null}
-      />
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.evalDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
 
       {/* Distinct from the filters-driven empty state below - a zero-result
           global search means the search term didn't match anything, not

@@ -7,6 +7,7 @@ import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
+import { resolveErrorMessage } from '../utils/errorCodeMessage.js';
 import { useAuthOutcomeMessages } from '../hooks/auth/useAuthOutcomeMessages.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
@@ -64,12 +65,10 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       // Rate-limiting and an invalid/expired reset link aren't things the
       // user can fix by editing password/confirm — system-level outcomes,
       // not field errors, so they go through StatusMessage, not AnnouncedError.
-      const errorKeys = {
+      setSystemError(resolveErrorMessage(err.code, {
         RESET_LOCKED_OUT: 'reset.complete.lockedOut',
         RESET_INVALID_CODE: 'reset.complete.invalidCode',
-      };
-      const key = err.code && errorKeys[err.code];
-      setSystemError(key ? t(key) : t('reset.complete.error'));
+      }, 'reset.complete.error', t));
     } finally {
       setIsLoading(false);
     }

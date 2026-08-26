@@ -3,6 +3,7 @@ import { GcdsButton, GcdsContainer } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
@@ -40,7 +41,18 @@ const renderAuditValueHtml = (value, emptyLabel) => {
 // admin's UI language. This resolves either shape to display text in the
 // admin's actual language.
 const resolveFieldError = (error, t) => {
-  if (typeof error === 'string') return error;
+  // The plain-string branch is the rare case (a requireString/requireLiteralString
+  // validation failure, or a DB write throwing inside setMany's
+  // Promise.allSettled) — SettingsService.setMany has no translation for these,
+  // by its own comment, so `error` here is a raw driver/exception message.
+  // FeedbackInlineError renders `message` directly, so returning a fragment
+  // instead of a string works with no change to that component — same
+  // translated-prefix + <code lang="en"> wrap as buildErrorStatus uses for
+  // DatabasePage.js's raw details, just field-scoped instead of page-scoped.
+  if (typeof error === 'string') {
+    const [prefix, suffix] = t('settings.fieldError.unexpected').split('{error}');
+    return <>{prefix}<code lang="en">{error}</code>{suffix}</>;
+  }
   if (error && error.i18nKey) {
     let message = t(error.i18nKey);
     Object.entries(error.i18nValues || {}).forEach(([placeholder, value]) => {
@@ -197,6 +209,11 @@ const FIELD_META = {
 
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Shared with DatabasePage.js's own ~13 uses of the same shape - see
+  // useErrorStatus.js. This page's only use (the settings-cache refresh
+  // below) renders success as 'info' (a neutral confirmation, not a
+  // completed mutation), not the 'success' default.
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const [status, setStatus] = useState('available');
   const [deploymentMode, setDeploymentMode] = useState('CDS');
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
@@ -208,6 +225,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   // without resetting whatever the admin had typed into the search box or
   // paged to, unlike forcing a full remount via a `tableKey` bump.
   const auditTableRef = useRef(null);
+  // Set from ServerDataTable's onError — a genuine fetch failure used to be
+  // silently indistinguishable from "no audit rows exist" (both rendered
+  // emptyTableText). buildErrorStatus/renderStatusMessage below is the same
+  // shape/rendering this page's settingsCacheStatus and DatabasePage.js's
+  // ~13 operations already use.
+  const [auditLoadStatus, setAuditLoadStatus] = useState(null);
   const [baseUrl, setBaseUrl] = useState('');
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
@@ -556,10 +579,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setSettingsCacheStatus({ text: t('settings.refreshCache.success'), isError: false });
       auditTableRef.current?.reload();
     } catch (error) {
-      setSettingsCacheStatus({
-        text: t('settings.refreshCache.error').replace('{error}', () => error.message || String(error)),
-        isError: true,
-      });
+      setSettingsCacheStatus(buildErrorStatus('settings.refreshCache.error', error));
     } finally {
       setRefreshingSettingsCache(false);
     }
@@ -590,10 +610,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
         </GcdsButton>
-        <StatusMessage
-          variant={settingsCacheStatus ? (settingsCacheStatus.isError ? 'error' : 'info') : undefined}
-          message={settingsCacheStatus?.text}
-        />
+        {renderStatusMessage(settingsCacheStatus, 'info')}
       </div>
       {/* Per-section "Unsaved changes" only shows while that section's
           <details> is open — a page-level one stays visible regardless of
@@ -1445,6 +1462,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             belongs in its own tab on this page, or behind a details/summary
             disclosure — either would let a lighter "recent changes" view
             replace this full search/paginate table for the common case. */}
+        {renderStatusMessage(auditLoadStatus)}
         <ServerDataTable
           ref={auditTableRef}
           tableKey="settings-audit-history"
@@ -1458,6 +1476,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           layout={{ topStart: 'search', topEnd: null }}
           containerClassName="table-scroll mt-200"
           emptyTableText={t('settings.auditHistory.empty')}
+          onError={(error) => setAuditLoadStatus(error ? buildErrorStatus('settings.auditHistory.loadError', error) : null)}
         />
       </section>
 

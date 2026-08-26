@@ -50,7 +50,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       // (network drop, unexpected 500). Not done: touches both layers plus
       // a test rewrite, not just this file — see PR discussion.
       const [prefix, suffix] = t('admin.deleteExpertEval.error').split('{message}');
-      return { isError: true, prefix, detail: <span lang="en">{err.message || String(err)}</span>, suffix };
+      return { isError: true, prefix, detail: <code lang="en">{err.message || String(err)}</code>, suffix };
     }
   };
 

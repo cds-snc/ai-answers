@@ -10,6 +10,7 @@ import { formatNumber } from '../utils/numberFormat.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -19,6 +20,14 @@ import {
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
+
+  // Every ...Message state below shares the same { text } (success) or
+  // { prefix, suffix, detail, isError } (error) shape — buildErrorStatus/
+  // renderStatusMessage build and render it, shared with SettingsPage.js's
+  // own single use of the same shape (useErrorStatus.js) rather than each
+  // hand-rolling it independently.
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
+
   const [isExporting, setIsExporting] = useState(false);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
@@ -56,7 +65,7 @@ const DatabasePage = ({ lang }) => {
   const [endDate, setEndDate] = useState('');
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
   const [tableCounts, setTableCounts] = useState(null);
-  const [countsError, setCountsError] = useState('');
+  const [countsError, setCountsError] = useState(null);
   // Import controls: chunk size in MB and optional throttle between chunk uploads (ms)
   const [importChunkMB, setImportChunkMB] = useState(90); // default 90 MB per file slice
   const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
@@ -78,12 +87,15 @@ const DatabasePage = ({ lang }) => {
   useEffect(() => {
     let isMounted = true;
     async function fetchCountsAndCollections() {
-      setCountsError('');
+      setCountsError(null);
       try {
         const counts = await DataStoreService.getTableCounts();
         if (isMounted) setTableCounts(counts);
       } catch (e) {
-        if (isMounted) setCountsError(e.message);
+        // Was raw e.message, untranslated and unwrapped — same fix as the
+        // ~13 buildErrorStatus call sites below, just missed on this one
+        // since it predates them (fetched on mount, not from a button).
+        if (isMounted) setCountsError(buildErrorStatus('admin.database.countsError', e));
       }
       // Fetch collections for export dropdown
       try {
@@ -102,6 +114,22 @@ const DatabasePage = ({ lang }) => {
     return () => { isMounted = false; };
   }, []);
 
+  // TODO (pending review — open question, not yet a confirmed gap):
+  // SettingsPage.js's real convention (stageChange) is narrower than it
+  // first looks — editing a field clears only that *section's* own stale
+  // save message, never a sibling section's. Export/Import here already
+  // match that exactly (each clears its own message when its own fields
+  // change). The other ~10 operations (Drop indexes, Repair timestamps,
+  // Migrate public feedback, etc.) are single-button actions with no
+  // editable fields at all, so there's no field-edit event to hook a clear
+  // into the way Settings/Export/Import do — per that actual precedent,
+  // that may not be a gap. Open question for review: should an unrelated
+  // stale message (e.g. "Repair timestamps succeeded" sitting on screen
+  // while the admin then clicks "Drop indexes") get cleared by that
+  // unrelated click, or is per-operation persistence until its own button
+  // is re-clicked actually fine? Don't copy VectorPage.js's
+  // fetchVectorStats (clears a sibling message too) as precedent here —
+  // that pattern hasn't been reviewed yet.
   const handleExport = async () => {
     try {
       setIsExporting(true);
@@ -185,7 +213,7 @@ const DatabasePage = ({ lang }) => {
       await writer.close();
       setExportMessage({ text: t('admin.database.exportSuccess'), isError: false });
     } catch (error) {
-      setExportMessage({ text: t('admin.database.exportError').replace('{error}', () => error.message), isError: true });
+      setExportMessage(buildErrorStatus('admin.database.exportError', error));
       console.error('Export error:', error);
     } finally {
       setIsExporting(false);
@@ -382,7 +410,7 @@ const DatabasePage = ({ lang }) => {
         fileInputRef.current.value = ''; // Reset file input
       }
     } catch (error) {
-      setImportMessage({ text: t('admin.database.importError').replace('{error}', () => error.message), isError: true });
+      setImportMessage(buildErrorStatus('admin.database.importError', error));
       console.error('Import error:', error);
     } finally {
       setIsImporting(false);
@@ -410,7 +438,7 @@ const DatabasePage = ({ lang }) => {
       const result = await response.json();
       setDropIndexesMessage({ text: t('admin.database.dropIndexesSuccess').replace('{count}', result.results.success.length), isError: false });
     } catch (error) {
-      setDropIndexesMessage({ text: t('admin.database.dropIndexesError').replace('{error}', () => error.message), isError: true });
+      setDropIndexesMessage(buildErrorStatus('admin.database.dropIndexesError', error));
       console.error('Drop indexes error:', error);
     } finally {
       setIsDroppingIndexes(false);
@@ -429,7 +457,7 @@ const DatabasePage = ({ lang }) => {
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
       setDeleteSystemLogsMessage({ text: t('admin.database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount), isError: false });
     } catch (error) {
-      setDeleteSystemLogsMessage({ text: t('admin.database.deleteSystemLogsError').replace('{error}', () => error.message), isError: true });
+      setDeleteSystemLogsMessage(buildErrorStatus('admin.database.deleteSystemLogsError', error));
     } finally {
       setIsDeletingSystemLogs(false);
     }
@@ -447,7 +475,7 @@ const DatabasePage = ({ lang }) => {
       const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
       setDeleteAllBatchesMessage({ text: t('admin.database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems), isError: false });
     } catch (error) {
-      setDeleteAllBatchesMessage({ text: t('admin.database.deleteAllBatchesError').replace('{error}', () => error.message), isError: true });
+      setDeleteAllBatchesMessage(buildErrorStatus('admin.database.deleteAllBatchesError', error));
       console.error('Delete all batches error:', error);
     } finally {
       setIsDeletingAllBatches(false);
@@ -464,7 +492,7 @@ const DatabasePage = ({ lang }) => {
       const result = await DataStoreService.repairTimestamps();
       setRepairTimestampsMessage({ text: t('admin.database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total), isError: false });
     } catch (error) {
-      setRepairTimestampsMessage({ text: t('admin.database.repairTimestampsError').replace('{error}', () => error.message), isError: true });
+      setRepairTimestampsMessage(buildErrorStatus('admin.database.repairTimestampsError', error));
     } finally {
       setIsRepairingTimestamps(false);
     }
@@ -480,7 +508,7 @@ const DatabasePage = ({ lang }) => {
       const result = await DataStoreService.repairExpertFeedback();
       setRepairExpertFeedbackMessage({ text: t('admin.database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect), isError: false });
     } catch (error) {
-      setRepairExpertFeedbackMessage({ text: t('admin.database.repairExpertFeedbackError').replace('{error}', () => error.message), isError: true });
+      setRepairExpertFeedbackMessage(buildErrorStatus('admin.database.repairExpertFeedbackError', error));
     } finally {
       setIsRepairingExpertFeedback(false);
     }
@@ -494,7 +522,7 @@ const DatabasePage = ({ lang }) => {
       const result = await DataStoreService.repairQaMatchScores();
       setRepairQaMatchScoresMessage({ text: t('admin.database.repairQaMatchScoresSuccess').replace('{updated}', result.stats.updated).replace('{matches}', result.stats.matches), isError: false });
     } catch (error) {
-      setRepairQaMatchScoresMessage({ text: t('admin.database.repairQaMatchScoresError').replace('{error}', () => error.message), isError: true });
+      setRepairQaMatchScoresMessage(buildErrorStatus('admin.database.repairQaMatchScoresError', error));
     } finally {
       setIsRepairingQaMatchScores(false);
     }
@@ -508,7 +536,7 @@ const DatabasePage = ({ lang }) => {
       const result = await DataStoreService.migratePublicFeedback();
       setMigratePublicFeedbackMessage({ text: t('admin.database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0), isError: false });
     } catch (error) {
-      setMigratePublicFeedbackMessage({ text: t('admin.database.migratePublicFeedbackError').replace('{error}', () => error.message), isError: true });
+      setMigratePublicFeedbackMessage(buildErrorStatus('admin.database.migratePublicFeedbackError', error));
     } finally {
       setIsMigratingPublicFeedback(false);
     }
@@ -532,7 +560,7 @@ const DatabasePage = ({ lang }) => {
       setCreateIndexesMessage({ text: t('admin.database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount), isError: false });
     } catch (error) {
       setCreationDetails(null);
-      setCreateIndexesMessage({ text: t('admin.database.createIndexesError').replace('{error}', () => error.message), isError: true });
+      setCreateIndexesMessage(buildErrorStatus('admin.database.createIndexesError', error));
       console.error('Create indexes error:', error);
     } finally {
       setIsCreatingIndexes(false);
@@ -554,7 +582,7 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        <StatusMessage variant={countsError ? 'error' : undefined} message={countsError} />
+        {renderStatusMessage(countsError)}
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
@@ -620,7 +648,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
           {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
         </GcdsButton>
-        <StatusMessage variant={exportMessage ? (exportMessage.isError ? 'error' : 'success') : undefined} message={exportMessage?.text} />
+        {renderStatusMessage(exportMessage)}
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
@@ -661,12 +689,11 @@ const DatabasePage = ({ lang }) => {
                     } catch (err) {
                       setChecksMessages(prev => ({
                         ...prev,
-                        [check.id]: {
-                          text: t('admin.database.checkFailed')
-                            .replace('{check}', check.id)
-                            .replace('{error}', () => err.message),
-                          isError: true,
-                        },
+                        [check.id]: buildErrorStatus(
+                          'admin.database.checkFailed',
+                          err,
+                          { check: check.id },
+                        ),
                       }));
                     } finally {
                       setChecksRunning(prev => ({ ...prev, [check.id]: false }));
@@ -677,10 +704,7 @@ const DatabasePage = ({ lang }) => {
                 >
                   {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
                 </GcdsButton>
-                <StatusMessage
-                  variant={checksMessages[check.id] ? (checksMessages[check.id].isError ? 'error' : 'success') : undefined}
-                  message={checksMessages[check.id]?.text}
-                />
+                {renderStatusMessage(checksMessages[check.id])}
                 <div style={{ minWidth: 220, textAlign: 'right' }}>
                   {checksResults[check.id] ? (
                     <div style={{ fontSize: 13 }}>
@@ -719,7 +743,7 @@ const DatabasePage = ({ lang }) => {
                         // Refresh the check results
                         setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
                       } catch (err) {
-                        setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesError').replace('{error}', () => err.message), isError: true });
+                        setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
                       } finally {
                         setIsRemovingDuplicates(false);
                       }
@@ -731,10 +755,7 @@ const DatabasePage = ({ lang }) => {
                   </GcdsButton>
                 )}
                 {check.id === 'duplicateKeys' && (
-                  <StatusMessage
-                    variant={removeDuplicatesMessage ? (removeDuplicatesMessage.isError ? 'error' : 'success') : undefined}
-                    message={removeDuplicatesMessage?.text}
-                  />
+                  renderStatusMessage(removeDuplicatesMessage)
                 )}
               </div>
             ))}
@@ -822,7 +843,7 @@ const DatabasePage = ({ lang }) => {
           {isImporting ? (
             <div role="status" aria-live="polite" className="status-message--progress">{importMessage?.text}</div>
           ) : (
-            <StatusMessage variant={importMessage ? (importMessage.isError ? 'error' : 'success') : undefined} message={importMessage?.text} />
+            renderStatusMessage(importMessage)
           )}
           {/* TODO: this is a raw <input type="file">, so the field-tied error
               below is FeedbackInlineError + aria-describedby (matching
@@ -873,7 +894,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
-        <StatusMessage variant={createIndexesMessage ? (createIndexesMessage.isError ? 'error' : 'success') : undefined} message={createIndexesMessage?.text} />
+        {renderStatusMessage(createIndexesMessage)}
         {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
           <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
@@ -905,7 +926,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
         </GcdsButton>
-        <StatusMessage variant={dropIndexesMessage ? (dropIndexesMessage.isError ? 'error' : 'success') : undefined} message={dropIndexesMessage?.text} />
+        {renderStatusMessage(dropIndexesMessage)}
       </div>
 
       <div className="mb-400">
@@ -922,7 +943,7 @@ const DatabasePage = ({ lang }) => {
               const json = await DataStoreService.checkIndexStatus();
               setIndexStatus(json);
             } catch (err) {
-              setIndexStatusMessage({ text: t('admin.database.indexStatusError').replace('{error}', () => err.message), isError: true });
+              setIndexStatusMessage(buildErrorStatus('admin.database.indexStatusError', err));
             } finally {
               setIsCheckingIndexStatus(false);
             }
@@ -933,20 +954,27 @@ const DatabasePage = ({ lang }) => {
         >
           {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
         </GcdsButton>
-        <StatusMessage variant={indexStatusMessage ? (indexStatusMessage.isError ? 'error' : 'success') : undefined} message={indexStatusMessage?.text} />
+        {renderStatusMessage(indexStatusMessage)}
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
-            <div
-              className={
-                indexStatus.anyBuilding
-                  ? 'text-status--neutral'
-                  : indexStatus.allComplete
-                    ? 'text-status--positive'
-                    : 'text-status--warning'
-              }
-              style={{ fontWeight: 600, marginBottom: 8 }}
-            >
-              {indexStatus.message}
+            {/* Was a hand-rolled colored <div> showing indexStatus.message
+                verbatim — raw, untranslated server text with no t() call at
+                all. The server's message is actually always one of these
+                same 3 fixed strings (see api/db/db-database-management.js),
+                picked from the exact same anyBuilding/allComplete booleans
+                already computed here — so the frontend translates its own
+                copy instead of echoing the server's English one. */}
+            <div style={{ marginBottom: 8 }}>
+              <StatusMessage
+                variant={indexStatus.anyBuilding ? 'info' : indexStatus.allComplete ? 'success' : 'warning'}
+                message={t(
+                  indexStatus.anyBuilding
+                    ? 'admin.database.indexStatusBuilding'
+                    : indexStatus.allComplete
+                      ? 'admin.database.indexStatusComplete'
+                      : 'admin.database.indexStatusIncomplete'
+                )}
+              />
             </div>
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -1003,7 +1031,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
         </GcdsButton>
-        <StatusMessage variant={deleteSystemLogsMessage ? (deleteSystemLogsMessage.isError ? 'error' : 'success') : undefined} message={deleteSystemLogsMessage?.text} />
+        {renderStatusMessage(deleteSystemLogsMessage)}
       </div>
 
       <div className="mb-400">
@@ -1019,7 +1047,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
         </GcdsButton>
-        <StatusMessage variant={repairTimestampsMessage ? (repairTimestampsMessage.isError ? 'error' : 'success') : undefined} message={repairTimestampsMessage?.text} />
+        {renderStatusMessage(repairTimestampsMessage)}
       </div>
 
       <div className="mb-400">
@@ -1035,7 +1063,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
         </GcdsButton>
-        <StatusMessage variant={deleteAllBatchesMessage ? (deleteAllBatchesMessage.isError ? 'error' : 'success') : undefined} message={deleteAllBatchesMessage?.text} />
+        {renderStatusMessage(deleteAllBatchesMessage)}
       </div>
 
       <div className="mb-400">
@@ -1051,7 +1079,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
         </GcdsButton>
-        <StatusMessage variant={repairExpertFeedbackMessage ? (repairExpertFeedbackMessage.isError ? 'error' : 'success') : undefined} message={repairExpertFeedbackMessage?.text} />
+        {renderStatusMessage(repairExpertFeedbackMessage)}
       </div>
 
       <div className="mb-400">
@@ -1067,7 +1095,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
         </GcdsButton>
-        <StatusMessage variant={migratePublicFeedbackMessage ? (migratePublicFeedbackMessage.isError ? 'error' : 'success') : undefined} message={migratePublicFeedbackMessage?.text} />
+        {renderStatusMessage(migratePublicFeedbackMessage)}
       </div>
 
       <div className="mb-400">
@@ -1076,7 +1104,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleRepairQaMatchScores} disabled={isRepairingQaMatchScores} buttonRole="secondary" className="mb-200">
           {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
-        <StatusMessage variant={repairQaMatchScoresMessage ? (repairQaMatchScoresMessage.isError ? 'error' : 'success') : undefined} message={repairQaMatchScoresMessage?.text} />
+        {renderStatusMessage(repairQaMatchScoresMessage)}
       </div>
     </GcdsContainer >
   );

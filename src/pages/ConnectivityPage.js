@@ -217,7 +217,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </section>
 
             <StatusMessage variant={error ? 'error' : undefined}>
-                {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
+                {error && <><strong>{t('connectivity.error')}:</strong> <code lang="en">{error}</code></>}
             </StatusMessage>
 
             {/* TODO: these counts should go through formatNumber(n, lang) per the

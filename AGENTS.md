@@ -230,6 +230,35 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 Read [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md) before rendering any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, sr-only announcement, or form validation error. The short version: use `src/components/admin/StatusMessage.js` for page/section-level outcomes with no single input they belong to, and the form-error family (`AnnouncedError.js`/`FeedbackInlineError.js`/`ExplanationErrorSummary.js`) for anything tied to a specific field — don't hand-roll a plain `<div>`/`<p>`/`alert()` for either. Never show a raw `err.message`/`error.message` directly to the user; the doc covers why and the two established alternatives.
 
+**Never show a raw `err.message`/`error.message` directly to the user.** It's the literal,
+untranslated text a JS `Error` or `fetch()` rejection happened to carry (`"Failed to fetch"`,
+a driver's internal message, etc.) — always English regardless of the user's language, and
+often irrelevant or confusing to show verbatim. `err.message || t('some.fallback')` doesn't
+protect against this: `.message` is essentially always truthy on a real `Error`, so the
+translated fallback can never actually fire. Two established alternatives, depending on
+whether the raw detail is worth keeping:
+
+1. **A stable backend `code`, not free text.** Have the backend return a small, fixed `code`
+   field and map that through a local object to a `t()` key client-side — use the shared
+   `resolveErrorMessage()` helper (`src/utils/errorCodeMessage.js`) rather than hand-rolling
+   the map/lookup per call site (see `ResetCompletePage.js`).
+2. **Wrap the raw detail in `<code lang="en">`.** If the raw detail itself is genuinely useful
+   to show (admin/diagnostic tooling especially — a fetch failure, an export error), split the
+   translated template around the placeholder and wrap only that portion, e.g.
+   `<>{prefix}<code lang="en">{error.message}</code>{suffix}</>` — see `DeleteChatSection.js`'s
+   `resolveLook()`. `<code>` (not `<span>`) both gets the correct `lang="en"` pronunciation for
+   AT *and* the existing global `code { font-family: monospace... }` style for sighted users,
+   so raw/technical output reads as visually distinct from prose — free, no new CSS. On a page
+   with several of these (e.g. `DatabasePage.js`'s ~13 operations), pull the split/wrap and the
+   render into two small local helpers instead of repeating the shape per state — see
+   `DatabasePage.js`'s `buildErrorStatus`/`renderStatusMessage`.
+
+A `t()` string with a `{placeholder}` substituted via `.replace()`/interpolation (the pattern
+just above) is *not* equivalent to option 2: `t()` returns a plain string, which can't embed
+an HTML element, so the substituted text has no way to get `lang="en"` — and no code styling
+either — and stays unmarked regardless of how carefully the `.replace()` call itself is
+written.
+
 ## Admin page nav landmark
 
 Every admin/partner page's "back to admin" `<nav>` needs an `aria-label`, or screen-reader users navigating by landmark get an unlabeled region (and, on pages with more than one `<nav>`, indistinguishable ones):

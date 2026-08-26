@@ -251,7 +251,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             </summary>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-                {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
+                {error && <div className="error">{t('common.error') || 'Error'}: <code lang="en">{error}</code></div>}
                 {/* Summary: citation and total score */}
                 <div className="expert-feedback-summary">
                     {(() => {
