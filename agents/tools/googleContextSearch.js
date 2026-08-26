@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { tool } from "@langchain/core/tools";
+import { retryOnTransientError } from '../../api/util/transient-retry.js';
 
 const customsearch = google.customsearch('v1');
 
@@ -24,39 +25,6 @@ function sanitizeErrorForLogging(error) {
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 250;
-
-/**
- * Transient transport/network failures (e.g. node-fetch "Premature close" from a
- * dropped keep-alive socket, connection resets, timeouts, 5xx) are worth retrying;
- * client errors (4xx, missing config) are not.
- */
-function isRetryableSearchError(error) {
-    if (!error) return false;
-
-    const status = error.status ?? error.code ?? error.response?.status;
-    if (typeof status === 'number' && status >= 500) return true;
-
-    const code = String(error.code ?? '').toUpperCase();
-    const retryableCodes = [
-        'ECONNRESET',
-        'ETIMEDOUT',
-        'ECONNREFUSED',
-        'EPIPE',
-        'ENOTFOUND',
-        'EAI_AGAIN',
-        'ERR_STREAM_PREMATURE_CLOSE',
-    ];
-    if (retryableCodes.includes(code)) return true;
-
-    const message = String(error.message ?? '').toLowerCase();
-    return (
-        message.includes('premature close') ||
-        message.includes('socket hang up') ||
-        message.includes('network socket disconnected')
-    );
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
 /**
@@ -89,7 +57,15 @@ function extractSearchResults(results, numResults = 3) {
  * @param {string} lang - The language of the search query.
  * @returns {object|null} - The Google search results.
  */
-const contextSearch = async (query, lang) => {
+/**
+ * @param {string} query
+ * @param {string} lang
+ * @param {object} [options]
+ * @param {(info: {error: unknown, attempt: number, attempts: number}) => void} [options.onRetry]
+ *   Called before each retry so a caller can record the attempt (see
+ *   SearchContextService). Best-effort telemetry only.
+ */
+const contextSearch = async (query, lang, { onRetry } = {}) => {
     try {
         const CX = process.env.GOOGLE_SEARCH_ENGINE_ID;
         const API_KEY = process.env.GOOGLE_API_KEY;
@@ -111,22 +87,20 @@ const contextSearch = async (query, lang) => {
             searchOptions.lr = lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
         }
 
-        let res;
-        for (let attempt = 1; attempt <= MAX_SEARCH_ATTEMPTS; attempt++) {
-            try {
-                res = await customsearch.cse.list(searchOptions);
-                break;
-            } catch (attemptError) {
-                if (attempt >= MAX_SEARCH_ATTEMPTS || !isRetryableSearchError(attemptError)) {
-                    throw attemptError;
-                }
-                console.warn(
-                    `Google search attempt ${attempt} failed with a transient error, retrying:`,
-                    maskSecretValue(attemptError.message)
-                );
-                await sleep(RETRY_BASE_DELAY_MS * attempt);
+        const res = await retryOnTransientError(
+            () => customsearch.cse.list(searchOptions),
+            {
+                attempts: MAX_SEARCH_ATTEMPTS,
+                baseDelayMs: RETRY_BASE_DELAY_MS,
+                onRetry: (info) => {
+                    console.warn(
+                        `Google search attempt ${info.attempt} failed with a transient error, retrying:`,
+                        maskSecretValue(info.error.message)
+                    );
+                    if (onRetry) onRetry(info);
+                },
             }
-        }
+        );
 
         const results = res.data;
         const extractedResults = extractSearchResults(results);
@@ -138,6 +112,13 @@ const contextSearch = async (query, lang) => {
         const sanitizedError = sanitizeErrorForLogging(error);
         console.error("Error performing Google search:", sanitizedError);
         return {
+            // Returning the failure as text rather than throwing is deliberate:
+            // the answer agent sees that the search failed and can say so,
+            // instead of the whole turn dying. `failed` exists because that
+            // choice otherwise makes a failure indistinguishable from a
+            // successful search to every caller — including the one that counts
+            // errors for the technical metrics dashboard.
+            failed: true,
             results: "Search failed: " + maskSecretValue(error.message),
             provider: "google"
         };
