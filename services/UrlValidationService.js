@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Agent } from 'https';
 import ServerLoggingService from './ServerLoggingService.js';
 import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
+import { normalizeFetchUrl } from '../api/util/normalizeFetchUrl.js';
 
 function getHttpsAgent() {
   return new Agent({ rejectUnauthorized: false });
@@ -67,6 +68,15 @@ async function checkUrlWithMethod(url, method = 'head', chatId) {
 
 export const UrlValidationService = {
   async validateUrl(url, chatId) {
+    // Normalized once here so the HEAD and GET attempts below both request the
+    // same URL. This method's contract is to resolve, never throw, so an
+    // unusable URL becomes a failed result rather than a thrown error.
+    try {
+      url = normalizeFetchUrl(url);
+    } catch (error) {
+      return { isValid: false, url, status: 400, error: error.message };
+    }
+
     let headResult = await checkUrlWithMethod(url, 'head', chatId);
     let result = headResult;
 

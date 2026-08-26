@@ -1,9 +1,14 @@
 import { tool } from "@langchain/core/tools";
 import axios from 'axios';
 import { Agent } from 'https';
+import { normalizeFetchUrl } from '../../api/util/normalizeFetchUrl.js';
 
 const checkUrlStatus = async (url, chatId = 'system') => {
     const httpsAgent = new Agent({ rejectUnauthorized: false });
+
+    // Normalized outside the try below so a bad URL is not reported as a
+    // network failure. See api/util/normalizeFetchUrl.js.
+    url = normalizeFetchUrl(url);
 
     try {
         const response = await axios.get(url, { 

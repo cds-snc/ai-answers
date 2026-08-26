@@ -64,6 +64,30 @@ describe('downloadWebPage tool', () => {
     expect(error.message).not.toContain('Failed to download webpage');
   });
 
+  // The deployed VPC allows outbound 443 only, and a NACL denial drops the
+  // packet silently — an http:// request hangs until the 5s timeout instead of
+  // failing fast, which reads as a flaky site rather than an unsent request.
+  it('requests https after being given an http URL', async () => {
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+    await invokeTool({
+      url: 'http://inspection.canada.ca/en/animal-health/livestock-feeds',
+    });
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'https://inspection.canada.ca/en/animal-health/livestock-feeds',
+      expect.anything()
+    );
+  });
+
+  it('rejects an unusable URL without reporting it as a download failure', async () => {
+    const error = await invokeTool({ url: 'javascript:alert(1)' }).catch((e) => e);
+
+    expect(error.message).toMatch(/unsupported scheme/);
+    expect(error.message).not.toContain('Failed to download webpage');
+    expect(axios.get).not.toHaveBeenCalled();
+  });
+
   it('still surfaces real HTTP failures', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 404 }, config: {} });
 

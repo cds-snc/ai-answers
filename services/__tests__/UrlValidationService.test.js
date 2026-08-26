@@ -97,6 +97,28 @@ describe('UrlValidationService', () => {
             const result = await UrlValidationService.validateUrl('https://example.com');
             expect(result.isValid).toBe(false);
         });
+
+        it('requests https after being given an http URL', async () => {
+            axios.mockResolvedValueOnce({
+                status: 200,
+                request: { res: { responseUrl: 'https://inspection.canada.ca/en' } },
+            });
+
+            await UrlValidationService.validateUrl('http://inspection.canada.ca/en');
+
+            expect(axios).toHaveBeenCalledWith(
+                expect.objectContaining({ url: 'https://inspection.canada.ca/en' })
+            );
+        });
+
+        it('returns a failed result instead of throwing on an unusable URL', async () => {
+            const result = await UrlValidationService.validateUrl('javascript:alert(1)');
+
+            expect(result.isValid).toBe(false);
+            expect(result.status).toBe(400);
+            expect(result.error).toMatch(/unsupported scheme/);
+            expect(axios).not.toHaveBeenCalled();
+        });
     });
 
     describe('Utils', () => {

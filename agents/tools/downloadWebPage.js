@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { getEncoding } from "js-tiktoken";
+import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
 
 const tokenizer = getEncoding("cl100k_base");
 const DEFAULT_MAX_TOKENS = 32000;
@@ -84,6 +85,11 @@ async function downloadWebPage(url) {
 
 const downloadWebPageTool = tool(
   async ({ url }) => {
+    // Normalized outside the try below so a bad URL is not reported as a
+    // network failure — an http:// URL never reaches the network at all in the
+    // deployed VPC. See api/util/normalizeFetchUrl.js.
+    url = normalizeFetchUrl(url);
+
     let markdown;
     try {
       const result = await downloadWebPage(url);
