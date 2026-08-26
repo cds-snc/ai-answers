@@ -30,6 +30,14 @@ function logCheck(url, response, method, chatId) {
     // swallow to avoid affecting URL checks
   }
 }
+// Same rejectUnauthorized:false axios GET/HEAD pattern as the outbound fetch
+// tools (agents/tools/downloadWebPage.js, checkURL.js), but this one never got
+// api/util/normalizeFetchUrl.js's http->https upgrade applied — an http:// url
+// here would hit the same silent-VPC-hang bug that file exists to prevent.
+// Currently harmless: validateUrl (below), the only caller of this function,
+// has no production caller of its own today (test files only). If validateUrl
+// is ever wired back up, or this pattern gets copied for a new tool, apply
+// normalizeFetchUrl(url) here first.
 async function checkUrlWithMethod(url, method = 'head', chatId) {
   const httpsAgent = getHttpsAgent();
   let result = {
@@ -140,6 +148,15 @@ UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', q
   // nothing. Adding a real domain gate here would be a behaviour change rather
   // than a cleanup: matching only `www.canada.ca` would divert every citation
   // on inspection.canada.ca, ised-isde.canada.ca and the like to a search page.
+  //
+  // "Passed through as-is" includes scheme: unlike api/util/normalizeFetchUrl.js
+  // (which upgrades http:// to https:// before the outbound fetch tools request
+  // a page), this has no equivalent upgrade. A model can fetch a page over
+  // https internally and still cite it as http:// here — the two paths don't
+  // share a URL. Low real-world impact (the citation is opened by the
+  // citizen's own browser, which redirects http->https for these sites in
+  // milliseconds, same as normalizeFetchUrl.js's header comment describes for
+  // local dev) but it is a known gap, not an oversight to be surprised by.
   return {
     isValid: true,
     url: url,

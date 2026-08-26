@@ -134,6 +134,21 @@ describe('UrlValidationService', () => {
 
             expect(axios).not.toHaveBeenCalled();
         });
+
+        // Unlike api/util/normalizeFetchUrl.js (used by the outbound fetch
+        // tools), this validator has no http->https upgrade — see the comment
+        // above the return in UrlValidationService.js. A model can fetch a page
+        // over https and still cite it as http: here; this test locks in that
+        // known, accepted gap so a future change doesn't silently alter it
+        // either way without the test noticing.
+        it('does not upgrade an http:// URL to https', async () => {
+            const url = 'http://inspection.canada.ca/en/animal-health/livestock-feeds';
+
+            expect(await UrlValidationService.validateUrlFormatting(url)).toEqual({
+                isValid: true,
+                url,
+            });
+        });
     });
 
     describe('Utils', () => {

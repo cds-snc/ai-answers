@@ -50,6 +50,17 @@ export function normalizeFetchUrl(value, fieldName = 'url') {
   }
 
   if (parsed.protocol === 'http:') {
+    // Rewritten from `trimmed`, not `parsed.href`, to stay byte-identical (see
+    // above) — which means this line trusts `trimmed` to actually start with
+    // "http:". It might not: `new URL()` above silently drops any ASCII tab/
+    // CR/LF from the input before reading `protocol`, so a stray control
+    // character landing inside the scheme (e.g. "ht\ttp://…") is classified
+    // as http: above but defeats this regex, and the un-upgraded URL is
+    // returned. That URL still reaches axios, which does the same silent
+    // stripping and dispatches it as plain http — the exact VPC hang this
+    // file exists to prevent. Known gap, accepted: this shape has not been
+    // observed in practice, unlike bare `http://`, which is routine (see top
+    // of file).
     return trimmed.replace(/^http:/i, 'https:');
   }
 
