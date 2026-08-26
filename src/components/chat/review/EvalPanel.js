@@ -197,7 +197,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
           </GcdsButton>
         </div>
         {loading && <div>{t('common.loading', 'Loading...')}</div>}
-        {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
+        {error && <div className="error">{t('common.error', 'Error')}: <code lang="en">{error}</code></div>}
 
         {evalObj ? (
           <>

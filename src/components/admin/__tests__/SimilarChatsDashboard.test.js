@@ -58,7 +58,7 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Failed to fetch similar chats: no embeddings found');
-    const enSpan = alert.querySelector('span[lang="en"]');
+    const enSpan = alert.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('no embeddings found');
     expect(alertSpy).not.toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
 
     const alert = await screen.findByRole('alert');
-    const enSpan = alert.querySelector('span[lang="en"]');
+    const enSpan = alert.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Failed to fetch');
   });

@@ -64,7 +64,7 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
     expect(alerts.length).toBeGreaterThan(0);
     expect(alerts[0].textContent).toBe('Failed to load data: boom');
 
-    const enSpan = alerts[0].querySelector('span[lang="en"]');
+    const enSpan = alerts[0].querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('boom');
   });

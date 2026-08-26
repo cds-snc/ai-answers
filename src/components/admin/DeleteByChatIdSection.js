@@ -121,7 +121,7 @@ const DeleteByChatIdSection = ({
           // children shape the isError branch below needs.
           <StatusMessage variant="error" message={status.text} persistent />
         ) : status?.isError ? (
-          // variant="error" + children (not `message`): the <span lang="en">
+          // variant="error" + children (not `message`): the <code lang="en">
           // wrapper a raw exception detail needs (see onDelete's own
           // comment) can't go inside a plain message string. StatusMessage
           // adds its own icon automatically either way (see its own

@@ -368,10 +368,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         <LoadingOverlay message={t('admin.chatDashboard.loading')} />
       )}
 
-      <StatusMessage
-        variant={error ? 'error' : undefined}
-        message={error ? `${t('admin.chatDashboard.error')} ${String(error)}` : null}
-      />
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.chatDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
         <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />

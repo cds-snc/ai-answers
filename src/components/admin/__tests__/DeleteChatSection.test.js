@@ -49,7 +49,7 @@ describe('DeleteChatSection error/success announcements', () => {
     vi.restoreAllMocks();
   });
 
-  it('wraps the untranslated error detail in a lang="en" span, inside role="alert"', async () => {
+  it('wraps the untranslated error detail in a lang="en" code element, inside role="alert"', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
     mockDeleteChat.mockRejectedValue(new Error('Failed to fetch'));
@@ -62,7 +62,7 @@ describe('DeleteChatSection error/success announcements', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Failed to delete chat: Failed to fetch');
 
-    const enSpan = alert.querySelector('span[lang="en"]');
+    const enSpan = alert.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Failed to fetch');
   });

@@ -112,9 +112,17 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                     setSelectedFile(null);
                     setShowUpload(false);
                 } catch (err) {
+                    // Always the translated message here, not
+                    // err.response?.data?.error directly - same as the
+                    // sibling handleDelete below, never raw backend text.
+                    // `details` (below, rendered per-item) is kept raw on
+                    // purpose - specific per-field validation feedback from
+                    // the backend, genuinely useful for diagnosing a
+                    // rejected upload, wrapped in <code lang="en"> instead
+                    // of dropped.
                     setMessage({
                         type: 'error',
-                        text: err.response?.data?.error || t('experimental.datasets.uploadFailed'),
+                        text: t('experimental.datasets.uploadFailed'),
                         details: err.response?.data?.details
                     });
                 } finally {
@@ -136,10 +144,14 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             await ExperimentalBatchClientService.deleteDataset(id);
             fetchDatasets();
         } catch (err) {
+            // Native alert() had no ARIA role and, worse, showed raw
+            // untranslated err.message text — routed through the page's
+            // existing setMessage/StatusMessage pattern instead, same as
+            // every other outcome on this page.
             if (err.response?.data?.code === 'IN_USE') {
-                alert(t('experimental.datasets.inUse'));
+                setMessage({ type: 'error', text: t('experimental.datasets.inUse') });
             } else {
-                alert(err.response?.data?.error || err.message);
+                setMessage({ type: 'error', text: t('experimental.datasets.deleteFailed') });
             }
         }
     };
@@ -187,7 +199,10 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             const alreadyProcessing = err.code === 'stillProcessing' || err.status === 409;
             if (!alreadyProcessing) {
                 console.error('Process dataset error:', err);
-                if (showMessage) setMessage({ type: 'error', text: err.message || t('experimental.datasets.processFailed') });
+                // message.text renders as plain text (<GcdsText>{message.text}</GcdsText>),
+                // no room to wrap a raw err.message in <code lang="en"> here —
+                // always show the translated message rather than raw text.
+                if (showMessage) setMessage({ type: 'error', text: t('experimental.datasets.processFailed') });
             }
         } finally {
             processingDatasetRef.current = null;
@@ -378,7 +393,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                         {message.details && Array.isArray(message.details) && message.details.length > 0 && (
                                             <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
                                                 {message.details.map((detail, i) => (
-                                                    <li key={i}>{detail}</li>
+                                                    <li key={i}><code lang="en">{detail}</code></li>
                                                 ))}
                                             </ul>
                                         )}

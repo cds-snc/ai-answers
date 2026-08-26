@@ -501,6 +501,10 @@
       "checkIndexStatusButton": "Check index status",
       "checkingLabel": "Checking...",
       "indexStatusError": "Index status check failed: {error}",
+      "indexStatusBuilding": "Some indexes are currently building.",
+      "indexStatusComplete": "All indexes are complete.",
+      "indexStatusIncomplete": "Some indexes may be incomplete.",
+      "countsError": "Table counts failed: {error}",
       "indexCreationFailed": "Index creation failed for the following collections:",
       "collectionColumn": "Collection",
       "currentColumn": "Current",
@@ -1075,6 +1079,9 @@
     "title": "Settings",
     "saveSuccessIn": "Changes to {section} saved.",
     "saveError": "Failed to save setting.",
+    "fieldError": {
+      "unexpected": "Unexpected error: {error}"
+    },
     "save": "Save",
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
@@ -1142,6 +1149,7 @@
       "title": "Settings history",
       "description": "Review who changed settings and when.",
       "empty": "No settings changes have been recorded.",
+      "loadError": "Failed to load audit history: {error}",
       "user": "User",
       "action": "Action",
       "setting": "Setting",
@@ -1795,6 +1803,7 @@
     "loading": "Loading...",
     "fetchStats": "Fetch vector stats",
     "statsLoaded": "Vector stats loaded.",
+    "statsLoadError": "Failed to load vector stats: {error}",
     "createIndex": "Create vector index",
     "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
@@ -1934,6 +1943,7 @@
     "regenerateEmbeddingsFailed": "Failed to regenerate embeddings. Check the console for details.",
     "regenerateConfirm": "This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?",
     "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully.",
+    "indexCreateError": "Failed to reinitialize vector service: {error}",
     "docdb8Capability": {
       "title": "DocumentDB 8 vector search capability test",
       "description": "Run aggregation probes against DocumentDB 8 to see whether filters can reduce the candidate set before vector search.",
@@ -1945,6 +1955,7 @@
       "yes": "Yes",
       "no": "No",
       "noError": "No error",
+      "errorDetail": "Test failed: {error}",
       "probeComplete": "{label}: {status}",
       "notAvailable": "Not available",
       "estimatedFeedbackSelectivity": "Estimated feedback selectivity",
@@ -2042,9 +2053,6 @@
       "step1": "Contact the AI Answers team at {email}, and include a copy of the edited text version in your email.",
       "step2": "The AI Answers team will review and then apply the changes into the live AI Answers product."
     },
-    "error": {
-      "fallback": "An error occurred while loading this page."
-    },
     "empty": {
       "never": "Never"
     }
@@ -2116,6 +2124,7 @@
       "creatingInstantAnswer": "Generating equivalent questions and creating dataset...",
       "goldenAnswerSuccess": "Golden answer dataset created successfully.",
       "goldenAnswerFailed": "Failed to create golden answer dataset.",
+      "goldenAnswerFailedDetail": "Failed to create golden answer dataset: {error}",
       "instantAnswerSuccess": "Instant answer test dataset created successfully.",
       "instantAnswerQueued": "Instant answer dataset creation has been queued. You can monitor its status on the datasets page.",
       "instantAnswerFailed": "Failed to create instant answer test dataset.",
@@ -2135,6 +2144,7 @@
       "errorLoadingRows": "Failed to load rows.",
       "confirmDelete": "Are you sure you want to delete this dataset? This action cannot be undone.",
       "inUse": "This dataset is in use by active batches and cannot be deleted.",
+      "deleteFailed": "Failed to delete dataset.",
       "nameLabel": "Dataset Name",
       "descLabel": "Description",
       "typeLabel": "Dataset Type",
