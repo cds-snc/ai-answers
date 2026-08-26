@@ -25,6 +25,8 @@ const t = (key) => {
     'homepage.chat.options.useSystemSettings': 'Use system settings',
     'homepage.chat.options.referringUrl.label': 'Referring Canada.ca URL (optional)',
     'homepage.chat.options.referringUrl.error': 'Enter a full URL, starting with https:// or http://',
+    'homepage.chat.options.referringUrl.emptyError': 'Please include a URL',
+    'homepage.chat.options.referringUrl.noUrlToClearError': 'No URL to clear',
     'homepage.chat.options.referringUrl.applyLabel': 'Apply URL',
     'homepage.chat.options.referringUrl.clearLabel': 'Clear URL',
     'homepage.chat.options.referringUrl.removedAnnouncement': 'Referring URL removed',
@@ -150,15 +152,17 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(input.value).toBe('https://www.canada.ca/still-typing');
   });
 
-  it('treats an empty draft as valid (clears the override) instead of erroring', () => {
+  it('rejects an empty draft on Apply with an inline error - clearing is Clear\'s job, not an empty Apply', () => {
     mockUseAuth.mockReturnValue({ currentUser: { role: 'partner' } });
     const { handleReferringUrlChange } = renderOptions({ referringUrl: 'https://www.canada.ca/en.html' });
 
     fireEvent.change(urlInput(), { target: { value: '' } });
     fireEvent.click(applyButton());
 
-    expect(handleReferringUrlChange).toHaveBeenCalledWith({ target: { value: '' } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(handleReferringUrlChange).not.toHaveBeenCalled();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toMatch(/Please include a URL/);
+    expect(document.activeElement).toBe(alert);
   });
 
   it('announces a successful apply to screen readers, not just validation errors', () => {
@@ -171,27 +175,33 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(screen.getByText('Referring URL applied')).toBeTruthy();
   });
 
-  it('disables Apply until the draft actually differs from the applied value', () => {
+  it('never disables Apply, even with nothing typed or unchanged - re-clicking with the applied value is a harmless no-op', () => {
     mockUseAuth.mockReturnValue({ currentUser: { role: 'partner' } });
-    renderOptions({ referringUrl: 'https://www.canada.ca/en.html' });
+    const { handleReferringUrlChange } = renderOptions({ referringUrl: 'https://www.canada.ca/en.html' });
 
-    expect(applyButton().disabled).toBe(true);
-
-    fireEvent.change(urlInput(), { target: { value: 'https://www.canada.ca/fr.html' } });
     expect(applyButton().disabled).toBe(false);
+
+    // Same as what's already applied - not an error, just nothing to do.
+    fireEvent.click(applyButton());
+    expect(handleReferringUrlChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('keeps the clear button mounted but disabled when no URL is applied', () => {
-    // Stays mounted (not conditionally rendered) so it never unmounts —
-    // GcdsButton uses aria-disabled, not native disabled, so this doesn't
-    // pull it out of the tab order or force a focus jump the way hiding it
-    // entirely would on every Clear click.
+  it('never disables Clear - clicking it with nothing applied shows an inline error instead', () => {
+    // Prefer rejecting the interaction over disabling the control (AGENTS.md) -
+    // a disabled control's reason is undiscoverable to a keyboard/screen-reader
+    // user who never lands on it.
     mockUseAuth.mockReturnValue({ currentUser: { role: 'partner' } });
-    renderOptions();
+    const { handleReferringUrlChange } = renderOptions();
 
-    const clearButton = screen.queryByRole('button', { name: 'Clear URL' });
-    expect(clearButton).not.toBeNull();
-    expect(clearButton.disabled).toBe(true);
+    const clearButton = screen.getByRole('button', { name: 'Clear URL' });
+    expect(clearButton.disabled).toBe(false);
+
+    fireEvent.click(clearButton);
+    expect(handleReferringUrlChange).not.toHaveBeenCalled();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toMatch(/No URL to clear/);
+    expect(document.activeElement).toBe(alert);
   });
 
   it('shows the clear button once a URL is actually applied, and clears it', async () => {
@@ -208,6 +218,22 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     // Focus lands back in the input on the next frame, not synchronously.
     await new Promise((resolve) => requestAnimationFrame(resolve));
     expect(document.activeElement).toBe(urlInput());
+  });
+
+  it('clears a leftover success message once a new error appears (regression)', () => {
+    // A successful Clear leaves "Referring URL removed" up (it's persistent).
+    // Clicking Apply right after with nothing typed used to leave that stale
+    // success message sitting next to the brand-new error, reading as two
+    // contradictory outcomes for the same field at once.
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'partner' } });
+    renderOptions({ referringUrl: 'https://www.canada.ca/en.html' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear URL' }));
+    expect(screen.getByText('Referring URL removed')).toBeTruthy();
+
+    fireEvent.click(applyButton());
+    expect(screen.getByRole('alert').textContent).toMatch(/Please include a URL/);
+    expect(screen.queryByText('Referring URL removed')).toBeNull();
   });
 
   it('Workflow and Model apply live on change, with no draft/Apply step', () => {

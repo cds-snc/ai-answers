@@ -9,6 +9,7 @@ import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 
 const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
 
@@ -60,10 +61,21 @@ const formatDocdb8ScoreRange = (scoreSummary, lang, t) => {
     .replace('{max}', formatDecimal(scoreSummary.maxScore, lang, 3));
 };
 
+// A probe's error is a genuine, unpredictable driver/DB message from a live
+// capability test (unlike VectorService.getStats/reinitialize's fixed
+// strings above) — always worth keeping, but wrapped behind a translated
+// prefix rather than shown alone, same as everywhere else in this file.
+const renderDocdb8Error = (detail, t) => {
+  if (!detail) return t('vector.docdb8Capability.noError');
+  const [prefix, suffix] = t('vector.docdb8Capability.errorDetail').split('{error}');
+  return <>{prefix}<code lang="en">{detail}</code>{suffix}</>;
+};
+
 const VectorPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
   const activeLang = lang || language;
   const { t } = useTranslations(activeLang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const fmtN = (n) => formatNumber(n, activeLang);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -256,7 +268,12 @@ const VectorPage = ({ lang = 'en' }) => {
       setVectorStats(data);
       announceVectorStats(t('vector.statsLoaded'));
     } catch (err) {
-      setError(err.message);
+      // err.message is usually the one fixed string VectorService.getStats
+      // throws on a non-OK response — not truly unbounded — but a real
+      // network failure before any response (e.g. the browser's own
+      // "Failed to fetch") can still land here, so the detail is kept,
+      // just translated and wrapped rather than shown alone.
+      setError(buildErrorStatus('vector.statsLoadError', err));
     } finally {
       setLoading(false);
     }
@@ -335,9 +352,11 @@ const VectorPage = ({ lang = 'en' }) => {
     setError(null);
     try {
       await VectorService.reinitialize();
-      setIndexMessage({ type: 'success', text: t('vector.indexCreatedSuccess') });
+      setIndexMessage({ text: t('vector.indexCreatedSuccess'), isError: false });
     } catch (err) {
-      setIndexMessage({ type: 'error', text: err.message });
+      // Same reasoning as fetchVectorStats' catch above — usually one fixed
+      // string, occasionally a real network error, always kept but wrapped.
+      setIndexMessage(buildErrorStatus('vector.indexCreateError', err));
     } finally {
       setLoading(false);
     }
@@ -544,8 +563,8 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={error ? 'error' : undefined} message={error} />
-        <StatusMessage variant={indexMessage?.type} message={indexMessage?.text} />
+        {renderStatusMessage(error)}
+        {renderStatusMessage(indexMessage)}
         <StatusMessage persistent message={vectorStatsAnnouncement} nonce={vectorStatsAnnounceNonce} className="sr-only" />
         {vectorStats && (
           <div className="mb-200">
@@ -596,7 +615,7 @@ const VectorPage = ({ lang = 'en' }) => {
                     <td>{result?.test?.metadata?.candidateReductionBeforeVectorSearch ? t('vector.docdb8Capability.yes') : t('vector.docdb8Capability.no')}</td>
                     <td>{formatDocdb8ScoreRange(result?.test?.scoreSummary, activeLang, t)}</td>
                     <td>{t('vector.docdb8Capability.durationMs').replace('{ms}', fmtN(result?.test?.durationMs))}</td>
-                    <td>{probeError || result?.test?.error?.message || t('vector.docdb8Capability.noError')}</td>
+                    <td>{renderDocdb8Error(probeError || result?.test?.error?.message, t)}</td>
                   </tr>
                 ))}
               </tbody>

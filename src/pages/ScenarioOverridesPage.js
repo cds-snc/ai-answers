@@ -103,17 +103,22 @@ class PageErrorBoundary extends React.Component {
   }
   render() {
     if (this.state.hasError) {
-      // this.props.t?.(...), not this.props.t(...): a fallback render must
-      // never itself throw (there's no boundary above this one to catch a
-      // secondary error) — optional-chain the call rather than restoring
-      // main's old `t ? t(key, 'fallback text') : 'fallback text'` guard,
-      // which duplicated a literal fallback string alongside every locale
-      // key (against this repo's t()-takes-only-a-key convention).
+      // Hardcoded and bilingual on purpose, not t()-driven: this is the one
+      // screen in the app that must render even if something above it —
+      // including the translation system itself — is what broke. No prop,
+      // no function call, nothing here that can itself throw and leave the
+      // admin with a blank screen instead of a fallback. Both languages
+      // shown together since we can't safely assume which one the admin
+      // needs. role="alert" so a screen reader announces this immediately
+      // if the boundary trips without a full page navigation (e.g. a
+      // second render after some in-page action).
       return (
         <GcdsContainer layout="page" className="mb-600">
-          <h1 className="mb-400">{this.props.t?.('scenarioOverrides.title')}</h1>
-          <p style={{ color: '#d3080c' }}>{this.props.t?.('scenarioOverrides.error.fallback')}</p>
-          <p>{this.state.error?.toString?.() || ''}</p>
+          <h1 className="mb-400">Edit and test scenarios / Modifier et tester les scénarios</h1>
+          <p role="alert" style={{ color: '#d3080c' }}>
+            An error occurred while loading this page. / Une erreur est survenue lors du chargement de cette page.
+          </p>
+          <p><code lang="en">{this.state.error?.toString?.() || ''}</code></p>
         </GcdsContainer>
       );
     }
@@ -520,7 +525,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   const showTestLink = Boolean(enabled && updatedAt && !dirty);
 
   return (
-    <PageErrorBoundary t={t}>
+    <PageErrorBoundary>
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>

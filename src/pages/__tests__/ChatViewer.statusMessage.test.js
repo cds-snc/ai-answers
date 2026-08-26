@@ -11,10 +11,17 @@ vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
+// Refresh now confirms the chat exists (via useChatIdLookup's getChat call,
+// which also requires a UUID-shaped chatId) before trusting refreshLogs'
+// result — see ChatViewer.js's handleRefreshLogs.
+const { CHAT_ID } = vi.hoisted(() => ({ CHAT_ID: '123e4567-e89b-42d3-a456-426614174000' }));
+vi.mock('../../services/DataStoreService.js', () => ({
+  default: { getChat: vi.fn().mockResolvedValue({ chat: { chatId: CHAT_ID } }) },
+}));
+
 const { mockRefreshLogs } = vi.hoisted(() => ({ mockRefreshLogs: vi.fn() }));
 vi.mock('../../hooks/chatviewer/useChatLogs.js', () => ({
   useChatLogs: () => ({
-    clearLogs: vi.fn(),
     isRefreshingLogs: false,
     logs: [],
     refreshLogs: mockRefreshLogs,
@@ -26,7 +33,6 @@ vi.mock('../../hooks/chatviewer/useChatTimeline.js', () => ({
 vi.mock('../../hooks/chatviewer/useChatLogsTable.js', () => ({
   useChatLogsTable: () => {},
 }));
-vi.mock('../../components/chatviewer/MetadataModal.js', () => ({ default: () => null }));
 vi.mock('prismjs/themes/prism.css', () => ({}));
 vi.mock('prismjs/components/prism-json.js', () => ({}));
 vi.mock('prismjs/components/prism-xml-doc.js', () => ({}));
@@ -52,8 +58,8 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
 
     render(<ChatViewer lang="en" />);
 
-    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: 'chat-123' } });
-    fireEvent.click(screen.getByText('logging.refresh'));
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('logging.refreshFailed');
@@ -64,13 +70,38 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
 
     render(<ChatViewer lang="en" />);
 
-    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: 'chat-123' } });
-    fireEvent.click(screen.getByText('logging.refresh'));
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     await waitFor(() => {
       expect(screen.getByText('logging.refreshComplete')).toBeTruthy();
     });
     expect(screen.getByText('logging.refreshComplete').closest('[role="status"]')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('re-announces a second consecutive identical refresh failure (nonce forces a remount, not just a value check)', async () => {
+    mockRefreshLogs.mockResolvedValue({ logs: [], error: 'fetch failed' });
+
+    render(<ChatViewer lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
+
+    const firstAlert = await screen.findByRole('alert');
+    expect(firstAlert.textContent).toContain('logging.refreshFailed');
+
+    // Same chatId re-submitted (the only refresh mechanism) - identical
+    // failure outcome. Without a nonce, setting the exact same message
+    // string again is a no-op React bails on: same DOM node, no mutation,
+    // nothing for a screen reader to pick up. The fix forces a fresh
+    // element (a different node identity) so the live region actually
+    // mutates and gets announced again.
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
+
+    await waitFor(() => expect(mockRefreshLogs).toHaveBeenCalledTimes(2));
+    const secondAlert = await screen.findByRole('alert');
+    expect(secondAlert.textContent).toContain('logging.refreshFailed');
+    expect(secondAlert).not.toBe(firstAlert);
   });
 });

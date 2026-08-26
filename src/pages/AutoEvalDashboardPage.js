@@ -151,10 +151,9 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         <LoadingOverlay message={t('admin.autoEvalDashboard.loading')} />
       )}
 
-      <StatusMessage
-        variant={error ? 'error' : undefined}
-        message={error ? `${t('admin.autoEvalDashboard.error')} ${String(error)}` : null}
-      />
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.autoEvalDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
         <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />

@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
-import downloadWebPageTool from '../downloadWebPage.js';
+import downloadWebPageTool, {
+  REQUEST_TIMEOUT_MS,
+  RETRY_TIME_BUDGET_MS,
+} from '../downloadWebPage.js';
 
 const invokeTool = (input) => downloadWebPageTool.invoke(input);
 
@@ -93,5 +96,110 @@ describe('downloadWebPage tool', () => {
 
     await expect(invokeTool({ url: 'https://www.canada.ca/en/gone.html' }))
       .rejects.toThrow(/Page not found \(404\)/);
+  });
+
+  describe('transient network failures', () => {
+    const connReset = Object.assign(new Error('read ECONNRESET'), {
+      code: 'ECONNRESET',
+      config: {},
+    });
+
+    it('retries a dropped connection and returns the page on the next attempt', async () => {
+      // The failure this guards against: one RST from a WAF or origin used to
+      // fail the tool call outright, so the agent answered without the page.
+      axios.get
+        .mockRejectedValueOnce(connReset)
+        .mockResolvedValueOnce({ status: 200, data: realContent });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const output = await invokeTool({ url: 'https://ised-isde.canada.ca/site/ised/en/page' });
+
+      expect(axios.get).toHaveBeenCalledTimes(2);
+      expect(output).toContain('705-424-1200');
+    });
+
+    it('gives up after exhausting attempts and reports the failure', async () => {
+      axios.get.mockRejectedValue(connReset);
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://ised-isde.canada.ca/site/ised/en/page' }))
+        .rejects.toThrow(/Failed to download webpage/);
+      expect(axios.get).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not retry a 404 — the page is gone, not flaky', async () => {
+      axios.get.mockRejectedValue({ response: { status: 404 }, config: {} });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://www.canada.ca/en/gone.html' }))
+        .rejects.toThrow(/Page not found \(404\)/);
+      expect(axios.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a page that returned 200 with no readable content', async () => {
+      axios.get.mockResolvedValue({ status: 200, data: spaShell });
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://military-transition.canada.ca/en/centre/4' }))
+        .rejects.toThrow(/No readable content/);
+      expect(axios.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a hostname that does not resolve', async () => {
+      // The model invents URLs; NXDOMAIN will not change on a second lookup.
+      const noSuchHost = Object.assign(new Error('getaddrinfo ENOTFOUND nope.canada.ca'), {
+        code: 'ENOTFOUND',
+        config: {},
+      });
+      axios.get.mockRejectedValue(noSuchHost);
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://nope.canada.ca/en/page' }))
+        .rejects.toThrow(/Failed to download webpage/);
+      expect(axios.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a refused connection', async () => {
+      const refused = Object.assign(new Error('connect ECONNREFUSED'), {
+        code: 'ECONNREFUSED',
+        config: {},
+      });
+      axios.get.mockRejectedValue(refused);
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://www.canada.ca:9999/en/page' }))
+        .rejects.toThrow(/Connection refused/);
+      expect(axios.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('budgets less time for retries than one request is allowed to take', () => {
+      // This is what stops a timeout being retried: retryOnTransientError checks
+      // elapsed time after a failure, so a request that used its full timeout is
+      // already over budget. Asserted as an invariant because a mocked rejection
+      // returns instantly and cannot burn real wall-clock time — the budget
+      // itself is exercised in api/util/__tests__/transient-retry.test.js.
+      expect(RETRY_TIME_BUDGET_MS).toBeLessThan(REQUEST_TIMEOUT_MS);
+    });
+
+    it('reports an axios timeout as a timeout, not a generic failure', async () => {
+      // axios raises its own `timeout: 5000` as ECONNABORTED, so the
+      // ETIMEDOUT-only check never fired for the timeout it was written for.
+      const timeout = Object.assign(new Error('timeout of 5000ms exceeded'), {
+        code: 'ECONNABORTED',
+        config: {},
+      });
+      axios.get.mockRejectedValue(timeout);
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://www.canada.ca/en/slow.html' }))
+        .rejects.toThrow(/Request timed out/);
+    });
   });
 });

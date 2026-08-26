@@ -58,13 +58,13 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         // can be wrapped in its own lang="en" span (mirrors
         // DeleteChatSection.js).
         const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-        setFetchMessage({ prefix, suffix, detail: <span lang="en">{data.message}</span> });
+        setFetchMessage({ prefix, suffix, detail: <code lang="en">{data.message}</code> });
       } else {
         setFetchMessage({ prefix: t('vector.fetchError'), suffix: '', detail: null });
       }
     } catch (error) {
       const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-      setFetchMessage({ prefix, suffix, detail: <span lang="en">{error.message || String(error)}</span> });
+      setFetchMessage({ prefix, suffix, detail: <code lang="en">{error.message || String(error)}</code> });
     }
     setLoading(false);
   };

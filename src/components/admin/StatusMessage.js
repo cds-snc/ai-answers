@@ -34,7 +34,7 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // checkmark glyph. A caller that passes `children` alongside `variant` gets
 // the box/role treatment AND the same icon `message` would have gotten —
 // `children` is only an escape hatch for content richer than one string
-// (e.g. a raw exception detail that needs its own <span lang="en">), not a
+// (e.g. a raw exception detail that needs its own <code lang="en">), not a
 // way to opt out of the icon. (It used to be — see resolveLook's own
 // comment for why that shipped 5 icon-less error boxes before this fixed
 // it at the root.)
@@ -138,7 +138,7 @@ function resolveLook({ variant, loading, message, isError, children }) {
       className: variantConfig.className,
       // Icon is unconditional — every real `children` caller in this
       // codebase only reaches for `children` to wrap part of the text in
-      // e.g. <span lang="en">, never for a genuinely icon-less shape, and
+      // e.g. <code lang="en">, never for a genuinely icon-less shape, and
       // the old `children || (icon + message)` short-circuited the icon
       // out entirely whenever `children` was passed. That was the actual
       // cause behind 5 separate call sites shipping error boxes with no

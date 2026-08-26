@@ -6,6 +6,11 @@ import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { getEncoding } from "js-tiktoken";
 import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
+import {
+  retryOnTransientError,
+  isTransientNetworkError,
+  errorCodeChain,
+} from "../../api/util/transient-retry.js";
 
 const tokenizer = getEncoding("cl100k_base");
 const DEFAULT_MAX_TOKENS = 32000;
@@ -16,6 +21,29 @@ const DEFAULT_MAX_TOKENS = 32000;
 // Measured against live Canada.ca pages: the shortest genuine extraction is
 // ~300 chars, while shells produce 0.
 const MIN_CONTENT_CHARS = 50;
+
+// NXDOMAIN and a refused port are settled answers, not blips: they cannot change
+// within the ~750ms a retry would spend. The model also invents hostnames, which
+// makes ENOTFOUND a routine outcome here rather than a network fault. Retrying
+// either just delays the same error, so this tool opts out of both.
+const SETTLED_FAILURE_CODES = new Set(["ENOTFOUND", "ECONNREFUSED"]);
+
+export const REQUEST_TIMEOUT_MS = 5000;
+
+// Deliberately below REQUEST_TIMEOUT_MS. retryOnTransientError checks this after
+// a failure to decide whether to start another attempt, so any request that
+// burned its full timeout is already over budget and will not be retried — one
+// slow origin costs 5s, not 10s. Failures that return fast (a reset mid-read)
+// are nowhere near the budget and still get all their attempts.
+export const RETRY_TIME_BUDGET_MS = 3000;
+
+function isWorthRetrying(error) {
+  // Reads the whole cause chain, matching isTransientNetworkError. An opt-out
+  // that only checked error.code would miss a code nested one level down and
+  // let the retry it is meant to prevent happen anyway.
+  if (errorCodeChain(error).some((code) => SETTLED_FAILURE_CODES.has(code))) return false;
+  return isTransientNetworkError(error);
+}
 
 function clipByTokens(text, maxTokens = DEFAULT_MAX_TOKENS) {
   const ids = tokenizer.encode(text);
@@ -66,7 +94,7 @@ async function downloadWebPage(url) {
   const config = {
     httpsAgent,
     maxRedirects: 10,
-    timeout: 5000,
+    timeout: REQUEST_TIMEOUT_MS,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
   };
   console.log("User Agent config:", process.env.USER_AGENT);
@@ -76,7 +104,19 @@ async function downloadWebPage(url) {
     headers: config.headers
   });
 
-  const res = await axios.get(url, config);
+  // A single dropped socket used to fail the whole tool call, leaving the agent
+  // to answer without ever reading the page. Transient failures get another go;
+  // 404s, 403s and the like still fail on the first attempt.
+  const res = await retryOnTransientError(() => axios.get(url, config), {
+    maxElapsedMs: RETRY_TIME_BUDGET_MS,
+    isRetryable: isWorthRetrying,
+    onRetry: ({ error, attempt, attempts }) => {
+      console.warn(
+        `Read web page attempt ${attempt}/${attempts} failed with a transient error, retrying: ${url}`,
+        error.code || error.message
+      );
+    },
+  });
   return {
     markdown: htmlToLeanMarkdown(res.data, url),
     res
@@ -118,7 +158,8 @@ const downloadWebPageTool = tool(
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
       if (error.response?.status === 404) throw new Error(`Page not found (404): ${url}`);
-      if (error.code === "ETIMEDOUT") throw new Error(`Request timed out: ${url}`);
+      if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED")
+        throw new Error(`Request timed out: ${url}`);
       throw new Error(`Failed to download webpage: ${url} - ${error.message}`);
     }
 

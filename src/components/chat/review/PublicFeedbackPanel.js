@@ -86,7 +86,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
             </summary>
             <div className="review-panel public-feedback-panel">
                 {loading && <div>{t('common.loading', 'Loading...')}</div>}
-                {error && <div className="error">{t('common.error', 'Error')}: {error}</div>}
+                {error && <div className="error">{t('common.error', 'Error')}: <code lang="en">{error}</code></div>}
                 <div className="public-feedback-summary">
                     <div>{t('reviewPanels.score', 'Score')}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : t('reviewPanels.notAvailable', 'N/A')}</div>
                     <div>{t('reviewPanels.reason', 'Reason')}: {(() => {
