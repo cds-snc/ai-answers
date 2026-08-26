@@ -2,13 +2,20 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusMessage from './StatusMessage.js';
 import ChatIdLookupField from './ChatIdLookupField.js';
+import { buildChatIdMatchesLabels } from './ChatIdMatchList.js';
 import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 
-// Quick chat-ID lookup, navigating to the chat viewer for the entered ID -
-// requires the full, exact chat ID (a direct navigation, not a search; see
-// EvalDashboardPage.js's own "View chat by ID" for the genuinely different
-// partial-match search version, which opens a filtered results table
-// instead of navigating anywhere).
+// Chat-ID lookup, navigating to the chat viewer for whichever chat is
+// confirmed. Accepts a partial ID as well as a full one — see
+// useChatIdLookup.js's searchChats: a full-UUID-shaped value resolves
+// directly (unchanged from this component's original exact-only
+// behaviour), a partial fragment that matches exactly one chat resolves the
+// same way, and a fragment matching several leaves ChatIdLookupField's own
+// pick-list up for the admin to choose from (handleSelectMatch below
+// navigates once they do). EvalDashboardPage.js has its own, unrelated
+// "View chat by ID" search (EvaluationService.getEvalDashboard, not
+// db-chat-search.js/useChatIdLookup.js) — only its label/placeholder locale
+// strings are actually shared with this one, not the search logic itself.
 //
 // Checks the chat actually exists (via useChatIdLookup.js's shared
 // existence check, the same DataStoreService.getChat / db-chat.js route
@@ -39,16 +46,28 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
     errorCount,
     errorRef,
     inlineErrorMessage,
-    checkChatExists,
+    matches,
+    matchesTruncated,
+    searchChats,
+    selectMatch,
   } = useChatIdLookup({ lang });
+
+  // Shared by both ways a chat can get confirmed below - a direct search
+  // that resolves to exactly one match, or picking one out of several.
+  // No setLoading(false)/reset on success in either path — this component
+  // is about to unmount as the page navigates away.
+  const goToChat = (chat) => {
+    if (!chat) return;
+    navigate(`/${lang}?chat=${encodeURIComponent(chat.chatId)}&review=1`);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const chat = await checkChatExists(chatId);
-    if (!chat) return;
-    navigate(`/${lang}?chat=${encodeURIComponent(chat.chatId)}&review=1`);
-    // No setLoading(false) here on success — this component is about to
-    // unmount as the page navigates away.
+    goToChat(await searchChats(chatId));
+  };
+
+  const handleSelectMatch = async (selectedChatId) => {
+    goToChat(await selectMatch(selectedChatId));
   };
 
   return (
@@ -59,7 +78,7 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
           <ChatIdLookupField
             fieldId="view-chat-id"
             label={t('admin.viewChat.label')}
-            placeholder={t('admin.common.chatIdPlaceholder')}
+            placeholder={t('admin.common.chatIdSearchPlaceholder')}
             value={chatId}
             onChange={handleInputChange}
             disabled={loading}
@@ -67,8 +86,11 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
             errorMessage={inlineErrorMessage}
             errorCount={errorCount}
             errorRef={errorRef}
-            buttonLabel={loading ? t('admin.viewChat.loading') : t('admin.viewChat.button')}
+            buttonLabel={loading ? t('admin.viewChat.loading') : t('admin.common.chatIdSearchButton')}
             describedById="view-chat-id-summary"
+            matches={matches}
+            {...buildChatIdMatchesLabels(t, matches, matchesTruncated)}
+            onSelectMatch={handleSelectMatch}
           />
         </form>
         <StatusMessage variant={status?.variant} message={status?.text} persistent />

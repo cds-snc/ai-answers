@@ -73,7 +73,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
         )}
         {error && !isLoading && (
           <StatusMessage variant="error">
-            {fetchErrorPrefix}<span lang="en">{error}</span>{fetchErrorSuffix}
+            {fetchErrorPrefix}<code lang="en">{error}</code>{fetchErrorSuffix}
           </StatusMessage>
         )}
         {/* No loading-dim/disable while a section refetches — removed rather

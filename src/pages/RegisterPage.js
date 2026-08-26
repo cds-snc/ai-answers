@@ -52,6 +52,10 @@ const RegisterPage = ({ lang = 'en' }) => {
         setSuccessMessage(true);
       }
     } catch {
+      // Never show err.message here — often just raw, always-English
+      // browser/fetch error text (e.g. "Failed to fetch"), and showing the
+      // specific reason (e.g. "email already exists") would double as an
+      // account-enumeration oracle. Always the generic translated message.
       setSystemError(t('signup.errorOccurred'));
     } finally {
       setIsLoading(false);

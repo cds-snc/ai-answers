@@ -78,11 +78,21 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                     : t('experimental.datasets.goldenAnswerSuccess')
             });
         } catch (err) {
+            // The server occasionally returns a specific, genuinely useful
+            // validation reason (data.error) — kept, but wrapped in
+            // <code lang="en"> behind a translated prefix rather than shown
+            // raw, same pattern as buildErrorStatus (useErrorStatus.js).
+            const detail = err.response?.data?.error;
+            let goldenAnswerText = t('experimental.datasets.goldenAnswerFailed');
+            if (detail) {
+                const [prefix, suffix] = t('experimental.datasets.goldenAnswerFailedDetail').split('{error}');
+                goldenAnswerText = <>{prefix}<code lang="en">{detail}</code>{suffix}</>;
+            }
             setMessage({
                 type: 'error',
                 text: method === 'instant-answer'
                     ? t('experimental.datasets.instantAnswerFailed')
-                    : err.response?.data?.error || t('experimental.datasets.goldenAnswerFailed')
+                    : goldenAnswerText
             });
         } finally {
             setCreating(false);

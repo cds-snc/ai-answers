@@ -48,5 +48,12 @@ ChatSchema.index({ interactions: 1 });
 ChatSchema.index({ pageLanguage: 1 });
 ChatSchema.index({ createdAt: 1 });
 ChatSchema.index({ user: 1 });
+// chatId had no index at all until this was added (schema declaration only -
+// this doesn't prove the index exists on the deployed DocumentDB cluster,
+// see AGENTS.md's DocumentDB compatibility section). Every exact-match
+// lookup (db-chat.js's Chat.findOne({ chatId })) was already an unindexed
+// full collection scan; db-chat-search.js's new partial-match $regex search
+// makes that same gap matter more.
+ChatSchema.index({ chatId: 1 });
 
 export const Chat = mongoose.models.Chat || mongoose.model('Chat', ChatSchema);

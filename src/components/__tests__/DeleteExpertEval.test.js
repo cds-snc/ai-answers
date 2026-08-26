@@ -122,10 +122,10 @@ describe('DeleteExpertEval error/success announcements', () => {
     expect(alert.textContent).toBe('Failed to delete expert evaluation: Not evaluated.');
     // "Not evaluated" is a known translated reason, not raw exception text —
     // shouldn't get the lang="en" pronunciation wrapper.
-    expect(alert.querySelector('span[lang="en"]')).toBeNull();
+    expect(alert.querySelector('code[lang="en"]')).toBeNull();
   });
 
-  it('announces a chat deleted between the existence check and the delete call (server-side 404 race) in a lang="en" span, inside role="alert"', async () => {
+  it('announces a chat deleted between the existence check and the delete call (server-side 404 race) in a lang="en" code element, inside role="alert"', async () => {
     // The existence pre-check found it, but the actual delete call still
     // fails server-side (e.g. the chat was removed in the gap between the
     // two requests) — EvaluationService.deleteExpertEval throws for the
@@ -142,12 +142,12 @@ describe('DeleteExpertEval error/success announcements', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Failed to delete expert evaluation: Chat not found');
 
-    const enSpan = alert.querySelector('span[lang="en"]');
+    const enSpan = alert.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Chat not found');
   });
 
-  it('wraps a generic network/server error in a lang="en" span too', async () => {
+  it('wraps a generic network/server error in a lang="en" code element too', async () => {
     chatExists();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     mockDeleteExpertEval.mockRejectedValue(new Error('Failed to fetch'));
@@ -157,7 +157,7 @@ describe('DeleteExpertEval error/success announcements', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Failed to delete expert evaluation: Failed to fetch');
-    expect(alert.querySelector('span[lang="en"]')).toBeTruthy();
+    expect(alert.querySelector('code[lang="en"]')).toBeTruthy();
   });
 
   it('clears a stale result message as soon as the admin edits the chat ID again', async () => {

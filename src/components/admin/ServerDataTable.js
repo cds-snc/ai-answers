@@ -42,7 +42,8 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     ordering = true,
     pageLength = 10,
     lengthChange = true,
-    layout
+    layout,
+    onError
 }, ref) {
     const initialResultRef = useRef(initialResult);
     // The live DataTables API instance, captured via initComplete (the same
@@ -108,6 +109,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     ? result.recordsFiltered
                     : (Number.isFinite(result.pagination?.total) ? result.pagination.total : data.length);
 
+                onError?.(null);
                 callback({
                     draw: params.draw,
                     recordsTotal,
@@ -115,7 +117,16 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     data
                 });
             } catch (error) {
+                // Previously: swallowed into an empty result with only a
+                // console.error — a genuine fetch failure and "this table
+                // has zero rows" were indistinguishable to the admin, since
+                // both render emptyTableText. onError hands the raw error
+                // up so a caller can show it (see SettingsPage.js's audit
+                // history for the reference usage) instead of just logging
+                // it; onError?.(null) above clears a stale error once a
+                // later fetch (e.g. a retry) succeeds.
                 console.error('Failed to load table data:', error);
+                onError?.(error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
             }
         },
@@ -130,7 +141,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         initComplete: function () {
             tableApiRef.current = this.api();
         }
-    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, order, ordering, pageLength, renderActions, tableColumns]);
+    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, renderActions, tableColumns]);
 
     return (
         // tabIndex makes this reachable by keyboard when its content overflows

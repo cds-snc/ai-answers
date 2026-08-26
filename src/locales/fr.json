@@ -131,6 +131,8 @@
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)",
           "error": "Entrez une URL complète, commençant par https:// ou http://",
+          "emptyError": "Veuillez inclure une URL",
+          "noUrlToClearError": "Aucune URL à effacer",
           "applyLabel": "Appliquer l'URL",
           "clearLabel": "Effacer l'URL",
           "removedAnnouncement": "URL de référence effacée.",
@@ -364,8 +366,9 @@
     }
   },
   "logging": {
-    "title": "Visualiseur de chat",
-    "refresh": "Actualiser",
+    "title": "Tracer un clavardage",
+    "chatIdSectionHeading": "ID du clavardage",
+    "refreshResults": "Actualiser les résultats",
     "refreshPending": "Patientez...",
     "refreshComplete": "Journaux actualisés. {count} entrées chargées.",
     "refreshFailed": "Échec de l'actualisation. Les journaux n'ont pas été mis à jour.",
@@ -376,16 +379,19 @@
     "message": "Message",
     "metadata": "Métadonnées",
     "enterChatId": "Entrez l'identifiant du clavardage :",
+    "traceFor": "Trace pour :",
     "filterByLevel": "Filtrer par niveau :",
     "all": "Tous",
     "info": "Info",
     "debug": "Débogage",
     "warn": "Avertissement",
     "error": "Erreur",
+    "levelFilterAnnouncement": "Affichage de {count} entrées pour le niveau : {level}",
+    "levelFilterAnnouncementAll": "Affichage de {count} entrées",
     "noLogs": "Aucun journal disponible",
-    "metadataDetails": "Détails des métadonnées",
-    "expand": "Développer",
-    "close": "Fermer",
+    "entriesHeading": "Entrées de journal",
+    "metadataSeeFullField": "Voir {key}",
+    "metadataSeeFullValue": "Voir la valeur",
     "timeline": {
       "title": "Chronologie des étapes du pipeline",
       "graph": "Graphe",
@@ -501,6 +507,10 @@
       "checkIndexStatusButton": "Vérifier l'état des index",
       "checkingLabel": "Vérification...",
       "indexStatusError": "Échec de la vérification de l'état des index : {error}",
+      "indexStatusBuilding": "Certains index sont en cours de création.",
+      "indexStatusComplete": "Tous les index sont complets.",
+      "indexStatusIncomplete": "Certains index pourraient être incomplets.",
+      "countsError": "Échec de la récupération des totaux de la table : {error}",
       "indexCreationFailed": "La création d'index a échoué pour les collections suivantes :",
       "collectionColumn": "Collection",
       "currentColumn": "Actuel",
@@ -602,7 +612,6 @@
     },
     "viewChat": {
       "label": "ID de chat",
-      "button": "Afficher le chat",
       "loading": "Recherche en cours...",
       "invalidFormat": "Format d'ID de chat invalide"
     },
@@ -818,6 +827,11 @@
       "aiAnswersSource": "Texte source : en anglais seulement",
       "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
       "chatIdPlaceholder": "Entrez l'ID complet du chat",
+      "chatIdSearchPlaceholder": "Entrez l'ID de clavardage (partiel ou complet)",
+      "chatIdSearchButton": "Rechercher l'ID de clavardage",
+      "chatIdSearchTooShort": "Entrez au moins 4 caractères.",
+      "chatIdMatchesFound": "{count} clavardages correspondants trouvés. Sélectionnez-en un pour continuer.",
+      "chatIdMatchesTruncated": "Affichage des {count} premiers résultats. Entrez une partie plus longue de l'ID pour préciser la recherche.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "sortActivateAscending": "{column} : activer le tri croissant",
@@ -871,8 +885,6 @@
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "searchChatIdInputLabel": "ID de chat",
-      "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
-      "searchButton": "Rechercher l'ID de chat",
       "columns": {
         "questionNumber": "#",
         "questionNumberAriaLabel": "Numéro de question",
@@ -1075,6 +1087,9 @@
     "title": "Paramètres",
     "saveSuccessIn": "Modifications de {section} enregistrées.",
     "saveError": "Échec de l'enregistrement du paramètre.",
+    "fieldError": {
+      "unexpected": "Erreur inattendue : {error}"
+    },
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
@@ -1142,6 +1157,7 @@
       "title": "Historique des paramètres",
       "description": "Consultez qui a modifié les paramètres et à quel moment.",
       "empty": "Aucune modification des paramètres n’a été enregistrée.",
+      "loadError": "Échec du chargement de l'historique : {error}",
       "user": "Utilisateur",
       "action": "Action",
       "setting": "Paramètre",
@@ -1794,6 +1810,7 @@
     "loading": "Chargement...",
     "fetchStats": "Afficher les statistiques des vecteurs",
     "statsLoaded": "Statistiques des vecteurs chargées.",
+    "statsLoadError": "Échec du chargement des statistiques des vecteurs : {error}",
     "reinitializeIndex": "Réinitialiser l'index",
     "createIndex": "Créer un index de vecteurs",
     "embeddingManagement": "Gestion des embeddings",
@@ -1934,6 +1951,7 @@
     "regenerateEmbeddingsFailed": "Échec de la régénération des incorporations. Vérifiez la console pour plus de détails.",
     "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès.",
+    "indexCreateError": "Échec de la réinitialisation du service vectoriel : {error}",
     "docdb8Capability": {
       "title": "Test des capacités de recherche vectorielle de DocumentDB 8",
       "description": "Exécutez des tests d'agrégation dans DocumentDB 8 pour vérifier si les filtres peuvent réduire l'ensemble des candidats avant la recherche vectorielle.",
@@ -1944,6 +1962,7 @@
       "yes": "Oui",
       "no": "Non",
       "noError": "Aucune erreur",
+      "errorDetail": "Échec du test : {error}",
       "probeComplete": "{label} : {status}",
       "notAvailable": "Non disponible",
       "estimatedFeedbackSelectivity": "Sélectivité estimée des rétroactions",
@@ -2042,9 +2061,6 @@
       "step1": "Communiquez avec l'équipe Réponses IA à {email}, et joignez une copie du texte modifié à votre courriel.",
       "step2": "L'équipe Réponses IA examinera les modifications, puis les appliquera dans le produit Réponses IA en direct."
     },
-    "error": {
-      "fallback": "Une erreur est survenue lors du chargement de cette page."
-    },
     "empty": {
       "never": "Jamais"
     }
@@ -2116,6 +2132,7 @@
       "creatingInstantAnswer": "Génération de questions équivalentes et création de l’ensemble de données...",
       "goldenAnswerSuccess": "L’ensemble de réponses de référence a été créé avec succès.",
       "goldenAnswerFailed": "Échec de la création de l’ensemble de réponses de référence.",
+      "goldenAnswerFailedDetail": "Échec de la création de l’ensemble de réponses de référence : {error}",
       "instantAnswerSuccess": "L’ensemble d’essai des réponses instantanées a été créé avec succès.",
       "instantAnswerQueued": "La création de l’ensemble de données de réponses instantanées a été mise en file d’attente. Vous pouvez suivre son état sur la page des ensembles de données.",
       "instantAnswerFailed": "Échec de la création de l’ensemble d’essai des réponses instantanées.",
@@ -2135,6 +2152,7 @@
       "errorLoadingRows": "Échec du chargement des données.",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
       "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
+      "deleteFailed": "Échec de la suppression de l'ensemble de données.",
       "nameLabel": "Nom de l'ensemble de données",
       "descLabel": "Description",
       "typeLabel": "Type d'ensemble de données",

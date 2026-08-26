@@ -166,10 +166,25 @@ protect against this: `.message` is essentially always truthy on a real `Error`,
 translated fallback can never actually fire. Two established alternatives, depending on
 whether the raw detail is worth keeping: (1) have the backend return a small, stable `code`
 field (not free text) and map that through a local object to a `t()` key client-side — see
-`ResetCompletePage.js`'s `errorKeys` map; or (2) if the raw detail itself is genuinely useful
-to show, wrap only that portion in `<span lang="en">` inside an otherwise-translated
+`resolveErrorMessage` in `src/utils/errorCodeMessage.js` (`ResetCompletePage.js`'s own use of
+it is the reference call site); or (2) if the raw detail itself is genuinely useful
+to show, wrap only that portion in `<code lang="en">` inside an otherwise-translated
 template, so AT pronounces it as English rather than mangling it with the page's own
-language rules — see `DeleteChatSection.js`'s `resolveLook()`. A `t()` string with a
+language rules (`<code>` over a plain `<span>` — same `lang` behaviour, plus free monospace
+styling from `global.css`'s bare `code {}` rule, and it's more semantically correct for a raw
+technical detail) — see `DeleteChatSection.js`'s `resolveLook()`. A `t()` string with a
 `{placeholder}` substituted via `.replace()`/interpolation is *not* equivalent to option 2:
 `t()` returns a plain string, which can't embed an HTML element, so the substituted text has
 no way to get `lang="en"` and stays unmarked either way.
+
+**`{ prefix, suffix, detail, isError }` shape, specifically: use `useErrorStatus`, not a third
+hand-rolled copy.** `DatabasePage.js` (~13 call sites) and `SettingsPage.js` independently
+built the same combination of option 2 above with a translated template split around
+`{error}` — extracted into `src/hooks/useErrorStatus.js` after the duplication was flagged in
+review. `const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);` once per page;
+`buildErrorStatus(key, error, otherPlaceholders)` takes the *raw* error object (not
+`error.message`) so the `error.message || String(error)` fallback lives in one place, and
+`renderStatusMessage(status, successVariant)` renders it (`successVariant` defaults to
+`'success'`; pass `'info'` for an outcome that's a neutral confirmation rather than a
+completed mutation — see `SettingsPage.js`'s cache-refresh use). Reach for this whenever a
+page needs the prefix/suffix/detail shape; don't rebuild it inline again.
