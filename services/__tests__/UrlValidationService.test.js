@@ -97,26 +97,41 @@ describe('UrlValidationService', () => {
             const result = await UrlValidationService.validateUrl('https://example.com');
             expect(result.isValid).toBe(false);
         });
+    });
 
-        it('requests https after being given an http URL', async () => {
-            axios.mockResolvedValueOnce({
-                status: 200,
-                request: { res: { responseUrl: 'https://inspection.canada.ca/en' } },
-            });
-
-            await UrlValidationService.validateUrl('http://inspection.canada.ca/en');
-
-            expect(axios).toHaveBeenCalledWith(
-                expect.objectContaining({ url: 'https://inspection.canada.ca/en' })
-            );
-        });
-
-        it('returns a failed result instead of throwing on an unusable URL', async () => {
-            const result = await UrlValidationService.validateUrl('javascript:alert(1)');
+    describe('validateUrlFormatting (public)', () => {
+        it('falls back to a search URL when no URL is supplied', async () => {
+            const result = await UrlValidationService.validateUrlFormatting('', 'en', 'feed licence', 'cfia');
 
             expect(result.isValid).toBe(false);
-            expect(result.status).toBe(400);
-            expect(result.error).toMatch(/unsupported scheme/);
+            expect(result.fallbackUrl).toContain('/sr/srb.html?q=feed%20licence');
+        });
+
+        it('uses the department search page for a known department', async () => {
+            const result = await UrlValidationService.validateUrlFormatting('', 'en', 'benefits', 'cra');
+
+            expect(result.fallbackUrl).toContain('/revenue-agency/search.html');
+        });
+
+        // Pass-through is the intended behaviour of a non-networking validator,
+        // not an accident of the tautology this replaced. Non-www.canada.ca GC
+        // hosts must keep their own URL rather than being sent to a search page.
+        it('passes any supplied URL through unchanged', async () => {
+            for (const url of [
+                'https://www.canada.ca/en/services/benefits.html',
+                'https://inspection.canada.ca/en/animal-health/livestock-feeds',
+                'https://ised-isde.canada.ca/site/ised/en',
+            ]) {
+                expect(await UrlValidationService.validateUrlFormatting(url)).toEqual({
+                    isValid: true,
+                    url,
+                });
+            }
+        });
+
+        it('makes no network request', async () => {
+            await UrlValidationService.validateUrlFormatting('https://www.canada.ca/en');
+
             expect(axios).not.toHaveBeenCalled();
         });
     });

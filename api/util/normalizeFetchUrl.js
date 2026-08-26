@@ -1,20 +1,20 @@
 // Normalize a model-provided URL before making an outbound request to it.
 //
-// The agent routinely emits `http://` URLs for sites whose live content is
-// HTTPS-only — inspection.canada.ca is the recurring case, since its pages
-// migrated from the legacy inspection.gc.ca domain and the plain-HTTP form is
-// what the model reaches for. Every Government of Canada site requires HTTPS
-// and redirects port 80, so on a laptop the mistake is invisible: the redirect
-// is followed in milliseconds and the page loads.
+// The agent routinely emits `http://` URLs for GC sites that are HTTPS-only —
+// inspection.canada.ca is the recurring case, since its pages migrated from the
+// legacy inspection.gc.ca domain. Locally the mistake is invisible: the site's
+// redirect to HTTPS is followed in milliseconds. In the deployed VPC it is not.
+// The network ACL allows outbound 443 only (terragrunt/aws/network/vpc.tf), and
+// a NACL denial *silently drops* the packet — no RST, no ICMP. The request
+// hangs until the client's own timeout fires, so the symptom is a fetch that
+// always fails at exactly the timeout value, reading as a flaky site rather
+// than a request that never left.
 //
-// In the deployed VPC it is not invisible. The network ACL allows outbound 443
-// only (terragrunt/aws/network/vpc.tf), and a NACL denial *silently drops* the
-// packet rather than refusing it — no RST, no ICMP. The SYN vanishes and the
-// request hangs until the client's own timeout fires. The symptom is a fetch
-// that always fails at exactly the timeout value, which reads as a slow or
-// flaky site rather than an unsent request. Upgrading the scheme here is what
-// stops that, and it is the right normalization regardless: it drops a
-// redirect round trip and keeps the request off cleartext HTTP.
+// The upgrade is unconditional rather than allowlisted by host. That is a
+// strict improvement in the VPC, where port 80 could never have succeeded, but
+// it does change local dev, which has no such restriction: an http-only host
+// that worked under `npm run dev` will now fail to connect. Accepted, since
+// every URL this sees is expected to be a GC site.
 //
 // Fail-fast by design. A URL that cannot be requested at all (blank, garbled,
 // or a non-http scheme such as javascript:/data:/file:) throws here rather
@@ -23,9 +23,11 @@
 // src/utils/safeUrl.js, which gates schemes for rendering an <a href> and
 // returns '' instead of throwing.
 //
-// Only the scheme is rewritten. The rest of the URL is returned byte for byte
-// so that already-valid URLs are never re-encoded or given a trailing slash by
-// a WHATWG URL round trip.
+// Only the scheme is rewritten, so the returned string stays byte-identical to
+// the input otherwise. This does not change what goes on the wire — axios
+// re-parses through `new URL()` before dispatching either way — but the
+// returned value also appears in tool output and error messages, where a
+// silently re-encoded query or an added trailing slash would be confusing.
 export function normalizeFetchUrl(value, fieldName = 'url') {
   if (typeof value !== 'string') {
     throw new Error(`Invalid ${fieldName}: expected a string`);

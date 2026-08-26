@@ -2,7 +2,6 @@ import axios from 'axios';
 import { Agent } from 'https';
 import ServerLoggingService from './ServerLoggingService.js';
 import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
-import { normalizeFetchUrl } from '../api/util/normalizeFetchUrl.js';
 
 function getHttpsAgent() {
   return new Agent({ rejectUnauthorized: false });
@@ -68,15 +67,6 @@ async function checkUrlWithMethod(url, method = 'head', chatId) {
 
 export const UrlValidationService = {
   async validateUrl(url, chatId) {
-    // Normalized once here so the HEAD and GET attempts below both request the
-    // same URL. This method's contract is to resolve, never throw, so an
-    // unusable URL becomes a failed result rather than a thrown error.
-    try {
-      url = normalizeFetchUrl(url);
-    } catch (error) {
-      return { isValid: false, url, status: 400, error: error.message };
-    }
-
     let headResult = await checkUrlWithMethod(url, 'head', chatId);
     let result = headResult;
 
@@ -97,17 +87,7 @@ export const UrlValidationService = {
   __private__: { checkUrlWithMethod, isKnown404, getFinalUrl }
 };
 
-// --- NEW: Lightweight formatting-only validation (bottom of file for visibility) ---
-function isCanadaCaDomain(url) {
-  try {
-    const parsed = new URL(url);
-    const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    return isHttp && parsed.hostname === 'www.canada.ca';
-  } catch (_e) {
-    return false;
-  }
-}
-
+// --- Lightweight formatting-only validation (bottom of file for visibility) ---
 function generateFallbackSearchUrl(lang, question, department, t) {
   const encodedQuestion = encodeURIComponent(question || '');
   let searchUrl;
@@ -149,15 +129,19 @@ UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', q
     return generateFallbackSearchUrl(lang, question, department, t);
   }
 
-  let checkResult = { isValid: true };
-
-  // NOTE: kept intentionally lightweight and non-networking.
-  if ((checkResult.isValid && isCanadaCaDomain(url)) || !isCanadaCaDomain(url)) {
-    return {
-      isValid: true,
-      url: url,
-    };
-  }
-
-  return generateFallbackSearchUrl(lang, question, department, t);
+  // NOTE: kept intentionally lightweight and non-networking. A missing URL is
+  // the only thing this can detect without making a request, so any URL the
+  // model supplied is passed through as-is.
+  //
+  // This previously branched on a `www.canada.ca` domain check ANDed with a
+  // hardcoded `{ isValid: true }` left behind when the live check was removed.
+  // With that constant folded in, the condition was true for every URL and the
+  // fallback below it was unreachable — it read as a domain gate while gating
+  // nothing. Adding a real domain gate here would be a behaviour change rather
+  // than a cleanup: matching only `www.canada.ca` would divert every citation
+  // on inspection.canada.ca, ised-isde.canada.ca and the like to a search page.
+  return {
+    isValid: true,
+    url: url,
+  };
 };
