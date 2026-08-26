@@ -367,6 +367,7 @@
   },
   "logging": {
     "title": "Tracer un clavardage",
+    "chatIdSectionHeading": "ID du clavardage",
     "refreshResults": "Actualiser les résultats",
     "refreshPending": "Patientez...",
     "refreshComplete": "Journaux actualisés. {count} entrées chargées.",
@@ -824,7 +825,6 @@
       "chatIdPlaceholder": "Entrez l'ID complet du chat",
       "chatIdSearchPlaceholder": "Entrez l'ID de clavardage (partiel ou complet)",
       "chatIdSearchButton": "Rechercher l'ID de clavardage",
-      "clear": "Effacer",
       "chatIdSearchTooShort": "Entrez au moins 4 caractères.",
       "chatIdMatchesFound": "{count} clavardages correspondants trouvés. Sélectionnez-en un pour continuer.",
       "chatIdMatchesTruncated": "Affichage des {count} premiers résultats. Entrez une partie plus longue de l'ID pour préciser la recherche.",

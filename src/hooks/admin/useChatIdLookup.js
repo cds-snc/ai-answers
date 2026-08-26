@@ -58,31 +58,17 @@ export function useChatIdLookup({
     setMatchesTruncated(false);
   };
 
-  // Shared by handleToggle (closing the row) and handleClear (an explicit
-  // Clear button) - both mean "reset this lookup fully," just triggered
-  // differently.
-  const resetLookup = () => {
-    setChatId('');
-    clearError();
-    setStatus(null);
-    setMatches(null);
-    setMatchesTruncated(false);
-  };
-
   // Closing the row means "I'm done here" — reset it fully (typed ID
   // included, not just the status message) so reopening it later starts
   // clean rather than picking up wherever it was left. Native <details>
   // fires `toggle` for both directions; clearing on open too is a harmless
   // no-op (already empty from the close that necessarily preceded it).
   const handleToggle = () => {
-    resetLookup();
-  };
-
-  // Explicit Clear button, opt-in per caller (ChatIdLookupField only renders
-  // it when a caller passes onClear) - same reset as handleToggle, just
-  // without closing the row.
-  const handleClear = () => {
-    resetLookup();
+    setChatId('');
+    clearError();
+    setStatus(null);
+    setMatches(null);
+    setMatchesTruncated(false);
   };
 
   // Validates and existence-checks rawValue. Returns the fetched chat object
@@ -215,7 +201,6 @@ export function useChatIdLookup({
     setChatId,
     handleInputChange,
     handleToggle,
-    handleClear,
     loading,
     setLoading,
     status,

@@ -45,12 +45,6 @@ const ChatIdLookupField = ({
   matchesHeading,
   matchesTruncatedMessage,
   onSelectMatch,
-  // Opt-in: only ViewChatByIdSection.js wires this up today. Stays mounted
-  // and just disabled when there's nothing to clear, rather than
-  // conditionally rendered - same reasoning as ChatOptions.js's
-  // referring-URL Clear button.
-  onClear,
-  clearLabel,
 }) => {
   const errorId = `${fieldId}-error`;
   const describedBy = [describedById, hasError && errorId].filter(Boolean).join(' ') || undefined;
@@ -88,17 +82,6 @@ const ChatIdLookupField = ({
       <GcdsButton type="submit" buttonRole={buttonRole} disabled={disabled} className="mt-200 mb-300">
         {buttonLabel}
       </GcdsButton>
-      {onClear && (
-        <GcdsButton
-          type="button"
-          buttonRole="secondary"
-          onClick={onClear}
-          disabled={disabled || !value}
-          className="mt-200 mb-300 mx-200"
-        >
-          {clearLabel}
-        </GcdsButton>
-      )}
       <ChatIdMatchList
         fieldId={fieldId}
         matches={matches}

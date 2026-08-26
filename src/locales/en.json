@@ -367,6 +367,7 @@
   },
   "logging": {
     "title": "Trace a chat",
+    "chatIdSectionHeading": "Chat ID",
     "refreshResults": "Refresh results",
     "refreshPending": "Please wait...",
     "refreshComplete": "Logs refreshed. {count} entries loaded.",
@@ -824,7 +825,6 @@
       "chatIdPlaceholder": "Enter full chat ID",
       "chatIdSearchPlaceholder": "Enter chat ID (partial or full)",
       "chatIdSearchButton": "Search for chat ID",
-      "clear": "Clear",
       "chatIdSearchTooShort": "Enter at least 4 characters.",
       "chatIdMatchesFound": "{count} matching chats found. Select one to continue.",
       "chatIdMatchesTruncated": "Showing the first {count} matches. Enter more of the chat ID to narrow the results.",

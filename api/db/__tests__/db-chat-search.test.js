@@ -63,6 +63,13 @@ describe('db-chat-search', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('rejects a whitespace-only query with the same 400 validation response, not a 500', async () => {
+    const res = await runGet({ q: '    ' });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.chatIds).toBeUndefined();
+  });
+
   it('caps results and reports truncation when more chats match than the limit', async () => {
     await dbConnect();
 

@@ -9,10 +9,6 @@ export function useChatLogs(chatId) {
 
   activeChatIdRef.current = chatId;
 
-  const clearLogs = useCallback(() => {
-    setLogs([]);
-  }, []);
-
   // Returns { logs, error } rather than a bare array so callers can tell a
   // genuinely empty result apart from a failed fetch — both would otherwise
   // resolve to the same `[]`, which made a failed refresh indistinguishable
@@ -62,7 +58,6 @@ export function useChatLogs(chatId) {
   }, []);
 
   return {
-    clearLogs,
     isRefreshingLogs,
     logs,
     refreshLogs,

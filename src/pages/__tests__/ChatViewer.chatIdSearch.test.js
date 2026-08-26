@@ -96,4 +96,33 @@ describe('ChatViewer chatId partial-match search', () => {
     });
     expect(screen.queryByRole('list')).toBeNull();
   });
+
+  it('does not get stuck busy forever when the chatId changes before an in-flight lookup resolves', async () => {
+    // checkChatExists's success path deliberately leaves loading=true for
+    // resolveConfirmedChat to clear - if a chatId change mid-flight makes
+    // resolveConfirmedChat bail out as stale before reaching that, nothing
+    // else ever clears it (ChatViewer.js:216's fix).
+    let resolveGetChat;
+    mockGetChat.mockReturnValue(new Promise((resolve) => { resolveGetChat = resolve; }));
+    mockGetLogs.mockResolvedValue({ logs: [] });
+
+    render(<ChatViewer lang="en" />);
+
+    const input = screen.getByLabelText('logging.enterChatId');
+    fireEvent.change(input, { target: { value: CHAT_A } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
+
+    await waitFor(() => expect(input.disabled).toBe(true));
+
+    // The viewer moves on to a different chatId while CHAT_A's lookup is
+    // still in flight.
+    fireEvent.change(input, { target: { value: CHAT_B } });
+
+    // The original (now-stale) lookup resolves successfully.
+    resolveGetChat({ chat: { chatId: CHAT_A } });
+
+    await waitFor(() => expect(input.disabled).toBe(false));
+    expect(screen.getByText('admin.common.chatIdSearchButton')).toBeTruthy();
+    expect(mockGetLogs).not.toHaveBeenCalled();
+  });
 });

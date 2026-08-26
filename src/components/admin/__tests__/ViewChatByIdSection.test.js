@@ -145,6 +145,11 @@ describe('ViewChatByIdSection', () => {
     });
     expect(screen.getByText(VALID_CHAT_ID)).toBeTruthy();
     expect(screen.getByText(OTHER_CHAT_ID)).toBeTruthy();
+    // ChatIdMatchList.js moves focus to its own heading when matches first
+    // populate - otherwise the list just silently appears for a
+    // screen-reader user with no announcement and no focus move at all.
+    const matchesHeading = screen.getByText('2 matching chats found. Select one to continue.');
+    await waitFor(() => expect(document.activeElement).toBe(matchesHeading));
 
     fireEvent.click(screen.getByText(OTHER_CHAT_ID));
 

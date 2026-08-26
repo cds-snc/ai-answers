@@ -24,7 +24,7 @@ async function chatSearchHandler(req, res) {
     await dbConnect();
 
     const { q } = req.query;
-    if (!q || typeof q !== 'string') {
+    if (!q || typeof q !== 'string' || !q.trim()) {
       return res.status(400).json({ error: 'q query parameter required' });
     }
     const query = requireString(q, 'q');
@@ -32,12 +32,13 @@ async function chatSearchHandler(req, res) {
       return res.status(400).json({ error: `q must be at least ${MIN_QUERY_LENGTH} characters` });
     }
 
-    // Chat.chatId has no index (see models/chat.js) - this is a full
-    // collection scan today, same as db-chat.js's existing exact-match
-    // Chat.findOne({ chatId }). Fine at current admin/partner-only, explicit-
-    // search-button-only call volume, but worth an index if this collection
-    // grows large enough for it to matter (validate with explain() against
-    // the real DocumentDB cluster before assuming either way - see AGENTS.md).
+    // models/chat.js's chatId index speeds up db-chat.js's exact-match
+    // Chat.findOne({ chatId }), but not this query: an unanchored $regex
+    // can't use a B-tree index the way an equality or prefix match can, so
+    // this is still a full collection scan. Fine at current admin/partner-
+    // only, explicit-search-button-only call volume - validate with
+    // explain() against the real DocumentDB cluster before assuming
+    // otherwise if that changes (see AGENTS.md).
     //
     // limit(MAX_RESULTS + 1) rather than a separate count query - one extra
     // row over the cap is enough to know whether more matches exist beyond

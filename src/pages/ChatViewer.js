@@ -10,7 +10,7 @@ import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
 import { useChatIdLookup } from '../hooks/admin/useChatIdLookup.js';
 import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
-import ChatIdMatchList from '../components/admin/ChatIdMatchList.js';
+import ChatIdMatchList, { buildChatIdMatchesLabels } from '../components/admin/ChatIdMatchList.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import { buildChatReviewHref, chatLangFromPageLanguage } from '../utils/reviewLink.js';
@@ -74,8 +74,17 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [idPanelOpen, setIdPanelOpen] = useState(true);
   // Error text only - a failed fetch has no other visual cue, so it stays a
   // real, visible StatusMessage. Success doesn't need one: the table filling
-  // in and the panel collapsing already say "it worked" loudly.
-  const [refreshAnnouncement, setRefreshAnnouncement] = useState('');
+  // in and the panel collapsing already say "it worked" loudly. nonce (like
+  // every other announcer in this file) so two consecutive identical
+  // failures both actually get announced - a plain message string only
+  // re-announces on value *change*, so a second "Refresh failed" in a row
+  // would otherwise be silently swallowed.
+  const {
+    message: refreshAnnouncement,
+    nonce: refreshAnnouncementNonce,
+    announce: announceRefreshFailed,
+    clear: clearRefreshAnnouncement,
+  } = useSrAnnouncer();
   // The confirmed chat's own pageLanguage (normalized to 'en'/'fr'), for the
   // "Trace for: {chatId}" link's href below - buildChatReviewHref routes to
   // the chat's OWN language, not the admin's (official-languages.md Rule 2:
@@ -214,13 +223,21 @@ const ChatViewer = ({ lang = 'en' }) => {
   // trip, during which the viewer may have typed a different chatId - if
   // so, this result no longer describes what's on screen.
   const resolveConfirmedChat = async (chat, requestedChatId, source = 'search') => {
+    // checkChatExists's success path deliberately leaves loading=true,
+    // expecting this function to clear it (see below) - unconditionally,
+    // before either staleness check, since the network round trip it was
+    // tracking has finished either way by the time this runs. Gating this
+    // on the checks below (as a stale result also being a "keep loading"
+    // result) previously meant a chatId change mid-flight left isCheckingChatId
+    // stuck true forever, with no other code path to release it.
+    setCheckingChatId(false);
     if (chatIdRef.current !== requestedChatId) {
       return;
     }
     if (!chat) {
       // searchChats/selectMatch already cover empty/malformed input and
       // "no such chat" - just clear any stale success message.
-      setRefreshAnnouncement('');
+      clearRefreshAnnouncement();
       return;
     }
     setChatIdStatus(null);
@@ -246,17 +263,13 @@ const ChatViewer = ({ lang = 'en' }) => {
       return;
     }
 
-    // searchChats/selectMatch's success branch leaves loading true for this
-    // next step (see checkChatExists) - cleared here.
-    setCheckingChatId(false);
-
     // A failed fetch also resolves to zero logs, so it needs its own
     // visible message - otherwise a failure reads identically to "nothing
     // new".
     if (error) {
-      setRefreshAnnouncement(t('logging.refreshFailed'));
+      announceRefreshFailed(t('logging.refreshFailed'));
     } else {
-      setRefreshAnnouncement('');
+      clearRefreshAnnouncement();
       const successMessage = t('logging.refreshComplete').replace('{count}', formatNumber(nextLogs.length, lang));
       if (source === 'refresh') {
         announceRefreshResults(successMessage);
@@ -321,6 +334,16 @@ const ChatViewer = ({ lang = 'en' }) => {
       </nav>
 
       <section className="mb-600">
+        {/* Same sr-only heading/landmark role as ChatDashboardPage.js's/
+            EvalDashboardPage.js's own "Filters" heading over FilterPanel
+            (whose <summary> below isn't heading-navigable on its own) - not
+            named "Filters" since this isn't one, and covers everything
+            about identifying/tracing this one chat: the lookup panel, the
+            confirmed "Trace for:" link, and Refresh results - not just the
+            lookup step. Distinct text from the summary's own "View chat by
+            ID" label so the two don't read as an identical back-to-back
+            announcement. */}
+        <h2 className="sr-only">{t('logging.chatIdSectionHeading')}</h2>
         {/* Same details/summary "hidey" as EvalDashboardPage.js's
             eval-search-chat-id panel (.filter-panel/.filter-panel-summary,
             admin.css's eval-search-chat-id override so it doesn't shrink
@@ -383,12 +406,7 @@ const ChatViewer = ({ lang = 'en' }) => {
             <ChatIdMatchList
               fieldId="chatIdInput"
               matches={chatIdMatches}
-              matchesHeading={t('admin.common.chatIdMatchesFound').replace('{count}', chatIdMatches?.length ?? 0)}
-              matchesTruncatedMessage={
-                chatIdMatchesTruncated
-                  ? t('admin.common.chatIdMatchesTruncated').replace('{count}', chatIdMatches?.length ?? 0)
-                  : null
-              }
+              {...buildChatIdMatchesLabels(t, chatIdMatches, chatIdMatchesTruncated)}
               onSelectMatch={handleSelectMatch}
             />
           </div>
@@ -453,10 +471,15 @@ const ChatViewer = ({ lang = 'en' }) => {
               a failed refresh - only one is ever meaningful at a time
               (resolveConfirmedChat clears chatIdStatus once a chat is
               confirmed). refreshAnnouncement only ever holds error text -
-              see its own declaration. */}
+              see its own declaration. persistent+nonce only actually drive
+              refreshAnnouncement's own re-announcement (chatIdStatus has no
+              nonce of its own), but are harmless either way here since the
+              two are mutually exclusive. */}
           <StatusMessage
+            persistent
             variant={chatIdStatus ? chatIdStatus.variant : (refreshAnnouncement ? 'error' : undefined)}
             message={chatIdStatus ? chatIdStatus.text : refreshAnnouncement}
+            nonce={refreshAnnouncementNonce}
           />
           <StatusMessage persistent className="sr-only" message={loadAnnouncement} nonce={loadAnnounceNonce} />
 
@@ -576,10 +599,11 @@ const ChatViewer = ({ lang = 'en' }) => {
             // this one delegated listener regardless of what rendered the
             // target. clearRefreshResultsMessage no-ops if already empty.
             <div className="metrics-table-container" onClick={clearRefreshResultsMessage}>
-              {/* Visible, not the shared sr-only admin.common.resultsHeading
-                  other dashboards use - this sits right below the step
-                  timeline's own visible h2, so a silent heading here would
-                  read as an unlabeled continuation of that section. */}
+              {/* Real, visible h2 - sibling of the step timeline's own h2
+                  above, not nested under a generic "Results" umbrella: both
+                  already have self-describing names, same reasoning as
+                  MetricsDashboard.js's/TechnicalMetricsDashboard.js's own
+                  section headings. */}
               <h2>{t('logging.entriesHeading')}</h2>
               {/* Above the table on purpose, not up by the chat ID panel -
                   the pills only filter this table's rows (useChatLogsTable's

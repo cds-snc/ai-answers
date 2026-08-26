@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusMessage from './StatusMessage.js';
 import ChatIdLookupField from './ChatIdLookupField.js';
+import { buildChatIdMatchesLabels } from './ChatIdMatchList.js';
 import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 
 // Chat-ID lookup, navigating to the chat viewer for whichever chat is
@@ -11,12 +12,10 @@ import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 // behaviour), a partial fragment that matches exactly one chat resolves the
 // same way, and a fragment matching several leaves ChatIdLookupField's own
 // pick-list up for the admin to choose from (handleSelectMatch below
-// navigates once they do). Shares this partial-match search with
-// EvalDashboardPage.js's own "View chat by ID" (leveraging the same
-// db-chat-search.js/useChatIdLookup.js logic) — that one opens a filtered
-// results table instead of navigating anywhere once it finds a match, since
-// its purpose is browsing evaluated interactions rather than jumping
-// straight to one chat.
+// navigates once they do). EvalDashboardPage.js has its own, unrelated
+// "View chat by ID" search (EvaluationService.getEvalDashboard, not
+// db-chat-search.js/useChatIdLookup.js) — only its label/placeholder locale
+// strings are actually shared with this one, not the search logic itself.
 //
 // Checks the chat actually exists (via useChatIdLookup.js's shared
 // existence check, the same DataStoreService.getChat / db-chat.js route
@@ -90,12 +89,7 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
             buttonLabel={loading ? t('admin.viewChat.loading') : t('admin.common.chatIdSearchButton')}
             describedById="view-chat-id-summary"
             matches={matches}
-            matchesHeading={t('admin.common.chatIdMatchesFound').replace('{count}', matches?.length ?? 0)}
-            matchesTruncatedMessage={
-              matchesTruncated
-                ? t('admin.common.chatIdMatchesTruncated').replace('{count}', matches?.length ?? 0)
-                : null
-            }
+            {...buildChatIdMatchesLabels(t, matches, matchesTruncated)}
             onSelectMatch={handleSelectMatch}
           />
         </form>
