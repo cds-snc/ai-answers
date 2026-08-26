@@ -11,6 +11,14 @@ vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
+// Refresh now confirms the chat exists (via useChatIdLookup's getChat call,
+// which also requires a UUID-shaped chatId) before trusting refreshLogs'
+// result — see ChatViewer.js's handleRefreshLogs.
+const { CHAT_ID } = vi.hoisted(() => ({ CHAT_ID: '123e4567-e89b-42d3-a456-426614174000' }));
+vi.mock('../../services/DataStoreService.js', () => ({
+  default: { getChat: vi.fn().mockResolvedValue({ chat: { chatId: CHAT_ID } }) },
+}));
+
 const { mockRefreshLogs } = vi.hoisted(() => ({ mockRefreshLogs: vi.fn() }));
 vi.mock('../../hooks/chatviewer/useChatLogs.js', () => ({
   useChatLogs: () => ({
@@ -26,7 +34,6 @@ vi.mock('../../hooks/chatviewer/useChatTimeline.js', () => ({
 vi.mock('../../hooks/chatviewer/useChatLogsTable.js', () => ({
   useChatLogsTable: () => {},
 }));
-vi.mock('../../components/chatviewer/MetadataModal.js', () => ({ default: () => null }));
 vi.mock('prismjs/themes/prism.css', () => ({}));
 vi.mock('prismjs/components/prism-json.js', () => ({}));
 vi.mock('prismjs/components/prism-xml-doc.js', () => ({}));
@@ -52,8 +59,8 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
 
     render(<ChatViewer lang="en" />);
 
-    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: 'chat-123' } });
-    fireEvent.click(screen.getByText('logging.refresh'));
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('logging.refreshFailed');
@@ -64,8 +71,8 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
 
     render(<ChatViewer lang="en" />);
 
-    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: 'chat-123' } });
-    fireEvent.click(screen.getByText('logging.refresh'));
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     await waitFor(() => {
       expect(screen.getByText('logging.refreshComplete')).toBeTruthy();

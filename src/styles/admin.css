@@ -116,67 +116,90 @@
   font-size: 2px;
 }
 
-/* Metadata and code styling */
-.metadata-content {
-  position: relative;
+/* Metadata column - ChatViewer.js's log table (useChatLogsTable.js /
+   utils/chatviewer/chatViewer.js's buildMetadataCellHtml). Every field
+   prints inline unless its own value is long enough to need collapsing,
+   in which case a native <details>/<summary> holds it. No fixed height or
+   scrolling - expanding one just grows the row in place. */
+.metadata-cell {
+  word-break: break-word;
 }
 
-.expand-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 12px !important;
-  padding: 4px 8px !important;
-  min-height: auto !important;
+.metadata-pair {
+  margin-bottom: 2px;
 }
 
-/* Syntax highlighting overrides */
+.metadata-more summary {
+  cursor: pointer;
+}
+
+/* :not(:focus): global.css's own summary:focus rule turns the text white
+   against its solid blue focus background, but admin.css loads after
+   global.css, so without this guard the link colour here wins on focus
+   and leaves dark text on a dark-blue background. */
+.metadata-more summary:not(:focus) {
+  color: var(--gcds-link-default);
+}
+
+.metadata-more[open] summary {
+  margin-bottom: var(--gcds-spacing-75);
+}
+
+/* Every <pre>/<code> in the metadata column wraps instead of scrolling.
+   prismjs/themes/prism.css's own code[class*="language-"],
+   pre[class*="language-"] rule hardcodes white-space: pre +
+   word-break/word-wrap: normal on both tags - equal specificity to a plain
+   descendant selector, so !important is needed regardless of bundle order. */
+.metadata-cell pre,
+.metadata-cell code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  /* Also overrides prism.css's own hardcoded #f5f2f0 background - white
+     gives the most contrast headroom for the 4.5:1 colours below. */
+  background: var(--gcds-color-white) !important;
+}
+
+.metadata-cell pre {
+  margin: 0;
+}
+
+/* Syntax highlighting overrides - GC DS colour tokens throughout, chosen to
+   clear 4.5:1 (1.4.3) against the background above. prismjs/themes/prism.css's
+   own .token.* colours were tuned for a dark theme and fall short of 4.5:1
+   here (2.6:1-4:1 measured); color: black is fine at 18.7:1 and left alone.
+   Semantic mapping: property/tag = identifier, string/attr-name = text
+   value, number/attr-value = data value, boolean = its own accent,
+   null/punctuation/operator/comment = de-emphasized. */
 .language-json {
-  color: #000;
+  color: var(--gcds-text-primary);
 }
 
-.language-json .token.property {
-  color: #2e86de;
+.language-json .token.property,
+.language-xml .token.tag {
+  color: var(--gcds-color-blue-700);
 }
 
-.language-json .token.string {
-  color: #10ac84;
+.language-json .token.string,
+.language-xml .token.attr-name {
+  color: var(--gcds-color-green-700);
 }
 
-.language-json .token.number {
-  color: #ee5253;
+.language-json .token.number,
+.language-xml .token.attr-value {
+  color: var(--gcds-color-red-700);
 }
 
 .language-json .token.boolean {
-  color: #ff9f43;
+  color: var(--gcds-color-yellow-800);
 }
 
-.language-json .token.null {
-  color: #8395a7;
-}
-
-.language-xml .token.tag {
-  color: #2e86de;
-}
-
-.language-xml .token.attr-name {
-  color: #10ac84;
-}
-
-.language-xml .token.attr-value {
-  color: #ee5253;
-}
-
-/* Modal styling */
-.metadata-modal {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.metadata-modal pre {
-  margin: 0;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 4px;
+.language-json .token.null,
+.language-json .token.punctuation,
+.language-json .token.operator,
+.language-xml .token.punctuation,
+.token.comment {
+  color: var(--gcds-color-grayscale-700);
 }
 
 /* Filter Panel Styles */
@@ -758,16 +781,52 @@
   background: #f3f4f6;
 }
 /* Shared by EvalDashboardPage.js's search field and ChatIdLookupField.js's
-   own input - both are block-level wrappers around a chat-ID input, not
-   just a width cap: without it, once the input stops being width:100%
-   (which forced the button below it by consuming the whole line), the
-   input and its inline-level GcdsButton sibling had room to sit side by
-   side again in normal flow. Wrapping the input in its own block
-   guarantees the button starts on a new line regardless of either
-   element's own display type. */
+   own input - a block-level wrapper around the chat-ID input, not just a
+   width cap: it guarantees the button below starts on a new line
+   regardless of either element's own display type. */
 .eval-search-chat-id__field,
 .chat-id-lookup-field {
   max-width: 40rem;
+}
+
+/* ChatIdLookupField.js's own input (ViewChatByIdSection.js/DeleteChatSection.js/
+   DeleteExpertEval.js) - .filter-input's shared default read short and small
+   next to a real GC DS input, so it's sized up to gcds-input's own tokens
+   here rather than changing .filter-input itself, which plenty of other
+   admin fields also share. */
+.chat-id-lookup-field .filter-input {
+  font: var(--gcds-input-font-desktop) !important;
+  padding: var(--gcds-input-padding) !important;
+  min-height: var(--gcds-input-min-width-and-height);
+}
+
+/* ChatIdLookupField.js's own label - same reasoning as the input rule
+   above, but the label is a sibling of .chat-id-lookup-field, so it needs
+   its own wrapper - see .chat-id-lookup-group in ChatIdLookupField.js. */
+.chat-id-lookup-group .filter-label {
+  font: var(--gcds-label-font-desktop);
+}
+
+/* ChatIdLookupField.js's partial-match pick-list - one button per matching
+   chatId (.filter-button.filter-button-outline, same bordered look
+   PauseToggleButton.js already uses elsewhere), stacked instead of
+   DataTables' row-per-result convention since this is a short, capped list
+   (db-chat-search.js's MAX_RESULTS) meant to be scanned and picked from
+   directly, not paged/sorted/filtered like a real results table. */
+.chat-id-match-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gcds-spacing-100);
+  max-width: 40rem;
+}
+
+.chat-id-match-list button {
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ChatLogsDashboard.js's export View/Format dropdowns. Previously
@@ -1566,12 +1625,15 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* User type labels — shared with DatabasePage.js's .label.building
-   ("building" has no neutral tier of its own below), and BatchList.js's
-   in_progress status pill below (same "actively working" meaning as
-   building's blue tier). */
+   ("building" has no neutral tier of its own below), BatchList.js's
+   in_progress status pill (same "actively working" meaning as building's
+   blue tier), and ChatViewer.js's log table Level column pill
+   (useChatLogsTable.js), whose logLevel values (info/debug/warn/error)
+   are literal class names — same "info" reuses this tier directly. */
 .label.public,
 .label.building,
-.label.in_progress {
+.label.in_progress,
+.label.info {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
 }
@@ -1587,9 +1649,12 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
-   the batch's default, not-yet-started state. */
+   the batch's default, not-yet-started state - and ChatViewer.js's log
+   table Level column pill: debug isn't a severity tier, so it gets this
+   same neutral grey rather than a colour of its own. */
 .label.normal,
-.label.uploaded {
+.label.uploaded,
+.label.debug {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
@@ -1661,8 +1726,11 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
    .label.admin/.clarifying-question/.not-gc/.pt-muni above (no matching
    GC DS token). #915700 clears 4.64:1 on #FFE0B2 (old #a14b00 was 4.70:1;
    #e65100 before that was 2.99:1) - shares .text-status--warning's hex,
-   tuned for a higher green:red ratio so it reads orange, not red/brown. */
-.label.hasContentIssue {
+   tuned for a higher green:red ratio so it reads orange, not red/brown.
+   ChatViewer.js's log table Level column pill reuses this same tier for
+   "warn" - same amber, same severity meaning. */
+.label.hasContentIssue,
+.label.warn {
   background-color: #FFE0B2;
   color: #915700;
 }
@@ -3139,6 +3207,15 @@ table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_1,
 table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_2,
 table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_3 {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1) !important;
+}
+
+/* .table-slim-padding - general-purpose utility for any `dataTable`-class
+   table that wants tighter rows than DataTables' own default cell padding.
+   ChatViewer.js's pipeline step timeline table is the only consumer for
+   now - opt-in per table rather than changing table.dataTable site-wide. */
+table.dataTable.table-slim-padding > tbody > tr > th,
+table.dataTable.table-slim-padding > tbody > tr > td {
+  padding: 4px 10px;
 }
 
 /* BatchList.js's visible "paused" design element - sits under the pause

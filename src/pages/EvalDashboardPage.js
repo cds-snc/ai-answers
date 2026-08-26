@@ -523,14 +523,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     setSearchChatIdNotFound(false);
                     clearSearchChatIdError();
                   }}
-                  placeholder={t('admin.evalDashboard.searchChatIdPlaceholder')}
+                  placeholder={t('admin.common.chatIdSearchPlaceholder')}
                   required
                   aria-required="true"
                   aria-describedby={hasSearchChatIdError ? 'eval-search-chat-id-error' : undefined}
                 />
               </div>
               <button type="submit" className="filter-button filter-button-primary mt-200">
-                {t('admin.evalDashboard.searchButton')}
+                {t('admin.common.chatIdSearchButton')}
               </button>
             </form>
             {searchChatIdNotFound && (

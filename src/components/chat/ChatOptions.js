@@ -31,6 +31,11 @@ const ChatOptions = ({
   // DatabasePage's Import) applies here too, no special-casing needed.
   const [draftUrl, setDraftUrl] = useState(referringUrl || '');
   const referringUrlError = useInlineFormError();
+  // useInlineFormError only tracks *that* there's an error, not *which* one -
+  // three different failures now share this one inline-error region (a
+  // malformed URL, Apply with nothing typed, Clear with nothing applied),
+  // so the message itself is tracked separately here.
+  const [urlErrorMessage, setUrlErrorMessage] = useState('');
   const urlInputRef = useRef(null);
   // Visible confirmation that Apply/Clear actually took effect — nothing
   // else confirms a successful apply (unlike Workflow/Model, whose native
@@ -41,14 +46,13 @@ const ChatOptions = ({
   // bails on an identical string update) — useSrAnnouncer's naming is a
   // holdover from its original sr-only use; the message/nonce bookkeeping
   // itself isn't sr-only-specific.
-  const { message: successMessage, nonce: successNonce, announce: announceRaw } = useSrAnnouncer();
+  const { message: successMessage, nonce: successNonce, announce: announceRaw, clear: clearSuccessMessage } = useSrAnnouncer();
   const announce = (key) => announceRaw(safeT(key));
 
   // Last value we told the parent to apply. Distinguishes an external
   // change to `referringUrl` (pageUrl auto-populate, a fresh chat) from the
   // prop settling to the value we just applied ourselves.
   const lastKnownUrlRef = useRef(referringUrl || '');
-  const isUrlDirty = draftUrl.trim() !== lastKnownUrlRef.current.trim();
 
   useEffect(() => {
     const incoming = referringUrl || '';
@@ -76,9 +80,25 @@ const ChatOptions = ({
   const handleApplyUrl = (e) => {
     e.preventDefault();
     const trimmed = draftUrl.trim();
-    // Optional field: an empty draft is valid (clears the override).
-    if (trimmed && !isWellFormedHttpUrl(trimmed)) {
+    // Neither button is ever disabled (prefer rejecting the interaction over
+    // disabling the control - AGENTS.md/ChatViewer.js's own precedent: a
+    // disabled control's reason is undiscoverable to a keyboard/screen-reader
+    // user who never lands on it). Clearing is Clear's job now, not an empty
+    // Apply - so an empty draft is a real error here, not a valid "remove
+    // the override" submission.
+    if (!trimmed) {
+      setUrlErrorMessage(safeT('homepage.chat.options.referringUrl.emptyError'));
       referringUrlError.triggerError();
+      // A stale "Referring URL applied/cleared." from an earlier action
+      // otherwise keeps sitting there next to this new error, reading as
+      // two contradictory outcomes for the same field at once.
+      clearSuccessMessage();
+      return;
+    }
+    if (!isWellFormedHttpUrl(trimmed)) {
+      setUrlErrorMessage(safeT('homepage.chat.options.referringUrl.error'));
+      referringUrlError.triggerError();
+      clearSuccessMessage();
       return;
     }
     referringUrlError.clearError();
@@ -87,20 +107,24 @@ const ChatOptions = ({
     if (trimmed !== lastKnownUrlRef.current) {
       lastKnownUrlRef.current = trimmed;
       handleReferringUrlChange({ target: { value: trimmed } });
-      announce(trimmed
-        ? 'homepage.chat.options.referringUrl.appliedAnnouncement'
-        : 'homepage.chat.options.referringUrl.removedAnnouncement');
+      announce('homepage.chat.options.referringUrl.appliedAnnouncement');
     }
   };
 
   const handleClearAppliedUrl = () => {
+    if (!referringUrl) {
+      setUrlErrorMessage(safeT('homepage.chat.options.referringUrl.noUrlToClearError'));
+      referringUrlError.triggerError();
+      clearSuccessMessage();
+      return;
+    }
     referringUrlError.clearError();
     setDraftUrl('');
     lastKnownUrlRef.current = '';
     handleReferringUrlChange({ target: { value: '' } });
     announce('homepage.chat.options.referringUrl.removedAnnouncement');
     // Land back in the box, ready to type a new URL. No defer needed: the
-    // Clear button stays mounted (aria-disabled, not unmounted — see its
+    // Clear button stays mounted (no longer even conditionally disabled - see its
     // comment above), so there's no async re-render race to wait out.
     urlInputRef.current?.focus();
   };
@@ -231,7 +255,7 @@ const ChatOptions = ({
             {referringUrlError.hasError && (
               <FeedbackInlineError
                 id="referring-url-error"
-                message={safeT('homepage.chat.options.referringUrl.error')}
+                message={urlErrorMessage}
                 errorCount={referringUrlError.errorCount}
                 inputRef={referringUrlError.errorRef}
               />
@@ -248,21 +272,19 @@ const ChatOptions = ({
               className="filter-input"
               aria-describedby={referringUrlError.hasError ? 'referring-url-error' : undefined}
             />
-            <GcdsButton type="submit" disabled={!isUrlDirty} className="mt-200">
+            <GcdsButton type="submit" className="mt-200">
               {safeT('homepage.chat.options.referringUrl.applyLabel')}
             </GcdsButton>
             {/* Clears the currently-applied URL (reflects `referringUrl`, not
-                the draft) — stays mounted and just disabled when there's
-                nothing to clear, rather than conditionally rendered. GcdsButton
-                uses aria-disabled, not native disabled, so it stays focusable
-                and in place either way — conditionally unmounting it here was
-                producing a jarring focus jump on every Clear click for no
-                benefit. */}
+                the draft). Never disabled - clicking with nothing applied
+                surfaces the same inline error region above ("No URL to
+                clear") instead of a silently inert control (prefer
+                rejecting the interaction over disabling it - see
+                handleClearAppliedUrl/handleApplyUrl's own comments). */}
             <GcdsButton
               type="button"
               buttonRole="secondary"
               onClick={handleClearAppliedUrl}
-              disabled={!referringUrl}
               className="mt-200 mx-200"
             >
               {safeT('homepage.chat.options.referringUrl.clearLabel')}

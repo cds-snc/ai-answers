@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { captureTableFocus, restoreTableFocus } from '../focusRestore.js';
 
 // Builds a <table> with one row per entry in `keys`, each carrying the
-// given data-log-key and an "Expand" button in its metadata cell — mirrors
-// the shape useChatLogsTable produces via DataTables' createdRow/render.
+// given data-log-key and a metadata "Show N more values" <summary> toggle
+// in its metadata cell — mirrors the shape useChatLogsTable/
+// buildMetadataCellHtml produce via DataTables' createdRow/render.
 function buildTable(keys) {
   const table = document.createElement('table');
   const tbody = document.createElement('tbody');
@@ -14,10 +15,12 @@ function buildTable(keys) {
     const row = document.createElement('tr');
     row.dataset.logKey = key;
     const metadataCell = document.createElement('td');
-    const expandButton = document.createElement('button');
-    expandButton.className = 'expand-button';
-    expandButton.textContent = 'Expand';
-    metadataCell.appendChild(expandButton);
+    const details = document.createElement('details');
+    details.className = 'metadata-more';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Show 2 more values';
+    details.appendChild(summary);
+    metadataCell.appendChild(details);
     row.appendChild(document.createElement('td')); // createdAt
     row.appendChild(document.createElement('td')); // level
     row.appendChild(document.createElement('td')); // message
@@ -44,15 +47,15 @@ describe('captureTableFocus', () => {
     expect(captureTableFocus(table)).toBeNull();
   });
 
-  it("captures the row's log key and marks an expand button as such", () => {
+  it("captures the row's log key and marks a metadata summary toggle as such", () => {
     const table = buildTable(['row-a', 'row-b']);
-    const expandButton = table.querySelectorAll('.expand-button')[1];
-    expandButton.focus();
+    const summary = table.querySelectorAll('.metadata-more > summary')[1];
+    summary.focus();
 
     expect(captureTableFocus(table)).toEqual({
       logKey: 'row-b',
       cellIndex: 3,
-      isExpandButton: true,
+      isMetadataSummary: true,
     });
   });
 });
@@ -61,7 +64,7 @@ describe('restoreTableFocus', () => {
   it('does nothing when focusRestore is null', () => {
     const table = buildTable(['a']);
     expect(() => restoreTableFocus(table, null)).not.toThrow();
-    expect(document.activeElement).not.toBe(table.querySelector('.expand-button'));
+    expect(document.activeElement).not.toBe(table.querySelector('.metadata-more > summary'));
   });
 
   it('finds the same log entry by key even after rows are reordered/rebuilt, ignoring stale position', () => {
@@ -71,7 +74,7 @@ describe('restoreTableFocus', () => {
     // newest-first, pushing row-b to position 2.
     let table = buildTable(['row-a', 'row-b']);
     const focusRestore = captureTableFocus(table); // nothing focused yet
-    table.querySelectorAll('.expand-button')[1].focus();
+    table.querySelectorAll('.metadata-more > summary')[1].focus();
     const captured = captureTableFocus(table);
     expect(captured.logKey).toBe('row-b');
 
@@ -81,13 +84,13 @@ describe('restoreTableFocus', () => {
 
     restoreTableFocus(table, captured);
 
-    expect(document.activeElement).toBe(table.querySelectorAll('.expand-button')[2]);
+    expect(document.activeElement).toBe(table.querySelectorAll('.metadata-more > summary')[2]);
     expect(focusRestore).toBeNull(); // sanity: first capture had nothing focused
   });
 
   it('falls back to the container when the captured row no longer exists (e.g. zero logs after refresh)', () => {
     let table = buildTable(['row-a', 'row-b']);
-    table.querySelectorAll('.expand-button')[0].focus();
+    table.querySelectorAll('.metadata-more > summary')[0].focus();
     const captured = captureTableFocus(table);
 
     document.body.removeChild(table);
@@ -99,9 +102,9 @@ describe('restoreTableFocus', () => {
     expect(document.activeElement).toBe(table);
   });
 
-  it('falls back to the container when the row exists but has no expand button focused originally', () => {
+  it('falls back to the container when the row exists but has no metadata summary focused originally', () => {
     const table = buildTable(['row-a']);
-    const focusRestore = { logKey: 'row-a', cellIndex: 0, isExpandButton: false };
+    const focusRestore = { logKey: 'row-a', cellIndex: 0, isMetadataSummary: false };
     table.setAttribute('tabindex', '-1');
 
     restoreTableFocus(table, focusRestore);

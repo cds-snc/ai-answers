@@ -2,8 +2,9 @@
  * DataTables has no in-place update path for the chat logs table — every
  * refresh tears the whole table down and rebuilds it, which silently drops
  * focus to <body> if the user had something inside it focused (e.g. a row's
- * "Expand" button). These two functions capture where focus was beforehand
- * and restore it to the equivalent spot afterwards.
+ * metadata "Show N more values" <summary> toggle). These two functions
+ * capture where focus was beforehand and restore it to the equivalent spot
+ * afterwards.
  *
  * Rows are located by a stable `data-log-key` attribute rather than DOM
  * position: sorting (newest-first) and paging reorder rows on every
@@ -29,7 +30,9 @@ export function captureTableFocus(container) {
   return {
     logKey: row?.dataset.logKey ?? null,
     cellIndex: cell ? Array.from(cell.parentNode.children).indexOf(cell) : -1,
-    isExpandButton: activeEl.classList.contains('expand-button'),
+    // A <summary> is natively focusable with no tabindex attribute of its
+    // own, unlike the [tabindex="0"] fallback below - needs its own check.
+    isMetadataSummary: activeEl.matches('.metadata-more > summary'),
   };
 }
 
@@ -53,7 +56,7 @@ export function restoreTableFocus(container, focusRestore) {
     : null;
   const targetCell = targetRow?.children?.[focusRestore.cellIndex];
   const target =
-    (focusRestore.isExpandButton && targetCell?.querySelector('.expand-button')) ||
+    (focusRestore.isMetadataSummary && targetCell?.querySelector('.metadata-more > summary')) ||
     targetCell?.querySelector('[tabindex="0"]') ||
     container;
 

@@ -9,25 +9,28 @@ import ViewChatByIdSection from '../ViewChatByIdSection.js';
 const TRANSLATIONS = {
   'admin.common.viewChatById': 'View chat by ID',
   'admin.common.chatIdRequired': 'Please enter a chat ID.',
-  'admin.common.chatIdPlaceholder': 'Enter full chat ID',
+  'admin.common.chatIdSearchPlaceholder': 'Enter chat ID (partial or full)',
+  'admin.common.chatIdSearchButton': 'Search for chat ID',
+  'admin.common.chatIdSearchTooShort': 'Enter at least 4 characters.',
+  'admin.common.chatIdMatchesFound': '{count} matching chats found. Select one to continue.',
+  'admin.common.chatIdMatchesTruncated': 'Showing the first {count} matches.',
   'admin.common.chatNotFound': 'No chat found with that ID.',
   'admin.common.fetchFailed': 'Failed to load data. Please try again.',
   'admin.viewChat.label': 'Chat ID',
-  'admin.viewChat.button': 'View chat',
   'admin.viewChat.loading': 'Looking up...',
-  'admin.viewChat.invalidFormat': 'Invalid chat ID format',
 };
 const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
-const { mockGetChat, mockNavigate } = vi.hoisted(() => ({
+const { mockGetChat, mockSearchChats, mockNavigate } = vi.hoisted(() => ({
   mockGetChat: vi.fn(),
+  mockSearchChats: vi.fn(),
   mockNavigate: vi.fn(),
 }));
 vi.mock('../../../services/DataStoreService.js', () => ({
-  default: { getChat: mockGetChat },
+  default: { getChat: mockGetChat, searchChats: mockSearchChats },
 }));
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
@@ -40,22 +43,26 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsIcon: ({ name }) => <span data-icon={name} />,
 }));
 
-// A well-formed chat ID (matches isValidChatIdFormat's uuidv4 pattern).
+// A well-formed chat ID (matches isValidChatIdFormat's uuidv4 pattern) -
+// this shape resolves directly via DataStoreService.getChat, never reaching
+// searchChats.
 const VALID_CHAT_ID = 'abcdef12-3456-4789-8abc-def012345678';
+const OTHER_CHAT_ID = '11111111-2222-4333-8444-555555555555';
 
 describe('ViewChatByIdSection', () => {
   afterEach(() => {
     cleanup();
     mockGetChat.mockReset();
+    mockSearchChats.mockReset();
     mockNavigate.mockReset();
   });
 
   const startLookup = (chatId = VALID_CHAT_ID) => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: chatId } });
-    fireEvent.click(screen.getByText('View chat'));
+    fireEvent.click(screen.getByText('Search for chat ID'));
   };
 
-  it('navigates to the review page for a chat that exists', async () => {
+  it('navigates to the review page for a full chat ID that exists', async () => {
     mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
 
     render(<ViewChatByIdSection lang="en" />);
@@ -64,6 +71,9 @@ describe('ViewChatByIdSection', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(`/en?chat=${encodeURIComponent(VALID_CHAT_ID)}&review=1`);
     });
+    // A full, valid-format ID resolves via the direct existence check -
+    // never reaches the partial-match search endpoint.
+    expect(mockSearchChats).not.toHaveBeenCalled();
   });
 
   it('shows "not found" and does not navigate when the chat does not exist', async () => {
@@ -91,22 +101,56 @@ describe('ViewChatByIdSection', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('flags an empty submit as an inline error instead of looking it up', async () => {
+  it('flags an empty submit as an inline error instead of searching', async () => {
     render(<ViewChatByIdSection lang="en" />);
-    fireEvent.click(screen.getByText('View chat'));
+    fireEvent.click(screen.getByText('Search for chat ID'));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('Please enter a chat ID.');
     expect(mockGetChat).not.toHaveBeenCalled();
+    expect(mockSearchChats).not.toHaveBeenCalled();
   });
 
-  it('flags a malformed chat ID as an inline error instead of looking it up', async () => {
+  it('flags a fragment shorter than the minimum as an inline error instead of searching', async () => {
     render(<ViewChatByIdSection lang="en" />);
-    startLookup('not-a-real-id');
+    startLookup('abc');
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Invalid chat ID format');
-    expect(mockGetChat).not.toHaveBeenCalled();
+    expect(alert.textContent).toContain('Enter at least 4 characters.');
+    expect(mockSearchChats).not.toHaveBeenCalled();
+  });
+
+  it('resolves a partial fragment matching exactly one chat directly, with no pick-list', async () => {
+    mockSearchChats.mockResolvedValue({ chatIds: [VALID_CHAT_ID], truncated: false });
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
+
+    render(<ViewChatByIdSection lang="en" />);
+    startLookup('abcdef12');
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/en?chat=${encodeURIComponent(VALID_CHAT_ID)}&review=1`);
+    });
+    expect(screen.queryByRole('list')).toBeNull();
+  });
+
+  it('shows a pick-list for a partial fragment matching several chats, and navigates on selection', async () => {
+    mockSearchChats.mockResolvedValue({ chatIds: [VALID_CHAT_ID, OTHER_CHAT_ID], truncated: false });
+    mockGetChat.mockResolvedValue({ chat: { chatId: OTHER_CHAT_ID } });
+
+    render(<ViewChatByIdSection lang="en" />);
+    startLookup('1234');
+
+    await waitFor(() => {
+      expect(screen.getByText('2 matching chats found. Select one to continue.')).toBeTruthy();
+    });
+    expect(screen.getByText(VALID_CHAT_ID)).toBeTruthy();
+    expect(screen.getByText(OTHER_CHAT_ID)).toBeTruthy();
+
+    fireEvent.click(screen.getByText(OTHER_CHAT_ID));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(`/en?chat=${encodeURIComponent(OTHER_CHAT_ID)}&review=1`);
+    });
   });
 
   it('clears the stale message and the typed chat ID when the row is collapsed', async () => {
