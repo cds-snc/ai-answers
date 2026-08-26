@@ -80,7 +80,7 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('re-announces a second consecutive identical refresh failure (nonce forces a remount, not just a value check)', async () => {
+  it('re-announces a second consecutive identical refresh failure without remounting the live region', async () => {
     mockRefreshLogs.mockResolvedValue({ logs: [], error: 'fetch failed' });
 
     render(<ChatViewer lang="en" />);
@@ -94,14 +94,15 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
     // Same chatId re-submitted (the only refresh mechanism) - identical
     // failure outcome. Without a nonce, setting the exact same message
     // string again is a no-op React bails on: same DOM node, no mutation,
-    // nothing for a screen reader to pick up. The fix forces a fresh
-    // element (a different node identity) so the live region actually
-    // mutates and gets announced again.
+    // nothing for a screen reader to pick up. The fix (StatusMessage.js)
+    // forces a real mutation on the SAME node rather than recreating a fresh
+    // one - a fresh node reproduces the "text already there on insertion"
+    // problem `persistent` exists to prevent in the first place.
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     await waitFor(() => expect(mockRefreshLogs).toHaveBeenCalledTimes(2));
     const secondAlert = await screen.findByRole('alert');
     expect(secondAlert.textContent).toContain('logging.refreshFailed');
-    expect(secondAlert).not.toBe(firstAlert);
+    expect(secondAlert).toBe(firstAlert);
   });
 });

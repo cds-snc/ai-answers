@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { GcdsIcon } from '@gcds-core/components-react';
 
 // Shared live-region pattern for announcing the outcome of an async admin
@@ -89,11 +90,15 @@ import { GcdsIcon } from '@gcds-core/components-react';
 // twice with the same pass/fail result) sets the same string, React bails
 // on the no-op update, and the second occurrence is silently un-announced.
 // Passing a value that changes on every trigger (a counter, a timestamp —
-// anything, its content is never read) as `nonce` folds it into the
-// rendered element's `key`, which forces a remount — same technique as
-// FeedbackInlineError's `key={errorCount}`, generalized here since variant/
-// loading callers render a fresh one-off outcome each time and don't need
-// it. Optional; omit it for that common case.
+// anything, its content is never read) as `nonce` forces a real DOM mutation
+// even when `message` itself is unchanged — see the effect below for how.
+// (This used to fold `nonce` into the rendered element's `key` to force a
+// remount instead, same technique as FeedbackInlineError's
+// `key={errorCount}` — but a remount recreates the DOM node with its text
+// already in it, reintroducing the exact insertion-vs-mutation problem
+// `persistent` exists to prevent. Fixed at the root instead of left as a
+// footgun the next `nonce` caller would hit too.) Optional; omit it for the
+// common case where re-announcing an unchanged value doesn't matter.
 // `loading` and `variant` are resolved through one lookup (resolveLook,
 // below) rather than three separate hand-synced conditionals — that used to
 // be the failure mode here: `loading` shipped with its content/className
@@ -192,6 +197,48 @@ const StatusMessage = React.forwardRef((
   // resolved look doesn't need block content.
   const Tag = look.isBlock ? 'div' : tag;
 
+  // `nonce` exists so a repeat trigger with byte-identical output (e.g.
+  // running the same probe twice with the same result) still gets
+  // re-announced — a plain re-render with an unchanged string is a no-op
+  // React bails on, so there'd be nothing for a live region to observe
+  // changing. This used to fold `nonce` into `key`, forcing React to destroy
+  // and recreate the whole DOM node on every announcement — which reproduces
+  // exactly the "text already there on insertion" failure mode `persistent`
+  // exists to prevent (confirmed: the recreated node is a different DOM
+  // node, not a mutation of the existing one, so AT sees a fresh insertion
+  // every time, not a change).
+  //
+  // Instead: briefly blank the content, then restore it — two real mutations
+  // on the SAME node, node identity untouched throughout, both driven through
+  // normal React state (an earlier version reached past React and mutated
+  // the node's innerHTML directly - broke immediately, because React still
+  // owns those child nodes, in particular <VariantIcon>'s own element, and
+  // throws "the node to be removed is not a child of this node" the next
+  // time it tries to touch children it no longer actually owns).
+  //
+  // Both state updates are forced synchronous via flushSync, back to back,
+  // so the blank-then-restore sequence commits as one atomic unit - without
+  // that, a caller like this component's own async waiter (a test's
+  // findByRole, a MutationObserver callback) could catch the DOM parked in
+  // the momentarily-blank state and never see it resolve. flushSync itself
+  // can't run while React is already mid-render elsewhere (a real scenario:
+  // a parent driving several children's state off the same triggering
+  // action, all settling in the same effect-flush pass) - queueMicrotask
+  // defers the pair to right after the current render/commit cycle fully
+  // returns, which is React's own suggested fix for that warning, and still
+  // keeps the two mutations back-to-back with nothing else able to run
+  // between them once they start.
+  const [suppressContent, setSuppressContent] = useState(false);
+  const prevNonceRef = useRef(nonce);
+  useEffect(() => {
+    if (nonce === undefined || nonce === prevNonceRef.current) return;
+    prevNonceRef.current = nonce;
+    queueMicrotask(() => {
+      flushSync(() => setSuppressContent(true));
+      flushSync(() => setSuppressContent(false));
+    });
+  }, [nonce]);
+
   // Screen readers announce changes inside a live region that was already
   // present; a region inserted into the DOM with its text already in it is
   // usually missed entirely. `persistent` keeps the region mounted while empty
@@ -219,11 +266,10 @@ const StatusMessage = React.forwardRef((
   // concern here - every StatusMessage instance holds one short message
   // that updates rarely (a save result, a warning appearing once), never a
   // large or rapidly-changing block.
-  if (!message && !children) {
+  if ((!message && !children) || suppressContent) {
     if (!persistent) return null;
     return (
       <Tag
-        key={nonce}
         ref={ref}
         id={id}
         role={look.isError ? 'alert' : 'status'}
@@ -236,7 +282,6 @@ const StatusMessage = React.forwardRef((
   }
   return (
     <Tag
-      key={nonce}
       ref={ref}
       id={id}
       role={look.isError ? 'alert' : 'status'}

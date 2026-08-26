@@ -102,6 +102,57 @@ describe('StatusMessage', () => {
     const region = container.querySelector('[role="alert"]');
     expect(region.className).toBe('mt-200 status-message--error-box');
   });
+
+  describe('nonce (repeat-identical-announcement)', () => {
+    // `nonce` used to be folded into the rendered element's `key`, forcing a
+    // full destroy-and-recreate of the DOM node on every bump — which
+    // reproduces the exact "text already there on insertion" problem
+    // `persistent` exists to prevent (a freshly-created node isn't the same
+    // node AT was already watching). These pin the node identity, not just
+    // the final text, since that's the part a snapshot of the rendered
+    // output wouldn't catch.
+    it('keeps the same DOM node across a nonce bump with a different message', () => {
+      const { container, rerender } = render(
+        React.createElement(StatusMessage, { persistent: true, variant: 'info', message: 'First', nonce: 0 })
+      );
+      const node = container.querySelector('[role="status"]');
+
+      rerender(React.createElement(StatusMessage, { persistent: true, variant: 'info', message: 'Second', nonce: 1 }));
+
+      expect(container.querySelector('[role="status"]')).toBe(node);
+      expect(node.textContent).toBe('Second');
+    });
+
+    it('keeps the same DOM node and still updates when the same message repeats', () => {
+      const { container, rerender } = render(
+        React.createElement(StatusMessage, { persistent: true, variant: 'success', message: 'Referring URL applied', nonce: 0 })
+      );
+      const node = container.querySelector('[role="status"]');
+
+      rerender(React.createElement(StatusMessage, { persistent: true, variant: 'success', message: 'Referring URL applied', nonce: 1 }));
+
+      // Same node identity (no remount)...
+      expect(container.querySelector('[role="status"]')).toBe(node);
+      // ...settled back to the real text, not stuck on the intermediate
+      // blank state the fix uses internally to force a real mutation.
+      expect(node.textContent).toBe('Referring URL applied');
+      expect(node.className).toContain('status-message--success-box');
+    });
+
+    it('does not react to nonce when the caller never uses it', () => {
+      // No `nonce` prop at all (most `persistent` callers) — confirms the
+      // fix is inert for them, same as before.
+      const { container, rerender } = render(
+        React.createElement(StatusMessage, { persistent: true, variant: 'info', message: null })
+      );
+      const node = container.querySelector('[role="status"]');
+
+      rerender(React.createElement(StatusMessage, { persistent: true, variant: 'info', message: 'Not found' }));
+
+      expect(container.querySelector('[role="status"]')).toBe(node);
+      expect(node.textContent).toBe('Not found');
+    });
+  });
 });
 
 describe('useSrAnnouncer', () => {
