@@ -60,6 +60,19 @@ const FilterPanel = ({
   // does - see the appliedFilters effect below.
   const panelSummaryRef = useRef(null);
   const pendingClearFocusRef = useRef(false);
+  // Captured in handleApply itself, not re-derived later from
+  // document.activeElement: a caller like PartnerDashboard.js ties
+  // applyDisabled to the same loading state Apply triggers, so the Apply
+  // button gets disabled - and the browser blurs a disabled element to
+  // <body> immediately, well before any fetch resolves - before the
+  // auto-close effect below would otherwise get a chance to check who's
+  // focused. This is the last point guaranteed to still see the real
+  // target. Collapsing a native <details> hides everything except its
+  // <summary> - if focus was still on the Apply button (a keyboard/
+  // screen-reader user who just pressed it) that button vanishes from the
+  // accessibility tree, so this drives the same redirect-to-summary fix as
+  // pendingClearFocusRef above.
+  const focusWasInPanelOnApplyRef = useRef(false);
   // Removing a single pill (removeFilter, as opposed to Clear all above) -
   // buildPills() always pushes exactly one entry per category in the same
   // fixed order, so whatever's now at the same array index the clicked pill
@@ -95,16 +108,33 @@ const FilterPanel = ({
       // (hasAppliedFilters stays true throughout), this branch never runs, so
       // their existing skip-then-consume flow below is unaffected.
       skipNextAutoClose.current = false;
+      focusWasInPanelOnApplyRef.current = false;
       return;
     }
     if (filterLoading) return;
     if (skipNextAutoClose.current) {
       skipNextAutoClose.current = false;
+      // Same staleness concern as skipNextAutoClose above: a Clear fired
+      // while an earlier Apply's loading was still in flight shouldn't let
+      // that Apply's armed flag silently redirect focus on some later,
+      // unrelated close.
+      focusWasInPanelOnApplyRef.current = false;
       return;
     }
     if (filterError || filterResultCount === 0) {
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(true);
     } else if (filterResultCount > 0) {
+      // panelSummaryRef.current is always mounted (a native <summary> stays
+      // visible whether its <details> is open or closed), so there's no
+      // need to wait for the collapse to actually commit before focusing it
+      // - unlike pendingClearFocusRef's case (Clear reopens the panel, so
+      // the target isn't rendered yet when Clear fires), the redirect
+      // target here already exists at arm time.
+      if (focusWasInPanelOnApplyRef.current) {
+        panelSummaryRef.current?.focus();
+      }
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(false);
     }
   }, [hasAppliedFilters, filterLoading, filterError, filterResultCount]);
@@ -729,6 +759,16 @@ const FilterPanel = ({
   ];
 
   const handleApply = () => {
+    // Captured here, synchronously, before anything else runs - see
+    // focusWasInPanelOnApplyRef's own comment above for why this can't be
+    // deferred to the auto-close effect below. .closest('details') rather
+    // than .parentElement: names the actual ancestor relationship this
+    // depends on instead of a one-hop DOM fact that happens to hold today.
+    const activeEl = document.activeElement;
+    const panelEl = panelSummaryRef.current?.closest('details');
+    focusWasInPanelOnApplyRef.current =
+      !!panelEl && !!activeEl && activeEl !== panelSummaryRef.current && panelEl.contains(activeEl);
+
     // Prefer the picker's live state over React state: the picker tracks the
     // user's calendar selection in real-time, so dates are correct even when
     // the user chose a custom range without clicking Apply inside the calendar.

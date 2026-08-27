@@ -438,4 +438,85 @@ describe('FilterPanel', () => {
     expect(document.activeElement).not.toBe(document.body);
     expect(container.querySelector('.filter-bar__pills-row').contains(document.activeElement)).toBe(true);
   });
+
+  it('moves focus to the panel summary when the panel auto-closes after a successful Apply, instead of dropping it to <body>', async () => {
+    // Regression test: a successful Apply flips hasAppliedFilters/filterResultCount
+    // (owned by the parent dashboard), which the auto-close effect consumes to
+    // collapse the panel. Collapsing a native <details> hides everything except
+    // its <summary> - before the fix, a keyboard/screen-reader user who had just
+    // pressed the (now-hidden) Apply button lost focus to <body> with no
+    // indication where it went.
+    //
+    // Mirrors PartnerDashboard.js's real wiring (applyDisabled={loading},
+    // filterLoading={loading} - the same state) rather than jumping straight
+    // to the resolved state: PartnerDashboard's Apply button disables the
+    // instant loading flips true, and a disabled focused button is blurred
+    // to <body> by the browser well before the fetch resolves. A test that
+    // skips this intermediate render never re-creates that blur, so it can't
+    // catch a regression here - see the two rerenders below.
+    const { container, rerender, onApplyFilters, onClearFilters } = renderPanel({
+      hasAppliedFilters: false,
+      filterLoading: false,
+      applyDisabled: false,
+      filterResultCount: null,
+    });
+    await waitFor(() => getDateRangeInput(container));
+
+    const applyButton = container.querySelector('#filter-apply-button');
+    applyButton.focus();
+    expect(document.activeElement).toBe(applyButton);
+
+    fireEvent.click(applyButton);
+    expect(onApplyFilters).toHaveBeenCalled();
+
+    // Real browsers blur a focused element the instant it becomes disabled -
+    // that's the actual mechanism this test exists to guard against, and
+    // exactly what PartnerDashboard's applyDisabled={loading} triggers here.
+    // jsdom doesn't implement that side effect (confirmed: calling .blur()
+    // on an already-disabled element is a no-op in jsdom, unlike real
+    // browsers), so it has to be forced explicitly, while the button is
+    // still enabled, to land on the same end state a real browser would.
+    applyButton.blur();
+    expect(document.activeElement).toBe(document.body);
+
+    // Simulate the loading render frame: PartnerDashboard disables Apply the
+    // instant its fetch starts. The blur above already modelled its effect;
+    // this is the render that must not depend on re-reading
+    // document.activeElement live to decide whether to restore focus later.
+    // hasAppliedFilters flips true in the same batch as filterLoading here -
+    // PartnerDashboard.js's handleApplyFilters calls setHasUserApplied(true)
+    // and fetchMetrics (which sets loading true) together, synchronously -
+    // not after the fetch resolves.
+    rerender(
+      <FilterPanel
+        lang="en"
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+        isVisible={true}
+        hasAppliedFilters={true}
+        filterLoading={true}
+        applyDisabled={true}
+        filterResultCount={null}
+      />
+    );
+    expect(applyButton.disabled).toBe(true);
+    expect(document.activeElement).toBe(document.body);
+
+    // Simulate the parent's fetch resolving with results.
+    rerender(
+      <FilterPanel
+        lang="en"
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+        isVisible={true}
+        hasAppliedFilters={true}
+        filterLoading={false}
+        applyDisabled={false}
+        filterResultCount={5}
+      />
+    );
+
+    expect(document.activeElement).toBe(container.querySelector('.filter-panel-summary'));
+    expect(document.activeElement).not.toBe(document.body);
+  });
 });
