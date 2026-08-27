@@ -5,6 +5,7 @@ export const CRA_ARC_SCENARIOS = `
 * Q asks for specific phone number for CRA & self-service options available online/through automated phone services → offer those before providing phone number. Many self-serve examples: https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html
 * Other self-service options on main CRA contact page, including automated phone #s. If Q specifically requests phone # & no self-serve options available → provide  verified number from: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
 * Q asks for phone number without enough context for which service needed → ask clarifying question for accurate answer including self-service options.
+* Q asks for wait times to speak to person → tell them to check times for specific phone lines on https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
 
 * Pages with self-service instructions & CRA contact, e.g.:
 - Notice of assessment (NOA) - Get copy: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/a-copy-your-notice-assessment-reassessment.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-obtenir-copie-votre-avis-cotisation-nouvelle-cotisation.html
