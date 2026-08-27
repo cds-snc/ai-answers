@@ -74,14 +74,28 @@
   clear: both;
 }
 
+/* Wraps GcdsHeader + the Beta banner (App.js) so the banner's `order: -1`
+   below can put it first visually while staying after GcdsHeader in the
+   DOM - see the comment at that JSX for why the DOM order matters. */
+.header-chrome {
+  display: flex;
+  flex-direction: column;
+}
+
 /* top banner for alpha/beta warning */
 /* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
 .alpha-top {
+  order: -1;
   padding-top: 2px !important;
   padding-bottom: 2px !important;
   top: 0;
   background-color: #f2f2f2;
-  z-index: 100;
+  /* Was z-index: 100 - harmless pre-.header-chrome (non-flex elements ignore
+     z-index), but flex items (for `order` above) honor it for paint order
+     even with no `position` set. That put this ahead of GcdsHeader's
+     shadow-DOM skip link (z-index: 3), hiding it on focus. auto restores the
+     original, correct behaviour. */
+  z-index: auto;
 }
 .alpha {
   padding-top: 5px;

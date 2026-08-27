@@ -93,7 +93,7 @@ const DeleteByChatIdSection = ({
   return (
     <details onToggle={handleToggle}>
       <summary id={`${fieldId}-summary`}>{t(titleKey)}</summary>
-      <div className="mt-200">
+      <div className="mt-200 mb-200">
         <form onSubmit={handleDelete}>
           <ChatIdLookupField
             fieldId={fieldId}

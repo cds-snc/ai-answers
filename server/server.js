@@ -1,5 +1,8 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
+import { renderIndexHtml } from './renderIndexHtml.js';
+import { normalizePathname } from '../src/utils/normalizePathname.js';
 
 import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 
@@ -139,7 +142,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 
-const normalizePath = (pathName) => pathName.replace(/\/+$/, '') || '/';
+const normalizePath = normalizePathname;
 
 const UI_ROUTE_PATTERNS = [
   /^\/$/,
@@ -147,6 +150,37 @@ const UI_ROUTE_PATTERNS = [
 ];
 
 const isUiRoutePath = (pathName) => UI_ROUTE_PATTERNS.some((pattern) => pattern.test(normalizePath(pathName)));
+
+const BUILD_DIR = path.join(__dirname, "../build");
+const INDEX_HTML_PATH = path.join(BUILD_DIR, "index.html");
+// Cached once - build output doesn't change at runtime. Read lazily, not at
+// module load, so a server started with no build present (e.g. standalone
+// against npm run dev's Vite dev server, which never hits this) doesn't crash.
+let cachedIndexHtmlTemplate = null;
+
+// Sends build/index.html with its <title>/lang/meta tags patched for
+// req.path - see renderIndexHtml.js for why this has to happen server-side
+// rather than left to App.js's client-side title effect.
+const sendIndexHtml = (req, res) => {
+  try {
+    if (cachedIndexHtmlTemplate === null) {
+      cachedIndexHtmlTemplate = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
+    }
+    // res.sendFile() set charset automatically; res.send() with a string
+    // doesn't - needed explicitly since the page ships accented French content.
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    // res.sendFile() also sent this by default; res.send() doesn't. Without
+    // it a CDN/proxy can keep serving a stale index.html (old asset hashes)
+    // after a deploy.
+    res.set('Cache-Control', 'public, max-age=0');
+    res.send(renderIndexHtml(cachedIndexHtmlTemplate, req.path, { contentRoot: BUILD_DIR, hostname: req.hostname }));
+  } catch (err) {
+    // Build missing/unreadable, or a bug in the transform - fall back to the
+    // untouched file rather than breaking the whole app over a title tag.
+    console.error('Failed to render index.html, falling back to the raw file:', err);
+    res.sendFile(INDEX_HTML_PATH);
+  }
+};
 
 const sendLightweightNotFound = (res) => {
   res.status(404).end();
@@ -282,7 +316,7 @@ app.get(/.*/, (req, res, next) => {
     sendLightweightNotFound(res);
     return;
   }
-  res.sendFile(path.join(__dirname, "../build", "index.html"));
+  sendIndexHtml(req, res);
 });
 
 

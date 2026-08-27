@@ -1,4 +1,4 @@
-{
+﻿{
   "locale": "en",
   "homepage": {
     "title": "AI Answers",
@@ -830,8 +830,9 @@
       "chatIdSearchPlaceholder": "Enter chat ID (partial or full)",
       "chatIdSearchButton": "Search for chat ID",
       "chatIdSearchTooShort": "Enter at least 4 characters.",
+      "chatFound": "Chat found.",
       "chatIdMatchesFound": "{count} matching chats found. Select one to continue.",
-      "chatIdMatchesTruncated": "Showing the first {count} matches. Enter more of the chat ID to narrow the results.",
+      "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
       "fetchFailed": "Failed to load data. Please try again.",
       "sortActivateAscending": "{column}: activate for ascending sort",

@@ -88,7 +88,12 @@ describe('LoginPage session expired notice', () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('admin@example.com', 'correct-password');
       expect(mockNavigate).toHaveBeenCalledWith('/en/signin', { replace: true });
-      expect(mockNavigate).toHaveBeenCalledWith('/en/admin');
+      // skipRouteFocus: a fresh sign-in should just load its landing page
+      // normally rather than force focus into its heading - see App.js's
+      // own comment on `skipRouteFocus` for why this is scoped to the
+      // navigation action (state) rather than to whatever route
+      // getDefaultRouteForRole happens to send it to.
+      expect(mockNavigate).toHaveBeenCalledWith('/en/admin', { state: { skipRouteFocus: true } });
     });
   });
 });
