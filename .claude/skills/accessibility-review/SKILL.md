@@ -5,537 +5,128 @@ description: Review the pending diff (or a named page/component) for WCAG 2.1 AA
 
 # Accessibility review
 
-This app is a Government of Canada public-facing service. It must meet
-**WCAG 2.1 AA** (the GC baseline) in both English and French. Treat that as
-the bar for every finding, not "best practice."
+GC public-facing service: the bar is **WCAG 2.1 AA** in EN and FR, not "best practice."
 
-## Scope
+## Scope — four modes
 
-There are four modes. Infer which one from the request; ask if it's
-ambiguous whether "everything" means the diff or the whole app.
+Infer from the request; ask if "everything" is ambiguous (diff vs. whole app).
 
-- **Diff review (default)** — `git diff` against the base branch, UI code
-  only (`src/pages/`, `src/components/`, `src/hooks/`, CSS). If the diff
-  touches only non-UI code (API, services, agents, prompts), say so and skip
-  the review rather than forcing findings. **New vs. pre-existing:** an
-  issue in code the diff *adds or changes* is blocking — new features must
-  pass the checklist before merge. An issue in code the diff merely
-  *touches* (a line near the change, but the defect itself predates this
-  PR) is not this PR's job to fix — call it out as a `// TODO(a11y):` (or
-  equivalent tracked note) pointing at the WCAG criterion, rather than
-  blocking the PR on unrelated pre-existing debt, unless the fix is trivial
-  enough to bundle in. Say explicitly which findings are which.
-- **Targeted review** — the user names a specific page/component/route.
-  Read the named file in full, then recursively follow its own imports into
-  every shared component, hook, and util it actually renders or calls
-  (`FilterPanel.js`, `StatusMessage.js`, shared DataTables helpers, etc.) —
-  apply the full checklist (Sections 1-8) to those too, not just the named
-  file's own JSX. A bug in a shared component is a bug in every page that
-  targets it; scoping to "just this page" without checking what it
-  consumes is how shared-component bugs go unnoticed. If a finding turns up
-  in a shared file, apply the "propagate confirmed anti-patterns" rule (see
-  Full app audit) even for an otherwise-targeted review — grep the rest of
-  the app for that shared file's other consumers and note them, since they
-  inherit the same bug.
-- **Full app audit** — triggered by phrasing like "audit everything",
-  "whole app", "full accessibility audit", or an explicit `full` arg, and
-  by named-area shortcuts (see below). Covers every route in scope, not
-  just what changed. See below.
-- **Audit re-verification / update** — triggered by "update the audit",
-  "is this still accurate", "re-check against main", or asking to refresh a
-  previously-published audit artifact. Different task from a full audit and
-  from a diff review — see below. **Do not treat this as "diff review of the
-  audit artifact's own claims."** It must re-examine the actual application
-  code, not just the doc's bookkeeping.
+- **Diff review (default)** — `git diff` vs. base branch, UI code only (`src/pages/`, `src/components/`, `src/hooks/`, CSS). Non-UI-only diff → say so and skip. Issues in code the diff *adds/changes* are blocking. Issues in code it merely *touches* (pre-existing defect) → `// TODO(a11y):` note with the SC, not a blocker, unless the fix is trivial. Label which is which.
+- **Targeted review** — user names a page/component/route. Read it in full, then recursively follow its imports into every shared component/hook/util it renders or calls (`FilterPanel.js`, `StatusMessage.js`, DataTables helpers…) and apply the full checklist there too. A bug in a shared file → grep its other consumers and list them (they inherit it).
+- **Full app audit** — "audit everything", "whole app", explicit `full`, or a named-area shortcut. Covers every in-scope route, not just changes.
+- **Audit re-verification / update** — "update the audit", "is this still accurate", "re-check against main". Must re-examine application code, not just the audit doc's bookkeeping.
 
 ### Full app audit
 
-This is a large task — confirm scope with the user before starting if it's
-not obvious (e.g. "just public-facing pages, or admin/partner tools too?").
+Large — confirm scope first if unclear (public only, or admin/partner too?).
 
-**Named-area shortcuts** — the audit doesn't have to mean literally every
-route; the user can scope it to a named area, checked against
-`roles`/`RoleProtectedRoute` in `src/App.js`:
+**Named-area shortcuts** (check against `roles`/`RoleProtectedRoute` in `src/App.js`):
 
-- **"public chat"** — `HomePage.js` + `src/components/chat/*` only. This
-  area has its own completed, passed audit as of this doc's last update —
-  confirm with the user that they actually want it re-audited (cost) rather
-  than assuming stale.
-- **"auth" / "staff account"** — Login/Register/Logout/ResetRequest/
-  ResetVerify/ResetComplete/About/HowTo/404 — no `roles` restriction on the
-  route itself, but these are **not public-user pages**: this app has no
-  public account system at all. The public only ever interacts
-  anonymously through the chat UI (`HomePage.js` +
-  `src/components/chat/*`, the separate "public chat" area above) — no
-  login, no account. Login/Register/reset-password exist solely for GC
-  staff (admin/partner) accounts; "unauthenticated route" here means
-  "the page you hit *before* staff auth," not "public-facing."
-- **"admin"** — means **everything behind auth**, not just `AdminPage.js`
-  and its immediate children. Every route in `src/App.js` carrying a
-  `roles` array (`['admin']` or `['admin', 'partner']`) is in scope:
-  dashboards, chat/session/batch tooling, eval tooling, admin utility
-  pages, experimental tooling, and the partner-shared pages below. Don't
-  narrow this to literally the admin shell page unless the user says so.
-- **"partner"** — the subset of the above where `roles` includes
-  `'partner'` (e.g. ChatDashboardPage, AdminPage shell, BatchPage,
-  ChatViewer, EvalDashboardPage, PublicEvalPage, Metrics/PublicDashboard/
-  PartnerDashboard/TechnicalMetrics, ScenarioOverridesPage). Partner is a
-  *role*, not a separate set of pages — most partner-visible pages are
-  shared with admin, just narrower (e.g. Users/Settings/Database/Vector/
-  Connectivity/Sessions/AutoEvalDashboard/EvalPage are `['admin']`-only and
-  excluded from a partner-scoped audit).
+- **"public chat"** — `HomePage.js` + `src/components/chat/*`. Already has a completed, passed audit; confirm the user really wants a re-audit.
+- **"auth" / "staff account"** — Login/Register/Logout/ResetRequest/ResetVerify/ResetComplete/About/HowTo/404. No `roles`, but **not public-user pages**: there is no public account system; the public only uses the chat anonymously. These are the pages hit *before* staff auth.
+- **"admin"** — **everything behind auth**: every `src/App.js` route with a `roles` array (dashboards, chat/session/batch tooling, eval tooling, utility pages, experimental, partner-shared pages). Not just `AdminPage.js`.
+- **"partner"** — the subset whose `roles` includes `'partner'` (ChatDashboardPage, AdminPage shell, BatchPage, ChatViewer, EvalDashboardPage, PublicEvalPage, Metrics/PublicDashboard/PartnerDashboard/TechnicalMetrics, ScenarioOverridesPage). Partner is a role, not a page set; `['admin']`-only pages (Users/Settings/Database/Vector/Connectivity/Sessions/AutoEvalDashboard/EvalPage) are excluded.
 - **"experimental"** — `src/pages/experimental/*` + `src/components/experimental/*`.
 
-If none of these match what was asked, fall back to enumerating the full
-surface per step 1 below.
+Otherwise:
 
-1. Enumerate the surface: read `src/utils/routes.js` for the full
-   `ROUTE_SLUGS` list, then map each route to its page component in
-   `src/pages/`. Include admin/partner-only routes unless told otherwise —
-   they're still subject to WCAG 2.1 AA.
-2. Group pages by shared components (e.g. several pages rendering the same
-   form or table) so shared components are reviewed once, not once per page
-   that uses them — note the shared component and every page it affects
-   instead of duplicating the same finding per page.
-3. This will not fit in one pass of context. Delegate page groups to
-   parallel `Explore`-or-`general-purpose` agents (background, one per
-   logical group of ~3-6 pages), each given this skill's checklist (Sections
-   1-8 above) and told to report findings in the file/line/WCAG-criterion/fix
-   format from "How to review" below. Don't have them fix anything —
-   audit-only.
-4. Aggregate all agent findings yourself, dedupe anything that's really the
-   same shared-component issue reported multiple times, and sort
-   most-severe-first per the severity ordering below.
-5. Given the likely volume, present the aggregated result as an Artifact
-   (a scannable report grouped by page/component with severity, WCAG
-   criterion, and fix) rather than a long chat wall of text — offer this,
-   don't assume it.
-6. **Propagate confirmed anti-patterns across the whole codebase, not just
-   the file where you found them.** Once a finding is verified as real (not
-   assumed), `grep` the rest of the in-scope surface — and ideally the whole
-   repo, noting anything found outside the requested scope even if it isn't
-   logged as an in-scope finding — for the same code shape before moving on.
-   Example from this app's history: a redundant `tabIndex="0"` on
-   `<GcdsDetails>` (it already renders its own focusable toggle, so this
-   just inserts a dead extra tab stop) was correctly caught in one page but
-   missed in two others using the identical pattern, because each file was
-   reviewed independently with no cross-file pattern search once the bug
-   was confirmed. A per-file line review will not surface this on its own.
+1. Enumerate: `ROUTE_SLUGS` in `src/utils/routes.js` → page component in `src/pages/`. Include admin/partner routes unless told otherwise.
+2. Group pages by shared components; review each shared component once and list every page it affects.
+3. Won't fit one context: delegate groups of ~3–6 pages to parallel background `Explore`/`general-purpose` agents, each given Sections 1–8 and the finding format below. Audit-only, no fixes.
+4. Aggregate, dedupe shared-component repeats, sort most-severe-first.
+5. Offer (don't assume) an Artifact report grouped by page/component with severity, SC, fix.
+6. **Propagate confirmed anti-patterns.** Once a finding is verified, grep the whole in-scope surface (ideally the repo; note out-of-scope hits) for the same code shape before moving on. History: redundant `tabIndex="0"` on `<GcdsDetails>` (dead extra tab stop) was caught in one page and missed in two identical ones because files were reviewed independently.
 
 ### Audit re-verification
 
-Two **separate, independently-triggerable requests**, not one bundled task —
-running both together is expensive and usually more than the user asked for.
-Ask which one is wanted if it's ambiguous ("update the audit" on its own
-usually means Request A only). The failure mode this section guards against
-isn't "not knowing WCAG" — it's silently trusting old conclusions instead of
-rereading the code:
+Two **separate** requests — don't bundle; ask if ambiguous ("update the audit" alone = A). The failure mode guarded against is trusting old conclusions instead of rereading code:
 
-- An "updated" pass once re-verified whether previously-*logged* findings
-  were fixed (checking PR diffs against claim text) but never re-scanned
-  already-in-scope files for genuinely new code that had landed since the
-  last pass — so a new feature added to an already-audited file, one day
-  after the first pass, sat un-flagged through a second pass that claimed
-  to have re-checked that same file.
-- A long-standing, pre-existing behaviour (autosave triggered on every
-  keystroke, no explicit confirm) went unflagged for months across every
-  pass, because no version of the checklist asked the SC 3.2.2 question at
-  all (see the new Forms bullet above) — the file-by-file review had a
-  category-level blind spot, not just a coverage gap. Only Request B below
-  would ever have caught that; Request A cannot, by design.
+- A past "updated" pass re-verified logged findings against PR diffs but never re-scanned already-audited files for new code — a feature added one day after the first pass sat unflagged through the second.
+- A long-standing autosave-per-keystroke went unflagged for months because no checklist version asked the SC 3.2.2 question — a category blind spot, catchable only by B.
 
-**Request A — revalidate the work in progress.** Cheaper, faster. Walk the
-existing audit's own scope: every finding it logged (open or fixed) and
-every file/pattern it already tracks. For each, re-verify against current
-`main` — is it still accurate, still open, actually fixed, or has the
-surrounding code moved out from under it? This is bookkeeping hygiene: it
-keeps the existing document honest, but it cannot surface anything the
-original audit never saw in the first place. Trigger phrases: "update the
-audit," "is this still accurate," "re-check the findings against main."
+**Request A — revalidate the work in progress.** Cheap. For every logged finding (open or fixed) and tracked file/pattern, re-verify against current `main`: still accurate, still open, actually fixed, or moved? Cannot surface anything the original audit never saw. Triggers: "update the audit", "is this still accurate", "re-check the findings against main".
 
-**Request B — recheck the whole audit against changes since it was first
-made.** More expensive, treat it as closer in cost to a fresh full audit.
-Independent of what the audit document says, re-run the actual checklist
-(Sections 1-8) over the audit's full declared scope (every route and shared
-component it claims to cover, per "Full app audit" above), specifically
-targeting what's changed since the audit's first pass: new code added to
-already-covered files (drift — rule 1 below) and categories of problem the
-checklist itself didn't have language for last time (a blind spot doesn't
-show up in a diff, so this can't be scoped to "just the diff" — see rule 2).
-Trigger phrases: "recheck against changes since it started," "full drift
-check," "re-audit for anything new." Confirm with the user before starting
-given the cost, same as a fresh Full app audit.
+**Request B — recheck against changes since the audit started.** Cost ≈ fresh full audit; confirm first. Re-run Sections 1–8 over the audit's full declared scope, targeting drift (new code in covered files) and category blind spots (not diff-scopable). Triggers: "recheck against changes since it started", "full drift check", "re-audit for anything new".
 
-Rules — apply whichever of A/B was actually requested:
+Rules:
 
-1. **Re-read in-scope file content — don't diff against the audit doc's own
-   claims.** For each file the existing audit covers (findings *and* things
-   marked clean), run `git log --oneline <since-last-audit-date>.. -- <file>`
-   to see if *anything* landed in it since the last pass, independent of
-   whether a tracked PR touched it. If yes, read the current file in full
-   against the whole checklist (Sections 1-8) — not just the lines related
-   to the tracked finding. A file being "already audited" is not a reason to
-   skip new code inside it. (Request B only, since Request A is scoped to
-   already-tracked findings.)
-2. **Don't assume new-looking code is new.** Before writing off a finding
-   as "this is new code that arrived after the audit, not a miss," check
-   when it actually landed (`git log -1 --format=%ad -- <file>` or
-   `git log -S"<anchor string>" -- <file>`) against the audit's own pass
-   dates. Code that landed between two passes — even one day after the
-   first — was in scope for the later pass and should be treated as a
-   miss, not excused as out-of-window.
-3. **Verify claims against current file content, not against whether a
-   tracked PR merged.** "PR #1234 merged" is not proof a specific finding
-   is fixed — re-read the actual lines. PRs get scope trimmed, rebased, or
-   split before landing; a finding attributed to a PR can be absent from
-   what actually merged.
-4. Apply the "propagate confirmed anti-patterns" step from Full app audit
-   above — Request B is exactly when a pattern fixed in one file during the
-   interim is most likely to still be lurking, unflagged, in a sibling file.
-5. Record what was actually re-checked vs. carried forward unverified, per
-   finding — don't let a doc's confidence silently outrun what was actually
-   re-read this pass. State plainly at the end which of A/B this was, so a
-   future pass doesn't mistake a Request A refresh for a full Request B
-   drift check.
+1. **(B only)** Per covered file (findings *and* clean), `git log --oneline <since-last-audit>.. -- <file>`; if anything landed, re-read the whole file against the whole checklist. "Already audited" never excuses new code.
+2. **Don't assume new-looking code is new.** Check when it landed (`git log -1 --format=%ad -- <file>`, `git log -S"<anchor>" -- <file>`) against pass dates. Landed between passes → a miss, not out-of-window.
+3. **"PR merged" ≠ fixed.** Re-read the actual lines; PRs get trimmed/rebased/split.
+4. Apply "propagate confirmed anti-patterns" — B is when a pattern fixed in one file is most likely still lurking in a sibling.
+5. Record per finding what was re-checked vs. carried forward unverified. State at the end whether this was A or B.
 
 ## What to check
 
-Go file by file. For each changed component/page, check against these
-categories — skip categories that plainly don't apply (e.g. a table page has
-no form-validation surface).
+File by file; skip categories that plainly don't apply.
 
 ### 1. Semantic HTML & structure
-- Real elements over ARIA-patched `<div>`s (`<button>` not `<div onClick>`,
-  `<nav>`, `<main>`, list markup for lists, etc.).
-- Heading hierarchy is sequential (no skipped levels) and there is exactly
-  one `<h1>` per page.
-- Landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`) aren't duplicated or
-  missing on page-level components.
-- The skip-to-main-content link (or equivalent bypass mechanism, SC 2.4.1) is
-  reachable early in DOM order — check what sits ahead of it, not just that
-  it exists. Easy to miss when the skip link lives in a third-party
-  component's shadow DOM (e.g. `GcdsHeader`'s `skipToHref`); the check is DOM
-  order of the host markup around it.
-- **An element chosen for its default styling, not what it actually means,
-  is still wrong even when nothing points at it as broken yet.** The
-  giveaway: the element carries no real relationship the tag implies —
-  `<label>` with no `for`/wrapped control (labelable elements only work with
-  form controls; a `<button>` group has none), `<button>` with no click
-  handler used purely for its reset-style default appearance, `<a>` with no
-  `href` kept only for cursor:pointer. This is decidable from the code alone
-  — check what the tag is *supposed* to relate to and confirm that
-  relationship actually exists, don't wait for a symptom to surface it.
-  Left in place, this class of mismatch tends to surface later and
-  confusingly once the element becomes a focus target or gets a live-region
-  role added — e.g. a `<label>` wrapping a preset-button group's caption
-  (kept only for its existing text styling) produced WebKit's AXGroup/
-  "empty" accessibility-tree behaviour only once something else made it
-  focusable, which read as a focus-management bug rather than the actual
-  root cause (wrong element, unrelated to what changed). Verify the fix is
-  free: check whether the *class* the element carries is a class selector
-  (`.foo`) rather than a tag-qualified one (`label.foo`) before assuming a
-  same-line tag swap (e.g. `<label>` → `<p>` or `<span>`) is safe — it
-  usually is, but confirm rather than assume. When found, apply the
-  "propagate confirmed anti-patterns" step (see Full app audit) — grep for
-  the same tag-for-styling shape elsewhere before moving on, the same way
-  the `tabIndex="0"` example there was found in more than one file.
+- Native elements over ARIA-patched `<div>`s; list markup for lists; landmarks present, not duplicated.
+- Sequential headings; exactly one `<h1>`.
+- Skip link (SC 2.4.1) early in DOM order — check what precedes it, not just that it exists (easy to miss inside shadow DOM, e.g. `GcdsHeader`'s `skipToHref`).
+- **Element chosen for its default styling, not its meaning, is wrong even before a symptom shows.** Tell: the tag's implied relationship doesn't exist — `<label>` with no `for`/wrapped control (a button group has none), handler-less `<button>` for the reset look, `href`-less `<a>` for the cursor. Surfaces later as confusing bugs (a `<label>` captioning a preset-button group produced WebKit's AXGroup/"empty" reading once it became a focus target — misread as a focus bug). Before a tag swap (`<label>` → `<p>`/`<span>`), confirm the CSS selector is `.foo` not `label.foo`. Then propagate-grep.
 
-### 2. Keyboard navigation
-- Everything clickable is reachable and operable via keyboard alone (Tab,
-  Shift+Tab, Enter/Space, Esc for dismissible UI, arrow keys for
-  radio/tab/listbox groups).
-- Tab order follows visual/reading order — no `tabindex` > 0 hacks.
-- No keyboard traps (modals, custom dropdowns must release focus on close).
-- Custom interactive components (accordions, tabs, comboboxes) follow the
-  matching ARIA APG pattern's keyboard model, not just click handlers.
+### 2. Keyboard
+- Everything clickable is keyboard-operable (Tab/Shift+Tab, Enter/Space, Esc for dismissible UI, arrows for radio/tab/listbox groups).
+- Tab order = reading order; no `tabindex` > 0.
+- No traps; modals/dropdowns release focus on close.
+- Custom widgets follow the ARIA APG keyboard model, not just click handlers.
 
 ### 3. Focus management
-This codebase has an established pattern for this (see the recent
-`fix: error message focus management` / `fix: feedback form error focus`
-commits) — check new code follows it rather than reinventing it:
-- On validation error, focus moves to the error summary/first invalid field.
-- On dynamic content changes (route change, modal open/close, async content
-  swap), focus moves somewhere sensible and isn't silently lost to `<body>`.
-- **A real page load and a client-side `navigate()` are not equivalent —
-  don't let a link-based route change hide a `navigate()`-based one.** Any
-  internal link rendered as a real `<a href>`/`GcdsLink` triggers a genuine
-  browser navigation: the browser resets focus and reads the new `<title>`
-  on its own, no app code required. `navigate()` from `useNavigate()` does
-  neither — it's a client-side `pushState` transition with no browser-native
-  focus reset and no title announcement. Grep for `useNavigate`/`navigate(`
-  to enumerate every call site; each one needs its own (or a shared,
-  centrally-wired) focus-management story, not an assumption that "it's just
-  routing, the browser handles it" — that's only true for the `<a href>`
-  case. Check the `location.key` vs `location.pathname` distinction too: a
-  transition that only changes a query string (e.g. `?chat=...`) still needs
-  to be caught — a pathname-keyed effect silently never fires for it.
-- **Each distinct page needs its own `document.title` (SC 2.4.2, Page
-  Titled).** If every route shares one generic app-wide title (or only a
-  handful of pages set their own while the rest fall through to a shared
-  default), that's a real, reportable finding — not just for screen readers:
-  indistinguishable browser tabs and identical bookmark names are the
-  sighted-user symptom of the same gap. Prefer reusing each page's existing
-  `<h1>`/heading locale key over a new duplicate title string, so the two
-  can't drift apart.
-- For every dismiss/clear/toggle/remove-style control, check whether its own
-  `onClick` **— or an effect that reacts to a prop/state change and closes,
-  collapses, or unmounts the currently-focused control from underneath the
-  user (an auto-close-on-success effect is just as capable of this as a
-  direct click handler, and easier to miss since there's no click to trace
-  from)** — changes state that the control's *own* render condition depends
-  on — a conditional `{x && <Control/>}`, a ternary swapping it for
-  something else, or a style/class change like `display: none`. If so,
-  explicit focus redirection is required in that same handler (or a
-  `useEffect` keyed to the same state) — don't assume a general "focus
-  dropped to `<body>`" finding already covers every instance of this in a
-  file just because one instance was found and fixed nearby. Check each
-  control independently: a "Clear all" button, an individual pill's own
-  remove button, and a search-clear pill can each have this bug
-  independently even inside the same component.
-- Focus is visible — never `outline: none` without a replacement that meets
-  contrast requirements (GC DS focus tokens, e.g. `var(--gcds-focus-border)`,
-  already provide this — flag any custom override that suppresses it).
-- **A focus-restoration mechanism that removes the interacted-with content
-  entirely (not just re-renders it) needs its own explicit fallback target —
-  don't assume the general remount-consumption path covers this case too.**
-  A common shape: click a control → arm a ref/flag with the clicked item's id
-  → a later redraw/remount consumes it and refocuses. This works when the
-  item survives the redraw (edited, reordered, status-changed). It
-  structurally cannot work when the action's own *success* removes the item
-  from the next render (a delete, a dismiss that also deletes) — nothing
-  ever redraws that id again, so the consuming side never fires and focus
-  drops to `<body>`. This is decidable from the code: find the success path,
-  confirm whether the item is still present in the data the next render
-  works from, and if not, confirm a *different*, explicit redirect exists
-  for that specific branch (e.g. a nearby always-mounted control) rather
-  than reusing the generic redraw-consumption logic. Real example: a delete
-  handler's `finally` block still called the shared re-fetch, and the
-  reviewer's first pass confirmed *a* button gets focused after Process/
-  Cancel — but never separately checked delete's own success path, where the
-  row genuinely never comes back.
-- **When a focus-restoration mechanism picks a target by querying "the first
-  interactive element" rather than the specific one that was clicked, check
-  whether that set's order or membership can vary.** `querySelector('button,
-  [tabindex]')`-style fallbacks silently refocus the *wrong* control whenever
-  the clicked item isn't reliably first — e.g. a row's action buttons differ
-  by status (Cancel before Delete in one branch, Delete alone in another), so
-  clicking Delete and having it fail can land focus on Cancel instead. This
-  is a real, reportable imprecision distinct from "focus dropped to body" —
-  it doesn't fail SC 2.4.3 outright (focus *did* move somewhere sensible-
-  looking) but it's the wrong somewhere, confusing for a keyboard/AT user who
-  clicked one specific thing. Look for whether the restoration mechanism
-  tracks *which* action was clicked (a key/id alongside the item id) or only
-  *that* something was clicked — the latter is the tell.
-- **A focus redirect issued from a handler running in one React root can
-  lose a real timing race against self-focusing content in a *different*
-  React root**, if that content is mounted via its own `createRoot`/manual
-  `root.render()` (a common pattern for cell-level renders inside a
-  non-React table library like DataTables). The separate root's own commit
-  is scheduled independently — a synchronous `.focus()` call issued from an
-  async callback elsewhere can execute *before* that commit lands, and then
-  the other root's self-focusing element (e.g. a "Processing…" placeholder
-  with its own focus-on-mount ref) steals focus right back immediately
-  after. Symptom: a redirect that appears to work when traced through the
-  code, but doesn't hold in a running app or a real test — the target
-  briefly receives focus, then loses it. Not reliably catchable by reasoning
-  about microtask order alone (a second, third microtask tick doesn't fix
-  it) — the redirect needs to run *after* the other root's commit, which
-  generally means a macrotask (`setTimeout`), not another `await`/`Promise.
-  resolve()`. Flag any synchronous or microtask-deferred focus redirect that
-  competes with a separately-rooted self-focusing element as `Needs
-  validation:` at minimum, and as a real finding if a quick trace confirms
-  the other root's commit isn't already guaranteed to have landed first.
+Follow the established pattern (`fix: error message focus management`, `fix: feedback form error focus` commits); don't reinvent.
+- Validation error → focus to error summary/first invalid field.
+- Dynamic change (route, modal, async swap) → focus lands somewhere sensible, never silently on `<body>`.
+- **`<a href>`/`GcdsLink` ≠ `navigate()`.** Real links get browser focus reset + title announcement for free; `navigate()` is `pushState` and gets neither. Grep `useNavigate`/`navigate(` — every call site needs its own or a centrally-wired focus story. Key effects on `location.key`, not `pathname`: a query-string-only transition (`?chat=...`) never fires a pathname-keyed effect.
+- **Each page needs its own `document.title` (SC 2.4.2).** A shared generic title (or only some pages setting one) is a real finding — identical tabs/bookmarks are the sighted symptom. Reuse the page's `<h1>` locale key, don't add a duplicate string.
+- For every dismiss/clear/toggle/remove control — **including effects that auto-close/collapse/unmount on a prop/state change (no click to trace from)** — check whether the state it changes feeds the control's *own* render condition (`{x && <Control/>}`, ternary, `display:none`). If so, that handler/effect must redirect focus explicitly. Check each control independently: "Clear all", a pill's own remove, a search-clear pill can each have this bug in the same component.
+- Focus visible: no `outline: none` without a contrast-passing replacement (GC DS `var(--gcds-focus-border)` already does; flag overrides).
+- **Focus-restore that survives re-render doesn't survive removal.** Pattern: click → arm ref with item id → redraw consumes it and refocuses. Works for edit/reorder/status change; structurally fails when success *removes* the item (delete, dismiss-that-deletes) — nothing redraws that id. Find the success path, confirm the item is gone from the next render, and require a separate explicit target (e.g. an always-mounted nearby control). Real case: a delete's `finally` re-fetch was checked for Process/Cancel but never for delete's own success path.
+- **Restore by "first interactive element" can pick the wrong one.** `querySelector('button, [tabindex]')` fallbacks misfocus whenever the clicked item isn't reliably first (row actions vary by status: Cancel-then-Delete vs Delete-alone → failed Delete lands on Cancel). Not an SC 2.4.3 failure, but a reportable imprecision. Tell: mechanism tracks *that* something was clicked, not *which*.
+- **Cross-root focus race.** A `.focus()` from an async handler in one React root can run before a separate `createRoot`/`root.render()` (e.g. DataTables cell renders) commits, and that root's self-focusing element (a "Processing…" placeholder with focus-on-mount) steals it back. Looks correct in code, fails live. Microtasks don't fix it; needs a macrotask (`setTimeout`) after the other root's commit. Flag sync/microtask redirects that compete with a separately-rooted self-focuser as `Needs validation:` minimum, real finding if the trace confirms the ordering isn't guaranteed.
 
-### 4. ARIA usage
-- ARIA attributes are used to *supplement*, not replace, semantics — flag
-  any case using ARIA to fix something a native element would solve for free.
-- Every `aria-*` reference (`aria-labelledby`, `aria-describedby`,
-  `aria-controls`) points to an ID that actually exists in the rendered DOM.
-- Live regions (`aria-live`, `role="alert"/"status"`) are used for dynamic
-  content that needs to be announced (errors, async results, loading state)
-  — and not overused to the point of announcement spam.
-- A live region announces a *change*, not a value. If a message is driven
-  by state with no mechanism to force a remount on a repeat identical
-  trigger, React bails on the no-op update and the second (and every later)
-  occurrence goes silently un-announced — this is decidable from the code,
-  not a maybe: report it as a real finding (SC 4.1.3) when the mechanism is
-  missing. `StatusMessage`'s `persistent` messages carry a `nonce` prop for
-  exactly this; check it's used wherever the same outcome could plausibly
-  repeat. Reserve `Needs validation:` (see "How to review") for what you
-  genuinely can't trace — a reset happening in a code path you can't
-  follow, or actual AT-timing behavior — not for this.
-- **Check *how* a repeat-trigger mechanism forces the re-announcement, not
-  just that one exists.** Folding a changing value into the rendered
-  element's own `key` (forcing React to destroy the node and mount a fresh
-  one) technically produces a DOM mutation, but a freshly-created node is a
-  fresh *insertion* with its text already inside it — exactly the
-  "populated on insertion" failure mode `persistent` exists to prevent,
-  self-inflicted by the mechanism meant to make repeat announcements *more*
-  reliable. This is a real, reportable finding on its own (SC 4.1.3), not
-  satisfied just because *a* mechanism is present. Confirm the fix is a
-  genuine in-place mutation on the *same* node (e.g. a real state change
-  that alters visible text, not a `key` swap) — a test asserting node
-  identity is unchanged across the trigger (not just that the right text
-  eventually renders) is the way to actually verify this from a diff.
-- **When the same live-region pattern is duplicated across multiple
-  sections/tabs/instances of one page (one `StatusMessage` per list, per
-  panel, per filter group), check whether the `nonce`/remount-forcing
-  counter is scoped per-instance or shared globally across all of them.** A
-  shared counter means an unrelated change in instance A still bumps the
-  counter instance B's `key`/`nonce` reads too, forcing B to remount even
-  though its own content never changed — and a remount with content already
-  populated is exactly the "fresh insertion" pattern AT generally
-  re-announces, so B's stale, already-heard message gets spoken again for no
-  reason tied to anything the user just did. This is decidable from the
-  code: find every place the nonce state updates, and confirm each `<Status
-  Message nonce={...}>` call site reads a value that only changes when
-  *that* call site's own message does. Report as a real finding (SC 4.1.3)
-  when a single counter/state variable feeds more than one independently-
-  positioned live region.
-- No redundant/conflicting roles (e.g. `role="button"` on an actual
-  `<button>`).
+### 4. ARIA
+- ARIA supplements semantics; flag ARIA used where a native element solves it.
+- Every `aria-labelledby`/`aria-describedby`/`aria-controls` points at an ID that exists in the rendered DOM.
+- Live regions for errors/async results/loading, not spammed.
+- **Live regions announce a change, not a value.** State-driven message with no remount-forcing mechanism → React no-ops the identical second update and it goes silent. Decidable from code: real finding (SC 4.1.3). `StatusMessage` `persistent` has a `nonce` prop for this; check it's used wherever an outcome can repeat.
+- **Check *how* re-announcement is forced.** Putting the changing value in the element's `key` creates a fresh node with text already inside — the exact "populated on insertion" failure `persistent` exists to prevent. Real finding. Fix is an in-place mutation on the same node; a test asserting node identity is unchanged across the trigger verifies it.
+- **Duplicated live regions (one `StatusMessage` per list/panel/tab) must have per-instance nonces.** A shared counter remounts B when only A changed, re-announcing B's stale message. Find every nonce update and confirm each `<StatusMessage nonce={...}>` reads a value that changes only with its own message. Real finding (SC 4.1.3).
+- No redundant/conflicting roles (`role="button"` on `<button>`).
 
 ### 5. Forms
-- Every input has a programmatically associated label (`<label for>`,
-  `aria-label`, or `aria-labelledby`) — not just placeholder text.
-- Required fields are marked both visually and programmatically
-  (`required`/`aria-required`).
-- Error messages are associated with their field (`aria-describedby`) and
-  announced (see Focus management above), not conveyed by colour alone.
-- Repeat identical validation failures still get announced. A field error
-  set via plain `useState` with no changing counter goes silent on a second
-  identical failure — the same DOM-no-op problem as live regions above.
-  `FeedbackInlineError` needs a changing `errorCount` (`useInlineFormError.js`;
-  see AGENTS.md's "FeedbackInlineError needs errorCount") to force a remount
-  on every trigger, not just the first.
-- Radio/checkbox groups have a group label (`<fieldset>`/`<legend>` or
-  `role="group"` + `aria-label`).
-- **Persisted changes need an explicit trigger, not just an announcement.**
-  If typing/selecting alone (no Save/Submit click) commits a change to the
-  server — save-per-keystroke, save-on-blur with no undo — that's a
-  candidate SC 3.2.2 (On Input) failure: a change of state the user didn't
-  explicitly ask for, and nothing in the UI advised them it would happen
-  automatically. This is a **separate finding from SC 4.1.3** (was the
-  change announced?) — an autosave that announces itself perfectly is still
-  a 3.2.2 problem if there's no way to review/confirm before it's
-  committed, and fixing the announcement does not fix this. Flag both
-  independently; don't let one absorb the other. Prefer explicit
-  save-on-demand with dirty-state tracking (stage changes locally, commit
-  on a real Save action) over autosave-on-input for anything consequential
-  (settings, redaction rules, anything hard to undo).
+- Every input has a programmatic label (not placeholder-only).
+- Required marked visually and programmatically.
+- Errors associated via `aria-describedby`, announced, not colour-only.
+- **Repeat identical failures still announce.** Plain `useState` error with no counter goes silent the second time. `FeedbackInlineError` needs a changing `errorCount` (`useInlineFormError.js`; AGENTS.md "FeedbackInlineError needs errorCount").
+- Radio/checkbox groups have `<fieldset>`/`<legend>` or `role="group"` + label.
+- **Persisted changes need an explicit trigger (SC 3.2.2).** Save-per-keystroke / save-on-blur with no undo and no advance notice = On Input failure. **Separate from SC 4.1.3** — a perfectly announced autosave is still a 3.2.2 problem; flag both. Prefer stage-locally + real Save with dirty tracking for anything consequential (settings, redaction rules).
 
 ### 6. Colour & contrast
-- Text and meaningful icons meet 4.5:1 (normal text) / 3:1 (large text, UI
-  components) against their background — check any new custom colour against
-  GC DS tokens (`docs/coding-agent-docs/design-system.md`) rather than
-  eyeballing it.
-- Colour is never the *only* signal for state (error, success, required) —
-  there's always a text/icon/shape cue alongside it.
-- **Verify the class actually exists before trusting its computed colour.**
-  This project has no Tailwind dependency, but Tailwind-style class names
-  (`text-red-600`, `bg-red-50`, `gap-2`, `rounded`, `p-2`, …) still show up
-  copy-pasted in — grep `src/styles/*.css` for the class before estimating
-  its contrast. An undefined class isn't a contrast failure at the value it
-  implies; it's unstyled/default-rendered, often a worse and different bug
-  (missing padding/background/icon sizing, not just a bad colour). Flag it
-  as "undefined class, not a real style" and point at the nearest real
-  pattern to reuse (see design-system.md) rather than reporting a computed
-  ratio for a rule that was never applied.
+- 4.5:1 text / 3:1 large text & UI components; check new colours against GC DS tokens (`docs/coding-agent-docs/design-system.md`), don't eyeball.
+- Colour never the only state signal.
+- **Verify the class exists before computing contrast.** No Tailwind here, but Tailwind-style names (`text-red-600`, `bg-red-50`, `gap-2`, `p-2`…) get pasted in — grep `src/styles/*.css`. Undefined class = unstyled, a different and often worse bug (missing padding/background/icon size). Report "undefined class" and point at the real pattern, not a ratio for a rule never applied.
 
-### 7. Images & non-text content
-- Meaningful images have real `alt` text; decorative images have `alt=""`
-  (not omitted).
-- Icon-only buttons/links have an accessible name (`aria-label` or visually
-  hidden text) — check both language variants.
-- **A decorative glyph drawn via CSS `content` (`::before`/`::after`,
-  e.g. `content: '►'` for a disclosure chevron) is not automatically
-  invisible to AT the way a background image is.** Modern browser/AT
-  pairings (Chrome+NVDA/JAWS, Safari+VoiceOver) expose `content`-generated
-  *text* to the accessibility tree — a decorative character rendered this
-  way gets read aloud alongside the element's real label, adding noise to
-  every instance app-wide if the pattern is shared (e.g. every
-  `<details>/<summary>`). Grep CSS for `content: '<char>'`/similar Unicode
-  glyphs on pseudo-elements of interactive controls; the fix is a CSS mask
-  (`mask-image`/`-webkit-mask-image` + `background-color: currentColor`) or
-  an actual `aria-hidden` image, not literal text `content`.
+### 7. Images & non-text
+- Meaningful images: real `alt`; decorative: `alt=""` (not omitted).
+- Icon-only controls have an accessible name — in both languages.
+- **CSS `content` glyphs (`::before { content: '►' }`) are read by AT** (Chrome+NVDA/JAWS, Safari+VoiceOver), unlike background images — noise on every instance if the pattern is shared (e.g. every `<details>/<summary>`). Grep CSS for `content: '<char>'` on interactive pseudo-elements; fix is a CSS mask (`mask-image` + `background-color: currentColor`) or an `aria-hidden` image.
 
-### 8. Bilingual/i18n interaction with accessibility
-- `lang` attribute correctness isn't broken by the change (page-level `lang`
-  should match the active locale).
-- New a11y-relevant strings (aria-labels, alt text, error announcements) go
-  through `t()` with entries in **both** `en.json` and `fr.json` — same rule
-  as all user-facing text in this repo, but easy to miss for attributes that
-  aren't visibly rendered text.
-- **Raw/dynamic runtime text substituted into an otherwise-translated
-  message still needs its own `lang="en"` wrapper — a translated sentence
-  around it doesn't cover it.** An exception message, HTTP status/status
-  text, or raw backend error detail is always English (or whatever the
-  underlying system emits), regardless of the surrounding `t()` copy's
-  locale — on a French page, a French screen reader hits that raw span and
-  mispronounces it under French phonetic rules. Look for any place a
-  translated template concatenates or interpolates a live JS value
-  (`${error}`, `.replace('{error}', ...)`, `{error.message}`, an HTTP
-  `status`/`text`) with no `<code lang="en">…</code>` (or `<span
-  lang="en">`) around just that substituted part — `t()`-wrapping the
-  surrounding sentence is not sufficient on its own. This is a systemic
-  pattern worth a repo-wide grep once one instance is confirmed (see
-  "propagate confirmed anti-patterns" in Full app audit), not just a
-  per-file eyeball — a single pass here previously turned up the same
-  unwrapped-raw-text gap independently in ~10 unrelated files.
+### 8. Bilingual / i18n
+- Page-level `lang` matches the active locale and isn't broken by the change.
+- New a11y strings (aria-labels, alt, announcements) go through `t()` with entries in **both** `en.json` and `fr.json` — easy to miss for non-visible attributes.
+- **Raw runtime text interpolated into a translated message needs its own `lang="en"` wrapper.** Exception messages, HTTP status/text, backend error detail are always English; a French screen reader mispronounces them. Look for `${error}`, `.replace('{error}', …)`, `{error.message}`, `status` with no `<code lang="en">`/`<span lang="en">` around just that part — `t()` around the sentence isn't enough. Systemic: one pass found it independently in ~10 files; propagate-grep once confirmed.
 
 ## How to review
 
-1. `git diff` (or `git diff main...HEAD`) to get the changed UI files.
-2. Read each changed component/page in full — don't pattern-match on diff
-   hunks alone, since a11y bugs are often about what's *missing*.
-   When a finding depends on a derived value ("this reduces to zero," "this
-   list becomes empty," "this condition can never be true"), trace the
-   actual derivation function — don't infer the mechanism from what seems
-   plausible. A wrong mechanism can make a real finding's severity or
-   trigger conditions inaccurate even when the underlying bug is genuine.
-3. Where feasible, actually drive the change: tab through it, check it with
-   a browser accessibility tree inspector, and skim console/axe warnings if
-   the dev server is running. Static reading catches structural issues but
-   not everything (e.g. focus order bugs) — flag in your findings if you
-   only did a static review and didn't run the app.
-4. Report findings most-severe first. Severity ordering: keyboard trap /
-   unreachable control > missing form label / broken focus management >
-   missing ARIA reference > contrast/colour-only signal > minor semantic
-   nit.
-5. **When a fix touches focus restoration or a live region, check whether
-   the diff's own test asserts against an independently-known-correct
-   target, not against "whatever the same selector logic the implementation
-   uses would also find."** A test that greps `document.activeElement`
-   against `container.querySelector('button, [tabindex]')` — the exact same
-   first-match query the code under test uses — passes as long as focus
-   lands on *something* the selector matches, even the wrong something; it
-   can never catch a wrong-target bug because it never independently names
-   the target (e.g. "the button whose text is literally 'Delete'"). This is
-   a real gap in test coverage worth calling out on its own, separate from
-   whether the underlying focus behavior itself is correct — a passing
-   suite next to this pattern is not evidence the fix works.
-6. **A fix confirmed by re-reading the conversation is not the same claim as
-   a fix confirmed by re-reading the file.** When re-verifying a finding —
-   your own from earlier in this session, or one handed off by another
-   review — re-read the current file content directly rather than trusting
-   that a fix which was correctly reasoned through in discussion actually
-   landed on disk. Mid-conversation, "traced the right fix" and "wrote the
-   right fix" are easy to conflate, especially across a task switch or a
-   long back-and-forth; grep the file for the specific line/pattern the fix
-   was supposed to introduce before reporting it as done.
+1. `git diff main...HEAD` for changed UI files.
+2. Read each changed file in full — a11y bugs are about what's *missing*. When a finding rests on a derived value ("reduces to zero", "list becomes empty", "never true"), trace the actual derivation; a wrong mechanism skews severity/trigger even when the bug is real.
+3. Where feasible, drive it: tab through, check the accessibility tree, skim axe/console if the dev server is up. Say if you only did a static review.
+4. Most-severe first: keyboard trap / unreachable control > missing label / broken focus management > missing ARIA reference > contrast / colour-only > semantic nit.
+5. **Focus/live-region fixes: does the diff's test name an independently-correct target?** A test asserting `activeElement` matches the same `querySelector('button, [tabindex]')` the implementation uses passes on the *wrong* target too. Call out as a coverage gap, separate from whether the behaviour is correct.
+6. **Confirmed-in-conversation ≠ confirmed-on-disk.** When re-verifying any finding (yours or handed off), grep the current file for the specific line the fix should have introduced before reporting it done.
 
-For each finding give: the file/line, what's wrong, which WCAG 2.1 AA
-success criterion it violates, and the concrete fix (not just "improve
-accessibility").
+Per finding: file/line, what's wrong, WCAG 2.1 AA SC, concrete fix.
 
-Since review here is static reading, most render-mechanics questions are
-decidable from the code alone — e.g. whether a live region or inline error
-has a mechanism (`nonce`, `key={errorCount}`, a reset before the async
-call) to force a remount on a repeat trigger. Report those as real findings
-when the mechanism is missing, not as `Needs validation`. Reserve `Needs
-validation:` for what genuinely can't be traced from the code — state reset
-by a path you can't follow, or AT-timing behavior that varies by screen
-reader. Report these separately from the severity-ordered findings: the
-file/line, the specific risk, and the exact steps a human needs to take in
-a running app to check it (e.g. "click Get stats twice; confirm whether the
-sr-only announcement fires the second time").
+**Keep the report terse.** One finding = one short paragraph or bullet: no restating the rule, no narrating what you read, no preamble/recap of clean areas beyond a one-line "checked X, Y, Z — no issues." Explanation belongs in the finding's fix, not in a summary section.
+
+Render-mechanics questions (nonce, `key={errorCount}`, reset-before-async) are decidable from code — report missing mechanisms as real findings. Reserve `Needs validation:` for what genuinely can't be traced (state reset in an unfollowable path, AT-timing that varies by screen reader); list those separately with file/line, the risk, and exact manual steps (e.g. "click Get stats twice; confirm the sr-only announcement fires the second time").
