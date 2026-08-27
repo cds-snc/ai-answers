@@ -211,6 +211,34 @@ no form-validation surface).
   one `<h1>` per page.
 - Landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`) aren't duplicated or
   missing on page-level components.
+- The skip-to-main-content link (or equivalent bypass mechanism, SC 2.4.1) is
+  reachable early in DOM order — check what sits ahead of it, not just that
+  it exists. Easy to miss when the skip link lives in a third-party
+  component's shadow DOM (e.g. `GcdsHeader`'s `skipToHref`); the check is DOM
+  order of the host markup around it.
+- **An element chosen for its default styling, not what it actually means,
+  is still wrong even when nothing points at it as broken yet.** The
+  giveaway: the element carries no real relationship the tag implies —
+  `<label>` with no `for`/wrapped control (labelable elements only work with
+  form controls; a `<button>` group has none), `<button>` with no click
+  handler used purely for its reset-style default appearance, `<a>` with no
+  `href` kept only for cursor:pointer. This is decidable from the code alone
+  — check what the tag is *supposed* to relate to and confirm that
+  relationship actually exists, don't wait for a symptom to surface it.
+  Left in place, this class of mismatch tends to surface later and
+  confusingly once the element becomes a focus target or gets a live-region
+  role added — e.g. a `<label>` wrapping a preset-button group's caption
+  (kept only for its existing text styling) produced WebKit's AXGroup/
+  "empty" accessibility-tree behaviour only once something else made it
+  focusable, which read as a focus-management bug rather than the actual
+  root cause (wrong element, unrelated to what changed). Verify the fix is
+  free: check whether the *class* the element carries is a class selector
+  (`.foo`) rather than a tag-qualified one (`label.foo`) before assuming a
+  same-line tag swap (e.g. `<label>` → `<p>` or `<span>`) is safe — it
+  usually is, but confirm rather than assume. When found, apply the
+  "propagate confirmed anti-patterns" step (see Full app audit) — grep for
+  the same tag-for-styling shape elsewhere before moving on, the same way
+  the `tabIndex="0"` example there was found in more than one file.
 
 ### 2. Keyboard navigation
 - Everything clickable is reachable and operable via keyboard alone (Tab,
@@ -228,8 +256,33 @@ commits) — check new code follows it rather than reinventing it:
 - On validation error, focus moves to the error summary/first invalid field.
 - On dynamic content changes (route change, modal open/close, async content
   swap), focus moves somewhere sensible and isn't silently lost to `<body>`.
+- **A real page load and a client-side `navigate()` are not equivalent —
+  don't let a link-based route change hide a `navigate()`-based one.** Any
+  internal link rendered as a real `<a href>`/`GcdsLink` triggers a genuine
+  browser navigation: the browser resets focus and reads the new `<title>`
+  on its own, no app code required. `navigate()` from `useNavigate()` does
+  neither — it's a client-side `pushState` transition with no browser-native
+  focus reset and no title announcement. Grep for `useNavigate`/`navigate(`
+  to enumerate every call site; each one needs its own (or a shared,
+  centrally-wired) focus-management story, not an assumption that "it's just
+  routing, the browser handles it" — that's only true for the `<a href>`
+  case. Check the `location.key` vs `location.pathname` distinction too: a
+  transition that only changes a query string (e.g. `?chat=...`) still needs
+  to be caught — a pathname-keyed effect silently never fires for it.
+- **Each distinct page needs its own `document.title` (SC 2.4.2, Page
+  Titled).** If every route shares one generic app-wide title (or only a
+  handful of pages set their own while the rest fall through to a shared
+  default), that's a real, reportable finding — not just for screen readers:
+  indistinguishable browser tabs and identical bookmark names are the
+  sighted-user symptom of the same gap. Prefer reusing each page's existing
+  `<h1>`/heading locale key over a new duplicate title string, so the two
+  can't drift apart.
 - For every dismiss/clear/toggle/remove-style control, check whether its own
-  `onClick` changes state that the control's *own* render condition depends
+  `onClick` **— or an effect that reacts to a prop/state change and closes,
+  collapses, or unmounts the currently-focused control from underneath the
+  user (an auto-close-on-success effect is just as capable of this as a
+  direct click handler, and easier to miss since there's no click to trace
+  from)** — changes state that the control's *own* render condition depends
   on — a conditional `{x && <Control/>}`, a ternary swapping it for
   something else, or a style/class change like `display: none`. If so,
   explicit focus redirection is required in that same handler (or a
@@ -311,6 +364,19 @@ commits) — check new code follows it rather than reinventing it:
   repeat. Reserve `Needs validation:` (see "How to review") for what you
   genuinely can't trace — a reset happening in a code path you can't
   follow, or actual AT-timing behavior — not for this.
+- **Check *how* a repeat-trigger mechanism forces the re-announcement, not
+  just that one exists.** Folding a changing value into the rendered
+  element's own `key` (forcing React to destroy the node and mount a fresh
+  one) technically produces a DOM mutation, but a freshly-created node is a
+  fresh *insertion* with its text already inside it — exactly the
+  "populated on insertion" failure mode `persistent` exists to prevent,
+  self-inflicted by the mechanism meant to make repeat announcements *more*
+  reliable. This is a real, reportable finding on its own (SC 4.1.3), not
+  satisfied just because *a* mechanism is present. Confirm the fix is a
+  genuine in-place mutation on the *same* node (e.g. a real state change
+  that alters visible text, not a `key` swap) — a test asserting node
+  identity is unchanged across the trigger (not just that the right text
+  eventually renders) is the way to actually verify this from a diff.
 - **When the same live-region pattern is duplicated across multiple
   sections/tabs/instances of one page (one `StatusMessage` per list, per
   panel, per filter group), check whether the `nonce`/remount-forcing
@@ -381,6 +447,17 @@ commits) — check new code follows it rather than reinventing it:
   (not omitted).
 - Icon-only buttons/links have an accessible name (`aria-label` or visually
   hidden text) — check both language variants.
+- **A decorative glyph drawn via CSS `content` (`::before`/`::after`,
+  e.g. `content: '►'` for a disclosure chevron) is not automatically
+  invisible to AT the way a background image is.** Modern browser/AT
+  pairings (Chrome+NVDA/JAWS, Safari+VoiceOver) expose `content`-generated
+  *text* to the accessibility tree — a decorative character rendered this
+  way gets read aloud alongside the element's real label, adding noise to
+  every instance app-wide if the pattern is shared (e.g. every
+  `<details>/<summary>`). Grep CSS for `content: '<char>'`/similar Unicode
+  glyphs on pseudo-elements of interactive controls; the fix is a CSS mask
+  (`mask-image`/`-webkit-mask-image` + `background-color: currentColor`) or
+  an actual `aria-hidden` image, not literal text `content`.
 
 ### 8. Bilingual/i18n interaction with accessibility
 - `lang` attribute correctness isn't broken by the change (page-level `lang`
@@ -389,6 +466,22 @@ commits) — check new code follows it rather than reinventing it:
   through `t()` with entries in **both** `en.json` and `fr.json` — same rule
   as all user-facing text in this repo, but easy to miss for attributes that
   aren't visibly rendered text.
+- **Raw/dynamic runtime text substituted into an otherwise-translated
+  message still needs its own `lang="en"` wrapper — a translated sentence
+  around it doesn't cover it.** An exception message, HTTP status/status
+  text, or raw backend error detail is always English (or whatever the
+  underlying system emits), regardless of the surrounding `t()` copy's
+  locale — on a French page, a French screen reader hits that raw span and
+  mispronounces it under French phonetic rules. Look for any place a
+  translated template concatenates or interpolates a live JS value
+  (`${error}`, `.replace('{error}', ...)`, `{error.message}`, an HTTP
+  `status`/`text`) with no `<code lang="en">…</code>` (or `<span
+  lang="en">`) around just that substituted part — `t()`-wrapping the
+  surrounding sentence is not sufficient on its own. This is a systemic
+  pattern worth a repo-wide grep once one instance is confirmed (see
+  "propagate confirmed anti-patterns" in Full app audit), not just a
+  per-file eyeball — a single pass here previously turned up the same
+  unwrapped-raw-text gap independently in ~10 unrelated files.
 
 ## How to review
 

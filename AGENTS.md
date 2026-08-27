@@ -72,6 +72,19 @@ Worked example: `<referring-url>` was passed to the context agent by the old
 the agent matched departments off search results alone. It went unnoticed for months
 because no test and no error covered it.
 
+**The same shape shows up outside prompts, too — any config object rebuilt via `.map()`/
+spread that only copies the fields the *current* mapping function happens to read.**
+Nothing fails when a new field is added upstream and the mapper doesn't carry it forward:
+no error, no red test, the field is just silently absent downstream. Worked example:
+`src/App.js`'s protected-routes `.map()` (building each route's React Router config) copied
+`path` and `element` but not `handle` — harmless while nothing read `route.handle`, until a
+later change started attaching `titleKey`/`skipRouteFocus` flags to route definitions and
+every one of them silently never reached the router, for most of the app, with no error
+anywhere. Same fix shape as the prompt-tag case: when a `.map()`/spread rebuilds an object
+from another object, diff the fields old vs. new rather than trusting "it still works,
+nothing threw" — and add a test asserting the field survives the rebuild once you notice
+one was dropped.
+
 ## How to work well in this codebase
 
 1. **State assumptions early.** Before implementing anything non-trivial, say what you're assuming so we can catch misalignment before code is written.
@@ -86,6 +99,7 @@ because no test and no error covered it.
 10. **Check for downstream impact.** After changing a shared function, utility, or service, trace its callers to verify the change doesn't break other consumers. Don't assume the only usage is the one you're fixing.
 11. **Prefer central fixes for shared semantics.** If the same derived value, metric, category, or business rule appears in multiple dashboards/pages/components, first look for the shared API, service, hook, helper, or data contract that should define it. Avoid patching each UI consumer with duplicate compensating logic unless the difference is intentionally presentation-specific.
 12. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
+13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it. Worked example: a session wrote its own local `escapeHtml` in a new server-side file instead of reusing the repo's existing shared `src/utils/htmlEscape.js`, only surfaced by a later review pass. Only once internal reuse is ruled out, consider whether an existing, well-maintained npm package already solves the problem. Unnecessary new code is code debt the team then has to maintain, test, and secure — don't create it when something already covers it.
 
 ## Documentation Regeneration
 
