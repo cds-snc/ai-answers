@@ -1,4 +1,3 @@
-import { tool } from "@langchain/core/tools";
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
 
 const MAX_SEARCH_ATTEMPTS = 3;
@@ -134,46 +133,4 @@ async function contextSearch(query, lang, { onRetry } = {}) {
     };
 }
 
-/**
- * canadaCASearch tool to perform a search using Coveo.
- */
-const contextSearchTool = tool(
-    async ({ lang, query, searchService = 'canadaca' }) => {
-        try {
-            console.log(`Starting ${searchService} search with query: ${query} in language: ${lang}`);
-
-            const results = await contextSearch(query, lang);
-
-            if (!results) {
-                return `Failed to retrieve search results for query: ${query}`;
-            }
-
-            const extractedResults = extractSearchResults(results);
-            console.log(`Results returned for query: ${query}`);
-            return extractedResults || `No meaningful results extracted for query: ${query}`;
-        } catch (error) {
-            console.error(`Error processing search query: ${query}. Details: ${error.message}`);
-            return `An error occurred while processing the search query: ${query}`;
-        }
-    },
-    {
-        name: "canadaCASearch",
-        description: "Perform a search using Coveo or Google. Provide the 'query' as the search term and lang as the language of the search query.",
-        schema: {
-            type: "object",
-            properties: {
-                query: {
-                    type: "string",
-                    description: "The search term to query.",
-                },
-                lang: {
-                    type: "string",
-                    description: "The language of the search query.",
-                }
-            },
-            required: ["lang", "query"],
-        },
-    }
-);
-
-export { contextSearchTool, contextSearch };
+export { contextSearch };

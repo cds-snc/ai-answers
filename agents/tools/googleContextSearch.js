@@ -1,5 +1,4 @@
 import { google } from 'googleapis';
-import { tool } from "@langchain/core/tools";
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
 
 const customsearch = google.customsearch('v1');
@@ -125,28 +124,4 @@ const contextSearch = async (query, lang, { onRetry } = {}) => {
     }
 };
 
-const contextSearchTool = tool(
-    async ({ query, lang }) => {
-        return await contextSearch(query, lang);
-    },
-    {
-        name: "contextSearch",
-        description: "Perform a search on Google Custom Search. Provide 'query' as the search term and 'lang' as the language.",
-        schema: {
-            type: "object",
-            properties: {
-                query: {
-                    type: "string",
-                    description: "The search term to query on.",
-                },
-                lang: {
-                    type: "string",
-                    description: "The language of the search query (e.g., 'en' or 'fr').",
-                }
-            },
-            required: ["query"],
-        },
-    }
-);
-
-export { contextSearchTool, contextSearch };
+export { contextSearch };
