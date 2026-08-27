@@ -422,6 +422,17 @@ details[open] > summary::before {
   transform: rotate(90deg);
 }
 
+/* The chevron's fill comes from background-color (masked to a triangle).
+   Forced-colors mode (Windows High Contrast Mode) maps background-color to
+   Canvas (the page background), not CanvasText like it does for color/text —
+   so the mask would be forced to match the page background and disappear.
+   Repaint it explicitly with the CanvasText system color so it stays visible. */
+@media (forced-colors: active) {
+  details > summary::before {
+    background-color: CanvasText;
+  }
+}
+
 /* A focused, open summary's outline (outline-offset 0.125rem + outline
    0.25rem, see summary:focus below) bleeds ~0.375rem past its own box —
    without breathing room after it, that blue ring touches the revealed
