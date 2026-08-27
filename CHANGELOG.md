@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.192.0](https://github.com/cds-snc/ai-answers/compare/v1.191.6...v1.192.0) (2026-08-27)
+
+
+### Features
+
+* redesign ChatViewer admin page for accessibility ([f4e89a7](https://github.com/cds-snc/ai-answers/commit/f4e89a7f69a3bda6a09b75a182ed3587ac065e0d))
+* redesign ChatViewer admin page for accessibility ([e301cc7](https://github.com/cds-snc/ai-answers/commit/e301cc765f741f9ebd3432e9ff31f00263f7a3a2))
+
+
+### Bug Fixes
+
+* capture focus at click-time so Apply's auto-close doesn't lose it to a disabled button ([46ffa3a](https://github.com/cds-snc/ai-answers/commit/46ffa3aa31672350f693be08eb514dbb03e58f8a))
+* chat ID lookup correctness and accessibility fixes ([093d8b0](https://github.com/cds-snc/ai-answers/commit/093d8b0c7ee170a4ef6647441313f0d4a1c726a6))
+* code review ([9f910b6](https://github.com/cds-snc/ai-answers/commit/9f910b6eae10b8708a77a1485b43b9dd4f8f27dc))
+* mark interrupted eval-analysis run as a warning, not info ([265d6c3](https://github.com/cds-snc/ai-answers/commit/265d6c31c55050b260fa9a3864394e65a71ff06b))
+* mark interrupted eval-analysis run as a warning, not info ([decf78c](https://github.com/cds-snc/ai-answers/commit/decf78cb94ff69557a691b6133dd716a07331683))
+* raw untranslated err.message to text except true developer strings ([d7ab90e](https://github.com/cds-snc/ai-answers/commit/d7ab90e7e092eac4afe467d70ebc87de5fca1908))
+* replace text-glyph disclosure chevron with a CSS mask ([7ac85e7](https://github.com/cds-snc/ai-answers/commit/7ac85e77e1974e67958fe426b133f3e6d60120a7))
+* replace text-glyph disclosure chevron with a CSS mask ([e4de494](https://github.com/cds-snc/ai-answers/commit/e4de49406a4dfb5297f0860c48d342fee12c52b4))
+* restore chevron visibility in forced-colors mode ([09db432](https://github.com/cds-snc/ai-answers/commit/09db43296af88d978f9f7faa23734d453a8a4235))
+* restore focus to filter panel summary when Apply auto-closes it ([46661e1](https://github.com/cds-snc/ai-answers/commit/46661e195e870c08c60dd493fceb3fdb7b66029a))
+* stop showing raw untranslated err.message to users ([1edee94](https://github.com/cds-snc/ai-answers/commit/1edee94217bbce1e3852b1b323dd65ecec1478cb))
+
 ## [1.191.6](https://github.com/cds-snc/ai-answers/compare/v1.191.5...v1.191.6) (2026-08-25)
 
 
