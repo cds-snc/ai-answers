@@ -402,15 +402,35 @@ summary::-webkit-details-marker {
 }
 
 details > summary::before {
-  content: '►';
+  content: '';
   display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
   margin-right: 0.5rem;
-  font-size: 0.75em;
-  line-height: 1;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 details[open] > summary::before {
-  content: '▼';
+  transform: rotate(90deg);
+}
+
+/* The chevron's fill comes from background-color (masked to a triangle).
+   Forced-colors mode (Windows High Contrast Mode) maps background-color to
+   Canvas (the page background), not CanvasText like it does for color/text —
+   so the mask would be forced to match the page background and disappear.
+   Repaint it explicitly with the CanvasText system color so it stays visible. */
+@media (forced-colors: active) {
+  details > summary::before {
+    background-color: CanvasText;
+  }
 }
 
 /* A focused, open summary's outline (outline-offset 0.125rem + outline
