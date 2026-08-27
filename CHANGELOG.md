@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.192.1](https://github.com/cds-snc/ai-answers/compare/v1.192.0...v1.192.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* add scope="col" and caption to ChatViewer's log-entries table ([aa1a0c1](https://github.com/cds-snc/ai-answers/commit/aa1a0c10a04cde502ee70fff7a40a8c18ea8fbf1))
+* add scope="col" and caption to ChatViewer's log-entries table ([159a9a2](https://github.com/cds-snc/ai-answers/commit/159a9a230be77a249d844c9c2c5bca6f23140d44))
+* give account-side route changes proper focus, page titles, and reading order ([d82b5a3](https://github.com/cds-snc/ai-answers/commit/d82b5a3ec7a84bd1271c7dca312be05a30461c42))
+* give account-side route changes proper focus, page titles, and reading order ([c91b8ee](https://github.com/cds-snc/ai-answers/commit/c91b8ee53342ef7689bd6e93f52a24a35a3bc61a))
+
+
+### Documentation
+
+* capture accessibility-review and code-reuse lessons learned ([a695837](https://github.com/cds-snc/ai-answers/commit/a695837f4539f4cccb2d4022a6ee81ae773e2dca))
+* capture accessibility-review and code-reuse lessons learned ([1f00707](https://github.com/cds-snc/ai-answers/commit/1f0070753b266f083fde81aa8d4e18189ce7837b))
+* make accessibility-review skill terser to cut load cost ([c9d22fc](https://github.com/cds-snc/ai-answers/commit/c9d22fc0449c8458079605028c44d9ded4aa2269))
+* make accessibility-review skill terser to cut load cost ([d6c54e0](https://github.com/cds-snc/ai-answers/commit/d6c54e0e6525153c0e6f0d22beefb8bd46970dbf))
+
 ## [1.192.0](https://github.com/cds-snc/ai-answers/compare/v1.191.6...v1.192.0) (2026-08-27)
 
 
