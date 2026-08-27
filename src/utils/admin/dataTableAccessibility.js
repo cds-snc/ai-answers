@@ -1,18 +1,33 @@
-// Shared DOM-only accessibility wiring for a DataTable with a single global
-// search box (Chat/Eval/Metrics dashboards) — call once from that table's own
-// `initComplete`. No React state involved; everything here is imperative
-// DOM, mirroring DataTables' own imperative init style.
+// Shared DOM-only accessibility wiring for DataTables, called once from a
+// table's own `initComplete`. No React state involved; everything here is
+// imperative DOM, mirroring DataTables' own imperative init style.
 //
-//   - scope="col" on every header cell: DataTables doesn't set this itself
-//     (a real WCAG 1.3.1 gap in the library, not something a config option
-//     turns on).
-//   - A dismissible search-term pill next to the search box, same
-//     .filter-pill styling FilterPanel.js uses for its own active-filter
-//     pills, so the current term is visible and clearable without needing
-//     to select/delete the input text.
+//   - setColumnHeaderScope: scope="col" on every header cell. DataTables
+//     doesn't set this itself (a real WCAG 1.3.1 gap in the library, not
+//     something a config option turns on). Use alone for a table with no
+//     search box.
+//   - wireTableAccessibility: the above, plus a dismissible search-term
+//     pill next to the search box, same .filter-pill styling FilterPanel.js
+//     uses for its own active-filter pills. Use for a table with one.
 //
-// Previously hand-duplicated (near-identically) across ChatDashboardPage.js,
-// EvalDashboardPage.js, and MetricsDashboard.js.
+// wireTableAccessibility was previously hand-duplicated (near-identically)
+// across ChatDashboardPage.js, EvalDashboardPage.js, and MetricsDashboard.js.
+
+/**
+ * Scope-only half of wireTableAccessibility, for a table with no search box
+ * (ChatViewer.js's step-timeline and log-entries tables).
+ *
+ * @param {object} api - the DataTables API instance (`this.api()` inside initComplete)
+ */
+export function setColumnHeaderScope(api) {
+  try {
+    api.columns().header().each((header) => {
+      header.setAttribute('scope', 'col');
+    });
+  } catch (e) {
+    // Accessibility wiring must never break the table itself.
+  }
+}
 
 /**
  * @param {object} api - the DataTables API instance (`this.api()` inside initComplete)
@@ -20,11 +35,10 @@
  * @param {function} options.t - translation function
  */
 export function wireTableAccessibility(api, { t }) {
+  // Own try/catch, isolated from the pill logic below: a scope-setting
+  // failure shouldn't also skip the pill.
+  setColumnHeaderScope(api);
   try {
-    api.columns().header().each((header) => {
-      header.setAttribute('scope', 'col');
-    });
-
     const searchContainer = api.table().container().querySelector('.dt-search');
     if (!searchContainer) return; // searching disabled on this table
     const searchInput = searchContainer.querySelector('input');

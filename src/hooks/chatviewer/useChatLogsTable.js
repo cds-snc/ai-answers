@@ -9,6 +9,7 @@ import Prism from 'prismjs';
 import { buildMetadataCellHtml, escapeHtml } from '../../utils/chatviewer/chatViewer.js';
 import { captureTableFocus, restoreTableFocus } from '../../utils/chatviewer/focusRestore.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 
 // DataTables' column search takes one string, not an array - '^(warn|error)$'
 // (regex mode) is how a multi-value "OR" match is expressed as that one
@@ -158,6 +159,11 @@ export function useChatLogsTable({
         // for those pages' department/program search and wouldn't fit
         // searching log messages/levels/metadata here.
         search: t('admin.common.searchLabel'),
+      },
+      // scope="col" is dynamic, not static JSX, so a future columns[] edit
+      // can't drift out of sync with it (WCAG 1.3.1).
+      initComplete: function () {
+        setColumnHeaderScope(this.api());
       },
       drawCallback: function () {
         // Scoped to this table - no <code> blocks exist outside it.
