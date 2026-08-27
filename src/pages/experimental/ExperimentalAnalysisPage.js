@@ -574,6 +574,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '11%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
     ];
 
+    // TODO(a11y): both "view results" buttons below fire navigate() with a
+    // destination (comparison._id/batch._id) that's already known when the
+    // button renders - no async step gating it. useRouteChangeFocus
+    // (App.js) now handles the focus/title gap this used to leave, so
+    // that part's covered - what's still missing is native link semantics:
+    // a real <a href> instead of a <GcdsButton onClick={navigate}> would
+    // give this a proper link role plus things onClick can't replicate
+    // (open in new tab, copy link, etc.).
     const renderComparisonActions = (comparison) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
             <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>

@@ -38,13 +38,13 @@ const ChatIdLookupField = ({
   describedById,
   // Partial-match pick-list, from useChatIdLookup.js's searchChats/matches -
   // optional: DeleteByChatIdSection.js's exact-only lookup never passes
-  // these. matchesHeading/matchesTruncatedMessage are pre-translated
+  // these. matchesHeading is a pre-translated
   // strings (this component does no i18n of its own) so the caller
   // controls the interpolated {count}.
   matches,
   matchesHeading,
-  matchesTruncatedMessage,
   onSelectMatch,
+  hrefForMatch,
 }) => {
   const errorId = `${fieldId}-error`;
   const describedBy = [describedById, hasError && errorId].filter(Boolean).join(' ') || undefined;
@@ -79,15 +79,16 @@ const ChatIdLookupField = ({
           aria-describedby={describedBy}
         />
       </div>
-      <GcdsButton type="submit" buttonRole={buttonRole} disabled={disabled} className="mt-200 mb-300">
+      <GcdsButton type="submit" buttonRole={buttonRole} disabled={disabled} className="mt-200">
         {buttonLabel}
       </GcdsButton>
+      {/* Below the button, where every other outcome StatusMessage sits. */}
       <ChatIdMatchList
         fieldId={fieldId}
         matches={matches}
         matchesHeading={matchesHeading}
-        matchesTruncatedMessage={matchesTruncatedMessage}
         onSelectMatch={onSelectMatch}
+        hrefForMatch={hrefForMatch}
       />
     </div>
   );

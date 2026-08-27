@@ -44,6 +44,9 @@ const LoginPage = ({ lang = 'en' }) => {
     // login attempt that passes validation, remove it so it cannot persist
     // into a new session.
     if (sessionExpired) {
+      // TODO(a11y): this is a route change, so useRouteChangeFocus moves
+      // focus to <main> mid-submit. Known, unfixed (PR #1765 review). Fix:
+      // history.replaceState instead of navigate(), or a one-shot skip.
       navigate(location.pathname, { replace: true });
     }
     setIsLoading(true);
@@ -55,7 +58,15 @@ const LoginPage = ({ lang = 'en' }) => {
         return;
       }
       const defaultRoute = data?.defaultRoute || '/';
-      navigate(defaultRoute);
+      // skipRouteFocus: leaves focus alone for this navigation - a fresh
+      // sign-in should load normally, not force focus into its heading.
+      // Scoped to the navigation action (location.state), not the
+      // destination route, since getDefaultRouteForRole's target varies by
+      // role and isn't itself the reason to skip.
+      // TODO(a11y): state sticks to the history entry, so Back to this
+      // page also skips focus-to-main. Known, unfixed (PR #1765 review).
+      // Fix: one-shot flag the hook clears on the next route change.
+      navigate(defaultRoute, { state: { skipRouteFocus: true } });
     } catch (err) {
       setError(t('login.invalidCredentials'), ['email', 'password']);
     } finally {
@@ -98,7 +109,8 @@ const LoginPage = ({ lang = 'en' }) => {
         defaultRoute = getDefaultRouteForRole(data.user.role, lang);
       }
       if (!defaultRoute) defaultRoute = '/';
-      navigate(defaultRoute);
+      // See the other navigate() call above for why skipRouteFocus is set.
+      navigate(defaultRoute, { state: { skipRouteFocus: true } });
     } catch (err) {
       setTwoStepError(t('login.2fa.invalidCode'));
     } finally {

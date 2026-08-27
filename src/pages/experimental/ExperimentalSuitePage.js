@@ -22,6 +22,15 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
 
     const { dataset, tests, runs, cells, loading, error } = useExperimentalSuiteGrid(datasetId);
 
+    // TODO(a11y): handleCellClick fires navigate() from a <td tabIndex={0}
+    // onClick/onKeyDown> in SuiteGridTable.js instead of a real link, even
+    // though the destination (run._id/test.position) is known synchronously
+    // - no async gating that would require navigate(). useRouteChangeFocus
+    // (App.js) now handles the focus/title gap this used to leave, so that
+    // part's covered - what's still missing is native link semantics: a real
+    // <a href> would give the cell a proper accessible role/name for free
+    // instead of the hand-rolled tabIndex/onKeyDown interactivity, plus
+    // things onClick can't replicate (open in new tab, copy link, etc.).
     const handleCellClick = (run, test) => {
         navigate(`${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`);
     };
