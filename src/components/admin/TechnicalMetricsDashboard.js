@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import FilterPanel from './FilterPanel.js';
 import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
@@ -168,10 +169,12 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    // scope="col" on headers (WCAG 1.3.1) - DataTables doesn't set it.
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang),
                   }}
                 >
@@ -209,10 +212,12 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    // scope="col" on headers (WCAG 1.3.1) - DataTables doesn't set it.
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang),
                   }}
                 >
@@ -259,10 +264,12 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    // scope="col" on headers (WCAG 1.3.1) - DataTables doesn't set it.
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang),
                   }}
                 >
@@ -295,10 +302,12 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    // scope="col" on headers (WCAG 1.3.1) - DataTables doesn't set it.
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang),
                   }}
                 >
@@ -392,10 +401,12 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    // scope="col" on headers (WCAG 1.3.1) - DataTables doesn't set it.
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang),
                   }}
                 >

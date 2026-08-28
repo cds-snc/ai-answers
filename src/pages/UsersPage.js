@@ -5,6 +5,8 @@ import DT from 'datatables.net-dt';
 import { GcdsButton, GcdsContainer, GcdsLink, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
+import { escapeHtml as escapeHtmlAttribute } from '../utils/htmlEscape.js';
+import { setColumnHeaderScope } from '../utils/admin/dataTableAccessibility.js';
 import { getCellRoot } from '../utils/dataTableCellRoot.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -12,15 +14,6 @@ import { usePageContext } from '../hooks/usePageParam.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
-
-const escapeHtmlAttribute = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
 
 const statusOptions = [
   { value: true, sortIndex: 0 },
@@ -270,8 +263,10 @@ const UsersPage = ({ lang }) => {
 
       <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
 
+      <div className="metrics-table-container">
       <DataTable
         data={users}
+        className="display dashboard-table zebra-stable-on-hover"
         columns={columns}
         options={{
           rowId: '_id',
@@ -279,7 +274,24 @@ const UsersPage = ({ lang }) => {
           searching: true,
           ordering: true,
           order: [[3, 'desc']],
-          language: dataTableLanguage(lang),
+          // Same zones as the dashboards: filter box top-left, page info +
+          // entries-per-page bottom-left, paging bottom-right.
+          layout: {
+            topStart: 'search',
+            topEnd: {},
+            bottomStart: { features: ['pageLength', 'info'] },
+            bottomEnd: { paging: { firstLast: false } },
+          },
+          language: {
+            ...dataTableLanguage(lang),
+            // Filter-style box like the other admin tables: sr-only label,
+            // "Filter" placeholder, native x to clear.
+            search: `<span class="sr-only">${escapeHtmlAttribute(t('users.filterLabel'))}</span>`,
+            searchPlaceholder: t('admin.common.filterPlaceholder'),
+          },
+          initComplete: function () {
+            setColumnHeaderScope(this.api());
+          },
           createdRow: (row, data) => {
             // Attach select change handlers
             row.querySelectorAll('select').forEach(select => {
@@ -314,7 +326,10 @@ const UsersPage = ({ lang }) => {
             );
           },
         }}
-      />
+      >
+        <caption className="sr-only">{t('users.title')}</caption>
+      </DataTable>
+      </div>
     </GcdsContainer>
   );
 };

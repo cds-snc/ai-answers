@@ -263,11 +263,16 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
               a tabIndex={-1} focus target (confirmed: reads as "Date range,
               empty group") - <p> carries no such implicit role. Matches the
               same dedicated-focus-target convention as ChatIdMatchList.js's
-              <p ref={headingRef} tabIndex={-1}>. */}
+              <p ref={headingRef} tabIndex={-1}>. No .focus-target: this is a
+              screen-reader cursor move after a preset click, not a place a
+              sighted keyboard user deliberately lands, so it takes
+              global.css's silent [tabindex="-1"]:focus default; the visible
+              ring is drawn around the whole .filter-bar box instead (see
+              admin.css). */}
           <p
             ref={dateRangeHeadingRef}
             tabIndex={-1}
-            className="filter-bar__label focus-target"
+            className="filter-bar__label"
           >
             {t('dashboardFilter.dateRange')}
           </p>

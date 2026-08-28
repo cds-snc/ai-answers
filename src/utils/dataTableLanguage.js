@@ -32,11 +32,15 @@ export function dataTableLanguage(lang) {
       processing: 'Traitement\u2026',
       search: 'Rechercher\u00a0:',
       zeroRecords: 'Aucun enregistrement correspondant trouvé',
+      // Word labels like GC DS pagination (the chevrons are CSS, see
+      // .dt-paging-button in admin.css). first/last are turned off per table
+      // in the app's own tables; kept translated for any table still on
+      // DataTables' default layout (the experimental pages).
       paginate: {
-        first: '«',
-        previous: '‹',
-        next: '›',
-        last: '»',
+        first: 'Premier',
+        previous: 'Précédent',
+        next: 'Suivant',
+        last: 'Dernier',
       },
       aria: {
         paginate: {
@@ -50,5 +54,12 @@ export function dataTableLanguage(lang) {
       },
     };
   }
-  return {};
+  return {
+    paginate: {
+      first: 'First',
+      previous: 'Previous',
+      next: 'Next',
+      last: 'Last',
+    },
+  };
 }

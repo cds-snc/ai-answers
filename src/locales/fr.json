@@ -309,7 +309,7 @@
       }
     },
     "list": {
-      "searchPlaceholder": "Nom du lot ou ID du lot",
+      "filterLabel": "Filtrer les lots par nom ou ID",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -381,6 +381,7 @@
     "enterChatId": "Entrez l'identifiant du clavardage :",
     "traceFor": "Trace pour :",
     "filterByLevel": "Filtrer par niveau :",
+    "filterEntriesLabel": "Filtrer les entrées du journal",
     "all": "Tous",
     "info": "Info",
     "debug": "Débogage",
@@ -791,6 +792,7 @@
     },
     "session": {
       "title": "Sessions",
+      "filterLabel": "Filtrer les sessions",
       "sessionId": "ID de session",
       "sessionType": "Type de session",
       "sessionTypes": {
@@ -820,6 +822,7 @@
     "common": {
       "searchLabel": "Rechercher :",
       "searchPlaceholder": "p. ex. impôt, contact, compte",
+      "filterPlaceholder": "Filtrer",
       "searchTermPillLabel": "Recherche : {term}",
       "noSearchResults": "Aucun résultat pour {term}.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
@@ -839,9 +842,6 @@
       "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
-      "sortActivateAscending": "{column} : activer le tri croissant",
-      "sortActivateDescending": "{column} : activer le tri décroissant",
-      "sortRemove": "{column} : activer pour annuler le tri",
       "fetchError": "Échec du chargement des données : {message}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
@@ -908,19 +908,15 @@
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
+      "noColumnFilterResults": "Aucun résultat pour les filtres de colonne : {term}.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
       "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
-      "searchLabel": "Rechercher par ID de chat ou d'interaction :",
-      "searchPlaceholder": "Entrez l'ID",
-      "columnFilterPlaceholder": "Filtrer",
       "columns": {
         "chatId": "ID de chat",
-        "questionNumber": "Q #",
-        "department": "Ministère",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
         "processed": "Traité",
-        "matches": "Correspondances trouvées",
+        "matches": "Correspondances",
         "fallback": "Repli",
         "any": "Tous",
         "reason": "Raison de non-correspondance",
@@ -1054,6 +1050,7 @@
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
@@ -1164,6 +1161,7 @@
       "title": "Historique des paramètres",
       "description": "Consultez qui a modifié les paramètres et à quel moment.",
       "empty": "Aucune modification des paramètres n’a été enregistrée.",
+      "filterLabel": "Filtrer l'historique des paramètres",
       "loadError": "Échec du chargement de l'historique : {error}",
       "user": "Utilisateur",
       "action": "Action",
@@ -1754,6 +1752,7 @@
       },
       "byDepartment": {
         "title": "Répartition par institution des évaluations d'experts",
+        "filterLabel": "Filtrer les institutions",
         "department": "Institution",
         "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
@@ -1789,7 +1788,7 @@
       },
       "searchCalls": {
         "title": "Appels de recherche",
-        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google), une ligne par fournisseur. Le % d'erreurs est estimé par rapport au total des questions, puisque chaque question ne déclenche pas nécessairement une nouvelle recherche. Une nouvelle tentative se produit automatiquement lorsqu'un appel de recherche échoue; les erreurs sont des appels ayant échoué même après toutes les tentatives. Les nouvelles tentatives sont affichées sous forme de nombre, et non de taux, puisque la recherche d'une question peut faire l'objet de plus d'une nouvelle tentative.",
+        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
         "provider": {
           "title": "Fournisseur",
           "canadaca": "Recherche Canada.ca (Coveo)",
@@ -1936,6 +1935,7 @@
     },
     "similarChats": "Trouver des chats similaires",
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
+    "similarChatsFilterLabel": "Filtrer les chats similaires",
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
     "loadingSimilarChats": "Chargement des chats similaires...",

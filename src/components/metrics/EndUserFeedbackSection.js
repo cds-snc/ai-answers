@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS, isPositiveScore } from '../../constants/UserFeedbackOptions.js';
 import { splitPublicFeedbackTotals } from '../../utils/dashboard/feedbackBreakdown.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 import enLocale from '../../locales/en.json';
@@ -144,6 +145,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
           options={{
             paging: false,
             searching: false,
+            initComplete: function () { setColumnHeaderScope(this.api()); },
             ordering: false,
             info: false,
             language: dataTableLanguage(lang)
@@ -163,7 +165,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
           <h3>{t('metrics.dashboard.userScored.reasonTableTitle')}</h3>
           <div className="metrics-table-container">
           <DataTable
-            className="display dashboard-table"
+            className="display dashboard-table zebra-stable-on-hover"
             data={tableData}
             columns={[
               { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
@@ -189,6 +191,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             options={{
               paging: false,
               searching: false,
+              initComplete: function () { setColumnHeaderScope(this.api()); },
               ordering: false,
               info: false,
               stripe: true,

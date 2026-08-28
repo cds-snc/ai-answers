@@ -11,7 +11,7 @@ import PauseToggleButton from '../admin/PauseToggleButton.js';
 import { announce } from '../../utils/liveAnnouncer.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
-import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
@@ -589,25 +589,25 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               topStart: 'search',
               topEnd: {},
               bottomStart: { features: ['pageLength', 'info'] },
-              bottomEnd: 'paging',
+              bottomEnd: { paging: { firstLast: false } },
             },
             language: {
               ...dataTableLanguage(lang),
-              // "Search:" label is genuinely shared (admin.common.searchLabel),
-              // but the *placeholder* isn't — admin.common.searchPlaceholder
-              // ("e.g. tax, contact, account") is Chat/Eval-dashboard-specific
-              // example text (topics people ask AI Answers about), meaningless
-              // here where search runs over batch name/ID/provider/etc. Own
-              // key instead of reusing a placeholder that doesn't fit.
-              search: t('admin.common.searchLabel'),
-              searchPlaceholder: t('batch.list.searchPlaceholder'),
+              // Visually just a "Filter" placeholder box, like the chat
+              // viewer's log entries and the settings history table; the
+              // <label> DataTables builds keeps an sr-only name (DataTables
+              // inserts this string as HTML).
+              search: `<span class="sr-only">${escapeHtml(t('batch.list.filterLabel'))}</span>`,
+              searchPlaceholder: t('admin.common.filterPlaceholder'),
             },
             initComplete: function () {
               const api = this.api();
               try {
-                wireTableAccessibility(api, { t });
+                // scope="col" only - no search-term pill here, the box's own
+                // native clear (x) does that job.
+                setColumnHeaderScope(api);
               } catch (e) {
-                console.error('BatchList: wireTableAccessibility failed', e);
+                console.error('BatchList: setColumnHeaderScope failed', e);
               }
               try {
                 // Keeps sortOrderRef current so the *next* remount (10s
@@ -747,7 +747,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
           // Key forces a full remount when batches change so rows (and actions)
           // re-render with the latest statuses returned from the backend.
           key={refreshKey}
-        />
+        >
+          <caption className="sr-only">{t(batchStatus === 'processed' ? 'batch.sections.processed.title' : 'batch.sections.running.title')}</caption>
+        </DataTable>
       </div>
     </div>
   );
