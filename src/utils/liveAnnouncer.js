@@ -32,6 +32,26 @@
 // Announcements remove themselves after a while so stale text ("Loading…")
 // isn't left in the accessibility tree for a screen-reader user browsing
 // by cursor to stumble over.
+//
+// Verified with VoiceOver (macOS, Safari + Chrome). The pattern — text
+// changing inside a region that already exists — is the one every screen
+// reader handles; NVDA/JAWS to be confirmed in production. Known
+// adjustments if a reader misbehaves, so the options aren't relearned:
+//   - "alert" is spoken before every assertive message (NVDA/JAWS prefix
+//     role="alert"): change the assertive region to role="status"
+//     aria-live="assertive" in REGIONS — same urgency, no prefix.
+//   - Messages heard twice / the region's older contents re-read (a reader
+//     ignoring aria-atomic="false"): in emit(), replace the region's text
+//     (region.textContent = message) instead of appending a child, and
+//     drop aria-atomic. Still a change inside an existing node, so still
+//     announced everywhere; the cost is that an identical repeat is no
+//     longer guaranteed to be re-read on VoiceOver (why appending was
+//     chosen). Not seen on anything from the last ten years.
+//   - "Loading…" heard on fast loads: raise SKIPPABLE_GRACE_MS.
+//   - Messages arriving out of order or one swallowing another: raise
+//     GAP_MS; lower it if announcements feel laggy.
+//   - Nothing heard on the very first announcement after a fresh page load
+//     (Chrome hadn't attached the regions yet): raise READY_DELAY_MS.
 
 const REGIONS = {
   polite: { id: 'live-announcer-polite', role: 'status', live: 'polite' },
@@ -68,6 +88,9 @@ function ensureRegion(kind) {
     // Lets tests tell these apart from page content (test/vitest-hooks.js
     // excludes them from *ByText queries; getAnnouncedText reads them).
     node.setAttribute('data-live-announcer', kind);
+    // For a human inspecting the DOM: why an empty status/alert region sits
+    // at the end of <body>. Not read by assistive tech.
+    node.setAttribute('data-purpose', 'site-wide screen-reader announcer — see src/utils/liveAnnouncer.js');
     node.className = 'sr-only';
     document.body.appendChild(node);
   }

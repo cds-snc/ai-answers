@@ -81,7 +81,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       {/* announce={false}: focus is moved here on mount (invalidLinkRef), and
           focus landing on it already reads it — a live announcement on top
           would be a double read. */}
-      <StatusMessage variant="error" message={systemError} ref={invalidLinkRef} tabIndex={-1} announce={false} />
+      <StatusMessage variant="error" message={systemError} ref={invalidLinkRef} tabIndex={-1} announce={false} announcedVia="focus" />
       {error && (
         <AnnouncedError id="reset-complete-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}

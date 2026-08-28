@@ -788,6 +788,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               ref={saveStatusRef}
               tabIndex={-1}
               announce={false}
+              announcedVia="focus"
               variant={saveStatus?.variant}
               message={saveStatus?.message}
             />

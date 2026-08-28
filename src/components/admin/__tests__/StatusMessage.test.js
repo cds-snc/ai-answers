@@ -38,6 +38,48 @@ describe('StatusMessage', () => {
     expect(announce).toHaveBeenCalledWith('Saved', { assertive: false, skippable: false });
   });
 
+  it('signposts the region it is announced in, matching what announce() was actually told', () => {
+    // The attribute must agree with the real call, not with its own logic.
+    const check = (ui) => {
+      announce.mockClear();
+      const { container, unmount } = render(ui);
+      const via = container.firstChild.getAttribute('data-announced-via');
+      expect(announce).toHaveBeenCalledTimes(1);
+      const wasAssertive = announce.mock.calls[0][1].assertive === true;
+      expect(via).toBe(wasAssertive ? 'live-announcer-assertive' : 'live-announcer-polite');
+      // Not ARIA: the box itself still carries no role/aria-live.
+      expect(container.firstChild.hasAttribute('role')).toBe(false);
+      expect(container.firstChild.hasAttribute('aria-live')).toBe(false);
+      unmount();
+    };
+    check(<StatusMessage variant="success" message="Saved." />);
+    check(<StatusMessage variant="error" message="Failed." />);
+    check(<StatusMessage message="Done." isError />);
+    check(<StatusMessage variant="info" message="Started." assertive />);
+  });
+
+  it('claims nothing when announce={false} unless the caller says how the box is read', () => {
+    const { container, rerender } = render(<StatusMessage variant="error" message="Failed." announce={false} tabIndex={-1} />);
+    expect(announce).not.toHaveBeenCalled();
+    // The component can't know — no attribute rather than a guess.
+    expect(container.firstChild.hasAttribute('data-announced-via')).toBe(false);
+    // A focus-target caller says so...
+    rerender(<StatusMessage variant="error" message="Failed." announce={false} tabIndex={-1} announcedVia="focus" />);
+    expect(container.firstChild.getAttribute('data-announced-via')).toBe('focus');
+    // ...and a caller that announces the text itself points at the region.
+    rerender(<StatusMessage variant="warning" message="Unsaved." announce={false} announcedVia="live-announcer-polite" />);
+    expect(container.firstChild.getAttribute('data-announced-via')).toBe('live-announcer-polite');
+    expect(announce).not.toHaveBeenCalled();
+  });
+
+  it('reports an announcedVia value that points at nothing', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<StatusMessage variant="warning" message="Unsaved." announce={false} announcedVia="polite" />);
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError.mock.calls[0][0]).toMatch(/unknown announcedVia "polite"/);
+    consoleError.mockRestore();
+  });
+
   it('announces assertively for isError and the error variant, politely otherwise', () => {
     render(React.createElement(StatusMessage, { message: 'Failed', isError: true }));
     render(React.createElement(StatusMessage, { message: 'Broken', variant: 'error' }));

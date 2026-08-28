@@ -639,6 +639,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         variant={unsavedWarning ? 'warning' : undefined}
         message={unsavedWarning}
         announce={false}
+        announcedVia="live-announcer-polite"
         className="mb-400"
       />
       <details>

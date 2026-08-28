@@ -36,7 +36,8 @@ const LoadingOverlay = ({ message }) => {
         {/* .loading-overlay-content span is styled directly in admin.css
             (font-size/weight/color) — keep the message wrapped in a span,
             not a bare text node, or it silently loses that styling. */}
-        <span ref={textRef}>{message}</span>
+        {/* data-announced-via: see StatusMessage.js — a signpost, not ARIA. */}
+        <span ref={textRef} data-announced-via="live-announcer-polite">{message}</span>
       </div>
     </div>
   );

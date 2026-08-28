@@ -161,6 +161,7 @@ const LoginPage = ({ lang = 'en' }) => {
           ref={sessionExpiredRef}
           tabIndex={-1}
           announce={false}
+          announcedVia="focus"
         >
           <p><strong>{t('login.sessionExpired.title')}</strong></p>
           <p>{t('login.sessionExpired.message')}</p>

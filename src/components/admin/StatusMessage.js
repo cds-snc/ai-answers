@@ -181,8 +181,13 @@ function resolveLook({ variant, loading, message, isError, children }) {
   };
 }
 
+// The only values data-announced-via may take: the two announcer region ids
+// (src/utils/liveAnnouncer.js) or "focus". Anything else would be a pointer
+// to nothing — the one thing the signpost exists to avoid.
+const ANNOUNCED_VIA = new Set(['focus', 'live-announcer-polite', 'live-announcer-assertive']);
+
 const StatusMessage = React.forwardRef((
-  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, variant, children, nonce, announce = true, assertive },
+  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, variant, children, nonce, announce = true, assertive, announcedVia },
   ref
 ) => {
   const look = resolveLook({ variant, loading, message, isError, children });
@@ -204,7 +209,22 @@ const StatusMessage = React.forwardRef((
   // queues politely unless the caller passes `assertive` — the dashboards'
   // "no data" outcome does, so the empty case lands as immediately as
   // "Results loaded." does.
-  useAnnounceOnChange(nodeRef, { enabled: announce, assertive: assertive ?? look.isError, skippable: loading, nonce });
+  // One value drives both the announcement and the DOM signpost below, so
+  // the signpost can't drift from what actually happens.
+  const assertiveAnnounce = assertive ?? look.isError;
+  // TODO(a11y): unconditional (every render, production too) on purpose
+  // while the site-wide announcer is under external accessibility review —
+  // a pointer to nothing is exactly what an auditor inspecting prod would
+  // trip on. Once that review is done, consider gating on
+  // import.meta.env.DEV or reporting each bad value once.
+  // The bad value is still written to the DOM below, deliberately: dropping
+  // it would make the mistake look exactly like a legitimate announce={false}
+  // box (no attribute), hiding it from the auditor the signpost is for —
+  // the "silent, nothing fails" shape this component exists to get rid of.
+  if (announcedVia !== undefined && !ANNOUNCED_VIA.has(announcedVia)) {
+    console.error(`StatusMessage: unknown announcedVia "${announcedVia}" — expected one of ${[...ANNOUNCED_VIA].join(', ')}`);
+  }
+  useAnnounceOnChange(nodeRef, { enabled: announce, assertive: assertiveAnnounce, skippable: loading, nonce });
 
   if (!message && !children) return null;
 
@@ -215,6 +235,17 @@ const StatusMessage = React.forwardRef((
       className={[className, look.className].filter(Boolean).join(' ') || undefined}
       style={style}
       tabIndex={tabIndex}
+      // Signpost for anyone inspecting the DOM: this box carries no
+      // role/aria-live on purpose. The value is the id of the always-mounted
+      // region (src/utils/liveAnnouncer.js) its text is announced in, so an
+      // auditor can jump to the element that does have role="status"/"alert"
+      // and read its data-purpose. With announce={false} this component
+      // doesn't know how the box reaches a screen reader, so it claims
+      // nothing — the caller says: announcedVia="focus" where focus is
+      // moved onto it, or a region id where the caller announces it itself
+      // (SettingsPage's delayed unsaved-changes warning). data-* is not in
+      // the accessibility tree — nothing is read differently.
+      data-announced-via={announcedVia ?? (announce ? (assertiveAnnounce ? 'live-announcer-assertive' : 'live-announcer-polite') : undefined)}
     >
       {look.content}
     </Tag>
