@@ -7,47 +7,34 @@
 
 ## Commit messages and releases
 
-Release Please runs on pushes to `main` and uses Conventional Commit prefixes
-from the commit message. When creating a commit, use one of the configured
-prefixes:
-
-`feat`, `feature`, `fix`, `perf`, `revert`, `docs`, `style`, `chore`,
-`refactor`, `test`, `build`, or `ci`.
-
-For example: `feat: add metadata backfill pagination` or
-`fix: prevent backfill timeout`. Branch names and pull request comments do not
-trigger releases. The generated release pull request uses the branch
-`release-please--branches--main` and a title such as
-`chore: AI Answers release v1.171.0`.
+Release Please reads Conventional Commit prefixes from commit messages on `main`.
+Use one of: `feat`, `feature`, `fix`, `perf`, `revert`, `docs`, `style`, `chore`,
+`refactor`, `test`, `build`, `ci` — e.g. `feat: add metadata backfill pagination`.
+Branch names and PR comments do not trigger releases.
 
 ## Do not edit prompts during unrelated coding work
 
-Prompt files in `agents/prompts/` — the system prompt, `agenticBase.js`,
-`citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, and the
-`scenarios/` files — are tuned through a dedicated process: changes are made by
-the prompt maintainers (Lisa Fast and Ryan Hyma) and validated by running
-evaluation **batches** before they ship. They may ask for assistance tuning prompts.
+Everything under `agents/prompts/` (system prompt, `agenticBase.js`,
+`citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, `scenarios/`) is
+tuned by the prompt maintainers (Lisa Fast and Ryan Hyma) and validated with
+evaluation batches before shipping.
 
-So unless your task is **explicitly** prompt tuning directed by a maintainer:
+Unless your task is **explicitly** prompt tuning directed by a maintainer:
 
 - **Do not edit anything under `agents/prompts/`** as a side effect of other work.
-- If a coding task seems to need a prompt change to work, **stop and flag it**:
-  describe what you think needs to change and why, and let a maintainer decide.
-  Do not make the edit yourself, and do not work around it by editing a prompt.
-
-This applies to all coding work — bug fixes, refactors, new features,
-dashboards — not just prompt-adjacent areas.
+- If a coding task seems to need a prompt change, **stop and flag it**: describe
+  what should change and why, and let a maintainer decide. Don't work around it
+  by editing a prompt.
 
 ## Never drop a prompt tag that code has to inject
 
 Prompts refer to tags — `<referring-url>`, `<output-lang>`, `<searchResults>`,
-`<final-turn>` — that **code** has to inject into the messages sent to the model. The
-prompt names the tag; the message-building code supplies it. If code stops supplying one,
-**nothing fails**: no error, no thrown exception, no red test. The model simply never sees
-the tag, every instruction referencing it goes dead, and answers quietly get worse. This
-is the hardest class of bug to notice in this codebase.
+`<final-turn>` — that **code** injects into the messages sent to the model. If code stops
+supplying one, **nothing fails**: no error, no red test. The model just never sees the tag,
+every instruction referencing it goes dead, and answers quietly get worse. (This happened
+to `<referring-url>` in the graph/helper migration and went unnoticed for months.)
 
-So, when changing anything that builds an agent's messages or payload:
+When changing anything that builds an agent's messages or payload:
 
 - **Never remove a field from a message/payload because it looks unused.** It is almost
   certainly consumed by a prompt, not by JS. Grep the prompt files for the tag first.
@@ -65,25 +52,11 @@ So, when changing anything that builds an agent's messages or payload:
   `agents/graphs/workflows/__tests__/GraphWorkflowHelper.test.js`. This is the only thing
   that turns a silent regression into a loud one.
 
-Worked example: `<referring-url>` was passed to the context agent by the old
-`services/ContextService.js`, then lost in the migration to the graph/helper architecture.
-`contextSystemPrompt.js` kept telling the model to prioritize `<referring-url>` over
-`<searchResults>` — but the tag was never in the input, so the instruction did nothing and
-the agent matched departments off search results alone. It went unnoticed for months
-because no test and no error covered it.
-
-**The same shape shows up outside prompts, too — any config object rebuilt via `.map()`/
-spread that only copies the fields the *current* mapping function happens to read.**
-Nothing fails when a new field is added upstream and the mapper doesn't carry it forward:
-no error, no red test, the field is just silently absent downstream. Worked example:
-`src/App.js`'s protected-routes `.map()` (building each route's React Router config) copied
-`path` and `element` but not `handle` — harmless while nothing read `route.handle`, until a
-later change started attaching `titleKey`/`skipRouteFocus` flags to route definitions and
-every one of them silently never reached the router, for most of the app, with no error
-anywhere. Same fix shape as the prompt-tag case: when a `.map()`/spread rebuilds an object
-from another object, diff the fields old vs. new rather than trusting "it still works,
-nothing threw" — and add a test asserting the field survives the rebuild once you notice
-one was dropped.
+**The same shape shows up outside prompts: any object rebuilt via `.map()`/spread that
+only copies the fields the current mapper happens to read.** A field added upstream is
+silently absent downstream, with no error (`src/App.js`'s route `.map()` dropped `handle`,
+so `titleKey`/`skipRouteFocus` never reached the router). When a `.map()`/spread rebuilds
+an object, diff the fields old vs. new, and add a test asserting the field survives.
 
 ## How to work well in this codebase
 
@@ -99,7 +72,7 @@ one was dropped.
 10. **Check for downstream impact.** After changing a shared function, utility, or service, trace its callers to verify the change doesn't break other consumers. Don't assume the only usage is the one you're fixing.
 11. **Prefer central fixes for shared semantics.** If the same derived value, metric, category, or business rule appears in multiple dashboards/pages/components, first look for the shared API, service, hook, helper, or data contract that should define it. Avoid patching each UI consumer with duplicate compensating logic unless the difference is intentionally presentation-specific.
 12. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
-13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it. Worked example: a session wrote its own local `escapeHtml` in a new server-side file instead of reusing the repo's existing shared `src/utils/htmlEscape.js`, only surfaced by a later review pass. Only once internal reuse is ruled out, consider whether an existing, well-maintained npm package already solves the problem. Unnecessary new code is code debt the team then has to maintain, test, and secure — don't create it when something already covers it.
+13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it (e.g. `src/utils/htmlEscape.js` exists — don't write another `escapeHtml`). Only once internal reuse is ruled out, consider whether a well-maintained npm package already solves it.
 
 ## Documentation Regeneration
 
@@ -109,15 +82,13 @@ When you change a **shared** prompt file in `agents/prompts/` — `agenticBase.j
 node scripts/generate-system-prompt-documentation.js
 ```
 
-This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the actual prompts.
+This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync.
 
-**Department scenario files do NOT require regeneration.** Changes to any `agents/prompts/scenarios/context-*/` file (partner department scenarios, which change frequently on partner request) never affect the generated documentation: the doc links to those files rather than embedding their contents. Do not run the generator for scenario-file changes.
+**Department scenario files (`agents/prompts/scenarios/context-*/`) do NOT require regeneration** — the doc links to them rather than embedding them.
 
 ## Inspecting a chat run (debugging)
 
-The ChatViewer page (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`, admin/partner only) has a **"Download logs (JSON)"** button that exports the full graph event stream for any chatId — local, staging, or prod — as a self-describing JSON file: `{ chatId, exportedAt, logCount, logs[] }`.
-
-If the user hands you one of these files (e.g. to diagnose a bad answer or see what evals were injected), parse it with:
+The ChatViewer page (`/en/chat-viewer`, admin/partner only) has a **"Download logs (JSON)"** button that exports the full graph event stream for a chatId. If the user hands you one of these files, parse it with:
 
 ```bash
 node scripts/check-chat-logs.js <file.json>                          # full timeline
@@ -125,7 +96,7 @@ node scripts/check-chat-logs.js <file.json> --summary                # message-t
 node scripts/check-chat-logs.js <file.json> --filter similarQuestions # injected evals only
 ```
 
-What lives in which event: see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing). Key ones: `node:context output` (matched department/topic), `node:similarQuestions output` (injected eval text in `metadata.similarQuestionsText`), `node:answer input/output` (what reached the LLM, what came back), `node:shortCircuit output` (whether the instant-answer path fired).
+What lives in which event: [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing).
 
 ## Official languages
 
@@ -135,11 +106,8 @@ for the full ruleset: the core EN/FR requirement, `t()`/locale-key rules, the
 admin/eval tooling vs. the live conversation transcript), locale key parity,
 number/percentage formatting, French punctuation spacing, and the PR review
 checklist. Read it before creating or reviewing any user-facing text —
-nearly every UI change touches at least one of these. Two related things
-stay in this file instead: locale key *hygiene* below (the fuller practice
-around adding/reusing/namespacing keys — general maintenance practice, not
-itself an OL rule, even though the parity it protects is), and the content
-style guide (writing quality, not a bilingual/legal requirement at all).
+nearly every UI change touches at least one of these. Locale key hygiene and
+the content style guide stay in this file.
 
 ### Content style guide
 
@@ -151,17 +119,17 @@ When writing a non-trivial amount of new user-facing copy — a paragraph of exp
 - **Second person, direct address**: "you"/"your" for the reader, "we" for the Government of Canada as a whole, where the copy is speaking to a person at all (not always applicable to terse admin/system copy).
 - **No end punctuation on titles/headings/table captions** in English (French keeps its own punctuation rules — see [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)'s French punctuation spacing section).
 - **Numbers**: digits for 10 and up, ages, dates, percentages; spell out zero to nine in narrative text.
-It's a useful sanity check for any user-facing copy, not just long-form text — just not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
+Not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
 
-**Don't over-apply the "we"/full-sentence framing to button-adjacent micro-confirmations.** The active-voice/second-person guidance above is for page-level outcomes with some distance from their trigger — a signup's pending-approval state, a password-reset confirmation, something the user might read a moment after acting. A `StatusMessage` sitting immediately next to the button that just fired (an Apply/Clear/Save right beside it) needs the opposite instinct: as terse as possible, and echoing the *same verb* the button itself uses, not a full sentence restating what happened. `"Referring URL applied."`/`"Referring URL cleared."` (matching `"Apply URL"`/`"Clear URL"`) is correct; `"We've applied the referring URL."` is the wrong register for that spot, even though it's the right one for `signup.pending`. Check which of the two a given message actually is — full-sentence "we" framing is not a blanket default for every success/error message in the app.
+**Button-adjacent micro-confirmations are the exception to the "we"/full-sentence framing.** A `StatusMessage` right beside the button that fired it should be terse and echo the button's verb: `"Referring URL applied."` (matching `"Apply URL"`), not `"We've applied the referring URL."`. Full sentences are for page-level outcomes with distance from their trigger (e.g. `signup.pending`).
 
 ### Locale key hygiene
 
-**Before adding a new locale key, check whether one already says the same thing.** For generic, non-page-specific text (status messages, announcements, common labels like "cleared", "no data", "loading"), grep `en.json` for the English string first — `common.*` already holds several of these (e.g. `common.noDataForFilters`) precisely so multiple pages/dashboards share one key instead of each defining its own copy. Adding a second key with an identical value under a page-specific namespace (e.g. `admin.evalDashboard.fooAnnouncement` duplicating `admin.chatDashboard.fooAnnouncement`) is the bug this section exists to prevent — do the reuse check *before* writing the key, not after, via the detector below. This has shipped more than once from copy-pasting an existing page's pattern into a new page without checking if the string itself could just be shared.
+**Before adding a locale key, grep `en.json` for the English string.** Generic text ("cleared", "no data", "loading") usually already has a shared key (e.g. `common.noDataForFilters`). Adding `admin.evalDashboard.fooAnnouncement` with the same value as `admin.chatDashboard.fooAnnouncement` is the bug this prevents — check *before* writing the key, not via the detector after.
 
-**`common.*` is site-wide, not admin-only — don't reuse it for admin-dashboard strings.** `common.*` is genuinely shared across both admin pages and the public-facing chat UI (`src/components/chat/`) — `common.yes`/`common.no`, `common.loading`, `common.error`, `common.close`, etc. are all used by public chat components, not just admin tooling. Shared text that only ever applies to admin dashboards (search labels/placeholders, "no results", "filters cleared", column-header conventions, etc.) belongs in **`admin.common.*`** instead — a separate namespace kept deliberately apart from `common.*` so a future edit made "for the admin dashboards" can never accidentally reach into text the public chat UI also depends on, and vice versa. When consolidating a duplicate that's genuinely admin-only, reuse/add to `admin.common.*`; only reach for top-level `common.*` when the string is (or plausibly could be) shared with the public chat experience too.
+**`common.*` is site-wide (admin pages *and* the public chat UI in `src/components/chat/`). Admin-only shared text goes in `admin.common.*`.** Keeping the namespaces apart means an edit "for the admin dashboards" can't reach public chat text, and vice versa.
 
-After adding, removing, or renaming locale keys, also run the dead key detector as a backstop:
+After adding, removing, or renaming locale keys, run the dead key detector as a backstop:
 
 ```bash
 node scripts/find-dead-locale-keys.cjs
@@ -183,10 +151,9 @@ the locale files. Edit the markdown, not the component — and always both langu
 - **Admin how-to guides** — `public/content/admin/`, one file per language, with
   screenshots in `public/content/admin/images/`
 
-Both render through `useMarkdownWithFrontmatter`. See
+Both render through `useMarkdownWithFrontmatter` — see
 [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)
-for the frontmatter contract, how to add a new how-to guide, and the GCDS list
-reset that markdown rendering has to work around.
+for the frontmatter contract and how to add a how-to guide.
 
 System card has EN and FR versions — always update both:
  *   - English: SYSTEM_CARD.md
@@ -246,35 +213,6 @@ Read [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-do
 
 **Never put `role="status"`/`aria-live` on a message, box, or overlay you render conditionally.** A live region inserted into the DOM with its text already in it is dropped by screen readers (VoiceOver especially), so it's silent — and nothing fails, no test goes red. Every announcement goes through the one always-mounted announcer in `src/utils/liveAnnouncer.js`: `StatusMessage`/`LoadingOverlay` do it for you; for an outcome with nothing visible to show, call `announce(text)` directly. The doc explains the mechanism, `nonce`, `announce={false}` for focus-moved messages, and how to test it (`test/liveAnnouncer.js`'s `waitForAnnouncement`, not `findByRole('alert')`).
 
-**Never show a raw `err.message`/`error.message` directly to the user.** It's the literal,
-untranslated text a JS `Error` or `fetch()` rejection happened to carry (`"Failed to fetch"`,
-a driver's internal message, etc.) — always English regardless of the user's language, and
-often irrelevant or confusing to show verbatim. `err.message || t('some.fallback')` doesn't
-protect against this: `.message` is essentially always truthy on a real `Error`, so the
-translated fallback can never actually fire. Two established alternatives, depending on
-whether the raw detail is worth keeping:
-
-1. **A stable backend `code`, not free text.** Have the backend return a small, fixed `code`
-   field and map that through a local object to a `t()` key client-side — use the shared
-   `resolveErrorMessage()` helper (`src/utils/errorCodeMessage.js`) rather than hand-rolling
-   the map/lookup per call site (see `ResetCompletePage.js`).
-2. **Wrap the raw detail in `<code lang="en">`.** If the raw detail itself is genuinely useful
-   to show (admin/diagnostic tooling especially — a fetch failure, an export error), split the
-   translated template around the placeholder and wrap only that portion, e.g.
-   `<>{prefix}<code lang="en">{error.message}</code>{suffix}</>` — see `DeleteChatSection.js`'s
-   `resolveLook()`. `<code>` (not `<span>`) both gets the correct `lang="en"` pronunciation for
-   AT *and* the existing global `code { font-family: monospace... }` style for sighted users,
-   so raw/technical output reads as visually distinct from prose — free, no new CSS. On a page
-   with several of these (e.g. `DatabasePage.js`'s ~13 operations), pull the split/wrap and the
-   render into two small local helpers instead of repeating the shape per state — see
-   `DatabasePage.js`'s `buildErrorStatus`/`renderStatusMessage`.
-
-A `t()` string with a `{placeholder}` substituted via `.replace()`/interpolation (the pattern
-just above) is *not* equivalent to option 2: `t()` returns a plain string, which can't embed
-an HTML element, so the substituted text has no way to get `lang="en"` — and no code styling
-either — and stays unmarked regardless of how carefully the `.replace()` call itself is
-written.
-
 ## Admin page nav landmark
 
 Every admin/partner page's "back to admin" `<nav>` needs an `aria-label`, or screen-reader users navigating by landmark get an unlabeled region (and, on pages with more than one `<nav>`, indistinguishable ones):
@@ -285,11 +223,11 @@ Every admin/partner page's "back to admin" `<nav>` needs an `aria-label`, or scr
 </nav>
 ```
 
-This is currently copy-pasted onto every admin page rather than centralized into a shared nav/breadcrumb component — don't forget it when adding a new admin page, and feel free to fold it into a shared component if you're touching several of these at once.
+This is copy-pasted onto every admin page rather than centralized — don't forget it on a new admin page.
 
 ## UI architecture and folders
 
-For UI work, follow the layered pattern below so data flow and responsibilities stay clear:
+For UI work, follow the layered pattern:
 
 1. **Service ->** API calls and raw response handling (`fetch`, endpoint URLs, request/response shape)
 2. **Hook ->** stateful UI logic that consumes services (`loading`, `error`, refresh, memoized derived state)
