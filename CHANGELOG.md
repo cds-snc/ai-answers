@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.193.1](https://github.com/cds-snc/ai-answers/compare/v1.193.0...v1.193.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* route all admin screen-reader announcements through one site-wide live… ([b229601](https://github.com/cds-snc/ai-answers/commit/b229601e5c85a9f61e30882ae981b9c367744729))
+
+
+### Documentation
+
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([a5a2170](https://github.com/cds-snc/ai-answers/commit/a5a2170076878571ed5e58632ce51d54ab8de1a8))
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([e8bf79e](https://github.com/cds-snc/ai-answers/commit/e8bf79e67511b4812e587a0c17eda5389c42e02f))
+* trim dashboards.md, rewrite tables.md for the shared table design ([1d22b81](https://github.com/cds-snc/ai-answers/commit/1d22b811b737f3580b4b4c2ec35974baf3c4451e))
+* trim dashboards.md, rewrite tables.md for the shared table design ([b0869ce](https://github.com/cds-snc/ai-answers/commit/b0869ced4a748239c8c124f09762db21ce543ae1))
+* trim design-system.md to rules ([0e2dfb3](https://github.com/cds-snc/ai-answers/commit/0e2dfb3a8f29056dc4bd151917096936635123d6))
+* trim design-system.md to rules ([ae070e1](https://github.com/cds-snc/ai-answers/commit/ae070e175c31d28a8198e34ce73505c68f4bb9d2))
+* trim status-and-error-messaging.md to rules and reference points ([bb8dd0b](https://github.com/cds-snc/ai-answers/commit/bb8dd0b0d38bec174dd34ff36b8d38e4d6a11082))
+* trim status-and-error-messaging.md to rules and reference points ([84d9600](https://github.com/cds-snc/ai-answers/commit/84d960062d98c043fed422e3e596e20e8e7f14bb))
+
 ## [1.193.0](https://github.com/cds-snc/ai-answers/compare/v1.192.1...v1.193.0) (2026-08-28)
 
 
