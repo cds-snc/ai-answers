@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.193.0](https://github.com/cds-snc/ai-answers/compare/v1.192.1...v1.193.0) (2026-08-28)
+
+
+### Features
+
+* more reliable dashboard tables readable by screen readers, AutoEval o… ([2a1786f](https://github.com/cds-snc/ai-answers/commit/2a1786f69631e916fe7ba088957efe76fa442c70))
+* more reliable screen-reader reading of grouped dashboard tables, AutoEval on the grouped table, GC DS-style table controls ([8296784](https://github.com/cds-snc/ai-answers/commit/82967840e9670c4bb1800d6f60cbdbd4c23501e9))
+
 ## [1.192.1](https://github.com/cds-snc/ai-answers/compare/v1.192.0...v1.192.1) (2026-08-27)
 
 
