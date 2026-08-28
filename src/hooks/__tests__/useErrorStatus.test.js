@@ -71,15 +71,14 @@ describe('useErrorStatus', () => {
 
   describe('renderStatusMessage', () => {
     it('renders a null status as nothing', () => {
-      render(<Host status={null} />);
-      expect(screen.queryByRole('status')).toBeNull();
-      expect(screen.queryByRole('alert')).toBeNull();
+      const { container } = render(<Host status={null} />);
+      expect(container.querySelector('[class*="status-message--"]')).toBeNull();
     });
 
     it('renders a {text, isError:false} status as plain text with the default success variant', () => {
       render(<Host status={{ text: 'Done.', isError: false }} />);
 
-      const el = screen.getByRole('status');
+      const el = screen.getByText('Done.');
       expect(el.className).toContain('status-message--success-box');
       expect(el.textContent).toContain('Done.');
     });
@@ -91,7 +90,7 @@ describe('useErrorStatus', () => {
       // rather than the 'success' default every other caller gets.
       render(<Host status={{ text: 'Settings cache refreshed.', isError: false }} successVariant="info" />);
 
-      const el = screen.getByRole('status');
+      const el = screen.getByText('Settings cache refreshed.');
       expect(el.className).toContain('status-message--info-box');
       expect(el.className).not.toContain('status-message--success-box');
     });
@@ -99,8 +98,8 @@ describe('useErrorStatus', () => {
     it('renders a buildErrorStatus-shaped status as prefix + <code lang="en">{detail}</code> + suffix with the error variant', () => {
       render(<Host status={{ prefix: 'Export failed: ', suffix: '.', detail: 'disk full', isError: true }} />);
 
-      const el = screen.getByRole('alert');
-      expect(el.className).toContain('status-message--error-box');
+      const el = document.querySelector('.status-message--error-box');
+      expect(el).toBeTruthy();
       expect(el.textContent).toBe('Export failed: disk full.');
 
       const raw = el.querySelector('code[lang="en"]');

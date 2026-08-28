@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, MODEL_VALUES } from '../../config/workflows.js';
-import StatusMessage, { useSrAnnouncer } from '../admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../admin/StatusMessage.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { isWellFormedHttpUrl } from '../../utils/chat/referringUrl.js';
@@ -42,11 +42,8 @@ const ChatOptions = ({
   // <select> already shows its own new value). Was sr-only; the
   // aria-disabled toggle on the buttons alone read as nothing-happened/
   // frozen with no visible feedback. nonce (bumped by announce()) forces
-  // re-announcement even when the same text fires twice in a row (React
-  // bails on an identical string update) — useSrAnnouncer's naming is a
-  // holdover from its original sr-only use; the message/nonce bookkeeping
-  // itself isn't sr-only-specific.
-  const { message: successMessage, nonce: successNonce, announce: announceRaw, clear: clearSuccessMessage } = useSrAnnouncer();
+  // re-announcement even when the same text fires twice in a row.
+  const { message: successMessage, nonce: successNonce, announce: announceRaw, clear: clearSuccessMessage } = useRepeatableStatus();
   const announce = (key) => announceRaw(safeT(key));
 
   // Last value we told the parent to apply. Distinguishes an external
@@ -292,11 +289,9 @@ const ChatOptions = ({
             {/* Was sr-only — the only feedback Apply/Clear gave was the
                 button's own aria-disabled toggle, easy to read as
                 nothing-happened/frozen with no visible confirmation. Now a
-                real visible success box; still persistent+nonce so a repeat
-                Apply of the identical URL re-announces instead of React
-                bailing on the unchanged string. */}
+                real visible success box; nonce so a repeat Apply of the
+                identical URL re-announces. */}
             <StatusMessage
-              persistent
               variant="success"
               message={successMessage}
               nonce={successNonce}

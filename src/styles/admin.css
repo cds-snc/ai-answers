@@ -2731,6 +2731,26 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   font-family: 'Noto Sans', sans-serif;
 }
 
+/* The pills themselves are a real list (one <li> per applied filter,
+   removable or fixed) so a screen reader gets "list, N items" and
+   item-by-item navigation; the <ul> lays out exactly like the row it
+   sits in. role="list" is set on the <ul> in markup because VoiceOver
+   drops list semantics from a list-style: none list otherwise. */
+.filter-pills-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.filter-pills-list > li {
+  display: inline-flex;
+}
+
 /* Exec dashboard pills align with the bordered filter box content */
 .filter-bar-wrapper .filter-bar__pills-row {
   padding-left: var(--gcds-spacing-250);

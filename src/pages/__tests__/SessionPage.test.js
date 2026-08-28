@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SessionPage from '../SessionPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -66,8 +67,7 @@ describe('SessionPage StatusMessage roles', () => {
 
     renderWithRouter(<SessionPage lang="en" />);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('admin.session.errorGeneric');
+    await waitForAnnouncement('admin.session.errorGeneric', 'assertive');
   });
 
   it('announces the loading state as role="status" with the loading spinner box', async () => {
@@ -77,7 +77,7 @@ describe('SessionPage StatusMessage roles', () => {
     renderWithRouter(<SessionPage lang="en" />);
 
     await waitFor(() => {
-      const status = screen.getByText('admin.filters.loading').closest('[role="status"]');
+      const status = screen.getByText('admin.filters.loading', { selector: '[class*="status-message--"]' });
       expect(status).toBeTruthy();
       expect(status.className).toContain('status-message--loading');
     });

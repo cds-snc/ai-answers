@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DeleteExpertEval from '../DeleteExpertEval.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.deleteExpertEval.title': 'Delete an expert evaluation',
@@ -99,14 +100,10 @@ describe('DeleteExpertEval error/success announcements', () => {
     render(<DeleteExpertEval lang="en" />);
     startDelete();
 
-    // The status region is now persistently mounted (see StatusMessage's
-    // `persistent` prop / this PR's a11y fix), so findByRole('status') would
-    // resolve to the still-empty region before the delete result lands —
-    // wait for the actual text instead.
     const status = await screen.findByText(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}.`);
-    expect(status.closest('[role="status"]')).not.toBeNull();
     expect(status.closest('.status-message--success-box')).not.toBeNull();
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitForAnnouncement(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}.`);
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
     expect(screen.queryByText('Deleted 1 expert feedback(s) for chat abc123')).toBeNull();
   });
 
@@ -118,10 +115,10 @@ describe('DeleteExpertEval error/success announcements', () => {
     render(<DeleteExpertEval lang="en" />);
     startDelete();
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Failed to delete expert evaluation: Not evaluated.');
+    await waitForAnnouncement('Failed to delete expert evaluation: Not evaluated.', 'assertive', { exact: true });
     // "Not evaluated" is a known translated reason, not raw exception text —
     // shouldn't get the lang="en" pronunciation wrapper.
+    const alert = document.querySelector('.status-message--error-box');
     expect(alert.querySelector('code[lang="en"]')).toBeNull();
   });
 
@@ -139,10 +136,9 @@ describe('DeleteExpertEval error/success announcements', () => {
     render(<DeleteExpertEval lang="fr" />);
     startDelete();
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Failed to delete expert evaluation: Chat not found');
+    await waitForAnnouncement('Failed to delete expert evaluation: Chat not found', 'assertive', { exact: true });
 
-    const enSpan = alert.querySelector('code[lang="en"]');
+    const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Chat not found');
   });
@@ -155,9 +151,8 @@ describe('DeleteExpertEval error/success announcements', () => {
     render(<DeleteExpertEval lang="fr" />);
     startDelete();
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Failed to delete expert evaluation: Failed to fetch');
-    expect(alert.querySelector('code[lang="en"]')).toBeTruthy();
+    await waitForAnnouncement('Failed to delete expert evaluation: Failed to fetch', 'assertive', { exact: true });
+    expect(document.querySelector('.status-message--error-box code[lang="en"]')).toBeTruthy();
   });
 
   it('clears a stale result message as soon as the admin edits the chat ID again', async () => {
@@ -167,10 +162,10 @@ describe('DeleteExpertEval error/success announcements', () => {
 
     render(<DeleteExpertEval lang="en" />);
     startDelete();
-    await screen.findByRole('alert');
+    await waitFor(() => expect(document.querySelector('.status-message--error-box')).toBeTruthy());
 
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID.replace('a', 'b') } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('shows "not found" and skips the confirm dialog when the chat does not exist', async () => {
@@ -181,7 +176,7 @@ describe('DeleteExpertEval error/success announcements', () => {
     startDelete();
 
     await waitFor(() => {
-      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
+      expect(screen.getByText('admin.deleteExpertEval.notFound')).toBeTruthy();
     });
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteExpertEval).not.toHaveBeenCalled();
@@ -214,7 +209,7 @@ describe('DeleteExpertEval error/success announcements', () => {
     await waitFor(() => {
       expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
     });
-    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
+    expect(screen.queryByText('admin.deleteExpertEval.notFound')).toBeNull();
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteExpertEval).not.toHaveBeenCalled();
   });
@@ -225,7 +220,9 @@ describe('DeleteExpertEval error/success announcements', () => {
     render(<DeleteExpertEval lang="en" />);
     startDelete('not-a-real-id');
 
-    const alert = await screen.findByRole('alert');
+    // FeedbackInlineError is its own role="alert" (field-tied, not a
+    // StatusMessage) — the only one on the page here.
+    const alert = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(alert.textContent).toContain('admin.viewChat.invalidFormat');
     expect(mockGetChat).not.toHaveBeenCalled();
     expect(confirmSpy).not.toHaveBeenCalled();

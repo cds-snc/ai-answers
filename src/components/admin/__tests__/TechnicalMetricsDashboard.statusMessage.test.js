@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import TechnicalMetricsDashboard from '../TechnicalMetricsDashboard.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.common.fetchError': 'Failed to load data: {message}',
@@ -60,11 +61,11 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
 
     render(<TechnicalMetricsDashboard lang="en" />);
 
-    const alerts = await screen.findAllByRole('alert');
-    expect(alerts.length).toBeGreaterThan(0);
-    expect(alerts[0].textContent).toBe('Failed to load data: boom');
+    await waitForAnnouncement('Failed to load data: boom', 'assertive', { exact: true });
+    const box = document.querySelector('.status-message--error-box');
+    expect(box.textContent).toBe('Failed to load data: boom');
 
-    const enSpan = alerts[0].querySelector('code[lang="en"]');
+    const enSpan = box.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('boom');
   });
@@ -77,7 +78,7 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
 
     render(<TechnicalMetricsDashboard lang="en" />);
 
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('suppresses all tables and shows only the info banner on a genuinely empty period', () => {
@@ -106,7 +107,7 @@ describe('TechnicalMetricsDashboard StatusMessage role', () => {
 
     render(<TechnicalMetricsDashboard lang="en" />);
 
-    expect(screen.queryAllByRole('alert').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.status-message--error-box').length).toBeGreaterThan(0);
     expect(screen.getByText('technicalMetrics.dashboard.responseTime.title')).toBeTruthy();
   });
 });

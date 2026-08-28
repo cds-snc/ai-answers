@@ -3,8 +3,9 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import PartnerDashboard from '../PartnerDashboard.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
 vi.mock('../../../hooks/useTranslations.js', () => ({
@@ -46,8 +47,7 @@ describe('PartnerDashboard StatusMessage role', () => {
 
     render(<PartnerDashboard lang="en" />);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('partnerDashboard.error');
+    await waitForAnnouncement('partnerDashboard.error', 'assertive');
   });
 
   it('shows no alert when there is no error', () => {
@@ -60,7 +60,7 @@ describe('PartnerDashboard StatusMessage role', () => {
 
     render(<PartnerDashboard lang="en" />);
 
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('shows the full-page loading-overlay while fetching (filter-driven fetch)', () => {

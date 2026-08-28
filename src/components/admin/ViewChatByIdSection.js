@@ -112,7 +112,7 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
             hrefForMatch={hrefForMatch}
           />
         </form>
-        <StatusMessage variant={status?.variant} message={status?.text} persistent />
+        <StatusMessage variant={status?.variant} message={status?.text} />
       </div>
     </details>
   );

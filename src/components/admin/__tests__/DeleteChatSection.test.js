@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DeleteChatSection from '../DeleteChatSection.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.deleteChat.success': '{chatId} deleted successfully.',
@@ -59,10 +60,9 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Failed to delete chat: Failed to fetch');
+    await waitForAnnouncement('Failed to delete chat: Failed to fetch', 'assertive', { exact: true });
 
-    const enSpan = alert.querySelector('code[lang="en"]');
+    const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Failed to fetch');
   });
@@ -81,8 +81,8 @@ describe('DeleteChatSection error/success announcements', () => {
     await waitFor(() => {
       expect(screen.getByText(expectedText)).toBeTruthy();
     });
-    expect(screen.getByText(expectedText).closest('[role="status"]')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText(expectedText, { selector: '[class*="status-message--"]' })).toBeTruthy();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('clears the stale message and the typed chat ID when the row is collapsed', async () => {
@@ -96,7 +96,7 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
     fireEvent.click(screen.getByText('Delete chat'));
     await waitFor(() => {
-      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
+      expect(screen.getByText('admin.deleteChat.notFound')).toBeTruthy();
     });
     expect(screen.getByLabelText('Chat ID').value).toBe(VALID_CHAT_ID);
 
@@ -104,7 +104,7 @@ describe('DeleteChatSection error/success announcements', () => {
     // the toggle event has to be dispatched directly.
     fireEvent(container.querySelector('details'), new Event('toggle'));
 
-    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
+    expect(screen.queryByText('admin.deleteChat.notFound')).toBeNull();
     expect(screen.getByLabelText('Chat ID').value).toBe('');
   });
 
@@ -118,7 +118,7 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.click(screen.getByText('Delete chat'));
 
     await waitFor(() => {
-      expect(screen.getByText('admin.common.chatNotFound')).toBeTruthy();
+      expect(screen.getByText('admin.deleteChat.notFound')).toBeTruthy();
     });
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteChat).not.toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('DeleteChatSection error/success announcements', () => {
     await waitFor(() => {
       expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
     });
-    expect(screen.queryByText('admin.common.chatNotFound')).toBeNull();
+    expect(screen.queryByText('admin.deleteChat.notFound')).toBeNull();
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(mockDeleteChat).not.toHaveBeenCalled();
   });
@@ -152,7 +152,9 @@ describe('DeleteChatSection error/success announcements', () => {
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: 'not-a-real-id' } });
     fireEvent.click(screen.getByText('Delete chat'));
 
-    const alert = await screen.findByRole('alert');
+    // FeedbackInlineError is its own role="alert" (field-tied, not a
+    // StatusMessage) — the only one on the page here.
+    const alert = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(alert.textContent).toContain('admin.viewChat.invalidFormat');
     expect(mockGetChat).not.toHaveBeenCalled();
     expect(confirmSpy).not.toHaveBeenCalled();

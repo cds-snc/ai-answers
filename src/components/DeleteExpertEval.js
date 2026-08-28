@@ -61,6 +61,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       idLabelKey="admin.deleteExpertEval.idLabel"
       buttonLabelKey="admin.deleteExpertEval.button"
       loadingLabelKey="admin.deleteExpertEval.loading"
+      notFoundMessageKey="admin.deleteExpertEval.notFound"
       fieldId="expertEvalChatId"
       onDelete={handleDelete}
       // The chat existing isn't this consumer's real precondition — it can

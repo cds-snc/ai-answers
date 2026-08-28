@@ -4,6 +4,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 import { MemoryRouter } from 'react-router-dom';
 import ScenarioOverridesPage from '../ScenarioOverridesPage.js';
 
@@ -135,7 +136,8 @@ describe('ScenarioOverridesPage', () => {
     // "TODO" in AGENTS.md — so this is the full-page overlay, not the
     // status.saving text (nothing is being saved here at all).
     const overlay = await screen.findByText('common.loading');
-    expect(overlay.closest('[role="status"]')).toBeTruthy();
+    expect(overlay.closest('.loading-overlay')).toBeTruthy();
+    await waitForAnnouncement('common.loading');
     expect(screen.queryByText('scenarioOverrides.status.saving')).toBeNull();
 
     resolveScenario({
@@ -171,13 +173,13 @@ describe('ScenarioOverridesPage', () => {
 
     fireEvent.click(checkbox);
     expect(checkbox.checked).toBe(false);
-    const errorNode = await screen.findByRole('alert');
+    const errorNode = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(errorNode.id).toBe('scenario-enabled-error');
     expect(checkbox.getAttribute('aria-describedby')).toBe('scenario-enabled-error');
 
     // Editing the text clears the error and allows checking it.
     fireEvent.change(textarea, { target: { value: 'Edited text' } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
     fireEvent.click(checkbox);
     expect(checkbox.checked).toBe(true);
   });
@@ -199,7 +201,7 @@ describe('ScenarioOverridesPage', () => {
     expect(checkbox.checked).toBe(true);
     fireEvent.click(checkbox);
     expect(checkbox.checked).toBe(false);
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   // Regression: only one department's override can be active at a time
@@ -387,9 +389,14 @@ describe('ScenarioOverridesPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'scenarioOverrides.buttons.save' }));
 
-    const errorNode = await screen.findByRole('alert');
-    expect(errorNode.id).toBe('scenario-save-status');
+    await waitFor(() => expect(document.getElementById('scenario-save-status')).toBeTruthy());
+    const errorNode = document.getElementById('scenario-save-status');
+    expect(errorNode.className).toContain('status-message--error-box');
     expect(textarea.getAttribute('aria-describedby')).toBe('scenario-save-status');
+    // The disabled Save button dropped focus; it's reclaimed onto the
+    // outcome once it renders. Focus reads the message, so it's deliberately
+    // not also announced (announce={false}) - that was a double read.
+    await waitFor(() => expect(document.activeElement).toBe(errorNode));
 
     // No test link on a failed save.
     expect(screen.queryByText('scenarioOverrides.testLink')).toBeNull();
@@ -466,7 +473,8 @@ describe('ScenarioOverridesPage', () => {
     // already disabled for the same duration and a second signal on the
     // (now-covered) button would just be redundant.
     const overlay = await screen.findByText('scenarioOverrides.status.saving');
-    expect(overlay.closest('[role="status"]')).toBeTruthy();
+    expect(overlay.closest('.loading-overlay')).toBeTruthy();
+    await waitForAnnouncement('scenarioOverrides.status.saving');
     expect(screen.getByRole('button', { name: 'scenarioOverrides.buttons.save' })).toBeTruthy();
 
     resolveSave({

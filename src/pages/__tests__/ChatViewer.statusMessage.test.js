@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ChatViewer from '../ChatViewer.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -61,8 +62,7 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
     fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('logging.refreshFailed');
+    await waitForAnnouncement('logging.refreshFailed', 'assertive');
   });
 
   it('announces a successful refresh as role="status", not role="alert"', async () => {
@@ -73,14 +73,14 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
     fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
-    await waitFor(() => {
-      expect(screen.getByText('logging.refreshComplete')).toBeTruthy();
-    });
-    expect(screen.getByText('logging.refreshComplete').closest('[role="status"]')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    // An initial search's success is announce-only (the table filling in
+    // already shows it) — see ChatViewer.stagedReveal.test.js for the
+    // visible box a Refresh results click gets.
+    await waitForAnnouncement('logging.refreshComplete');
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
-  it('re-announces a second consecutive identical refresh failure (nonce forces a remount, not just a value check)', async () => {
+  it('announces a second consecutive identical refresh failure too (nonce, see useAnnounceOnChange.test.js for the re-announce mechanism)', async () => {
     mockRefreshLogs.mockResolvedValue({ logs: [], error: 'fetch failed' });
 
     render(<ChatViewer lang="en" />);
@@ -88,20 +88,16 @@ describe('ChatViewer refresh-logs StatusMessage roles', () => {
     fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_ID } });
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
-    const firstAlert = await screen.findByRole('alert');
-    expect(firstAlert.textContent).toContain('logging.refreshFailed');
+    await waitForAnnouncement('logging.refreshFailed', 'assertive');
 
     // Same chatId re-submitted (the only refresh mechanism) - identical
-    // failure outcome. Without a nonce, setting the exact same message
-    // string again is a no-op React bails on: same DOM node, no mutation,
-    // nothing for a screen reader to pick up. The fix forces a fresh
-    // element (a different node identity) so the live region actually
-    // mutates and gets announced again.
+    // failure outcome. Without a nonce, the exact same message text is
+    // not a change, so nothing would be re-announced; the nonce bump is
+    // what makes the second failure audible.
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
 
     await waitFor(() => expect(mockRefreshLogs).toHaveBeenCalledTimes(2));
-    const secondAlert = await screen.findByRole('alert');
-    expect(secondAlert.textContent).toContain('logging.refreshFailed');
-    expect(secondAlert).not.toBe(firstAlert);
+    await waitForAnnouncement('logging.refreshFailed', 'assertive');
+    expect(document.querySelector('.status-message--error-box').textContent).toContain('logging.refreshFailed');
   });
 });

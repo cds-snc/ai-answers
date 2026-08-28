@@ -1048,8 +1048,11 @@ const FilterPanel = ({
     pendingPillFocusIndexRef.current = null;
     const row = pillsRowRef.current;
     if (!row) return;
-    const target = (idx < pills.length ? row.children[idx] : null) || row.children[Math.max(0, idx - 1)];
-    target?.focus();
+    // The pills are <li>s inside the row's <ul>; the focusable element is
+    // the <li>'s single child (a pill button, or a tabIndex={-1} info span).
+    const items = row.querySelectorAll('.filter-pills-list > li');
+    const slot = (idx < pills.length ? items[idx] : null) || items[Math.max(0, idx - 1)];
+    slot?.firstElementChild?.focus();
   }, [appliedFilters]);
 
   if (!isVisible) return null;
@@ -1060,8 +1063,14 @@ const FilterPanel = ({
       <summary className="filter-panel-summary" ref={panelSummaryRef}>
         <SlidersHorizontal className="filter-panel-summary__icon" aria-hidden="true" />
         {t('admin.filters.title')}
+        {/* The badge is decorative for AT; the sr-only phrase says what the
+            number means ("Filters, Applied filters: 4"). aria-label on a
+            <span> isn't reliably exposed, so hidden text instead. */}
         {appliedFilters && pills.length > 0 && (
-          <span className="filter-panel-summary__count">{pills.length}</span>
+          <>
+            <span className="filter-panel-summary__count" aria-hidden="true">{pills.length}</span>
+            <span className="sr-only">{t('admin.filters.appliedCount').replace('{count}', () => pills.length)}</span>
+          </>
         )}
       </summary>
       <div className="filter-panel-content">
@@ -1187,7 +1196,12 @@ const FilterPanel = ({
             <details className="filter-checkbox-details details-form" open onToggle={(e) => e.stopPropagation()}>
               <summary className="filter-label">
                 {t('admin.filters.answerType') || 'Answer Type'}
-                {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
+                {answerType.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({answerType.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => answerType.length)}</span>
+                  </>
+                )}
               </summary>
               <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.answerType')}>
                 <div className="checkbox">
@@ -1211,7 +1225,12 @@ const FilterPanel = ({
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
                     {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                    {partnerEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({partnerEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => partnerEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.partnerEval')}>
                     <div className="checkbox">
@@ -1230,7 +1249,12 @@ const FilterPanel = ({
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
                     {t('admin.filters.aiEval') || 'AI Evaluation'}
-                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                    {aiEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({aiEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => aiEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.aiEval')}>
                     <div className="checkbox">
@@ -1276,15 +1300,24 @@ const FilterPanel = ({
     </details>
 
     {pills.length > 0 && (
-      <div className="filter-bar__pills-row" ref={pillsRowRef}>
+      // role="group" + name: what the row is (the applied filters) and what
+      // the pills do (remove one to change the results). Without it a
+      // screen reader arriving on the first pill just hears "Remove filter
+      // - Last 30 days, button".
+      <div className="filter-bar__pills-row" ref={pillsRowRef} role="group" aria-label={t('admin.filters.appliedFiltersGroup')}>
+        {/* A real list, fixed and removable pills alike: fixed ones are
+            plain text (not in the tab order), so list navigation is the
+            only way a screen-reader user reads the whole applied set and
+            gets its count. role="list" explicitly - see .filter-pills-list. */}
+        <ul className="filter-pills-list" role="list">
         {pills.map((pill, index) => (
-          pill.connector || pill.info ? (
+          <li key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}>
+          {pill.connector || pill.info ? (
             // tabIndex={-1}: not in the tab order (it's not interactive),
             // but still a valid target for the removeFilter effect above to
             // land on programmatically when this info pill is what now
             // occupies a just-cleared pill's old slot.
             <span
-              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
               className={`filter-pill${pill.connector ? ' filter-pill--connector' : ' filter-pill--info'}`}
               tabIndex={-1}
             >
@@ -1299,7 +1332,6 @@ const FilterPanel = ({
             // button - a button inside a button is invalid HTML anyway),
             // carried entirely by this button's own aria-label.
             <button
-              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
               type="button"
               className="filter-pill filter-pill--closable"
               onClick={() => {
@@ -1315,13 +1347,17 @@ const FilterPanel = ({
                 }
                 removeFilter(pill.key, pill.value);
               }}
-              aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
+              // Value first, action second: someone reading the row to
+              // learn what's applied hears the filter before "remove".
+              aria-label={`${pill.label} - ${t('dashboardFilter.removeFilter')}`}
             >
               {pill.label}
               <span className="filter-pill__close" aria-hidden="true">×</span>
             </button>
-          )
+          )}
+          </li>
         ))}
+        </ul>
         {pills.some(p => !p.info) && (
           <button
             type="button"

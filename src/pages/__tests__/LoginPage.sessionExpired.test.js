@@ -58,12 +58,12 @@ describe('LoginPage session expired notice', () => {
   it('shows a warning when redirected after a session check fails', () => {
     render(<LoginPage lang="en" />);
 
-    // role="status"/aria-live="polite" - was GcdsNotice, which renders no
-    // role/aria-live at all (see status-and-error-messaging.md), so a
-    // screen reader got no announcement here before this fix.
-    const notice = screen.getByRole('status');
+    // A StatusMessage warning box - was GcdsNotice, which had no
+    // accessibility wiring at all (see status-and-error-messaging.md).
+    // Focus is moved onto it on mount (next test), which reads it, so it's
+    // deliberately not also live-announced (announce={false}).
+    const notice = screen.getByText('Session expired').closest('.status-message--warning-box');
     expect(notice).toBeTruthy();
-    expect(notice.getAttribute('aria-live')).toBe('polite');
     expect(notice.textContent).toContain('Session expired');
     expect(notice.textContent).toContain('Your session has expired. Please sign in again to continue.');
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
@@ -72,13 +72,14 @@ describe('LoginPage session expired notice', () => {
   it('moves focus to the notice on mount, since there is no prior interaction to anchor to', () => {
     render(<LoginPage lang="en" />);
 
-    const notice = screen.getByRole('status');
+    const notice = screen.getByText('Session expired').closest('.status-message--warning-box');
     expect(notice.getAttribute('tabindex')).toBe('-1');
     expect(document.activeElement).toBe(notice);
   });
 
   it('allows valid credentials to log in while the expiry reason is present', async () => {
     mockLogin.mockResolvedValue({ defaultRoute: '/en/admin' });
+    const replaceState = vi.spyOn(window.history, 'replaceState');
     render(<LoginPage lang="en" />);
 
     fireEvent.change(screen.getByRole('textbox', { name: 'login.email' }), { target: { value: 'admin@example.com' } });
@@ -87,13 +88,18 @@ describe('LoginPage session expired notice', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('admin@example.com', 'correct-password');
-      expect(mockNavigate).toHaveBeenCalledWith('/en/signin', { replace: true });
-      // skipRouteFocus: a fresh sign-in should just load its landing page
-      // normally rather than force focus into its heading - see App.js's
-      // own comment on `skipRouteFocus` for why this is scoped to the
-      // navigation action (state) rather than to whatever route
-      // getDefaultRouteForRole happens to send it to.
-      expect(mockNavigate).toHaveBeenCalledWith('/en/admin', { state: { skipRouteFocus: true } });
+      // The only navigation is to the landing page. The expiry marker is
+      // cleaned with history.replaceState, not navigate(): a router
+      // navigation mid-submit would move focus to <main> and announce
+      // "Sign in" before the user has landed anywhere.
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).toHaveBeenCalledWith('/en/admin');
     });
+    expect(mockNavigate).not.toHaveBeenCalledWith('/en/signin', expect.anything());
+    // Marker gone from the URL, notice gone from the page.
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(replaceState.mock.calls[0].slice(1)).toEqual(['', '/en/signin']);
+    replaceState.mockRestore();
+    expect(screen.queryByText('login.sessionExpired.title')).toBeNull();
   });
 });

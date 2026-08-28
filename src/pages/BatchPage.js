@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
-import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce as announceSuccessRaw } from '../utils/liveAnnouncer.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import ExportService from '../services/ExportService.js';
@@ -47,7 +48,6 @@ const BatchPage = ({ lang = 'en' }) => {
   const namedOrGeneric = (namedKey, genericKey, name) =>
     name ? t(namedKey).replace('{name}', () => name) : t(genericKey);
 
-  const { message: successAnnouncement, nonce: successNonce, announce: announceSuccessRaw } = useSrAnnouncer();
   // `section` is optional only because a couple of hypothetical future
   // callers might not have one - every actual call site below always
   // passes it, since every success here is scoped to one of the two
@@ -197,13 +197,6 @@ const BatchPage = ({ lang = 'en' }) => {
           {t('common.backToAdmin')}
         </GcdsLink>
       </nav>
-
-      <StatusMessage
-        persistent
-        nonce={successNonce}
-        message={successAnnouncement || undefined}
-        className="sr-only"
-      />
 
       <section id="evaluator" className="mb-200">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>

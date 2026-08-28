@@ -6,6 +6,7 @@ import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.js';
@@ -18,6 +19,8 @@ import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import { escapeHtmlAttribute } from '../utils/reviewLink.js';
 import { formatLocaleDate } from '../utils/formatLocaleDate.js';
+
+const UNSAVED_WARNING_ANNOUNCE_DELAY_MS = 4000;
 
 // Same truncate-behind-a-disclosure treatment as the React SettingsAuditValue
 // component (previousValue/newValue can be as long as SettingsAuditService's
@@ -321,7 +324,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   // re-focus/re-announce on a second failed attempt (see useFocusOnChange).
   const [sectionErrorAttempt, setSectionErrorAttempt] = useState({});
   // Bumped on every save attempt (success or failure) for a section, so
-  // SectionSaveControls' persistent StatusMessage re-announces even when the
+  // SectionSaveControls' StatusMessage re-announces even when the
   // outcome text is identical to the previous attempt (e.g. two saves in a
   // row that both succeed, or a retry that hits the same error).
   const [sectionSaveNonce, setSectionSaveNonce] = useState({});
@@ -594,6 +597,17 @@ const SettingsPage = ({ lang = 'en' }) => {
     .filter((section) => isSectionDirty(section))
     .map((section) => t(SECTION_TITLE_KEYS[section]))
     .join(', ');
+  const unsavedWarning = dirtySectionNames
+    ? t('settings.unsavedChangesIn').replace('{sections}', () => dirtySectionNames)
+    : undefined;
+  // Announced only if still unsaved a few seconds after it appears —
+  // announcing on the first keystroke talks over the field being typed in.
+  // Re-arms whenever the set of dirty sections changes.
+  useEffect(() => {
+    if (!unsavedWarning) return undefined;
+    const timer = setTimeout(() => announce(unsavedWarning), UNSAVED_WARNING_ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [unsavedWarning]);
 
   return (
     <GcdsContainer layout="page" className="mb-600 filter-fields-full-size">
@@ -617,21 +631,14 @@ const SettingsPage = ({ lang = 'en' }) => {
           which sections are collapsed, and names which section(s) so it's
           useful even when several are dirty at once. Gives advance notice
           before the beforeunload prompt would. */}
-      {/* TODO: this page's `persistent` StatusMessage usages (here, and the
-          audit-loading/empty message + "Showing X of Y" count below) were
-          written against StatusMessage.js as it stood mid-merge, in parallel
-          with main's own separate a11y pass over admin StatusMessage usage
-          ("close StatusMessage/aria gaps in admin utility pages"). Now that
-          both are merged, revisit whether `persistent`'s empty-node/
-          `status-message--empty` handling still matches whatever convention
-          main settled on for other admin pages' status messages, once this
-          PR and any follow-up review are wrapped up — don't assume the two
-          efforts landed on the same pattern just because they merged cleanly. */}
+      {/* announce={false} + the delayed announce() above: this appears on
+          the first keystroke, and announcing it right then talks over the
+          field being typed in, so it's easy to miss. It's announced only if
+          still unsaved a few seconds later. */}
       <StatusMessage
-        persistent
-        tag="div"
-        variant={dirtySectionNames ? 'warning' : undefined}
-        message={dirtySectionNames ? t('settings.unsavedChangesIn').replace('{sections}', () => dirtySectionNames) : undefined}
+        variant={unsavedWarning ? 'warning' : undefined}
+        message={unsavedWarning}
+        announce={false}
         className="mb-400"
       />
       <details>
@@ -1525,7 +1532,6 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
         {saving ? t('settings.saving') : `${t('settings.save')} ${t(titleKey)}`}
       </GcdsButton>
       <StatusMessage
-        persistent
         variant={status ? (status.isError ? 'error' : 'success') : undefined}
         message={status?.text}
         nonce={saveNonce}

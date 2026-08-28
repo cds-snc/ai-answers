@@ -11,6 +11,7 @@ import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -21,7 +22,11 @@ const LoginPage = ({ lang = 'en' }) => {
   const [password, setPassword] = useState('');
   const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
-  const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
+  // Seeded from the URL marker, then owned locally: handleSubmit clears it
+  // (and the marker) without a router navigation — see there.
+  const [sessionExpired, setSessionExpired] = useState(
+    () => new URLSearchParams(location.search).get('reason') === 'session-expired'
+  );
   // Unlike App.js's session-warning box (ambient, no focus-move needed),
   // this is a one-time mount-time message explaining a redirect the user
   // didn't initiate — same category ResetCompletePage.js's invalid-reset-
@@ -44,12 +49,22 @@ const LoginPage = ({ lang = 'en' }) => {
     // login attempt that passes validation, remove it so it cannot persist
     // into a new session.
     if (sessionExpired) {
-      // TODO(a11y): this is a route change, so useRouteChangeFocus moves
-      // focus to <main> mid-submit. Known, unfixed (PR #1765 review). Fix:
-      // history.replaceState instead of navigate(), or a one-shot skip.
-      navigate(location.pathname, { replace: true });
+      // history.replaceState, not navigate(): a router navigation gets a
+      // fresh location.key, so useRouteChangeFocus would move focus to
+      // <main> and usePageMetadata would announce "Sign in" mid-submit.
+      // The URL is cleaned so the marker can't survive a reload; the notice
+      // is local state, so it can go too. Safe to unmount: it only ever
+      // holds focus on mount, and focus is on the submit button by now.
+      window.history.replaceState(window.history.state, '', location.pathname);
+      setSessionExpired(false);
     }
     setIsLoading(true);
+    // The submit button disables itself while signing in, which drops
+    // focus to <body> — its own "Signing in..." label change is never
+    // heard. Announce it, so there's a signal between the click and the
+    // landing page (same as any other loading state — skippable, so a fast
+    // sign-in reads just the landing page's title).
+    announce(t('login.form.submitting'), { skippable: true });
     try {
       const data = await login(trimmedEmail, password);
       // If backend requires two-step verification, backend already sent the email; prompt for code
@@ -58,15 +73,11 @@ const LoginPage = ({ lang = 'en' }) => {
         return;
       }
       const defaultRoute = data?.defaultRoute || '/';
-      // skipRouteFocus: leaves focus alone for this navigation - a fresh
-      // sign-in should load normally, not force focus into its heading.
-      // Scoped to the navigation action (location.state), not the
-      // destination route, since getDefaultRouteForRole's target varies by
-      // role and isn't itself the reason to skip.
-      // TODO(a11y): state sticks to the history entry, so Back to this
-      // page also skips focus-to-main. Known, unfixed (PR #1765 review).
-      // Fix: one-shot flag the hook clears on the next route change.
-      navigate(defaultRoute, { state: { skipRouteFocus: true } });
+      // A plain navigate(): the landing page gets the same focus-to-<main>
+      // treatment as every other client-side route change
+      // (useRouteChangeFocus). Skipping it left a screen-reader user parked
+      // wherever the old page's cursor was, with nothing read.
+      navigate(defaultRoute);
     } catch (err) {
       setError(t('login.invalidCredentials'), ['email', 'password']);
     } finally {
@@ -87,8 +98,8 @@ const LoginPage = ({ lang = 'en' }) => {
   // The credentials form (and whatever had focus in it) unmounts when the
   // 2FA view mounts in its place, so focus would otherwise revert to <body>
   // with no signal to AT users that the view changed. Move focus onto the
-  // new view's intro text — role="status" also announces it as a live
-  // region, matching FeedbackComponent's thank-you-message pattern.
+  // new view's intro text — focus reads it, so it's deliberately not also
+  // a live region (same as FeedbackComponent's thank-you message).
   // NOTE: showTwoStep stays `true` across a resend (requestTwoStep calls
   // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
   // don't rely on it to announce resend-specific feedback.
@@ -97,6 +108,8 @@ const LoginPage = ({ lang = 'en' }) => {
   const verifyTwoStep = async () => {
     setIsLoading(true);
     clearTwoStepError();
+    // Same reasoning as handleSubmit's announce().
+    announce(t('login.form.submitting'), { skippable: true });
     try {
       // backend method remains verify2FA
       const data = await AuthService.verify2FA(email, code);
@@ -109,8 +122,7 @@ const LoginPage = ({ lang = 'en' }) => {
         defaultRoute = getDefaultRouteForRole(data.user.role, lang);
       }
       if (!defaultRoute) defaultRoute = '/';
-      // See the other navigate() call above for why skipRouteFocus is set.
-      navigate(defaultRoute, { state: { skipRouteFocus: true } });
+      navigate(defaultRoute);
     } catch (err) {
       setTwoStepError(t('login.2fa.invalidCode'));
     } finally {
@@ -148,6 +160,7 @@ const LoginPage = ({ lang = 'en' }) => {
           className="mb-400"
           ref={sessionExpiredRef}
           tabIndex={-1}
+          announce={false}
         >
           <p><strong>{t('login.sessionExpired.title')}</strong></p>
           <p>{t('login.sessionExpired.message')}</p>
@@ -157,7 +170,7 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div>
-          <p role="status" tabIndex={-1} ref={twoStepIntroRef}>
+          <p tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
           {twoStepError && (

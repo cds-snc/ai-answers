@@ -13,6 +13,7 @@ import LoadingOverlay from './LoadingOverlay.js';
 import SectionLoadingIndicator from './SectionLoadingIndicator.js';
 import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
 import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 
 DataTable.use(DT);
@@ -113,14 +114,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   // fetchSection's own finally (runs for every section either way).
   const [hasAnySectionSettled, setHasAnySectionSettled] = useState(false);
 
-  // sr-only announcement of the Institution breakdown table's own search box
+  // Announcement of the Institution breakdown table's own search box
   // narrowing (SC 4.1.3) — shared with ChatDashboardPage.js. Also reused
-  // below (announce()) for the one "metrics loaded" completion message, same
-  // shared-persistent-region pattern as ChatDashboardPage.js's Clear-all.
-  const { searchAnnouncement, searchAnnounceNonce, noteSearchResult, announce } = useSearchAnnouncement({ t, fmtN });
-  // Guards the completion announcement to fire once per fetch cycle, not on
-  // every render where allSettled happens to still be true.
-  const announcedCompletionRef = useRef(false);
+  const { noteSearchResult } = useSearchAnnouncement({ t, fmtN });
 
   const updateLoading = useCallback((key, isLoading) => {
     setLoadingState(prev => ({ ...prev, [key]: isLoading }));
@@ -141,7 +137,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     const f = filters || getDefaultDateRange();
     setHasStartedLoading(true);
     setHasAnySectionSettled(false);
-    announcedCompletionRef.current = false;
 
     // Clear errors but keep stale data visible during loading (no flash)
     setErrorState({
@@ -193,17 +188,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     };
   }, []);
 
-  // One "metrics loaded" sr-only announcement once every section has
-  // settled — the counterpart to the LoadingOverlay shown until the first
-  // one does (see render below). announcedCompletionRef prevents firing
-  // again on a later re-render where allSettled is still true.
+  // The one completion announcement every dashboard makes ("Results
+  // loaded.", nothing on zero) once every section has settled — the
+  // counterpart to the LoadingOverlay shown until the first one does (see
+  // render below).
   const allSettled = hasStartedLoading && !Object.values(loadingState).some(Boolean);
-  useEffect(() => {
-    if (allSettled && !announcedCompletionRef.current) {
-      announcedCompletionRef.current = true;
-      announce(t('metrics.dashboard.loadedAnnouncement'));
-    }
-  }, [allSettled, announce, t]);
+  useResultsLoadedAnnouncement({
+    loading: hasStartedLoading && !allSettled,
+    count: metrics.totalQuestions,
+    // Any section failing shows its own error box; "Results loaded." on
+    // top of that would contradict it.
+    error: Object.values(errorState).some(Boolean),
+    t,
+  });
 
   const handleApplyFilters = (filters) => {
     fetchMetrics(filters);
@@ -317,13 +314,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Always mounted (not inside the loading-gated blocks below) so it's
-          a pre-existing empty live region — required for `persistent` to
-          work at all (see StatusMessage.js's own comment) — before either
-          the completion announcement or the Institution breakdown table's
-          own search-narrowing announcement can ever fire into it. */}
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
-
       {/* Blocks the whole results area until the first of the 6 sections
           settles (success or error) — same LoadingOverlay pattern as
           ChatDashboardPage.js/EvalDashboardPage.js's single-fetch tables,
@@ -350,7 +340,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         return (
           <>
             {isEmptyPeriod && (
-              <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+              <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
             )}
 
             {hasAnySectionSettled && !isEmptyPeriod && (

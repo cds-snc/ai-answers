@@ -16,9 +16,9 @@ import { useEffect, useRef } from 'react';
 // componentOnReady (so VoiceOver's read-from-top isn't interrupted
 // mid-hydration), so its route opts out entirely instead of racing it.
 //
-// `skip` also covers an unrelated case: a route that just shouldn't get this
-// treatment (the post-login landing page - a fresh sign-in should load
-// normally, not force focus into its heading). See App.js's `skipRouteFocus`.
+// Don't add a `skip` for a plain navigate() destination (the post-login
+// landing page used to have one): without the focus move a screen-reader
+// user is left wherever the previous page's cursor was, with nothing read.
 export const useRouteChangeFocus = (routeKey, { skip = false } = {}) => {
   const ref = useRef(null);
   const isInitialMount = useRef(true);
