@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -11,7 +11,8 @@ import MetricsService from '../../services/MetricsService.js';
 import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
 import SectionLoadingIndicator from './SectionLoadingIndicator.js';
-import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
+import { escapeHtml } from '../../utils/htmlEscape.js';
 import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 
@@ -121,6 +122,26 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   // Guards the completion announcement to fire once per fetch cycle, not on
   // every render where allSettled happens to still be true.
   const announcedCompletionRef = useRef(false);
+
+  // Memoized: the DataTables React wrapper rebuilds every row when the
+  // `data` prop's identity changes, and this component re-renders on each
+  // filter keystroke (noteSearchResult sets state) - an inline array meant
+  // a full rebuild per keystroke, which also jumped the page to the top.
+  const byDepartmentRows = useMemo(
+    () => Object.entries(metrics.byDepartment).map(([department, data]) => ({
+      department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
+      totalQuestions: data.total,
+      expertScoredTotal: data.expertScored.total,
+      expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) : 0,
+      expertScoredHasError: data.expertScored.hasError,
+      // null (not '-' directly): this column has real ordering
+      // on (unlike Accuracy summary's twin above), so the raw
+      // sort/type value has to stay numeric-or-null, with '-'
+      // only substituted at display time below.
+      expertScoredAccuracyPct: data.expertScored.total ? 100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : null
+    })),
+    [metrics.byDepartment, t]
+  );
 
   const updateLoading = useCallback((key, isLoading) => {
     setLoadingState(prev => ({ ...prev, [key]: isLoading }));
@@ -375,7 +396,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     buildCountPctRow(t('metrics.dashboard.questions.thirdOrMore'), metrics.sessionsByQuestionCount.threeQuestions, metrics.totalQuestions)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questions.title')}</caption>
                 </DataTable>
@@ -429,7 +450,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.accuracy.accuracyPctEn'), data: 'accuracyPctEn', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d },
                     { title: t('metrics.dashboard.accuracy.accuracyPctFr'), data: 'accuracyPctFr', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d }
                   ]}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.accuracy.title')}</caption>
                 </DataTable>
@@ -446,7 +467,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { ...buildCountPctRow(t('metrics.dashboard.totalSessions'), { total: metrics.totalConversations, en: metrics.totalConversationsEn, fr: metrics.totalConversationsFr }, metrics.totalConversations), percentage: 100 }
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.sessions.title')}</caption>
                 </DataTable>
@@ -464,7 +485,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     buildCountPctRow(t('metrics.dashboard.answerTypes.notGc'), metrics.answerTypes['not-gc'], metrics.totalQuestions)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questionTypes.title')}</caption>
                 </DataTable>
@@ -500,10 +521,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang)
                   }}
                 >
@@ -530,10 +552,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang)
                   }}
                 >
@@ -558,19 +581,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     className on <DataTable> below, not this wrapper. */}
                 <div className="metrics-table-container">
                 <DataTable
-                  className="display dashboard-table"
-                  data={Object.entries(metrics.byDepartment).map(([department, data]) => ({
-                    department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
-                    totalQuestions: data.total,
-                    expertScoredTotal: data.expertScored.total,
-                    expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) : 0,
-                    expertScoredHasError: data.expertScored.hasError,
-                    // null (not '-' directly): this column has real ordering
-                    // on (unlike Accuracy summary's twin above), so the raw
-                    // sort/type value has to stay numeric-or-null, with '-'
-                    // only substituted at display time below.
-                    expertScoredAccuracyPct: data.expertScored.total ? 100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : null
-                  }))}
+                  className="display dashboard-table zebra-stable-on-hover"
+                  data={byDepartmentRows}
                   columns={[
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
                     { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions', render: (d, type) => type === 'display' ? fmtN(d) : d },
@@ -605,12 +617,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       topStart: 'search',
                       topEnd: {},
                       bottomStart: { features: ['pageLength', 'info'] },
-                      bottomEnd: 'paging'
+                      bottomEnd: { paging: { firstLast: false } }
                     },
-                    language: dataTableLanguage(lang),
+                    language: {
+                      ...dataTableLanguage(lang),
+                      // Filter-style box like the batch list / log entries:
+                      // sr-only <label> text, "Filter" placeholder, native x
+                      // to clear (no search-term pill).
+                      search: `<span class="sr-only">${escapeHtml(t('metrics.dashboard.byDepartment.filterLabel'))}</span>`,
+                      searchPlaceholder: t('admin.common.filterPlaceholder'),
+                    },
                     initComplete: function () {
                       const api = this.api();
-                      wireTableAccessibility(api, { t });
+                      setColumnHeaderScope(api);
                       api.on('search.dt', () => {
                         noteSearchResult(api.search(), api.rows({ search: 'applied' }).count());
                       });

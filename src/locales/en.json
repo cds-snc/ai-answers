@@ -309,7 +309,7 @@
       }
     },
     "list": {
-      "searchPlaceholder": "Batch name or batch ID",
+      "filterLabel": "Filter batches by name or ID",
       "columns": {
         "batchId": "Batch ID",
         "totals": "Totals",
@@ -381,6 +381,7 @@
     "enterChatId": "Enter Chat ID:",
     "traceFor": "Trace for:",
     "filterByLevel": "Filter by level:",
+    "filterEntriesLabel": "Filter log entries",
     "all": "All",
     "info": "Info",
     "debug": "Debug",
@@ -790,6 +791,7 @@
     },
     "session": {
       "title": "Sessions",
+      "filterLabel": "Filter sessions",
       "sessionId": "Session ID",
       "sessionType": "Session type",
       "sessionTypes": {
@@ -819,6 +821,7 @@
     "common": {
       "searchLabel": "Search:",
       "searchPlaceholder": "e.g. tax, contact, account",
+      "filterPlaceholder": "Filter",
       "searchTermPillLabel": "Search: {term}",
       "noSearchResults": "No search results found.",
       "filtersClearedAnnouncement": "Filters cleared.",
@@ -837,9 +840,6 @@
       "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
       "fetchFailed": "Failed to load data. Please try again.",
-      "sortActivateAscending": "{column}: activate for ascending sort",
-      "sortActivateDescending": "{column}: activate for descending sort",
-      "sortRemove": "{column}: activate to remove sort",
       "fetchError": "Failed to load data: {message}",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
@@ -907,19 +907,15 @@
       "description": "Filter auto-evaluations and explore details in the table below.",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
+      "noColumnFilterResults": "No results for the column filters: {term}.",
       "resultsSummary": "Total matching evaluations: {count}",
       "totalCount": "Total eval rows in range: {total}",
-      "searchLabel": "Search by Chat or Interaction ID:",
-      "searchPlaceholder": "Enter ID",
-      "columnFilterPlaceholder": "Filter",
       "columns": {
         "chatId": "Chat ID",
-        "questionNumber": "Q #",
-        "department": "Department",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
         "processed": "Processed",
-        "matches": "Has matches",
+        "matches": "Matches",
         "fallback": "Fallback",
         "any": "Any",
         "reason": "No-match reason",
@@ -1096,6 +1092,7 @@
     "title": "Manage user accounts",
     "institutionNone": "Not set",
     "groupNone": "None",
+    "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
       "role": "Role",
@@ -1208,6 +1205,7 @@
       "title": "Settings history",
       "description": "Review who changed settings and when.",
       "empty": "No settings changes have been recorded.",
+      "filterLabel": "Filter settings history",
       "loadError": "Failed to load audit history: {error}",
       "user": "User",
       "action": "Action",
@@ -1799,6 +1797,7 @@
       },
       "byDepartment": {
         "title": "Institution breakdown of expert evaluations",
+        "filterLabel": "Filter institutions",
         "department": "Institution",
         "noContextDept": "No institution context",
         "pctEvaluated": "% evaluated"
@@ -1835,7 +1834,7 @@
       },
       "searchCalls": {
         "title": "Search calls",
-        "note": "Errors and retries per search provider (Canada.ca/Coveo or Google), one row per provider. Error % is approximated against total questions since not every question triggers a new search. A retry happens automatically when a search call fails; errors are calls that still failed after all retries. Retries are shown as a count, not a rate, since one question's search can retry more than once.",
+        "note": "Errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against total questions, since not every question triggers a search. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
         "provider": {
           "title": "Provider",
           "canadaca": "Canada.ca search (Coveo)",
@@ -1982,6 +1981,7 @@
     },
     "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
+    "similarChatsFilterLabel": "Filter similar chats",
     "chatIdPlaceholder": "Enter Chat ID",
     "getSimilarChats": "Get similar chats",
     "loadingSimilarChats": "Loading similar chats...",

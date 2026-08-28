@@ -148,17 +148,16 @@ export function useChatLogsTable({
               }
             : {},
         bottomStart: { features: ['pageLength', 'info'] },
-        bottomEnd: 'paging',
+        bottomEnd: { paging: { firstLast: false } },
       },
       language: {
         ...dataTableLanguage(lang),
         emptyTable: t('logging.noLogs'),
-        // Reuses admin.common's generic "Search:" label, matching
-        // ChatDashboardPage.js/EvalDashboardPage.js - but not its
-        // searchPlaceholder ("e.g. tax, contact, account"), which is tuned
-        // for those pages' department/program search and wouldn't fit
-        // searching log messages/levels/metadata here.
-        search: t('admin.common.searchLabel'),
+        // Visually just a "Filter" placeholder box, flush with the level
+        // presets above it; the <label> DataTables builds keeps an sr-only
+        // name (DataTables inserts this string as HTML).
+        search: `<span class="sr-only">${escapeHtml(t('logging.filterEntriesLabel'))}</span>`,
+        searchPlaceholder: t('admin.common.filterPlaceholder'),
       },
       // scope="col" is dynamic, not static JSX, so a future columns[] edit
       // can't drift out of sync with it (WCAG 1.3.1).
