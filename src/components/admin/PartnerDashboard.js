@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
@@ -36,6 +37,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true });
+  useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
@@ -324,7 +326,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
       )}
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>

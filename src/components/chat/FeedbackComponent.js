@@ -197,7 +197,9 @@ const FeedbackComponent = ({
 
   if (feedbackGiven) {
     return (
-      <p className="thank-you" role="status" ref={thankYouRef} tabIndex={-1} lang={lang}>
+      // Focus is moved here (thankYouRef), which reads it — no live region
+      // on top, that's a double read.
+      <p className="thank-you" ref={thankYouRef} tabIndex={-1} lang={lang}>
         <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
         {t("homepage.feedback.thankYou")}
       </p>

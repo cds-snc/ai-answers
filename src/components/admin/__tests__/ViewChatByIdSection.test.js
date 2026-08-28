@@ -125,7 +125,7 @@ describe('ViewChatByIdSection', () => {
     render(<ViewChatByIdSection lang="en" />);
     fireEvent.click(screen.getByRole('button', { name: 'Search for chat ID' }));
 
-    const alert = await screen.findByRole('alert');
+    const alert = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(alert.textContent).toContain('Please enter a chat ID.');
     expect(mockGetChat).not.toHaveBeenCalled();
     expect(mockSearchChats).not.toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe('ViewChatByIdSection', () => {
     render(<ViewChatByIdSection lang="en" />);
     startLookup('abc');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(alert.textContent).toContain('Enter at least 4 characters.');
     expect(mockSearchChats).not.toHaveBeenCalled();
   });

@@ -304,30 +304,17 @@ const AppLayout = () => {
           silently inserted into the DOM with zero announcement to screen
           reader users whenever sessionWarningVisible flipped true mid-task.
           GcdsNotice is fine for static, in-page content that doesn't change;
-          this appears/disappears, so it needs StatusMessage's role="status"
-          aria-live="polite" instead. See
+          this appears/disappears, so it needs StatusMessage, which announces
+          it through the shared live announcer. See
           docs/coding-agent-docs/status-and-error-messaging.md. No explicit
           focus-move — this is ambient, non-blocking info (same category as
           other StatusMessage successes that don't move focus), not a
-          blocking error like AnnouncedError's model.
-          persistent: the region is mounted (empty) as soon as the user is
-          signed in on an eligible route, so the warning landing in it later
-          is a content *change* an AT picks up, not a fresh insertion with
-          text already in it — the same populated-on-insertion failure mode
-          StatusMessage.js's own doc comment warns about, and that
-          ScenarioOverridesPage.js's save/copy status regions use
-          `persistent` to avoid. No explicit tag="div" needed — StatusMessage
-          already forces Tag to 'div' for any variant box regardless of what
-          tag is passed (resolveLook's isBlock: true). */}
-      {currentUser && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
+          blocking error like AnnouncedError's model. */}
+      {currentUser && sessionWarningVisible && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
         <div className="container-custom mb-400">
-          <StatusMessage variant="warning" persistent>
-            {sessionWarningVisible && (
-              <>
-                <p><strong>{t('auth.sessionWarning.title')}</strong></p>
-                <p>{t('auth.sessionWarning.message')}</p>
-              </>
-            )}
+          <StatusMessage variant="warning">
+            <p><strong>{t('auth.sessionWarning.title')}</strong></p>
+            <p>{t('auth.sessionWarning.message')}</p>
           </StatusMessage>
         </div>
       )}

@@ -734,6 +734,9 @@
     },
     "filters": {
       "title": "Filters",
+      "appliedCount": "{count} applied filters, listed below",
+      "appliedFiltersGroup": "Applied filters. Remove one to change the results.",
+      "selectedCount": "Selected: {count}",
       "sectionHeading": "Choose filter options",
       "clearAll": "Clear all",
       "apply": "Apply",
@@ -821,8 +824,9 @@
       "searchPlaceholder": "e.g. tax, contact, account",
       "filterPlaceholder": "Filter",
       "searchTermPillLabel": "Search: {term}",
-      "noSearchResults": "No search results found.",
+      "noSearchResults": "No results for {term}.",
       "filtersClearedAnnouncement": "Filters cleared.",
+      "resultsLoaded": "Results loaded.",
       "viewChatById": "View chat by ID",
       "originallyAskedIn": "Originally asked in: {language}",
       "sourceText": "Source",
@@ -945,6 +949,7 @@
       "idLabel": "Chat ID",
       "button": "Delete chat",
       "loading": "Deleting...",
+      "notFound": "Cannot delete chat: ID not found.",
       "success": "{chatId} deleted successfully.",
       "error": "Failed to delete chat: {message}"
     },
@@ -953,6 +958,7 @@
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
       "loading": "Deleting...",
+      "notFound": "Cannot delete evaluation: ID not found.",
       "success": "Deleted {count} expert feedback record(s) for {chatId}.",
       "error": "Failed to delete expert evaluation: {message}",
       "notEvaluated": "Not evaluated."
@@ -1652,7 +1658,6 @@
   "metrics": {
     "title": "Metrics dashboard",
     "dashboard": {
-      "loadedAnnouncement": "Metrics loaded.",
       "totalSessions": "Total sessions",
       "totalQuestions": "Total questions",
       "answerTypes": {
@@ -1758,7 +1763,6 @@
     "title": "Technical metrics",
     "dashboard": {
       "loading": "Loading technical metrics...",
-      "loadedAnnouncement": "Technical metrics loaded.",
       "metric": "Metric",
       "responseTime": {
         "title": "Total response time",

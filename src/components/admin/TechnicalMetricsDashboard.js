@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { GcdsContainer } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -11,7 +11,7 @@ import { useTechnicalMetrics } from '../../hooks/admin/useTechnicalMetrics.js';
 import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
 import SectionLoadingIndicator from './SectionLoadingIndicator.js';
-import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 
 DataTable.use(DT);
 
@@ -27,28 +27,16 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
     loadingState,
   } = useTechnicalMetrics();
 
-  // sr-only "loaded" completion announcement, counterpart to the
-  // LoadingOverlay shown until the first section settles (see render
-  // below) — same shared-persistent-region pattern as
-  // MetricsDashboard.js/ChatDashboardPage.js's Clear-all.
-  const { searchAnnouncement, searchAnnounceNonce, announce } = useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
-  const announcedCompletionRef = useRef(false);
   const allSettled = hasStartedLoading && !Object.values(loadingState).some(Boolean);
-  // hasAnySectionSettled resets to false at the top of every fetchAll (see
-  // useTechnicalMetrics.js) - use that same transition to rearm this ref for
-  // the new cycle's own completion announcement, rather than only ever
-  // firing once across the page's lifetime.
-  useEffect(() => {
-    if (!hasAnySectionSettled) {
-      announcedCompletionRef.current = false;
-    }
-  }, [hasAnySectionSettled]);
-  useEffect(() => {
-    if (allSettled && !announcedCompletionRef.current) {
-      announcedCompletionRef.current = true;
-      announce(t('technicalMetrics.dashboard.loadedAnnouncement'));
-    }
-  }, [allSettled, announce, t]);
+  // The one completion announcement every dashboard makes ("Results
+  // loaded.", nothing on zero), once per fetch cycle.
+  useResultsLoadedAnnouncement({
+    loading: hasStartedLoading && !allSettled,
+    count: data.totalQuestions,
+    // Same as MetricsDashboard.js: a section error box wins over "loaded".
+    error: Object.values(errorState).some(Boolean),
+    t,
+  });
 
   const fmtNum = (n) => formatNumber(n, lang);
   const fmtMs = (n) => (n == null ? '–' : fmtNum(n));
@@ -127,11 +115,6 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Always mounted (not inside the loading-gated blocks below) — see
-          MetricsDashboard.js's matching comment on why `persistent` needs a
-          pre-existing empty live region. */}
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
-
       {/* Blocks the whole results area until the first section settles
           (success or error) — see MetricsDashboard.js's matching comment. */}
       {hasStartedLoading && !hasAnySectionSettled && (
@@ -149,7 +132,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
         return (
           <>
             {isEmptyPeriod && (
-              <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+              <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
             )}
 
             {hasAnySectionSettled && !isEmptyPeriod && (

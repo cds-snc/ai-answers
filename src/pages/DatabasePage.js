@@ -11,6 +11,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
+import { useAnnounceOnChange } from '../hooks/useAnnounceOnChange.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -32,6 +33,11 @@ const DatabasePage = ({ lang }) => {
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
+  const importProgressRef = useRef(null);
+  // skippable: a chunk tick is only worth saying if it's still the latest
+  // one — fast chunks would otherwise queue up behind the announcer's
+  // minimum gap and delay the final outcome behind stale "chunk N of M"s.
+  useAnnounceOnChange(importProgressRef, { skippable: true });
   const [importSelectedCollections, setImportSelectedCollections] = useState(['All']);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
@@ -836,12 +842,16 @@ const DatabasePage = ({ lang }) => {
               TODO: chunkIndex/totalChunks are already known during the
               import loop (see handleImport) — a real determinate progress
               bar could replace this text-only counter later. If it does,
-              it should be its own small component (bar + plain
-              role="status" text, same shape as ExperimentalAnalysisPage.js's
-              renderProgressCards), not a new StatusMessage prop — see the
-              scope note in StatusMessage.js. */}
+              it should be its own small component (bar + a text line
+              announced via useAnnounceOnChange, same shape as
+              ExperimentalAnalysisPage.js's ProgressCard), not a new
+              StatusMessage prop — see the scope note in StatusMessage.js.
+              Each chunk tick is announced through the shared announcer
+              (importProgressRef), not by this div being a live region — it's
+              conditionally rendered, so as its own role="status" the first
+              tick was inserted-with-text and never heard. */}
           {isImporting ? (
-            <div role="status" aria-live="polite" className="status-message--progress">{importMessage?.text}</div>
+            <div ref={importProgressRef} className="status-message--progress">{importMessage?.text}</div>
           ) : (
             renderStatusMessage(importMessage)
           )}

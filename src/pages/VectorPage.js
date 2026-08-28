@@ -6,7 +6,8 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
-import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
@@ -80,11 +81,6 @@ const VectorPage = ({ lang = 'en' }) => {
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // useSrAnnouncer's nonce forces the sr-only "stats loaded" region to
-  // re-announce even when stats are fetched twice in a row with an
-  // identical result (same string both times, which React would otherwise
-  // treat as a no-op update).
-  const { message: vectorStatsAnnouncement, nonce: vectorStatsAnnounceNonce, announce: announceVectorStats } = useSrAnnouncer();
   // { type: 'success' | 'error', text } per action — was window.alert() for
   // every one of these; not caught by the earlier StatusMessage migration
   // pass since these never went through StatusMessage at all (this was
@@ -97,19 +93,10 @@ const VectorPage = ({ lang = 'en' }) => {
   // progress paragraph below already shows "Stopped" for sighted admins,
   // and the processed count visibly stops climbing; a screen reader gets
   // neither cue (that block has no aria-live at all — the still-open TODO
-  // below), so this exists purely to announce it, same persistent sr-only
-  // pattern as docdb8LastProbeAnnouncement. A genuine stop *failure* still
-  // gets a real, visible metadataBackfillMessage error box below — that's
-  // worth interrupting for.
-  // useSrAnnouncer's nonce re-fires even when stopping the same job's
-  // backfill twice in a row produces an identical string (which React would
-  // otherwise treat as a no-op update).
-  const {
-    message: metadataBackfillStopAnnouncement,
-    nonce: metadataBackfillStopAnnounceNonce,
-    announce: announceMetadataBackfillStop,
-    clear: clearMetadataBackfillStopAnnouncement,
-  } = useSrAnnouncer();
+  // below), so a stop is announced (announce(), in handleStopMetadataBackfill)
+  // with no visible box. A genuine stop *failure* still gets a real,
+  // visible metadataBackfillMessage error box below — that's worth
+  // interrupting for.
   // Validation errors tied to one specific field, not an async outcome —
   // FeedbackInlineError + aria-describedby, not StatusMessage (see AGENTS.md's
   // "StatusMessage vs. form-field errors"). useInlineFormError (not a plain
@@ -138,12 +125,8 @@ const VectorPage = ({ lang = 'en' }) => {
   // Sighted admins see the stats <pre>/results table appear or update; a
   // screen reader gets nothing unless the outcome is announced separately —
   // there was no failure-only StatusMessage for either of these before, so
-  // success (the common case) was silent. persistent sr-only live regions,
-  // same pattern as ConnectivityPage.js's test-completion summary.
-  // useSrAnnouncer's nonce re-fires even when running the same probe twice
-  // in a row produces an identical pass/fail string (which React would
-  // otherwise treat as a no-op update).
-  const { message: docdb8LastProbeAnnouncement, nonce: docdb8AnnounceNonce, announce: announceDocdb8Probe } = useSrAnnouncer();
+  // success (the common case) was silent. Both go through announce() with
+  // no visible box, same as ConnectivityPage.js's test-completion summary.
 
   // Embedding functionality state
   const [embeddingProgress, setEmbeddingProgress] = useState(null);
@@ -266,7 +249,7 @@ const VectorPage = ({ lang = 'en' }) => {
     try {
       const data = await VectorService.getStats();
       setVectorStats(data);
-      announceVectorStats(t('vector.statsLoaded'));
+      announce(t('vector.statsLoaded'));
     } catch (err) {
       // err.message is usually the one fixed string VectorService.getStats
       // throws on a non-OK response — not truly unbounded — but a real
@@ -381,7 +364,6 @@ const VectorPage = ({ lang = 'en' }) => {
     // / same metadata — a stale "Metadata cleared" shouldn't keep showing
     // once a backfill has started.
     setMetadataClearMessage(null);
-    clearMetadataBackfillStopAnnouncement();
     try {
       const { job } = await VectorService.startMetadataBackfillJob({
         phase: 'missing',
@@ -401,7 +383,6 @@ const VectorPage = ({ lang = 'en' }) => {
   const handleStopMetadataBackfill = async () => {
     setMetadataBackfillMessage(null);
     setMetadataClearMessage(null);
-    clearMetadataBackfillStopAnnouncement();
     try {
       const { job } = await VectorService.stopMetadataBackfillJob(metadataProgress?.jobId);
       if (job) {
@@ -409,7 +390,7 @@ const VectorPage = ({ lang = 'en' }) => {
         setIsBackfillingMetadata(ACTIVE_METADATA_JOB_STATUSES.has(job.status));
       }
       setStopMetadataBackfill(true);
-      announceMetadataBackfillStop(t('vector.metadataBackfillStoppedAnnouncement'));
+      announce(t('vector.metadataBackfillStoppedAnnouncement'));
     } catch (err) {
       console.error('Error stopping embedding metadata backfill:', err);
       // Was vector.metadataBackfillFailed ("Failed to backfill...") — wrong
@@ -429,7 +410,6 @@ const VectorPage = ({ lang = 'en' }) => {
     if (isBackfillingMetadata) return;
     setMetadataClearMessage(null);
     setMetadataBackfillMessage(null);
-    clearMetadataBackfillStopAnnouncement();
     try {
       await VectorService.clearMetadata();
       // The backfill job record this progress/message came from still says
@@ -471,7 +451,7 @@ const VectorPage = ({ lang = 'en' }) => {
         ...current,
         [probe]: data,
       }));
-      announceDocdb8Probe(
+      announce(
         t('vector.docdb8Capability.probeComplete')
           .replace('{label}', () => probeLabel)
           .replace('{status}', () => (data?.test?.supported ? t('vector.docdb8Capability.pass') : t('vector.docdb8Capability.fail')))
@@ -481,7 +461,7 @@ const VectorPage = ({ lang = 'en' }) => {
         ...current,
         [probe]: err.message,
       }));
-      announceDocdb8Probe(
+      announce(
         t('vector.docdb8Capability.probeComplete')
           .replace('{label}', () => probeLabel)
           .replace('{status}', () => t('vector.docdb8Capability.fail'))
@@ -565,7 +545,6 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         {renderStatusMessage(error)}
         {renderStatusMessage(indexMessage)}
-        <StatusMessage persistent message={vectorStatsAnnouncement} nonce={vectorStatsAnnounceNonce} className="sr-only" />
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -588,7 +567,6 @@ const VectorPage = ({ lang = 'en' }) => {
             </GcdsButton>
           ))}
         </div>
-        <StatusMessage persistent message={docdb8LastProbeAnnouncement} nonce={docdb8AnnounceNonce} className="sr-only" />
         <GcdsText>
           {t('vector.docdb8Capability.singleProbeDescription')}
         </GcdsText>
@@ -775,7 +753,6 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <StatusMessage variant={metadataBackfillMessage?.type} message={metadataBackfillMessage?.text} />
         <StatusMessage variant={metadataClearMessage?.type} message={metadataClearMessage?.text} />
-        <StatusMessage persistent message={metadataBackfillStopAnnouncement} nonce={metadataBackfillStopAnnounceNonce} className="sr-only" />
         {/* TODO (review): this "processed: X, remaining: Y, [active/stopped/
             failed]" block is a live-updating status (refreshed by the
             useEffect poll above, every 5s while a backfill job is active)

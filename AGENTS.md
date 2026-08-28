@@ -244,6 +244,8 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 Read [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md) before rendering any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, sr-only announcement, or form validation error. The short version: use `src/components/admin/StatusMessage.js` for page/section-level outcomes with no single input they belong to, and the form-error family (`AnnouncedError.js`/`FeedbackInlineError.js`/`ExplanationErrorSummary.js`) for anything tied to a specific field — don't hand-roll a plain `<div>`/`<p>`/`alert()` for either. Never show a raw `err.message`/`error.message` directly to the user; the doc covers why and the two established alternatives.
 
+**Never put `role="status"`/`aria-live` on a message, box, or overlay you render conditionally.** A live region inserted into the DOM with its text already in it is dropped by screen readers (VoiceOver especially), so it's silent — and nothing fails, no test goes red. Every announcement goes through the one always-mounted announcer in `src/utils/liveAnnouncer.js`: `StatusMessage`/`LoadingOverlay` do it for you; for an outcome with nothing visible to show, call `announce(text)` directly. The doc explains the mechanism, `nonce`, `announce={false}` for focus-moved messages, and how to test it (`test/liveAnnouncer.js`'s `waitForAnnouncement`, not `findByRole('alert')`).
+
 **Never show a raw `err.message`/`error.message` directly to the user.** It's the literal,
 untranslated text a JS `Error` or `fetch()` rejection happened to carry (`"Failed to fetch"`,
 a driver's internal message, etc.) — always English regardless of the user's language, and

@@ -8,7 +8,7 @@ import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePausablePolling } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../admin/PauseToggleButton.js';
-import StatusMessage, { useSrAnnouncer } from '../admin/StatusMessage.js';
+import { announce } from '../../utils/liveAnnouncer.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
@@ -82,7 +82,9 @@ const RowActionButtons = ({ batchId, actions, t, pendingFocusRef }) => {
 
   if (clicked) {
     return (
-      <span role="status" aria-live="polite" tabIndex={-1} ref={(el) => el?.focus()}>
+      // Self-focusing, and focus reads it — no live region on top (that's a
+      // double read; see status-and-error-messaging.md).
+      <span tabIndex={-1} ref={(el) => el?.focus()}>
         {t('common.processing')}
       </span>
     );
@@ -161,15 +163,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   const [refreshKey, setRefreshKey] = useState(0);
   const { t } = useTranslations(lang);
 
-  // Single sr-only, persistent live region shared by every announcement this
-  // component makes (pause/resume, batch completions below) - one region,
-  // not one per event type, so a screen reader user doesn't have several
-  // near-simultaneous live regions competing. useSrAnnouncer's nonce forces
-  // a remount on every trigger so two back-to-back announcements with
-  // coincidentally identical text - e.g. pausing twice, or two different
-  // batches sharing a name completing in separate polls - both still get
-  // announced instead of the second being a silent no-op React bails on.
-  const { message: announcement, nonce: announceNonce, announce } = useSrAnnouncer();
+  // Every announcement this component makes (pause/resume, batch
+  // completions below) goes through the shared announce() — one site-wide
+  // region, so a screen reader user doesn't have several near-simultaneous
+  // live regions competing, and a repeat of identical text (pausing twice,
+  // two batches sharing a name completing in separate polls) is still read.
 
   // Tracks whether the *previous* render was paused, so the resume
   // announcement only fires on an actual paused->resumed transition, not on
@@ -382,8 +380,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // criterion requires a way to stop.
   const { isPaused, togglePause } = usePausablePolling(fetchBatches, 10000, [lang, fetchBatches]);
 
-  // Pause/resume announcement - shares the same sr-only region as
-  // completions above rather than its own, see `announce`'s own comment.
+  // Pause/resume announcement - see the announce() comment above.
   useEffect(() => {
     if (isPaused) {
       announce(t('common.pausedIndicator'));
@@ -544,17 +541,8 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   return (
     <div>
       <PauseToggleButton ref={pauseButtonRef} isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
-      {/* sr-only + persistent: the accessible half only, shared by every
-          announcement this component makes (pause, resume, batch
-          completions - see `announce`'s own comment above), same pattern as
-          ChatDashboardPage.js/EvalDashboardPage.js's own persistent sr-only
-          search-announcement StatusMessage. Decoupled from the visible
-          pause badge below on purpose - that badge only ever reflects
-          isPaused, but this region also has to carry completion
-          announcements the badge has no visual counterpart for. */}
-      <StatusMessage variant="info" persistent nonce={announceNonce} message={announcement || undefined} className="sr-only" />
-      {/* Visible half - purely decorative (aria-hidden; the sr-only
-          StatusMessage above is the real announcement), a design element
+      {/* Purely decorative (aria-hidden; the announce() call in the pause
+          effect above is the real announcement), a design element
           rather than a StatusMessage box: reassures a sighted user the
           table genuinely isn't about to redraw out from under them, not
           "this table is disabled" - doesn't dim/fade the table itself,

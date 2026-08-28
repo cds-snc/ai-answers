@@ -4,6 +4,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 import MetricsDashboard from '../MetricsDashboard.js';
 
 const TRANSLATIONS = {
@@ -68,11 +69,11 @@ describe('MetricsDashboard StatusMessage role', () => {
     render(<MetricsDashboard lang="en" />);
     fireEvent.click(screen.getByText('trigger-apply-filters'));
 
-    const alerts = await screen.findAllByRole('alert');
-    expect(alerts.length).toBeGreaterThan(0);
-    expect(alerts[0].textContent).toBe('Failed to load data: usage metrics failed');
+    await waitForAnnouncement('Failed to load data: usage metrics failed', 'assertive', { exact: true });
+    const box = document.querySelector('.status-message--error-box');
+    expect(box.textContent).toBe('Failed to load data: usage metrics failed');
 
-    const enSpan = alerts[0].querySelector('code[lang="en"]');
+    const enSpan = box.querySelector('code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('usage metrics failed');
   });
@@ -86,7 +87,7 @@ describe('MetricsDashboard StatusMessage role', () => {
     await waitFor(() => {
       expect(mockGetUsageMetrics).toHaveBeenCalled();
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('suppresses all tables and shows only the info banner on a genuinely empty period', async () => {
@@ -112,8 +113,7 @@ describe('MetricsDashboard StatusMessage role', () => {
     render(<MetricsDashboard lang="en" />);
     fireEvent.click(screen.getByText('trigger-apply-filters'));
 
-    const alerts = await screen.findAllByRole('alert');
-    expect(alerts.length).toBeGreaterThan(0);
+    await waitFor(() => expect(document.querySelector('.status-message--error-box')).toBeTruthy());
     expect(dataTableCallCount.current).toBeGreaterThan(0);
   });
 
@@ -139,10 +139,10 @@ describe('MetricsDashboard StatusMessage role', () => {
     render(<MetricsDashboard lang="en" />);
     fireEvent.click(screen.getByText('trigger-apply-filters'));
 
-    await screen.findByText('metrics.dashboard.loadedAnnouncement');
-    // Exactly one live region exists once settled - the shared persistent
-    // one - not a separate role="status" per section (SectionLoadingIndicator
-    // is deliberately not a live region; see its own file comment).
-    expect(screen.queryAllByRole('status').length).toBe(1);
+    await waitForAnnouncement('admin.common.resultsLoaded', 'assertive');
+    // No role="status" per section (SectionLoadingIndicator is deliberately
+    // not a live region; see its own file comment) - the only live regions
+    // are the site-wide ones (liveAnnouncer.js).
+    expect(document.querySelectorAll('[role="status"]:not([data-live-announcer])').length).toBe(0);
   });
 });

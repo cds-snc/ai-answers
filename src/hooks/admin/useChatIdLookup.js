@@ -22,10 +22,15 @@ const MIN_SEARCH_LENGTH = 4;
 // which a plain existence check can't express) — see DeleteByChatIdSection.js's
 // own comment for the full reasoning. Checked against the same already-fetched
 // chat data, no second request.
+// notFoundMessageKey: the "no such chat" outcome, worded per action. The
+// delete tools say "Cannot delete …: ID not found" rather than repeating
+// View-by-ID's "No chat found with that ID." — a screen reader that just
+// read the identical sentence from the search above may not read it again.
 export function useChatIdLookup({
   lang = 'en',
   validateChat = () => true,
   invalidChatMessageKey = 'admin.common.chatNotFound',
+  notFoundMessageKey = 'admin.common.chatNotFound',
 } = {}) {
   const { t } = useTranslations(lang);
   const [chatId, setChatId] = useState('');
@@ -112,7 +117,7 @@ export function useChatIdLookup({
       // and an outage gets its own distinct message instead of both
       // reading as "this data doesn't exist."
       if (!data?.chat) {
-        setStatus({ variant: 'info', text: t('admin.common.chatNotFound') });
+        setStatus({ variant: 'info', text: t(notFoundMessageKey) });
         setLoading(false);
         return null;
       }
@@ -167,7 +172,7 @@ export function useChatIdLookup({
     try {
       const { chatIds, truncated } = await DataStoreService.searchChats(trimmed);
       if (!chatIds || chatIds.length === 0) {
-        setStatus({ variant: 'info', text: t('admin.common.chatNotFound') });
+        setStatus({ variant: 'info', text: t(notFoundMessageKey) });
         setLoading(false);
         return null;
       }

@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BatchPage from '../BatchPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -56,27 +57,21 @@ describe('BatchPage StatusMessage roles', () => {
     renderWithRouter(<BatchPage lang="en" />);
     fireEvent.click(screen.getByText('trigger-delete-running'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('batch.list.actions.deleteError');
+    await waitForAnnouncement('batch.list.actions.deleteError', 'assertive');
   });
 
-  it('announces a successful delete as an sr-only role="status" region, not a visible box', async () => {
+  it('announces a successful delete politely, with no visible box', async () => {
     mockDeleteBatch.mockResolvedValue({});
 
     renderWithRouter(<BatchPage lang="en" />);
     fireEvent.click(screen.getByText('trigger-delete-running'));
 
-    await waitFor(() => {
-      expect(screen.getByText('batch.list.actions.deleteSuccess')).toBeTruthy();
-    });
-    const region = screen.getByText('batch.list.actions.deleteSuccess').closest('[role="status"]');
-    expect(region).toBeTruthy();
-    // Success is sr-only, not a visible box - the table itself already shows
-    // the outcome to a sighted user (the row disappears), so this shouldn't
-    // render as a status-message--success-box the way an error does.
-    expect(region.className).toContain('sr-only');
-    expect(region.className).not.toContain('status-message--success-box');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitForAnnouncement('batch.list.actions.deleteSuccess');
+    // Success is announce-only, not a visible box - the table itself already
+    // shows the outcome to a sighted user (the row disappears), so this
+    // shouldn't render as a status-message--success-box the way an error does.
+    expect(screen.queryByText('batch.list.actions.deleteSuccess')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it("does not remount/re-announce the processed section's error box when a later, unrelated error fires in the running section", async () => {
@@ -89,26 +84,24 @@ describe('BatchPage StatusMessage roles', () => {
     // preserve (an untouched section renders null regardless of nonce, see
     // StatusMessage.js's own early-return branch).
     fireEvent.click(screen.getByText('trigger-delete-processed'));
-    const processedAlert = await screen.findAllByRole('alert');
-    // Both sections' boxes share role="alert" text/classing, so identify
-    // "processed"'s specifically by DOM position relative to its own
-    // trigger button, then capture its node identity to compare later.
-    const processedNode = screen.getByText('trigger-delete-processed').closest('section').querySelector('[role="alert"]');
-    expect(processedNode).toBeTruthy();
+    // Both sections' boxes share text/classing, so identify "processed"'s
+    // specifically by DOM position relative to its own trigger button, then
+    // capture its node identity to compare later.
+    const processedSection = screen.getByText('trigger-delete-processed').closest('section');
+    await waitFor(() => expect(processedSection.querySelector('.status-message--error-box')).toBeTruthy());
+    const processedNode = processedSection.querySelector('.status-message--error-box');
 
     // Now fire a second, unrelated error in "running" only.
     fireEvent.click(screen.getByText('trigger-delete-running'));
     await waitFor(() => {
-      const runningNode = screen.getByText('trigger-delete-running').closest('section').querySelector('[role="alert"]');
+      const runningNode = screen.getByText('trigger-delete-running').closest('section').querySelector('.status-message--error-box');
       expect(runningNode).toBeTruthy();
     });
 
     // "processed"'s own error box must be the exact same DOM node as
-    // before - a shared nonce would have forced it to remount (a fresh
-    // node, its stale text freshly inserted) purely because "running"
-    // changed, even though errors.processed itself never did.
-    const processedNodeAfter = screen.getByText('trigger-delete-processed').closest('section').querySelector('[role="alert"]');
-    expect(processedNodeAfter).toBe(processedNode);
+    // before - a shared nonce would have re-announced it purely because
+    // "running" changed, even though errors.processed itself never did.
+    expect(processedSection.querySelector('.status-message--error-box')).toBe(processedNode);
   });
 
   it('clears a section\'s visible error box once a later action in that same section succeeds', async () => {
@@ -116,7 +109,7 @@ describe('BatchPage StatusMessage roles', () => {
 
     renderWithRouter(<BatchPage lang="en" />);
     fireEvent.click(screen.getByText('trigger-delete-running'));
-    await screen.findByRole('alert');
+    await waitFor(() => expect(document.querySelector('.status-message--error-box')).toBeTruthy());
 
     // Retry, this time succeeding - the earlier error box shouldn't just
     // sit there forever contradicting what actually happened.
@@ -124,7 +117,7 @@ describe('BatchPage StatusMessage roles', () => {
     fireEvent.click(screen.getByText('trigger-delete-running'));
 
     await waitFor(() => {
-      expect(screen.queryByRole('alert')).toBeNull();
+      expect(document.querySelector('.status-message--error-box')).toBeNull();
     });
   });
 });

@@ -66,7 +66,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // syntheticCount (see the ajax callback below) is a pagination trick, not
   // a real count, so search completions pass count: null here and get the
   // count-less "results updated" message instead of "N results found".
-  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   // Tracked so a zero-result global search doesn't feed FilterPanel's own
   // "reopen on zero results" effect - see the filterResultCount prop below
@@ -393,7 +393,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           screen-reader users a heading/landmark entry point into the filter
           section. Distinct text from FilterPanel's "Filters" summary label. */}
       <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -427,11 +426,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           that the applied filters themselves are wrong (same distinction as
           ChatDashboardPage.js's noSearchResults/noDataForFilters split). */}
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {/* A sub-component of the Filters box above, not a peer - same
@@ -652,7 +651,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // count-less "results updated" message instead of "N
                     // results found". TODO: pass the real count once a cheap
                     // one is available from the backend.
-                    noteSearchResult(searchValue, syntheticCount === 0 ? 0 : null);
+                    const loadCount = syntheticCount === 0 ? 0 : null;
+                    if (!noteSearchResult(searchValue, loadCount)) noteLoadResult(loadCount);
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load eval dashboard data', err);

@@ -49,6 +49,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       idLabelKey="admin.deleteChat.idLabel"
       buttonLabelKey="admin.deleteChat.button"
       loadingLabelKey="admin.deleteChat.loading"
+      notFoundMessageKey="admin.deleteChat.notFound"
       fieldId="chatId"
       onDelete={handleDelete}
     />

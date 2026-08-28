@@ -15,6 +15,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ChatViewer from '../ChatViewer.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -157,22 +158,19 @@ describe('ChatViewer staged reveal', () => {
     fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: CHAT_A } });
     fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
     await waitFor(() => expect(mockGetLogs).toHaveBeenCalledTimes(1));
-    // The initial search's own success is sr-only - present in the DOM
-    // (persistent), but not a visible box yet.
-    expect(screen.getByText('logging.refreshComplete').closest('.sr-only')).toBeTruthy();
+    // The initial search's own success is announce-only - not a visible
+    // box yet.
+    await waitForAnnouncement('logging.refreshComplete');
+    expect(screen.queryByText('logging.refreshComplete')).toBeNull();
 
     const refreshButton = screen.getByText('logging.refreshResults');
     refreshButton.focus();
     fireEvent.click(refreshButton);
     await waitFor(() => expect(mockGetLogs).toHaveBeenCalledTimes(2));
 
-    // Two matches now - the initial search's own (still-mounted, sr-only)
-    // one, and the new visible one from this refresh. At least one of them
-    // must be a real, seen box.
-    const successMessages = await screen.findAllByText('logging.refreshComplete');
-    const visibleOne = successMessages.find((el) => !el.closest('.sr-only'));
+    // This time it's a real, seen box.
+    const visibleOne = await screen.findByText('logging.refreshComplete', { selector: '.status-message--success-box' });
     expect(visibleOne).toBeTruthy();
-    expect(visibleOne.closest('[role="status"]')).toBeTruthy();
 
     // No explicit refocus for this path (unlike the initial-search path,
     // whose collapsing ID panel takes focus with it) - standard button

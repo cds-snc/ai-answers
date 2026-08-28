@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
@@ -24,6 +25,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+  useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
 
   const [appliedStartDate, setAppliedStartDate] = useState('');
   const [appliedEndDate, setAppliedEndDate] = useState('');
@@ -181,7 +183,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
-        <StatusMessage variant="info" message={t('publicDashboard.noData')} />
+        <StatusMessage variant="info" assertive message={t('publicDashboard.noData')} />
       )}
 
       {/* KPI row: accuracy donut on the left, stat cards on the right — questions
