@@ -1,234 +1,132 @@
 # Dashboards & filters
 
-There are two dashboard families, and one filter layer shared across most of them:
+Two dashboard families, one shared filter layer:
 
-- **Card/chart dashboards** — Public and Partner. KPI cards, donuts, bars.
-  Deep-dive in [Public & partner card dashboards](#public--partner-card-dashboards).
-- **Table/filter dashboards** — Chat, Eval, AutoEval, and the older
-  `MetricsDashboard` performance-metrics page. DataTables + per-column/global filters.
-- **Shared filter layer** — `FilterPanel.js` + `getChatFilterConditions`
-  (`api/util/chat-filters.js`), consumed by Partner, Metrics, Chat, Eval, AutoEval,
-  and Export. The Public dashboard is the odd one out (uses `DashboardFilterBar`).
-
-**Jump to what you're touching:**
+- **Card/chart dashboards** — Public and Partner. KPI cards, donuts, bars. See [Public & partner card dashboards](#public--partner-card-dashboards).
+- **Table/filter dashboards** — Chat, Eval, AutoEval, and the older `MetricsDashboard` page. DataTables + filters; table mechanics are in [tables.md](tables.md).
+- **Shared filter layer** — `FilterPanel.js` + `getChatFilterConditions` (`api/util/chat-filters.js`), consumed by Partner, Metrics, Chat, Eval, AutoEval, and Export. Public uses `DashboardFilterBar` instead.
 
 | Editing… | Read first |
 |----------|-----------|
-| `FilterPanel.js` or `getChatFilterConditions` (affects many dashboards) | [Shared filter logic](#shared-filter-logic-read-first-when-touching-filters) + [Cross-dashboard gotchas](#cross-dashboard-gotchas) |
-| Chat / Eval / AutoEval / Metrics table dashboards | [Shared filter logic](#shared-filter-logic-read-first-when-touching-filters) + [Cross-dashboard gotchas](#cross-dashboard-gotchas) |
-| Public or Partner card/chart dashboard | [Public & partner card dashboards](#public--partner-card-dashboards) |
+| `FilterPanel.js` or `getChatFilterConditions` | [Shared filter logic](#shared-filter-logic) + [Cross-dashboard gotchas](#cross-dashboard-gotchas) |
+| Chat / Eval / AutoEval / Metrics table dashboards | same, plus [tables.md](tables.md) |
+| Public or Partner card dashboard | [Public & partner card dashboards](#public--partner-card-dashboards) |
 
-## Shared filter logic (read first when touching filters)
+## Shared filter logic
 
-When changing `FilterPanel.js` or the backend filter logic in `getChatFilterConditions` (`api/util/chat-filters.js`), you must verify the change works across **all consumers** — each has a different aggregation pipeline shape, so a regex or filter condition that works on one may fail on another due to different field paths, `$lookup` ordering, or stored data formats:
+A change to `FilterPanel.js` or `getChatFilterConditions` must be verified on **every consumer** — each has a different pipeline shape (field paths, `$lookup` order, stored formats):
 
 - **ChatDashboardPage** (`api/chat/chat-dashboard.js`)
-- **EvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Chat`, unwinds `interactions`, and uses `basePath: 'interactions'` with `userField: 'user'`; `referringUrl` may be stored without protocol prefix
-- **AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`, same backend)
-- **MetricsDashboard** (`api/metrics/metrics-common.js` + individual metric endpoints)
-- **PartnerDashboard** (`api/metrics/*` via `parseRequestFilters`) — uses `FilterPanel` too; see the [filter components](#filter-components) table below
-- **ChatViewer / Chat Logs list** (`api/db/db-chat-logs.js`)
-- **Export/Download** (`api/chat/chat-export-logs.js`) — has a `$lookup` that overwrites `user`; user-type filter must be applied early in `dateFilter` before the overwrite
+- **EvalDashboardPage / AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Chat`, unwinds `interactions`; uses `basePath: 'interactions'`, `userField: 'user'`; `referringUrl` may lack a protocol prefix
+- **MetricsDashboard** (`api/metrics/metrics-common.js` + metric endpoints)
+- **PartnerDashboard** (`api/metrics/*` via `parseRequestFilters`)
+- **ChatViewer / Chat logs list** (`api/db/db-chat-logs.js`)
+- **Export/Download** (`api/chat/chat-export-logs.js`) — a `$lookup` overwrites `user`; apply the user-type filter early in `dateFilter`
 
-**Any new/changed `FilterPanel` field must also be forwarded by `ChatLogsDashboard.js`, or the download silently ignores it.** `ChatDashboardPage.js` forwards filters generically (`DashboardService.getChatDashboard` appends every key in the filters object as a query param), but `ChatLogsDashboard.js`'s `handleApplyFilters` (the "Download chat logs" page) hand-picks specific fields into `URLSearchParams` before calling `chat-export-logs.js`. When adding or renaming a field in `FilterPanel.js`, check `ChatLogsDashboard.js`'s param-building list explicitly — it won't fail loudly, it just drops the field.
+**A new/changed `FilterPanel` field must also be forwarded by `ChatLogsDashboard.js`.** `ChatDashboardPage` forwards every filter key generically; `ChatLogsDashboard.js`'s `handleApplyFilters` hand-picks fields into `URLSearchParams` (`startDate`, `endDate`, `department`, `urlEn`, `urlFr`, `userType`, `answerType`, `partnerEval`, `aiEval`, `evalLogic`). A missing field is silently dropped from the download.
 
-**`partnerEval`/`aiEval`/`answerType` allow-lists are hand-duplicated, not shared — check both when adding a category.** `api/db/db-chat-logs.js` and `api/chat/chat-export-logs.js` each keep their own `validCategories`/`validAnswerTypes` arrays that gate requests with a 400 *before* the pipeline runs, separate from the pseudo-category handling (`noEval`, `hasContentIssue`) inside `getChatFilterConditions` in `chat-filters.js`. Adding a new pseudo-category to `chat-filters.js` + `FilterPanel.js` is not enough — you must also add it to the `validCategories` (or `validPartnerEvalCategories`) array in *both* `db-chat-logs.js` and `chat-export-logs.js`, or requests using it get rejected with "Invalid partnerEval values" even though the filter logic itself supports it.
+**`partnerEval`/`aiEval`/`answerType` allow-lists are hand-duplicated.** `api/db/db-chat-logs.js` and `api/chat/chat-export-logs.js` each keep `validCategories`/`validPartnerEvalCategories`/`validAnswerTypes` arrays that 400 a request before the pipeline runs. A new pseudo-category (like `noEval`, `hasContentIssue`) must be added to `chat-filters.js`, `FilterPanel.js`, **and both** arrays.
 
 ## Cross-dashboard gotchas
 
-- **DataTables `stateSave`**: When changing column `searchable`/`orderable` settings, bump the `TABLE_STORAGE_KEY` version — stale localStorage can silently apply old column filters that no longer have visible inputs.
-- **Eval dashboard aggregates from `Chat`, then unwinds interactions**: This avoids a reverse lookup from each interaction into `chats.interactions`. The result is still one row per interaction/question, but parent fields like `user`, `chatId`, and `pageLanguage` stay on the base chat document. Shared filters should use `basePath: 'interactions'` and `userField: 'user'`.
-- **Cleanup `$project` stages**: If you add a `$lookup` + `$addFields` for a new field, don't remove it in the cleanup `$project` if a later `$project` still needs it.
-- **Only the AutoEval dashboard has per-column filters** (inputs/selects built into each header in its `initComplete`, sent as `columnSearch`; no global search box). Chat and Eval use one global search instead. Adding column filters to Chat Dashboard requires both frontend (`initComplete` + `columnSearch` in ajax) and backend (`columnSearch` handling in `chat-dashboard.js`); the eval endpoint already handles `columnSearch`.
-- **Chat grouping is shared, not per page**: chat-group striping and keep-chat-together cells for the Chat, Eval and AutoEval tables all come from `src/utils/admin/chatGroupedTable.js` (`buildChatGroupCallbacks`, spread into the DataTables options). Grouped cells are kept in the DOM with the repeated value as `sr-only` text - not `rowSpan` - so every row reads completely in a screen reader's linear mode; the CSS (`.group-cell*` in `admin.css`) makes them look merged. Add a column to a page's `groupedColumns` list rather than writing a new `drawCallback`.
-
-**Shared table component**: `src/components/admin/ServerDataTable.js` is the app's one *stable*, non-dashboard-specific DataTable wrapper — its consumers include non-dashboard pages too (SettingsPage.js), so it's documented separately in [tables.md](tables.md) rather than here.
+- **DataTables `stateSave`**: when changing column `searchable`/`orderable`, bump the page's `TABLE_STORAGE_KEY` version — stale localStorage silently applies old column filters.
+- **Eval dashboard aggregates from `Chat`, then unwinds interactions**: one row per interaction, but `user`, `chatId`, `pageLanguage` stay on the chat document.
+- **Cleanup `$project` stages**: a field added via `$lookup` + `$addFields` must survive any later `$project` that needs it.
+- **Only AutoEval has per-column filters** (built in `initComplete`, sent as `columnSearch`; no global search). Chat and Eval use one global search. Adding column filters to Chat needs frontend (`initComplete` + `columnSearch`) and backend (`chat-dashboard.js`) work; the eval endpoint already handles `columnSearch`.
+- **Chat grouping is shared**: striping and keep-chat-together cells for Chat, Eval and AutoEval come from `src/utils/admin/chatGroupedTable.js` — see [tables.md](tables.md#grouped-chat-tables).
 
 ---
 
 # Public & partner card dashboards
 
-The card/chart dashboards — **not** the older `MetricsDashboard` performance-metrics
-page. (If you're only touching their filters, the shared sections above usually
-cover it.)
-
-## What they are
-
 | Dashboard | Page | Component | Audience |
 |-----------|------|-----------|----------|
 | Public | `src/pages/PublicDashboardPage.js` | `src/components/admin/PublicDashboard.js` | admin + partner |
-| Partner | (rendered in admin/partner area) | `src/components/admin/PartnerDashboard.js` | admin + partner |
+| Partner | admin/partner area | `src/components/admin/PartnerDashboard.js` | admin + partner |
 
-Both compose the same building blocks and read the same metric bundle. They are
-deliberately kept close in layout but differ in a few intentional ways (below).
+Same building blocks, same metric bundle, deliberately close layouts with a few intentional differences (below).
 
 ## Data flow
 
 ```
 FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardMetrics.fetchMetrics(filters)
-                                                              │  (passes filters straight through)
                                                               ▼
         MetricsService.getXxxMetrics(filters)  ──►  /api/metrics/* endpoints  ──►  parseRequestFilters()
-                                                              │
-                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations })
+                                                              ▼
+                              setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...tail })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — orchestrates 7 parallel metric
-  fetches (usage, sessions, expert, ai, public feedback, departments, technical)
-  plus a best-effort tail round (blocked queries always; **top referrals and top
-  citations only when opted in via `useDashboardMetrics({ includeReferrals: true,
-  includeCitations: true })`** — partner dashboard opts in, public does not, so
-  the public dashboard pays nothing for lists it doesn't render), abort, loading/error.
-  `fetchMetrics(filters)` takes a **filters object** and passes it through
-  unchanged; both filter components supply a superset/subset of `{ startDate,
-  endDate, department, userType, ... }`. The tail fetches each fall back to their
-  empty shape on failure, so one bad endpoint can't blank the rest of the
-  dashboard.
-- **`src/services/MetricsService.js`** — `_fetchMetric` serializes the whole
-  filters object to query params (`new URLSearchParams(filters)`).
-- **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)`
-  (`api/metrics/metrics-common.js`) which reads `startDate/endDate/department/
-  userType/answerType/partnerEval/aiEval/urlEn/urlFr`. `userType` of `'all'` or
-  undefined = no user-type filter.
+- **`src/hooks/admin/useDashboardMetrics.js`** — 7 parallel fetches (usage, sessions, expert, ai, public feedback, departments, technical), then a best-effort tail round: blocked queries always; referrals, citations, programs, content-issue chats and harmful chats only when opted in (`useDashboardMetrics({ includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats })` — partner opts into all five, public into none). Each tail fetch falls back to its empty shape on failure. `fetchMetrics(filters)` passes the filters object through unchanged.
+- **`src/services/MetricsService.js`** — `_fetchMetric` serializes the filters object to query params.
+- **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)` (`metrics-common.js`), reading `startDate/endDate/timezoneOffsetMinutes/department/userType/answerType/partnerEval/aiEval/urlEn/urlFr`. `userType` `'all'`/undefined = no filter.
 
 ## Filter components
 
 | Component | Used by | Notes |
 |-----------|---------|-------|
-| `FilterPanel.js` | **Partner** | Full filter (date-range picker, dept, userType, advanced: answerType/partnerEval/aiEval/url). Pass `autoApply` to load on mount; `defaultUserType="all"`. Also used by `MetricsDashboard`. |
-| `DashboardFilterBar.js` | **Public** | Preset bar only (Last 30 days / Current quarter / Last 12 months / Custom — the `'allTime'` preset key is labelled "Last 12 months"). Auto-fires `onApply` on mount. **Date range is the only filter** — there is deliberately no institution/department selector (the public view is all-of-government) and no userType selector, since `PublicDashboard` fixes `userType: 'public'` on every fetch (see below). It sends `{ startDate, endDate }` only. |
+| `FilterPanel.js` | **Partner**, `MetricsDashboard` | Full filter: date range (default last 7 days), dept, userType, advanced (answerType/partnerEval/aiEval/url). `autoApply` loads on mount; `defaultUserType="all"`. |
+| `DashboardFilterBar.js` | **Public** | Presets only: Last 30 days / Current quarter / Last 12 months (key `allTime`) / Custom. Auto-fires on mount. **Date range is the only filter** — no department (all-of-government) and no userType (`PublicDashboard` fixes `userType: 'public'`). |
 
-`FilterPanel` owns its own default range (last 7 days). End dates run through today (23:59:59) and the picker allows selecting today — the backend queries `createdAt` up to the end date that's sent, so today's data is returned normally. (There is **no** backend cap at yesterday; an earlier version capped the picker at yesterday, which was reverted because it hid the current day's data.)
+End dates run through today (23:59:59); the picker allows today. There is **no** backend cap at yesterday (an earlier cap hid the current day's data and was reverted).
 
-**Keep same-named presets aligned between the two filter components — presets unique to one side are free to differ.** `FilterPanel.js`'s daterangepicker `ranges` and `DashboardFilterBar.js`'s `getDateRange` are two independent implementations, but where **both define a preset with the same label** (currently only "Last 30 Days" / `last30`), they must compute the **same span**, since partners/admins compare them across dashboards. The convention for day-counted presets is an *N-day inclusive window counting today*, so subtract `N − 1` days for a labelled "Last N Days" (e.g. 30 days → `subtract(29, 'days')` / `setDate(getDate() - 29)`), not `N`. Presets that exist on only one side — `Today`/`Yesterday`/`This Month`/`Last Month` on `FilterPanel`, or `currentQuarter`/`allTime` on `DashboardFilterBar` — have no counterpart to match and can use whatever logic fits (calendar-boundary presets like these aren't day-counted anyway). When adding or changing a preset in either file, only check the other file if the same label exists there.
+**Same-named presets must compute the same span in both components** — currently only "Last 30 Days"/`last30`. Day-counted presets are an *N-day window inclusive of today*: subtract `N − 1` (`subtract(29, 'days')`). Presets unique to one side (`Today`/`Yesterday`/`This Month`/`Last Month`; `currentQuarter`/`allTime`) are free to differ.
 
-### DashboardFilterBar — "Last 12 months" preset (`allTime` key) and load-on-mount
+**`allTime` ("Last 12 months")** is a rolling 12-month window clamped to the first date with data: `start = max(firstDataDate, today − 12 months)`. While less than a year of data exists it's effectively "all data"; it becomes a true rolling year on its own. `firstDataDate` arrives as `minDate`; the range heading and the start input both clamp to it, so they always agree.
 
-**The `'allTime'` preset (labelled "Last 12 months") is a rolling 12-month window**, clamped up to the first date with real data: `start = max(firstDataDate, today − 12 months)`, `end = today`. While less than a year of data exists it's effectively "all data so far" (the clamp wins); once history passes 12 months it becomes a true rolling year, no code change needed. `firstDataDate` arrives as `minDate`; the snap effect re-applies through `getDateRange` so the clamp uses the real value. The public range **heading** clamps the displayed start up to `firstDataDate`, so a partial year shows its true span and the label isn't misleading. (The preset key stays `allTime`; only the `dashboardFilter.allTime` label reads "Last 12 months".)
+**Auto-load on mount.** `DashboardFilterBar` fires `onInitialLoad` (or `onApply`) once with the `allTime` range. If that default fetch gets slow as data grows, drop `onInitialLoad` from `PublicDashboard` so the bar waits for Apply.
 
-**Auto-loads on mount.** `DashboardFilterBar` fires `onInitialLoad` (or `onApply`) once on mount with the "Last 12 months" (`allTime`) range. This is intentional while data is small, but as volume grows the default fetch may become slow. If that happens, drop `onInitialLoad` from `PublicDashboard` — the bar will then wait for an explicit Apply click before fetching. The comment in `DashboardFilterBar.js` marks this known trade-off.
+**`FilterPanel` auto-close.** The panel closes after a fetch with results and stays open on error/zero results, via the `skipNextAutoClose` ref. `handleClear` sets it (it also calls `setIsOpen(true)`, which the auto-close would otherwise fight). `removeFilter` (pill ×) deliberately does not — removing a pill is a re-apply, so closing on results is correct.
 
-### FilterPanel auto-close behaviour
+## Public vs partner differences
 
-`FilterPanel` auto-closes after a successful fetch (results > 0) and stays open on error or zero results. This is controlled by `skipNextAutoClose` (a ref):
+**Public is public-only.** `PublicDashboard` injects `userType: 'public'` on every fetch, excluding admin/partner test traffic. Fixed in code; `publicDashboard.description` states the exclusion — keep the two in sync.
 
-- **`handleClear`** sets `skipNextAutoClose.current = true` before calling `onApplyFilters` / `onClearFilters`. It also calls `setIsOpen(true)` directly — without the skip, the auto-close effect would immediately fight that and close the panel again.
-- **`removeFilter`** (pill × button) does **not** set `skipNextAutoClose`. This is intentional: removing a pill is semantically the same as re-applying filters, so if results come back the panel should auto-close normally. If the panel was open because of zero results and removing the pill brings results back, closing is the correct outcome.
+**Public is a trimmed cut of partner.** Deliberately absent, don't restore for symmetry:
+- No token counts, no harmful card (internal cost/moderation detail).
+- No "Operations metrics" section — the median response-time card sits beside the conversation-length donut.
+- No satisfaction section (public-feedback metrics are still fetched, just not rendered).
 
-**Public dashboard is public-only.** `PublicDashboard` wraps every metrics fetch
-(`fetchPublicMetrics`) to inject `userType: 'public'`, so it reports public usage
-and excludes questions from admin/partner accounts signed in to test/evaluate.
-`'public'` (no logged-in user) already covers the referred-public subset; in the
-blocked-query counter it sums `referredPublic + publicOther`. This is fixed in
-code, not user-selectable. The title note (`publicDashboard.description`) states the
-exclusion — keep the two in sync.
+**Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Public range heading** clamps its start date up to `metrics.firstDataDate` (the
-first day with data in range) so it never shows an empty leading stretch when the
-default 12-month window reaches back before any data exists. `firstDataDate` is a
-`$min` over `createdAt` in `metrics-usage.js`; the heading self-corrects if the DB
-is cleared and data starts later. The filter bar's **start input** is snapped to
-that same date once the fetch returns (`DashboardFilterBar`'s `dataStartDate`
-prop) so the inputs and the heading always show the same range — the snap changes
-only after a fetch, so it never fights a mid-edit.
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue and harmful chat lists (`ContentIssueChatsCard`, linked from the Content issues/Harmful `StatCard`s), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
 
-**The public dashboard is a trimmed cut of the partner one.** Several things are
-deliberately absent for a public audience and must not be "restored" for
-symmetry with partner:
-
-- **No token counts and no harmful card** — token totals
-  (`totalInputTokens`/`totalOutputTokens`) and the expert `harmful` count read as
-  internal cost/moderation detail.
-- **No standalone "Operations metrics" section** — the median response-time card
-  moved up beside the conversation-length donut; there is no separate ops heading.
-- **No satisfaction section** — the helpful/not donut and the reasons breakdown
-  bar were removed. The public-feedback metrics are **still fetched** in the
-  bundle (the hook pulls the full set), just not rendered, so re-adding the
-  section later is pure JSX.
-
-All of these remain fetched and are still shown on the partner dashboard.
-
-**Public dashboard section order** (single filtered section, top to bottom): KPI
-row (accuracy donut + questions asked, then expert-evaluated → content issues) →
-top institutions → conversation length + median response time → safety (blocked
-queries). Questions-about-the-questions cluster first; feedback/safety follow.
-Expert-evaluated sits **before** content issues because the issues are identified
-by those evaluators.
-
-## Metric bundle shape (the important fields)
+## Metric bundle shape
 
 ```
-metrics.firstDataDate                                                // earliest createdAt in range (ISO ts), from usage; null if no data
+metrics.firstDataDate                                    // earliest createdAt in range; null if no data
 metrics.totalQuestions / totalQuestionsEn / totalQuestionsFr / totalConversations
-metrics.totalInputTokens / totalInputTokensEn / totalInputTokensFr   // from usage
-metrics.totalOutputTokens / totalOutputTokensEn / totalOutputTokensFr // from usage
-metrics.responseTime.{ count, median, p90, p95, max, maxChatId }    // ms, from technical
+metrics.totalInputTokens / totalOutputTokens (+En/Fr)    // usage
+metrics.responseTime.{ count, median, p90, p95, max, maxChatId }   // ms, technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
-metrics.byDepartment[dept].{ total, expertScored.total }  // total = interactions (questions), not conversations
-metrics.expertScored.<cat>.{ total, en, fr }   // cat: total, correct, needsImprovement,
-                                                //      hasError, hasCitationError, harmful, hasContentIssue
-metrics.aiScored.<cat>.{ total, en, fr }        // same cats EXCEPT no hasContentIssue
+metrics.byDepartment[dept].{ total, expertScored.total } // total = interactions, not conversations
+metrics.expertScored.<cat>.{ total, en, fr }   // cat: total, correct, needsImprovement, hasError,
+                                                //      hasCitationError, harmful, hasContentIssue
+metrics.aiScored.<cat>.{ total, en, fr }        // same, no hasContentIssue
 metrics.expertScored.hasContentIssue.{ total, en, fr, needsImprovement, hasError }
 metrics.publicFeedbackTotals.{ totalQuestionsWithFeedback, yes, no, enYes, enNo, frYes, frNo }
 metrics.publicFeedbackReasons.{ yes, no }       // keyed by score (string) -> { en, fr, total }
-metrics.blockedQueries.<type>.{ total, en, fr } // from metrics-blocked; type: tooShort,
-                                                //   piStage1, piStage2, profanity, threat,
-                                                //   manipulation, azureGuardrail,
-                                                //   unsupportedLanguage, plus a `total` bucket
-metrics.topReferrals[]                          // from metrics-referrals (partner only); ranked
-                                                //   [{ url, count }], top 20, normalized page key,
-                                                //   count = distinct CONVERSATIONS (not questions)
-metrics.topPrograms[]                           // from metrics-programs (partner only); ranked
-                                                //   [{ program, count, en, fr, programFr }], per-question
-                                                //   program classification; en/fr split by pageLanguage;
-                                                //   'unknown' = unclassified/low-confidence bucket
-metrics.topCitations[]                          // from metrics-citations (partner only); ranked
-                                                //   [{ url, count }], top 20, normalized page key,
-                                                //   count = QUESTIONS that cited the page
-metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' } // question counts
-                                                //   per answer type; `normal` = the answers with a citation
+metrics.blockedQueries.<type>.{ total, en, fr } // tooShort, piStage1, piStage2, profanity, threat,
+                                                //   manipulation, azureGuardrail, unsupportedLanguage, total
+metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERSATIONS
+metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
+metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
+metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
+metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, status? }]
 ```
 
 ### What each metric counts
 
-Most metrics count at the **interaction level** (one per question asked):
-`totalQuestions`, `expertScored`, `aiScored`, `publicFeedback`, `byDepartment.total`, and `byDepartmentCount` (institutions with questions) all count interactions. A 3-question TBS session counts as 3 toward TBS's total.
+Most metrics count **interactions** (one per question): `totalQuestions`, `expertScored`, `aiScored`, `publicFeedback`, `byDepartment.total`, `byDepartmentCount`. A 3-question TBS session counts 3 toward TBS.
 
-Two metrics count at the **chat (conversation) level** — intentionally:
-- **`totalConversations`** — distinct Chat IDs; measures unique conversations.
-- **`sessionsByQuestionCount`** — groups by Chat ID to show session depth (how many questions per conversation). Chat-level grouping is correct here.
+Chat-level on purpose: **`totalConversations`** (distinct Chat IDs), **`sessionsByQuestionCount`** (session depth), and **`topReferrals`** (see below). A new metric that aggregates from `Chat` without `$unwind`ing interactions must have an intentional counting unit.
 
-Nothing else should count at the Chat ID level. If you add a new metric that aggregates from `Chat` without `$unwind`ing interactions, verify the counting unit is intentional.
-
-Expert metrics come from `api/metrics/metrics-expert-feedback.js`, AI from
-`metrics-ai-eval.js`, public feedback from `metrics-public-feedback.js`. Token
-totals come from `metrics-usage.js`; `responseTime` (ms percentiles) from
-`metrics-technical.js`. Both dashboards surface `responseTime.median`/`p95`
-(shown in seconds): partner has a dedicated **Operations metrics** row that also
-carries the token totals; the public dashboard has **no** ops heading — its
-response-time card sits beside the conversation-length donut, and it shows no
-tokens.
+Sources: expert `metrics-expert-feedback.js`, AI `metrics-ai-eval.js`, public feedback `metrics-public-feedback.js`, tokens `metrics-usage.js`, `responseTime` `metrics-technical.js`. Both dashboards show `responseTime.median`/`p95` in seconds.
 
 ## Shared UI building blocks (`src/components/admin/dashboard/`)
 
-All charts are **recharts** (`BarChart`/`PieChart`), wrapped in a shared white
-card chrome (`.dashboard-card`: white background, `1px solid` border, no
-radius, no shadow — square corners throughout the dashboards). Match this
-chrome when adding a new card — don't drop a bare `<table>`/chart in. Colours
-come from `src/constants/dashboardColours.js`.
+Charts are **recharts**, wrapped in `.dashboard-card` (white, `1px solid` border, no radius, no shadow — square corners throughout). Match this chrome for any new card. Colours: `src/constants/dashboardColours.js`.
 
-**Text alternative is required on every chart.** Recharts SVGs expose their
-data only on mouse hover (the `<Tooltip>`) with no `role="img"`/text
-fallback — a straight WCAG 1.1.1 / 2.1.1 miss for keyboard and screen-reader
-users, who never trigger a hover. `DonutCard.js`, `HBarCard.js`,
-`DivergingBarCard.js`, and `StackedBarCard.js` all take an `a11y` prop that
-adds a slim "Table view" `<details>`/`<summary>` expand/collapse
-(`ChartDataToggle.js`) below the chart, revealing the same `data` array as a
-real HTML `<table>` (`ChartDataTable.js`) — the chart itself always stays
-visible; this isn't a toggle that swaps it out. Any **new** chart component
-must accept and render `a11y` the same way — don't add a chart without it.
-Build the shared `a11y` object once per dashboard page and pass it to every
-chart:
+**Every chart needs a text alternative.** Recharts SVGs expose data only on hover (WCAG 1.1.1/2.1.1 miss). `DonutCard`, `HBarCard`, `DivergingBarCard`, `StackedBarCard` take an `a11y` prop that renders a "Table view" `<details>` (`ChartDataToggle` → `ChartDataTable`) below the chart with the same `data`. Any **new** chart must do the same. Build one `a11y` object per page:
 
 ```jsx
 const chartA11y = {
@@ -238,323 +136,110 @@ const chartA11y = {
   captionTemplate: t('common.chartDataTableCaption'),
   rawDataTableLabel: t('common.chartDataTableSummary'),
 };
-// ...
-<HBarCard ... a11y={chartA11y} />
 ```
 
-`StackedBarCard`'s `leftContent` mode replaces `title`/`subtitle`, so also
-pass `a11yTitle` (a plain translated string) so the table's caption still has
-something to reference.
+`StackedBarCard`'s `leftContent` mode replaces `title`/`subtitle`, so also pass `a11yTitle` for the table caption.
 
 | File | Purpose |
 |------|---------|
-| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style; plain (default) = public style. `href` (optional) makes the whole card a same-page link (e.g. Content issues/Harmful → their chat-list section). |
-| `ChartDataToggle.js` | Slim "Table view" `<details>` wrapping `ChartDataTable.js` — rendered via each chart's `a11y` prop, see above. Not used standalone. |
-| `ChartDataTable.js` | Text-alternative `<table>` for a chart's `data`. Only ever rendered inside `ChartDataToggle.js`. |
-| `DonutCard.js` | Donut + centre figure. Per-slice colours via `colours[]`. |
-| `HBarCard.js` | Horizontal bars. Per-bar colour via `data[i].colour`; `percent` mode (0–100 axis + `%`); integer-only ticks (`allowDecimals={false}`); value labels via `<LabelList>`; optional `tooltipContent` (recharts custom-content fn) to surface extra per-row fields; `subtitle`/`noDataLabel`. |
-| `DivergingBarCard.js` | Diverging horizontal bars from a zero baseline: positive rows extend right (green), negative left (red); `value` is the non-negative count, `positive` picks the side. Axis + per-bar data label show **% of total**; tooltip shows the **count**. Symmetric domain (one shared scale, not per-side). Used for the satisfaction breakdown on the **partner** dashboard only (the public dashboard no longer renders a satisfaction section). |
-| `NoDataCard.js` | Placeholder card (title + short note) shown in place of a chart or donut that is below its minimum-sample threshold. Keeps the section's heading on the page instead of letting the card vanish — see [Minimum data thresholds](#layout). Message is always `common.notEnoughData`. |
-| `CountTable.js` | Plain two-column "label / count" table with row dividers, shared by the collapsible list cards. `rows` = `[{ key, label, count, href? }]` — `href` renders the label as a new-tab link. Locale-free (labels passed in resolved). |
-| `ReferralUrlsCard.js` | Collapsible (`<details>`) card wrapping a `CountTable` (referring page / click-throughs) for the top-referral-pages list. **Partner dashboard only.** URLs open in a new tab (`https://` prepended to the normalized page key). |
-| `CitationPagesCard.js` | Collapsible (`<details>`) card with **two** `CountTable`s: top citation pages (cited page / questions) and the answer-type breakdown (answer type / questions). **Partner dashboard only.** |
+| `StatCard.js` | KPI card: label + big number + optional sub. `uppercase` = partner style. `href` makes the card a same-page link. |
+| `ChartDataToggle.js` / `ChartDataTable.js` | The text-alternative "Table view"; only rendered via a chart's `a11y` prop. |
+| `DonutCard.js` | Donut + centre figure; per-slice `colours[]`. |
+| `HBarCard.js` | Horizontal bars; per-bar `data[i].colour`; `percent` mode; integer ticks; `<LabelList>` values; optional `tooltipContent`. |
+| `DivergingBarCard.js` | Bars from a zero baseline: `positive` picks the side; label shows **% of total**, tooltip the count; symmetric domain. Partner satisfaction only. |
+| `StackedBarCard.js` | Stacked bar; `leftContent` mode (see above). |
+| `NoDataCard.js` | Same title + `common.notEnoughData`, shown in place of a chart below its sample threshold. |
+| `CollapsibleCard.js` | Shell for a card whose heading/subtext stay visible and whose content sits behind a link-styled `<details>` trigger. `anchorId` for same-page links into the collapsed content. |
+| `CountTable.js` | Two-column label/count table; `rows = [{ key, label, count, href? }]`. |
+| `ReferralUrlsCard.js` | `CollapsibleCard` + `CountTable` of top referral pages. Partner only. |
+| `CitationPagesCard.js` | `CollapsibleCard` + `CountTable` of top citation pages. Partner only. |
+| `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
+| `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
+| `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
-- `buildQualityBarData(expertScored, aiScored, t)` — answer-quality bar rows as
-  **% of combined expert+AI evals**, fixed order, **"Has answer error" last**,
-  per-category colour. Harmful is not shown as its own bar here; the metrics API
-  folds harmful incorrect answers into the returned `hasError` count, while the
-  harmful card/row still reports them separately.
-- `splitPublicFeedbackTotals(totals, noReasonsByScore)` — reclassifies public
-  feedback to positive/negative **by score, not the yes/no click** (see rules).
-- `buildFeedbackSplitData(totals, reasons, t)` — donut rows (helpful / not helpful).
-- `buildFeedbackReasonsData(reasons, t)` — full reason breakdown bar rows in the
-  fixed `FEEDBACK_REASON_ORDER` (positives green first, negatives red after — NOT
-  count-sorted, stable across date ranges), zero rows dropped. Each row carries
-  `positive` (for `DivergingBarCard`'s left/right) **and** `colour` (for plain
-  bars). To re-order the satisfaction breakdown, edit `FEEDBACK_REASON_ORDER` in
-  `feedbackBreakdown.js`. The reason breakdown now renders on the **partner**
-  dashboard only (public dropped its satisfaction section).
-- Score → positive/negative is defined in `src/constants/UserFeedbackOptions.js`
-  (`isPositiveScore`, `POSITIVE_SCORES`, the `positiveAboutAI` flag).
-
-Colours: `src/constants/dashboardColours.js` (single source of truth).
+- `buildQualityBarData(expertScored, aiScored, t)` — quality bar rows as % of combined evals, fixed order, "Has answer error" last. Harmful isn't its own bar (the API folds harmful into `hasError`).
+- `splitPublicFeedbackTotals(totals, noReasonsByScore)` — positive/negative **by score, not the yes/no click**.
+- `buildFeedbackSplitData(totals, reasons, t)` — donut rows.
+- `buildFeedbackReasonsData(reasons, t)` — reason rows in fixed `FEEDBACK_REASON_ORDER` (positives first, then negatives — not count-sorted), zero rows dropped; each row carries `positive` and `colour`. Edit `FEEDBACK_REASON_ORDER` to re-order.
+- Score → positive/negative: `src/constants/UserFeedbackOptions.js` (`isPositiveScore`, `POSITIVE_SCORES`).
 
 ## Domain rules that are easy to get wrong
 
-- **Accuracy** counts the returned `hasError` metric (answer errors). The metrics
-  API includes both `hasError` and `harmful` categories in that returned count,
-  because the review UI only allows harmful after selecting Incorrect (0).
-  Citation issues and needs-improvement do **not** lower accuracy.
-  `accuracy = 100 − round(hasError/total)`. Both dashboards render this as an
-  **accuracy donut** (public: KPI row; partner: beside the answer-quality bar),
-  gated at `>= 10` combined evals. Its **footer carries the EN/FR split**, shown
-  only when *each* language has **more than 10** evals on its own — a percentage
-  off a handful of evals misleads. Below that the footer is omitted, not zeroed.
-- **Category is mutually exclusive, priority `harmful > hasCitationError >
-  hasError > needsImprovement > correct`** (`getPartnerEvalAggregationExpression`
-  in `api/util/chat-filters.js`). So a harmful answer is categorized `harmful`
-  for filters and the separate harmful row/card. The metrics API folds that
-  category into the returned `hasError` count anywhere accuracy needs answer
-  errors.
-- **Citation errors are NOT answer errors** and can't carry harmful/content
-  flags. The "answer error" signal is sentence/total score `0` only (never
-  `citationScore`). `totalScore = sentenceComponent + citationComponent`, so
-  `totalScore===0` always implies a sentence error too.
-- **Content issues** (`hasContentIssue`) are expert-only and split into
-  `needsImprovement` vs `hasError` by the **raw error signal** (so harmful/
-  citation answers that also have an error land in the error bucket); the two
-  always sum to the total.
-- **Public feedback `notWanted`** ("answer is clear, but not what I wanted to
-  hear") is a *no* click but counts as **positive** about AI. Classify by score,
-  not the raw `feedback` field.
+- **Accuracy** = `100 − round(hasError/total)`. The API's `hasError` count already includes `harmful` (the review UI only allows harmful after Incorrect). Citation issues and needs-improvement do **not** lower accuracy. Rendered as the accuracy donut on both dashboards, gated at `>= 10` combined evals; the EN/FR footer shows only when *each* language has **more than 10** evals, else omitted.
+- **Category is mutually exclusive**, priority `harmful > hasCitationError > hasError > needsImprovement > correct` (`getPartnerEvalAggregationExpression`, `chat-filters.js`).
+- **Citation errors are not answer errors** and can't carry harmful/content flags. The answer-error signal is sentence/total score `0` only.
+- **Content issues** (`hasContentIssue`, expert-only) split into `needsImprovement` vs `hasError` by the raw error signal; the two sum to the total.
+- **Public feedback `notWanted`** is a *no* click but counts as **positive**. Classify by score, not `feedback`.
 
 ## Safety: blocked-query counter
 
-Queries stopped by the guardrails (too short, profanity/threat/manipulation word
-lists, programmatic + AI privacy detection, Azure content filter, unsupported
-language) **throw before `persistNode`** and are never written as Chat/Interaction
-records — the question text is intentionally discarded. A **text-free** counter is
-the only record of them. End-to-end:
+Guardrail-blocked queries (too short, word lists, PI detection, Azure filter, unsupported language) throw before `persistNode` and are never stored; a **text-free** counter is the only record.
 
-- **Tagging:** each guardrail throw site in `agents/graphs/guardrails/` sets a `blockType` on the
-  thrown error (`ShortQueryValidation` / `RedactionError`). A word-list block that
-  trips several lists is classified to one primary bucket by priority.
-- **Recording:** the single `catch` in `api/chat/chat-graph-run.js` fires
-  fire-and-forget `BlockedQueryService.record({ blockType, lang, user,
-  referringUrl })` — never awaited, never throws.
-- **Storage:** `models/blockedQueryCounter.js`, day-bucketed
-  `{ date, type, lang, userType, count }` with an atomic `$inc`/upsert. No text.
-  `userType` is `admin | referredPublic | publicOther` via
-  `classifyUserType` (reuses `isReferredPublicUrl` from `api/util/chat-filters.js`
-  so it matches the dashboard userType filter).
-- **Endpoint:** `api/metrics/metrics-blocked.js` → `metrics.blockedQueries`
-  (per-type `{ total, en, fr }`). It honours date range + `userType`, and
-  **ignores department on purpose** (blocks happen before the department is known).
-- **UI:** public **and** partner = `StatCard` (total) + `HBarCard` (by type, fixed
-  pipeline order, zero rows dropped). The **partner** dashboard tracks the
-  applied department and **hides the blocked-query view when a department is
-  selected** (showing `blockedQueries.deptNote` instead) — it can't be
-  department-scoped. The public dashboard has no institution filter, so its
-  counter is always in scope and has no such branch. Type order/labels:
-  `src/constants/blockedQueryTypes.js` + `blockedQueries.types.*` locale keys.
-  Technical dashboard doesn't show blocked queries at all — confirmed
-  intentional, not a gap.
-- **"Private details" is a display-only merge.** The public and partner bars group
-  the two privacy guardrails (`piStage1` programmatic + `piStage2` AI detection)
-  into one **Private details** row — which stage caught the query is an
-  implementation detail to those audiences. The grouping lives in
-  `BLOCK_QUERY_GROUPS` (`blockedQueryTypes.js`) and is summed by the shared
-  `buildBlockedBarData` (`src/utils/dashboard/blockedQueryBars.js`), which both
-  dashboards call — don't rebuild the bar rows inline. Storage, `blockType`
-  tagging, and the metrics API are untouched — they still record and return
-  both stages separately. Tests: `src/utils/dashboard/blockedQueryBars.test.js`.
-- **Partner userType is deliberately NOT forced to public.** The public dashboard fixes
-  `userType: 'public'` on every fetch, so its blocked counter excludes admin/
-  partner test traffic. The partner dashboard intentionally does **not** do this —
-  it respects the `FilterPanel` userType selector (`defaultUserType="all"`) so
-  partners can see their own admin testing progress alongside public usage. Do not
-  "fix" the partner blocked counter to public-only to match the public dashboard.
-- **No backfill:** counts accrue from deploy forward; historical blocks were never
-  recorded. Tests: `__tests__/blockedQueryService.test.js`.
+- **Tagging:** each throw site in `agents/graphs/guardrails/` sets `blockType` on the error; multi-list hits classify to one primary bucket.
+- **Recording:** the `catch` in `api/chat/chat-graph-run.js` fires `BlockedQueryService.record(...)` — never awaited, never throws.
+- **Storage:** `models/blockedQueryCounter.js`, day-bucketed `{ date, type, lang, userType, count }` with atomic `$inc`. `userType` is `admin | referredPublic | publicOther` (`classifyUserType`, reusing `isReferredPublicUrl`).
+- **Endpoint:** `api/metrics/metrics-blocked.js` → `metrics.blockedQueries`. Honours date range + `userType`; **ignores department** (blocks happen before it's known).
+- **UI:** public and partner = `StatCard` (total) + `HBarCard` (by type, fixed order, zero rows dropped). Partner **hides the view when a department is selected** (`blockedQueries.deptNote`). Types/order: `src/constants/blockedQueryTypes.js`. Technical dashboard shows none — intentional.
+- **"Private details" is a display-only merge** of `piStage1` + `piStage2` (`BLOCK_QUERY_GROUPS` in `blockedQueryTypes.js`, summed by `buildBlockedBarData` in `src/utils/dashboard/blockedQueryBars.js` — both dashboards call it). Storage and API keep the stages separate.
+- **Partner userType is NOT forced to public** — partners see their own admin testing traffic. Don't "fix" it to match public.
+- **No backfill:** counts accrue from deploy forward. Tests: `__tests__/blockedQueryService.test.js`, `src/utils/dashboard/blockedQueryBars.test.js`.
 
-## Top referral pages (partner dashboard only)
+## Top referral pages (partner only)
 
-Which pages on a partner's site drove the most click-throughs to AI Answers.
-`referringUrl` is stored per interaction (indexed). End-to-end:
+- **Counting unit = CONVERSATIONS.** Collapses to distinct `(referringUrl, chat)` pairs first, then counts per URL, so multi-question sessions don't bias the list (two-stage grouping is also DocumentDB-friendly).
+- **Endpoint:** `api/metrics/metrics-referrals.js` → `metrics.topReferrals`. Honours date range, userType/url filters, and department (the `contexts` lookup is skipped when no department is selected).
+- **Normalization:** `api/util/normalizeReferralUrl.js` reduces raw referrers to a page key (strip protocol/`www.`/query/fragment/trailing slash; lowercase host); returns `null` for blanks and AI Answers self-referrals (`SELF_REFERRAL_LABELS`).
+- **`RAW_URL_CAP` (500):** top 500 raw URLs are fetched before Node merges. Raise it only if one page fragments across hundreds of low-count variants.
+- Tests: `__tests__/normalizeReferralUrl.test.js`, `__tests__/api.metrics-referrals.test.js`.
 
-- **Counting unit = CONVERSATIONS, not questions.** Counting interactions would
-  bias toward pages whose visitors happen to ask longer (multi-question)
-  sessions. The pipeline collapses to distinct `(referringUrl, chat)` pairs
-  first, then counts pairs per URL — so a 3-question session from one page counts
-  once. (This is one of the few intentional chat-level counts; see [What each
-  metric counts](#what-each-metric-counts).) Two-stage grouping (pair → count)
-  also avoids a large `$addToSet` of chat IDs, which is DocumentDB-friendly.
-- **Endpoint:** `api/metrics/metrics-referrals.js` → `metrics.topReferrals`
-  (`[{ url, count }]`, top 20). Honours date range, userType/url filters, and
-  **department** — when a partner is selected the list is scoped to that
-  department (unlike blocked queries, which can't be); when none is selected it's
-  the global top pages and the `contexts` lookup is skipped entirely (lighter).
-- **Normalization:** `api/util/normalizeReferralUrl.js` reduces each raw referrer
-  to a stable page key (strip protocol / leading `www.` / query / fragment /
-  trailing slash; lowercase host). Counts for variants of the same page merge.
-  Returns `null` to drop blanks and AI Answers self-referrals (in-app
-  language-switch / navigation), reusing `SELF_REFERRAL_LABELS` from
-  `chat-filters.js`.
-- **`RAW_URL_CAP` (500):** the DB returns the top 500 raw URLs by count before
-  Node normalizes + merges. Since normalization only ever merges rows, the
-  top-20 is accurate in practice; the only blind spot is a single page split
-  across hundreds of low-count variants (pathological). Raise the cap if that
-  ever happens.
-- **Why partner-only:** opted in via `useDashboardMetrics({ includeReferrals: true })`
-  so the public dashboard doesn't fetch it. Usertype is **not** forced to public
-  here — same rationale as the blocked counter (partners see their own admin
-  testing traffic too). Tests: `__tests__/normalizeReferralUrl.test.js`,
-  `__tests__/api.metrics-referrals.test.js`.
+## Top citation pages + answer types (partner only)
 
-## Top citation pages + answer-type breakdown (partner dashboard only)
+Citations live in the `citations` collection (`providedCitationUrl`, fallback `aiCitationUrl`) via `answer.citation`; only `normal` answers carry one.
 
-Which GC pages AI Answers cited most, plus how questions split across answer
-types. Citations live in a separate `citations` collection
-(`providedCitationUrl`, falling back to `aiCitationUrl`) referenced from
-`answer.citation`; only `normal` answers carry one.
+- **Counting unit = QUESTIONS.** One aggregation groups by `(answerType, citationUrl)`; Node sums per answer type and merges/ranks URLs via `normalizeReferralUrl`. Honours date range, userType/url, department.
+- **Uncapped** — the answer-type totals need every group. If citation-URL cardinality explodes, split the breakdown into its own aggregation and cap the URL one.
+- The URL list keys off any non-empty citation URL (robust to legacy `answerType`); the breakdown tallies the four known types.
+- UI: `CitationPagesCard` + `AnswerTypesCard`. Tests: `__tests__/api.metrics-citations.test.js`.
 
-- **Counting unit = QUESTIONS (interactions).** Each question that produced a
-  citation URL counts once toward that page (and a question can sit in only one
-  answer-type bucket).
-- **Endpoint:** `api/metrics/metrics-citations.js` → `metrics.topCitations`
-  (`[{ url, count }]`, top 20) **and** `metrics.answerTypeBreakdown`
-  (`{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }`). One aggregation
-  groups by `(answerType, citationUrl)`; Node sums per answer type and
-  merges/ranks the URLs (reusing `normalizeReferralUrl`). Honours date range,
-  userType/url filters, and department (scoped when a partner is selected).
-- **Uncapped on purpose:** the answer-type totals need every group, so unlike the
-  referral list there's no `RAW_URL_CAP`. The `(answerType, url)` grouping still
-  collapses to ~`distinct citation URLs + one row per non-citation answer type`,
-  which is bounded like the referral list. If citation-URL cardinality ever
-  explodes, split the breakdown into its own lightweight aggregation and cap the
-  URL one.
-- **Citation list counts any cited question, not just `answerType === 'normal'`:**
-  the URL list keys off a non-empty citation URL, so it's robust to legacy/empty
-  answerType values; the breakdown separately tallies the four known types.
-- **UI:** `CitationPagesCard` (collapsible, partner-only) renders the citation
-  `CountTable` then the answer-type `CountTable`. Opted in via
-  `useDashboardMetrics({ includeCitations: true })`. Tests:
-  `__tests__/api.metrics-citations.test.js`.
+## Question volume by program (partner only)
 
-## Question volume by program (partner dashboard only)
+Ranked bar of `context.program`, directly under the accuracy row.
 
-Ranked bar of the per-question program classification (`context.program`), sitting
-directly under the accuracy row (partners asked for it prominently). Opted in via
-`useDashboardMetrics({ includePrograms: true })`.
+- **Bars are % of all *classified* questions**; top-N bars intentionally don't sum to 100%. Raw count + EN/FR split ride in the tooltip. The subtitle count reads lower than "Questions asked" because only `normal` answers are classified.
+- **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`, grouped by `$program` with an `en`/`fr` split by `pageLanguage`; `programFr` is the curated French name (empty → English). `'unknown'` is pulled out of the bars into the subtitle.
+- Subtitle is terse at partner request. Tests: `__tests__/api.metrics-programs.test.js`.
 
-- **Bars are percentages of all *classified* questions**, not raw counts. The
-  denominator is the classified total across **every** returned row, so the
-  top-N bars intentionally don't sum to 100% once the tail is cut. The raw count
-  and its EN/FR split ride along on each row for the **tooltip** (the bar label is
-  the percentage). This is why the subtitle count (classified only) reads lower
-  than the "Questions asked" KPI — the pipeline counts `normal` answers only.
-- **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`
-  (`[{ program, count, en, fr, programFr }]`). Grouped by `$program` with an
-  `en`/`fr` split by `pageLanguage` (`$cond` sum, mirroring `metrics-usage.js`);
-  `programFr` is the curated French name (empty → English fallback at display).
-  The `'unknown'` sentinel (unclassified / low-confidence) is pulled out of the
-  bars and surfaced in the subtitle so it can't dominate the axis.
-- **Subtitle** carries the classified total + EN/FR split, plus the unclassified
-  count when > 0. All descriptive prose was removed at partner request — keep it
-  terse. Tests: `__tests__/api.metrics-programs.test.js` (covers the shape and the
-  `pageLanguage` split).
+## Satisfaction section (partner only)
 
-## Satisfaction section (partner dashboard only)
+A collapsible `<details>` (default closed) whose `<summary>` carries the headline (`{pct} helpful of {total} responses`).
 
-Public-feedback satisfaction, in a **collapsible `<details>`** (defaults closed;
-the `<summary>` carries the headline — `Public feedback (satisfaction) – {pct}
-helpful of {total} responses` — so the key number shows while collapsed). The
-public dashboard no longer has this section at all.
-
-- **Two independent gates:** the helpful/not **donut** (`DonutCard`, title
-  `feedbackSplitTitle` "Helpful or not") shows from **10** responses; the
-  per-reason **breakdown bar** (`DivergingBarCard`, title `feedbackReasonsTitle`
-  "Breakdown by reason") only renders at **40+** — its percentages read as noise
-  on a handful of responses. Between 10–39 the expanded panel shows just the donut
-  in a half column; below 10 the whole section is a `NoDataCard` titled
-  `feedbackSectionTitle`.
-- The collapsible summary is styled via `.dashboard-collapse__summary` in
-  `admin.css` (custom ▸/▾ marker, section-title font).
+- **Two gates:** the helpful/not donut shows from **10** responses; the per-reason `DivergingBarCard` only at **40+**. Below 10 the section is a `NoDataCard`.
+- Summary styled by `.dashboard-collapse__summary` in `admin.css`.
 
 ## Local preview with mock data
 
-The public and partner dashboards can be loaded with realistic placeholder data — no API or backend required. This is useful for layout and locale review without needing real data in the database.
-
-Append `?mock=1` to the dashboard URL in your browser:
-
-```
-http://localhost:3000/en/public-dashboard?mock=1
-http://localhost:3000/en/partner-dashboard?mock=1
-```
-
-No server restart needed — adding or removing `?mock=1` and refreshing is enough. The mock data is defined in `src/utils/dashboard/mockMetrics.js` and covers most sections: KPI cards, quality bar, satisfaction charts, blocked queries, operations metrics, and conversation depth. (It does **not** include `topPrograms`, so the question-volume-by-program chart is hidden in mock mode — add it to `mockMetrics.js` if you need to preview that section.)
-
-To update the placeholder values (e.g. to stress-test a specific threshold or layout edge case), edit `mockMetrics.js` directly and refresh.
+Append `?mock=1` to `/en/public-dashboard` or `/en/partner-dashboard` — no backend needed, no restart. Data lives in `src/utils/dashboard/mockMetrics.js`; edit it to stress-test thresholds or layouts.
 
 ## Layout
 
-**Solo, partial-row, and paired components**
-A component left alone in a `dashboard-row` will stretch full width — wrap it in `dashboard-col-third` or `dashboard-col-half` to constrain it. Pick the fraction that matches the column count of the nearest sibling row (e.g. if the row above has 3 cards, use `dashboard-col-third`).
-
-Charts default to full width. When a related KPI card or donut sits alongside one, the chart takes the left (wider) column using `dashboard-chart-wide` and the card or donut sits unstyled on the right.
-
-**Minimum data thresholds**
-Charts and donuts don't render when the sample is too small to be meaningful (< 10). Current gates: `>= 10` evaluations for the quality bar and the accuracy donut (both dashboards), `>= 10` responses for the satisfaction donut, **`>= 40` responses for the satisfaction reason-breakdown bar** (partner only — see [Satisfaction section](#satisfaction-section-partner-dashboard-only)), `>= 10` conversations for the engagement donut. Blocked queries has no minimum — safety signals show regardless of volume.
-
-**Below the threshold, render a `NoDataCard`, don't hide the section.** Users read a vanished card as a bug or a broken filter, so every threshold-gated section on the public and partner dashboards swaps in a `NoDataCard` carrying the *same title* plus `common.notEnoughData`. Keep that pattern when adding a gated chart. (The accuracy donut used to collapse the whole KPI row into a flat fallback; it now always occupies its half so the row keeps its shape.)
-
-This applies to **minimum-sample** gates only. Sections gated on *presence* of data — top referrals, top citations, top programs, and the public dashboard's **top-institutions** row — stay hidden when empty.
+- A lone component in a `dashboard-row` stretches full width — wrap it in `dashboard-col-third`/`dashboard-col-half` to match the neighbouring row's column count.
+- Charts default to full width; beside a KPI card or donut, the chart takes the wider left column via `dashboard-chart-wide`.
+- **Minimum-sample gates:** `>= 10` evals for the quality bar and accuracy donut, `>= 10` responses for the satisfaction donut, `>= 40` for the reason breakdown, `>= 10` conversations for the engagement donut. Blocked queries have no minimum.
+- **Below a gate, render `NoDataCard`, don't hide the section** — a vanished card reads as a bug. Sections gated on *presence* of data (referrals, citations, programs, public's top institutions, chat lists) stay hidden when empty.
 
 ## Conventions
 
-- **Status messages** (errors, empty-state banners, section outcomes): use
-  `src/components/admin/StatusMessage.js`
-  (`<StatusMessage variant="..." message={...} />` — builds the icon, box className, and
-  `role`/`aria-live` from one prop; see design-system.md's "Status/outcome message states")
-  instead of hand-rolling a `<div role="alert">`/`<div role="status">`. Two variants come
-  up constantly on dashboards specifically:
-  - `variant="error"` — fetch/export failures.
-  - `variant="info"` — the "no data for the selected filters" empty state
-    (`common.noDataForFilters`), used across every dashboard listed above. Amber/`warning`
-    is reserved for genuine caution (e.g. unsaved changes) — a query that successfully
-    returned zero rows isn't a failure or a caution, so it gets `info`, not `warning`.
-  See "Loading states" below — `loading` is a `StatusMessage` prop, but the
-  full-page overlay these dashboards use is not.
-- **Loading states — two patterns, by trigger, not by page**:
-  - **Filter-driven fetch → full-page `<LoadingOverlay message={...} />`**
-    (`src/components/admin/LoadingOverlay.js` — a separate component, not a
-    `StatusMessage` prop; `position: fixed`, blurred backdrop, blocks the whole
-    page — deliberately, confirmed: there's nothing behind it worth keeping
-    visible while a filtered re-fetch is in flight): `ChatDashboardPage`,
-    `EvalDashboardPage`, `AutoEvalDashboardPage`, `ChatLogsDashboard`,
-    `PublicDashboard`, `PartnerDashboard`. Use `LoadingOverlay` for any new
-    filter-driven dashboard fetch — don't hand-roll the `.loading-overlay`
-    markup again. This used to be the exact same markup copy-pasted across all
-    6 files with no shared component; `LoadingOverlay` is that shared
-    component now. It stays a separate file rather than a `StatusMessage`
-    prop because it's narrow — specific to a filter-driven page block — not
-    because it's structurally different from `StatusMessage`'s `loading`
-    (it isn't; both are `role="status"`).
-  - **Independent per-section fetch → inline, not an overlay**:
-    `MetricsDashboard`/`TechnicalMetricsDashboard` fire several fetches in
-    parallel (6 and 2 respectively) and reveal each section as its own fetch
-    finishes, rather than waiting on the slowest one — each section shows its
-    own `.section-loading-indicator` instead. This is deliberate: collapsing it
-    into one page-level overlay would remove the progressive reveal. Don't
-    confuse this with `StatusMessage`'s `loading` prop (inline spinner + text
-    for a single page-level "still working" state, e.g. `SessionPage.js`,
-    `BatchUpload.js`) — `.section-loading-indicator` is per-section on these
-    two specific pages, a third pattern of its own.
-- **Locales**: each dashboard has its own `partnerDashboard.*` / `publicDashboard.*`
-  namespace (`kpi`, `charts`). Duplicated keys across the two are normal. Add
-  EN + FR together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).
-- **Numbers/percent**: always `formatNumber`/`formatPercent`/`formatDecimal`
-  from `src/utils/numberFormat.js` (locale-aware; FR uses `1 000`, `45 %`).
-- **En-dash separators**: a hardcoded ` – ` is acceptable in headings, date
-  ranges (e.g. `formatDateRange` in `PublicDashboard`), and department
-  abbreviations like `CRA-ARC` (these end with a name, not a dash, and are
-  short enough not to line-break). Avoid it in chart bar labels and tooltips —
-  the chart library renders its own dash between label and value, and a
-  hardcoded ` – ` sits directly next to it.
-- **Public page title** carries "AI Answers" for screenshot identification; FR puts
-  "Réponses IA" at the end (matches `admin.partnerTitle`).
-- The public dashboard is a **single filterable section** defaulting to the last 12
-  months (the old fixed last-12-months row + its second `useDashboardMetrics`
-  instance were removed in the reorg). One filter, one metrics fetch.
+- **Status messages**: `StatusMessage` — `variant="error"` for fetch/export failures; `variant="info"` for the "no data for the selected filters" empty state (`common.noDataForFilters`; Public uses `publicDashboard.noData` since it has no filters to speak of). `warning` is for genuine caution (unsaved changes), not zero rows. See [status-and-error-messaging.md](status-and-error-messaging.md).
+- **Loading states — by trigger, not by page:**
+  - Filter-driven fetch → `<LoadingOverlay message={...} />` (`src/components/admin/LoadingOverlay.js`; blocks the whole page): Chat, Eval, AutoEval, ChatLogs, Public, Partner. Don't hand-roll `.loading-overlay` markup.
+  - Multi-fetch progressive reveal (`MetricsDashboard`, `TechnicalMetricsDashboard`) → `LoadingOverlay` until the first section settles, then `SectionLoadingIndicator` per still-loading section (visual only, not a live region — one consolidated announcement instead of up to 7 simultaneous ones).
+- **Locales**: `partnerDashboard.*` / `publicDashboard.*` namespaces; duplicated keys across the two are normal. Add EN + FR together; run `node scripts/find-dead-locale-keys.cjs`.
+- **Numbers**: `formatNumber`/`formatPercent`/`formatDecimal` from `src/utils/numberFormat.js`.
+- **En-dash ` – `** is fine in headings, date ranges, and `CRA-ARC`-style abbreviations; avoid it in chart labels/tooltips (recharts renders its own).
+- **Public page title** carries "AI Answers" for screenshot identification; FR puts "Réponses IA" at the end.
 
 ## Tests
 
-`src/utils/dashboard/feedbackBreakdown.test.js` (vitest) covers the pure helpers
-— ordering (incl. the fixed `FEEDBACK_REASON_ORDER`), colours, score
-classification, the feedback split. Run:
-`npx vitest run src/utils/dashboard/feedbackBreakdown.test.js`. The metrics
-endpoints are covered by `__tests__/*metrics-dashboard*.test.js`. The blocked-
-query counter (classification, day-bucketing, userType mapping, metric bundle
-shape) is covered by `__tests__/blockedQueryService.test.js`.
+`src/utils/dashboard/feedbackBreakdown.test.js` covers the pure helpers; `__tests__/api.metrics-dashboard.test.js`, `integration.metrics-dashboard.test.js`, `api.metrics-technical.test.js` and the per-endpoint tests above cover the API.
