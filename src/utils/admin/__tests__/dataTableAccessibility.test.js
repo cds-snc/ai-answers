@@ -2,7 +2,8 @@
  * @vitest-environment jsdom
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { wireTableAccessibility } from '../dataTableAccessibility.js';
+import $ from 'jquery';
+import { wireTableAccessibility, installPagingFocusGuard, getHeaderTitleText } from '../dataTableAccessibility.js';
 
 const t = (key) => {
   const map = {
@@ -107,5 +108,80 @@ describe('wireTableAccessibility', () => {
   it('never throws when the api itself throws', () => {
     const api = { columns: () => { throw new Error('boom'); } };
     expect(() => wireTableAccessibility(api, { t })).not.toThrow();
+  });
+});
+
+describe('installPagingFocusGuard', () => {
+  it('hands focus to the current page button when the focused paging button is removed by a draw', () => {
+    vi.useFakeTimers();
+    installPagingFocusGuard();
+    const container = document.createElement('div');
+    container.className = 'dt-container';
+    container.innerHTML = '<table></table><div class="dt-paging"><button class="dt-paging-button current" data-dt-idx="0">1</button><button class="dt-paging-button next" data-dt-idx="next">Next</button></div>';
+    document.body.appendChild(container);
+    const next = container.querySelector('.next');
+    next.focus();
+    expect(document.activeElement).toBe(next);
+    // DataTables: activating Next onto the last page re-renders it disabled
+    // (display:none in admin.css) - simulate by removing it, then draw.
+    next.remove();
+    expect(document.activeElement).toBe(document.body);
+    $(container.querySelector('table')).trigger('draw.dt');
+    vi.runAllTimers();
+    expect(document.activeElement).toBe(container.querySelector('.current'));
+    vi.useRealTimers();
+    container.remove();
+  });
+
+  it('ignores a draw from a different table, and forgets the button after a click elsewhere', () => {
+    vi.useFakeTimers();
+    installPagingFocusGuard();
+    const a = document.createElement('div');
+    a.className = 'dt-container';
+    a.innerHTML = '<table></table><div class="dt-paging"><button class="dt-paging-button current">1</button><button class="dt-paging-button next">Next</button></div>';
+    const b = document.createElement('div');
+    b.className = 'dt-container';
+    b.innerHTML = '<table></table><div class="dt-paging"><button class="dt-paging-button current">1</button></div>';
+    document.body.append(a, b);
+    a.querySelector('.next').focus();
+    // Another table (a timed refresh) draws: not ours, leave focus alone.
+    a.querySelector('.next').remove();
+    $(b.querySelector('table')).trigger('draw.dt');
+    vi.runAllTimers();
+    expect(document.activeElement).toBe(document.body);
+    // Click on blank page area, then our table draws: the user left, do nothing.
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    $(a.querySelector('table')).trigger('draw.dt');
+    vi.runAllTimers();
+    expect(document.activeElement).toBe(document.body);
+    vi.useRealTimers();
+    a.remove(); b.remove();
+  });
+
+  it('leaves focus alone when it was not on a paging button', () => {
+    vi.useFakeTimers();
+    installPagingFocusGuard();
+    const container = document.createElement('div');
+    container.className = 'dt-container';
+    container.innerHTML = '<input /><table></table><div class="dt-paging"><button class="dt-paging-button current">1</button></div>';
+    document.body.appendChild(container);
+    const input = container.querySelector('input');
+    input.focus();
+    $(container.querySelector('table')).trigger('draw.dt');
+    vi.runAllTimers();
+    expect(document.activeElement).toBe(input);
+    vi.useRealTimers();
+    container.remove();
+  });
+});
+
+describe('getHeaderTitleText', () => {
+  it('prefers .dt-column-title and falls back to the whole header', () => {
+    const th = document.createElement('th');
+    th.textContent = 'Plain';
+    expect(getHeaderTitleText(th)).toBe('Plain');
+    const titled = document.createElement('th');
+    titled.innerHTML = '<span class="dt-column-title"> Titled </span><select><option>Any</option></select>';
+    expect(getHeaderTitleText(titled)).toBe('Titled');
   });
 });

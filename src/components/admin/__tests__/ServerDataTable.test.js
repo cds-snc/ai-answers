@@ -82,6 +82,20 @@ describe('ServerDataTable', () => {
     expect(mockAjaxReload).not.toHaveBeenCalled();
   });
 
+  it('renders an sr-only search label and a placeholder when asked', () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+        searchLabelSrOnly="Filter <things>"
+        searchPlaceholder="Filter"
+      />
+    );
+    expect(lastOptions.language.search).toBe('<span class="sr-only">Filter &lt;things&gt;</span>');
+    expect(lastOptions.language.searchPlaceholder).toBe('Filter');
+  });
+
   it('passes ordering/pageLength/lengthChange/layout through to DataTables options', () => {
     render(
       React.createElement(ServerDataTable, {
@@ -98,6 +112,8 @@ describe('ServerDataTable', () => {
     expect(lastOptions.ordering).toBe(false);
     expect(lastOptions.pageLength).toBe(10);
     expect(lastOptions.lengthChange).toBe(false);
-    expect(lastOptions.layout).toEqual({ topStart: 'search', topEnd: null });
+    // The component always turns off the first/last paging buttons (GC DS
+    // pagination has none); a caller's own slots merge on top.
+    expect(lastOptions.layout).toEqual({ bottomEnd: { paging: { firstLast: false } }, topStart: 'search', topEnd: null });
   });
 });

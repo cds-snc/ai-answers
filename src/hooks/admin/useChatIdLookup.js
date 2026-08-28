@@ -146,6 +146,11 @@ export function useChatIdLookup({
       triggerError();
       return null;
     }
+    // Normalize the field to the trimmed value first: ChatViewer.js guards
+    // the resolved chat against the current field value, so "id " vs "id"
+    // silently dropped the result. The partial-match path below already
+    // does the same when it settles on one ID.
+    if (trimmed !== rawValue) setChatId(trimmed);
     if (isValidChatIdFormat(trimmed)) {
       return checkChatExists(trimmed);
     }

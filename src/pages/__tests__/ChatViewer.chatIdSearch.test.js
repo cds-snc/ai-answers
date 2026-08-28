@@ -97,6 +97,23 @@ describe('ChatViewer chatId partial-match search', () => {
     expect(screen.queryByRole('list')).toBeNull();
   });
 
+  it('resolves a full ID pasted with a trailing space, trimming the field so the resolved chat is not discarded', async () => {
+    mockGetChat.mockResolvedValue({ chat: { chatId: CHAT_A } });
+    mockGetLogs.mockResolvedValue({ logs: [] });
+
+    render(<ChatViewer lang="en" />);
+
+    const input = screen.getByLabelText('logging.enterChatId');
+    fireEvent.change(input, { target: { value: `${CHAT_A} ` } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
+
+    await waitFor(() => {
+      expect(mockGetLogs).toHaveBeenCalledWith(CHAT_A);
+    });
+    expect(mockGetChat).toHaveBeenCalledWith(CHAT_A);
+    expect(input.value).toBe(CHAT_A);
+  });
+
   it('does not get stuck busy forever when the chatId changes before an in-flight lookup resolves', async () => {
     // checkChatExists's success path deliberately leaves loading=true for
     // resolveConfirmedChat to clear - if a chatId change mid-flight makes

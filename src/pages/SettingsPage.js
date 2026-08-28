@@ -1474,8 +1474,13 @@ const SettingsPage = ({ lang = 'en' }) => {
           pageLength={10}
           lengthChange={false}
           layout={{ topStart: 'search', topEnd: null }}
-          containerClassName="table-scroll mt-200"
+          // metrics-table-container: same filter-box styling as the chat
+          // viewer's log entries table (admin.css).
+          containerClassName="metrics-table-container table-scroll mt-200"
           emptyTableText={t('settings.auditHistory.empty')}
+          caption={t('settings.auditHistory.title')}
+          searchLabelSrOnly={t('settings.auditHistory.filterLabel')}
+          searchPlaceholder={t('admin.common.filterPlaceholder')}
           onError={(error) => setAuditLoadStatus(error ? buildErrorStatus('settings.auditHistory.loadError', error) : null)}
         />
       </section>
