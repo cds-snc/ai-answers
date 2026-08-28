@@ -18,9 +18,13 @@ import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@g
 import StatusMessage from './components/admin/StatusMessage.js';
 import { useRouteChangeFocus } from './hooks/useRouteChangeFocus.js';
 import { usePageMetadata } from './hooks/usePageMetadata.js';
+import { installPagingFocusGuard } from './utils/admin/dataTableAccessibility.js';
 import './styles/global.css';
 import './styles/admin.css';
 import './styles/chat.css';
+
+// Site-wide DataTables paging focus hand-off (see the function's comment).
+installPagingFocusGuard();
 import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
 import EvalDashboardPage from './pages/EvalDashboardPage.js';

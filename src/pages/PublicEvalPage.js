@@ -71,7 +71,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
             render: (data) => formatDate(data)
           }
         ]}
-        options={{ paging: true, searching: true, ordering: true, language: dataTableLanguage(lang) }}
+        options={{ paging: true, layout: { bottomEnd: { paging: { firstLast: false } } }, searching: true, ordering: true, language: dataTableLanguage(lang) }}
       >
         <caption className="sr-only">{t('admin.publicEval.title')}</caption>
       </DataTable>

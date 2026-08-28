@@ -594,16 +594,33 @@ const VectorPage = ({ lang = 'en' }) => {
         </GcdsText>
         {loadedDocdb8Results.length > 0 && (
           <div className="mb-400">
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step
+                timeline (see the metadata backfill results table below). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            {/* Fixed layout + colgroup: widths are set once instead of
+                re-measured from the content every time a probe adds a row,
+                which had the columns shifting between button clicks. Error
+                takes whatever is left. */}
+            <table className="dataTable table-slim-padding table-fixed-layout">
+              <caption className="sr-only">{t('vector.docdb8Capability.title')}</caption>
+              <colgroup>
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '7%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '9%' }} />
+                <col />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>{t('vector.docdb8Capability.table.capability')}</th>
-                  <th>{t('vector.docdb8Capability.table.status')}</th>
-                  <th>{t('vector.docdb8Capability.table.resultCount')}</th>
-                  <th>{t('vector.docdb8Capability.table.preFilter')}</th>
-                  <th>{t('vector.docdb8Capability.table.score')}</th>
-                  <th>{t('vector.docdb8Capability.table.duration')}</th>
-                  <th>{t('vector.docdb8Capability.table.error')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.capability')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.status')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.resultCount')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.preFilter')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.score')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.duration')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.error')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -620,6 +637,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
+            </div>
             <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400" tabIndex="0">
               <pre>{JSON.stringify(docdb8CapabilityResults, null, 2)}</pre>
             </GcdsDetails>
@@ -809,20 +827,29 @@ const VectorPage = ({ lang = 'en' }) => {
                 })()}
               </strong>
             </div>
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step
+                timeline: DataTables' base table styling (the dataTable class
+                alone, no display striping/hover) with slim padding - nothing
+                to page/sort/search here. dt-container on the wrapper is what
+                every live DataTables instance gets from the library, and
+                admin.css keys the table text size off it. table-scroll: 11
+                columns overflow the page width. */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding">
+              <caption className="sr-only">{t('vector.metadataBatchResultsTitle')}</caption>
               <thead>
                 <tr>
-                  <th>{t('vector.metadataBatchResults.columns.embeddingId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.storedInteractionId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.resolvedInteractionId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.action')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.reason')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.feedbackType')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.pageLanguage')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.interactionLanguage')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.expertFeedbackId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.totalScore')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.modifiedCount')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.embeddingId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.storedInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.resolvedInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.action')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.reason')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.feedbackType')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.pageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.interactionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.expertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.totalScore')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.modifiedCount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -843,6 +870,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />
@@ -862,14 +890,19 @@ const VectorPage = ({ lang = 'en' }) => {
         )}
         {metadataStatus && (
           <div className="mb-400">
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
+                (see the DocDB capability table above). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding table-key-value">
+              <caption className="sr-only">{t('vector.metadataStatus.title')}</caption>
               <tbody>
-                <tr><th>{t('vector.metadataStatus.totalEmbeddings')}</th><td>{fmtN(metadataStatus.totalEmbeddings)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsRequiringMetadata')}</th><td>{fmtN(metadataStatus.recordsRequiringMetadata)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsWithMetadata')}</th><td>{fmtN(metadataStatus.recordsWithMetadata)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsMissingMetadata')}</th><td>{fmtN(metadataStatus.recordsMissingMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.totalEmbeddings')}</th><td>{fmtN(metadataStatus.totalEmbeddings)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsRequiringMetadata')}</th><td>{fmtN(metadataStatus.recordsRequiringMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsWithMetadata')}</th><td>{fmtN(metadataStatus.recordsWithMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsMissingMetadata')}</th><td>{fmtN(metadataStatus.recordsMissingMetadata)}</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />
@@ -920,24 +953,28 @@ const VectorPage = ({ lang = 'en' }) => {
               <span> {t('vector.metadataLookup.chatSummary.interactions')}: {fmtN(metadataLookupResult.chat.interactionCount)}</span>
               <span> {t('vector.metadataLookup.chatSummary.embeddings')}: {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
             </p>
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
+                (see the DocDB capability table above). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding">
+              <caption className="sr-only">{t('vector.metadataLookup.title')}</caption>
               <thead>
                 <tr>
-                  <th>{t('vector.metadataLookup.columns.row')}</th>
-                  <th>{t('vector.metadataLookup.columns.status')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionObjectId')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
-                  <th>{t('vector.metadataLookup.columns.embeddingId')}</th>
-                  <th>{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
-                  <th>{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
-                  <th>{t('vector.metadataLookup.columns.attachedScore')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataScore')}</th>
-                  <th>{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.neverStale')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.row')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.status')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionObjectId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.embeddingId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.attachedScore')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataScore')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.neverStale')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -962,6 +999,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />

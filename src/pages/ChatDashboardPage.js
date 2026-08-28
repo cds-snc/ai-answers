@@ -13,6 +13,7 @@ import { detectUrlLanguage } from '../utils/dashboard/urlLanguage.js';
 import { normalizeAnswerText } from '../utils/answerText.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 import { resolveDisplayContent } from '../utils/answerLanguage.js';
 
@@ -58,7 +59,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const filtersRef = useRef({});
   // Tracks chat-group striping state across a single draw's rows (reset in
   // preDrawCallback, mutated in createdRow as each row is built in order).
-  const chatGroupStateRef = useRef({ lastChatId: undefined, parity: 0 });
+  const chatGroupStateRef = useRef(createChatGroupState());
+  // Bumped by Clear all and by each ajax call, so a response that lands
+  // after the table was cleared (or superseded) can't set error/count/loading
+  // state on a table that's gone.
+  const ajaxSeqRef = useRef(0);
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
 
@@ -199,6 +204,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // into calling .ajax.reload() on an already-destroyed table instead of
     // mounting a fresh one.
     tableApiRef.current = null;
+    ajaxSeqRef.current += 1;
     setHasAppliedFilters(false);
     setRecordsTotal(0);
     setSearchTerm('');
@@ -430,7 +436,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     topStart: 'search',
                     topEnd: {},
                     bottomStart: { features: ['pageLength', 'info'] },
-                    bottomEnd: 'paging'
+                    bottomEnd: { paging: { firstLast: false } }
                   },
                   language: {
                     ...dataTableLanguage(lang),
@@ -477,168 +483,24 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     }
                     return null;
                   },
-                  // Each row is one question/answer pair, not one chat - a
-                  // multi-turn chat spans several consecutive rows sharing a
-                  // chatId (see the backend's chatCreatedAt/questionNumber
-                  // sort). Plain per-row zebra striping (see .chat-dashboard-
-                  // table's nth-child rule in admin.css) would cut through
-                  // the middle of a chat's rows and make them look
-                  // unrelated. Stripe by chat GROUP instead: every row
-                  // sharing a chatId gets the same shaded/unshaded class,
-                  // alternating only when the chatId changes, plus a
-                  // top-border marker on the first row of each new group.
-                  preDrawCallback: function () {
-                    chatGroupStateRef.current = { lastChatId: undefined, parity: 0 };
-                  },
-                  createdRow: function (row, data) {
-                    const state = chatGroupStateRef.current;
-                    const chatId = data && data.chatId;
-                    const isFirstRowOfPage = state.lastChatId === undefined;
-                    if (chatId !== state.lastChatId) {
-                      if (!isFirstRowOfPage) {
-                        state.parity = state.parity === 0 ? 1 : 0;
-                        row.classList.add('chat-group-start');
-                      }
-                      state.lastChatId = chatId;
-                    }
-                    row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
-                    // Group hover used to live here (highlighting every row
-                    // belonging to the same chat on mouseenter/mouseleave)
-                    // but was removed: purely decorative with nothing to
-                    // click, so it just read as a false affordance. Native
-                    // per-row hover stays disabled below rather than
-                    // reinstated - it looked broken on the rowspan'd Chat
-                    // ID/Department/Service cells (a spanned cell doesn't
-                    // live in every row it visually covers, so only its own
-                    // anchor row would ever light up) - so there's
-                    // deliberately no hover feedback at all now, not a
-                    // reversion to per-row.
-                  },
-                  // Collapse the Chat ID/Department/Service cells across a
-                  // chat's consecutive rows into single rowspan'd cells,
-                  // instead of repeating identical values on every row -
-                  // both a stronger visual grouping cue than striping
-                  // alone, and better for screen readers (one spanned cell
-                  // announced once, not the same value read out N times).
-                  // Department/Service only merge WITHIN a chat's own rows,
-                  // never across chats - two unrelated chats happening to
-                  // share a department shouldn't look like one group.
-                  // Recomputed from scratch on every draw (paging/sorting/
-                  // filtering all trigger a fresh drawCallback) rather than
-                  // incrementally patched, so it can't drift out of sync
-                  // with whatever rows are currently rendered - safe under
-                  // serverSide mode, which rebuilds row nodes per draw
-                  // rather than reusing stale cached ones.
-                  drawCallback: function () {
-                    try {
-                      const api = this.api();
-                      const rowNodes = api.rows({ page: 'current' }).nodes();
-                      const rowData = api.rows({ page: 'current' }).data().toArray();
-
-                      // valueFn returns the value consecutive rows must
-                      // share to merge; boundByChatId additionally requires
-                      // rows to belong to the same chat (used for
-                      // Department/Service so the merge never crosses a
-                      // chat boundary, even if two different chats happen
-                      // to share the same value).
-                      // extraClass marks the Chat ID column's anchor cells
-                      // specifically (regardless of span size) so the CSS
-                      // vertical divider can target that class instead of
-                      // `:first-child` - cell removal above means the DOM's
-                      // actual first <td> in a row varies (it becomes
-                      // whichever column survived removal), so position-
-                      // based selectors silently pick the wrong cell.
-                      const collapseColumn = (colIndex, valueFn, boundByChatId, extraClass) => {
-                        if (colIndex === -1) return;
-                        let i = 0;
-                        while (i < rowData.length) {
-                          let span = 1;
-                          while (
-                            i + span < rowData.length &&
-                            // Merging on an empty value (several consecutive
-                            // blank cells) doesn't convey anything - just a
-                            // divider-bordered box around nothing. Leave those
-                            // as ordinary, unmerged single-row cells instead.
-                            valueFn(rowData[i]) &&
-                            valueFn(rowData[i + span]) === valueFn(rowData[i]) &&
-                            (!boundByChatId || rowData[i + span].chatId === rowData[i].chatId)
-                          ) {
-                            span += 1;
-                          }
-                          const anchorCell = rowNodes[i] && rowNodes[i].cells[colIndex];
-                          if (anchorCell) {
-                            anchorCell.rowSpan = span;
-                            anchorCell.classList.toggle('row-spanned', span > 1);
-                            if (extraClass) anchorCell.classList.add(extraClass);
-                            // This span's last row is the page's actual
-                            // last row, but the anchor cell itself (where
-                            // the rowspan - and any border-bottom drawn on
-                            // it - actually lives) sits higher up, on
-                            // whichever row started the group. Without this,
-                            // the table's bottom edge has a gap under any
-                            // column still mid-span when the page ends -
-                            // the closing border only reaches the columns
-                            // that still have a real <td> on the last row.
-                            anchorCell.classList.toggle('spans-to-page-end', i + span === rowData.length);
-                          }
-                          for (let j = i + 1; j < i + span; j += 1) {
-                            const cellToRemove = rowNodes[j] && rowNodes[j].cells[colIndex];
-                            if (cellToRemove) cellToRemove.remove();
-                          }
-                          i += span;
-                        }
-                      };
-
-                      // Right-to-left by column index: removing a cell from
-                      // a row shifts every later cell's index in that same
-                      // row's live HTMLCollection, so a column must be
-                      // fully processed before any column to its left.
-                      collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
-                      collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
-                      collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
-
-                      // Sort-icon tooltip text (visual only - see the
-                      // thead th[data-tooltip] comment in admin.css
-                      // for why this is a sighted-user mirror, not itself
-                      // an accessibility mechanism). Runs every draw, not
-                      // just initComplete, because the text depends on
-                      // aria-sort (set by DataTables' own header-update
-                      // logic, which runs as part of every draw cycle
-                      // including sort changes) - "activate for ascending
-                      // sort" needs to flip to "activate for descending
-                      // sort" the moment a column becomes the active sort,
-                      // matching GC DS's own table pattern (see admin.css
-                      // comment above the CSS rules this feeds). Ported
-                      // rather than shared with EvalDashboardPage.js's
-                      // identical version - same reasoning as
-                      // collapseColumn above, each page's DataTables
-                      // options object is otherwise page-specific.
-                      api.columns().header().each((header) => {
-                        if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
-                        const orderSpan = header.querySelector('.dt-column-order');
-                        if (!orderSpan) return;
-                        const title = (header.textContent || '').trim();
-                        const currentSort = header.getAttribute('aria-sort');
-                        // 3-state cycle, not 2 - see the matching comment
-                        // in EvalDashboardPage.js's identical version for
-                        // why (DataTables' own default asSorting is
-                        // ['asc', 'desc', ''], a third click removes
-                        // sorting entirely).
-                        const nextKey = currentSort === 'ascending'
-                          ? 'admin.common.sortActivateDescending'
-                          : currentSort === 'descending'
-                            ? 'admin.common.sortRemove'
-                            : 'admin.common.sortActivateAscending';
-                        header.setAttribute('data-tooltip', t(nextKey).replace('{column}', () => title));
-                      });
-                    } catch (e) { /* ignore drawCallback errors */ }
-                  },
+                  // Striping and keep-chat-together cells - see
+                  // utils/admin/chatGroupedTable.js.
+                  ...buildChatGroupCallbacks({
+                    stateRef: chatGroupStateRef,
+                    columns,
+                    groupedColumns: [
+                      { data: 'program' },
+                      { data: 'department' },
+                      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                    ],
+                  }),
                   initComplete: function () {
                     const api = this.api();
                     tableApiRef.current = api;
                     wireTableAccessibility(api, { t });
                   },
                   ajax: async (dtParams, callback) => {
+                    const seq = ++ajaxSeqRef.current;
                     try {
                       setLoading(true);
                       setError(null);
@@ -674,6 +536,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         query.search = searchValue;
                       }
                       const result = await DashboardService.getChatDashboard(query);
+                      if (seq !== ajaxSeqRef.current) return;
                       const total = result?.recordsTotal || 0;
                       setRecordsTotal(total);
 
@@ -687,10 +550,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       });
                     } catch (err) {
                       console.error('Failed to load chat dashboard data', err);
+                      if (seq !== ajaxSeqRef.current) return;
                       setError(err.message || String(err));
                       callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                     } finally {
-                      setLoading(false);
+                      if (seq === ajaxSeqRef.current) setLoading(false);
                     }
                   }
                 }}

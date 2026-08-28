@@ -8,12 +8,18 @@ import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
-import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
+import { wireTableAccessibility, getHeaderTitleText } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
+import { buildEvalPillsHtml } from '../utils/admin/evalPills.js';
+import { renderDateTimeCell } from '../utils/admin/dateTimeCell.js';
 
 DataTable.use(DT);
 
-const TABLE_STORAGE_KEY = `autoEvalDashboard_tableState_v1_`;
+// v2: columns changed (Department added, Q # no longer searchable).
+const TABLE_STORAGE_KEY = `autoEvalDashboard_tableState_v2_`;
+// Filtered by a Yes/No/Any <select> instead of a text box (see initComplete).
+const BOOLEAN_FILTER_COLUMNS = ['processed', 'hasMatches'];
 
 const getDefaultEvalFilters = () => {
   const now = new Date();
@@ -45,25 +51,17 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef(getDefaultEvalFilters());
+  const chatGroupStateRef = useRef(createChatGroupState());
+  // Bumped by Clear all and by each ajax call, so a response that lands
+  // after the table was cleared (or superseded) can't set error/count/loading
+  // state on a table that's gone.
+  const ajaxSeqRef = useRef(0);
+  // "Column: value" for each active column filter, captured per ajax call -
+  // names the filters in the zero-result message (Chat/Eval name the search
+  // term the same way) instead of blaming the date/department filters.
+  const [activeColumnFilterText, setActiveColumnFilterText] = useState('');
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const formatDate = useCallback((dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      return new Intl.DateTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    } catch (err) {
-      console.error('Failed to format date', err);
-      return dateStr;
-    }
-  }, [lang]);
 
   useEffect(() => {
     // allow table render
@@ -90,16 +88,26 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
       }
     } catch (e) { void e; }
-    setTableKey((prev) => prev + 1);
+    // Same as EvalDashboardPage.js: clearing hides the results until the
+    // next Apply (restart, not re-apply) - previously this reloaded the
+    // default date range, so the table came straight back.
+    ajaxSeqRef.current += 1;
     filtersRef.current = getDefaultEvalFilters();
-    try { if (tableApiRef.current) tableApiRef.current.ajax.reload(null, true); } catch (e) { void e; }
+    tableApiRef.current = null;
+    setHasAppliedFilters(false);
+    setPageResultCount(0);
+    setError(null);
+    setLoading(false);
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
-  // Columns: Chat ID, Interaction ID, Department, Page Language, AutoEval, Processed, Has matches, Fallback, No-match reason, Date
+  // Columns: Chat ID, #, Department, AI eval, Partner eval, Processed, Matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
     {
       title: t('admin.autoEvalDashboard.columns.chatId', 'Chat ID'),
       data: 'chatId',
+      // Fixed width; the UUID wraps onto two lines (see .col-chat-id in admin.css).
+      width: '150px',
+      className: 'col-chat-id',
       render: (value, type, row) => {
         if (!value) return '';
         // Route to the reviewed chat's own pageLanguage, not the admin's
@@ -111,21 +119,44 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       orderable: true
     },
     {
-      title: t('admin.autoEvalDashboard.columns.questionNumber', 'Q #'),
+      // Header shows "#"; aria-label spells it out (initComplete).
+      title: t('admin.evalDashboard.columns.questionNumber'),
+      // Feeds DataTables' sort-button aria-label (built at init; the th
+      // aria-label set in initComplete is too late for that).
+      ariaTitle: t('admin.evalDashboard.columns.questionNumberAriaLabel'),
       data: 'questionNumber',
       render: (value) => value != null ? String(value) : '',
       width: '40px',
-      searchable: true,
+      // No filter: columnSearch is a text $regex and coerces "1"/"0" to
+      // booleans, so a numeric filter can't work.
+      searchable: false,
       orderable: true
     },
-    { title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'), data: 'aiEval', render: v => { if (!v) return ''; const label = t(`admin.chatDashboard.labels.evaluation.${v}`); return `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; }, searchable: true, orderable: true },
-    { title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'), data: 'partnerEval', render: (v, type, row) => { let html = ''; if (v) { const label = t(`admin.chatDashboard.labels.evaluation.${v}`); html += `<span class="label ${escapeHtmlAttribute(v)}">${escapeHtmlAttribute(label.includes('.') ? v : label)}</span>`; } if (row && row.partnerHasContentIssue) { const contentIssueLabel = t('admin.chatDashboard.labels.contentIssue'); html += `<span class="label hasContentIssue">${escapeHtmlAttribute(contentIssueLabel)}</span>`; } return html; }, searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', searchable: true, orderable: true },
+    { title: t('admin.common.columns.department'), data: 'department', width: '130px', searchable: true, orderable: true },
+    // Shared with EvalDashboardPage.js; hasCitationError is a separate
+    // flag from the endpoint, not part of aiEval/partnerEval.
+    {
+      title: t('admin.chatDashboard.columns.aiEval'), data: 'aiEval', width: '170px', render: (v, type, row) => buildEvalPillsHtml(t, v, [
+        { active: row && row.aiHasCitationError, className: 'hasCitationError', labelKey: 'admin.chatDashboard.labels.evaluation.hasCitationError' }
+      ]), searchable: true, orderable: true
+    },
+    {
+      title: t('admin.chatDashboard.columns.partnerEval'), data: 'partnerEval', width: '170px', render: (v, type, row) => buildEvalPillsHtml(t, v, [
+        { active: row && row.partnerHasCitationError, className: 'hasCitationError', labelKey: 'admin.chatDashboard.labels.evaluation.hasCitationError' },
+        { active: row && row.partnerHasContentIssue, className: 'hasContentIssue', labelKey: 'admin.chatDashboard.labels.contentIssue' }
+      ]), searchable: true, orderable: true
+    },
+    { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: false },
+    { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: false },
+    // TODO: fallbackType is a raw internal code shown untranslated (only value
+    // today: 'qa-high-score' - the evaluation was inherited from a similar
+    // past expert-scored Q&A, see services/evaluation.worker.js). Map it
+    // through t() like noMatchReasonType does with eval.noMatchReasonTypes.*,
+    // and switch its filter to the Yes/No/Any select since there is one value.
+    { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', className: 'col-nowrap', searchable: true, orderable: true },
     { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => formatDate(v), searchable: true, orderable: true }
-  ]), [formatDate, t, lang]);
+    { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => renderDateTimeCell(v, lang), searchable: true, orderable: true }
+  ]), [t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -143,7 +174,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
           the filter section. Distinct text from FilterPanel's "Filters"
           summary label. */}
       <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
-      <div className="mb-600">
+      <div className="mb-100">
         <FilterPanel lang={lang} onApplyFilters={(filters) => { handleApplyFilters(filters); }} onClearFilters={handleClearFilters} isVisible={true} filterLoading={loading} filterError={error} filterResultCount={pageResultCount} hasAppliedFilters={hasAppliedFilters} />
       </div>
 
@@ -156,17 +187,25 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       </StatusMessage>
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage
+          variant="info"
+          message={activeColumnFilterText
+            ? t('admin.autoEvalDashboard.noColumnFilterResults').replace('{term}', () => activeColumnFilterText)
+            : t('common.noDataForFilters')}
+          nonce={zeroResultNonce}
+        />
       )}
 
       {hasAppliedFilters && (
-        <div className="mt-200">
+        <div>
           {dataTableReady && (
-            <div className="dashboard-table-container">
+            <div className="dashboard-table-container dashboard-table-container--grouped">
+            {/* Heading-navigation stop for the results, as on Chat/Eval. */}
+            <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
             <DataTable
               key={tableKey}
               columns={columns}
-              className="display dashboard-table"
+              className="display dashboard-table dashboard-table--grouped"
               options={{
                 processing: true,
                 serverSide: true,
@@ -175,27 +214,32 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 ordering: true,
                 info: true,
                 autoWidth: false,
-                order: [[8, 'desc']],
+                order: [[columns.length - 1, 'desc']],
                 stateSave: true,
+                // Same bottom row as Chat/Eval; no search slot (per-column
+                // filters instead). Previously every control rendered twice.
                 layout: {
-                  topStart: {
-                    features: ['info', 'pageLength']
-                  },
-                  topEnd: 'paging',
-                  bottomStart: {
-                    features: ['info', 'pageLength']
-                  },
-                  bottomEnd: 'paging'
+                  topStart: {},
+                  topEnd: {},
+                  bottomStart: { features: ['pageLength', 'info'] },
+                  bottomEnd: { paging: { firstLast: false } }
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
                   const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
                   return `${t('common.page', 'Page')} ${pageNumber}`;
                 },
-                language: {
-                  ...dataTableLanguage(lang),
-                  search: t('admin.autoEvalDashboard.searchLabel', 'Search'),
-                  searchPlaceholder: t('admin.autoEvalDashboard.searchPlaceholder')
-                },
+                language: dataTableLanguage(lang),
+                // Striping and keep-chat-together cells - see
+                // utils/admin/chatGroupedTable.js. A column filter can drop
+                // some of a chat's turns, so a group is the matching rows.
+                ...buildChatGroupCallbacks({
+                  stateRef: chatGroupStateRef,
+                  columns,
+                  groupedColumns: [
+                    { data: 'department' },
+                    { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                  ],
+                }),
                 initComplete: function () {
                   try {
                     const api = this.api();
@@ -212,6 +256,15 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     // MetricsDashboard.js) should apply to a per-column-filter
                     // table like this one.
                     wireTableAccessibility(api, { t });
+                    // "#" header: aria-label spells it out. Set before the
+                    // filter inputs below, which take their names from it.
+                    const questionNumberHeader = api.column(columns.findIndex((c) => c.data === 'questionNumber')).header();
+                    if (questionNumberHeader) {
+                      questionNumberHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.questionNumberAriaLabel'));
+                    }
+                    // Blue fill on a box that holds a filter, like the sorted column's
+                    // highlight - the one visible sign the table is filtered.
+                    const markActive = (control) => control.classList.toggle('dt-col-search--active', Boolean(control.value));
                     const debounce = (fn, wait = 300) => {
                       let t = null;
                       return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
@@ -225,37 +278,57 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                       if (!headerEl) return;
                       const existingFilterContainer = headerEl.querySelector('.dt-col-filter-container');
                       if (existingFilterContainer) headerEl.removeChild(existingFilterContainer);
-                      // Captured before the filter container is appended below, so this is
-                      // just the column's own title text — used to give each generated
-                      // input/select a unique accessible name (screen readers otherwise hear
-                      // an identical, unlabeled "Filter" control for every column).
-                      const colTitle = headerEl.textContent.trim();
+                      // Names each filter control after its column.
+                      const colTitle = headerEl.getAttribute('aria-label') || getHeaderTitleText(headerEl);
+                      // Keeps the header's accessible name to its title once a
+                      // filter control (and a <select>'s option text) lives inside it.
+                      headerEl.setAttribute('aria-label', colTitle);
                       const filterContainer = document.createElement('div');
                       filterContainer.className = 'dt-col-filter-container';
                       filterContainer.style.marginTop = '4px';
-                      const booleanCols = ['processed', 'hasMatches'];
-                      if (booleanCols.includes(colData)) {
+                      if (BOOLEAN_FILTER_COLUMNS.includes(colData)) {
                         const sel = document.createElement('select');
                         sel.className = 'dt-col-search';
-                        sel.setAttribute('aria-label', `${t('admin.autoEvalDashboard.columnFilterPlaceholder')} — ${colTitle}`);
+                        sel.setAttribute('aria-label', `${t('admin.common.filterPlaceholder')} — ${colTitle}`);
                         const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.autoEvalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
                         const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
                         const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
                         sel.addEventListener('change', function () {
+                          markActive(sel);
                           column.search(this.value);
                           api.page('first').draw('page');
                         });
+                        // stateSave restores the filter value silently; show it.
+                        sel.value = column.search() || '';
+                        markActive(sel);
                         filterContainer.appendChild(sel);
                       } else {
                         const input = document.createElement('input');
                         input.type = 'search';
                         input.className = 'dt-col-search';
-                        input.placeholder = t('admin.autoEvalDashboard.columnFilterPlaceholder', 'Filter');
+                        // Default size=20 (~180px) forced narrow columns open;
+                        // size=1 + width:100% (admin.css) fits the column.
+                        input.size = 1;
+                        input.placeholder = t('admin.common.filterPlaceholder');
                         input.setAttribute('aria-label', `${input.placeholder} — ${colTitle}`);
+                        input.addEventListener('input', function () { markActive(input); });
+                        // The native clear (x) fires 'search', not 'input', in Safari
+                        // (Chrome fires both) - without this the text vanished but
+                        // the column stayed filtered. Immediate, no debounce.
+                        input.addEventListener('search', function () {
+                          // Only the clear case: Chrome also fires 'search' on
+                          // Enter, which the debounced input handler already covers.
+                          if (input.value !== '') return;
+                          markActive(input);
+                          column.search('');
+                          api.page('first').draw('page');
+                        });
                         input.addEventListener('input', debounce(function (e) {
                           column.search(e.target.value);
                           api.page('first').draw('page');
                         }, 350));
+                        input.value = column.search() || '';
+                        markActive(input);
                         filterContainer.appendChild(input);
                       }
                       const stopSort = (event) => event.stopPropagation();
@@ -274,11 +347,14 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                   } catch (e) { /* ignore initComplete errors */ }
                 },
                 ajax: async (dtParams, callback) => {
+                  const seq = ++ajaxSeqRef.current;
                   try {
                     setLoading(true);
                     setError(null);
-                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 8, dir: 'desc' };
-                    const orderByMap = ['chatId', 'questionNumber', 'aiEval', 'partnerEval', 'processed', 'hasMatches', 'fallbackType', 'noMatchReasonType', 'createdAt'];
+                    const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: columns.length - 1, dir: 'desc' };
+                    // Derived from `columns` so it can't desync; only Date's
+                    // key differs from the backend field name.
+                    const orderByMap = columns.map((c) => (c.data === 'date' ? 'createdAt' : c.data));
                     const orderBy = orderByMap[dtOrder.column] || 'createdAt';
                     const orderDir = dtOrder.dir || 'desc';
                     const searchValue = (dtParams.search && dtParams.search.value) || '';
@@ -302,7 +378,12 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     };
                     if (searchValue) query.search = searchValue;
                     if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
+                    setActiveColumnFilterText(columns
+                      .filter((c) => columnSearches[c.data])
+                      .map((c) => `${c.data === 'questionNumber' ? t('admin.evalDashboard.columns.questionNumberAriaLabel') : c.title}: ${columnSearches[c.data]}`)
+                      .join(', '));
                     const result = await EvaluationService.getEvalDashboard(query);
+                    if (seq !== ajaxSeqRef.current) return;
                     const rows = Array.isArray(result?.data) ? result.data : [];
                     const start = Number.isFinite(Number(dtParams.start)) ? Number(dtParams.start) : 0;
                     const hasMore = result?.hasMore === true;
@@ -316,17 +397,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     // requested page length, so the synthetic total kept
                     // implying a next page that didn't exist, and clicking
                     // it returned nothing.
-                    //
-                    // TODO: this page hasn't otherwise been updated for
-                    // that endpoint's other recent changes (auto-eval work
-                    // is out of scope for now) - specifically, aiEval/
-                    // partnerEval no longer include hasCitationError as a
-                    // value (EvalDashboardPage.js shows it as a separate
-                    // stacking pill instead), so a citation-only-error row
-                    // here silently renders as whatever the sentence-score
-                    // fallback is instead of showing the citation problem.
-                    // Extend the same *WithoutCitation-aware pill rendering
-                    // here too when this page is revisited.
                     const syntheticUnitCount = orderBy === 'createdAt'
                       ? new Set(rows.map((r) => r.chatId)).size
                       : rows.length;
@@ -336,11 +406,12 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load auto-eval dashboard data', err);
+                    if (seq !== ajaxSeqRef.current) return;
                     setError(err.message || String(err));
                     setPageResultCount(0);
                     callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                   } finally {
-                    setLoading(false);
+                    if (seq === ajaxSeqRef.current) setLoading(false);
                   }
                 },
                 stateSaveCallback: function (settings, data) {
