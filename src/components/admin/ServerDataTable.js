@@ -28,6 +28,9 @@ DataTable.use(DT);
 // having to consider "does this break Settings/Chat dashboard/etc.?"
 const ServerDataTable = forwardRef(function ServerDataTable({
     columns,
+    // Accessible name for the table (rendered as an sr-only <caption>) -
+    // pass the section heading so AT users get a named table.
+    caption,
     fetchData,
     lang = 'en',
     actionsTitle,
@@ -153,7 +156,9 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                 className="display dashboard-table"
                 columns={tableColumns}
                 options={options}
-            />
+            >
+                {caption ? <caption className="sr-only">{caption}</caption> : null}
+            </DataTable>
         </div>
     );
 });

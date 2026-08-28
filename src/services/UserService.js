@@ -18,6 +18,34 @@ const UserService = {
     },
 
     /**
+     * Fetch the signed-in user's own profile (email, role, institution, group).
+     * @returns {Promise<{email: string, role: string, institution: string, group: string, createdAt: string}>}
+     */
+    async getMe() {
+        const response = await AuthService.fetch(getApiUrl('user-me'));
+        if (!response.ok) {
+            throw new Error('Failed to fetch profile');
+        }
+        return response.json();
+    },
+
+    /**
+     * Update the signed-in user's own profile (institution, group, preferences).
+     * @param {{institution?: string, group?: string, preferences?: {prefilterDepartment: boolean}}} updates
+     * @returns {Promise<Object>} the updated profile
+     */
+    async updateMe(updates) {
+        const response = await AuthService.fetch(getApiUrl('user-me'), {
+            method: 'PATCH',
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) {
+            throw new Error('Failed to update profile');
+        }
+        return response.json();
+    },
+
+    /**
      * Fetch all users.
      * @returns {Promise<Array>}
      */
@@ -32,7 +60,7 @@ const UserService = {
     /**
      * Update a user.
      * @param {string} userId 
-     * @param {{active?: boolean, role?: string}} updates 
+     * @param {{active?: boolean, role?: string, institution?: string, group?: string}} updates 
      * @returns {Promise<Object>}
      */
     async update(userId, updates) {

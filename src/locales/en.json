@@ -415,6 +415,7 @@
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
       "partnerMenu": "Partner menu",
+      "account": "Manage your account",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -747,6 +748,7 @@
       "urlPlaceholder": "Filter by full or partial URL",
       "department": "Partner institution",
       "allDepartments": "All institutions",
+      "group": "Group",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -847,6 +849,7 @@
         "chatId": "Chat ID",
         "department": "Department",
         "program": "Service",
+        "user": "User",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Page language"
       }
@@ -1046,14 +1049,61 @@
     "pendingReceived": "We've received your account request.",
     "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
   },
+  "account": {
+    "title": "Manage your account",
+    "profileHeading": "Your account",
+    "accountName": "Account name",
+    "activityHeading": "Your chats and evaluations",
+    "status": "Status",
+    "role": "Role",
+    "institution": "Institution",
+    "group": "Group",
+    "memberSince": "Member since",
+    "profileSaved": "Account updated.",
+    "profileSaveError": "Failed to update your account.",
+    "loadError": "Failed to load your account.",
+    "groupChats": {
+      "heading": "{group} chats and reviews",
+      "description": "Chats started or evaluated by members of your group in the last 12 months.",
+      "empty": "No chats from your group yet.",
+      "underReview": "Under review: the filter preference may replace this table",
+      "loadError": "Failed to load group chats."
+    },
+    "assignedChats": {
+      "heading": "Chats assigned to you",
+      "comingSoon": "Coming soon",
+      "description": "Chats assigned to you by group members, or by you to review later.",
+      "inProgress": "Feature in progress. Chats assigned to you for evaluation will appear here.",
+      "columns": {
+        "assignedOn": "Assigned on",
+        "assignedBy": "Assigned by",
+        "partnerNotes": "Partner notes"
+      }
+    },
+    "preferences": {
+      "heading": "Filter preferences",
+      "prefilterDepartment": "Your institution",
+      "prefilterDepartmentHint": "Dashboards can start by default with the following options:",
+      "prefilterGroup": "Only chats created or reviewed by your group's members",
+      "noGroup": "Pick your group above before turning this on.",
+      "noInstitution": "Pick your institution above before turning this on.",
+      "saved": "Preference saved. Dashboards will now start with this filter applied by default.",
+      "savedOff": "Preference saved.",
+      "saveError": "Failed to save preference."
+    }
+  },
   "users": {
     "title": "Manage user accounts",
+    "institutionNone": "Not set",
+    "groupNone": "None",
     "columns": {
       "email": "Email",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created at",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Group"
     },
     "roles": {
       "admin": "Admin",

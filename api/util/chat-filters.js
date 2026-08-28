@@ -610,6 +610,31 @@ export function getChatFilterConditions(filters, options = {}) {
     });
   }
 
+  // reviewerMatch - pre-resolved by api/util/reviewer-filter.js's
+  // resolveReviewerMatch (the Institution / Reviewer email filters): chats
+  // created by one of the users
+  // OR carrying an expert evaluation written by one of them. Each side is
+  // matched both as a raw ref and as a looked-up doc's _id, so the same
+  // condition works in every consumer pipeline regardless of whether it has
+  // $lookup'd user / interactions.expertFeedback by the time it runs the
+  // shared $match (chat-export-logs.js overwrites `user` with the looked-up
+  // array; most others still hold the ObjectId there).
+  if (filters.reviewerMatch) {
+    const { userIds = [], feedbackIds = [] } = filters.reviewerMatch;
+    const branches = [];
+    if (userIds.length) {
+      branches.push({ [userField]: { $in: userIds } });
+      branches.push({ [`${userField}._id`]: { $in: userIds } });
+    }
+    if (feedbackIds.length) {
+      branches.push({ [withPath('expertFeedback')]: { $in: feedbackIds } });
+      branches.push({ [withPath('expertFeedback._id')]: { $in: feedbackIds } });
+    }
+    // Nobody matched (unknown institution, email with no hits): match nothing
+    // rather than silently dropping the filter.
+    conditions.push(branches.length ? { $or: branches } : { _id: null });
+  }
+
   // department
   if (filters.department) {
     const escaped = escapeRegex(filters.department);

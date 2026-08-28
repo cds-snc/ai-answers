@@ -43,6 +43,15 @@ const AdminPage = ({ lang = 'en' }) => {
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
 
+        {/* The user's own account comes first, above both menus */}
+        <ul className="list-none p-0">
+          <li>
+            <GcdsLink href={getPath('account', lang)}>
+              {t('admin.navigation.account')}
+            </GcdsLink>
+          </li>
+        </ul>
+
         {/* Partner Menu - Visible to everyone (Partner & Admin) */}
         <section className="mb-400">
           <h2 className="mt-400 mb-400">

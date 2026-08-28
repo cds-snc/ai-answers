@@ -13,7 +13,7 @@ async function getBlockedMetrics(req, res) {
 
   try {
     await dbConnect();
-    const { dateFilter } = parseRequestFilters(req);
+    const { dateFilter } = await parseRequestFilters(req);
 
     if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
