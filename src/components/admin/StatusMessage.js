@@ -53,8 +53,7 @@ import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 // and this component builds the icon+text content; `isError`/manual
 // `className` box modifiers are only still needed for callers that haven't
 // migrated. `success` uses a raw FA checkmark span (`fa-solid
-// fa-check-circle`) instead of GcdsIcon, matching the existing precedent in
-// BatchUpload.js — GC DS's icon font has no checkmark glyph. A caller that
+// fa-check-circle`) instead of GcdsIcon. A caller that
 // passes `children` alongside `variant` gets the box treatment AND the same
 // icon `message` would have gotten — `children` is only an escape hatch for
 // content richer than one string (e.g. a raw exception detail that needs
