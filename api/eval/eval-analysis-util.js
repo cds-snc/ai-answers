@@ -2,7 +2,7 @@
 
 // Whitelist of dashboard filter keys accepted by the analysis pipeline —
 // the same contract FilterPanel sends to the metrics endpoints.
-const FILTER_KEYS = ['startDate', 'endDate', 'department', 'userType', 'answerType', 'partnerEval', 'aiEval', 'urlEn', 'urlFr', 'referringUrl'];
+const FILTER_KEYS = ['startDate', 'endDate', 'department', 'userType', 'answerType', 'partnerEval', 'aiEval', 'urlEn', 'urlFr', 'referringUrl', 'institution', 'group', 'reviewerEmail'];
 
 export function pickFilters(source = {}) {
     const filters = {};

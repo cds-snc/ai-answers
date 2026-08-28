@@ -29,6 +29,9 @@ DataTable.use(DT);
 // having to consider "does this break Settings/Chat dashboard/etc.?"
 const ServerDataTable = forwardRef(function ServerDataTable({
     columns,
+    // Accessible name for the table (rendered as an sr-only <caption>) -
+    // pass the section heading so AT users get a named table.
+    caption,
     fetchData,
     lang = 'en',
     actionsTitle,
@@ -43,8 +46,6 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     // text sr-only so the input still has an accessible name.
     searchLabelSrOnly,
     searchPlaceholder,
-    // sr-only <caption> naming the table for screen readers.
-    caption,
     actionsWidth,
     autoWidth = true,
     ordering = true,

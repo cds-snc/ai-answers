@@ -442,6 +442,16 @@
   font: var(--gcds-input-font-desktop);
 }
 
+/* Narrow variant for a select/input whose values are short (abbrKeys,
+   group names, yes/no) and would otherwise stretch to its container -
+   .filter-select is width:100%. Reusable anywhere a form field sits in a
+   wide layout; first used on the Account dashboard page. */
+.filter-select--narrow,
+.filter-input--narrow {
+  width: 100%;
+  max-width: 20rem;
+}
+
 /* SettingsPage's .filter-input/.filter-select fields are width:100% of
    whatever contains them — without a cap that's the full GcdsContainer
    layout="page" width, which reads as very wide on a large monitor.
@@ -908,6 +918,14 @@
   overflow-x: auto;
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
+}
+/* Same table styling, but kept inside its parent instead of bleeding to
+   90vw - for tables that sit inside a section or <details> rather than
+   owning the page (Manage your account page). */
+.dashboard-table-container--contained {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
 }
 /* overflow-x: auto above makes this a scrollable region, which browsers
    treat as implicitly keyboard-focusable (so arrow keys can scroll it when
@@ -3424,4 +3442,53 @@ table.dataTable.table-key-value > tbody > tr > td {
 details gcds-button::part(button) {
   transition: background-color .15s ease-in-out, color .15s ease-in-out,
     border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* Account dashboard page (AccountPage.js) - labelled profile grid */
+.account-profile {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gcds-spacing-150) var(--gcds-spacing-400);
+  margin: 0 0 var(--gcds-spacing-400);
+}
+
+.account-profile__row {
+  display: contents;
+}
+
+.account-profile dt {
+  font-weight: 600;
+}
+
+.account-profile dd {
+  margin: 0;
+}
+
+/* "Coming soon" label beside a section heading */
+.account-badge {
+  display: inline-block;
+  margin-left: var(--gcds-spacing-200);
+  padding: 0 var(--gcds-spacing-150);
+  border-radius: 6px;
+  background: var(--gcds-color-blue-100);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  vertical-align: middle;
+}
+
+/* Yellow "tip" variant (same tokens as the yellow StatusMessage box) */
+.account-badge--tip {
+  background: var(--gcds-color-yellow-100);
+  color: var(--gcds-color-yellow-800);
+}
+
+@media (max-width: 600px) {
+  .account-profile {
+    grid-template-columns: 1fr;
+    gap: var(--gcds-spacing-100);
+  }
+  .account-profile dd {
+    margin-bottom: var(--gcds-spacing-200);
+  }
 }

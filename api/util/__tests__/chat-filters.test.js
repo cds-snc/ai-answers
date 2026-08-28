@@ -200,3 +200,35 @@ describe('getChatFilterConditions - noEval handling', () => {
     });
   });
 });
+
+describe('getChatFilterConditions - reviewerMatch (Institution / Reviewer email filters)', () => {
+  const userIds = ['u1', 'u2'];
+  const feedbackIds = ['f1'];
+
+  it('matches creator or reviewer, as raw refs and as looked-up docs', () => {
+    const conditions = getChatFilterConditions({ reviewerMatch: { userIds, feedbackIds } }, { basePath: 'interactions', userField: 'user' });
+    expect(conditions).toEqual([{
+      $or: [
+        { user: { $in: userIds } },
+        { 'user._id': { $in: userIds } },
+        { 'interactions.expertFeedback': { $in: feedbackIds } },
+        { 'interactions.expertFeedback._id': { $in: feedbackIds } }
+      ]
+    }]);
+  });
+
+  it('matches nothing when nobody resolved, instead of dropping the filter', () => {
+    const conditions = getChatFilterConditions({ reviewerMatch: { userIds: [], feedbackIds: [] } });
+    expect(conditions).toEqual([{ _id: null }]);
+  });
+
+  it('omits the creator branch when only evaluations matched', () => {
+    const [cond] = getChatFilterConditions({ reviewerMatch: { userIds: [], feedbackIds } });
+    expect(cond.$or).toHaveLength(2);
+    expect(cond.$or[0]).toEqual({ 'interactions.expertFeedback': { $in: feedbackIds } });
+  });
+
+  it('adds no condition when reviewerMatch is null (filters not set)', () => {
+    expect(getChatFilterConditions({ reviewerMatch: null })).toEqual([]);
+  });
+});

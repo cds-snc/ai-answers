@@ -26,6 +26,7 @@ import './styles/chat.css';
 // Site-wide DataTables paging focus hand-off (see the function's comment).
 installPagingFocusGuard();
 import UsersPage from './pages/UsersPage.js';
+import AccountPage from './pages/AccountPage.js';
 import EvalPage from './pages/EvalPage.js';
 import EvalDashboardPage from './pages/EvalDashboardPage.js';
 import AutoEvalDashboardPage from './pages/AutoEvalDashboardPage.js';
@@ -394,6 +395,8 @@ export default function App() {
       { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
       { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
       { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
+      { path: '/en/account', element: <AccountPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'account.title' } },
+      { path: '/fr/compte', element: <AccountPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'account.title' } },
       { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
       { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.navigation.eval' } },

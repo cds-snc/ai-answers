@@ -416,6 +416,7 @@
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
       "partnerMenu": "Menu partenaire",
+      "account": "Gérer votre compte",
       "aiAnswers": "Utiliser Réponses IA avec les options d'évaluation",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -748,6 +749,7 @@
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Institution partenaire",
       "allDepartments": "Toutes les institutions",
+      "group": "Groupe",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -847,6 +849,7 @@
         "chatId": "ID de chat",
         "department": "Ministère",
         "program": "Service",
+        "user": "Utilisateur",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Langue de la page"
       }
@@ -1042,15 +1045,62 @@
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
   },
+  "account": {
+    "title": "Gérer votre compte",
+    "profileHeading": "Votre compte",
+    "accountName": "Nom du compte",
+    "activityHeading": "Vos clavardages et évaluations",
+    "status": "Statut",
+    "role": "Rôle",
+    "institution": "Institution",
+    "group": "Groupe",
+    "memberSince": "Membre depuis",
+    "profileSaved": "Compte mis à jour.",
+    "profileSaveError": "Impossible de mettre à jour votre compte.",
+    "loadError": "Impossible de charger votre compte.",
+    "groupChats": {
+      "heading": "Clavardages et évaluations du groupe {group}",
+      "description": "Clavardages commencés ou évalués par les membres de votre groupe au cours des 12 derniers mois.",
+      "empty": "Aucun clavardage de votre groupe pour l'instant.",
+      "underReview": "En évaluation : la préférence de filtre pourrait remplacer ce tableau",
+      "loadError": "Impossible de charger les clavardages du groupe."
+    },
+    "assignedChats": {
+      "heading": "Clavardages qui vous sont attribués",
+      "comingSoon": "Bientôt disponible",
+      "description": "Clavardages attribués par les membres de votre groupe, ou par vous pour les évaluer plus tard.",
+      "inProgress": "Fonctionnalité en cours. Les clavardages qui vous sont attribués pour évaluation s'afficheront ici.",
+      "columns": {
+        "assignedOn": "Attribué le",
+        "assignedBy": "Attribué par",
+        "partnerNotes": "Notes du partenaire"
+      }
+    },
+    "preferences": {
+      "heading": "Préférences de filtre",
+      "prefilterDepartment": "Votre institution",
+      "prefilterDepartmentHint": "Les tableaux de bord peuvent démarrer par défaut avec les options suivantes :",
+      "prefilterGroup": "Seulement les clavardages créés ou évalués par les membres de votre groupe",
+      "noGroup": "Choisissez votre groupe ci-dessus avant d'activer cette option.",
+      "noInstitution": "Choisissez votre institution ci-dessus avant d'activer cette option.",
+      "saved": "Préférence enregistrée. Les tableaux de bord démarreront maintenant avec ce filtre appliqué par défaut.",
+      "savedOff": "Préférence enregistrée.",
+      "saveError": "Impossible d'enregistrer la préférence."
+    }
+  },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "institutionNone": "Non défini",
+    "groupNone": "Aucun",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Groupe"
     },
     "roles": {
       "admin": "Administrateur",

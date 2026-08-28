@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
@@ -295,7 +296,10 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true })
+        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true }),
+        // Reviewer identity for "who evaluated this" columns (Manage your
+        // account page's group table); expertFeedbackDocs is dropped below.
+        'interactions.reviewerEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] }
       }
     });
 
@@ -369,7 +373,8 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({ $project: { creator: 0 } });
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
+    const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic, reviewerMatch };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
@@ -403,6 +408,8 @@ async function chatDashboardHandler(req, res) {
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
+        creatorEmail: 1,
+        reviewerEmail: '$interactions.reviewerEmail',
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
@@ -579,7 +586,9 @@ async function chatDashboardHandler(req, res) {
       partnerEval: row.partnerEval || '',
       aiEval: row.aiEval || '',
       partnerHasContentIssue: !!row.partnerHasContentIssue,
-      userType: row.userType || 'public'
+      userType: row.userType || 'public',
+      creatorEmail: row.creatorEmail || '',
+      reviewerEmail: row.reviewerEmail || ''
     }));
 
     if (isDataTablesMode) {
