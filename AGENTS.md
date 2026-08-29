@@ -73,6 +73,7 @@ an object, diff the fields old vs. new, and add a test asserting the field survi
 11. **Prefer central fixes for shared semantics.** If the same derived value, metric, category, or business rule appears in multiple dashboards/pages/components, first look for the shared API, service, hook, helper, or data contract that should define it. Avoid patching each UI consumer with duplicate compensating logic unless the difference is intentionally presentation-specific.
 12. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
 13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it (e.g. `src/utils/htmlEscape.js` exists — don't write another `escapeHtml`). Only once internal reuse is ruled out, consider whether a well-maintained npm package already solves it.
+14. **Keep PRs human-reviewable.** When a change is too large or wide-ranging for a reviewer to take in as one PR, flag it and work out the breakdown. Pieces that share a contract (a schema, a service, a type) need to be built and verified together before splitting for review; independent findings can just ship as their own small PRs as each is ready.
 
 ## Documentation Regeneration
 
