@@ -132,44 +132,6 @@ code {
     monospace;
 }
 
-.wb-inv {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-  white-space: nowrap;
-  font-size: 1em;
-}
-
-/* When focused, make it visible for keyboard users */
-.wb-inv:focus,
-.wb-inv:active {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-  background-color: var(--gcds-link-focus-background);
-  color: var(--gcds-link-focus-text);
-  border-radius: var(--gcds-link-focus-border-radius);
-  box-shadow: var(--gcds-link-focus-box-shadow);
-  outline: var(--gcds-link-focus-outline-width) solid
-    var(--gcds-link-focus-background);
-  outline-offset: var(--gcds-link-focus-outline-offset);
-  text-decoration: none;
-  padding: 10px;
-  display: inline-block;
-  z-index: 9999;
-  transition: none;
-  animation: none;
-}
-
 /* modifications of GCDS-tokens to Canada.ca design where appropriate */
 :root {
   --gcds-header-margin: 0 0 1.55rem !important;
