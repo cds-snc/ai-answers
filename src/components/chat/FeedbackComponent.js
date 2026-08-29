@@ -297,7 +297,7 @@ const FeedbackComponent = ({
         {showSkipButton && (
           <>
             <a
-              className="wb-inv"
+              className="skip-link"
               href={`#${skipToId}`}
               onClick={onSkip}
               aria-label={skipButtonLabel}
@@ -358,7 +358,7 @@ const FeedbackComponent = ({
         <>
           <span className="feedback-separator"></span>
           <a
-            className="wb-inv"
+            className="skip-link"
             href={`#${skipToId}`}
             onClick={onSkip}
             aria-label={skipButtonLabel}

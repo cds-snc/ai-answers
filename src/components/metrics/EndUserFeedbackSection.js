@@ -151,7 +151,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
             language: dataTableLanguage(lang)
           }}
         >
-          <caption className="wb-inv">{t('metrics.dashboard.userScored.title')}</caption>
+          <caption className="sr-only">{t('metrics.dashboard.userScored.title')}</caption>
         </DataTable>
         {/* One row per distinct feedback reason — a set that grows over
             time, same shape as MetricsDashboard.js's Institution breakdown
@@ -198,7 +198,7 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
               language: dataTableLanguage(lang)
             }}
           >
-            <caption className="wb-inv">{t('metrics.dashboard.userScored.reasonTableTitle')}</caption>
+            <caption className="sr-only">{t('metrics.dashboard.userScored.reasonTableTitle')}</caption>
           </DataTable>
           </div>
         </div>

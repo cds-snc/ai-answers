@@ -1,3 +1,19 @@
+/* File map, 7-1-inspired (VENDORS/BASE/ABSTRACTS/LAYOUT/COMPONENTS/PAGES) —
+   labels only, nothing has been reordered. This file is essentially all
+   COMPONENTS (it's the chat interface's own UI - message bubbles, feedback
+   forms, citations, input) with almost no BASE/LAYOUT/ABSTRACTS/PAGES
+   content, so one top-level banner plus feature-area sub-banners
+   (-- Error & Privacy Messages --, -- Feedback UI --, etc.) is more useful
+   here than a flat 7-1 split would be. Sub-banners aren't exhaustive or
+   perfectly pure - some straddle two areas (e.g. .skip-link sits inside
+   the Feedback UI span though it's really its own thing) - they're a
+   navigation aid, not a strict taxonomy. `grep -n "^   [A-Z]* —\|^/\* -- "
+   src/styles/chat.css` for the current real locations. */
+
+/* ===================================================================
+   COMPONENTS — reusable UI pieces
+   =================================================================== */
+/* -- Error & Privacy Messages -- */
 .redacted-preview, .privacy-message {
     max-width: 100% !important;
   }
@@ -7,7 +23,7 @@
   background-color: var(--gcds-color-red-100);
   border: 1px solid var(--gcds-color-red-100);
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: var(--gcds-spacing-125);
 }
 
 .error-box {
@@ -18,29 +34,29 @@
   background-color: var(--gcds-color-red-50);
   border: 1px solid var(--gcds-color-red-50);
   border-radius: 4px;
-  margin-bottom: 10px;
-  padding-top: 20px;
+  margin-bottom: var(--gcds-spacing-125);
+  padding-top: var(--gcds-spacing-250);
 }
 .privacy-error-box {
   color: #33465c;
   background-color: #f7fafd;
   border: 1px solid var(--gcds-color-blue-100);
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: var(--gcds-spacing-125);
   font-weight: 500;
 }
 
 /* QA: cleanup — "temp fix"; investigate proper spacing so this override can be removed */
 .user-message-box p,
 .chat-id p {
-  margin-bottom: 0px;
+  margin-bottom: var(--gcds-spacing-0);
 }
 
 /* QA: cleanup — "temp" label; this section is permanent, rename or remove the comment */
 .chat-container {
   width: 100%;
   max-width: 800px;
-  padding: 1rem;
+  padding: var(--gcds-spacing-200);
 }
 
 .chat-container > * {
@@ -54,7 +70,7 @@
 }
 .message {
   max-width: 100%;
-  padding: 0.5rem;
+  padding: var(--gcds-spacing-100);
   border-radius: 0.5rem;
 }
 .message.user {
@@ -66,7 +82,7 @@
 }
 .user-message-box {
   background-color: var(--gcds-color-blue-100);
-  color: #333;
+  color: var(--gcds-text-primary);
   padding: 0.65rem;
   border-radius: 0.5rem;
 }
@@ -76,7 +92,7 @@
 }
 .redacted-message {
   color: var(--gcds-color-red-900);
-  padding: 1rem;
+  padding: var(--gcds-spacing-200);
   background-color: white;
   border-radius: 6px;
 }
@@ -113,6 +129,7 @@
   padding: 0;
 }
 
+/* -- AI Message Bubble, Citations & Chat Container -- */
 .ai-message-bubble {
   display: flex;
   flex-direction: column;
@@ -121,9 +138,9 @@
 
 .ai-message-content {
   background-color: #fff;
-  border: solid 1px #d9d9d9;
+  border: solid 1px var(--gcds-color-grayscale-150);
   border-radius: 0.5rem;
-  padding: 1.25rem;
+  padding: var(--gcds-spacing-250);
   display: flex;
   flex-direction: column;
   gap: 1em;
@@ -132,38 +149,24 @@
 .ai-message-content p:first-child {
   font-weight: 600;
 }
-.ai-paragraph,
-.ai-list-item {
-  margin: 0;
-}
 .ai-sentence {
   margin-bottom: 0.2em;
   line-height: 1.6em;
 }
-.ai-list-item {
-  display: flex;
-  align-items: flex-start;
-}
-.list-number {
-  flex-shrink: 0;
-  margin-right: 0.5em;
-  font-weight: bold;
-}
-
 
 .citation-divider {
   border: none;
-  border-top: 3px solid #d9d9d9;
+  border-top: 3px solid var(--gcds-color-grayscale-150);
   margin: 0;
   width: 80px;
 }
 
 .citation-head {
-  margin-bottom: 0.5rem !important;
+  margin-bottom: var(--gcds-spacing-100) !important;
 }
 
 .citation-link a {
-  margin-bottom: 0.5rem !important;
+  margin-bottom: var(--gcds-spacing-100) !important;
   color: var(--gcds-color-blue-850) !important;
   overflow-wrap: break-word;
 }
@@ -184,7 +187,7 @@
 
 .new-tab-link-icon {
   display: inline-block;
-  margin-left: 4px;
+  margin-left: var(--gcds-spacing-50);
 }
 
 /* Only apply mobile ellipsis styles to long URLs */
@@ -193,7 +196,7 @@
     display: block;
     width: 100%;
     position: relative;
-    padding-right: 20px;
+    padding-right: var(--gcds-spacing-250);
   }
 
   .citation-link a.long-url-mobile .citation-url-text {
@@ -222,42 +225,14 @@
   display: inline-block;
 }
 
-.follow-up-prompt {
-  margin-top: 1rem;
-  color: #555;
-}
 .input-area {
-  margin-top: 1rem;
+  margin-top: var(--gcds-spacing-200);
   width: 100%;
 }
 
-.input-button-wrapper {
-  border-bottom: 1px solid #d9d9d9;
-  margin-bottom: 1.5em;
-  padding-bottom: 1em;
-}
-.input-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.main-input-container {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.main-input-container .gcds-textarea {
-  flex-grow: 1;
-}
-
-.optional-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 @media only screen and (width < 48em) {
   .chat-container {
-    padding: 0.5rem;
+    padding: var(--gcds-spacing-100);
   }
   .message {
     max-width: 100%;
@@ -265,14 +240,7 @@
   }
   .user-message-box,
   .ai-message-content {
-    padding: 0.75rem;
-  }
-  .main-input-container {
-    flex-direction: column;
-  }
-  .send-button {
-    width: 100%;
-    margin-top: 10px;
+    padding: var(--gcds-spacing-150);
   }
 }
 @media only screen and (width >= 48em) {
@@ -282,56 +250,43 @@
   }
 }
 
+/* -- Feedback UI -- */
 /* Feedback container */
 .feedback-buttons {
   white-space: nowrap;
-  padding-right: 10px;
+  padding-right: var(--gcds-spacing-125);
 }
 .feedback-container {
   background-color: #fff;
-  border: solid 1px #d9d9d9;
+  border: solid 1px var(--gcds-color-grayscale-150);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
 }
 .feedback-text {
-  font-size: 18px !important;
-  padding-right: 10px;
+  font-size: var(--gcds-font-sizes-text-small) !important;
+  padding-right: var(--gcds-spacing-125);
 }
 .feedback-container p {
-  margin-bottom: 10px;
-}
-.feedback-survey-link {
-  display: inline-block;
-  margin-left: 10px;
-  text-decoration: underline;
-  text-decoration-thickness: var(--gcds-link-decoration-thickness);
-  text-underline-offset: var(--gcds-link-underline-offset);
-  color: #284162;
-}
-.feedback-survey-link:hover {
-  text-decoration: underline;
-  color: var(--gcds-link-hover);
-  text-decoration-thickness: default;
-  text-underline-offset: default;
+  margin-bottom: var(--gcds-spacing-125);
 }
 
 /* Review panels table styling */
 .review-table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #e6e6e6;
+  border: 1px solid var(--gcds-color-grayscale-150);
   background: white;
 }
 .review-table th,
 .review-table td {
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--gcds-color-grayscale-150);
   padding: 0.5rem 0.75rem;
   text-align: left;
   vertical-align: top;
   font-size: 0.95rem;
 }
 .review-table thead th {
-  background: #fafafa;
+  background: var(--gcds-color-grayscale-50);
   font-weight: 600;
 }
 
@@ -375,21 +330,21 @@
 }
 
 .limit-reached-message {
-  margin-bottom: 20px;
+  margin-bottom: var(--gcds-spacing-250);
   margin-top: -20px;
   white-space: pre-line;
 }
 
 .limit-reached-message .btn-primary {
-  margin-top: 1rem;
+  margin-top: var(--gcds-spacing-200);
 }
 
 .limit-reached-message p {
   border-color: var(--gcds-color-blue-500);
   border-left: solid 7px;
-  margin-left: 10px;
+  margin-left: var(--gcds-spacing-125);
   padding: 0.5em 1em 0.5em 1em;
-  margin-bottom: 20px;
+  margin-bottom: var(--gcds-spacing-250);
   border-image: linear-gradient(
       to bottom,
       #6584a6 16px,
@@ -413,14 +368,15 @@
   font-size: 24px;
   line-height: 1.6em;
   margin-left: -1.55em;
-  padding: 2px;
+  padding: var(--gcds-spacing-25);
   position: absolute;
 }
 
+/* -- Expert Rating Form -- */
 /* expert rating */
 .expert-rating-container {
-  margin-top: 10px;
-  padding: 20px;
+  margin-top: var(--gcds-spacing-125);
+  padding: var(--gcds-spacing-250);
   background-color: #f5f5f5;
   border: 1px solid #e3e3e3;
   border-radius: 0.5rem;
@@ -429,34 +385,29 @@
 
 .expert-rating-container h3 {
   font-size: 18px;
-  color: #333;
-  margin-top: 10px;
-}
-.radio-group {
-  margin-top: 10px;
-  color: #333;
+  margin-top: var(--gcds-spacing-125);
 }
 .expert-rating-container label {
   display: block;
-  margin-bottom: 20px;
+  margin-bottom: var(--gcds-spacing-250);
 }
 .expert-rating-container input[type="checkbox"] {
-  margin-right: 10px;
+  margin-right: var(--gcds-spacing-125);
 }
 .expert-rating-container input[type="text"] {
   width: 100%;
-  padding: 8px;
+  padding: var(--gcds-spacing-100);
   margin-top: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--gcds-color-grayscale-150);
   border-radius: 4px;
 }
 
 .feedback-link {
   font-size: 18px !important;
-  padding-right: 10px;
+  padding-right: var(--gcds-spacing-125);
   color: var(--gcds-link-default);
-  margin-right: 8px;
-  margin-left: 8px;
+  margin-right: var(--gcds-spacing-100);
+  margin-left: var(--gcds-spacing-100);
   text-decoration-thickness: var(--gcds-link-decoration-thickness);
   text-underline-offset: var(--gcds-link-underline-offset);
   text-decoration: underline;
@@ -483,6 +434,55 @@
   color: #555;
   margin: 0 0.2rem;
 }
+
+/* FeedbackComponent.js's skip-past-the-rating-buttons link. Same
+   visually-hidden-until-focused technique as global.css's .sr-only, but
+   that class has no focus-reveal state at all - this one needs to become a
+   real, visible, styled link once a keyboard user tabs to it, so it's its
+   own class rather than .sr-only plus one-off overrides. Lives here, not
+   global.css, since FeedbackComponent is chat-only. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+}
+
+/* When focused, make it visible for keyboard users. No font-size of its
+   own on purpose: it inherits the ambient 20px body-text size rather than
+   matching .feedback-link's explicit 18px right beside it - tried matching
+   that 18px and reverted, confirmed against the live page that the larger
+   inherited size reads more legibly once revealed. Don't "fix" this
+   mismatch without checking again first. */
+.skip-link:focus,
+.skip-link:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--gcds-link-focus-background);
+  color: var(--gcds-link-focus-text);
+  border-radius: var(--gcds-link-focus-border-radius);
+  box-shadow: var(--gcds-link-focus-box-shadow);
+  outline: var(--gcds-link-focus-outline-width) solid
+    var(--gcds-link-focus-background);
+  outline-offset: var(--gcds-link-focus-outline-offset);
+  text-decoration: none;
+  padding: var(--gcds-spacing-125);
+  display: inline-block;
+  z-index: 9999;
+  transition: none;
+  animation: none;
+}
+
 .button-as-link {
   background: none;
   border: none;
@@ -506,7 +506,7 @@
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f164"; /* thumbs-up */
-  margin-right: 6px;
+  margin-right: var(--gcds-spacing-75);
   text-decoration: none !important;
   display: inline-block;
 }
@@ -515,7 +515,7 @@
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
   content: "\f165"; /* thumbs-down */
-  margin-right: 6px;
+  margin-right: var(--gcds-spacing-75);
   text-decoration: none !important;
   display: inline-block;
 }
@@ -547,31 +547,9 @@
 
 /* Chat app container styles */
 
-.referring-url {
-  margin-bottom: 10px;
-}
-
-.referring-url_input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.service-status-alert {
-  background-color: #f3e9e8;
-  border: 1px solid #bc3331;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-}
-
-
-.loading-hint-text,
-.mistake-disc p {
+.loading-hint-text {
   color: var(--gcds-color-blue-850);
-  font-size: 18px;
+  font-size: var(--gcds-font-sizes-text-small);
   font-weight: 400 !important;
 }
 
@@ -580,18 +558,8 @@
     font-weight: 400 !important;
 }
 
-/* Add spacing between radio buttons and their labels */
-.radio-group label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.radio-group input[type="radio"] {
-  margin-right: 8px;
-}
-
 .thank-you span {
-  margin-right: 6px;
+  margin-right: var(--gcds-spacing-75);
   color: var(--gcds-notice-success-text);
 }
 
@@ -607,15 +575,14 @@
 .thank-you {
   color: var(--gcds-notice-success-text);
   font-weight: 500;
-  font-size: 18px;
+  font-size: var(--gcds-font-sizes-text-small);
   margin: 1em 1em 1em 1em;
 }
 
 /* Add spacing between sections */
 .sentence-rating-group,
-.citation-rating-group,
-.answer-improvement {
-  margin-bottom: 20px;
+.citation-rating-group {
+  margin-bottom: var(--gcds-spacing-250);
 }
 
 /* Expert feedback only. Was keyed off .gc-chckbxrdio.md, but .md is now also
@@ -664,35 +631,29 @@
 
 .character-limit i,
 .character-warning i {
-  padding-right: 4px;
+  padding-right: var(--gcds-spacing-50);
 }
 
+/* -- Chat Input Form -- */
 /* Container for the form elements */
 .field-container {
   max-width: 800px;
-}
-
-/* QA: cleanup — .field-container label is defined twice; merge display/margin-bottom from here into the second definition below ("Label styling") and delete this block */
-/* Style the label */
-.field-container label {
-  display: block;
-  margin-bottom: 4px;
 }
 
 /* Container for the textarea and button */
 .form-group {
   display: flex;
   position: relative;
-  border: 2px solid #333;
+  border: 2px solid var(--gcds-text-primary);
   border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: var(--gcds-spacing-200);
 }
 
 /* Style the textarea */
 .form-group textarea {
   flex: 1;
-  padding: 8px;
+  padding: var(--gcds-spacing-100);
   min-height: 64px;
   resize: none;
   overflow: hidden;
@@ -756,17 +717,10 @@
   }
 }
 
-/* Character counter */
-.char-counter {
-  position: absolute;
-  bottom: -20px;
-  right: 0;
-  font-size: 0.75em;
-  color: #666;
-}
-
 /* Label styling */
 .field-container label {
+  display: block;
+  margin-bottom: var(--gcds-spacing-50);
   font-size: var(--gcds-font-sizes-h5);
   line-height: var(--gcds-line-heights-h5);
   font-family: var(--gcds-font-families-body);
@@ -776,9 +730,8 @@
 /* Hint text styling */
 .hint-text {
   font-size: 20px;
-  color: #333;
   font-family: "Noto Sans";
-  padding-bottom: 20px;
+  padding-bottom: var(--gcds-spacing-250);
   display: block;
 }
 
@@ -820,9 +773,9 @@
 .expert-rating-container textarea {
   display: block;
   width: 100%;
-  padding: 8px;
+  padding: var(--gcds-spacing-100);
   margin-top: 5px;
-  border: 2px solid #333;
+  border: 2px solid var(--gcds-text-primary);
   border-radius: 4px;
 }
 
@@ -863,9 +816,6 @@ textarea:focus {
   .button-text {
     display: none !important;
   }
-  .mistake-disc p {
-    font-size: 16px;
-  }
   .hint-text {
     font: var(--gcds-font-text-mobile) !important;
   }
@@ -897,7 +847,7 @@ textarea:focus {
 .chat-id,
 .referring-url-label,
 #displayReferringURL {
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--gcds-color-grayscale-150);
   border-radius: 999px;
 }
 
@@ -915,9 +865,9 @@ textarea:focus {
 .expert-rating-container .explanation-field textarea,
 .expert-rating-container .explanation-field input[type="url"] {
   width: 100%;
-  padding: 8px;
+  padding: var(--gcds-spacing-100);
   margin-top: 5px;
-  border: 2px solid #333;
+  border: 2px solid var(--gcds-text-primary);
   border-radius: 0;
 }
 
@@ -986,16 +936,15 @@ textarea:focus {
 }
 
 .expert-rating-container .sentence-rating-group {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--gcds-color-grayscale-150);
 }
 
 .sentence-text,
 .citation-text {
-  color: #333;
   margin: 10px 0;
-  padding: 10px;
-  background-color: #f8f8f8;
-  border-left: 3px solid #ddd;
+  padding: var(--gcds-spacing-125);
+  background-color: var(--gcds-color-grayscale-50);
+  border-left: 3px solid var(--gcds-color-grayscale-150);
   font-size: 0.95em;
   line-height: 1.4;
   overflow-wrap: break-word;
@@ -1005,6 +954,7 @@ textarea:focus {
   font-weight: var(--gcds-font-weights-bold);
 }
 
+/* -- Public Feedback Reason Picker -- */
 /* Public feedback: section title sits above the white option-picker card,
    not inside its fieldset/legend — it's a page heading, not a form control. */
 .expert-rating-container h4.feedback-followup-title {
@@ -1130,18 +1080,17 @@ fieldset.gc-chckbxrdio legend {
 }
 
 .expert-rating-container .explanation-field {
-  margin-bottom: 20px;
-  padding: 10px;
+  margin-bottom: var(--gcds-spacing-250);
+  padding: var(--gcds-spacing-125);
   border-radius: 4px;
   background-color: #fff;
 }
 
 .expert-rating-container .explanation-field label {
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: var(--gcds-spacing-100);
 }
 
-.mistake-disc,
 .loading-hint-text,
 .disclaimer {
   background-color: #f5f5ff;
@@ -1149,7 +1098,8 @@ fieldset.gc-chckbxrdio legend {
   padding: 0.25em 1em;
 }
 
-/* Scroll bar for chat */
+/* -- Scroll-to-bottom Button -- */
+/* Floating button that jumps to the latest message, not a scrollbar */
 .scroll-down-btn {
     position: fixed;
     bottom: 30px;
@@ -1239,9 +1189,10 @@ fieldset.gc-chckbxrdio legend {
     }
 }
 
+/* -- Review Mode & Scenario Override Chrome -- */
 /* QA: cleanup — misleading name in chat.css; shown in ChatInterface readOnly (review) mode only. Consider renaming to .chat-created-date */
 .admin-date {
-  font-size: 18px;
+  font-size: var(--gcds-font-sizes-text-small);
   margin-left: 12px
 }
 .referring-url-label, #displayReferringURL {
@@ -1249,7 +1200,7 @@ fieldset.gc-chckbxrdio legend {
   line-height: 1.55;
   background-color: #f5f5ff;
   padding: var(--gcds-spacing-75) var(--gcds-spacing-175);
-  color: #333;
+  color: var(--gcds-text-primary);
   display: inline-block;
 }
 
@@ -1283,7 +1234,7 @@ fieldset.gc-chckbxrdio legend {
    that node present before its content changes, not inserted fresh once an
    override activates. */
 .scenario-override-wrapper {
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--gcds-color-grayscale-150);
   border-radius: var(--gcds-border-radius-md);
   background-color: var(--gcds-color-purple-50);
   padding: var(--gcds-spacing-175);
@@ -1305,7 +1256,7 @@ fieldset.gc-chckbxrdio legend {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--gcds-spacing-100) var(--gcds-spacing-175);
-  font-size: 18px;
+  font-size: var(--gcds-font-sizes-text-small);
   line-height: 1.55;
   color: var(--gcds-color-purple-550);
   padding-bottom: var(--gcds-spacing-175);
@@ -1328,10 +1279,11 @@ fieldset.gc-chckbxrdio legend {
   padding-top: var(--gcds-spacing-175);
   /* Default paragraph text, not hint text — GC DS's own body-text token
      (--gcds-font-sizes-text/-mobile), same 20px desktop / 18px mobile split
-     gcds-text's own default size uses, not a fixed non-responsive size. */
+     gcds-text's own default size uses, not a fixed non-responsive size.
+     No color either, for the same reason: already the inherited
+     body{color:var(--gcds-text-primary)} default. */
   font-size: var(--gcds-font-sizes-text-mobile);
   line-height: 1.55;
-  color: #333;
 }
 @media only screen and (width >= 48em) {
   .scenario-override-instructions {
@@ -1353,6 +1305,6 @@ fieldset.gc-chckbxrdio legend {
 .scenario-override-instructions details[open],
 .scenario-override-instructions summary:not(:focus) {
   background-color: var(--gcds-color-purple-50);
-  border-color: #d9d9d9;
+  border-color: var(--gcds-color-grayscale-150);
 }
 

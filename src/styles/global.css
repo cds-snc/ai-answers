@@ -1,11 +1,32 @@
+/* File map, 7-1-inspired (VENDORS/BASE/ABSTRACTS/LAYOUT/COMPONENTS/PAGES) —
+   labels only, nothing has been reordered, so the same category shows up
+   more than once wherever it already sat in the file. As of the pass that
+   added these labels: BASE x4, COMPONENTS x4, ABSTRACTS x3, PAGES x2,
+   LAYOUT x1, VENDORS x1. These counts WILL drift as the file changes —
+   don't trust them, `grep -n "^   [A-Z]* —" src/styles/global.css` for the
+   current real count and locations before assuming any one block is the
+   only one of its kind, especially before consolidating a category. */
+
+/* ===================================================================
+   VENDORS — third-party CSS
+   =================================================================== */
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
 
+/* ===================================================================
+   BASE — site-wide element defaults and resets
+   =================================================================== */
 /* Suppress focus ring on programmatically focused elements (tabindex="-1")
    that exist only to move the screen-reader cursor for a status/loading
    announcement (e.g. FeedbackComponent's "thank you" message, ChatInterface's
    loading indicator) — sighted keyboard users have nothing to act on there,
-   so a visible ring would be confusing rather than helpful. */
+   so a visible ring would be confusing rather than helpful.
+   TODO(design): this is opt-in today — every tabindex="-1" target is silent
+   by default, and the rule below has to name each exception that wants a
+   ring back (role="alert" errors, .focus-target). Flip to opt-out instead:
+   default to a visible ring, and give the "screen-reader-cursor-move only"
+   targets their own suppressing class, so a new tabindex="-1" use doesn't
+   silently lose its ring just because nobody added it to the exception list. */
 [tabindex="-1"]:focus {
   outline: none;
 }
@@ -22,6 +43,9 @@
   outline-offset: 2px;
 }
 
+/* ===================================================================
+   ABSTRACTS — design tokens and standalone utility classes
+   =================================================================== */
 /* Custom non-responsive font sizes */
 .font-size-text-sm-nr {
   font-size: var(--gcds-font-sizes-text-small); /* 18px — GC DS token, stays this size on mobile rather than shrinking to --gcds-font-sizes-text-small-mobile (16px) */
@@ -37,20 +61,17 @@
   line-height: 1.2em;
 }
 
+/* ===================================================================
+   LAYOUT — page shell structure
+   =================================================================== */
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: 1.5rem;
-}
-/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
-.referring-url-container {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 0 20px;
+  padding-left: var(--gcds-spacing-300);
 }
 
 .container-custom:first-of-type {
-  margin-bottom: 0px !important;
+  margin-bottom: var(--gcds-spacing-0) !important;
 }
 
 /* Fluid width + capped max-width, matching GcdsHeader's own inner container
@@ -64,16 +85,6 @@
   margin-left: auto;
 }
 
-/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
-.container-custom :after,
-.container-custom :before {
-  display: table;
-}
-
-.container-custom :after {
-  clear: both;
-}
-
 /* Wraps GcdsHeader + the Beta banner (App.js) so the banner's `order: -1`
    below can put it first visually while staying after GcdsHeader in the
    DOM - see the comment at that JSX for why the DOM order matters. */
@@ -82,12 +93,19 @@
   flex-direction: column;
 }
 
-/* top banner for alpha/beta warning */
-/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
+/* ===================================================================
+   COMPONENTS — reusable UI pieces
+   =================================================================== */
+/* top banner for alpha/beta warning
+   TODO(naming): "alpha" is misleading now that the live banner reads "Beta"
+   (t('homepage.status.label'), App.js) — .alpha and .alpha-fill are already
+   gone (unused), so nothing else depends on the "alpha" name surviving.
+   Rename .alpha-top/.alpha-label to something status-neutral (e.g.
+   .service-status-banner/-label) next time this file is touched. */
 .alpha-top {
   order: -1;
-  padding-top: 2px !important;
-  padding-bottom: 2px !important;
+  padding-top: var(--gcds-spacing-25) !important;
+  padding-bottom: var(--gcds-spacing-25) !important;
   top: 0;
   background-color: #f2f2f2;
   /* Was z-index: 100 - harmless pre-.header-chrome (non-flex elements ignore
@@ -96,12 +114,6 @@
      shadow-DOM skip link (z-index: 3), hiding it on focus. auto restores the
      original, correct behaviour. */
   z-index: auto;
-}
-.alpha {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: white;
-  z-index: 100;
 }
 .alpha-label {
   background-color: black;
@@ -116,12 +128,10 @@
   border-radius: 0px;
   font-size: 14px !important;
 }
-.alpha-fill {
-  background-color: #f2f2f2;
-  padding: 0.6em 1em 0.6em 0.6em;
-}
 
-/* index.css */
+/* ===================================================================
+   BASE — site-wide element defaults and resets
+   =================================================================== */
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
@@ -132,44 +142,9 @@ code {
     monospace;
 }
 
-.wb-inv {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-  white-space: nowrap;
-  font-size: 1em;
-}
-
-/* When focused, make it visible for keyboard users */
-.wb-inv:focus,
-.wb-inv:active {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-  background-color: var(--gcds-link-focus-background);
-  color: var(--gcds-link-focus-text);
-  border-radius: var(--gcds-link-focus-border-radius);
-  box-shadow: var(--gcds-link-focus-box-shadow);
-  outline: var(--gcds-link-focus-outline-width) solid
-    var(--gcds-link-focus-background);
-  outline-offset: var(--gcds-link-focus-outline-offset);
-  text-decoration: none;
-  padding: 10px;
-  display: inline-block;
-  z-index: 9999;
-  transition: none;
-  animation: none;
-}
-
+/* ===================================================================
+   ABSTRACTS — design tokens and standalone utility classes
+   =================================================================== */
 /* modifications of GCDS-tokens to Canada.ca design where appropriate */
 :root {
   --gcds-header-margin: 0 0 1.55rem !important;
@@ -187,17 +162,17 @@ code {
 
 /* clean up margins and spacing */
 gcds-button.send-button {
-  margin-bottom: 40px;
+  margin-bottom: var(--gcds-spacing-500);
 }
 gcds-container {
-  margin-bottom: 40px !important;
+  margin-bottom: var(--gcds-spacing-500) !important;
 }
 gcds-details {
-  margin-bottom: 0px !important;
+  margin-bottom: var(--gcds-spacing-0) !important;
 }
 
 .mrgn-bttm-20 {
-  margin-bottom: 20px;
+  margin-bottom: var(--gcds-spacing-250);
 }
 
 .form-error-message {
@@ -206,11 +181,11 @@ gcds-details {
 }
 
 .mrgn-bttm-10 {
-  margin-bottom: 10px;
+  margin-bottom: var(--gcds-spacing-125);
 }
 
 .mrgn-bttm-4 {
-  margin-bottom: 4px;
+  margin-bottom: var(--gcds-spacing-50);
 }
 
 .display-block {
@@ -257,35 +232,43 @@ gcds-details {
 }
 
 .mrgn-tp-1r {
-  margin-top: 1rem;
+  margin-top: var(--gcds-spacing-200);
 }
 
 .mrgn-lft-sm {
-  margin-left: 16px;
-  margin-top: 0px !important;
+  margin-left: var(--gcds-spacing-200);
+  margin-top: var(--gcds-spacing-0) !important;
 }
 
+/* ===================================================================
+   PAGES — one-off styles for a single page
+   =================================================================== */
 /* Homepage subtitle ("Get answers to your Canada.ca questions"). Was
    h2:first-of-type — unscoped, so it silently applied to (and had to be
-   fought via !important elsewhere for) any other page's first h2, including
-   the feedback components' own headings. */
+   fought via a color !important here for) any other page's first h2,
+   including the feedback components' own headings. That rule is gone now,
+   so the !important (and the color itself — already the inherited
+   body{color:var(--gcds-text-primary)} default from gcds-utility.min.css)
+   went with it. */
 h2.homepage-subtitle {
   font: var(--gcds-heading-h4-desktop);
-  margin-bottom: 10px;
-  color: #333 !important;
+  margin-bottom: var(--gcds-spacing-125);
 }
 
 gcds-container:first-of-type {
-  margin-bottom: 0px !important;
+  margin-bottom: var(--gcds-spacing-0) !important;
 }
 
+/* ===================================================================
+   COMPONENTS — reusable UI pieces
+   =================================================================== */
 .loading-container {
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--gcds-color-grayscale-150);
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: var(--gcds-spacing-250);
+  margin-bottom: var(--gcds-spacing-250);
   border-radius: 0.5rem;
 }
 
@@ -294,10 +277,11 @@ gcds-container:first-of-type {
 }
 
 .loading-animation {
-  color: #333;
+  /* No text content — only the pseudo-elements' own `background` (not currentColor)
+     paint the bars, so a color here would be vestigial. */
   position: relative;
   font-size: 4px;
-  background: #333;
+  background: var(--gcds-text-primary);
   animation: escaleY 1s infinite ease-in-out;
   width: 1em;
   height: 4em;
@@ -310,7 +294,7 @@ gcds-container:first-of-type {
   position: absolute;
   top: 0;
   left: 2em;
-  background: #333;
+  background: var(--gcds-text-primary);
   width: 1em;
   height: 4em;
   animation: escaleY 1s infinite ease-in-out;
@@ -340,6 +324,9 @@ gcds-container:first-of-type {
   }
 }
 
+/* ===================================================================
+   BASE — site-wide element defaults and resets
+   =================================================================== */
 /* detail/summary styling */
 details {
   padding-left: 1.1em;
@@ -348,7 +335,7 @@ details {
 }
 
 details[open] {
-  border: 1px solid #ddd;
+  border: 1px solid var(--gcds-color-grayscale-150);
   border-radius: 4px;
   background-color: white;
 }
@@ -356,7 +343,10 @@ details[open] {
 details summary {
   display: flex !important;
   align-items: center;
-  border: 1px solid #ddd;
+  list-style: none;
+  visibility: visible !important;
+  cursor: pointer;
+  border: 1px solid var(--gcds-color-grayscale-150);
   border-radius: 4px;
   color: #295376;
   padding: 5px 15px;
@@ -403,14 +393,6 @@ details > summary {
   margin-right: -1.1em;
 }
 
-/* QA: cleanup — summary defined twice; merge cursor: pointer into this block and remove the second rule */
-summary {
-  display: block !important;
-  list-style: none;
-  visibility: visible !important;
-  cursor: pointer;
-}
-
 summary::-webkit-details-marker {
   display: none;
 }
@@ -420,7 +402,7 @@ details > summary::before {
   display: inline-block;
   width: 0.75em;
   height: 0.75em;
-  margin-right: 0.5rem;
+  margin-right: var(--gcds-spacing-100);
   background-color: currentColor;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
@@ -457,6 +439,9 @@ details[open] > summary {
   margin-bottom: var(--gcds-spacing-100);
 }
 
+/* ===================================================================
+   COMPONENTS — reusable UI pieces
+   =================================================================== */
 /* buttons */
 .btn-primary-sm {
   padding: var(--gcds-button-small-padding);
@@ -468,6 +453,14 @@ details[open] > summary {
   cursor: pointer;
 }
 
+/* .btn-primary-sm's secondary counterpart - no current caller, but kept
+   deliberately: git history shows it was built on purpose alongside
+   .btn-primary-sm (both touched together in "fix: button styling and
+   focus fixes"), not leftover from a removed feature, and it's fully
+   token-driven already (no hardcoded values to go stale). Real native
+   <button> + CSS, matching this project's stated preference over
+   <GcdsButton> for anything that needs analytics tracking - a secondary
+   button need is a "when", not an "if". */
 .btn-secondary-sm {
   padding: var(--gcds-button-small-padding);
   background: white;
@@ -478,8 +471,12 @@ details[open] > summary {
   cursor: pointer;
 }
 
+.btn-secondary-sm:hover {
+  background: var(--gcds-color-blue-100);
+}
+
 .btn-primary {
-  margin-top: 10px;
+  margin-top: var(--gcds-spacing-125);
   padding: 10px 18px;
   background-color: var(--gcds-color-blue-900);
   font-weight: 500;
@@ -496,10 +493,6 @@ details[open] > summary {
 .btn-primary:hover:not(:disabled),
 .btn-primary-send:hover:not(:disabled) {
   background: var(--gcds-button-primary-hover-background);
-}
-
-.btn-secondary-sm:hover {
-  background: var(--gcds-color-blue-100);
 }
 
 .btn-primary-sm:focus,
@@ -523,6 +516,9 @@ summary:focus,
 }
 
 
+/* ===================================================================
+   ABSTRACTS — design tokens and standalone utility classes
+   =================================================================== */
 /* Screen reader only class. Also used by the two site-wide live regions
    src/utils/liveAnnouncer.js appends to <body>. */
 .sr-only {
@@ -542,10 +538,9 @@ summary:focus,
   margin-bottom: 22px;
 }
 
-.small-text {
-  font-size: 16px;
-}
-
+/* ===================================================================
+   BASE — site-wide element defaults and resets
+   =================================================================== */
 /* radios */
 
 fieldset {
@@ -555,7 +550,7 @@ fieldset {
 }
 
 fieldset.gc-chckbxrdio legend:first-of-type {
-  padding-top: 20px;
+  padding-top: var(--gcds-spacing-250);
 }
 
 legend {
@@ -575,7 +570,7 @@ input[type="search"] {
 .gc-chckbxrdio input[type="radio"] {
   margin: 4px 0 0;
   line-height: normal;
-  margin-left: 10px;
+  margin-left: var(--gcds-spacing-125);
   opacity: 0;
   z-index: 2;
 }
@@ -618,113 +613,9 @@ output {
   color: rgb(85.425, 85.425, 85.425);
 }
 
-.form-control {
-  display: block;
-  width: 100%;
-  height: 37px;
-  padding: 10px 14px;
-  font-size: 16px;
-  line-height: 1.4375;
-  color: rgb(85.425, 85.425, 85.425);
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border-color ease-in-out 0.15s,
-    box-shadow ease-in-out 0.15s;
-  -webkit-transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-}
-
-.form-control:focus {
-  border-color: #66afe9;
-  outline: 0;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-}
-
-.form-control::-moz-placeholder {
-  color: #5c5c5c !important;
-  opacity: 1;
-}
-
-.form-control:-ms-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-webkit-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-ms-expand {
-  background-color: transparent;
-  border: 0;
-}
-
-.form-control[disabled],
-.form-control[readonly],
-fieldset[disabled] .form-control {
-  background-color: rgb(238.425, 238.425, 238.425);
-  opacity: 1;
-}
-
-.form-control[disabled],
-fieldset[disabled] .form-control {
-  cursor: not-allowed;
-}
-
-textarea.form-control {
-  height: auto;
-}
-
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  input[type="date"].form-control,
-  input[type="datetime-local"].form-control,
-  input[type="month"].form-control,
-  input[type="time"].form-control {
-    line-height: 37px;
-  }
-
-  .input-group-sm input[type="date"],
-  .input-group-sm input[type="datetime-local"],
-  .input-group-sm input[type="month"],
-  .input-group-sm input[type="time"],
-  .input-group-sm > .input-group-btn > input[type="date"].btn,
-  .input-group-sm > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-sm > .input-group-btn > input[type="month"].btn,
-  .input-group-sm > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-sm,
-  input[type="datetime-local"].input-sm,
-  input[type="month"].input-sm,
-  input[type="time"].input-sm {
-    line-height: 33px;
-  }
-
-  .input-group-lg input[type="date"],
-  .input-group-lg input[type="datetime-local"],
-  .input-group-lg input[type="month"],
-  .input-group-lg input[type="time"],
-  .input-group-lg > .input-group-btn > input[type="date"].btn,
-  .input-group-lg > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-lg > .input-group-btn > input[type="month"].btn,
-  .input-group-lg > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-lg,
-  input[type="datetime-local"].input-lg,
-  input[type="month"].input-lg,
-  input[type="time"].input-lg {
-    line-height: 46px;
-  }
-}
-
+/* ===================================================================
+   COMPONENTS — reusable UI pieces
+   =================================================================== */
 .gc-chckbxrdio fieldset {
   min-width: 0;
   padding: 0;
@@ -732,7 +623,6 @@ textarea.form-control {
   border: 0;
 }
 
-.answer-improvement label,
 label.expert-citation-url {
   font-weight: 500 !important;
 }
@@ -740,7 +630,7 @@ label.expert-citation-url {
 .gc-chckbxrdio .radio {
   position: relative;
   display: block;
-  margin-top: 10px;
+  margin-top: var(--gcds-spacing-125);
   margin-bottom: 26px;
   line-height: 2.8em;
 }
@@ -773,16 +663,14 @@ fieldset[disabled] .radio label {
 .checkbox label,
 .radio label {
   min-height: 23px;
-  padding-left: 20px;
+  padding-left: var(--gcds-spacing-250);
   margin-bottom: 0;
   font-weight: 400;
   cursor: pointer;
 }
 
 .checkbox input[type="checkbox"],
-.checkbox-inline input[type="checkbox"],
-.radio input[type="radio"],
-.radio-inline input[type="radio"] {
+.radio input[type="radio"] {
   position: absolute;
   margin-left: -20px;
 }
@@ -790,30 +678,6 @@ fieldset[disabled] .radio label {
 .checkbox + .checkbox,
 .radio + .radio {
   margin-top: -5px;
-}
-
-.checkbox-inline,
-.radio-inline {
-  position: relative;
-  display: inline-block;
-  padding-left: 20px;
-  margin-bottom: 0;
-  font-weight: 400;
-  vertical-align: middle;
-  cursor: pointer;
-}
-
-.checkbox-inline.disabled,
-.radio-inline.disabled,
-fieldset[disabled] .checkbox-inline,
-fieldset[disabled] .radio-inline {
-  cursor: not-allowed;
-}
-
-.checkbox-inline + .checkbox-inline,
-.radio-inline + .radio-inline {
-  margin-top: 0;
-  margin-left: 10px;
 }
 
 fieldset.gc-chckbxrdio {
@@ -847,7 +711,7 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="checkbox"] + label,
 .gc-chckbxrdio input[type="radio"] + label {
   display: inline-block;
-  margin-left: 40px;
+  margin-left: var(--gcds-spacing-500);
   width: auto;
   /* Wins over the generic .expert-rating-container label { font-size: 16px }
      rule (chat.css) on specificity — two class-level selectors here vs one
@@ -879,7 +743,7 @@ fieldset.gc-chckbxrdio {
 .gc-chckbxrdio input[type="checkbox"] + label::before,
 .gc-chckbxrdio input[type="radio"] + label::before {
   border: 13px solid #fff;
-  -webkit-box-shadow: 0 0 0 2px #333;
+  -webkit-box-shadow: 0 0 0 2px var(--gcds-text-primary);
   box-shadow: 0 0 0 2px #000;
   content: "";
   display: inline-block;
@@ -954,7 +818,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .gc-chckbxrdio input[type="radio"]:checked + label::before {
-  background: #333;
+  background: var(--gcds-text-primary);
 }
 
 .gc-chckbxrdio.checkbox input[type="checkbox"] + label,
@@ -994,7 +858,7 @@ fieldset.gc-chckbxrdio {
 }
 
 .gc-chckbxrdio input[type="checkbox"]:checked + label::after {
-  border-color: #333;
+  border-color: var(--gcds-text-primary);
   border-style: solid;
   border-width: 0 5px 5px 0;
   content: "";
@@ -1023,6 +887,9 @@ fieldset.gc-chckbxrdio {
   }
 }
 
+/* ===================================================================
+   PAGES — one-off styles for a single page
+   =================================================================== */
 /* Suppress Edge's native password reveal button only where the custom toggle is present */
 .auth-password-wrapper input::-ms-reveal {
   display: none;
@@ -1032,7 +899,7 @@ fieldset.gc-chckbxrdio {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  padding-inline: 1rem;
+  padding-inline: var(--gcds-spacing-200);
   box-sizing: border-box;
 }
 
