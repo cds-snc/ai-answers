@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { escapeHtml } from '../../utils/htmlEscape.js';
 
 DataTable.use(DT);
 
@@ -37,12 +38,20 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     containerClassName = 'experimental-table-container',
     initialResult = null,
     emptyTableText,
+    // Visually just a placeholder box (e.g. "Filter"), like the chat
+    // viewer's log entries table: the <label> DataTables builds keeps this
+    // text sr-only so the input still has an accessible name.
+    searchLabelSrOnly,
+    searchPlaceholder,
+    // sr-only <caption> naming the table for screen readers.
+    caption,
     actionsWidth,
     autoWidth = true,
     ordering = true,
     pageLength = 10,
     lengthChange = true,
-    layout
+    layout,
+    onError
 }, ref) {
     const initialResultRef = useRef(initialResult);
     // The live DataTables API instance, captured via initComplete (the same
@@ -84,10 +93,14 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         // search box top-right. A caller can override either slot (e.g. to
         // put search on the left once there's no length menu to sit next to
         // it) without this component hardcoding one specific arrangement.
-        ...(layout ? { layout } : {}),
+        // No first/last « » paging buttons (GC DS pagination has none - see
+        // admin.css); a caller's layout can still override any slot.
+        layout: { bottomEnd: { paging: { firstLast: false } }, ...(layout || {}) },
         language: {
             ...dataTableLanguage(lang),
-            ...(emptyTableText ? { emptyTable: emptyTableText } : {})
+            ...(emptyTableText ? { emptyTable: emptyTableText } : {}),
+            ...(searchLabelSrOnly ? { search: `<span class="sr-only">${escapeHtml(searchLabelSrOnly)}</span>` } : {}),
+            ...(searchPlaceholder ? { searchPlaceholder } : {})
         },
         ajax: async (params, callback) => {
             try {
@@ -108,6 +121,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     ? result.recordsFiltered
                     : (Number.isFinite(result.pagination?.total) ? result.pagination.total : data.length);
 
+                onError?.(null);
                 callback({
                     draw: params.draw,
                     recordsTotal,
@@ -115,7 +129,16 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     data
                 });
             } catch (error) {
+                // Previously: swallowed into an empty result with only a
+                // console.error — a genuine fetch failure and "this table
+                // has zero rows" were indistinguishable to the admin, since
+                // both render emptyTableText. onError hands the raw error
+                // up so a caller can show it (see SettingsPage.js's audit
+                // history for the reference usage) instead of just logging
+                // it; onError?.(null) above clears a stale error once a
+                // later fetch (e.g. a retry) succeeds.
                 console.error('Failed to load table data:', error);
+                onError?.(error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
             }
         },
@@ -130,7 +153,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         initComplete: function () {
             tableApiRef.current = this.api();
         }
-    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, order, ordering, pageLength, renderActions, tableColumns]);
+    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
 
     return (
         // tabIndex makes this reachable by keyboard when its content overflows
@@ -139,10 +162,12 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         <div className={containerClassName} tabIndex={0}>
             <DataTable
                 key={tableKey}
-                className="display chat-dashboard-table"
+                className="display dashboard-table zebra-stable-on-hover"
                 columns={tableColumns}
                 options={options}
-            />
+            >
+                {caption ? <caption className="sr-only">{caption}</caption> : null}
+            </DataTable>
         </div>
     );
 });

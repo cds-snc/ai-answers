@@ -4,7 +4,9 @@ import DataTable from 'datatables.net-react';
 import { SCORE_TO_KEY, FEEDBACK_OPTIONS, isPositiveScore } from '../../constants/UserFeedbackOptions.js';
 import { splitPublicFeedbackTotals } from '../../utils/dashboard/feedbackBreakdown.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
+import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 import enLocale from '../../locales/en.json';
 import frLocale from '../../locales/fr.json';
 
@@ -114,56 +116,36 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
 
   return (
     <div className="mb-600">
-      <h3 className="mb-300">{t('metrics.dashboard.userScored.title')}</h3>
-      <GcdsText className="mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
-      <div className="bg-gray-50 p-4 rounded-lg">
-        {/* Totals Table (unchanged) */}
+      <h2 className="mb-0">{t('metrics.dashboard.userScored.title')}</h2>
+      <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.userScored.description')}</GcdsText>
+      <div>
+        {/* Totals Table */}
         <DataTable
           data={(() => {
             const total = metrics.publicFeedbackTotals.totalQuestionsWithFeedback;
-            const pctOf = (n) => (total ? fmtPct(Math.round((n / total) * 100)) : fmtPct(0));
             return [
+              // Total row's percentages are literal 100 (not computed via
+              // pctOf below) even when total is 0 — matches this table's
+              // original behaviour exactly; see buildCountPctRow's own
+              // comment for why that's not the same as self-dividing.
               {
                 metric: t('metrics.dashboard.userScored.total'),
-                count: fmtN(total),
-                percentage: fmtPct(100),
-                enCount: fmtN(metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo),
-                enPercentage: fmtPct(100),
-                frCount: fmtN(metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo),
-                frPercentage: fmtPct(100)
+                count: total,
+                percentage: 100,
+                enCount: metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo,
+                enPercentage: 100,
+                frCount: metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo,
+                frPercentage: 100
               },
-              {
-                metric: t('metrics.dashboard.userScored.helpful'),
-                count: fmtN(totalsSplit.positive.total),
-                percentage: pctOf(totalsSplit.positive.total),
-                enCount: fmtN(totalsSplit.positive.en),
-                enPercentage: pctOf(totalsSplit.positive.en),
-                frCount: fmtN(totalsSplit.positive.fr),
-                frPercentage: pctOf(totalsSplit.positive.fr)
-              },
-              {
-                metric: t('metrics.dashboard.userScored.unhelpful'),
-                count: fmtN(totalsSplit.negative.total),
-                percentage: pctOf(totalsSplit.negative.total),
-                enCount: fmtN(totalsSplit.negative.en),
-                enPercentage: pctOf(totalsSplit.negative.en),
-                frCount: fmtN(totalsSplit.negative.fr),
-                frPercentage: pctOf(totalsSplit.negative.fr)
-              }
+              buildCountPctRow(t('metrics.dashboard.userScored.helpful'), totalsSplit.positive, total),
+              buildCountPctRow(t('metrics.dashboard.userScored.unhelpful'), totalsSplit.negative, total)
             ];
           })()}
-          columns={[
-            { title: t('metrics.dashboard.metric'), data: 'metric' },
-            { title: t('metrics.dashboard.count'), data: 'count' },
-            { title: t('metrics.dashboard.percentage'), data: 'percentage' },
-            { title: t('metrics.dashboard.enCount'), data: 'enCount' },
-            { title: t('metrics.dashboard.enPercentage'), data: 'enPercentage' },
-            { title: t('metrics.dashboard.frCount'), data: 'frCount' },
-            { title: t('metrics.dashboard.frPercentage'), data: 'frPercentage' }
-          ]}
+          columns={getCountPctColumns(t, fmtN, fmtPct)}
           options={{
             paging: false,
             searching: false,
+            initComplete: function () { setColumnHeaderScope(this.api()); },
             ordering: false,
             info: false,
             language: dataTableLanguage(lang)
@@ -171,28 +153,54 @@ const EndUserFeedbackSection = ({ t, metrics, lang = 'en' }) => {
         >
           <caption className="wb-inv">{t('metrics.dashboard.userScored.title')}</caption>
         </DataTable>
-        {/* Table for public feedback reasons breakdown by language */}
+        {/* One row per distinct feedback reason — a set that grows over
+            time, same shape as MetricsDashboard.js's Institution breakdown
+            table. Carries its CSS hooks (metrics-table-container,
+            dashboard-table) so search/sort styling is ready when
+            paging/searching/ordering are turned on; not active yet, so no
+            layout/initComplete wiring either. Note: dashboard-table already
+            applies zebra/hover regardless, so this table currently looks
+            slightly different from the plain Totals table above it. */}
         <div style={{ marginTop: '2rem' }}>
-          <h4>{t('metrics.dashboard.userScored.reasonTableTitle')}</h4>
+          <h3>{t('metrics.dashboard.userScored.reasonTableTitle')}</h3>
+          <div className="metrics-table-container">
           <DataTable
+            className="display dashboard-table zebra-stable-on-hover"
             data={tableData}
             columns={[
               { title: t('metrics.dashboard.userScored.reason'), data: 'label' },
-              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn', render: (d, type) => type === 'display' ? fmtN(d) : d },
-              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr', render: (d, type) => type === 'display' ? fmtN(d) : d },
-              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn', render: (d, type) => type === 'display' ? fmtN(d) : d },
-              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.frCount')}`, data: 'noFr', render: (d, type) => type === 'display' ? fmtN(d) : d },
-              { title: t('metrics.dashboard.count'), data: 'total', render: (d, type) => type === 'display' ? fmtN(d) : d }
+              // type: 'num' on every count column below: this table's rows
+              // are the only ones on this page that can be genuinely empty
+              // at first mount (tableData is filtered to row.total > 0,
+              // and metrics still equals initialMetricsState pre-fetch) —
+              // DataTables only auto-detects column type once, from
+              // whichever data is present at mount (datatables.net-react
+              // just does clear()+rows.add() on every later data change, no
+              // re-detection), so an empty-at-mount column would otherwise
+              // default to type 'string' forever, including its alignment
+              // (DataTables right-aligns dt-type-numeric by default) even
+              // once real rows arrive. Declaring the type explicitly
+              // sidesteps detection entirely instead of depending on mount
+              // timing.
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.enCount')}`, data: 'yesEn', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.helpful')} ${t('metrics.dashboard.frCount')}`, data: 'yesFr', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.enCount')}`, data: 'noEn', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: `${t('metrics.dashboard.userScored.unhelpful')} ${t('metrics.dashboard.frCount')}`, data: 'noFr', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d },
+              { title: t('metrics.dashboard.count'), data: 'total', type: 'num', render: (d, type) => type === 'display' ? fmtN(d) : d }
             ]}
             options={{
               paging: false,
               searching: false,
+              initComplete: function () { setColumnHeaderScope(this.api()); },
               ordering: false,
-              info: false
+              info: false,
+              stripe: true,
+              language: dataTableLanguage(lang)
             }}
           >
             <caption className="wb-inv">{t('metrics.dashboard.userScored.reasonTableTitle')}</caption>
           </DataTable>
+          </div>
         </div>
       </div>
     </div>

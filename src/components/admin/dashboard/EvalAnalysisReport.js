@@ -73,9 +73,17 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   // Older stored reports have no example.
   const exampleLink = (example) => {
     if (!example?.chatId) return '—';
+    // Route to the example's own (EN/FR breakdown row) language, not the
+    // admin's current UI language - see the note in ChatDashboardPage.js.
+    // The admin's own language rides along separately as the `adminLang`
+    // query param (4th arg) for the review page's own chrome to use. The
+    // visible text is just the opaque chatId though, not real content -
+    // its `lang` attribute (driving GcdsLink's own "opens in a new tab"
+    // hint) is admin-facing chrome, so it follows the admin's own `lang`
+    // instead of `chatLang`, same reasoning as ContentIssueChatsCard.js.
     const chatLang = example.lang === 'fr' ? 'fr' : 'en';
     return (
-      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId)} target="_blank" lang={chatLang}>
+      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId, lang)} target="_blank" lang={lang}>
         {example.chatId}
       </GcdsLink>
     );

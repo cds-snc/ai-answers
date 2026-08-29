@@ -1,6 +1,12 @@
 /**
  * Utility functions to categorize expert feedback and AI evals
  */
+// Duplicate of api/util/db-query.js's own escapeRegex (and api/chat/
+// chat-dashboard.js's) - a code review flagged all three as the same
+// function copy-pasted three times (confirmed byte-identical) and worth
+// consolidating to one shared import. Deliberately left as-is here: out of
+// scope for the chat-viewer-a11y work that surfaced it. Safe to
+// consolidate later - see api/util/db-query.js's escapeRegex.
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export function categorizeExpertFeedback(expertFeedback) {
@@ -221,6 +227,36 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
   };
 }
 
+// Citation correctness is an independent axis from the sentence-score
+// category (harmful/hasError/needsImprovement/correct) - an answer's
+// citation can be wrong regardless of how its sentences scored, and vice
+// versa. getPartnerEvalAggregationExpression/getAiEvalAggregationExpression
+// above fold it into their single priority-ordered value instead (shared
+// by ~10 metrics/export/analysis consumers - see their own call sites) -
+// this is a deliberately SEPARATE, non-shared boolean, used only where a
+// caller wants citation to stack as its own flag alongside the base
+// category rather than mask it (currently just EvalDashboardPage.js's
+// Partner/AI Eval pills, via getPartnerEvalAggregationExpressionWithoutCitation
+// / getAiEvalAggregationExpressionWithoutCitation below). Do not wire this
+// into the shared expressions above without confirming the metrics/export/
+// analysis consumers are meant to change too.
+export function getHasCitationErrorAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
+  return {
+    $cond: {
+      if: { $eq: [{ $ifNull: [feedbackPath, null] }, null] },
+      then: false,
+      else: {
+        $let: {
+          vars: {
+            ef: { $ifNull: [feedbackPath, null] }
+          },
+          in: { $in: ['$$ef.citationScore', [0, 20]] }
+        }
+      }
+    }
+  };
+}
+
 // Content issue is a separate tag partners/admins can check per-sentence
 // during evaluation (sentenceNContentIssue) — independent of the score-
 // derived category above (a "correct" answer can still be flagged), so it's
@@ -330,6 +366,164 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
   };
 }
 
+// Dedicated (non-shared) variants of the two functions above, for
+// EvalDashboardPage.js's Partner/AI Eval pills specifically: same priority
+// chain, minus the hasCitationError branch, since that dashboard shows
+// citation as its own stacking pill (getHasCitationErrorAggregationExpression)
+// instead of folding it into the single base value. Kept as separate,
+// distinctly-named functions rather than a parameterized version of the
+// originals so nothing else can accidentally start depending on this
+// behavior - the ~10 metrics/export/analysis consumers of the originals
+// above must keep seeing hasCitationError as a base-category value unless
+// that's deliberately revisited with them later.
+export function getPartnerEvalAggregationExpressionWithoutCitation(feedbackPath = '$interactions.expertFeedback') {
+  return {
+    $cond: {
+      if: { $eq: [{ $ifNull: [feedbackPath, null] }, null] },
+      then: null,
+      else: {
+        $let: {
+          vars: { ef: { $ifNull: [feedbackPath, null] } },
+          in: {
+            $let: {
+              vars: {
+                hasAnyScore: {
+                  $or: [
+                    { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
+                    { $in: ['$$ef.citationScore', [0, 20, 25]] },
+                    { $ne: ['$$ef.totalScore', null] }
+                  ]
+                },
+                hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
+                hasHarmful: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Harmful', true] },
+                    { $eq: ['$$ef.sentence2Harmful', true] },
+                    { $eq: ['$$ef.sentence3Harmful', true] },
+                    { $eq: ['$$ef.sentence4Harmful', true] }
+                  ]
+                },
+                hasError: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 0] },
+                    { $eq: ['$$ef.sentence2Score', 0] },
+                    { $eq: ['$$ef.sentence3Score', 0] },
+                    { $eq: ['$$ef.sentence4Score', 0] },
+                    { $eq: ['$$ef.totalScore', 0] }
+                  ]
+                },
+                hasNeedsImprovement: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 80] },
+                    { $eq: ['$$ef.sentence2Score', 80] },
+                    { $eq: ['$$ef.sentence3Score', 80] },
+                    { $eq: ['$$ef.sentence4Score', 80] },
+                    { $eq: ['$$ef.totalScore', 80] }
+                  ]
+                }
+              },
+              in: {
+                $cond: {
+                  if: '$$hasAnyScore',
+                  then: {
+                    $switch: {
+                      branches: [
+                        { case: { $eq: ["$$hasHarmful", true] }, then: 'harmful' },
+                        { case: { $eq: ["$$hasError", true] }, then: 'hasError' },
+                        { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
+                        { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
+                      ],
+                      default: null
+                    }
+                  },
+                  else: null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
+export function getAiEvalAggregationExpressionWithoutCitation(feedbackPath = '$interactions.autoEval.expertFeedback') {
+  return {
+    $let: {
+      vars: { ef: { $ifNull: [feedbackPath, null] } },
+      in: {
+        $cond: {
+          if: { $eq: ['$$ef', null] },
+          then: null,
+          else: {
+            $let: {
+              vars: {
+                hasAnyScore: {
+                  $or: [
+                    { $in: ['$$ef.sentence1Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence2Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence3Score', [0, 80, 100]] },
+                    { $in: ['$$ef.sentence4Score', [0, 80, 100]] },
+                    { $in: ['$$ef.citationScore', [0, 20, 25]] },
+                    { $ne: ['$$ef.totalScore', null] }
+                  ]
+                },
+                hasPerfectTotalScore: { $eq: ['$$ef.totalScore', 100] },
+                hasHarmful: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Harmful', true] },
+                    { $eq: ['$$ef.sentence2Harmful', true] },
+                    { $eq: ['$$ef.sentence3Harmful', true] },
+                    { $eq: ['$$ef.sentence4Harmful', true] }
+                  ]
+                },
+                hasError: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 0] },
+                    { $eq: ['$$ef.sentence2Score', 0] },
+                    { $eq: ['$$ef.sentence3Score', 0] },
+                    { $eq: ['$$ef.sentence4Score', 0] },
+                    { $eq: ['$$ef.totalScore', 0] }
+                  ]
+                },
+                hasNeedsImprovement: {
+                  $or: [
+                    { $eq: ['$$ef.sentence1Score', 80] },
+                    { $eq: ['$$ef.sentence2Score', 80] },
+                    { $eq: ['$$ef.sentence3Score', 80] },
+                    { $eq: ['$$ef.sentence4Score', 80] },
+                    { $eq: ['$$ef.totalScore', 80] }
+                  ]
+                }
+              },
+              in: {
+                $cond: {
+                  if: '$$hasAnyScore',
+                  then: {
+                    $switch: {
+                      branches: [
+                        { case: { $eq: ["$$hasHarmful", true] }, then: 'harmful' },
+                        { case: { $eq: ["$$hasError", true] }, then: 'hasError' },
+                        { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
+                        { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
+                      ],
+                      default: null
+                    }
+                  },
+                  else: null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
 // Subdomains of canada.ca to exclude from the "Public Referred" filter.
 // These are CDS-owned, internal, or non-public-facing sites.
 // Add both EN and FR variants when applicable.
@@ -379,7 +573,14 @@ export function isReferredPublicUrl(referringUrl) {
 }
 
 export function getChatFilterConditions(filters, options = {}) {
-  const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;
+  // citationErrorStacking: opt-in only - EvalDashboardPage.js's Partner/AI
+  // Eval pipeline is the only caller that passes this today. Every other
+  // caller (Chat Dashboard, Partner/Metrics dashboards, exports, eval
+  // analysis) keeps matching hasCitationError as a literal value of the
+  // base partnerEval/aiEval field, same as before - see the long comment
+  // on getHasCitationErrorAggregationExpression in this file for why this
+  // isn't the default.
+  const { basePath = 'interactions', userField = 'user', skipUserCondition = false, citationErrorStacking = false } = options;
   const prefix = basePath ? `${basePath}.` : '';
   const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
@@ -453,16 +654,23 @@ export function getChatFilterConditions(filters, options = {}) {
   // Builds the same shape as the previous inline blocks; extracted so both
   // fields can be combined via evalLogic below instead of always being
   // pushed as separate (implicitly ANDed) top-level conditions. Each
-  // selected pseudo-category (noEval, and — partnerEval only —
-  // hasContentIssue) becomes its own OR-branch alongside the real category
-  // match, since a row can match on score category and/or either tag
-  // independently of the others.
+  // selected pseudo-category (noEval; hasContentIssue, partnerEval only;
+  // hasCitationError too, but only when citationErrorStacking is on)
+  // becomes its own OR-branch alongside the real category match, since a
+  // row can match on score category and/or either tag independently of
+  // the others - hasContentIssue (and, opt-in only, hasCitationError) are
+  // their own boolean fields, not values the base partnerEval/aiEval field
+  // itself takes, so they're pulled out of evalCategories and matched
+  // against those fields instead. Without the option, hasCitationError
+  // stays in evalCategories and matches the base field's literal value,
+  // same as every caller before citation stacking existed.
   const buildEvalCondition = (rawValue, field) => {
     if (!rawValue || rawValue === 'all') return null;
     const categories = rawValue.split(',').map(c => c.trim()).filter(Boolean);
     const hasNoEval = categories.includes('noEval');
     const hasContentIssue = field === 'partnerEval' && categories.includes('hasContentIssue');
-    const evalCategories = categories.filter(c => c !== 'noEval' && c !== 'hasContentIssue');
+    const hasCitationError = citationErrorStacking && categories.includes('hasCitationError');
+    const evalCategories = categories.filter(c => c !== 'noEval' && c !== 'hasContentIssue' && !(hasCitationError && c === 'hasCitationError'));
 
     const branches = [];
     if (hasNoEval) {
@@ -470,6 +678,10 @@ export function getChatFilterConditions(filters, options = {}) {
     }
     if (hasContentIssue) {
       branches.push({ [withPath('partnerHasContentIssue')]: true });
+    }
+    if (hasCitationError) {
+      const citationErrorField = field === 'partnerEval' ? 'partnerHasCitationError' : 'aiHasCitationError';
+      branches.push({ [withPath(citationErrorField)]: true });
     }
     if (evalCategories.length === 1) {
       branches.push({ [withPath(field)]: evalCategories[0] });

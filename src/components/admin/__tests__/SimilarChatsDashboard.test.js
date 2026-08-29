@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import SimilarChatsDashboard from '../SimilarChatsDashboard.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'vector.fetchErrorDetail': 'Failed to fetch similar chats: {message}',
@@ -56,9 +57,8 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.change(screen.getByPlaceholderText('vector.chatIdPlaceholder'), { target: { value: 'abc123' } });
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Failed to fetch similar chats: no embeddings found');
-    const enSpan = alert.querySelector('span[lang="en"]');
+    await waitForAnnouncement('Failed to fetch similar chats: no embeddings found', 'assertive', { exact: true });
+    const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('no embeddings found');
     expect(alertSpy).not.toHaveBeenCalled();
@@ -71,8 +71,8 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.change(screen.getByPlaceholderText('vector.chatIdPlaceholder'), { target: { value: 'abc123' } });
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
 
-    const alert = await screen.findByRole('alert');
-    const enSpan = alert.querySelector('span[lang="en"]');
+    await waitForAnnouncement('Failed to fetch', 'assertive');
+    const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Failed to fetch');
   });
@@ -84,10 +84,10 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     const input = screen.getByPlaceholderText('vector.chatIdPlaceholder');
     fireEvent.change(input, { target: { value: 'abc123' } });
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
-    await screen.findByRole('alert');
+    await waitFor(() => expect(document.querySelector('.status-message--error-box')).toBeTruthy());
 
     fireEvent.change(input, { target: { value: 'def456' } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('does not show a table before any successful fetch', () => {

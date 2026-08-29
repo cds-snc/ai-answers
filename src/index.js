@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.js';
+import { ensureLiveAnnouncer } from './utils/liveAnnouncer.js';
 import reportWebVitals from './reportWebVitals.js';
 import '@gcds-core/components-react/gcds.css';
 import '@cdssnc/gcds-utility/dist/gcds-utility.min.css';
@@ -62,6 +63,10 @@ function insertAdobeScriptsIfNeeded() {
 // -------------------------------------------------------
 
 const renderApp = async () => {
+  // The site-wide live regions every screen-reader announcement goes
+  // through (src/utils/liveAnnouncer.js). Created before React renders so
+  // they're already in the accessibility tree when the first page announces.
+  ensureLiveAnnouncer();
   const root = ReactDOM.createRoot(document.getElementById('root'));
 
   // Load runtime config (from /config.js) then insert Adobe scripts.

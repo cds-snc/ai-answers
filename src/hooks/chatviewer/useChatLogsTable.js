@@ -6,22 +6,40 @@ import $ from 'jquery';
 // jQuery directly, so nothing else guarantees the plugin is attached.
 import 'datatables.net-dt';
 import Prism from 'prismjs';
-import { buildMetadataCellHtml } from '../../utils/chatviewer/chatViewer.js';
+import { buildMetadataCellHtml, escapeHtml } from '../../utils/chatviewer/chatViewer.js';
 import { captureTableFocus, restoreTableFocus } from '../../utils/chatviewer/focusRestore.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
+
+// DataTables' column search takes one string, not an array - '^(warn|error)$'
+// (regex mode) is how a multi-value "OR" match is expressed as that one
+// string. Anchored full-match rather than a bare alternation: the Level
+// column's rendered text is only ever the level word itself (see the Level
+// column's own render()), so this never needs to guard against a false
+// substring match elsewhere in the row the way an unanchored pattern would.
+const buildLevelSearchPattern = (selectedLevels) =>
+  selectedLevels.length > 0 ? `^(${selectedLevels.join('|')})$` : '';
 
 export function useChatLogsTable({
   tableRef,
   logs,
   lang,
-  logLevel,
+  selectedLevels,
   t,
-  onExpandMetadata,
+  onDownloadLogs,
 }) {
   const dataTableRef = useRef(null);
-  const logLevelRef = useRef(logLevel);
+  const selectedLevelsRef = useRef(selectedLevels);
+  // Ref rather than an effect dependency: ChatViewer.js's handleDownloadLogs
+  // is a fresh function every render (not memoized), and the topEnd button
+  // built below only needs whatever's current at click time - putting it in
+  // deps instead would rebuild the whole DataTable (destroy+recreate, see
+  // below) on every ChatViewer render, not just when logs/lang/t actually
+  // change.
+  const onDownloadLogsRef = useRef(onDownloadLogs);
 
-  logLevelRef.current = logLevel;
+  selectedLevelsRef.current = selectedLevels;
+  onDownloadLogsRef.current = onDownloadLogs;
 
   useEffect(() => {
     if (!tableRef.current) {
@@ -67,37 +85,88 @@ export function useChatLogsTable({
           title: t('logging.level'),
           data: 'logLevel',
           width: '7%',
-          render: (data) => data ?? '',
+          // .label pill - logLevel's own values (info/debug/warn/error) are
+          // used directly as the class name, reusing the existing severity
+          // tiers already in admin.css (.label.info/.warn/.error/.debug)
+          // rather than a separate log-level-* set of colours. logLevel is
+          // enum-constrained (models/logs.js), but this still escapes it -
+          // a storage-path log entry (Storage.js/S3, not Mongoose) never
+          // went through that schema's validation.
+          render: (data) => {
+            if (!data) return '';
+            const safe = escapeHtml(data);
+            return `<span class="label ${safe}">${safe}</span>`;
+          },
         },
         {
           title: t('logging.message'),
           data: 'message',
-          width: '25%',
+          width: '28%',
           render: (data) => data ?? '',
         },
         {
           title: t('logging.metadata'),
           data: 'metadata',
           className: 'metadata-column',
-          width: '56%',
-          render: (data) => buildMetadataCellHtml(data, t('logging.expand')),
+          width: '53%',
+          // Every field shown, each judged on its own length rather than a
+          // pair-count cutoff - see buildMetadataCellHtml for the details.
+          render: (data) =>
+            buildMetadataCellHtml(data, {
+              seeFullFieldLabel: t('logging.metadataSeeFullField'),
+              seeFullValueLabel: t('logging.metadataSeeFullValue'),
+            }),
         },
       ],
       order: [[0, 'desc']],
       autoWidth: false,
       scrollX: false,
       pageLength: 50,
-      language: { ...dataTableLanguage(lang), emptyTable: t('logging.noLogs') },
+      searching: true,
+      // Matches ChatDashboardPage.js/EvalDashboardPage.js's layout (search
+      // top-left, count+page-length bottom-left, pagination bottom-right),
+      // using topEnd for the Download action next to the search box. A
+      // DataTables layout value can be a function returning a DOM/jQuery
+      // node - built as a jQuery template since this table isn't
+      // React-rendered content (icon markup matches BatchList.js's download
+      // action; GC DS's icon font has no download glyph).
+      layout: {
+        topStart: 'search',
+        topEnd:
+          logs.length > 0
+            ? function () {
+                const $button = $(
+                  `<gcds-button type="button" button-role="secondary" id="download-logs-button">` +
+                    `<span style="display:inline-flex;align-items:center;gap:0.4em;">` +
+                    `<span class="fa fa-solid fa-download" aria-hidden="true"></span>` +
+                    `${escapeHtml(t('logging.download'))}` +
+                    `</span>` +
+                    `</gcds-button>`
+                );
+                $button.on('click', () => onDownloadLogsRef.current?.());
+                return $button;
+              }
+            : {},
+        bottomStart: { features: ['pageLength', 'info'] },
+        bottomEnd: { paging: { firstLast: false } },
+      },
+      language: {
+        ...dataTableLanguage(lang),
+        emptyTable: t('logging.noLogs'),
+        // Visually just a "Filter" placeholder box, flush with the level
+        // presets above it; the <label> DataTables builds keeps an sr-only
+        // name (DataTables inserts this string as HTML).
+        search: `<span class="sr-only">${escapeHtml(t('logging.filterEntriesLabel'))}</span>`,
+        searchPlaceholder: t('admin.common.filterPlaceholder'),
+      },
+      // scope="col" is dynamic, not static JSX, so a future columns[] edit
+      // can't drift out of sync with it (WCAG 1.3.1).
+      initComplete: function () {
+        setColumnHeaderScope(this.api());
+      },
       drawCallback: function () {
-        // TODO(follow-up, PR #1684 review): document-scoped, so a logs-table
-        // redraw while MetadataModal is open also re-highlights the modal's
-        // own <code> block from outside React. MetadataModal's rewrite to
-        // dangerouslySetInnerHTML was specifically meant to make React the
-        // only writer of that markup — this doesn't corrupt it (Prism's
-        // re-tokenization of already-highlighted markup is idempotent), but it
-        // contradicts that invariant and does wasted work on every redraw.
-        // Scope with Prism.highlightAllUnder(tableRef.current) instead.
-        Prism.highlightAll();
+        // Scoped to this table - no <code> blocks exist outside it.
+        Prism.highlightAllUnder(tableRef.current);
 
         $(tableRef.current).css({
           width: '100%',
@@ -112,80 +181,11 @@ export function useChatLogsTable({
           'white-space': 'normal',
           'overflow-wrap': 'anywhere',
         });
-
-        $('.metadata-wrapper').css({
-          position: 'relative',
-          display: 'block',
-          width: '100%',
-          'min-width': '0',
-          'max-width': '100%',
-          'min-height': '200px',
-          'box-sizing': 'border-box',
-          'vertical-align': 'top',
-          overflow: 'visible',
-        });
-
-        $('.metadata-column').css({
-          'vertical-align': 'top',
-          overflow: 'visible',
-        });
-
-        $('.metadata-content').css({
-          position: 'relative',
-          height: '200px',
-          'min-height': '200px',
-          'max-height': '200px',
-          overflow: 'scroll',
-          'overflow-x': 'scroll',
-          'overflow-y': 'scroll',
-          'scrollbar-gutter': 'stable both-edges',
-          width: '100%',
-          'min-width': '0',
-          'max-width': '100%',
-          'box-sizing': 'border-box',
-          'background-color': '#f5f5f5',
-          'border-radius': '4px',
-        });
-
-        $('.metadata-content pre').css({
-          margin: '0',
-          padding: '8px',
-          'min-width': 'max-content',
-          'min-height': '260px',
-          width: 'max-content',
-        });
-
-        $('.metadata-content code').css({
-          'font-family': 'monospace',
-          'font-size': '13px',
-          'line-height': '1.4',
-          'white-space': 'pre',
-        });
-
-        $('.expand-button')
-          .css({
-            position: 'absolute',
-            top: '6px',
-            right: '24px',
-            'z-index': '3',
-            'font-size': '14px',
-            padding: '4px 8px',
-            'line-height': '1.2',
-            'white-space': 'nowrap',
-            'background-color': '#fff',
-          })
-          .off('click')
-          .on('click', function (e) {
-            e.stopPropagation();
-            const tr = $(this).closest('tr');
-            const rowData = dataTableRef.current.row(tr).data();
-            onExpandMetadata(rowData.metadata);
-          });
       },
     });
 
-    if (logLevelRef.current && dataTableRef.current) {
-      dataTableRef.current.column(1).search(logLevelRef.current, false, false).draw();
+    if (selectedLevelsRef.current.length > 0 && dataTableRef.current) {
+      dataTableRef.current.column(1).search(buildLevelSearchPattern(selectedLevelsRef.current), true, false).draw();
     }
 
     restoreTableFocus(tableRef.current, focusRestore);
@@ -196,15 +196,15 @@ export function useChatLogsTable({
         dataTableRef.current = null;
       }
     };
-  }, [lang, logs, onExpandMetadata, t, tableRef]);
+  }, [lang, logs, t, tableRef]);
 
   useEffect(() => {
     if (!dataTableRef.current) {
       return;
     }
 
-    dataTableRef.current.column(1).search(logLevel, false, false).draw();
-  }, [logLevel]);
+    dataTableRef.current.column(1).search(buildLevelSearchPattern(selectedLevels), true, false).draw();
+  }, [selectedLevels]);
 
   return dataTableRef;
 }

@@ -54,14 +54,19 @@ const PublicFeedbackComponent = ({
   };
 
   return (
-    <form className="expert-rating-container" noValidate onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+    <form className="expert-rating-container" noValidate onSubmit={(e) => { e.preventDefault(); handleSend(); }} lang={lang}>
       <span
         className="close-icon"
         role="button"
         tabIndex={0}
         aria-label={t('common.close')}
         onClick={onClose}
-        onKeyDown={(e) => e.key === 'Enter' && onClose()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClose();
+          }
+        }}
       >
         <i className="fa-solid fa-close"></i>
       </span>

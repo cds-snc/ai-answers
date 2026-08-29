@@ -13,8 +13,15 @@ import aiStarsBlue from '../../assets/ai-stars-1354ec-90.png';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { buildReadableLocationLabel } from '../../utils/citationAriaLabel.js';
+import { useHasAnyRole } from '../RoleBasedUI.js';
 import { CanadaCaAccessibleLabel } from '../../utils/pronounceCanadaCa.js';
 import { buildAnswerNumberLabel } from '../../hooks/useAnswerNumberLabel.js';
+import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { detectUrlLanguage } from '../../utils/dashboard/urlLanguage.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import { useActiveScenarioOverride } from '../../hooks/chat/useActiveScenarioOverride.js';
+import ScenarioSubmitInstructions from '../scenario/ScenarioSubmitInstructions.js';
+import ScenarioOverrideBanner from './ScenarioOverrideBanner.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -27,7 +34,6 @@ const ChatInterface = ({
   handleSendMessage,
   handleReload,
   handleAIToggle,
-  handleSearchToggle,
   workflowSelection,
   handleWorkflowChange,
   handleReferringUrlChange,
@@ -44,10 +50,13 @@ const ChatInterface = ({
   MAX_CONVERSATION_TURNS,
   t,
   lang,
+  adminLang,
   extractSentences,
   chatId,
   readOnly = false,
   userLeftChatRef,
+  onExpertFeedbackChange,
+  reappearedFeedback,
 }) => {
   // Add safeT helper function
   const safeT = useCallback(
@@ -60,16 +69,55 @@ const ChatInterface = ({
     [t]
   );
 
-  // Add truncateURL helper function 
+  // effectiveAdminLang/adminT/safeAdminT: a second, separately-resolved
+  // translator for the review-mode-only "admin chrome" around the
+  // transcript - the department wrapper's review panels
+  // (ExpertFeedbackPanel/PublicFeedbackPanel/DownloadPanel/UsedChatsPanel/
+  // EvalPanel/FeedbackComponent), and the Chat ID/Referring URL/Date labels.
+  // `lang` above is the chat's own language (what the end user actually saw
+  // - official-languages.md Rule 2); this is the reviewing admin's own
+  // current UI language instead. `adminLang` is only ever set by
+  // ChatAppContainer.js in review mode and otherwise defaults to `lang`, so
+  // live-chat behaviour is unchanged. Resolved once here rather than
+  // `adminLang || lang` at every call site below.
+  const effectiveAdminLang = adminLang || lang;
+  const { t: adminT } = useTranslations(effectiveAdminLang);
+  // Admin/partner testing via ChatOptions cares about the exact URL they
+  // applied, not the shortened public-facing display — same role gate
+  // ChatOptions itself uses for that panel.
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
+  const safeAdminT = useCallback(
+    (key) => {
+      const result = adminT(key);
+      return typeof result === "object" && result !== null
+        ? result.text
+        : result;
+    },
+    [adminT]
+  );
+
+  // Add truncateURL helper function
   const truncateURL = useCallback((url) => {
     if (!url) return '';
     try {
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace(/^www\./, '');
-      const pathname = urlObj.pathname;
-      const filename = pathname.split('/').pop() || '';
+      // Real path segments only (filter(Boolean) drops the empty strings
+      // split('/') leaves for a leading/trailing slash) — the previous
+      // version always appended "/.../{lastSegment}" even for a bare domain
+      // with no path at all, producing a fake "domain/.../ " with nothing
+      // actually elided.
+      const segments = urlObj.pathname.split('/').filter(Boolean);
 
-      return `${domain}/.../${filename}`;
+      if (segments.length === 0) {
+        return domain;
+      }
+      if (segments.length === 1) {
+        return `${domain}/${segments[0]}`;
+      }
+      // Only genuinely worth eliding the middle once there's more than one
+      // segment to hide.
+      return `${domain}/.../${segments[segments.length - 1]}`;
     } catch (error) {
       console.error('Invalid URL:', error);
       return url;
@@ -443,13 +491,18 @@ const ChatInterface = ({
     ? `${safeT("homepage.chat.input.referringPage")} ${buildReadableLocationLabel(referringUrl, lang) || truncateURL(referringUrl)}`
     : '';
 
+  // Full URL for admin/partner (testing via ChatOptions cares about the
+  // exact value applied); shortened domain/.../file display for everyone
+  // else, same as before.
+  const displayedReferringUrl = isAdminOrPartner ? referringUrl : truncateURL(referringUrl);
+
   // Live-chat referring-URL banner: shown at the top once the first message
   // has been sent, or above the textarea before that (see the two render
   // sites below) — same markup either way, so it's defined once here rather
   // than duplicated at both call sites.
   const liveReferringUrlBanner = referringUrl ? (
     <span className="referring-url-label mb-300" id="displayReferringURL" aria-label={referringUrlAriaLabel}>
-      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {displayedReferringUrl}
     </span>
   ) : null;
 
@@ -460,12 +513,22 @@ const ChatInterface = ({
   // the accessible description is already announced via the persistent one.
   const composeBoxReferringUrlEcho = referringUrl ? (
     <span className="referring-url-label mb-300" aria-hidden="true">
-      <b>{safeT("homepage.chat.input.referringPage")}</b> {truncateURL(referringUrl)}
+      <b>{safeT("homepage.chat.input.referringPage")}</b> {displayedReferringUrl}
     </span>
   ) : null;
 
-  return (
-<div className="chat-container">
+  // Issue #1048: only relevant to live testing, not the read-only chat
+  // review view (ChatViewer/EvalPanel etc. render historical chats, where a
+  // "you're testing a local override" warning wouldn't make sense).
+  const { activeOverride } = useActiveScenarioOverride({ enabled: !readOnly });
+
+  // Everything from the testing-notice banner through the chat itself down to
+  // the "how to submit" instructions, in document order. Extracted to a
+  // variable (rather than inlined below) so it can be rendered either
+  // wrapped in .scenario-override-wrapper (live chat) or bare (readOnly
+  // review, which never has an activeOverride — see the hook call above).
+  const chatBody = (
+    <>
       {/* Show referring URL at the top: always for review mode, and once the
           first message has been sent for the live chat (before that, it's
           shown above the textarea instead, as context for the message being composed).
@@ -474,13 +537,22 @@ const ChatInterface = ({
       {referringUrl && (readOnly || messages.length > 0) && (
         readOnly ? (
           <span className="referring-url-label mb-300">
-            <b>{safeT("homepage.chat.input.referringURL")}</b>{" "}
+            {/* Admin-facing label (review mode only) - follows the admin's own
+                toggle language, same as every other piece of review chrome
+                (adminT). The URL itself is real content from the user's
+                actual page, split the same way as CountTable.js's citation
+                links: GcdsLink's own `lang` drives its "(opens in a new
+                tab)" hint (admin chrome, effectiveAdminLang), while the
+                nested span carries the URL's own detected language
+                (detectUrlLanguage) so the text itself is pronounced
+                correctly regardless of the admin's current UI language. */}
+            <b>{safeAdminT("homepage.chat.input.referringURL")}</b>{" "}
 
             <GcdsLink href={referringUrl}
               target="_blank"
-              lang={lang}
+              lang={effectiveAdminLang}
             >
-              {referringUrl}
+              <span lang={detectUrlLanguage(referringUrl, lang)}>{referringUrl}</span>
             </GcdsLink>
           </span>
         ) : (
@@ -547,13 +619,20 @@ const ChatInterface = ({
             ? aiAnswerIndex + 1
             : undefined;
           const { answerText: departmentAnswerText } = buildAnswerNumberLabel(
-            t,
+            adminT,
             aiAnswerIndex !== null ? aiAnswerIndex + 1 : undefined
           );
           const userQuestionIndex = (message.sender === "user" && !message.error)
             ? sequenceableUserMessages.findIndex(m => m.id === message.id)
             : null;
           const citationUrl = getCitationUrl(message.interaction);
+          // Computed once per message rather than inline at each
+          // FeedbackComponent call site below (review-mode and live-chat
+          // both need it) - same fallback chain, just no longer duplicated
+          // verbatim. Optional chaining here (unlike the old inline
+          // versions) since this now also runs for user-sender messages,
+          // which never carry `.interaction`.
+          const englishQuestion = message.interaction?.answer?.englishQuestion || message.interaction?.question?.englishQuestion || '';
           const isLastErrorMessage =
             message.error && message.id === messages[messages.length - 1]?.id;
           // While the AI is still generating a reply, the most recent question
@@ -586,6 +665,19 @@ const ChatInterface = ({
                   {...(message.redactedText?.includes("###") && {
                     "aria-hidden": "true",
                   })}
+                  // Real detected language, not collapsed to English - this is
+                  // the actual conversation transcript (what the end user
+                  // typed), not an admin/eval tool. `message.questionLanguage`
+                  // (not `message.interaction`, which a user-sender message
+                  // never carries - see ChatAppContainer.js/HomePage.js) is
+                  // the same detected language the answer bubble tags itself
+                  // with via getAnswerLanguage(message.interaction), just
+                  // pre-resolved to a plain string at attach-time since the
+                  // two sides of one interaction share it. See
+                  // docs/coding-agent-docs/official-languages.md for why this
+                  // differs from the collapse-to-English rule used in the
+                  // eval/dashboard tools.
+                  lang={toLangAttr(message.questionLanguage)}
                 >
                   {message.text}
                 </p>
@@ -708,19 +800,19 @@ const ChatInterface = ({
                           <h3 className="sr-only">
                             {departmentAnswerText ? `${departmentAnswerText} - ` : ""}
                             {message.interaction.context?.department ||
-                              safeT("homepage.chat.review.noDepartment")}
+                              safeAdminT("homepage.chat.review.noDepartment")}
                           </h3>
                           <p className="department-label-text font-size-text-xsm-nr mb-200" aria-hidden="true">
                             <b>
                               {message.interaction.context?.department ||
-                                safeT("homepage.chat.review.noDepartment")}
+                                safeAdminT("homepage.chat.review.noDepartment")}
                             </b>
                           </p>
                           {caches &&
                             message.interaction.answer.answerType !== "question" &&
                             !message.interaction.expertFeedback && (
                               <FeedbackComponent
-                                lang={lang}
+                                lang={effectiveAdminLang}
                                 sentences={
                                   extractSentences(message.interaction.answer.content) ||
                                   []
@@ -729,6 +821,23 @@ const ChatInterface = ({
                                   extractSentences(message.interaction.answer.content)
                                     .length
                                 }
+                                // Same EN/FR-official-languages display rule (shown
+                                // as-is; non-EN/FR collapses to English) as
+                                // ExpertFeedbackPanel.js/ChatDashboardPage.js -
+                                // getAnswerLanguage handles
+                                // both the live and persisted data shapes.
+                                questionLanguage={getAnswerLanguage(message.interaction)}
+                                // TODO(sentence-pairing-risk): see the
+                                // resolveDisplayContent TODO in
+                                // answerLanguage.js - sentences/sentencesEnglish
+                                // are paired purely by array index with no
+                                // enforced guarantee of matching segmentation.
+                                sentencesEnglish={
+                                  message.interaction.answer.englishAnswer
+                                    ? extractSentences(message.interaction.answer.englishAnswer)
+                                    : []
+                                }
+                                englishQuestion={englishQuestion}
                                 chatId={chatId}
                                 userMessageId={message.id}
                                 answerNumber={reviewAnswerNumber}
@@ -739,25 +848,47 @@ const ChatInterface = ({
                                 skipButtonLabel={safeT(
                                   "homepage.chat.textarea.ariaLabel.skipfo"
                                 )}
+                                onExpertFeedbackChange={(expertFeedback) =>
+                                  onExpertFeedbackChange?.(message.id, expertFeedback)
+                                }
+                                // Only set for the one message whose expert
+                                // feedback was just deleted - tells
+                                // FeedbackComponent to move focus into
+                                // itself, since it just reappeared in place
+                                // of ExpertFeedbackPanel's summary and the
+                                // Delete button that had focus is now gone
+                                // from the DOM.
+                                reappearedAfterDeleteNonce={
+                                  reappearedFeedback?.messageId === message.id
+                                    ? reappearedFeedback.nonce
+                                    : undefined
+                                }
                               />
                             )}
                           <div className="inline-review-panels">
                             <ExpertFeedbackPanel
                               message={message}
                               extractSentences={extractSentences}
-                              t={t}
-                              lang={lang}
+                              t={adminT}
+                              lang={effectiveAdminLang}
                               answerNumber={reviewAnswerNumber}
+                              onDeleted={() => onExpertFeedbackChange?.(message.id, undefined)}
                             />
                             <PublicFeedbackPanel
                               message={message}
                               extractSentences={extractSentences}
-                              t={t}
+                              t={adminT}
                               answerNumber={reviewAnswerNumber}
                             />
-                            <DownloadPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
-                            <UsedChatsPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
-                            <EvalPanel message={message} t={t} lang={lang} answerNumber={reviewAnswerNumber} />
+                            <DownloadPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
+                            {/* lang stays the CURRENT chat's own language here, not adminLang -
+                                it routes buildChatReviewHref to a DIFFERENT matched chat, which
+                                has no known pageLanguage of its own available to this panel
+                                (UsedChatsPanel.js has the full explanation). adminLang still rides
+                                along as the link's adminLang query param, and its translated
+                                labels (t) follow the admin's language. */}
+                            <UsedChatsPanel message={message} t={adminT} lang={lang} adminLang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
+                            <EvalPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
                           </div>
                         </div>
                       )}
@@ -778,6 +909,13 @@ const ChatInterface = ({
                               )
                               : []
                           }
+                          questionLanguage={getAnswerLanguage(message.interaction)}
+                          sentencesEnglish={
+                            message.interaction.answer.englishAnswer
+                              ? extractSentences(message.interaction.answer.englishAnswer)
+                              : []
+                          }
+                          englishQuestion={englishQuestion}
                           chatId={chatId}
                           userMessageId={message.id}
                           answerNumber={reviewAnswerNumber}
@@ -799,7 +937,7 @@ const ChatInterface = ({
                     {message.sender === "ai" && !message.error && chatId && (
                       <div className="chat-id">
                         <p className="font-size-text-xxs-nr">
-                          {safeT("homepage.chat.chatId")}: {chatId}
+                          {safeAdminT("homepage.chat.chatId")}: {chatId}
                         </p>
                       </div>
                     )}
@@ -822,18 +960,25 @@ const ChatInterface = ({
                         fontSize: "0.9rem"
                       }}
                     >
-                      <strong>{t("homepage.chat.review.referringUrl")}</strong>{" "}
+                      <strong>{adminT("homepage.chat.review.referringUrl")}</strong>{" "}
                       {referringUrl ? (
+                        // Same split as CountTable.js's citation links: GcdsLink's own
+                        // `lang` drives its auto-generated "(opens in a new tab)" hint,
+                        // which is admin chrome and should announce in the admin's own
+                        // language - while the URL text itself is real content from the
+                        // user's actual page, tagged with its own detected language
+                        // (detectUrlLanguage) so it's pronounced correctly regardless of
+                        // what the admin dashboard happens to be set to.
                         <GcdsLink
                           href={referringUrl}
                           target="_blank"
-                          lang={lang}
+                          lang={effectiveAdminLang}
                           className="url-break-all"
                         >
-                          {referringUrl}
+                          <span lang={detectUrlLanguage(referringUrl, lang)}>{referringUrl}</span>
                         </GcdsLink>
                       ) : (
-                        <span style={{ color: "#666" }}>none</span>
+                        <span style={{ color: "#666" }}>{adminT('reviewPanels.none')}</span>
                       )}
                     </div>
                   )}
@@ -918,8 +1063,10 @@ const ChatInterface = ({
               <div className="field-container">
                 {/* The accessible-name source for the autofocused textarea (see the
                     mount-time focus effect above) — its name must stay one atomic
-                    string. */}
-                <CanadaCaAccessibleLabel as="label" htmlFor="message" text={inputCopy} lang={lang} />
+                    string. Given an id so the textarea can reference it explicitly
+                    via aria-labelledby below (admin/partner sessions prepend
+                    admin-mode-hint ahead of it — see that block's comment). */}
+                <CanadaCaAccessibleLabel as="label" htmlFor="message" id="message-label" text={inputCopy} lang={lang} />
                 <span className="hint-text" id="chat-input-hint">
                   <img
                     src={isTextareaFocused ? aiStarsBlue : aiStarsGray}
@@ -934,6 +1081,48 @@ const ChatInterface = ({
                 </span>
                 {!readOnly && messages.length === 0 && liveReferringUrlBanner}
                 {!readOnly && messages.length > 0 && isTextareaFocused && composeBoxReferringUrlEcho}
+                {/* HomePage.js's admin-view pill is sighted-only chrome, and the
+                    textarea below autofocuses on mount (see the mount-time
+                    focus effect above) — a screen reader user's focus lands
+                    directly in the textarea and never encounters the pill, so
+                    admin/partner mode would otherwise go unannounced. Wired
+                    into aria-labelledby, not aria-describedby: AT always
+                    announces a focused control's *name* before its
+                    *description*, no matter what order the description's own
+                    ids are listed in — putting this in aria-describedby (as
+                    an earlier version of this fix did) meant "Ask a
+                    Canada.ca question" was still announced first regardless.
+                    aria-labelledby, by contrast, concatenates every
+                    referenced id's text in list order to form the name
+                    itself, so listing this ahead of message-label (below)
+                    genuinely puts "Admin view..." first. Always rendered
+                    when applicable (not conditioned on messages.length like
+                    the referring-url banner) since the id must stay in the
+                    DOM for as long as it's referenced.
+
+                    Scoped entirely to isAdminOrPartner — the public chat
+                    path keeps its plain <label htmlFor> association
+                    untouched (aria-labelledby="message-label" alone
+                    resolves to the exact same name), so this carries no risk
+                    for the public view. The "testing scenario" banner
+                    (ScenarioOverrideBanner.js) isn't part of this ordering
+                    fix — it announces asynchronously via its own live
+                    region, and reliably sequencing it against this
+                    focus-time announcement needs a bigger change (delaying
+                    autofocus for admin/partner sessions). Deferred pending a
+                    decision on that tradeoff. */}
+                {!readOnly && isAdminOrPartner && (
+                  <span className="sr-only" id="admin-mode-hint">
+                    {/* Trailing period is deliberate and sr-only-local, not
+                        part of the shared adminViewLabel string (which also
+                        feeds HomePage.js's visible pill, where a trailing
+                        period isn't wanted). Without it, AT runs this
+                        straight into "Ask a Canada.ca question" with no
+                        pause between the two concatenated aria-labelledby
+                        parts. */}
+                    {safeT("homepage.chat.input.adminViewLabel")}.
+                  </span>
+                )}
                 <div className="form-group">
                   <textarea
                     ref={textareaRef}
@@ -946,11 +1135,15 @@ const ChatInterface = ({
                     onClick={handleTextareaClick}
                     onBlur={handleTextareaBlur}
                     onFocus={handleTextareaFocus}
-                    aria-describedby={
-                      !readOnly && referringUrl
-                        ? "chat-input-hint displayReferringURL"
-                        : "chat-input-hint"
+                    aria-labelledby={
+                      !readOnly && isAdminOrPartner
+                        ? "admin-mode-hint message-label"
+                        : "message-label"
                     }
+                    aria-describedby={[
+                      "chat-input-hint",
+                      !readOnly && referringUrl ? "displayReferringURL" : null,
+                    ].filter(Boolean).join(" ")}
                     title={safeT("homepage.chat.textarea.title")}
                     required
                     disabled={isLoading}
@@ -1022,19 +1215,52 @@ const ChatInterface = ({
               </div>
             </form>
           )}
-          <ChatOptions
-            safeT={safeT}
-            modelSelection={modelSelection}
-            handleAIToggle={handleAIToggle}
-            selectedSearch={selectedSearch}
-            handleSearchToggle={handleSearchToggle}
-            workflowSelection={workflowSelection}
-            handleWorkflowChange={handleWorkflowChange}
-            referringUrl={referringUrl}
-            handleReferringUrlChange={handleReferringUrlChange}
-          />
         </section>
       )}
+    </>
+  );
+
+  // Deliberately outside chatBody/scenario-override-wrapper: the "Options"
+  // disclosure (admin/partner model/workflow/referring-URL controls) isn't
+  // part of the chat experience the scenario bubble is wrapping — it's a
+  // debug panel. The bubble — testing notice, chat, and "return to edit"/
+  // "how to submit" — has to end above it, not swallow Options into the
+  // same box. Same gating condition it always had (input-area's own
+  // `!readOnly && turnCount < MAX_CONVERSATION_TURNS`).
+  const chatOptions = !readOnly && turnCount < MAX_CONVERSATION_TURNS && (
+    <ChatOptions
+      safeT={safeT}
+      modelSelection={modelSelection}
+      handleAIToggle={handleAIToggle}
+      selectedSearch={selectedSearch}
+      workflowSelection={workflowSelection}
+      handleWorkflowChange={handleWorkflowChange}
+      referringUrl={referringUrl}
+      handleReferringUrlChange={handleReferringUrlChange}
+    />
+  );
+
+  return (
+<div className="chat-container">
+      {!readOnly ? (
+        <div
+          className={`scenario-override-wrapper${activeOverride ? '' : ' scenario-override-wrapper--empty'}`}
+        >
+          <ScenarioOverrideBanner activeOverride={activeOverride} t={safeT} />
+          {chatBody}
+          {/* "Return to edit" + "how to submit", below the chat inside the
+              same bounding box — only present while actively testing a
+              scenario, same as the banner above. */}
+          {activeOverride && (
+            <div className="scenario-override-instructions">
+              <ScenarioSubmitInstructions t={safeT} lang={lang} departmentKey={activeOverride.departmentKey} />
+            </div>
+          )}
+        </div>
+      ) : (
+        chatBody
+      )}
+      {chatOptions}
 
       {/* Accessible Scroll Down Button — page-level utility (scrolls the whole
           window toward the footer), not scoped to either section above, so it
@@ -1071,7 +1297,7 @@ const ChatInterface = ({
       {/* Show chat date at bottom for review mode */}
       {readOnly && chatCreatedAt && (
         <div className="admin-date">
-          <b>{safeT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
+          <b>{safeAdminT("homepage.chat.review.chatDate")}</b> {formatChatDate(chatCreatedAt)}
         </div>
       )}
     </div>

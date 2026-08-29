@@ -4,8 +4,10 @@ import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
+import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
+import OriginalLanguagePill from './OriginalLanguagePill.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, onDeleted }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
@@ -63,12 +65,21 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 message.expertFeedback = undefined;
             }
             await ClientLoggingService.info(interactionId, 'Expert feedback deleted', {});
+            // The mutation above only updates this shared `message` object in
+            // place - it doesn't tell React anything changed, so
+            // ChatInterface.js's own `!message.interaction.expertFeedback`
+            // check (deciding whether to show the eval form again) would keep
+            // evaluating against its last render until something else forced
+            // a re-render. This tells the actual owner of `messages` state
+            // (ChatAppContainer.js) so the eval form reappears immediately,
+            // no page refresh needed.
+            onDeleted?.();
         } catch (err) {
             setError(err.message || String(err));
         } finally {
             setDeleting(false);
         }
-    }, [message, t]);
+    }, [message, t, onDeleted]);
 
     const handleNeverStaleToggle = useCallback(async () => {
         try {
@@ -162,10 +173,45 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
         englishQuestion = '';
     }
 
+    // The original-language question text, for the same EN/FR-official-
+    // languages display rule resolveDisplayContent applies below - the real
+    // original-language text only exists when interaction.question arrived
+    // here as the actual populated Question document (models/question.js),
+    // not just an id string. When it isn't populated, fall back to
+    // englishQuestion (which has its own broader fallback chain above,
+    // independent of interaction.question) rather than '' - matches what
+    // this panel showed unconditionally before the original-language
+    // display work (englishQuestion, no language distinction) instead of
+    // silently hiding the whole Question block. Only wrong in the narrow
+    // case of a genuinely French question arriving unpopulated (shows the
+    // English text tagged lang="fr"), which is exactly as imprecise as - not
+    // worse than - that prior behaviour.
+    const originalQuestion = (interaction.question && typeof interaction.question === 'object')
+        ? (interaction.question.redactedQuestion || '') : (englishQuestion || '');
+    // Question.language (models/question.js) - the AI answers in whatever
+    // language was detected here (agents/prompts/agenticBase.js), so this
+    // same value also drives the answer-sentence table below, not just the
+    // question header. getAnswerLanguage (answerLanguage.js) also checks
+    // interaction.answer.questionLanguage, which - unlike
+    // interaction.question.language - is always available once an answer
+    // exists, regardless of whether interaction.question got populated.
+    // Without this broader fallback, an unpopulated interaction.question
+    // resolved questionLanguage to '' here, which resolveDisplayContent
+    // treats as "already EN/FR, show original as-is" - silently hiding the
+    // whole Question block (originalQuestion was also '' in that case) and,
+    // worse, showing the untranslated original-language answer sentences
+    // below instead of falling back to their English text.
+    const questionLanguage = getAnswerLanguage(interaction);
+    const questionDisplay = resolveDisplayContent({
+        language: questionLanguage,
+        original: originalQuestion,
+        english: englishQuestion,
+    });
+
     const getExpertScore = (idx) => {
         // expert schema stores sentence scores as sentence1Score, sentence2Score...
         const key = `sentence${idx + 1}Score`;
-        return (expert && typeof expert[key] !== 'undefined' && expert[key] !== null) ? expert[key] : 'N/A';
+        return (expert && typeof expert[key] !== 'undefined' && expert[key] !== null) ? expert[key] : t('reviewPanels.notAvailable');
     };
 
     if (sentences.length === 0) return null;
@@ -183,7 +229,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
     if (!hasExpert) return null;
 
     return (
-        <details className="review-details" onToggle={(e) => {
+        <details className="review-details" lang={lang} onToggle={(e) => {
             // e.target is the native <details> element; check its open property
             try {
                 // call load when panel is being opened
@@ -205,7 +251,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             </summary>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-                {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
+                {error && <div className="error">{t('common.error') || 'Error'}: <code lang="en">{error}</code></div>}
                 {/* Summary: citation and total score */}
                 <div className="expert-feedback-summary">
                     {(() => {
@@ -226,11 +272,24 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                         const totalVal = (efSource && typeof efSource.totalScore !== 'undefined' && efSource.totalScore !== null) ? efSource.totalScore : computeTotal(efSource, sentenceCount);
                         return (
                             <div>
-                                {/* English question shown above total score when available */}
-                                {englishQuestion ? (
-                                    <div style={{ marginBottom: '6px' }}><strong>{t('reviewPanels.englishQuestion') || 'English question'}:</strong> {englishQuestion}</div>
+                                {/* Question shown above total score when available - EN/FR stay in
+                                    their original language (resolveDisplayContent), only a
+                                    genuinely non-EN/FR question falls back to englishQuestion, with
+                                    the pill flagging that it happened. */}
+                                {questionDisplay.text ? (
+                                    <>
+                                        {questionDisplay.isSource && (
+                                            <div style={{ marginBottom: '4px' }}>
+                                                <OriginalLanguagePill languageCode={toLangAttr(questionLanguage)} lang={lang} t={t} />
+                                            </div>
+                                        )}
+                                        <div style={{ marginBottom: '6px' }}>
+                                            <strong>{t('reviewPanels.question')}</strong>{' '}
+                                            <span lang={questionDisplay.lang}>{questionDisplay.text}</span>
+                                        </div>
+                                    </>
                                 ) : null}
-                                <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
+                                <div><strong>{t('reviewPanels.totalScore')}:</strong> {totalVal !== null ? totalVal : t('reviewPanels.notAvailable')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
                                     <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
@@ -243,19 +302,26 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 <table className="review-table">
                     <thead>
                         <tr>
-                            <th>{t('reviewPanels.sentence') || 'Sentence'}</th>
-                            <th>{t('reviewPanels.sentenceEnglish') || 'Sentence English'}</th>
-                            <th>{t('reviewPanels.expertScore') || 'Expert score'}</th>
-                            <th>{t('homepage.expertRating.options.harmful') || 'Harmful'}</th>
-                            <th>{t('homepage.expertRating.options.contentIssue') || 'Content Issue'}</th>
-                            <th>{t('reviewPanels.explanation') || 'Explanation'}</th>
+                            {/* Column header names what's actually in it, not just always
+                                "Sentence" - the AI answers in whatever language was detected
+                                for the question (agenticBase.js), same questionDisplay signal
+                                driving the question header above, so this table is either all
+                                original-language or all English, never a mix. "Source text"
+                                (not "Sentence in English") since the English shown here is what
+                                AI Answers actually worked from, same framing as EvalPanel.js's
+                                reviewPanels.sourceText column, reused rather than duplicated. */}
+                            <th>{questionDisplay.isSource ? t('reviewPanels.sourceText') : t('reviewPanels.sentence')}</th>
+                            <th>{t('reviewPanels.expertScore')}</th>
+                            <th>{t('homepage.expertRating.options.harmful')}</th>
+                            <th>{t('homepage.expertRating.options.contentIssue')}</th>
+                            <th>{t('reviewPanels.explanation')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sentences.map((s, i) => {
                             const row = (data && data.sentences && data.sentences[i]) || {};
                             const scoreVal = (typeof row.score !== 'undefined' && row.score !== null) ? row.score : getExpertScore(i);
-                            const explVal = (row.explanation || (expert && expert[`sentence${i + 1}Explanation`])) || (t('reviewPanels.notAvailable') || 'N/A');
+                            const explVal = (row.explanation || (expert && expert[`sentence${i + 1}Explanation`])) || t('reviewPanels.notAvailable');
                             const harmfulVal = (typeof row.harmful !== 'undefined') ? row.harmful : (expert && expert[`sentence${i + 1}Harmful`]);
                             const contentIssueVal = (typeof row.contentIssue !== 'undefined') ? row.contentIssue : (expert && expert[`sentence${i + 1}ContentIssue`]);
 
@@ -268,14 +334,22 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                             } else {
                                 englishVal = null;
                             }
+                            // The answer is generated in whatever language was detected for the
+                            // question (agenticBase.js), so questionLanguage drives this same
+                            // EN/FR-official-languages display rule for each answer sentence too - not a
+                            // separately-tracked per-sentence language.
+                            const sentenceDisplay = resolveDisplayContent({
+                                language: questionLanguage,
+                                original: s,
+                                english: englishVal,
+                            });
 
                             return (
                                 <tr key={`s-${i}`}>
-                                    <td>{s || (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{englishVal ? englishVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{harmfulVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
-                                    <td>{contentIssueVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
+                                    <td lang={sentenceDisplay.lang}>{sentenceDisplay.text || t('reviewPanels.notAvailable')}</td>
+                                    <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : t('reviewPanels.notAvailable')}</td>
+                                    <td>{harmfulVal ? t('common.yes') : t('common.no')}</td>
+                                    <td>{contentIssueVal ? t('common.yes') : t('common.no')}</td>
                                     <td>{explVal}</td>
                                 </tr>
                             );
@@ -289,7 +363,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                         {(() => {
                             const efSource = (data && data.expertFeedback) || expert || {};
                             const citationScore = (typeof efSource.citationScore !== 'undefined' && efSource.citationScore !== null) ? efSource.citationScore : null;
-                            const scoreCell = citationScore !== null ? citationScore : (t('reviewPanels.notAvailable') || 'N/A');
+                            const scoreCell = citationScore !== null ? citationScore : t('reviewPanels.notAvailable');
                             const explCell = (efSource.citationExplanation || efSource.expertCitationUrl) ? (
                                 <>
                                     {efSource.citationExplanation && (
@@ -302,14 +376,13 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                         </div>
                                     )}
                                 </>
-                            ) : (t('reviewPanels.notAvailable') || 'N/A');
+                            ) : t('reviewPanels.notAvailable');
                             return (
                                 <tr key="citation-row" className="citation-row">
-                                    <td>{t('reviewPanels.citation') || 'Citation'}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{t('reviewPanels.citation')}</td>
                                     <td>{scoreCell}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{t('reviewPanels.notAvailable')}</td>
+                                    <td>{t('reviewPanels.notAvailable')}</td>
                                     <td>{explCell}</td>
                                 </tr>
                             );

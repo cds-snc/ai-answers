@@ -4,8 +4,10 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
 import VectorService from '../../services/VectorService.js';
-import { buildChatReviewLinkHtml } from '../../utils/reviewLink.js';
+import { buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../../utils/reviewLink.js';
+import { escapeHtml } from '../../utils/htmlEscape.js';
 import StatusMessage from './StatusMessage.js';
 import FeedbackInlineError from '../chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
@@ -58,13 +60,13 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         // can be wrapped in its own lang="en" span (mirrors
         // DeleteChatSection.js).
         const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-        setFetchMessage({ prefix, suffix, detail: <span lang="en">{data.message}</span> });
+        setFetchMessage({ prefix, suffix, detail: <code lang="en">{data.message}</code> });
       } else {
         setFetchMessage({ prefix: t('vector.fetchError'), suffix: '', detail: null });
       }
     } catch (error) {
       const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-      setFetchMessage({ prefix, suffix, detail: <span lang="en">{error.message || String(error)}</span> });
+      setFetchMessage({ prefix, suffix, detail: <code lang="en">{error.message || String(error)}</code> });
     }
     setLoading(false);
   };
@@ -110,14 +112,20 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         )}
       </div>
       {hasLoadedData && (
-        <div className="bg-white shadow rounded-lg p-4">
+        <div className="metrics-table-container">
           <DataTable
             data={chats}
+            className="display dashboard-table zebra-stable-on-hover"
             columns={[
               {
                 title: t('vector.columns.chatId'),
                 data: 'chatId',
-                render: (data) => buildChatReviewLinkHtml(data, lang)
+                // Route to the chat's own pageLanguage (already shown in the
+                // adjacent Page language column below), not this dashboard's
+                // own current UI language - see the same note in
+                // ChatDashboardPage.js. The admin's own language rides along
+                // separately as the adminLang query param (4th arg).
+                render: (data, type, row) => buildChatReviewLinkHtml(data, chatLangFromPageLanguage(row.pageLanguage), null, lang)
               },
               { title: t('vector.columns.similarity'), data: 'similarity' },
               { title: t('vector.columns.aiProvider'), data: 'aiProvider' },
@@ -130,7 +138,24 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               searching: true,
               pageLength: 10,
               order: [[1, 'desc']],
-              language: dataTableLanguage(lang),
+              // Same zones as the other admin tables: filter box top-left,
+              // page info + entries-per-page bottom-left, paging bottom-right.
+              layout: {
+                topStart: 'search',
+                topEnd: {},
+                bottomStart: { features: ['pageLength', 'info'] },
+                bottomEnd: { paging: { firstLast: false } },
+              },
+              language: {
+                ...dataTableLanguage(lang),
+                // Filter-style box: sr-only label, "Filter" placeholder,
+                // native x to clear (no search-term pill).
+                search: `<span class="sr-only">${escapeHtml(t('vector.similarChatsFilterLabel'))}</span>`,
+                searchPlaceholder: t('admin.common.filterPlaceholder'),
+              },
+              initComplete: function () {
+                setColumnHeaderScope(this.api());
+              },
             }}
           >
             <caption className="sr-only">{t('vector.similarChats')}</caption>

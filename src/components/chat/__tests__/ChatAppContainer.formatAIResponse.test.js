@@ -64,4 +64,38 @@ describe('ChatAppContainer - formatAIResponse blank-sentence filtering', () => {
         expect(paragraphs).toHaveLength(1);
         expect(paragraphs[0].textContent).toBe('Real sentence.');
     });
+
+    // Regression: the citation heading and disclaimer used to render with no
+    // explicit lang attribute of their own, relying on document.documentElement.lang
+    // (App.js) inheriting the route's own lang - which happened to equal this
+    // message's own language before review mode's admin/chat language split
+    // existed. Now that document.documentElement.lang can follow the reviewing
+    // admin's own adminLang instead (App.js's computeAlternateLangHref, review
+    // mode), these need their own explicit lang so they stay locked to the
+    // answer's actual language - like every other bubble element from Q to
+    // answer - independent of whatever the site-wide EN/FR toggle is currently set to.
+    it('tags the citation heading and disclaimer with the answer\'s own language, not the ambient page lang', async () => {
+        vi.mocked(usePageContext).mockReturnValue({ url: '', department: '' });
+        render(<ChatAppContainer lang="en" />);
+
+        expect(capturedFormatAIResponse).toBeInstanceOf(Function);
+
+        const message = {
+            id: 'm2',
+            interaction: {
+                citationUrl: 'https://www.canada.ca/fr/exemple.html',
+                answer: {
+                    paragraphs: ['<s-1>Une phrase.</s-1>'],
+                    questionLanguage: 'fra',
+                },
+            },
+        };
+
+        const { container } = render(<div>{capturedFormatAIResponse('openai', message)}</div>);
+
+        const heading = container.querySelector('p.citation-head');
+        const disclaimer = container.querySelector('.disclaimer p');
+        expect(heading.getAttribute('lang')).toBe('fr');
+        expect(disclaimer.getAttribute('lang')).toBe('fr');
+    });
 });

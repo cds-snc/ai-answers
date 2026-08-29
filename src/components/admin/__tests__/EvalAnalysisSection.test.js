@@ -31,6 +31,29 @@ vi.mock('../../../services/EvalAnalysisService.js', () => ({
   }
 }));
 
+// Real useEvalAnalysis() drives a whole precheck→create→advance state
+// machine off the mocked service above — overkill for a test that only
+// needs one specific `analysis` shape rendered. Mocked here; individual
+// tests override just the field(s) they care about by spreading this base.
+const defaultHookResult = {
+  precheck: null,
+  precheckLoading: false,
+  runPrecheck: vi.fn(),
+  running: false,
+  analysis: null,
+  runError: null,
+  runAnalysis: vi.fn(),
+  pastRuns: [],
+  refreshList: vi.fn(),
+  loadAnalysis: vi.fn(),
+  clearAnalysis: vi.fn(),
+  loadingAnalysisId: null
+};
+const mockUseEvalAnalysis = vi.fn(() => defaultHookResult);
+vi.mock('../../../hooks/admin/useEvalAnalysis.js', () => ({
+  useEvalAnalysis: (...args) => mockUseEvalAnalysis(...args)
+}));
+
 import EvalAnalysisSection from '../dashboard/EvalAnalysisSection.js';
 import EvalAnalysisReport from '../dashboard/EvalAnalysisReport.js';
 
@@ -44,6 +67,20 @@ describe('EvalAnalysisSection', () => {
     expect(screen.getByText('Select an institution in the filters above to enable analysis.')).toBeTruthy();
     const button = document.querySelector('gcds-button, button');
     expect(button).toBeTruthy();
+  });
+
+  it('shows the interrupted-run message as a warning, not info', () => {
+    // A past run loaded in a non-terminal status (neither 'complete' nor
+    // 'error') — the tab was closed mid-run, nothing left to display but
+    // the fact that it needs re-running. That's warning-shaped (a broken
+    // state with one way forward), not neutral info, even though role/
+    // aria-live don't change between the two variants.
+    mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, analysis: { _id: 'a1', status: 'running' } });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{}} />);
+
+    const message = screen.getByText('This analysis was interrupted before it finished and has no report to display. Run a new analysis.');
+    expect(message.closest('.status-message--warning-box')).toBeTruthy();
+    expect(message.closest('.status-message--info-box')).toBeNull();
   });
 });
 
@@ -109,9 +146,12 @@ describe('EvalAnalysisReport', () => {
     // "vs others" column removed deliberately (sensitivity); flag stays.
     expect(screen.queryByText('vs others')).toBeNull();
     // Example chatId links to review mode in a new tab, deep-linked to the
-    // evaluated interaction; groups without a stored example render a dash.
+    // evaluated interaction, routed to the example's own (EN/FR breakdown
+    // row) language - here 'en', same as the admin's own `lang`, which
+    // still rides along separately as the adminLang query param; groups
+    // without a stored example render a dash.
     const link = screen.getByRole('link', { name: 'chat-abc' });
-    expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1#interaction=interactionId' + encodeURIComponent('int-1'));
+    expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1&adminLang=en#interaction=interactionId' + encodeURIComponent('int-1'));
     expect(link.getAttribute('target')).toBe('_blank');
     expect(screen.getByText('—')).toBeTruthy();
   });

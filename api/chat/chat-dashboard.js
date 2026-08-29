@@ -55,6 +55,12 @@ const getDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
   return { $gte: start, $lte: end };
 };
 
+// Duplicate of api/util/db-query.js's own escapeRegex (and api/util/
+// chat-filters.js's) - a code review flagged all three as the same
+// function copy-pasted three times (confirmed byte-identical) and worth
+// consolidating to one shared import. Deliberately left as-is here: out of
+// scope for the chat-viewer-a11y work that surfaced it. Safe to
+// consolidate later - see api/util/db-query.js's escapeRegex.
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 async function chatDashboardHandler(req, res) {
@@ -194,7 +200,13 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] }
+        'interactions.redactedQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.redactedQuestion', 0] }, ''] },
+        // Both needed for the admin display rule (see src/utils/answerLanguage.js's
+        // resolveDisplayContent): EN/FR show redactedQuestion as-is, anything
+        // else falls back to englishQuestion - questionLanguage is what
+        // decides which.
+        'interactions.questionLanguage': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.language', 0] }, ''] },
+        'interactions.englishQuestion': { $ifNull: [{ $arrayElemAt: ['$interactionQuestion.englishQuestion', 0] }, ''] }
       }
     });
 
@@ -213,10 +225,18 @@ async function chatDashboardHandler(req, res) {
     pipeline.push({
       $addFields: {
         'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.answerType', 0] }, ''] },
+        // Computed once here, referenced by answerContent's own fallback
+        // below - a field added earlier in an $addFields stage is visible
+        // to a later field's expression in the same stage. Kept as its own
+        // field (not folded into answerContent) so the frontend can apply
+        // the questionLanguage-driven display rule the same way it does for
+        // the question (resolveDisplayContent), independent of
+        // answerContent's separate null-safety fallback below.
+        'interactions.englishAnswer': { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.englishAnswer', 0] }, ''] },
         'interactions.answerContent': {
           $ifNull: [
             { $arrayElemAt: ['$interactionAnswer.content', 0] },
-            { $ifNull: [{ $arrayElemAt: ['$interactionAnswer.englishAnswer', 0] }, ''] }
+            '$interactions.englishAnswer'
           ]
         },
         'interactions.citationRef': { $arrayElemAt: ['$interactionAnswer.citation', 0] }
@@ -375,7 +395,10 @@ async function chatDashboardHandler(req, res) {
         department: '$interactions.department',
         program: '$interactions.program',
         redactedQuestion: '$interactions.redactedQuestion',
+        questionLanguage: '$interactions.questionLanguage',
+        englishQuestion: '$interactions.englishQuestion',
         answerContent: '$interactions.answerContent',
+        englishAnswer: '$interactions.englishAnswer',
         citationUrl: '$interactions.citationUrl',
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
@@ -403,18 +426,17 @@ async function chatDashboardHandler(req, res) {
     // data grows.
     if (searchParam) {
       const esc = escapeRegex(searchParam);
+      const searchOr = [
+        { chatId: { $regex: esc, $options: 'i' } },
+        { interactionId: { $regex: esc, $options: 'i' } },
+        { department: { $regex: esc, $options: 'i' } },
+        { program: { $regex: esc, $options: 'i' } },
+        { redactedQuestion: { $regex: esc, $options: 'i' } },
+        { answerContent: { $regex: esc, $options: 'i' } },
+        { citationUrl: { $regex: esc, $options: 'i' } }
+      ];
       pipeline.push({
-        $match: {
-          $or: [
-            { chatId: { $regex: esc, $options: 'i' } },
-            { interactionId: { $regex: esc, $options: 'i' } },
-            { department: { $regex: esc, $options: 'i' } },
-            { program: { $regex: esc, $options: 'i' } },
-            { redactedQuestion: { $regex: esc, $options: 'i' } },
-            { answerContent: { $regex: esc, $options: 'i' } },
-            { citationUrl: { $regex: esc, $options: 'i' } }
-          ]
-        }
+        $match: { $or: searchOr }
       });
     }
 
@@ -457,24 +479,86 @@ async function chatDashboardHandler(req, res) {
       : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, chatId: -1, questionNumber: 1 } };
     pipeline.push(sortStage);
 
-    if (isDataTablesMode) {
+    const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
+
+    // Group-based pagination only applies to the default date sort;
+    // explicit column sorts intentionally fall back to row-based
+    // pagination (see below) - not a bug if a chat's rows end up apart
+    // from each other in that mode.
+    //
+    // Group-based (never-split-a-chat) pagination only applies to the
+    // default view (no explicit column sort - date order, where a chat
+    // really is one unit worth keeping together). An explicit sort by a
+    // per-question field (Department/Program/Service) is deliberately
+    // scoped to individual interactions, not whole chats - "sort by
+    // Department = IRCC" means show me the IRCC questions first, not every
+    // other question in the same conversation dragged along with them,
+    // same as how a search match doesn't pull in its chat's unrelated
+    // siblings either. So those sorts fall back to plain row-based
+    // pagination below, and a chat's rows can end up apart from each other
+    // (or split across a page) in that mode - that's correct there, not
+    // the bug this feature exists to prevent. See the matching, more
+    // detailed comment in api/eval/eval-dashboard.js for the full
+    // reasoning (single continuous aggregation so the $lookup joins above
+    // still run exactly once, no $setWindowFields, etc.) - not repeated
+    // here.
+    //
+    // TODO: if this turns out to cost more than expected in practice (real
+    // DocumentDB, not local dev), it's fine to strip this back out for
+    // Chat Dashboard specifically (revert to the plain row-based
+    // $skip/$limit) and revisit later rather than live with a slow
+    // dashboard. Eval Dashboard has the equivalent TODO.
+    const useChatGroupedPagination = isDataTablesMode && sortField === 'createdAt';
+
+    if (useChatGroupedPagination) {
+      pipeline.push({ $group: { _id: '$chatId', sortKeyValue: { $first: '$chatCreatedAt' }, rows: { $push: '$$ROOT' } } });
+      pipeline.push({ $sort: { sortKeyValue: orderDir, _id: orderDir } });
       if (start > 0) pipeline.push({ $skip: start });
-      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
+      pipeline.push({ $unwind: '$rows' });
+      pipeline.push({ $replaceRoot: { newRoot: '$rows' } });
+    } else if (isDataTablesMode) {
+      // No +1 lookahead needed here (unlike the chat-grouped branch above)
+      // - this mode always has a real totalCount from countPipeline below,
+      // not a synthetic hasMore guess, so there's nothing to detect.
+      if (start > 0) pipeline.push({ $skip: start });
+      pipeline.push({ $limit: pageSize });
     } else {
       pipeline.push({ $limit: limit });
     }
 
-    // Build count pipeline before modifying main pipeline with sort/limit
+    // Build count pipeline before modifying main pipeline with sort/limit -
+    // counts distinct chats to match group-based pagination, or plain rows
+    // to match the row-based fallback, whichever mode is active.
     const countPipeline = pipelineBeforeSortLimit.slice();
+    if (useChatGroupedPagination) countPipeline.push({ $group: { _id: '$chatId' } });
     countPipeline.push({ $count: 'totalCount' });
 
     // Run data and count queries in parallel for better performance
-    const [results, countResult] = await Promise.all([
+    const [flatResults, countResult] = await Promise.all([
       Chat.aggregate(pipeline).allowDiskUse(true),
       Chat.aggregate(countPipeline).allowDiskUse(true)
     ]);
 
     const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
+
+    let results = flatResults;
+    if (useChatGroupedPagination && pageSize !== null) {
+      // flatResults may include one extra chat's worth of rows (the +1
+      // lookahead group) purely so a mismatched page length here would
+      // still be caught in review - trim it back off, same as
+      // eval-dashboard.js. totalCount above is unaffected either way.
+      const seenChatIds = [];
+      for (const r of flatResults) {
+        if (seenChatIds[seenChatIds.length - 1] !== r.chatId) seenChatIds.push(r.chatId);
+      }
+      if (seenChatIds.length > pageSize) {
+        const lookaheadChatId = seenChatIds[pageSize];
+        results = flatResults.filter((r) => r.chatId !== lookaheadChatId);
+      }
+    }
+    // Row-based fallback needs no trim here - its own $limit above (no +1)
+    // already fetched exactly one page's worth.
 
     const chats = results.map((row) => ({
       _id: row._id ? String(row._id) : '',
@@ -484,7 +568,10 @@ async function chatDashboardHandler(req, res) {
       program: row.program || '',
       programFr: frForProgram(row.program),
       redactedQuestion: row.redactedQuestion || '',
+      questionLanguage: row.questionLanguage || '',
+      englishQuestion: row.englishQuestion || '',
       answerContent: row.answerContent || '',
+      englishAnswer: row.englishAnswer || '',
       citationUrl: row.citationUrl || '',
       date: row.createdAt ? row.createdAt.toISOString() : null,
       questionNumber: row.questionNumber || 0,

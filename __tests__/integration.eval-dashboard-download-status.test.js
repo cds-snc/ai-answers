@@ -21,7 +21,7 @@ vi.mock('../api/db/db-connect.js', () => ({
     default: async () => { }
 }));
 
-// Regression coverage for the hasDownload 'success' | 'partial' | 'fail' | ''
+// Regression coverage for the hasDownload 'success' | 'partial' | 'failed' | ''
 // $switch in api/eval/eval-dashboard.js. The existing unit test for this
 // endpoint (__tests__/api.eval-dashboard.filters.test.js) mocks
 // Chat.aggregate to return [] and only string-matches the pipeline shape, so
@@ -106,31 +106,32 @@ describe('Integration: eval-dashboard hasDownload status', () => {
 
         expect(byChatId['chat-success']).toBe('success');
         expect(byChatId['chat-partial']).toBe('partial');
-        expect(byChatId['chat-fail']).toBe('fail');
+        expect(byChatId['chat-fail']).toBe('failed');
         expect(byChatId['chat-none']).toBe('');
     });
 
-    // These only assert inclusion, not exclusivity: the free-text "yes"/"no"
-    // shortcut is a combined $or across several unrelated boolean columns
-    // (hasAutoEval, hasExpertEval, processed, hasMatches), so a row can
-    // legitimately match via one of those instead of hasDownload. That's
-    // pre-existing, orthogonal behavior - what these regression-test is
-    // specifically that hasDownload's own $in clause now includes 'partial'
-    // under "yes" (previously only reachable by typing the literal word).
-    it('finds the partial row via the free-text "yes" shortcut', async () => {
-        const body = await callHandler({ search: 'yes' });
-        const chatIds = body.rows.map((r) => r.chatId);
+    // Regression: free-text "yes"/"no" used to be interpreted as a literal
+    // boolean and OR'd against hasAutoEval, hasExpertEval, processed,
+    // hasMatches, AND hasDownload (mapped to success/partial vs fail/'').
+    // Those first four fields are false/blank for most rows in real data
+    // (most questions aren't expert-reviewed, most have no download
+    // attempt), so that shortcut made "no" match almost every row in the
+    // table instead of narrowing anything down. It's been removed - "yes"/
+    // "no" now only match literal text (e.g. the Public feedback column,
+    // which genuinely stores 'yes'/'no' as its value), and hasDownload/
+    // Processed/Has matches/etc. are reachable only via their own filter
+    // dropdowns, not free text.
+    it('does not match hasDownload via a "yes"/"no" boolean shortcut anymore', async () => {
+        const yesBody = await callHandler({ search: 'yes' });
+        expect(yesBody.rows.map((r) => r.chatId)).not.toContain('chat-success');
+        expect(yesBody.rows.map((r) => r.chatId)).not.toContain('chat-partial');
 
-        expect(chatIds).toContain('chat-success');
-        expect(chatIds).toContain('chat-partial');
-    });
-
-    it('finds the fail and none rows via the free-text "no" shortcut', async () => {
-        const body = await callHandler({ search: 'no' });
-        const chatIds = body.rows.map((r) => r.chatId);
-
-        expect(chatIds).toContain('chat-fail');
-        expect(chatIds).toContain('chat-none');
+        const noBody = await callHandler({ search: 'no' });
+        expect(noBody.rows.map((r) => r.chatId)).not.toContain('chat-fail');
+        // chat-none is a coincidence of this test's own chatId naming (it
+        // literally contains the substring "no" in "noNe"), not the
+        // hasDownload shortcut - still a legitimate plain-text chatId match.
+        expect(noBody.rows.map((r) => r.chatId)).toContain('chat-none');
     });
 
     it('finds only the partial row via a column search, without being coerced to a boolean', async () => {

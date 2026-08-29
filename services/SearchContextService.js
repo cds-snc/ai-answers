@@ -1,17 +1,38 @@
 import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
-import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const searchFunction = searchService.toLowerCase() === 'google'
-        ? googleContextSearch
-        : canadaContextSearch;
+    const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
+    const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
 
-    return await exponentialBackoff(() => searchFunction(query, lang));
+    // Retry lives inside each search tool, not here: only the tool can tell a
+    // dropped socket or a 5xx from a 404 or a bad API key, and a wrapper at this
+    // level would retry all four — spending seconds of an interactive answer to
+    // return the same permanent error. The tools call back here on each attempt
+    // so the retry metric still gets recorded.
+    try {
+        const result = await searchFunction(query, lang, {
+            // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+            onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
+        });
+        // The two providers report a spent-all-retries failure differently:
+        // canadaca throws (caught below), google returns `failed` with the error
+        // as its result text so the answer agent can still say the search failed.
+        // Both are errors for metrics purposes — the dashboard's own note defines
+        // this count as "calls that still failed after all retries".
+        if (result?.failed) {
+            ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        }
+        return result;
+    } catch (error) {
+        ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        throw error;
+    }
 }
 
 function countSearchResults(resultsString) {
@@ -44,9 +65,14 @@ export const SearchContextService = {
         let searchResults = await performSearch(searchQuery, lang, searchService, chatId);
         ServerLoggingService.debug('Search results:', chatId, searchResults);
 
-        // Retry with a simplified query if search returned 0 or 1 results
+        // Retry with a simplified query if search returned 0 or 1 results.
+        // A failed search is excluded: its result text ("Search failed: ...")
+        // counts as 0, which would otherwise spend an LLM rewrite plus a second
+        // full search on an outage that is certain to fail again — and record a
+        // second error for the same outage, putting google's error count on a
+        // different scale from canadaca's, which throws and is counted once.
         const resultCount = countSearchResults(searchResults?.results);
-        if (resultCount <= 1) {
+        if (!searchResults?.failed && resultCount <= 1) {
             try {
                 ServerLoggingService.info('Search returned too few results, retrying with simplified query', chatId, {
                     failedQuery: searchQuery,

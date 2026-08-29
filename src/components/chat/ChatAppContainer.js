@@ -53,9 +53,22 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError = null, onChatIdUpdate = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, adminLang = null, targetInteractionId = null, onSessionError = null, onChatIdUpdate = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
+  // `lang` is always the language the transcript itself was actually in -
+  // for a live chat it's the current user's own page; in review mode
+  // HomePage.js/ChatDashboardPage.js route review links using the reviewed
+  // chat's own pageLanguage, not the admin's. So `t`/`safeT` below - used for
+  // the transcript's own fixed labels, e.g. the citation heading
+  // (agents/prompts/citationInstructions.js's history - it used to be
+  // LLM-generated per-response, deliberately made a fixed programmatic label
+  // instead for consistent wording/punctuation) - can key off `lang` directly
+  // without a separate override (official-languages.md Rule 2: never
+  // collapsed to a different language than what the end user actually saw).
+  // `adminLang` (the reviewing admin's own current UI language, only set in
+  // review mode) is for the admin-only chrome around that transcript instead
+  // - see the components that receive it below.
   const { t } = useTranslations(lang);
 
   // Add safeT helper function
@@ -63,6 +76,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const result = t(key);
     return typeof result === 'object' && result !== null ? result.text : result;
   }, [t]);
+
+  // Mirrors ChatInterface.js's effectiveAdminLang/safeAdminT split (see that
+  // file's comment for the full rationale). Only needed here for the
+  // expert-feedback-deleted live-region announcement below, which - like the
+  // rest of the review-mode admin chrome - should read in the reviewing
+  // admin's own UI language, not the transcript's `lang`.
+  const effectiveAdminLang = adminLang || lang;
+  const { t: adminT } = useTranslations(effectiveAdminLang);
+  const safeAdminT = useCallback((key) => {
+    const result = adminT(key);
+    return typeof result === 'object' && result !== null ? result.text : result;
+  }, [adminT]);
 
   const { url: pageUrl, department: urlDepartment } = usePageContext();
   const [messages, setMessages] = useState([]);
@@ -124,6 +149,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [referringUrl, setReferringUrl] = useState(() => {
     return initialReferringUrl || pageUrl || clientReferrer || '';
   });
+  // Set once the user explicitly applies or clears a referring URL via
+  // ChatOptions (both go through handleReferringUrlChange below). Once true,
+  // the pageUrl-backfill effect further down must never override it again —
+  // otherwise clearing snaps straight back to pageUrl on the very next
+  // render, since that effect also runs on every referringUrl change. If the
+  // chat opened with a ?ref= URL, it should still populate initially (this
+  // flag starts false); the admin just needs to be able to change or clear
+  // it afterward and have that stick.
+  const userSetReferringUrlRef = useRef(false);
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -486,6 +520,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const handleReferringUrlChange = (e) => {
     const url = e.target.value.trim();
     console.log('Referring URL changed:', url);
+    userSetReferringUrlRef.current = true;
     setReferringUrl(url);
 
     // Parse department from manually entered URL
@@ -584,13 +619,37 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
         clearInput();
 
-        // Add the AI response to messages
-        setMessages(prevMessages => [...prevMessages, {
-          id: aiMessageId,
-          interaction: interaction,
-          sender: 'ai',
-          aiService: selectedAI,
-        }]);
+        // Add the AI response to messages, and retroactively give this
+        // turn's user message the detected question language too - it was
+        // pushed before the response came back, with nothing to tag itself
+        // with (ChatInterface.js's lang={toLangAttr(message.questionLanguage)}
+        // was silently reading undefined).
+        //
+        // Deliberately NOT `{ ...m, interaction }` (attaching the whole AI
+        // interaction object to the user bubble) - `.interaction` presence
+        // is a signal several *other*, unrelated pieces of server-side code
+        // (ContextAgentService.js, AnswerGenerationService.js) already use
+        // to mean "this is the AI's real turn, safe to read a full Q&A pair
+        // from" when building conversationHistory for the next request. This
+        // client `messages` array *is* that conversationHistory (sent
+        // verbatim in GraphClient.js's payload) - a user message also
+        // carrying `.interaction` broke that assumption for both files
+        // without their knowledge (each historical turn's Q&A got pushed
+        // twice, since both the user and AI message of that turn satisfied
+        // their `if (entry.interaction)` check). Passing only the resolved
+        // language string keeps `.interaction` truthiness reliably meaning
+        // "the AI's turn" everywhere, current and future - see the same
+        // reasoning applied to HomePage.js's review-mode message-building
+        // loop.
+        setMessages(prevMessages => [
+          ...prevMessages.map(m => (m.id === userMessageId ? { ...m, questionLanguage: getAnswerLanguage(interaction) } : m)),
+          {
+            id: aiMessageId,
+            interaction: interaction,
+            sender: 'ai',
+            aiService: selectedAI,
+          }
+        ]);
 
         setTurnCount(prev => prev + 1);
 
@@ -764,12 +823,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // If a pageUrl becomes available later and there was no saved review value,
   // prefer pageUrl over a clientReferrer. Do not override an explicit saved
-  // initialReferringUrl.
+  // initialReferringUrl, or a value the user has since applied/cleared
+  // themselves via ChatOptions (userSetReferringUrlRef) — without that guard,
+  // this effect also fires on every referringUrl change, including the one
+  // Clear itself just made, and immediately repopulates from pageUrl before
+  // the user ever sees it cleared.
   useEffect(() => {
-    // If pageUrl becomes available later and there was no saved review value,
-    // prefer pageUrl over a clientReferrer — but don't override an explicit
-    // initialReferringUrl or a user-edited referringUrl.
-    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
+    if (
+      pageUrl &&
+      !initialReferringUrl &&
+      !userSetReferringUrlRef.current &&
+      (!referringUrl || referringUrl === '')
+    ) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {
@@ -820,7 +885,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head" lang={answerLang}>{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
                     {/* Intentionally a raw <a>, not <GcdsLink>: the Adobe
@@ -1001,13 +1066,49 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           </>
         )}
         <div className="disclaimer">
-          <p className="font-size-text-xsm-nr">
+          <p className="font-size-text-xsm-nr" lang={answerLang}>
             {safeT('homepage.chat.input.disclaimer')}
           </p>
         </div>
       </div>
     );
   }, [safeT, chatId, isMobile]);
+
+  // Keeps `messages` (the actual source ChatInterface/FeedbackComponent/
+  // ExpertFeedbackPanel all render from) in sync after an expert eval is
+  // submitted or deleted, without a page refresh. Both
+  // FeedbackComponent.js's handleExpertFeedback and
+  // ExpertFeedbackPanel.js's handleDelete used to only update the shared
+  // `message` object in place (a direct mutation, not a state update) -
+  // React never learns that mutation happened, so ChatInterface.js's own
+  // `!message.interaction.expertFeedback` check (deciding whether to show
+  // the eval form or the read-only summary panel) kept evaluating against
+  // its last render and never flipped until something else (e.g. a full
+  // page reload) forced ChatInterface to re-render from fresh data. Pass
+  // `undefined` for `expertFeedback` on delete, the persisted feedback
+  // object on submit.
+  //
+  // On delete specifically, ExpertFeedbackPanel.js's own "Delete" button -
+  // which had focus - is removed from the DOM in this same update, and
+  // FeedbackComponent reappears in its place. A sighted admin sees the eval
+  // prompt come back; nothing else signals that to a screen-reader user, so
+  // this both moves focus into the reappeared FeedbackComponent
+  // (reappearedFeedback, matched by messageId+nonce so ChatInterface can
+  // route it to the right instance) and announces the change via the
+  // existing ariaLiveMessage region below (reused rather than adding a
+  // second live-region mechanism).
+  const [reappearedFeedback, setReappearedFeedback] = useState(null);
+  const handleExpertFeedbackChange = useCallback((messageId, expertFeedback) => {
+    setMessages(prevMessages => prevMessages.map(m =>
+      (m.id === messageId && m.interaction)
+        ? { ...m, interaction: { ...m.interaction, expertFeedback } }
+        : m
+    ));
+    if (!expertFeedback) {
+      setReappearedFeedback({ messageId, nonce: Date.now() });
+      announceToLiveRegion(safeAdminT('homepage.feedback.expertFeedbackDeletedAnnouncement'));
+    }
+  }, [announceToLiveRegion, safeAdminT]);
 
   // Add handler for department changes
 
@@ -1025,7 +1126,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleSendMessage={handleSendMessage}
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
-        handleSearchToggle={handleSearchToggle}
         workflowSelection={workflowIsOverride ? workflow : ''}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
@@ -1040,10 +1140,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
+        adminLang={adminLang || lang}
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
         userLeftChatRef={userLeftChatRef}
+        onExpertFeedbackChange={handleExpertFeedbackChange}
+        reappearedFeedback={reappearedFeedback}
       />
       {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div

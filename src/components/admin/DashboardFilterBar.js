@@ -79,9 +79,20 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
   // The custom-date row (start/end inputs + Apply) unmounts whenever
   // showCustom flips back to false — whatever inside it had focus would
   // otherwise silently drop to <body>. Refocus this button (the one that
-  // opened the row) every time that happens, from all three closing paths:
-  // Escape, re-clicking "Custom", and clicking "Apply".
+  // opened the row) on the two closing paths that don't also start a fetch:
+  // Escape and re-clicking "Custom" to collapse it. The third path (Apply)
+  // used to land here too, but every preset button here - including this
+  // one - carries disabled={loading}, and onApply's fetch flips loading
+  // true in the very same tick: the browser blurs a focused element the
+  // instant it's disabled, so a fetch-triggering close would refocus this
+  // button just in time to have the disable yank focus right back off it.
+  // See dateRangeHeadingRef below for the fetch-triggering paths' fix.
   const customToggleRef = useRef(null);
+  // Fetch-triggering closes (fireApply, handleCustomApply, handleReset)
+  // land here instead of customToggleRef - this label is never disabled and
+  // never unmounts, so it can't be raced by the loading state its own click
+  // just triggered the way any of the preset buttons can.
+  const dateRangeHeadingRef = useRef(null);
   const [customStart, setCustomStart] = useState(DATA_START_DATE);
   const [customEnd, setCustomEnd] = useState(todayStr);
 
@@ -144,6 +155,21 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     const { startDate, endDate } = getDateRange(preset, customStart, customEnd, allTimeStart);
     if (!startDate || !endDate) return;
     setAppliedPreset(preset);
+    // The clicked preset button doesn't unmount here (unlike the custom row),
+    // but disabled={loading} still blurs it to <body> the instant onApply's
+    // fetch flips loading true - see dateRangeHeadingRef's own comment above.
+    //
+    // Unconditional, unlike FilterPanel.js's sibling fix (which only
+    // redirects when focus was already inside the panel) - deliberately so,
+    // to match this file's own existing handleCustomApply/handleReset
+    // convention below, which was already unconditional before this diff.
+    // This file has two independent race sources to dodge (disable-blur
+    // here, custom-row unmount there) rather than FilterPanel's one, so a
+    // single uniform rule stays simpler than tracking prior focus state per
+    // handler. Tradeoff: a pure-mouse click (e.g. Safari's default, where
+    // clicking a <button> doesn't focus it) now plants a focus ring on this
+    // label it wouldn't have shown before.
+    dateRangeHeadingRef.current?.focus();
     onApplyRef.current({ startDate, endDate });
   };
 
@@ -186,7 +212,7 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     setAppliedCustomStart(startDate);
     setAppliedCustomEnd(endDate);
     setShowCustom(false);
-    customToggleRef.current?.focus();
+    dateRangeHeadingRef.current?.focus();
     onApplyRef.current({ startDate, endDate });
   };
 
@@ -201,6 +227,12 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
     didSnapAllTime.current = true;
     const allTimeStart = minDate || DATA_START_DATE;
     onApplyRef.current({ startDate: allTimeStart, endDate: todayStr() });
+    // isDefault flips to true right after this, swapping the just-clicked
+    // <button> pill for a plain non-interactive <span> - same "focused
+    // element disappears" gap handleCustomApply avoids, landing on the same
+    // stable target for the same reason (this button is also disabled by
+    // the loading state this fetch triggers).
+    dateRangeHeadingRef.current?.focus();
   };
 
   const isDefault = appliedPreset === 'allTime';
@@ -223,7 +255,27 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       {/* Row 1: date presets */}
       <div className="filter-bar__row">
         <div className="filter-bar__field filter-bar__field--grow">
-          <label className="filter-bar__label">{t('dashboardFilter.dateRange')}</label>
+          {/* <p>, not <label>: nothing below is a labelable form control (these
+              are all <button>s), so there was never a real label/control
+              relationship here - just a heading-style caption reusing
+              .filter-bar__label for its text styling. A <label> also picks
+              up its own WebKit/VoiceOver AXGroup mapping once it doubles as
+              a tabIndex={-1} focus target (confirmed: reads as "Date range,
+              empty group") - <p> carries no such implicit role. Matches the
+              same dedicated-focus-target convention as ChatIdMatchList.js's
+              <p ref={headingRef} tabIndex={-1}>. No .focus-target: this is a
+              screen-reader cursor move after a preset click, not a place a
+              sighted keyboard user deliberately lands, so it takes
+              global.css's silent [tabindex="-1"]:focus default; the visible
+              ring is drawn around the whole .filter-bar box instead (see
+              admin.css). */}
+          <p
+            ref={dateRangeHeadingRef}
+            tabIndex={-1}
+            className="filter-bar__label"
+          >
+            {t('dashboardFilter.dateRange')}
+          </p>
           <div className="filter-bar__presets">
             {PRESETS.map(p => (
               <button
@@ -298,29 +350,44 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       </div>
 
       {/* Pills row — outside the bordered filter box */}
-      <div className="filter-bar__pills-row">
-        <span className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
-        {/* Public dashboard has no department/institution scoping at all
-            (unlike Partner's FilterPanel, which supports filtering to one) —
-            this pill makes that explicit instead of leaving it unstated.
-            Reuses the same key/wording as Partner's own default-state
-            "All institutions" pill for consistency. */}
-        <span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span>
-        <span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span>
-        <span className={`filter-pill${isDefault ? ' filter-pill--info' : ' filter-pill--closable'}`}>
-          {pillDate}
-          {!isDefault && (
-            <button
-              type="button"
-              className="filter-pill__close"
-              onClick={handleReset}
-              aria-label={t('dashboardFilter.removeFilter')}
-              disabled={loading}
-            >
-              ×
-            </button>
-          )}
-        </span>
+      {/* role="group" named by the visible "Showing:" label. This row
+          mostly just states what's being shown (fixed pills), unlike
+          FilterPanel's removable applied-filter pills, so it doesn't get
+          that row's "remove one to change the results" name. */}
+      <div className="filter-bar__pills-row" role="group" aria-labelledby="dashboard-filter-showing">
+        <span id="dashboard-filter-showing" className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
+        {/* A real list, fixed and removable pills alike - see FilterPanel.js's
+            matching comment. */}
+        <ul className="filter-pills-list" role="list">
+          {/* Public dashboard has no department/institution scoping at all
+              (unlike Partner's FilterPanel, which supports filtering to one) —
+              this pill makes that explicit instead of leaving it unstated.
+              Reuses the same key/wording as Partner's own default-state
+              "All institutions" pill for consistency. */}
+          <li><span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span></li>
+          <li><span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span></li>
+          <li>
+            {isDefault ? (
+              <span className="filter-pill filter-pill--info">{pillDate}</span>
+            ) : (
+              // Whole pill is the close target, not just the small × - see
+              // FilterPanel.js's identical pattern for why (real <button>,
+              // not a span wrapping one; × is a purely visual aria-hidden
+              // span carried by this button's own aria-label). Value first,
+              // action second, same as FilterPanel's pills.
+              <button
+                type="button"
+                className="filter-pill filter-pill--closable"
+                onClick={handleReset}
+                aria-label={`${pillDate} - ${t('dashboardFilter.removeFilter')}`}
+                disabled={loading}
+              >
+                {pillDate}
+                <span className="filter-pill__close" aria-hidden="true">×</span>
+              </button>
+            )}
+          </li>
+        </ul>
       </div>
     </div>
   );

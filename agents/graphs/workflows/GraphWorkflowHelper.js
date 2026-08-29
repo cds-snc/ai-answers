@@ -19,6 +19,7 @@ import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js'
 import { UrlValidationService } from '../../../services/UrlValidationService.js';
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
+import ServiceCallMetricsService from '../../../services/ServiceCallMetricsService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 import { referringUrlTag } from '../../../api/util/prompt-tags.js';
 
@@ -121,7 +122,19 @@ export class GraphWorkflowHelper {
     };
 
     // Invoke Context Agent via Service directly
-    const contextResponse = await exponentialBackoff(() => invokeContextAgent(selectedAI, contextPayload));
+    let contextResponse;
+    try {
+      contextResponse = await exponentialBackoff(
+        () => invokeContextAgent(selectedAI, contextPayload),
+        3,
+        1000,
+        // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+        () => ServiceCallMetricsService.recordRetry({ service: 'ai', type: 'context' })
+      );
+    } catch (error) {
+      ServiceCallMetricsService.recordError({ service: 'ai', type: 'context' });
+      throw error;
+    }
 
     // Use the service to parse the context response
     const parsed = parseContextMessage({

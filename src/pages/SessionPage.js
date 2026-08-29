@@ -6,6 +6,8 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { usePausablePolling } from '../hooks/usePauseToggle.js';
 import PauseToggleButton from '../components/admin/PauseToggleButton.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
+import { setColumnHeaderScope } from '../utils/admin/dataTableAccessibility.js';
+import { escapeHtml } from '../utils/htmlEscape.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
@@ -82,8 +84,10 @@ const SessionPage = ({ lang: propLang }) => {
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />
 
+      <div className="metrics-table-container">
       <DataTable
         data={sessions}
+        className="display dashboard-table zebra-stable-on-hover"
         columns={[
           { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
           { title: t('admin.session.sessionType', 'Session type'), data: 'sessionType', render: (data) => sessionTypeLabel(data) },
@@ -106,10 +110,33 @@ const SessionPage = ({ lang: propLang }) => {
           { title: t('admin.session.avgLatency', 'Avg latency (ms)'), data: 'avgLatencyMs' },
           { title: t('admin.session.rpm', 'Requests / minute'), data: 'rpm' }
         ]}
-        options={{ paging: true, searching: true, ordering: true, language: dataTableLanguage(lang) }}
+        options={{
+          paging: true,
+          searching: true,
+          ordering: true,
+          // Same zones as the dashboards: filter box top-left, page info +
+          // entries-per-page bottom-left, paging bottom-right.
+          layout: {
+            topStart: 'search',
+            topEnd: {},
+            bottomStart: { features: ['pageLength', 'info'] },
+            bottomEnd: { paging: { firstLast: false } },
+          },
+          language: {
+            ...dataTableLanguage(lang),
+            // Filter-style box like the other admin tables: sr-only label,
+            // "Filter" placeholder, native x to clear.
+            search: `<span class="sr-only">${escapeHtml(t('admin.session.filterLabel'))}</span>`,
+            searchPlaceholder: t('admin.common.filterPlaceholder'),
+          },
+          initComplete: function () {
+            setColumnHeaderScope(this.api());
+          },
+        }}
       >
         <caption className="sr-only">{t('admin.session.title')}</caption>
       </DataTable>
+      </div>
     </GcdsContainer>
   );
 };

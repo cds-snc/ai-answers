@@ -14,10 +14,17 @@ import LogoutPage from './pages/LogoutPage.js';
 import ResetRequestPage from './pages/ResetRequestPage.js';
 import ResetVerifyPage from './pages/ResetVerifyPage.js';
 import ResetCompletePage from './pages/ResetCompletePage.js';
-import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter, GcdsNotice, GcdsText } from '@gcds-core/components-react';
+import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@gcds-core/components-react';
+import StatusMessage from './components/admin/StatusMessage.js';
+import { useRouteChangeFocus } from './hooks/useRouteChangeFocus.js';
+import { usePageMetadata } from './hooks/usePageMetadata.js';
+import { installPagingFocusGuard } from './utils/admin/dataTableAccessibility.js';
 import './styles/global.css';
 import './styles/admin.css';
 import './styles/chat.css';
+
+// Site-wide DataTables paging focus hand-off (see the function's comment).
+installPagingFocusGuard();
 import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
 import EvalDashboardPage from './pages/EvalDashboardPage.js';
@@ -32,7 +39,6 @@ import MetricsPage from './pages/MetricsPage.js';
 import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
 import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
-import { DEFAULT_METADATA, DCTERMS } from './config/metadata.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
@@ -96,7 +102,11 @@ const getAlternatePath = (currentPath, currentLang) => {
 
 // Compute both the current language and the alternate lang href (preserving search/hash).
 // Returns an object: { alternateLangHref, currentLang }
-const computeAlternateLangHref = (location) => {
+// Exported for direct unit testing (App.computeAlternateLangHref.test.js) - this is
+// shared logic that drives the site-wide EN/FR header toggle for every route,
+// document.documentElement.lang, and OG/SEO metadata, so it's covered directly
+// rather than only indirectly through a full App render.
+export const computeAlternateLangHref = (location) => {
   // location is the object from react-router; pathname does not include protocol/host
   try {
     console.debug('[computeAlternateLangHref] location:', location);
@@ -145,6 +155,28 @@ const computeAlternateLangHref = (location) => {
     console.debug('[computeAlternateLangHref] hostname:', runtimeHostname, 'hostPrefix:', hostPrefix, 'hadHostPrefix:', hadHostPrefix, 'currentLang:', currentLang);
   } catch (e) {
     // ignore
+  }
+
+  const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+  const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+
+  // Review mode (?chat=...&review=1&adminLang=...): the route's own `lang`
+  // (this path segment) is pinned to the reviewed chat's own pageLanguage -
+  // WCAG 3.1.2 / official-languages.md Rule 2, never collapsed to a
+  // different language than what the end user actually saw - so it must
+  // never change on toggle. Only `adminLang` (the reviewing admin's own UI
+  // language - ChatReviewPage.js's H1/nav, this App shell's own
+  // header/footer/status banner, and ChatInterface.js's inline eval tooling
+  // all key off it, per HomePage.js's `adminLang` derivation) should follow
+  // the toggle here. The chat transcript itself (bubbles, citation heading)
+  // is keyed off `lang`, untouched by this branch, so it stays put too.
+  const searchParams = new URLSearchParams(search);
+  if (searchParams.get('review') === '1') {
+    const effectiveAdminLang = searchParams.get('adminLang') || currentLang;
+    const newAdminLang = effectiveAdminLang === 'en' ? 'fr' : 'en';
+    searchParams.set('adminLang', newAdminLang);
+    const alternateLangHref = `${path}?${searchParams.toString()}${hash || ''}`;
+    return { alternateLangHref, currentLang: effectiveAdminLang };
   }
 
   const alternatePath = getAlternatePath(path, currentLang);
@@ -196,7 +228,16 @@ const AppLayout = () => {
   const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
+  // isChatReviewMode/skipRouteFocus derivation and the <title>/meta-tag
+  // effect used to live inline here - extracted to usePageMetadata.js (see
+  // its own header for why no existing library replaces it).
+  const { skipRouteFocus } = usePageMetadata(currentLang, t);
 
+  // Moves focus to <main> on every navigate()-driven route change (see
+  // useRouteChangeFocus.js for the full reasoning) - fixes ExperimentalSuitePage.js,
+  // ExperimentalAnalysisPage.js, RegisterPage.js/ResetVerifyPage.js/
+  // ResetCompletePage.js for free, wired once here instead of per call site.
+  const mainRef = useRouteChangeFocus(location.key, { skip: skipRouteFocus });
 
   // Set the html lang attribute synchronously (before paint/microtasks) so that
   // GCDS web components (gcds-header, gcds-footer) resolve the correct language
@@ -221,153 +262,63 @@ const AppLayout = () => {
     }
   }, [location.pathname]);
 
-  // Update Open Graph meta tags based on current language
-  useEffect(() => {
-    // Pages can opt-out by setting window.__CUSTOM_METADATA_ACTIVE (set by frontmatter hook)
-    const isCustomMetadataPage =
-      typeof window !== 'undefined' && window.__CUSTOM_METADATA_ACTIVE === true;
-
-    const langKey = currentLang === 'fr' ? 'FR' : 'EN';
-    const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
-    const title = currentLang === 'fr' ? `Bêta : ${DEFAULT_METADATA.TITLE[langKey]}` : `Beta: ${DEFAULT_METADATA.TITLE[langKey]}`;
-    const description = DEFAULT_METADATA.DESCRIPTION[langKey];
-    const dctermsDescription = DEFAULT_METADATA.DESCRIPTION[langKey];
-    const dctermsLang = currentLang === 'fr' ? 'fra' : 'eng';
-    const author = DCTERMS.CREATOR[langKey];
-    const dctermsCreator = DCTERMS.CREATOR[langKey];
-    const dctermsAudience = currentLang === 'fr' ? 'grand public' : 'general public';
-    let projectStatusMeta = document.querySelector('meta[name="project-status"]');
-    if (projectStatusMeta) {
-      const projectStatus = currentLang === 'fr' ? 'bêta' : 'beta';
-      projectStatusMeta.setAttribute('content', projectStatus);
-    }
-
-    // Only update title and description for pages without custom metadata
-    if (!isCustomMetadataPage) {
-      // Update page title
-      document.title = title;
-
-      // Update dcterms.title
-      let dctermsTitleMeta = document.querySelector('meta[name="dcterms.title"]');
-      if (dctermsTitleMeta) {
-        dctermsTitleMeta.setAttribute('content', title);
-      }
-
-      // Update description meta tag
-      let descMeta = document.querySelector('meta[name="description"]');
-      if (descMeta) {
-        descMeta.setAttribute('content', description);
-      }
-    }
-
-    // Update dcterms.language
-    let dctermsLangMeta = document.querySelector('meta[name="dcterms.language"]');
-    if (dctermsLangMeta) {
-      dctermsLangMeta.setAttribute('content', dctermsLang);
-    }
-
-    // Update dcterms.description
-    let dctermsDescMeta = document.querySelector('meta[name="dcterms.description"]');
-    if (dctermsDescMeta) {
-      dctermsDescMeta.setAttribute('content', dctermsDescription);
-    }
-
-    // Update author meta tag
-    let authorMeta = document.querySelector('meta[name="author"]');
-    if (authorMeta) {
-      authorMeta.setAttribute('content', author);
-    }
-
-    // Update dcterms.creator
-    let dctermsCreatorMeta = document.querySelector('meta[name="dcterms.creator"]');
-    if (dctermsCreatorMeta) {
-      dctermsCreatorMeta.setAttribute('content', dctermsCreator);
-    }
-
-    // Update dcterms.audience
-    let dctermsAudienceMeta = document.querySelector('meta[name="dcterms.audience"]');
-    if (dctermsAudienceMeta) {
-      dctermsAudienceMeta.setAttribute('content', dctermsAudience);
-    }
-
-    // Only update social media meta tags for pages without custom metadata
-    if (!isCustomMetadataPage) {
-      // Update og:title
-      let ogTitleMeta = document.querySelector('meta[property="og:title"]');
-      if (ogTitleMeta) {
-        ogTitleMeta.setAttribute('content', title);
-      }
-
-      // Update og:description
-      let ogDescMeta = document.querySelector('meta[property="og:description"]');
-      if (ogDescMeta) {
-        ogDescMeta.setAttribute('content', description);
-      }
-
-      // Update og:image meta tag
-      let ogImageMeta = document.querySelector('meta[property="og:image"]');
-      if (ogImageMeta) {
-        ogImageMeta.setAttribute('content', ogImage);
-      }
-
-      // Update twitter:title
-      let twitterTitleMeta = document.querySelector('meta[property="twitter:title"]');
-      if (twitterTitleMeta) {
-        twitterTitleMeta.setAttribute('content', title);
-      }
-
-      // Update twitter:description
-      let twitterDescMeta = document.querySelector('meta[property="twitter:description"]');
-      if (twitterDescMeta) {
-        twitterDescMeta.setAttribute('content', description);
-      }
-
-      // Update twitter:image meta tag
-      let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
-      if (twitterImageMeta) {
-        twitterImageMeta.setAttribute('content', ogImage);
-      }
-    }
-  }, [currentLang, location.pathname]);
+  // <title>/lang/dcterms/og/twitter meta-tag updates now live in
+  // usePageMetadata.js (see above).
 
   return (
     <>
-      {!is404 && (
-        <section className="alpha-top">
-          <div className="container">
-            <small>
-              <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
-              {t('homepage.status.description')}
-            </small>
-          </div>
-        </section>
-      )}
-      <GcdsHeader
-        lang={currentLang}
-        langHref={alternateLangHref}
-        skipToHref="#main-content"
-      >
-        <GcdsBreadcrumbs slot="breadcrumb">
-          {/* Show AI Answers breadcrumb on About and 404 pages */}
-          {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
-            <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
-              {t('notFound.breadcrumb')}
-            </GcdsBreadcrumbsItem>
-          )}
-        </GcdsBreadcrumbs>
-      </GcdsHeader>
+      {/* header-chrome is flex (see global.css) so the Beta banner can carry
+          `order: -1` - it renders after GcdsHeader in the DOM (its skip link
+          lives in shadow DOM, so anything ahead of it in light DOM sat ahead
+          of the skip link too, on every route). `order` only changes visual
+          position, so sighted users see the banner first as before, while AT
+          reading order now goes straight to the header/skip link. */}
+      <div className="header-chrome">
+        <GcdsHeader
+          lang={currentLang}
+          langHref={alternateLangHref}
+          skipToHref="#main-content"
+        >
+          <GcdsBreadcrumbs slot="breadcrumb">
+            {/* Show AI Answers breadcrumb on About and 404 pages */}
+            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+              <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
+                {t('notFound.breadcrumb')}
+              </GcdsBreadcrumbsItem>
+            )}
+          </GcdsBreadcrumbs>
+        </GcdsHeader>
+        {!is404 && (
+          <section className="alpha-top">
+            <div className="container">
+              <small>
+                <span className="alpha-label">{t('homepage.status.label')}</span>&nbsp;&nbsp;
+                {t('homepage.status.description')}
+              </small>
+            </div>
+          </section>
+        )}
+      </div>
+      {/* Was GcdsNotice — its render is a plain <section>, no role/aria-live at
+          all (verified against its compiled source), so this box got
+          silently inserted into the DOM with zero announcement to screen
+          reader users whenever sessionWarningVisible flipped true mid-task.
+          GcdsNotice is fine for static, in-page content that doesn't change;
+          this appears/disappears, so it needs StatusMessage, which announces
+          it through the shared live announcer. See
+          docs/coding-agent-docs/status-and-error-messaging.md. No explicit
+          focus-move — this is ambient, non-blocking info (same category as
+          other StatusMessage successes that don't move focus), not a
+          blocking error like AnnouncedError's model. */}
       {currentUser && sessionWarningVisible && !isPublicAuthExemptPath(location.pathname, requireAuthForChat) && (
         <div className="container-custom mb-400">
-          <GcdsNotice
-            noticeRole="warning"
-            noticeTitleTag="h2"
-            noticeTitle={t('auth.sessionWarning.title')}
-          >
-            <GcdsText>{t('auth.sessionWarning.message')}</GcdsText>
-          </GcdsNotice>
+          <StatusMessage variant="warning">
+            <p><strong>{t('auth.sessionWarning.title')}</strong></p>
+            <p>{t('auth.sessionWarning.message')}</p>
+          </StatusMessage>
         </div>
       )}
-      <main id="main-content">
+      <main id="main-content" ref={mainRef} tabIndex={-1}>
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>
@@ -385,29 +336,34 @@ export default function App() {
     const defaultLang = hostPrefixMatch && hostPrefixMatch[1] === 'reponses-ia' ? 'fr' : 'en';
     const homeDefault = defaultLang === 'fr' ? homeFr : homeEn;
     const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
+    // skipRouteFocus: ChatInterface's own async textarea autofocus lives
+    // only on this route - see useRouteChangeFocus's `skip` option and its
+    // call site in AppLayout for why the generic route-change focus hook
+    // has to stay out of its way here rather than racing it.
     const homeRouteEntries = PUBLIC_HOME_ROUTE_PATHS.map((path) => ({
       path,
       element: path === '/fr' ? homeFr : homeEn,
+      handle: { skipRouteFocus: true },
     }));
-    homeRouteEntries[0] = { path: '/', element: homeDefault };
+    homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true } };
 
     const publicRoutes = [
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
-      { path: '/en/signin', element: <LoginPage lang="en" /> },
-      { path: '/fr/se-connecter', element: <LoginPage lang="fr" /> },
-      { path: '/en/reset-request', element: <ResetRequestPage lang="en" /> },
-      { path: '/fr/reinitialisation', element: <ResetRequestPage lang="fr" /> },
-      { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" /> },
-      { path: '/fr/verification-reinitialisation', element: <ResetVerifyPage lang="fr" /> },
-      { path: '/en/reset-complete', element: <ResetCompletePage lang="en" /> },
-      { path: '/fr/reinitialisation-reussie', element: <ResetCompletePage lang="fr" /> },
-      { path: '/en/register', element: <RegisterPage lang="en" /> },
-      { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" /> },
+      { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
+      { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
+      { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },
+      { path: '/fr/reinitialisation', element: <ResetRequestPage lang="fr" />, handle: { titleKey: 'reset.request.title' } },
+      { path: '/en/reset-verify', element: <ResetVerifyPage lang="en" />, handle: { titleKey: 'reset.verify.title' } },
+      { path: '/fr/verification-reinitialisation', element: <ResetVerifyPage lang="fr" />, handle: { titleKey: 'reset.verify.title' } },
+      { path: '/en/reset-complete', element: <ResetCompletePage lang="en" />, handle: { titleKey: 'reset.complete.title' } },
+      { path: '/fr/reinitialisation-reussie', element: <ResetCompletePage lang="fr" />, handle: { titleKey: 'reset.complete.title' } },
+      { path: '/en/register', element: <RegisterPage lang="en" />, handle: { titleKey: 'signup.title' } },
+      { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" />, handle: { titleKey: 'signup.title' } },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
       { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> },
-      { path: '*', element: <NotFoundRoute />, handle: { is404: true } }
+      { path: '*', element: <NotFoundRoute />, handle: { is404: true, titleKey: 'notFound.title' } }
     ];
 
     const protectedRoutes = [
@@ -417,44 +373,48 @@ export default function App() {
           roles: ['admin', 'partner'],
         })),
       ] : []),
-      { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/evaluation', element: <EvalPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord-evaluation', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/tableau-de-bord-auto-evaluation', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/public-dashboard', element: <PublicDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
-      { path: '/fr/derogation-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/parametres', element: <SettingsPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
-      { path: '/fr/base-de-donnees', element: <DatabasePage lang="fr" />, roles: ['admin'] },
-      { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.chatDashboard.title' } },
+      { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.chatDashboard.title' } },
+      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title' } },
+      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title' } },
+      { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
+      { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
+      { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
+      { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
+      { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
+      { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
+      { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.navigation.eval' } },
+      { path: '/fr/evaluation', element: <EvalPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'admin.navigation.eval' } },
+      { path: '/en/eval-dashboard', element: <EvalDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.evalDashboard.title' } },
+      { path: '/fr/tableau-de-bord-evaluation', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.evalDashboard.title' } },
+      { path: '/en/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.autoEvalDashboard.title' } },
+      { path: '/fr/tableau-de-bord-auto-evaluation', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'admin.autoEvalDashboard.title' } },
+      { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.publicEval.title' } },
+      { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.publicEval.title' } },
+      { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'metrics.title' } },
+      { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'metrics.title' } },
+      { path: '/en/public-dashboard', element: <PublicDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'publicDashboard.title' } },
+      { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'publicDashboard.title' } },
+      { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
+      { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
+      { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
+      { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
+      { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.session.title' } },
+      { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'admin.session.title' } },
+      { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'scenarioOverrides.title' } },
+      { path: '/fr/derogation-scenarios', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'scenarioOverrides.title' } },
+      { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'settings.title' } },
+      { path: '/fr/parametres', element: <SettingsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'settings.title' } },
+      { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.database.title' } },
+      { path: '/fr/base-de-donnees', element: <DatabasePage lang="fr" />, roles: ['admin'], handle: { titleKey: 'admin.database.title' } },
+      { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'], handle: { titleKey: 'vector.title' } },
+      { path: '/fr/vecteur', element: <VectorPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'vector.title' } },
+      { path: '/en/connectivity', element: <ConnectivityPage lang="en" />, roles: ['admin'], handle: { titleKey: 'connectivity.title' } },
+      { path: '/fr/connectivite', element: <ConnectivityPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'connectivity.title' } },
+      // No titleKey: HowToPage is markdown-driven (useMarkdownWithFrontmatter)
+      // and already sets its own document.title from frontmatter via
+      // __CUSTOM_METADATA_ACTIVE, which this effect's isCustomMetadataPage
+      // check already skips - a titleKey here would just be dead code.
       ...HOW_TOS.flatMap((howTo) => ([
         {
           path: getPath(howTo.route, 'en'),
@@ -467,16 +427,16 @@ export default function App() {
           roles: ['admin', 'partner'],
         },
       ])),
-      { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/analyse', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/ensembles-de-donnees', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/experimental/create-dataset', element: <ExperimentalCreateDatasetPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/creer-ensemble-de-donnees', element: <ExperimentalCreateDatasetPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/analyse/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'] },
-      { path: '/fr/experimental/suites-de-tests/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'] }
+      { path: '/en/experimental/analysis', element: <ExperimentalAnalysisPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.analysis.title' } },
+      { path: '/fr/experimental/analyse', element: <ExperimentalAnalysisPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.analysis.title' } },
+      { path: '/en/experimental/datasets', element: <ExperimentalDatasetsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.datasets.title' } },
+      { path: '/fr/experimental/ensembles-de-donnees', element: <ExperimentalDatasetsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.datasets.title' } },
+      { path: '/en/experimental/create-dataset', element: <ExperimentalCreateDatasetPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.datasets.createDatasetTitle' } },
+      { path: '/fr/experimental/creer-ensemble-de-donnees', element: <ExperimentalCreateDatasetPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.datasets.createDatasetTitle' } },
+      { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.results.title' } },
+      { path: '/fr/experimental/analyse/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.results.title' } },
+      { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.suite.title' } },
+      { path: '/fr/experimental/suites-de-tests/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.suite.title' } }
     ];
 
     // sessions routes are defined in the protectedRoutes array above
@@ -492,6 +452,7 @@ export default function App() {
           ...publicRoutes,
           ...protectedRoutes.map(route => ({
             path: route.path,
+            handle: route.handle,
             element: (
               <RoleProtectedRoute roles={route.roles} lang={route.path === '/fr' || route.path.startsWith('/fr/') ? 'fr' : 'en'}>
                 {route.element}

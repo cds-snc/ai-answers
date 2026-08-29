@@ -4,6 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsFileUploader, GcdsFieldset, GcdsStepper, GcdsInput, GcdsSelect } from '@gcds-core/components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
+import { resolveErrorMessage } from '../../utils/errorCodeMessage.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
@@ -195,18 +196,24 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setFileUploaderKey((k) => k + 1);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
-          setError(persistErr?.message || t('batch.upload.error.saveFailed'));
+          setError(persistErr?.message
+            ? <>{t('batch.upload.error.saveFailed')} <code lang="en">{persistErr.message}</code></>
+            : t('batch.upload.error.saveFailed'));
           // Re-show the upload button so the user can retry
           setFileUploaded(false);
           setProcessing(false);
         }
       } catch (err) {
         // Surface the actual parse error (e.g. missing column, empty file)
-        // so the admin can see what's wrong with the CSV.
-        const detail = {
-          EMPTY_CSV: t('batch.upload.error.invalidCsv'),
-          MISSING_QUESTION_COLUMN: t('batch.upload.error.missingQuestionColumn'),
-        }[err?.code] || err?.message || t('batch.upload.error.readFailed');
+        // so the admin can see what's wrong with the CSV. This feeds
+        // GcdsFileUploader's errorMessage prop, a plain-string web-component
+        // attribute — no way to wrap a raw err.message in <code lang="en">
+        // here, so unlike other error sites, an unrecognized err.code falls
+        // back to the translated generic message rather than raw text.
+        const detail = resolveErrorMessage(err?.code, {
+          EMPTY_CSV: 'batch.upload.error.invalidCsv',
+          MISSING_QUESTION_COLUMN: 'batch.upload.error.missingQuestionColumn',
+        }, 'batch.upload.error.readFailed', t);
         announceFileError(detail);
         fileUploaderRef.current?.focus?.();
         console.error('Error reading file:', err);
@@ -247,7 +254,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
         <GcdsStepper currentStep={2} totalSteps={3} tag="h3">
           {t('batch.upload.steps.step2Title')}
         </GcdsStepper>
-        <div className="feedback-reason-card mb-500">
+        <div className="batch-upload-card mb-500">
           <div className="mt-300 mb-250">
             <GcdsInput
               inputId="batchName"
@@ -425,9 +432,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             {t('batch.upload.steps.step3Title')}
           </GcdsStepper>
           <p className="mb-100">{t('batch.upload.instructions.reviewIncomplete')}</p>
-          <p className="mb-200">
-            <a href="#running-evaluation">{t('batch.upload.instructions.incompleteLinkText')}</a>
-          </p>
           <details className="mb-250">
             <summary className="mb-200">{t('batch.upload.instructions.tipsTitle')}</summary>
             <p>{t('batch.upload.instructions.step6')}</p>

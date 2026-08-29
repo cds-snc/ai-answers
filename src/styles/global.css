@@ -74,14 +74,28 @@
   clear: both;
 }
 
+/* Wraps GcdsHeader + the Beta banner (App.js) so the banner's `order: -1`
+   below can put it first visually while staying after GcdsHeader in the
+   DOM - see the comment at that JSX for why the DOM order matters. */
+.header-chrome {
+  display: flex;
+  flex-direction: column;
+}
+
 /* top banner for alpha/beta warning */
 /* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
 .alpha-top {
+  order: -1;
   padding-top: 2px !important;
   padding-bottom: 2px !important;
   top: 0;
   background-color: #f2f2f2;
-  z-index: 100;
+  /* Was z-index: 100 - harmless pre-.header-chrome (non-flex elements ignore
+     z-index), but flex items (for `order` above) honor it for paint order
+     even with no `position` set. That put this ahead of GcdsHeader's
+     shadow-DOM skip link (z-index: 3), hiding it on focus. auto restores the
+     original, correct behaviour. */
+  z-index: auto;
 }
 .alpha {
   padding-top: 5px;
@@ -226,6 +240,11 @@ gcds-details {
    --gcds-spacing-text-1-25x: 1.25em) alongside the fixed rem scale. */
 .canada-ca-list-spcd-2 li {
   margin-bottom: 1.25em;
+}
+
+/* -2 above: long/bulleted-paragraph items. -1 here: short-sentence items. */
+.canada-ca-list-spcd-1 li {
+  margin-bottom: 0.625em;
 }
 
 .flex-center {
@@ -397,15 +416,35 @@ summary::-webkit-details-marker {
 }
 
 details > summary::before {
-  content: '►';
+  content: '';
   display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
   margin-right: 0.5rem;
-  font-size: 0.75em;
-  line-height: 1;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 details[open] > summary::before {
-  content: '▼';
+  transform: rotate(90deg);
+}
+
+/* The chevron's fill comes from background-color (masked to a triangle).
+   Forced-colors mode (Windows High Contrast Mode) maps background-color to
+   Canvas (the page background), not CanvasText like it does for color/text —
+   so the mask would be forced to match the page background and disappear.
+   Repaint it explicitly with the CanvasText system color so it stays visible. */
+@media (forced-colors: active) {
+  details > summary::before {
+    background-color: CanvasText;
+  }
 }
 
 /* A focused, open summary's outline (outline-offset 0.125rem + outline
@@ -484,27 +523,8 @@ summary:focus,
 }
 
 
-.hr {
-  padding-top: 30px;
-  margin-top: 60px;
-  border-top: 1px solid #ccc;
-}
-
-/* Screen reader only class */
-/* Live regions that stay mounted while empty (StatusMessage's `persistent`
-   prop) so screen readers treat the first message as a change rather than an
-   insertion — the default `<p>` tag still gets its browser margin while
-   empty, which would show as a blank gap on screen without this reset.
-   Scoped to `.status-message--empty` rather than the bare `[aria-live]`
-   attribute so this doesn't reach unrelated live regions elsewhere in the app
-   (e.g. ChatInterface's `.message-list`, which is legitimately empty before
-   the first message and would otherwise have its margin/padding silently
-   overridden by this rule's higher specificity). */
-.status-message--empty:empty {
-  margin: 0;
-  padding: 0;
-}
-
+/* Screen reader only class. Also used by the two site-wide live regions
+   src/utils/liveAnnouncer.js appends to <body>. */
 .sr-only {
   position: absolute;
   width: 1px;

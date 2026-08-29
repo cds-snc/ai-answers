@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce as announceTestComplete } from '../utils/liveAnnouncer.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -92,10 +93,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    // Bumped on every test run so StatusMessage's `nonce` forces the sr-only
-    // completion announcement to re-fire even when the result text is identical
-    // to the previous run (e.g. same connected/errors/warnings counts twice in a row).
-    const [testCompleteAnnounceNonce, setTestCompleteAnnounceNonce] = useState(0);
     const [simulatedFailures, setSimulatedFailures] = useState({
         database: false,
         search: false,
@@ -152,13 +149,18 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             const data = await response.json();
             setResults(data);
-            setTestCompleteAnnounceNonce((n) => n + 1);
+            announceTestComplete(
+                t('connectivity.testComplete')
+                    .replace('{connected}', data.summary.connected)
+                    .replace('{errors}', data.summary.errors)
+                    .replace('{warnings}', data.summary.warnings)
+            );
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t, announceTestComplete]);
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -211,7 +213,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </section>
 
             <StatusMessage variant={error ? 'error' : undefined}>
-                {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
+                {error && <><strong>{t('connectivity.error')}:</strong> <code lang="en">{error}</code></>}
             </StatusMessage>
 
             {/* TODO: these counts should go through formatNumber(n, lang) per the
@@ -226,18 +228,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 DatabasePage.js's move to a { text, isError } status shape ends
                 up establishing a shared "guard the response shape" pattern
                 worth reusing here too. */}
-            <StatusMessage
-                persistent
-                message={results
-                    ? t('connectivity.testComplete')
-                        .replace('{connected}', results.summary.connected)
-                        .replace('{errors}', results.summary.errors)
-                        .replace('{warnings}', results.summary.warnings)
-                    : undefined}
-                nonce={testCompleteAnnounceNonce}
-                className="sr-only"
-            />
-
             {results && (
                 <>
                     <div style={{

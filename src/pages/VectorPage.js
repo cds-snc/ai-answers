@@ -7,8 +7,10 @@ import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 
 const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
 
@@ -60,19 +62,25 @@ const formatDocdb8ScoreRange = (scoreSummary, lang, t) => {
     .replace('{max}', formatDecimal(scoreSummary.maxScore, lang, 3));
 };
 
+// A probe's error is a genuine, unpredictable driver/DB message from a live
+// capability test (unlike VectorService.getStats/reinitialize's fixed
+// strings above) — always worth keeping, but wrapped behind a translated
+// prefix rather than shown alone, same as everywhere else in this file.
+const renderDocdb8Error = (detail, t) => {
+  if (!detail) return t('vector.docdb8Capability.noError');
+  const [prefix, suffix] = t('vector.docdb8Capability.errorDetail').split('{error}');
+  return <>{prefix}<code lang="en">{detail}</code>{suffix}</>;
+};
+
 const VectorPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
   const activeLang = lang || language;
   const { t } = useTranslations(activeLang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const fmtN = (n) => formatNumber(n, activeLang);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // Bumped on every stats fetch so StatusMessage's `nonce` forces the
-  // sr-only "stats loaded" region to re-announce even when stats are
-  // fetched twice in a row with an identical result (same string both
-  // times, which React would otherwise treat as a no-op update).
-  const [vectorStatsAnnounceNonce, setVectorStatsAnnounceNonce] = useState(0);
   // { type: 'success' | 'error', text } per action — was window.alert() for
   // every one of these; not caught by the earlier StatusMessage migration
   // pass since these never went through StatusMessage at all (this was
@@ -85,16 +93,10 @@ const VectorPage = ({ lang = 'en' }) => {
   // progress paragraph below already shows "Stopped" for sighted admins,
   // and the processed count visibly stops climbing; a screen reader gets
   // neither cue (that block has no aria-live at all — the still-open TODO
-  // below), so this exists purely to announce it, same persistent sr-only
-  // pattern as docdb8LastProbeAnnouncement. A genuine stop *failure* still
-  // gets a real, visible metadataBackfillMessage error box below — that's
-  // worth interrupting for.
-  const [metadataBackfillStopAnnouncement, setMetadataBackfillStopAnnouncement] = useState(null);
-  // Bumped alongside metadataBackfillStopAnnouncement — see
-  // vectorStatsAnnounceNonce above for why (stopping the same job's backfill
-  // twice in a row would otherwise produce an identical string that React
-  // wouldn't re-render for).
-  const [metadataBackfillStopAnnounceNonce, setMetadataBackfillStopAnnounceNonce] = useState(0);
+  // below), so a stop is announced (announce(), in handleStopMetadataBackfill)
+  // with no visible box. A genuine stop *failure* still gets a real,
+  // visible metadataBackfillMessage error box below — that's worth
+  // interrupting for.
   // Validation errors tied to one specific field, not an async outcome —
   // FeedbackInlineError + aria-describedby, not StatusMessage (see AGENTS.md's
   // "StatusMessage vs. form-field errors"). useInlineFormError (not a plain
@@ -123,14 +125,8 @@ const VectorPage = ({ lang = 'en' }) => {
   // Sighted admins see the stats <pre>/results table appear or update; a
   // screen reader gets nothing unless the outcome is announced separately —
   // there was no failure-only StatusMessage for either of these before, so
-  // success (the common case) was silent. persistent sr-only live regions,
-  // same pattern as ConnectivityPage.js's test-completion summary.
-  const [docdb8LastProbeAnnouncement, setDocdb8LastProbeAnnouncement] = useState(null);
-  // Bumped alongside docdb8LastProbeAnnouncement — see
-  // vectorStatsAnnounceNonce above for why (running the same probe twice in
-  // a row with the same pass/fail result would otherwise produce an
-  // identical string that React wouldn't re-render for).
-  const [docdb8AnnounceNonce, setDocdb8AnnounceNonce] = useState(0);
+  // success (the common case) was silent. Both go through announce() with
+  // no visible box, same as ConnectivityPage.js's test-completion summary.
 
   // Embedding functionality state
   const [embeddingProgress, setEmbeddingProgress] = useState(null);
@@ -253,9 +249,14 @@ const VectorPage = ({ lang = 'en' }) => {
     try {
       const data = await VectorService.getStats();
       setVectorStats(data);
-      setVectorStatsAnnounceNonce((n) => n + 1);
+      announce(t('vector.statsLoaded'));
     } catch (err) {
-      setError(err.message);
+      // err.message is usually the one fixed string VectorService.getStats
+      // throws on a non-OK response — not truly unbounded — but a real
+      // network failure before any response (e.g. the browser's own
+      // "Failed to fetch") can still land here, so the detail is kept,
+      // just translated and wrapped rather than shown alone.
+      setError(buildErrorStatus('vector.statsLoadError', err));
     } finally {
       setLoading(false);
     }
@@ -334,9 +335,11 @@ const VectorPage = ({ lang = 'en' }) => {
     setError(null);
     try {
       await VectorService.reinitialize();
-      setIndexMessage({ type: 'success', text: t('vector.indexCreatedSuccess') });
+      setIndexMessage({ text: t('vector.indexCreatedSuccess'), isError: false });
     } catch (err) {
-      setIndexMessage({ type: 'error', text: err.message });
+      // Same reasoning as fetchVectorStats' catch above — usually one fixed
+      // string, occasionally a real network error, always kept but wrapped.
+      setIndexMessage(buildErrorStatus('vector.indexCreateError', err));
     } finally {
       setLoading(false);
     }
@@ -361,7 +364,6 @@ const VectorPage = ({ lang = 'en' }) => {
     // / same metadata — a stale "Metadata cleared" shouldn't keep showing
     // once a backfill has started.
     setMetadataClearMessage(null);
-    setMetadataBackfillStopAnnouncement(null);
     try {
       const { job } = await VectorService.startMetadataBackfillJob({
         phase: 'missing',
@@ -381,7 +383,6 @@ const VectorPage = ({ lang = 'en' }) => {
   const handleStopMetadataBackfill = async () => {
     setMetadataBackfillMessage(null);
     setMetadataClearMessage(null);
-    setMetadataBackfillStopAnnouncement(null);
     try {
       const { job } = await VectorService.stopMetadataBackfillJob(metadataProgress?.jobId);
       if (job) {
@@ -389,8 +390,7 @@ const VectorPage = ({ lang = 'en' }) => {
         setIsBackfillingMetadata(ACTIVE_METADATA_JOB_STATUSES.has(job.status));
       }
       setStopMetadataBackfill(true);
-      setMetadataBackfillStopAnnouncement(t('vector.metadataBackfillStoppedAnnouncement'));
-      setMetadataBackfillStopAnnounceNonce((n) => n + 1);
+      announce(t('vector.metadataBackfillStoppedAnnouncement'));
     } catch (err) {
       console.error('Error stopping embedding metadata backfill:', err);
       // Was vector.metadataBackfillFailed ("Failed to backfill...") — wrong
@@ -410,7 +410,6 @@ const VectorPage = ({ lang = 'en' }) => {
     if (isBackfillingMetadata) return;
     setMetadataClearMessage(null);
     setMetadataBackfillMessage(null);
-    setMetadataBackfillStopAnnouncement(null);
     try {
       await VectorService.clearMetadata();
       // The backfill job record this progress/message came from still says
@@ -452,23 +451,21 @@ const VectorPage = ({ lang = 'en' }) => {
         ...current,
         [probe]: data,
       }));
-      setDocdb8LastProbeAnnouncement(
+      announce(
         t('vector.docdb8Capability.probeComplete')
           .replace('{label}', () => probeLabel)
           .replace('{status}', () => (data?.test?.supported ? t('vector.docdb8Capability.pass') : t('vector.docdb8Capability.fail')))
       );
-      setDocdb8AnnounceNonce((n) => n + 1);
     } catch (err) {
       setDocdb8CapabilityErrors((current) => ({
         ...current,
         [probe]: err.message,
       }));
-      setDocdb8LastProbeAnnouncement(
+      announce(
         t('vector.docdb8Capability.probeComplete')
           .replace('{label}', () => probeLabel)
           .replace('{status}', () => t('vector.docdb8Capability.fail'))
       );
-      setDocdb8AnnounceNonce((n) => n + 1);
     } finally {
       setDocdb8CapabilityLoadingProbe(null);
     }
@@ -546,9 +543,8 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={error ? 'error' : undefined} message={error} />
-        <StatusMessage variant={indexMessage?.type} message={indexMessage?.text} />
-        <StatusMessage persistent message={vectorStats ? t('vector.statsLoaded') : undefined} nonce={vectorStatsAnnounceNonce} className="sr-only" />
+        {renderStatusMessage(error)}
+        {renderStatusMessage(indexMessage)}
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -571,22 +567,38 @@ const VectorPage = ({ lang = 'en' }) => {
             </GcdsButton>
           ))}
         </div>
-        <StatusMessage persistent message={docdb8LastProbeAnnouncement} nonce={docdb8AnnounceNonce} className="sr-only" />
         <GcdsText>
           {t('vector.docdb8Capability.singleProbeDescription')}
         </GcdsText>
         {loadedDocdb8Results.length > 0 && (
           <div className="mb-400">
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step
+                timeline (see the metadata backfill results table below). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            {/* Fixed layout + colgroup: widths are set once instead of
+                re-measured from the content every time a probe adds a row,
+                which had the columns shifting between button clicks. Error
+                takes whatever is left. */}
+            <table className="dataTable table-slim-padding table-fixed-layout">
+              <caption className="sr-only">{t('vector.docdb8Capability.title')}</caption>
+              <colgroup>
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '7%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '9%' }} />
+                <col />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>{t('vector.docdb8Capability.table.capability')}</th>
-                  <th>{t('vector.docdb8Capability.table.status')}</th>
-                  <th>{t('vector.docdb8Capability.table.resultCount')}</th>
-                  <th>{t('vector.docdb8Capability.table.preFilter')}</th>
-                  <th>{t('vector.docdb8Capability.table.score')}</th>
-                  <th>{t('vector.docdb8Capability.table.duration')}</th>
-                  <th>{t('vector.docdb8Capability.table.error')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.capability')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.status')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.resultCount')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.preFilter')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.score')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.duration')}</th>
+                  <th scope="col">{t('vector.docdb8Capability.table.error')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -598,11 +610,12 @@ const VectorPage = ({ lang = 'en' }) => {
                     <td>{result?.test?.metadata?.candidateReductionBeforeVectorSearch ? t('vector.docdb8Capability.yes') : t('vector.docdb8Capability.no')}</td>
                     <td>{formatDocdb8ScoreRange(result?.test?.scoreSummary, activeLang, t)}</td>
                     <td>{t('vector.docdb8Capability.durationMs').replace('{ms}', fmtN(result?.test?.durationMs))}</td>
-                    <td>{probeError || result?.test?.error?.message || t('vector.docdb8Capability.noError')}</td>
+                    <td>{renderDocdb8Error(probeError || result?.test?.error?.message, t)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
             <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400" tabIndex="0">
               <pre>{JSON.stringify(docdb8CapabilityResults, null, 2)}</pre>
             </GcdsDetails>
@@ -740,7 +753,6 @@ const VectorPage = ({ lang = 'en' }) => {
         </div>
         <StatusMessage variant={metadataBackfillMessage?.type} message={metadataBackfillMessage?.text} />
         <StatusMessage variant={metadataClearMessage?.type} message={metadataClearMessage?.text} />
-        <StatusMessage persistent message={metadataBackfillStopAnnouncement} nonce={metadataBackfillStopAnnounceNonce} className="sr-only" />
         {/* TODO (review): this "processed: X, remaining: Y, [active/stopped/
             failed]" block is a live-updating status (refreshed by the
             useEffect poll above, every 5s while a backfill job is active)
@@ -792,20 +804,29 @@ const VectorPage = ({ lang = 'en' }) => {
                 })()}
               </strong>
             </div>
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step
+                timeline: DataTables' base table styling (the dataTable class
+                alone, no display striping/hover) with slim padding - nothing
+                to page/sort/search here. dt-container on the wrapper is what
+                every live DataTables instance gets from the library, and
+                admin.css keys the table text size off it. table-scroll: 11
+                columns overflow the page width. */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding">
+              <caption className="sr-only">{t('vector.metadataBatchResultsTitle')}</caption>
               <thead>
                 <tr>
-                  <th>{t('vector.metadataBatchResults.columns.embeddingId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.storedInteractionId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.resolvedInteractionId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.action')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.reason')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.feedbackType')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.pageLanguage')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.interactionLanguage')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.expertFeedbackId')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.totalScore')}</th>
-                  <th>{t('vector.metadataBatchResults.columns.modifiedCount')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.embeddingId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.storedInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.resolvedInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.action')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.reason')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.feedbackType')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.pageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.interactionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.expertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.totalScore')}</th>
+                  <th scope="col">{t('vector.metadataBatchResults.columns.modifiedCount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -826,6 +847,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />
@@ -845,14 +867,19 @@ const VectorPage = ({ lang = 'en' }) => {
         )}
         {metadataStatus && (
           <div className="mb-400">
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
+                (see the DocDB capability table above). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding table-key-value">
+              <caption className="sr-only">{t('vector.metadataStatus.title')}</caption>
               <tbody>
-                <tr><th>{t('vector.metadataStatus.totalEmbeddings')}</th><td>{fmtN(metadataStatus.totalEmbeddings)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsRequiringMetadata')}</th><td>{fmtN(metadataStatus.recordsRequiringMetadata)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsWithMetadata')}</th><td>{fmtN(metadataStatus.recordsWithMetadata)}</td></tr>
-                <tr><th>{t('vector.metadataStatus.recordsMissingMetadata')}</th><td>{fmtN(metadataStatus.recordsMissingMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.totalEmbeddings')}</th><td>{fmtN(metadataStatus.totalEmbeddings)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsRequiringMetadata')}</th><td>{fmtN(metadataStatus.recordsRequiringMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsWithMetadata')}</th><td>{fmtN(metadataStatus.recordsWithMetadata)}</td></tr>
+                <tr><th scope="row">{t('vector.metadataStatus.recordsMissingMetadata')}</th><td>{fmtN(metadataStatus.recordsMissingMetadata)}</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />
@@ -903,24 +930,28 @@ const VectorPage = ({ lang = 'en' }) => {
               <span> {t('vector.metadataLookup.chatSummary.interactions')}: {fmtN(metadataLookupResult.chat.interactionCount)}</span>
               <span> {t('vector.metadataLookup.chatSummary.embeddings')}: {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
             </p>
-            <table>
+            {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
+                (see the DocDB capability table above). */}
+            <div className="table-scroll dt-container" tabIndex={0}>
+            <table className="dataTable table-slim-padding">
+              <caption className="sr-only">{t('vector.metadataLookup.title')}</caption>
               <thead>
                 <tr>
-                  <th>{t('vector.metadataLookup.columns.row')}</th>
-                  <th>{t('vector.metadataLookup.columns.status')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionObjectId')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
-                  <th>{t('vector.metadataLookup.columns.embeddingId')}</th>
-                  <th>{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
-                  <th>{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
-                  <th>{t('vector.metadataLookup.columns.attachedScore')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataScore')}</th>
-                  <th>{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.interactionLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
-                  <th>{t('vector.metadataLookup.columns.neverStale')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.row')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.status')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionObjectId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.embeddingId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.attachedScore')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataScore')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.interactionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.neverStale')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -945,6 +976,7 @@ const VectorPage = ({ lang = 'en' }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         <hr className="mb-400" />

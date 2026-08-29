@@ -128,7 +128,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
       {exportError && (
         <StatusMessage variant="error">
-          {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}
+          {exportError.prefix}<code lang="en">{exportError.detail}</code>{exportError.suffix}
         </StatusMessage>
       )}
 
@@ -157,7 +157,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
           <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
             <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription')}</p>
 
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="export-controls-row">
               {/* View Dropdown */}
               <div className="export-control-group">
                 <label htmlFor="export-view" className="filter-label">
