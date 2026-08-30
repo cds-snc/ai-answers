@@ -132,24 +132,10 @@
 .ai-message-content p:first-child {
   font-weight: 600;
 }
-.ai-paragraph,
-.ai-list-item {
-  margin: 0;
-}
 .ai-sentence {
   margin-bottom: 0.2em;
   line-height: 1.6em;
 }
-.ai-list-item {
-  display: flex;
-  align-items: flex-start;
-}
-.list-number {
-  flex-shrink: 0;
-  margin-right: 0.5em;
-  font-weight: bold;
-}
-
 
 .citation-divider {
   border: none;
@@ -222,39 +208,11 @@
   display: inline-block;
 }
 
-.follow-up-prompt {
-  margin-top: 1rem;
-  color: #555;
-}
 .input-area {
   margin-top: 1rem;
   width: 100%;
 }
 
-.input-button-wrapper {
-  border-bottom: 1px solid #d9d9d9;
-  margin-bottom: 1.5em;
-  padding-bottom: 1em;
-}
-.input-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.main-input-container {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.main-input-container .gcds-textarea {
-  flex-grow: 1;
-}
-
-.optional-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 @media only screen and (width < 48em) {
   .chat-container {
     padding: 0.5rem;
@@ -266,13 +224,6 @@
   .user-message-box,
   .ai-message-content {
     padding: 0.75rem;
-  }
-  .main-input-container {
-    flex-direction: column;
-  }
-  .send-button {
-    width: 100%;
-    margin-top: 10px;
   }
 }
 @media only screen and (width >= 48em) {
@@ -300,21 +251,6 @@
 .feedback-container p {
   margin-bottom: 10px;
 }
-.feedback-survey-link {
-  display: inline-block;
-  margin-left: 10px;
-  text-decoration: underline;
-  text-decoration-thickness: var(--gcds-link-decoration-thickness);
-  text-underline-offset: var(--gcds-link-underline-offset);
-  color: #284162;
-}
-.feedback-survey-link:hover {
-  text-decoration: underline;
-  color: var(--gcds-link-hover);
-  text-decoration-thickness: default;
-  text-underline-offset: default;
-}
-
 /* Review panels table styling */
 .review-table {
   width: 100%;
@@ -432,10 +368,6 @@
   color: #333;
   margin-top: 10px;
 }
-.radio-group {
-  margin-top: 10px;
-  color: #333;
-}
 .expert-rating-container label {
   display: block;
   margin-bottom: 20px;
@@ -547,29 +479,7 @@
 
 /* Chat app container styles */
 
-.referring-url {
-  margin-bottom: 10px;
-}
-
-.referring-url_input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.service-status-alert {
-  background-color: #f3e9e8;
-  border: 1px solid #bc3331;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-}
-
-
-.loading-hint-text,
-.mistake-disc p {
+.loading-hint-text {
   color: var(--gcds-color-blue-850);
   font-size: 18px;
   font-weight: 400 !important;
@@ -578,16 +488,6 @@
 .disclaimer p {
     color: var(--gcds-color-blue-850);
     font-weight: 400 !important;
-}
-
-/* Add spacing between radio buttons and their labels */
-.radio-group label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.radio-group input[type="radio"] {
-  margin-right: 8px;
 }
 
 .thank-you span {
@@ -756,15 +656,6 @@
   }
 }
 
-/* Character counter */
-.char-counter {
-  position: absolute;
-  bottom: -20px;
-  right: 0;
-  font-size: 0.75em;
-  color: #666;
-}
-
 /* Label styling */
 .field-container label {
   font-size: var(--gcds-font-sizes-h5);
@@ -862,9 +753,6 @@ textarea:focus {
 @media screen and (max-width: 600px) {
   .button-text {
     display: none !important;
-  }
-  .mistake-disc p {
-    font-size: 16px;
   }
   .hint-text {
     font: var(--gcds-font-text-mobile) !important;
@@ -1141,7 +1029,6 @@ fieldset.gc-chckbxrdio legend {
   margin-bottom: 8px;
 }
 
-.mistake-disc,
 .loading-hint-text,
 .disclaimer {
   background-color: #f5f5ff;
