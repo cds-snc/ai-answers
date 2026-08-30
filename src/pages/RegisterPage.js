@@ -85,7 +85,6 @@ const RegisterPage = ({ lang = 'en' }) => {
               type="email"
               id="email"
               value={email}
-              title={t('signup.email')}
               autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -99,7 +98,6 @@ const RegisterPage = ({ lang = 'en' }) => {
             name="password"
             label={t('signup.password')}
             value={password}
-            title={t('signup.password')}
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={isLoading}
@@ -113,7 +111,6 @@ const RegisterPage = ({ lang = 'en' }) => {
             name="confirmPassword"
             label={t('signup.confirmPassword')}
             value={confirmPassword}
-            title={t('signup.confirmPassword')}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             disabled={isLoading}
