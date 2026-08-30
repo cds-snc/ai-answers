@@ -47,9 +47,9 @@ flowchart TD
         validate["2. validate<br/>short-query guardrail"]
         redact["3. redact<br/>word lists + AI PI detection<br/>blocks, never persists"]
         translate["4. translate<br/>detect language, translate to EN<br/>+ post-translation guard"]
-        ctx["5. contextNode<br/>query rewrite, search,<br/>institution and topic match"]
+        ctx["5. contextNode<br/>query rewrite, search,<br/>institution match<br/>→ sets the abbrKey"]
         sim["6. similarQuestions<br/>eval-informed answering:<br/>inject expert-rated past Q/A"]
-        ans["7. answerNode<br/>answer + citation, agent tools"]
+        ans["7. answerNode<br/>systemPrompt.js assembles: base + safety +<br/>citation rules + that institution's scenarios<br/>+ injected evals, then answers with tools"]
         verify["8. verifyNode<br/>citation URL check, builds result"]
         persist["9. persistNode<br/>save interaction, create embeddings"]
 
@@ -70,6 +70,13 @@ flowchart TD
     human["human expert evaluation<br/>sampled, hours to weeks later"] --> emb
     emb -. "feedback metadata + vector index entry" .-> sim
 ```
+
+**Institution-specific instructions:** the `contextNode` match is what makes the next two
+steps institution-aware. Its `abbrKey` (e.g. `EDSC-ESDC`, `CRA-ARC`) is what
+`systemPrompt.js` uses to dynamically import that institution's
+`agents/prompts/scenarios/context-{abbrKey}/` scenarios into the prompt for this one
+answer. No context match means no institution scenarios are loaded — the answer falls back
+to the general prompt.
 
 **Reading the loop:** `persistNode` writes embeddings that nothing can retrieve yet. A
 human expert evaluation attaches the feedback metadata and registers those embeddings in
@@ -166,7 +173,7 @@ The graph maintains state across all nodes with these key fields:
   overrideUserId: string,        // Override user ID for special cases
   redactedText: string,          // Text after PI redaction
   translationData: object,       // Translation results
-  context: object,               // Derived context (dept, topic, search results,
+  context: object,               // Derived context (department, search results,
                                  //   similarQuestions block, qaMatches)
   usedExistingContext: boolean,  // Whether context was reused (always false in the
                                  //   production graph — see step 5d)
@@ -319,11 +326,14 @@ verified answer is found
 - Configurable via `searchProvider` parameter
 - Tools: `canadaCaContextSearch.js`, `googleContextSearch.js`
 
-**5c. Department Matching**
-- Match question to Government of Canada department
-- Identify topic and relevant URLs
-- Parse department code (e.g., `EDSC-ESDC`, `CRA-ARC`)
-- Load department-specific scenarios if available
+**5c. Institution Matching**
+- Match question to a Government of Canada institution
+- Identify relevant URLs
+- Parse the institution code / `abbrKey` (e.g., `EDSC-ESDC`, `CRA-ARC`)
+- The `abbrKey` is what loads that institution's scenarios into the answer prompt (step 7)
+- Categorizing *what the question was about* is not done here — that is the program/action
+  classification, which runs after the answer
+  ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
 
 **5d. Context Reuse — variant graphs only**
 - **The production graph does not reuse context.** `GenericWithQAGraph` and `GenericGraph`
@@ -394,7 +404,7 @@ short-circuit variants when a verified match was found)
 
 **Input:**
 - Translated question
-- Derived context (department, topic, search results)
+- Derived context (department, search results)
 - Expert-rated similar Q/A pairs from the `similarQuestions` node
 - Conversation history
 - Department-specific scenarios (if available)
@@ -511,7 +521,6 @@ finishes) and emitted as a `result` SSE event with `chatId` merged in:
     citationUrl: string
   },
   context: {
-    topic: string,
     department: string,
     departmentUrl: string,
     searchResults: array,
@@ -707,7 +716,7 @@ User Question
     ↓
 [translate] → Add translationData to state
     ↓
-[contextNode] → Add context (department, topic, searchResults) to state
+[contextNode] → Add context (department, searchResults) to state
     ↓
 [similarQuestions] → Add context.similarQuestions + context.qaMatches
     ↓

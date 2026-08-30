@@ -65,7 +65,7 @@ Model selection is decoupled from workflow — the `model.default` setting contr
 3. Similar-questions context (if available)
 4. Department-specific scenarios from `context-{abbrKey}/`
 5. Page language tag
-6. Tagged context (department, topic, URLs, search results)
+6. Tagged context (department, URLs, search results)
 7. **BASE_SYSTEM_PROMPT** from `agenticBase.js` — 7-step response framework
 8. **CITATION_INSTRUCTIONS** from `citationInstructions.js`
 9. Final reminder
@@ -115,7 +115,7 @@ This means selecting "Azure GPT-5.1" uses GPT-5.1 for context and answer generat
 | `Question` | Redacted/original question, detected language, English translation |
 | `Answer` | AI answer text, sentences, citation ref, token counts, model info |
 | `Citation` | Citation URL, heading, provided vs AI citation |
-| `Context` | Department/topic matched, search results, token usage |
+| `Context` | Institution matched, search results, program/action classification, token usage. `topic`/`topicUrl` are dead fields pending removal — don't read or write them |
 | `Eval` | Auto-evaluation: similarity scores, sentence match traces, fallback logic |
 | `ExpertFeedback` | Sentence-level scores (1-4), harmful/content flags |
 | `PublicFeedback` | User ratings (thumbs up/down, feedback text) |

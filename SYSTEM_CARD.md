@@ -1,7 +1,7 @@
 # AI Answers system card
 
-**Version**: 1.2
-**Date**: July 2026
+**Version**: 1.3
+**Date**: August 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 
@@ -102,44 +102,49 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 ```mermaid
 flowchart TD
-    Q["Someone asks a question"] --> G["Safety and privacy checks<br/>questions containing personal information<br/>are blocked and never stored"]
-    G --> T["Language detected,<br/>translated to English if needed"]
-    T --> S["Search of Government of Canada<br/>web content only"]
-    S --> E["Expert evaluations of similar past questions<br/>added as worked examples"]
-    E --> A["Answer written in plain language,<br/>with one citation"]
-    A --> V["Citation link checked<br/>before the answer is shown"]
-    V --> ANS["Answer shown to the person"]
-    ANS --> SAVE["Interaction saved"]
-    SAVE --> AI["Automated AI evaluation<br/>for monitoring and reporting"]
+    Q["Question asked"] --> G["Safety and privacy checks<br/>personal information<br/>blocked, never stored"]
+    G --> S["Government of Canada<br/>content searched"]
+    S --> D["Institution identified<br/>its own instructions added"]
+    D --> E["Expert evaluations of similar<br/>past questions added"]
+    E --> A["Plain-language answer<br/>with verified citation link"]
+    A --> SAVE["Answer shown and saved"]
+    SAVE --> AI["Automated AI evaluation<br/>reporting only"]
     SAVE --> HUM["Human expert evaluation<br/>of a sample of answers"]
     HUM -. "improves future answers" .-> E
 ```
 
-Two things in this flow set AI Answers apart from a general-purpose chatbot. Answers are
-built only from Government of Canada content, with the citation link checked before the
-person sees it. And the dotted line is a genuine loop: when an expert evaluates an answer,
-that judgement — including what was wrong with it — becomes a worked example the model is
-shown the next time someone asks something similar. Automated AI evaluations feed reporting
-only. They never become examples, so the system never learns from its own judgements.
-
 <details>
 <summary>Image description (alt text)</summary>
 
-A flow chart running top to bottom. Someone asks a question. It passes through safety and
-privacy checks, where questions containing personal information are blocked and never
-stored. The language is detected and the question translated to English if needed. The
-system searches Government of Canada web content only. Expert evaluations of similar past
-questions are added as worked examples. The answer is written in plain language with one
-citation. The citation link is checked before the answer is shown. The answer is shown to
-the person and the interaction is saved.
+A flow chart running top to bottom. A question is asked. It passes through safety and
+privacy checks, where personal information is blocked and never stored. Government of
+Canada content is searched. The institution the question belongs to is identified, and that
+institution's own instructions are added. Expert evaluations of similar past questions are
+added. A plain-language answer is written with a verified citation link. The answer is
+shown and saved.
 
-Saving branches two ways. One branch is an automated AI evaluation, used for monitoring and
-reporting; it ends there. The other branch is a human expert evaluation of a sample of
-answers, and a dotted arrow returns from it to the step where expert evaluations are added
-as examples, labelled "improves future answers".
+Saving then branches two ways. One branch is an automated AI evaluation, used for reporting
+only; it ends there. The other is a human expert evaluation of a sample of answers, and a
+dotted arrow returns from it to the step where expert evaluations are added, labelled
+"improves future answers".
 
 </details>
 
+Three things in this flow set AI Answers apart from a general-purpose chatbot.
+
+Answers are built only from Government of Canada content, with the citation link checked
+before the person sees it.
+
+The system works out which institution a question belongs to, then loads that institution's
+own material into the instructions for that one answer — the scenarios, agentic tools and
+files its partner team has written. A question about a passport and a question about a tax
+credit are answered under different institutional instructions, chosen per question, with
+no one having to route the question first.
+
+And the dotted line is a genuine loop: when an expert evaluates an answer, that judgement —
+including what was wrong with it — becomes a worked example the model is shown the next
+time someone asks something similar. Automated AI evaluations feed reporting only. They
+never become examples, so the system never learns from its own judgements.
 
 1. **Initialization**: Set up timing and state tracking
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful

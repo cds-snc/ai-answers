@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
-**Version** : 1.2
-**Date** : Juillet 2026
+**Version** : 1.3
+**Date** : Août 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -102,48 +102,53 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 ```mermaid
 flowchart TD
-    Q["Une personne pose une question"] --> G["Vérifications de sécurité et de confidentialité<br/>les questions contenant des renseignements<br/>personnels sont bloquées et jamais conservées"]
-    G --> T["Détection de la langue,<br/>traduction en anglais au besoin"]
-    T --> S["Recherche dans le contenu Web du<br/>gouvernement du Canada seulement"]
-    S --> E["Ajout d'évaluations d'experts portant sur des<br/>questions similaires, à titre d'exemples"]
-    E --> A["Rédaction de la réponse en langage clair,<br/>avec une citation"]
-    A --> V["Vérification du lien de la citation<br/>avant l'affichage de la réponse"]
-    V --> ANS["Réponse affichée à la personne"]
-    ANS --> SAVE["Interaction sauvegardée"]
-    SAVE --> AI["Évaluation automatisée par l'IA,<br/>pour la surveillance et les rapports"]
-    SAVE --> HUM["Évaluation par un expert humain<br/>d'un échantillon de réponses"]
+    Q["Question posée"] --> G["Vérifications de sécurité<br/>renseignements personnels<br/>bloqués, jamais conservés"]
+    G --> S["Contenu du gouvernement<br/>du Canada seulement"]
+    S --> D["Institution repérée<br/>ses propres directives ajoutées"]
+    D --> E["Évaluations d'experts de<br/>questions similaires ajoutées"]
+    E --> A["Réponse en langage clair<br/>lien de citation vérifié"]
+    A --> SAVE["Réponse affichée<br/>et sauvegardée"]
+    SAVE --> AI["Évaluation par l'IA<br/>rapports seulement"]
+    SAVE --> HUM["Évaluation par un expert<br/>humain, sur un échantillon"]
     HUM -. "améliore les réponses futures" .-> E
 ```
-
-Deux éléments de ce flux distinguent Réponses IA d'un agent conversationnel générique. Les
-réponses sont construites uniquement à partir du contenu du gouvernement du Canada, et le
-lien de la citation est vérifié avant que la personne ne voie la réponse. Et la flèche
-pointillée forme une véritable boucle : lorsqu'un expert évalue une réponse, son jugement —
-y compris ce qui clochait — devient un exemple concret présenté au modèle la prochaine fois
-qu'une question semblable est posée. Les évaluations automatisées par l'IA servent
-uniquement aux rapports. Elles ne deviennent jamais des exemples : le système n'apprend
-donc jamais de ses propres jugements.
 
 <details>
 <summary>Description de l'image (texte de remplacement)</summary>
 
-Un organigramme se déroulant de haut en bas. Une personne pose une question. Elle passe par
-des vérifications de sécurité et de confidentialité, où les questions contenant des
-renseignements personnels sont bloquées et ne sont jamais conservées. La langue est
-détectée et la question traduite en anglais au besoin. Le système effectue une recherche
-dans le contenu Web du gouvernement du Canada seulement. Des évaluations d'experts portant
-sur des questions similaires sont ajoutées à titre d'exemples. La réponse est rédigée en
-langage clair avec une citation. Le lien de la citation est vérifié avant l'affichage de la
-réponse. La réponse est affichée à la personne et l'interaction est sauvegardée.
+Un organigramme se déroulant de haut en bas. Une question est posée. Elle passe par des
+vérifications de sécurité et de confidentialité, où les renseignements personnels sont
+bloqués et ne sont jamais conservés. Le contenu du gouvernement du Canada est interrogé.
+L'institution visée par la question est repérée, et les directives propres à cette
+institution sont ajoutées. Des évaluations d'experts de questions similaires sont ajoutées.
+Une réponse en langage clair est rédigée, avec un lien de citation vérifié. La réponse est
+affichée et sauvegardée.
 
-La sauvegarde se divise en deux branches. La première est une évaluation automatisée par
-l'IA, utilisée pour la surveillance et les rapports ; elle s'arrête là. La seconde est une
-évaluation par un expert humain d'un échantillon de réponses, et une flèche pointillée en
-revient vers l'étape d'ajout des évaluations d'experts à titre d'exemples, portant la
-mention « améliore les réponses futures ».
+La sauvegarde se divise ensuite en deux branches. La première est une évaluation
+automatisée par l'IA, utilisée pour les rapports seulement ; elle s'arrête là. La seconde
+est une évaluation par un expert humain, sur un échantillon de réponses, et une flèche
+pointillée en revient vers l'étape d'ajout des évaluations d'experts, portant la mention
+« améliore les réponses futures ».
 
 </details>
 
+Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel générique.
+
+Les réponses sont construites uniquement à partir du contenu du gouvernement du Canada, et
+le lien de la citation est vérifié avant que la personne ne voie la réponse.
+
+Le système détermine à quelle institution se rapporte la question, puis charge le matériel
+propre à cette institution dans les directives de cette réponse précise — les scénarios,
+les outils agentiques et les fichiers rédigés par son équipe partenaire. Une question sur
+un passeport et une question sur un crédit d'impôt sont traitées selon des directives
+institutionnelles différentes, choisies question par question, sans que personne ait à
+aiguiller la question au préalable.
+
+Et la flèche pointillée forme une véritable boucle : lorsqu'un expert évalue une réponse,
+son jugement — y compris ce qui clochait — devient un exemple concret présenté au modèle la
+prochaine fois qu'une question semblable est posée. Les évaluations automatisées par l'IA
+servent uniquement aux rapports. Elles ne deviennent jamais des exemples : le système
+n'apprend donc jamais de ses propres jugements.
 
 1. **Initialisation** : Configure le chronométrage et le suivi de l'état
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
