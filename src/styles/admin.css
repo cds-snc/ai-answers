@@ -62,6 +62,14 @@
   backdrop-filter: blur(2px);
 }
 
+/* Scoped variant (LoadingOverlay's `scoped` prop): covers one positioned
+   ancestor section instead of the whole viewport. Caller's wrapper needs
+   its own `position: relative` (or otherwise positioned) for this to
+   anchor there rather than further up the tree. */
+.loading-overlay--scoped {
+  position: absolute;
+}
+
 /* TODO (design review, low risk): needs review for small screens. */
 .loading-overlay-content {
   display: flex;
