@@ -315,7 +315,9 @@
   text-underline-offset: default;
 }
 
-/* Review panels table styling */
+/* Review panels table styling - shared with ExperimentalDatasetsPage.js, so
+   left at its original values; review-panel-only overrides are scoped to
+   .review-details below. */
 .review-table {
   width: 100%;
   border-collapse: collapse;
@@ -330,9 +332,86 @@
   vertical-align: top;
   font-size: 0.95rem;
 }
+/* Border was ~1:1 contrast against white, near-invisible - #a4a4a4 raises
+   that to a visible grey. Scoped to .review-details so it doesn't reach
+   ExperimentalDatasetsPage.js's table. */
+.review-details .review-table,
+.review-details .review-table th,
+.review-details .review-table td {
+  border-color: #a4a4a4;
+}
+/* Label:value pairs (Fallback type, Total score, etc.) as real <dl>/<dt>/
+   <dd> instead of <div><strong>, describing what they actually are. Grid
+   keeps each pair on one line instead of dt/dd's default two-line stack. */
+.review-details dl {
+  font-size: 16px;
+  display: grid;
+  /* Capped so one long label (e.g. "Matched citation interactionId") can't
+     stretch the column and strand every short label far from its value. */
+  grid-template-columns: minmax(0, 13rem) 1fr;
+  row-gap: 0.25rem;
+  margin: 0.5rem 0;
+  padding: 0 0.75rem;
+}
+.review-details dt {
+  font-weight: 700;
+  /* Padding, not the dl's gap - a true grid gap breaks the divider line
+     below at the column boundary. */
+  padding-right: 0.5rem;
+}
+.review-details dt::after {
+  content: ':';
+}
+/* Canadian French wants a space before ":" ("Label :"), English doesn't -
+   see docs/coding-agent-docs/official-languages.md's French punctuation
+   spacing rule. :lang(fr) inherits from document.documentElement.lang
+   (set in App.js), no lang attribute needed locally. */
+:lang(fr) .review-details dt::after {
+  content: ' :';
+}
+.review-details dd {
+  margin: 0;
+}
+/* Row divider, same purpose (and colour) as the table borders above - a
+   plain grid list otherwise loses the row lines a table gave the eye to
+   scan down. Stacked pairs get it under dd only, not dt - a line under dt
+   would read as separating the label from its own value on the next row. */
+.review-details dt:not(.stacked),
+.review-details dd:not(.stacked),
+.review-details dd.stacked {
+  border-bottom: 1px solid #a4a4a4;
+  padding-bottom: 0.25rem;
+}
+/* .stacked: for a long-form value (a paragraph, a multi-line URL) - spans
+   the full row instead of the two-column grid, so it wraps normally below
+   its label instead of staying indented at a fixed column. */
+.review-details dt.stacked,
+.review-details dd.stacked {
+  grid-column: 1 / -1;
+}
+
 .review-table thead th {
   background: #fafafa;
   font-weight: 600;
+}
+/* table-slim-padding (admin.css) only tightens tbody - DataTables' own
+   header padding is already hardcoded elsewhere, so that rule stays
+   tbody-only for every other consumer. EvalPanel.js's plain <thead><th>
+   rows have no such hardcode though, so scoped to .review-details only -
+   not a bare table.table-slim-padding rule, which would also silently
+   retighten VectorPage.js's 4 dataTable+table-slim-padding tables, never
+   tested against this. */
+.review-details table.table-slim-padding > thead > tr > th {
+  padding: 4px 10px;
+}
+/* Visible caption - some tables had a separate bold label duplicating a
+   sr-only caption's text; the caption is now the one title instead of two
+   copies. Scoped to .review-details, same reasoning as the border above. */
+.review-details .review-table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.4rem;
 }
 
 .eval-panel + details.review-details {
