@@ -6,6 +6,7 @@ import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
 import OriginalLanguagePill from './OriginalLanguagePill.js';
+import StatusMessage from '../../admin/StatusMessage.js';
 
 const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, onDeleted }) => {
     const [loading, setLoading] = useState(false);
@@ -221,7 +222,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
     // would be redundant with the panel's own presence. The score itself
     // (when set) does add information, shown as a pill \u2014 same treatment as
     // DownloadPanel.js's Pass/Failed summary pill.
-    const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation';
+    const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title');
     const hasExpert = expert && (expert._id || expert.id || expert.totalScore !== undefined);
     const hasScore = hasExpert && typeof expert.totalScore !== 'undefined' && expert.totalScore !== null;
     const expertTitle = withAnswerNumber(baseTitle);
@@ -250,8 +251,12 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 )}
             </summary>
             <div className="review-panel expert-feedback-panel">
-                {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-                {error && <div className="error">{t('common.error') || 'Error'}: <code lang="en">{error}</code></div>}
+                {loading && <StatusMessage loading message={t('common.loading')} />}
+                {error && (
+                  <StatusMessage variant="error">
+                    {t('common.error')}: <code lang="en">{error}</code>
+                  </StatusMessage>
+                )}
                 {/* Summary: citation and total score */}
                 <div className="expert-feedback-summary">
                     {(() => {
@@ -292,7 +297,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 <div><strong>{t('reviewPanels.totalScore')}:</strong> {totalVal !== null ? totalVal : t('reviewPanels.notAvailable')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
-                                    <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
+                                    <div><strong>{t('reviewPanels.expertEmail')}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
                                 {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>
@@ -300,6 +305,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                     })()}
                 </div>
                 <table className="review-table">
+                    <caption className="sr-only">{t('reviewPanels.expertFeedbackTitle')}</caption>
                     <thead>
                         <tr>
                             {/* Column header names what's actually in it, not just always
@@ -310,11 +316,11 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 (not "Sentence in English") since the English shown here is what
                                 AI Answers actually worked from, same framing as EvalPanel.js's
                                 reviewPanels.sourceText column, reused rather than duplicated. */}
-                            <th>{questionDisplay.isSource ? t('reviewPanels.sourceText') : t('reviewPanels.sentence')}</th>
-                            <th>{t('reviewPanels.expertScore')}</th>
-                            <th>{t('homepage.expertRating.options.harmful')}</th>
-                            <th>{t('homepage.expertRating.options.contentIssue')}</th>
-                            <th>{t('reviewPanels.explanation')}</th>
+                            <th scope="col">{questionDisplay.isSource ? t('reviewPanels.sourceText') : t('reviewPanels.sentence')}</th>
+                            <th scope="col">{t('reviewPanels.expertScore')}</th>
+                            <th scope="col">{t('homepage.expertRating.options.harmful')}</th>
+                            <th scope="col">{t('homepage.expertRating.options.contentIssue')}</th>
+                            <th scope="col">{t('reviewPanels.explanation')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -401,9 +407,9 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                     buttonRole="danger"
                                     disabled={deleting}
                                     className="hydrated"
-                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback'))}
+                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback')))}
                                 >
-                                    {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
+                                    {deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback'))}
                                 </GcdsButton>
                                 {/* .gc-chckbxrdio.md — same custom checkbox visual/size used by
                                     ExpertFeedbackComponent's rating checkboxes, in place of the
@@ -419,7 +425,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                             onChange={handleNeverStaleToggle}
                                             disabled={updatingNeverStale}
                                         />
-                                        <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale') || 'Never Stale'}</label>
+                                        <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale')}</label>
                                     </div>
                                 </div>
                             </div>
