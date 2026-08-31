@@ -215,7 +215,6 @@ const LoginPage = ({ lang = 'en' }) => {
                 type="email"
                 id="email"
                 value={email}
-                title={t('login.email')}
                 autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -228,7 +227,6 @@ const LoginPage = ({ lang = 'en' }) => {
               id="password"
               label={t('login.password')}
               value={password}
-              title={t('login.password')}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
