@@ -5,7 +5,19 @@ Expert evaluations stored against past interactions are fed back into live answe
 1. **Short-circuit serving** — when an incoming question closely matches a perfect-score (100) past Q/A, skip the LLM entirely and serve the past answer. Implemented by `SimilarAnswerService`. Questions need to be VERY similar to avoid serving the wrong answer. GOAL: reduce token usage and latency for frequent very similar questions. Top example question is "How can I immigrate/come live in Canada?" *Public-facing name (system card): **instant verified answers**.*
 2. **Similar-questions injection** — fetch a few expert-evaluated past Q/A pairs for the incoming question and inject them into the system prompt as evaluated examples. May include perfect score and lower scored evaluations. Lower-rated examples carry the expert's comments about every sentence and the citation url so the LLM can avoid the same mistakes. GOAL: improve accuracy by avoiding previous mistakes and good solutions for both answer and citation. Also provides additional good citation urls for service to read. Implemented by `QuestionAnswerService`. *Public-facing name (system card): **eval-informed answering** — the card avoids the word "injection" because it reads as adversarial; this doc keeps "injection" as internal vocabulary.*
 
-Both mechanisms read from the same vector index (`DocDBVectorService` or `IMVectorService`) and the same `ExpertFeedback` corpus. Different graphs combine them differently — the table below is the load-bearing summary.
+Both mechanisms read from the same vector index (`DocDBVectorService` or `IMVectorService`) and the same `ExpertFeedback` corpus.
+
+> **Invariant — the corpus is human-only.** Only expert evaluations written by a person are
+> eligible for either mechanism. AI auto-evaluations (`ExpertFeedback` with `type: 'ai'`,
+> written by `services/evaluation.worker.js`) are never denormalized onto embeddings and
+> never added to the vector index, so they cannot be injected as examples or short-circuit
+> served. Feeding the system's own judgements back into generation would compound its
+> errors with no human in the loop. One guard enforces this — `isAutoEvalFeedback` in
+> `services/EmbeddingMetadataService.js`, which clears metadata rather than writing it;
+> nothing in this document's retrieval paths filters on `feedback.type`. Do not undo it as
+> a side effect of other work — see
+> [AGENTS.md](../../AGENTS.md#never-let-ai-evaluations-feed-answer-generation) and
+> [pipeline-architecture.md](./pipeline-architecture.md#after-the-answer-evaluation-and-the-feedback-loop). Different graphs combine them differently — the table below is the load-bearing summary.
 
 ---
 
@@ -13,12 +25,12 @@ Both mechanisms read from the same vector index (`DocDBVectorService` or `IMVect
 
 | Graph | Short-circuit (`SimilarAnswerService`) | Similar-questions injection (`QuestionAnswerService`) | Notes |
 |---|---|---|---|
-| `GenericGraph` | ❌ | ❌ | Baseline — runs context → answer with no eval-driven steps. **This is the graph currently running in production** (and the control for the trial below). |
-| `GenericWithQAGraph` | ❌ | ✅ rating ≤ 100 (`lte`, k=3, threshold=0.75) | Always runs the LLM, but feeds it expert-rated examples — including perfect-score ones and negative-feedback ones (so the model can avoid repeating past mistakes). **System card name: *eval-informed answering*. This is the graph targeted for the upcoming production trial** (the planned switch from `GenericGraph`). |
+| `GenericGraph` | ❌ | ❌ | Baseline — runs context → answer with no eval-driven steps. Was the production graph until August 2026; now the control to compare `GenericWithQAGraph` against. |
+| `GenericWithQAGraph` | ❌ | ✅ rating ≤ 100 (`lte`, k=3, threshold=0.75) | Always runs the LLM, but feeds it expert-rated examples — including perfect-score ones and negative-feedback ones (so the model can avoid repeating past mistakes). **System card name: *eval-informed answering*. This is the graph running in production since early August 2026** (the switch from `GenericGraph`). |
 | `DefaultWithVectorGraph` | ✅ rating = 100 (`eq`) | ❌ | The registry's code-level fallback (used when a client names no graph) — **not the graph currently deployed in production**. Will serve a verified past answer when one exists; otherwise runs the full pipeline with **no** in-prompt eval examples. |
 | `InstantAndQAGraph` | ✅ rating = 100 (`eq`) | ✅ rating < 100 (`lt`, k=3, threshold=0.75) | Both mechanisms: short-circuit on a perfect match, otherwise feed the LLM only **imperfect** examples (so the model sees flagged-issue cases to avoid, while perfect ones are reserved for short-circuit). |
 
-> **Production status of the short-circuit / instant-answer path (Mechanism 1):** still **experimental — not in production**. In testing it has not performed reliably enough to deploy (risk of serving a near-match's answer to a subtly different question), so every graph that relies on it (`DefaultWithVectorGraph`, `InstantAndQAGraph`) is held back. The eval-informed answering path (`GenericWithQAGraph`) is the one moving toward production first.
+> **Production status of the short-circuit / instant-answer path (Mechanism 1):** still **experimental — not in production**. In testing it has not performed reliably enough to deploy (risk of serving a near-match's answer to a subtly different question), so every graph that relies on it (`DefaultWithVectorGraph`, `InstantAndQAGraph`) is held back. The eval-informed answering path (`GenericWithQAGraph`) went to production first, in early August 2026.
 
 > **The `threshold=0.75` similarity floor is now enforced** on the injection path (Path A — implemented). Both vector backends re-score candidates and drop those below the floor, so off-topic examples are no longer injected. `0.75` is the initial value, pending preview calibration. See [Similarity threshold — now enforced](#similarity-threshold--now-enforced-path-a) under Mechanism 2 for the mechanics.
 

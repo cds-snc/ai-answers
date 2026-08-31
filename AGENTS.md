@@ -58,6 +58,36 @@ silently absent downstream, with no error (`src/App.js`'s route `.map()` dropped
 so `titleKey`/`skipRouteFocus` never reached the router). When a `.map()`/spread rebuilds
 an object, diff the fields old vs. new, and add a test asserting the field survives.
 
+## Never let AI evaluations feed answer generation
+
+Only **human** expert evaluations may feed back into live answers. AI auto-evaluations —
+`ExpertFeedback` documents written with `type: 'ai'` by `services/evaluation.worker.js` —
+must never be denormalized onto embeddings or added to the vector index, so they can never
+be injected as expert-rated examples (eval-informed answering) or served as an instant
+verified answer.
+
+**Why:** the system would grade its own output and then learn from that grade. Errors
+compound with no person in the loop. Every example the model is shown must trace back to a
+human judgement.
+
+The single thing enforcing this is `isAutoEvalFeedback` in
+`services/EmbeddingMetadataService.js`, which *clears* metadata rather than writing it when
+the attached feedback is AI-typed. Nothing downstream re-checks:
+`QuestionAnswerService`, `SimilarAnswerService` and both vector services filter on
+`expertFeedbackId`, rating and recency — never on `feedback.type`. If the metadata gets
+written, the AI eval is retrievable, and no test or error will say so.
+
+- **Never add `syncForInteraction` or `VectorService.addExpertFeedbackEmbedding` to the
+  evaluation worker**, however reasonable "make auto-evals reusable too" sounds.
+- **Never delete the clear-on-`ai` branch as dead code.** It is defensive on purpose.
+- Human feedback is identified by the *absence* of `type: 'ai'` (the expert form leaves
+  `type` as `''`). Anything that starts stamping `type` must keep human values out of
+  `'ai'`.
+- If a task genuinely calls for changing this, **stop and flag it** — it is a policy
+  decision for the maintainers (Lisa Fast and Ryan Hyma), not a refactor.
+
+See [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md#after-the-answer-evaluation-and-the-feedback-loop).
+
 ## How to work well in this codebase
 
 1. **State assumptions early.** Before implementing anything non-trivial, say what you're assuming so we can catch misalignment before code is written.
@@ -73,6 +103,31 @@ an object, diff the fields old vs. new, and add a test asserting the field survi
 11. **Prefer central fixes for shared semantics.** If the same derived value, metric, category, or business rule appears in multiple dashboards/pages/components, first look for the shared API, service, hook, helper, or data contract that should define it. Avoid patching each UI consumer with duplicate compensating logic unless the difference is intentionally presentation-specific.
 12. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
 13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it (e.g. `src/utils/htmlEscape.js` exists — don't write another `escapeHtml`). Only once internal reuse is ruled out, consider whether a well-maintained npm package already solves it.
+
+## Keep the pipeline docs in sync — they have different jobs
+
+Three documents describe the same pipeline for different readers. When you add, remove, or
+reorder a pipeline step, update all three:
+
+| Document | Reader | Level |
+|---|---|---|
+| [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
+| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
+
+They are **not** meant to match one-for-one — the card describes processing steps a reader
+can understand (search and context derivation are separate steps there; in code they are
+one `contextNode`), while the architecture doc describes graph nodes. That difference is
+fine and deliberate. What must never differ:
+
+- **Whether a step exists at all**, and whether it runs in production or only in a variant
+  graph.
+- **Any safety or privacy claim** — a guardrail described in one and missing from the other
+  is a governance problem, not a docs nit.
+- **Behavioural claims about the production graph.** Check the graph the
+  `workflow.default` setting names before writing "the system does X"; a claim inherited
+  from an older default silently becomes false (e.g. context reuse, which only the
+  short-circuit variants do).
 
 ## Documentation Regeneration
 

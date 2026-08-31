@@ -49,8 +49,10 @@ START → init → validate → redact → translate → contextNode → answerN
 | `GenericGraph.js` | Generic | Full pipeline: redact → translate → context → answer → verify → persist. No short-circuit. |
 | `DefaultWithVectorGraph.js` | Instant answer ON | Same as GenericGraph, but after translation checks `SimilarAnswerService.findSimilarAnswer()` for a vector-similarity match against previously answered questions **with an expert score of 100**. If a perfect-score match is reranker-certified, **reuses the previous answer verbatim** and skips the full context → answer pipeline. Falls through to the full pipeline if no match. |
 | `InstantAndQAGraph.js` | Instant answer with context ON | Same score-100 short-circuit check, and also runs `QuestionAnswerService.getSimilarQuestionsContext()` (score < 100) to inject **rich context** from expert-reviewed interactions: matched question, answer, expert feedback score, sentence-level feedback, citation, and conversation flow. This context informs the answer when the short-circuit doesn't fire. |
-| `GenericWithQAGraph.js` | Past evals context ON | Like GenericGraph (no short-circuit) but inserts a `similarQuestions` node between context and answer that injects past imperfect (score < 100) Q&A as context via `QuestionAnswerService.getSimilarQuestionsContext()`. Lets you test the "learn from past mistakes" idea without any risk of serving a past answer verbatim. |
+| `GenericWithQAGraph.js` | Past evals context ON | **The production graph since early August 2026.** Like GenericGraph (no short-circuit) but inserts a `similarQuestions` node between context and answer that injects expert-rated past Q&A (score ≤ 100 — perfect ones as a model to follow, lower ones with the expert's flagged issues to avoid) via `QuestionAnswerService.getSimilarQuestionsContext()`. No risk of serving a past answer verbatim. |
 | `registry.js` | — | Lazy-loads and caches compiled graphs; `getGraphApp(name)` |
+
+Batch runs go through the same registry (`services/experimental/ExperimentalBatchService.js` → `getGraphApp(batch.config.workflow)`), so a batch inherits whatever eval-driven nodes its workflow has — including eval-informed answering on `GenericWithQAGraph`. Pick the batch workflow deliberately when comparing against production.
 
 Model selection is decoupled from workflow — the `model.default` setting controls which model family is used. `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings from the database on startup and seeds required defaults (defined in `SETTING_DEFAULTS`) if missing. The server injects the model into the graph input at request time (`chat-graph-run.js`). All UI pages fetch the default from the Settings API — never hardcode model defaults in components. See [Model family routing](#model-family-routing-agentfactoryjs) for how each pipeline step maps to a specific model within the family.
 
@@ -63,7 +65,7 @@ Model selection is decoupled from workflow — the `model.default` setting contr
 3. Similar-questions context (if available)
 4. Department-specific scenarios from `context-{abbrKey}/`
 5. Page language tag
-6. Tagged context (department, topic, URLs, search results)
+6. Tagged context (department, URLs, search results)
 7. **BASE_SYSTEM_PROMPT** from `agenticBase.js` — 7-step response framework
 8. **CITATION_INSTRUCTIONS** from `citationInstructions.js`
 9. Final reminder
@@ -113,7 +115,7 @@ This means selecting "Azure GPT-5.1" uses GPT-5.1 for context and answer generat
 | `Question` | Redacted/original question, detected language, English translation |
 | `Answer` | AI answer text, sentences, citation ref, token counts, model info |
 | `Citation` | Citation URL, heading, provided vs AI citation |
-| `Context` | Department/topic matched, search results, token usage |
+| `Context` | Institution matched, search results, program/action classification, token usage. `topic`/`topicUrl` are dead fields pending removal — don't read or write them |
 | `Eval` | Auto-evaluation: similarity scores, sentence match traces, fallback logic |
 | `ExpertFeedback` | Sentence-level scores (1-4), harmful/content flags |
 | `PublicFeedback` | User ratings (thumbs up/down, feedback text) |
