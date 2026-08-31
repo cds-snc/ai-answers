@@ -66,8 +66,8 @@ actually bounded:
   code) gets `<span lang="en">`, and even then it's a TODO for a real fix, not
   a closed issue. See `DeleteChatSection.js`/`DeleteExpertEval.js` for the
   wrapper pattern and why raw text should never hit a `{message}` template via
-  plain `String.replace` ("Interpolating dynamic text" — see
-  `docs/coding-agent-docs/common-tasks.md`).
+  plain `String.replace` (see "Interpolating dynamic text" in
+  [status-and-error-messaging.md](status-and-error-messaging.md)).
 
 Example of the bounded case going unfixed: `DatabasePage.js`'s index tools
 render `f.error`/`col.error` (MongoDB exception text) with no wrapper — but
