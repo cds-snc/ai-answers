@@ -483,6 +483,38 @@
   color: #555;
   margin: 0 0.2rem;
 }
+
+/* FeedbackComponent.js's skip-past-the-rating-buttons link - applied
+   alongside .sr-only (global.css) for the hidden baseline, since only the
+   focus-reveal state below is actually specific to this link. */
+/* No font-size of its own on purpose: inherits the ambient 20px body-text
+   size rather than matching .feedback-link's 18px beside it - tried
+   matching, reverted after confirming the larger size reads more legibly
+   once revealed. Don't "fix" this mismatch without checking again. */
+.skip-link:focus,
+.skip-link:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--gcds-link-focus-background);
+  color: var(--gcds-link-focus-text);
+  border-radius: var(--gcds-link-focus-border-radius);
+  box-shadow: var(--gcds-link-focus-box-shadow);
+  outline: var(--gcds-link-focus-outline-width) solid
+    var(--gcds-link-focus-background);
+  outline-offset: var(--gcds-link-focus-outline-offset);
+  text-decoration: none;
+  padding: 10px;
+  display: inline-block;
+  z-index: 9999;
+  transition: none;
+  animation: none;
+}
+
 .button-as-link {
   background: none;
   border: none;
