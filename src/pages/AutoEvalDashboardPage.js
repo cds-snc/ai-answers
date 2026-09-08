@@ -106,7 +106,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
   // Columns: Chat ID, #, Department, AI eval, Partner eval, Processed, Matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
     {
-      title: t('admin.autoEvalDashboard.columns.chatId', 'Chat ID'),
+      title: t('admin.autoEvalDashboard.columns.chatId'),
       data: 'chatId',
       // Fixed width; the UUID wraps onto two lines (see .col-chat-id in admin.css).
       width: '150px',
@@ -149,21 +149,21 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
         { active: row && row.partnerHasContentIssue, className: 'hasContentIssue', labelKey: 'admin.chatDashboard.labels.contentIssue' }
       ]), searchable: true, orderable: true
     },
-    { title: t('admin.autoEvalDashboard.columns.processed', 'Processed'), data: 'processed', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: false },
-    { title: t('admin.autoEvalDashboard.columns.matches', 'Has matches'), data: 'hasMatches', render: v => v ? t('common.yes', 'Yes') : t('common.no', 'No'), searchable: true, orderable: false },
+    { title: t('admin.autoEvalDashboard.columns.processed'), data: 'processed', render: v => v ? t('common.yes') : t('common.no'), searchable: true, orderable: false },
+    { title: t('admin.autoEvalDashboard.columns.matches'), data: 'hasMatches', render: v => v ? t('common.yes') : t('common.no'), searchable: true, orderable: false },
     // TODO: fallbackType is a raw internal code shown untranslated (only value
     // today: 'qa-high-score' - the evaluation was inherited from a similar
     // past expert-scored Q&A, see services/evaluation.worker.js). Map it
     // through t() like noMatchReasonType does with eval.noMatchReasonTypes.*,
     // and switch its filter to the Yes/No/Any select since there is one value.
-    { title: t('admin.autoEvalDashboard.columns.fallback', 'Fallback'), data: 'fallbackType', className: 'col-nowrap', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.reason', 'No-match reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
-    { title: t('admin.autoEvalDashboard.columns.date', 'Date'), data: 'date', render: (v) => renderDateTimeCell(v, lang), searchable: true, orderable: true }
+    { title: t('admin.autoEvalDashboard.columns.fallback'), data: 'fallbackType', className: 'col-nowrap', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.reason'), data: 'noMatchReasonType', render: (v) => v ? t(`eval.noMatchReasonTypes.${v}`, v) : '', searchable: true, orderable: true },
+    { title: t('admin.autoEvalDashboard.columns.date'), data: 'date', render: (v) => renderDateTimeCell(v, lang), searchable: true, orderable: true }
   ]), [t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.autoEvalDashboard.title', 'Auto-Evaluation dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.autoEvalDashboard.title')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -230,7 +230,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
                   const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
-                  return `${t('common.page', 'Page')} ${pageNumber}`;
+                  return `${t('common.page')} ${pageNumber}`;
                 },
                 language: dataTableLanguage(lang),
                 // Striping and keep-chat-together cells - see
@@ -294,9 +294,9 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                         const sel = document.createElement('select');
                         sel.className = 'dt-col-search';
                         sel.setAttribute('aria-label', `${t('admin.common.filterPlaceholder')} — ${colTitle}`);
-                        const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.autoEvalDashboard.columns.any', 'Any'); sel.appendChild(optAny);
-                        const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes', 'Yes'); sel.appendChild(optYes);
-                        const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no', 'No'); sel.appendChild(optNo);
+                        const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = t('admin.autoEvalDashboard.columns.any'); sel.appendChild(optAny);
+                        const optYes = document.createElement('option'); optYes.value = 'true'; optYes.textContent = t('common.yes'); sel.appendChild(optYes);
+                        const optNo = document.createElement('option'); optNo.value = 'false'; optNo.textContent = t('common.no'); sel.appendChild(optNo);
                         sel.addEventListener('change', function () {
                           markActive(sel);
                           column.search(this.value);

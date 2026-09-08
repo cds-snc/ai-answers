@@ -33,7 +33,7 @@ const SessionPage = ({ lang: propLang }) => {
     return labels[type] || labels.unknown;
   }, [t]);
   const creditsLeftLabel = React.useCallback((value) => (
-    value === null ? t('admin.session.unlimited', 'Unlimited') : (value !== undefined ? value : 0)
+    value === null ? t('admin.session.unlimited') : (value !== undefined ? value : 0)
   ), [t]);
 
   const fetchSessions = React.useCallback(async () => {
@@ -72,8 +72,8 @@ const SessionPage = ({ lang: propLang }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.session.title', 'Sessions')}</h1>
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <h1 className="mb-400">{t('admin.session.title')}</h1>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
@@ -89,26 +89,26 @@ const SessionPage = ({ lang: propLang }) => {
         data={sessions}
         className="display dashboard-table zebra-stable-on-hover"
         columns={[
-          { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
-          { title: t('admin.session.sessionType', 'Session type'), data: 'sessionType', render: (data) => sessionTypeLabel(data) },
+          { title: t('admin.session.sessionId'), data: 'sessionId', render: (data) => data || '' },
+          { title: t('admin.session.sessionType'), data: 'sessionType', render: (data) => sessionTypeLabel(data) },
           {
-            title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
+            title: t('admin.session.chatId'), data: 'chatId', render: (data, type, row) => {
               const cid = data || row.chatId || '';
               return cid ? `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>` : '';
             }
           },
-          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => creditsLeftLabel(data) },
-          { title: t('admin.session.lastSeen', 'Last seen'), data: 'lastSeen', render: (data) => new Date(data).toLocaleString() },
-          { title: t('admin.session.requests', 'Requests'), data: 'requestCount' },
-          { title: t('admin.session.errors', 'Errors'), data: 'errorCount' },
+          { title: t('admin.session.creditsLeft'), data: 'creditsLeft', render: (data) => creditsLeftLabel(data) },
+          { title: t('admin.session.lastSeen'), data: 'lastSeen', render: (data) => new Date(data).toLocaleString() },
+          { title: t('admin.session.requests'), data: 'requestCount' },
+          { title: t('admin.session.errors'), data: 'errorCount' },
           // specific error type columns
-          { title: t('admin.session.errorTypes.redaction', 'Redactions'), data: 'errorTypes', render: (data) => (data && data.redaction) ? data.redaction : 0 },
-          { title: t('admin.session.errorTypes.shortQuery', 'Short queries'), data: 'errorTypes', render: (data) => (data && data.shortQuery) ? data.shortQuery : 0 },
+          { title: t('admin.session.errorTypes.redaction'), data: 'errorTypes', render: (data) => (data && data.redaction) ? data.redaction : 0 },
+          { title: t('admin.session.errorTypes.shortQuery'), data: 'errorTypes', render: (data) => (data && data.shortQuery) ? data.shortQuery : 0 },
           // aggregated "other" errors column
-          { title: t('admin.session.errorTypes.other', 'Other errors'), data: 'errorTypesOther' },
-          { title: t('admin.session.lastLatency', 'Last latency (ms)'), data: 'lastLatencyMs' },
-          { title: t('admin.session.avgLatency', 'Avg latency (ms)'), data: 'avgLatencyMs' },
-          { title: t('admin.session.rpm', 'Requests / minute'), data: 'rpm' }
+          { title: t('admin.session.errorTypes.other'), data: 'errorTypesOther' },
+          { title: t('admin.session.lastLatency'), data: 'lastLatencyMs' },
+          { title: t('admin.session.avgLatency'), data: 'avgLatencyMs' },
+          { title: t('admin.session.rpm'), data: 'rpm' }
         ]}
         options={{
           paging: true,
