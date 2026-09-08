@@ -3316,12 +3316,14 @@ table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_3 {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1) !important;
 }
 
-/* .table-slim-padding - general-purpose utility for any `dataTable`-class
-   table that wants tighter rows than DataTables' own default cell padding.
-   ChatViewer.js's pipeline step timeline table is the only consumer for
-   now - opt-in per table rather than changing table.dataTable site-wide. */
-table.dataTable.table-slim-padding > tbody > tr > th,
-table.dataTable.table-slim-padding > tbody > tr > td {
+/* .table-slim-padding - general-purpose utility for any table that wants
+   tighter rows than the default cell padding, DataTables-driven or not
+   (widened from a table.dataTable-only selector - EvalPanel.js's plain
+   .review-table tables are a consumer now too). ChatViewer.js's pipeline
+   step timeline table was the only consumer before - opt-in per table
+   rather than changing every table site-wide. */
+table.table-slim-padding > tbody > tr > th,
+table.table-slim-padding > tbody > tr > td {
   padding: 4px 10px;
 }
 /* .table-fixed-layout - opt-in for a table whose rows arrive one at a
