@@ -1436,7 +1436,7 @@
       "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
@@ -1477,7 +1477,7 @@
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",

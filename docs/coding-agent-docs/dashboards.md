@@ -64,7 +64,7 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
 
 | Component | Used by | Notes |
 |-----------|---------|-------|
-| `FilterPanel.js` | **Partner**, `MetricsDashboard` | Full filter: date range (default last 7 days), dept, userType, advanced (answerType/partnerEval/aiEval/url). `autoApply` loads on mount; `defaultUserType="all"`. |
+| `FilterPanel.js` | **Partner**, `MetricsDashboard` | Date range (default 7 days), dept, userType. `autoApply` on mount, `defaultUserType="all"`. Advanced differs: **Partner** is URL-only (`showCategoryFilters={false}`) — answerType/partnerEval/aiEval are already breakdown charts there; **MetricsDashboard** hides advanced entirely (`showAdvancedSection={false}`), same reason plus a broken `noEval` filter (see in-code comment). |
 | `DashboardFilterBar.js` | **Public** | Presets only: Last 30 days / Current quarter / Last 12 months (key `allTime`) / Custom. Auto-fires on mount. **Date range is the only filter** — no department (all-of-government) and no userType (`PublicDashboard` fixes `userType: 'public'`). |
 
 End dates run through today (23:59:59); the picker allows today. There is **no** backend cap at yesterday (an earlier cap hid the current day's data and was reverted).
