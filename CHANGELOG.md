@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.193.2](https://github.com/cds-snc/ai-answers/compare/v1.193.1...v1.193.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* revise for wait times ([4389636](https://github.com/cds-snc/ai-answers/commit/4389636b69a191597327b9c1a5bc1304da6a8427))
+* tighten diagrams ([dededb2](https://github.com/cds-snc/ai-answers/commit/dededb25c502d903536a81e18d9ae3003605c3d4))
+* update all docs ([7fedac0](https://github.com/cds-snc/ai-answers/commit/7fedac0254b0ec0cf25752dc96f8f307d79a6b14))
+
 ## [1.193.1](https://github.com/cds-snc/ai-answers/compare/v1.193.0...v1.193.1) (2026-08-28)
 
 

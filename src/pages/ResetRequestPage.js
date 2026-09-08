@@ -51,7 +51,6 @@ const ResetRequestPage = ({ lang = 'en' }) => {
               id="email"
               type="email"
               value={email}
-              title={t('login.email')}
               autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
               required
