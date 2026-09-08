@@ -305,14 +305,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}
           hasAppliedFilters={hasUserApplied}
-          // The "More filters" section (URL, answer type, partner eval, AI
-          // eval, and — since they live inside it — the AND/OR toggle and
-          // Content issue checkbox) is hidden entirely: this dashboard has
-          // no charts that break results down by those categories, so
-          // applying one would just silently shrink every number with no
-          // visible way to tell why. See the former TODO this replaced
-          // (commit 32ff2262) and FilterPanel's own prop comments.
-          showAdvancedSection={false}
+          // "More filters" is shown for URL (EN/FR) lookup only — partners
+          // want to filter down to a specific referring page. answerType/
+          // partnerEval/aiEval (and, since it's gated on those, the AND/OR
+          // toggle) stay hidden: this dashboard has no charts that break
+          // results down by those categories, so applying one would just
+          // silently shrink every number with no visible way to tell why.
+          // See the former TODO this replaced (commit 32ff2262),
+          // TechnicalMetricsDashboard.js's matching comment, and
+          // FilterPanel's own showAdvancedSection/showCategoryFilters prop
+          // comments.
+          showCategoryFilters={false}
         />
       </div>
 
