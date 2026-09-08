@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ChatOptions from '../ChatOptions.js';
 
 const { mockUseAuth } = vi.hoisted(() => ({ mockUseAuth: vi.fn() }));
@@ -101,7 +101,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     fireEvent.click(applyButton());
 
     expect(handleReferringUrlChange).not.toHaveBeenCalled();
-    const alert = screen.getByRole('alert');
+    const alert = document.querySelector('.form-error-message');
     expect(alert.textContent).toMatch(/Enter a full URL/);
     // Explicit-submit failure: this is the standard focus-the-error pattern
     // (matching Settings' Save/DatabasePage's Import), unlike an implicit
@@ -114,7 +114,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     renderOptions();
 
     fireEvent.change(urlInput(), { target: { value: 'not a url' } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.form-error-message')).toBeNull();
   });
 
   it('normalizes untrimmed whitespace in the box once applied', () => {
@@ -160,7 +160,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     fireEvent.click(applyButton());
 
     expect(handleReferringUrlChange).not.toHaveBeenCalled();
-    const alert = screen.getByRole('alert');
+    const alert = document.querySelector('.form-error-message');
     expect(alert.textContent).toMatch(/Please include a URL/);
     expect(document.activeElement).toBe(alert);
   });
@@ -184,7 +184,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     // Same as what's already applied - not an error, just nothing to do.
     fireEvent.click(applyButton());
     expect(handleReferringUrlChange).not.toHaveBeenCalled();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.form-error-message')).toBeNull();
   });
 
   it('never disables Clear - clicking it with nothing applied shows an inline error instead', () => {
@@ -199,7 +199,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
 
     fireEvent.click(clearButton);
     expect(handleReferringUrlChange).not.toHaveBeenCalled();
-    const alert = screen.getByRole('alert');
+    const alert = document.querySelector('.form-error-message');
     expect(alert.textContent).toMatch(/No URL to clear/);
     expect(document.activeElement).toBe(alert);
   });
@@ -232,7 +232,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(screen.getByText('Referring URL removed')).toBeTruthy();
 
     fireEvent.click(applyButton());
-    expect(screen.getByRole('alert').textContent).toMatch(/Please include a URL/);
+    expect(document.querySelector('.form-error-message').textContent).toMatch(/Please include a URL/);
     expect(screen.queryByText('Referring URL removed')).toBeNull();
   });
 

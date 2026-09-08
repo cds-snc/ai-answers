@@ -193,10 +193,12 @@ describe('ExpertFeedbackPanel delete', () => {
       englishQuestion: 'Can I renew online?',
     });
 
-    render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" onDeleted={onDeleted} />);
+    const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" onDeleted={onDeleted} />);
 
-    // Open the panel (delete button lives inside the <details>).
-    fireEvent.click(screen.getByText(/Expert evaluation|reviewPanels.expertFeedbackTitle|homepage.expertRating.title/));
+    // Open the panel (delete button lives inside the <details>). Scoped to
+    // the actual <summary> - a plain text match would also catch the
+    // table's sr-only <caption>, which reuses the same title text.
+    fireEvent.click(container.querySelector('summary'));
 
     const deleteButton = await screen.findByText(/Delete Expert Feedback|reviewPanels.deleteExpertFeedback/);
     fireEvent.click(deleteButton);

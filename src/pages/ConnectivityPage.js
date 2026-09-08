@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
-import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce as announceTestComplete } from '../utils/liveAnnouncer.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -92,11 +93,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    // useSrAnnouncer's nonce forces the sr-only completion announcement to
-    // re-fire on every test run even when the result text is identical to
-    // the previous run (e.g. same connected/errors/warnings counts twice in
-    // a row).
-    const { message: testCompleteAnnouncement, nonce: testCompleteAnnounceNonce, announce: announceTestComplete } = useSrAnnouncer();
     const [simulatedFailures, setSimulatedFailures] = useState({
         database: false,
         search: false,
@@ -232,13 +228,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 DatabasePage.js's move to a { text, isError } status shape ends
                 up establishing a shared "guard the response shape" pattern
                 worth reusing here too. */}
-            <StatusMessage
-                persistent
-                message={testCompleteAnnouncement}
-                nonce={testCompleteAnnounceNonce}
-                className="sr-only"
-            />
-
             {results && (
                 <>
                     <div style={{

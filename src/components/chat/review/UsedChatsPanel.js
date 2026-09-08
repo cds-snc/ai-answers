@@ -15,10 +15,11 @@ const UsedChatsPanel = ({ message, t, lang = 'en', adminLang, answerNumber }) =>
             <summary>{withAnswerNumber(t('reviewPanels.usedQaChatsTitle'))}</summary>
             <div className="review-panel">
                 <table className="review-table">
+                    <caption className="sr-only">{t('reviewPanels.usedQaChatsTitle')}</caption>
                     <thead>
                         <tr>
-                            <th>{t('reviewPanels.chatId')}</th>
-                            <th>{t('reviewPanels.totalScore')}</th>
+                            <th scope="col">{t('reviewPanels.chatId')}</th>
+                            <th scope="col">{t('reviewPanels.totalScore')}</th>
                         </tr>
                     </thead>
                     <tbody>

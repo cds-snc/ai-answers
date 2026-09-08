@@ -2,8 +2,13 @@
  * @vitest-environment jsdom
  */
 import { renderHook, act } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSearchAnnouncement } from '../useSearchAnnouncement.js';
+
+const announce = vi.fn();
+vi.mock('../../../utils/liveAnnouncer.js', () => ({
+  announce: (...args) => announce(...args),
+}));
 
 const t = (key) => {
   const map = {
@@ -15,13 +20,36 @@ const t = (key) => {
 const fmtN = (n) => String(n);
 
 describe('useSearchAnnouncement', () => {
+  beforeEach(() => announce.mockClear());
+
+  it('reports whether it announced, so the caller can skip noteLoadResult for the same fetch', () => {
+    const { result } = renderHook(() => useSearchAnnouncement({ t, fmtN }));
+    let announced;
+
+    act(() => { announced = result.current.noteSearchResult('tax', 12); });
+    expect(announced).toBe(true);
+
+    // Same term again (paging/sorting): silent, so the caller announces
+    // "Results loaded." instead.
+    act(() => { announced = result.current.noteSearchResult('tax', 12); });
+    expect(announced).toBe(false);
+
+    // Zero results: the visible box announces, this doesn't.
+    act(() => { announced = result.current.noteSearchResult('nomatch', 0); });
+    expect(announced).toBe(false);
+
+    // No term at all (a filter apply): not a search announcement.
+    act(() => { announced = result.current.noteSearchResult('', 40); });
+    expect(announced).toBe(false);
+  });
+
   it('announces a count-based message on a new non-zero-result search term', () => {
     const { result } = renderHook(() => useSearchAnnouncement({ t, fmtN }));
 
     act(() => result.current.noteSearchResult('tax', 12));
 
-    expect(result.current.searchAnnouncement).toBe('12 results found.');
-    expect(result.current.searchAnnounceNonce).toBe(1);
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith('12 results found.');
     expect(result.current.zeroResultNonce).toBe(0);
   });
 
@@ -30,8 +58,7 @@ describe('useSearchAnnouncement', () => {
 
     act(() => result.current.noteSearchResult('tax', null));
 
-    expect(result.current.searchAnnouncement).toBe('Search results updated.');
-    expect(result.current.searchAnnounceNonce).toBe(1);
+    expect(announce).toHaveBeenCalledWith('Search results updated.');
   });
 
   it('does not re-announce on a redraw of the same search term', () => {
@@ -40,7 +67,7 @@ describe('useSearchAnnouncement', () => {
     act(() => result.current.noteSearchResult('tax', 12));
     act(() => result.current.noteSearchResult('tax', 12));
 
-    expect(result.current.searchAnnounceNonce).toBe(1);
+    expect(announce).toHaveBeenCalledTimes(1);
   });
 
   it('bumps zeroResultNonce on every zero-result completion, even repeats', () => {
@@ -50,9 +77,9 @@ describe('useSearchAnnouncement', () => {
     act(() => result.current.noteSearchResult('nomatch', 0));
 
     expect(result.current.zeroResultNonce).toBe(2);
-    // no "0 results found" sr-only announcement - the visible zero-result
+    // no "0 results found" announcement - the visible zero-result
     // StatusMessage (gated on zeroResultNonce) covers that case instead.
-    expect(result.current.searchAnnounceNonce).toBe(0);
+    expect(announce).not.toHaveBeenCalled();
   });
 
   it('announce() and reset() support the Filters-cleared case', () => {
@@ -63,9 +90,12 @@ describe('useSearchAnnouncement', () => {
     act(() => result.current.reset());
     act(() => result.current.noteSearchResult('tax', 12));
 
-    expect(result.current.searchAnnouncement).toBe('12 results found.');
     // announce (1) + 2 noteSearchResult calls (2) = 3, since reset() makes
     // the repeated 'tax' term count as new again
-    expect(result.current.searchAnnounceNonce).toBe(3);
+    expect(announce.mock.calls.map((c) => c[0])).toEqual([
+      '12 results found.',
+      'Filters cleared.',
+      '12 results found.',
+    ]);
   });
 });

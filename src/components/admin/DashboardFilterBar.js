@@ -350,33 +350,44 @@ const DashboardFilterBar = ({ lang = 'en', loading = false, onApply, onInitialLo
       </div>
 
       {/* Pills row — outside the bordered filter box */}
-      <div className="filter-bar__pills-row">
-        <span className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
-        {/* Public dashboard has no department/institution scoping at all
-            (unlike Partner's FilterPanel, which supports filtering to one) —
-            this pill makes that explicit instead of leaving it unstated.
-            Reuses the same key/wording as Partner's own default-state
-            "All institutions" pill for consistency. */}
-        <span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span>
-        <span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span>
-        {isDefault ? (
-          <span className="filter-pill filter-pill--info">{pillDate}</span>
-        ) : (
-          // Whole pill is the close target, not just the small × - see
-          // FilterPanel.js's identical pattern for why (real <button>,
-          // not a span wrapping one; × is a purely visual aria-hidden
-          // span carried by this button's own aria-label).
-          <button
-            type="button"
-            className="filter-pill filter-pill--closable"
-            onClick={handleReset}
-            aria-label={`${t('dashboardFilter.removeFilter')} - ${pillDate}`}
-            disabled={loading}
-          >
-            {pillDate}
-            <span className="filter-pill__close" aria-hidden="true">×</span>
-          </button>
-        )}
+      {/* role="group" named by the visible "Showing:" label. This row
+          mostly just states what's being shown (fixed pills), unlike
+          FilterPanel's removable applied-filter pills, so it doesn't get
+          that row's "remove one to change the results" name. */}
+      <div className="filter-bar__pills-row" role="group" aria-labelledby="dashboard-filter-showing">
+        <span id="dashboard-filter-showing" className="filter-bar__showing">{t('dashboardFilter.showing')}</span>
+        {/* A real list, fixed and removable pills alike - see FilterPanel.js's
+            matching comment. */}
+        <ul className="filter-pills-list" role="list">
+          {/* Public dashboard has no department/institution scoping at all
+              (unlike Partner's FilterPanel, which supports filtering to one) —
+              this pill makes that explicit instead of leaving it unstated.
+              Reuses the same key/wording as Partner's own default-state
+              "All institutions" pill for consistency. */}
+          <li><span className="filter-pill filter-pill--info">{t('admin.filters.allDepartments')}</span></li>
+          <li><span className="filter-pill filter-pill--info">{t('publicDashboard.usersOnlyPill')}</span></li>
+          <li>
+            {isDefault ? (
+              <span className="filter-pill filter-pill--info">{pillDate}</span>
+            ) : (
+              // Whole pill is the close target, not just the small × - see
+              // FilterPanel.js's identical pattern for why (real <button>,
+              // not a span wrapping one; × is a purely visual aria-hidden
+              // span carried by this button's own aria-label). Value first,
+              // action second, same as FilterPanel's pills.
+              <button
+                type="button"
+                className="filter-pill filter-pill--closable"
+                onClick={handleReset}
+                aria-label={`${pillDate} - ${t('dashboardFilter.removeFilter')}`}
+                disabled={loading}
+              >
+                {pillDate}
+                <span className="filter-pill__close" aria-hidden="true">×</span>
+              </button>
+            )}
+          </li>
+        </ul>
       </div>
     </div>
   );

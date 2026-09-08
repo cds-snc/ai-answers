@@ -43,9 +43,8 @@ const AdminNotifications = ({ lang = 'en' }) => {
         // content *change* an AT picks up, not a fresh insertion with text
         // already in it. Returning null until the fetch resolved (the old
         // behaviour) is exactly the populated-on-insertion failure mode
-        // StatusMessage.js's own doc comment warns about, and that
-        // `persistent` exists to fix for the shared component — this is the
-        // hand-rolled-markup equivalent, since the stat list + action link
+        // src/utils/liveAnnouncer.js's own doc comment warns about — this
+        // is the hand-rolled-markup equivalent, since the stat list + action link
         // layout doesn't map onto StatusMessage's single-message/children
         // shape. polite, not assertive: these are routine pending-account
         // counts (api/user/user-stats.js's only two fields), not an urgent

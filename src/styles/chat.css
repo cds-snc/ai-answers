@@ -132,24 +132,10 @@
 .ai-message-content p:first-child {
   font-weight: 600;
 }
-.ai-paragraph,
-.ai-list-item {
-  margin: 0;
-}
 .ai-sentence {
   margin-bottom: 0.2em;
   line-height: 1.6em;
 }
-.ai-list-item {
-  display: flex;
-  align-items: flex-start;
-}
-.list-number {
-  flex-shrink: 0;
-  margin-right: 0.5em;
-  font-weight: bold;
-}
-
 
 .citation-divider {
   border: none;
@@ -222,39 +208,11 @@
   display: inline-block;
 }
 
-.follow-up-prompt {
-  margin-top: 1rem;
-  color: #555;
-}
 .input-area {
   margin-top: 1rem;
   width: 100%;
 }
 
-.input-button-wrapper {
-  border-bottom: 1px solid #d9d9d9;
-  margin-bottom: 1.5em;
-  padding-bottom: 1em;
-}
-.input-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.main-input-container {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.main-input-container .gcds-textarea {
-  flex-grow: 1;
-}
-
-.optional-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 @media only screen and (width < 48em) {
   .chat-container {
     padding: 0.5rem;
@@ -266,13 +224,6 @@
   .user-message-box,
   .ai-message-content {
     padding: 0.75rem;
-  }
-  .main-input-container {
-    flex-direction: column;
-  }
-  .send-button {
-    width: 100%;
-    margin-top: 10px;
   }
 }
 @media only screen and (width >= 48em) {
@@ -300,22 +251,9 @@
 .feedback-container p {
   margin-bottom: 10px;
 }
-.feedback-survey-link {
-  display: inline-block;
-  margin-left: 10px;
-  text-decoration: underline;
-  text-decoration-thickness: var(--gcds-link-decoration-thickness);
-  text-underline-offset: var(--gcds-link-underline-offset);
-  color: #284162;
-}
-.feedback-survey-link:hover {
-  text-decoration: underline;
-  color: var(--gcds-link-hover);
-  text-decoration-thickness: default;
-  text-underline-offset: default;
-}
-
-/* Review panels table styling */
+/* Review panels table styling - shared with ExperimentalDatasetsPage.js, so
+   left at its original values; review-panel-only overrides are scoped to
+   .review-details below. */
 .review-table {
   width: 100%;
   border-collapse: collapse;
@@ -330,9 +268,86 @@
   vertical-align: top;
   font-size: 0.95rem;
 }
+/* Border was ~1:1 contrast against white, near-invisible - #a4a4a4 raises
+   that to a visible grey. Scoped to .review-details so it doesn't reach
+   ExperimentalDatasetsPage.js's table. */
+.review-details .review-table,
+.review-details .review-table th,
+.review-details .review-table td {
+  border-color: #a4a4a4;
+}
+/* Label:value pairs (Fallback type, Total score, etc.) as real <dl>/<dt>/
+   <dd> instead of <div><strong>, describing what they actually are. Grid
+   keeps each pair on one line instead of dt/dd's default two-line stack. */
+.review-details dl {
+  font-size: 16px;
+  display: grid;
+  /* Capped so one long label (e.g. "Matched citation interactionId") can't
+     stretch the column and strand every short label far from its value. */
+  grid-template-columns: minmax(0, 13rem) 1fr;
+  row-gap: 0.25rem;
+  margin: 0.5rem 0;
+  padding: 0 0.75rem;
+}
+.review-details dt {
+  font-weight: 700;
+  /* Padding, not the dl's gap - a true grid gap breaks the divider line
+     below at the column boundary. */
+  padding-right: 0.5rem;
+}
+.review-details dt::after {
+  content: ':';
+}
+/* Canadian French wants a space before ":" ("Label :"), English doesn't -
+   see docs/coding-agent-docs/official-languages.md's French punctuation
+   spacing rule. :lang(fr) inherits from document.documentElement.lang
+   (set in App.js), no lang attribute needed locally. */
+:lang(fr) .review-details dt::after {
+  content: ' :';
+}
+.review-details dd {
+  margin: 0;
+}
+/* Row divider, same purpose (and colour) as the table borders above - a
+   plain grid list otherwise loses the row lines a table gave the eye to
+   scan down. Stacked pairs get it under dd only, not dt - a line under dt
+   would read as separating the label from its own value on the next row. */
+.review-details dt:not(.stacked),
+.review-details dd:not(.stacked),
+.review-details dd.stacked {
+  border-bottom: 1px solid #a4a4a4;
+  padding-bottom: 0.25rem;
+}
+/* .stacked: for a long-form value (a paragraph, a multi-line URL) - spans
+   the full row instead of the two-column grid, so it wraps normally below
+   its label instead of staying indented at a fixed column. */
+.review-details dt.stacked,
+.review-details dd.stacked {
+  grid-column: 1 / -1;
+}
+
 .review-table thead th {
   background: #fafafa;
   font-weight: 600;
+}
+/* table-slim-padding (admin.css) only tightens tbody - DataTables' own
+   header padding is already hardcoded elsewhere, so that rule stays
+   tbody-only for every other consumer. EvalPanel.js's plain <thead><th>
+   rows have no such hardcode though, so scoped to .review-details only -
+   not a bare table.table-slim-padding rule, which would also silently
+   retighten VectorPage.js's 4 dataTable+table-slim-padding tables, never
+   tested against this. */
+.review-details table.table-slim-padding > thead > tr > th {
+  padding: 4px 10px;
+}
+/* Visible caption - some tables had a separate bold label duplicating a
+   sr-only caption's text; the caption is now the one title instead of two
+   copies. Scoped to .review-details, same reasoning as the border above. */
+.review-details .review-table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.4rem;
 }
 
 .eval-panel + details.review-details {
@@ -432,10 +447,6 @@
   color: #333;
   margin-top: 10px;
 }
-.radio-group {
-  margin-top: 10px;
-  color: #333;
-}
 .expert-rating-container label {
   display: block;
   margin-bottom: 20px;
@@ -483,6 +494,38 @@
   color: #555;
   margin: 0 0.2rem;
 }
+
+/* FeedbackComponent.js's skip-past-the-rating-buttons link - applied
+   alongside .sr-only (global.css) for the hidden baseline, since only the
+   focus-reveal state below is actually specific to this link. */
+/* No font-size of its own on purpose: inherits the ambient 20px body-text
+   size rather than matching .feedback-link's 18px beside it - tried
+   matching, reverted after confirming the larger size reads more legibly
+   once revealed. Don't "fix" this mismatch without checking again. */
+.skip-link:focus,
+.skip-link:active {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background-color: var(--gcds-link-focus-background);
+  color: var(--gcds-link-focus-text);
+  border-radius: var(--gcds-link-focus-border-radius);
+  box-shadow: var(--gcds-link-focus-box-shadow);
+  outline: var(--gcds-link-focus-outline-width) solid
+    var(--gcds-link-focus-background);
+  outline-offset: var(--gcds-link-focus-outline-offset);
+  text-decoration: none;
+  padding: 10px;
+  display: inline-block;
+  z-index: 9999;
+  transition: none;
+  animation: none;
+}
+
 .button-as-link {
   background: none;
   border: none;
@@ -547,29 +590,7 @@
 
 /* Chat app container styles */
 
-.referring-url {
-  margin-bottom: 10px;
-}
-
-.referring-url_input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.service-status-alert {
-  background-color: #f3e9e8;
-  border: 1px solid #bc3331;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-}
-
-
-.loading-hint-text,
-.mistake-disc p {
+.loading-hint-text {
   color: var(--gcds-color-blue-850);
   font-size: 18px;
   font-weight: 400 !important;
@@ -578,16 +599,6 @@
 .disclaimer p {
     color: var(--gcds-color-blue-850);
     font-weight: 400 !important;
-}
-
-/* Add spacing between radio buttons and their labels */
-.radio-group label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.radio-group input[type="radio"] {
-  margin-right: 8px;
 }
 
 .thank-you span {
@@ -756,15 +767,6 @@
   }
 }
 
-/* Character counter */
-.char-counter {
-  position: absolute;
-  bottom: -20px;
-  right: 0;
-  font-size: 0.75em;
-  color: #666;
-}
-
 /* Label styling */
 .field-container label {
   font-size: var(--gcds-font-sizes-h5);
@@ -862,9 +864,6 @@ textarea:focus {
 @media screen and (max-width: 600px) {
   .button-text {
     display: none !important;
-  }
-  .mistake-disc p {
-    font-size: 16px;
   }
   .hint-text {
     font: var(--gcds-font-text-mobile) !important;
@@ -1141,7 +1140,6 @@ fieldset.gc-chckbxrdio legend {
   margin-bottom: 8px;
 }
 
-.mistake-disc,
 .loading-hint-text,
 .disclaimer {
   background-color: #f5f5ff;

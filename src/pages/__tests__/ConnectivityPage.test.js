@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ConnectivityPage from '../ConnectivityPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const { mockGetSetting, mockSetSetting } = vi.hoisted(() => {
   const connectivitySettings = {
@@ -98,11 +99,10 @@ describe('ConnectivityPage StatusMessage roles', () => {
     await waitFor(() => screen.getByText('connectivity.runTests'));
     fireEvent.click(screen.getByText('connectivity.runTests'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('boom');
+    await waitForAnnouncement('boom', 'assertive');
   });
 
-  it('mounts the test-summary region persistently and fills it as role="status" after a successful run', async () => {
+  it('announces the test summary politely after a successful run', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -116,15 +116,9 @@ describe('ConnectivityPage StatusMessage roles', () => {
     render(<ConnectivityPage lang="en" />);
     await waitFor(() => screen.getByText('connectivity.runTests'));
 
-    // Persistent: the sr-only status region exists before any test has run.
-    const statusRegions = screen.getAllByRole('status');
-    expect(statusRegions.length).toBeGreaterThan(0);
-
     fireEvent.click(screen.getByText('connectivity.runTests'));
 
-    await waitFor(() => {
-      expect(screen.getByText('connectivity.testComplete')).toBeTruthy();
-    });
-    expect(screen.getByText('connectivity.testComplete').closest('[role="status"]')).toBeTruthy();
+    await waitForAnnouncement('connectivity.testComplete');
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 });

@@ -3,8 +3,9 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import PublicDashboard from '../PublicDashboard.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
 vi.mock('../../../hooks/useTranslations.js', () => ({
@@ -39,8 +40,7 @@ describe('PublicDashboard StatusMessage role', () => {
 
     render(<PublicDashboard lang="en" />);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('publicDashboard.error');
+    await waitForAnnouncement('publicDashboard.error', 'assertive');
   });
 
   it('shows no alert when there is no error', () => {
@@ -53,7 +53,7 @@ describe('PublicDashboard StatusMessage role', () => {
 
     render(<PublicDashboard lang="en" />);
 
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 
   it('shows the full-page loading-overlay while fetching (filter-driven fetch)', () => {

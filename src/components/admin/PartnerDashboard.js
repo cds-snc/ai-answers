@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
@@ -36,6 +37,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true });
+  useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
@@ -303,14 +305,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}
           hasAppliedFilters={hasUserApplied}
-          // The "More filters" section (URL, answer type, partner eval, AI
-          // eval, and — since they live inside it — the AND/OR toggle and
-          // Content issue checkbox) is hidden entirely: this dashboard has
-          // no charts that break results down by those categories, so
-          // applying one would just silently shrink every number with no
-          // visible way to tell why. See the former TODO this replaced
-          // (commit 32ff2262) and FilterPanel's own prop comments.
-          showAdvancedSection={false}
+          // "More filters" is shown for URL (EN/FR) lookup only — partners
+          // want to filter down to a specific referring page. answerType/
+          // partnerEval/aiEval (and, since it's gated on those, the AND/OR
+          // toggle) stay hidden: this dashboard has no charts that break
+          // results down by those categories, so applying one would just
+          // silently shrink every number with no visible way to tell why.
+          // See the former TODO this replaced (commit 32ff2262),
+          // TechnicalMetricsDashboard.js's matching comment, and
+          // FilterPanel's own showAdvancedSection/showCategoryFilters prop
+          // comments.
+          showCategoryFilters={false}
         />
       </div>
 
@@ -324,7 +329,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
       )}
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
