@@ -103,7 +103,7 @@ const ExpertFeedbackComponent = ({
   // With only one field in error, its own field name is visually redundant
   // (the message sits right beside the one field it can possibly refer to) —
   // shown only once there's more than one, to disambiguate between them.
-  // Screen reader users still get it either way, via .wb-inv when hidden.
+  // Screen reader users still get it either way, via .sr-only when hidden.
   const showFieldInMessage = visibleExplanationErrors.length > 1;
 
   // Shared label per field key, reused by the per-field error message and
@@ -118,7 +118,7 @@ const ExpertFeedbackComponent = ({
   // without ever hardcoding the surrounding punctuation ourselves (the
   // colon/spacing stays entirely inside the locale string, correct per
   // language either way). With exactly 1 error, the plain sentence is used
-  // and the field name still appended for screen readers only (.wb-inv) —
+  // and the field name still appended for screen readers only (.sr-only) —
   // never omitted, just not visibly duplicated next to its own field.
   const explanationErrorMessage = (key) => {
     const fieldLabel = explanationFieldLabel(key);
@@ -129,7 +129,7 @@ const ExpertFeedbackComponent = ({
     return (
       <>
         {t('homepage.expertRating.explanationRequired')}
-        <span className="wb-inv"> {fieldLabel}</span>
+        <span className="sr-only"> {fieldLabel}</span>
       </>
     );
   };

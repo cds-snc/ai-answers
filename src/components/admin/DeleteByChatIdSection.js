@@ -43,6 +43,8 @@ const DeleteByChatIdSection = ({
   // second round trip; defaults preserve the old any-chat-is-valid behavior.
   validateChat,
   invalidChatMessageKey,
+  // Action-specific "not found" wording — see useChatIdLookup's own note.
+  notFoundMessageKey,
 }) => {
   const {
     t,
@@ -59,7 +61,7 @@ const DeleteByChatIdSection = ({
     errorRef,
     inlineErrorMessage,
     checkChatExists,
-  } = useChatIdLookup({ lang, validateChat, invalidChatMessageKey });
+  } = useChatIdLookup({ lang, validateChat, invalidChatMessageKey, notFoundMessageKey });
 
   const handleDelete = async (e) => {
     e.preventDefault();
@@ -113,24 +115,24 @@ const DeleteByChatIdSection = ({
         </form>
         {status?.variant === 'info' ? (
           // "Not found" — a genuine server-lookup outcome, not an error.
-          <StatusMessage variant="info" message={status.text} persistent />
+          <StatusMessage variant="info" message={status.text} />
         ) : status?.variant === 'error' ? (
           // A plain, fully-translated failure message (the lookup/onDelete
           // call itself failed) — no raw exception text to wrap, so this
           // uses `message` directly rather than the prefix/detail/suffix
           // children shape the isError branch below needs.
-          <StatusMessage variant="error" message={status.text} persistent />
+          <StatusMessage variant="error" message={status.text} />
         ) : status?.isError ? (
           // variant="error" + children (not `message`): the <code lang="en">
           // wrapper a raw exception detail needs (see onDelete's own
           // comment) can't go inside a plain message string. StatusMessage
           // adds its own icon automatically either way (see its own
           // resolveLook comment) — this doesn't need to render one itself.
-          <StatusMessage variant="error" persistent>
+          <StatusMessage variant="error">
             {status.prefix}{status.detail}{status.suffix}
           </StatusMessage>
         ) : (
-          <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} persistent />
+          <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} />
         )}
       </div>
     </details>

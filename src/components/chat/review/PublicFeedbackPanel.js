@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import { SCORE_TO_KEY } from '../../../constants/UserFeedbackOptions.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
+import StatusMessage from '../../admin/StatusMessage.js';
 
 const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     const [loading, setLoading] = useState(false);
@@ -51,7 +52,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
 
     if (!interaction.publicFeedback && !message.publicFeedback) return null;
 
-    const baseTitle = t('reviewPanels.publicFeedbackTitle', 'Public feedback');
+    const baseTitle = t('reviewPanels.publicFeedbackTitle');
     const publicTitle = withAnswerNumber(baseTitle);
 
     // Text, not a bare glyph — a checkmark with no label isn't reliably
@@ -63,10 +64,10 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     // "Feedback" label rather than guessing yes/no.
     const feedbackValue = fetchedPublicFeedback ? fetchedPublicFeedback.feedback : null;
     const feedbackPillText = feedbackValue === 'yes'
-        ? t('reviewPanels.helpfulYes', 'Helpful - yes')
+        ? t('reviewPanels.helpfulYes')
         : feedbackValue === 'no'
-            ? t('reviewPanels.helpfulNo', 'Helpful - no')
-            : t('reviewPanels.feedback', 'Feedback');
+            ? t('reviewPanels.helpfulNo')
+            : t('reviewPanels.feedback');
 
     return (
         <details className="review-details" onToggle={(e) => {
@@ -85,20 +86,27 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
                 <span className="label label--summary-status normal">{feedbackPillText}</span>
             </summary>
             <div className="review-panel public-feedback-panel">
-                {loading && <div>{t('common.loading', 'Loading...')}</div>}
-                {error && <div className="error">{t('common.error', 'Error')}: <code lang="en">{error}</code></div>}
-                <div className="public-feedback-summary">
-                    <div>{t('reviewPanels.score', 'Score')}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : t('reviewPanels.notAvailable', 'N/A')}</div>
-                    <div>{t('reviewPanels.reason', 'Reason')}: {(() => {
+                {loading && <StatusMessage loading message={t('common.loading')} />}
+                {error && (
+                  <StatusMessage variant="error">
+                    {t('common.error')}: <code lang="en">{error}</code>
+                  </StatusMessage>
+                )}
+                <dl className="public-feedback-summary">
+                    <dt>{t('reviewPanels.score')}</dt>
+                    <dd>{(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : t('reviewPanels.notAvailable')}</dd>
+                    <dt>{t('reviewPanels.reason')}</dt>
+                    <dd>{(() => {
                         if (!publicFeedback) return '';
                         const score = publicFeedback.publicFeedbackScore;
                         const id = SCORE_TO_KEY[score];
                         const feedbackType = publicFeedback.feedback === 'yes' ? 'yes' : 'no';
                         if (id) return t(`homepage.publicFeedback.${feedbackType}.options.${id}`, publicFeedback.publicFeedbackReason || id);
                         return publicFeedback.publicFeedbackReason || '';
-                    })()}</div>
-                    <div>{t('reviewPanels.feedback', 'Feedback')}: {publicFeedback && (publicFeedback.feedback === 'yes' ? t('common.yes', 'Yes') : publicFeedback.feedback === 'no' ? t('common.no', 'No') : publicFeedback.feedback || '')}</div>
-                </div>
+                    })()}</dd>
+                    <dt>{t('reviewPanels.feedback')}</dt>
+                    <dd>{publicFeedback && (publicFeedback.feedback === 'yes' ? t('common.yes') : publicFeedback.feedback === 'no' ? t('common.no') : publicFeedback.feedback || '')}</dd>
+                </dl>
                 {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>
         </details>

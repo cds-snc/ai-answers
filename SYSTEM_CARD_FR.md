@@ -1,7 +1,7 @@
 # Fiche système Réponses IA
 
-**Version** : 1.2
-**Date** : Juillet 2026
+**Version** : 1.3
+**Date** : Août 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
 
@@ -100,21 +100,71 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 ### Flux du pipeline (Machine à états LangGraph)
 Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout le traitement côté serveur. Plusieurs variantes de graphe existent avec des capacités différentes (p. ex. court-circuit vectoriel, réponses éclairées par les évaluations, modèles de raisonnement). Toutes les étapes ne s'exécutent pas dans chaque variante.
 
+```mermaid
+flowchart TD
+    Q["Question posée"] --> G["Vérifications de sécurité<br/>renseignements personnels<br/>bloqués, jamais conservés"]
+    G --> S["Contenu du gouvernement<br/>du Canada seulement"]
+    S --> D["Institution repérée<br/>ses propres directives ajoutées"]
+    D --> E["Évaluations d'experts de<br/>questions similaires ajoutées"]
+    E --> A["Réponse en langage clair<br/>lien de citation vérifié"]
+    A --> SAVE["Réponse affichée<br/>et sauvegardée"]
+    SAVE --> AI["Évaluation par l'IA<br/>rapports seulement"]
+    SAVE --> HUM["Évaluation par un expert<br/>humain, sur un échantillon"]
+    HUM -. "améliore les réponses futures" .-> E
+```
+
+<details>
+<summary>Description de l'image (texte de remplacement)</summary>
+
+Un organigramme se déroulant de haut en bas. Une question est posée. Elle passe par des
+vérifications de sécurité et de confidentialité, où les renseignements personnels sont
+bloqués et ne sont jamais conservés. Le contenu du gouvernement du Canada est interrogé.
+L'institution visée par la question est repérée, et les directives propres à cette
+institution sont ajoutées. Des évaluations d'experts de questions similaires sont ajoutées.
+Une réponse en langage clair est rédigée, avec un lien de citation vérifié. La réponse est
+affichée et sauvegardée.
+
+La sauvegarde se divise ensuite en deux branches. La première est une évaluation
+automatisée par l'IA, utilisée pour les rapports seulement ; elle s'arrête là. La seconde
+est une évaluation par un expert humain, sur un échantillon de réponses, et une flèche
+pointillée en revient vers l'étape d'ajout des évaluations d'experts, portant la mention
+« améliore les réponses futures ».
+
+</details>
+
+Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel générique.
+
+Les réponses sont construites uniquement à partir du contenu du gouvernement du Canada, et
+le lien de la citation est vérifié avant que la personne ne voie la réponse.
+
+Le système détermine à quelle institution se rapporte la question, puis charge le matériel
+propre à cette institution dans les directives de cette réponse précise — les scénarios,
+les outils agentiques et les fichiers rédigés par son équipe partenaire. Une question sur
+un passeport et une question sur un crédit d'impôt sont traitées selon des directives
+institutionnelles différentes, choisies question par question, sans que personne ait à
+aiguiller la question au préalable.
+
+Et la flèche pointillée forme une véritable boucle : lorsqu'un expert évalue une réponse,
+son jugement — y compris ce qui clochait — devient un exemple concret présenté au modèle la
+prochaine fois qu'une question semblable est posée. Les évaluations automatisées par l'IA
+servent uniquement aux rapports. Elles ne deviennent jamais des exemples : le système
+n'apprend donc jamais de ses propres jugements.
 
 1. **Initialisation** : Configure le chronométrage et le suivi de l'état
 2. **Validation de requête courte** (Programmatique) : Bloque les requêtes trop courtes pour être significatives
 3. **Blocage de question en deux étapes** :
    - **Étape 1** (Programmatique) : Blocage basé sur motifs pour la profanité, les menaces et les renseignements personnels courants (listes de mots configurables par les administrateurs via la page Paramètres)
    - **Étape 2** (IA - Azure OpenAI GPT-4o, région Canada Est) : L'IA détecte les renseignements personnels qui ont échappé au filtrage ; la question est alors bloquée
-4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement
-5. **Réécriture de requête et recherche** (IA - mini modèle) : Réécrit la question traduite en une requête de recherche optimisée et l'exécute sur Canada.ca ou Google. Si la première recherche ne retourne aucun résultat ou un seul résultat, une nouvelle réécriture simplifiée est effectuée automatiquement et la recherche est relancée ; le meilleur ensemble de résultats est conservé.
-6. **Dérivation de contexte** (IA - modèle complet) : Correspondance d'institution et génération de contexte à partir des résultats de recherche ; charge optionnellement les scénarios spécifiques à l'institution
-7. **Vérification de court-circuit** (IA) : Recherche de similarité vectorielle pour trouver des questions similaires déjà répondues. Présent uniquement dans certaines variantes de graphe, pas dans le pipeline par défaut
-8. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
-9. **Vérification de citation** (Programmatique) : Valide le formatage des URL de citation et génère une URL de recherche de secours si nécessaire
-10. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
-11. **Évaluation automatique** : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
-12. **Classificateur de tâches** (IA - modèle complet) : utilise la question et la réponse pour attribuer un programme et une action (p. ex. compte IRCC - ouvrir une session) à la question à des fins de rapport et d'analyse par les institutions
+4. **Traduction** (IA - mini modèle configurable) : Détecte la langue et traduit en anglais pour le traitement. Les listes de mots de protection sont ensuite réappliquées au texte anglais et, pour les langues sources autres que l'anglais ou le français, la détection des renseignements personnels par l'IA est exécutée une seconde fois — une menace ou un renseignement personnel écrit dans une autre langue peut n'être reconnaissable qu'une fois traduit
+5. **Vérification des réponses vérifiées instantanées** (IA - similarité vectorielle et reclassement) : Cherche une question déjà répondue, notée 100/100 par un expert, qui correspond de très près à la nouvelle, et sert cette réponse vérifiée directement. Présent uniquement dans certaines variantes de graphe, pas dans le pipeline de production
+6. **Réécriture de requête et recherche** (IA - mini modèle) : Réécrit la question traduite en une requête de recherche optimisée et l'exécute sur Canada.ca ou Google. Si la première recherche ne retourne aucun résultat ou un seul résultat, une nouvelle réécriture simplifiée est effectuée automatiquement et la recherche est relancée ; le meilleur ensemble de résultats est conservé.
+7. **Dérivation de contexte** (IA - modèle complet) : Correspondance d'institution et génération de contexte à partir des résultats de recherche ; charge optionnellement les scénarios spécifiques à l'institution
+8. **Réponses éclairées par les évaluations** (recherche par incorporation, sans appel à un modèle de langue) : Récupère jusqu'à trois des ensembles question-réponse-évaluation passés les plus similaires évalués par des experts et les ajoute aux instructions du modèle à titre d'exemples évalués. Un seuil de similarité et une limite d'un an sur l'âge de l'évaluation d'expert ne retiennent que les exemples véritablement pertinents et à jour ; lorsqu'aucun ne se qualifie, aucun n'est ajouté. En production depuis août 2026
+9. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés
+10. **Vérification de citation** (Programmatique) : Valide le formatage des URL de citation et génère une URL de recherche de secours si nécessaire
+11. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
+12. **Évaluation automatique** (en arrière-plan ; toutes les réponses n'en reçoivent pas une) : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
+13. **Classificateur de tâches** (IA - modèle complet, exécuté en arrière-plan après la livraison de la réponse) : utilise la question et la réponse pour attribuer un programme et une action (p. ex. compte IRCC - ouvrir une session) à la question à des fins de rapport et d'analyse par les institutions
 
 **Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -238,10 +288,12 @@ Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout l
 
 Les évaluations d'experts des réponses passées ne servent pas uniquement à la production de rapports — elles peuvent aussi être réinjectées dans la génération de réponses en direct. Deux mécanismes ont été conçus à cette fin, qui puisent tous deux dans le même ensemble de paires question/réponse évaluées par des experts.
 
-- **Réponses éclairées par les évaluations (questions similaires)** : Avant que l'IA ne génère une réponse, le système récupère quelques-uns des ensembles question-réponse-évaluation passés les plus similaires évalués par des experts et les inclut dans les instructions du modèle à titre d'exemples évalués — des paires à note parfaite à imiter, et des paires comportant des erreurs signalées (avec les notes phrase par phrase de l'expert et la citation corrigée) afin que le modèle puisse éviter de répéter des erreurs connues. Un seuil de similarité garantit que seuls des exemples véritablement pertinents sont utilisés ; lorsqu'aucun exemple pertinent n'existe, aucun n'est injecté.
+- **Réponses éclairées par les évaluations (questions similaires) — en production depuis août 2026** : Avant que l'IA ne génère une réponse, le système récupère quelques-uns des ensembles question-réponse-évaluation passés les plus similaires évalués par des experts et les inclut dans les instructions du modèle à titre d'exemples évalués — des paires à note parfaite à imiter, et des paires comportant des erreurs signalées (avec les notes phrase par phrase de l'expert et la citation corrigée) afin que le modèle puisse éviter de répéter des erreurs connues. Un seuil de similarité garantit que seuls des exemples véritablement pertinents sont utilisés, et une évaluation d'expert de plus d'un an n'est pas réutilisée ; lorsqu'aucun exemple pertinent n'existe, aucun n'est injecté.
 - **Réponses vérifiées instantanées (service par court-circuit) — pas encore en production** : Lorsqu'une nouvelle question correspond de très près à une question passée dont la réponse a obtenu d'un expert la note parfaite de 100/100, le système servirait cette réponse vérifiée directement et contournerait le modèle d'IA, réduisant les coûts et la latence. Seules les réponses ayant obtenu la note parfaite seraient admissibles, et la correspondance doit être très étroite pour éviter de servir la mauvaise réponse. Lors des tests, cette approche ne s'est pas encore montrée assez fiable pour être déployée ; elle demeure donc désactivée en production.
 
 Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sélectionnables (« graphes »), exigent qu'une évaluation d'expert existe pour une réponse passée, et sont conçus pour se dégrader en douceur — si la recherche est indisponible, la génération de réponses se poursuit normalement sans exemples.
+
+**Seules les évaluations humaines alimentent les réponses.** Les évaluations automatisées par l'IA servent aux rapports et à la surveillance, jamais d'exemples pour le modèle : elles sont délibérément exclues du répertoire dont les deux mécanismes se servent. Le système n'apprend pas de ses propres jugements — chaque exemple qui façonne une réponse remonte à l'évaluation d'une personne.
 
 **Pour les détails techniques complets, voir [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 

@@ -9,6 +9,47 @@ import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workf
 import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 import { getPath } from '../../utils/routes.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
+import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+
+// One batch's progress: a status line + a real progressbar. Its own small
+// component (not a StatusMessage `progress` variant) because determinate
+// progress isn't an outcome or an indeterminate wait — see the scope note
+// in StatusMessage.js. The status line is announced through the shared
+// announcer whenever its text changes (useAnnounceOnChange), not by being
+// a live region itself: cards appear when a run starts, and an element
+// inserted with its text already in it is never heard.
+function ProgressCard({ id, prog, t, lang, getStatusLabel }) {
+    const statusRef = useRef(null);
+    useAnnounceOnChange(statusRef);
+    const name = prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`;
+    return (
+        <div className="border p-200 mb-200 rounded bg-light">
+            <div ref={statusRef}><strong>{name}</strong>: {getStatusLabel(prog.status)}</div>
+            <div
+                role="progressbar"
+                aria-valuenow={Math.round(prog.percentComplete)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={name}
+                style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}
+            >
+                <div style={{
+                    width: `${prog.percentComplete}%`,
+                    backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
+                    height: '100%',
+                    transition: 'width 0.5s ease-in-out'
+                }}></div>
+            </div>
+            <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
+                {t('experimental.analysis.progressSummary')
+                    .replace('{completed}', formatNumber(prog.completed, lang))
+                    .replace('{failed}', formatNumber(prog.failed, lang))
+                    .replace('{total}', formatNumber(prog.total, lang))}
+            </div>
+        </div>
+    );
+}
 
 const DEFAULT_WORKFLOW = WORKFLOW_VALUES[0] || 'GenericGraph';
 const ACTIVE_BATCH_WINDOW_MS = 60 * 1000;
@@ -120,8 +161,19 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
     const [comparisons, setComparisons] = useState([]);
-    const [message, setMessage] = useState('');
+    // Outcome of the last run/resume/comparison action: { variant, text }.
+    // 'info' for "started" messages (starting isn't completing — see
+    // status-and-error-messaging.md), 'error' for failures and rejected
+    // submits.
+    const [runStatus, setRunStatus] = useState(null);
+    const showInfo = (text) => setRunStatus({ variant: 'info', text });
+    const showError = (text) => setRunStatus({ variant: 'error', text });
     const [startingRun, setStartingRun] = useState(null);
+    // The "starting run" card below is announced when it appears / its
+    // text changes, rather than being a live region itself (it's
+    // conditionally rendered).
+    const startingRunRef = useRef(null);
+    useAnnounceOnChange(startingRunRef);
 
     // Progress tracking
     const [batchProgress, setBatchProgress] = useState({});
@@ -311,12 +363,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleRunAnalysis = async () => {
         if (!selectedAnalyzerId) {
-            setMessage(t('experimental.analysis.messages.selectAnalyzer'));
+            showError(t('experimental.analysis.messages.selectAnalyzer'));
             return;
         }
 
         if (!selectedDatasetId) {
-            setMessage(t('experimental.analysis.messages.selectDataset'));
+            showError(t('experimental.analysis.messages.selectDataset'));
             return;
         }
 
@@ -338,7 +390,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             status: t('experimental.analysis.startingRun'),
             message: t('experimental.analysis.messages.startingRun')
         });
-        setMessage('');
+        setRunStatus(null);
 
         try {
 
@@ -367,20 +419,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 for (const b of result.batches) {
                     try {
                         await ExperimentalBatchClientService.processBatch(b._id);
-                        if (!message) setMessage(t('experimental.analysis.messages.processingStarted'));
+                        if (!runStatus) showInfo(t('experimental.analysis.messages.processingStarted'));
                     } catch (err) {
                         console.error('Process batch error:', err);
-                        setMessage(t('experimental.analysis.messages.startProcessingError'));
+                        showError(t('experimental.analysis.messages.startProcessingError'));
                     }
                 }
-                setMessage(t('experimental.analysis.messages.startedCount').replace('{count}', result.batches.length));
+                showInfo(t('experimental.analysis.messages.startedCount').replace('{count}', result.batches.length));
             } else {
                 try {
                     await ExperimentalBatchClientService.processBatch(result._id);
-                    setMessage(t('experimental.analysis.messages.processingStarted'));
+                    showInfo(t('experimental.analysis.messages.processingStarted'));
                 } catch (err) {
                     console.error('Process batch error:', err);
-                    setMessage(t('experimental.analysis.messages.startProcessingError'));
+                    showError(t('experimental.analysis.messages.startProcessingError'));
                 }
             }
             setRunLabel('');
@@ -391,7 +443,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             // when it resolves to the key itself.
             const translated = err?.message ? t(err.message) : null;
             const isLocaleKey = translated && translated !== err.message;
-            setMessage(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
+            showError(isLocaleKey ? translated : t('experimental.analysis.messages.startAnalysisFailed'));
         } finally {
             setStartingRun(null);
             setLoading(false);
@@ -444,11 +496,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
             setLoading(true);
             await ExperimentalBatchClientService.processBatch(batchId, true);
-            setMessage(t('experimental.analysis.messages.resumeStarted'));
+            showInfo(t('experimental.analysis.messages.resumeStarted'));
             await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Resume batch error:', err);
-            setMessage(t('experimental.analysis.messages.resumeFailed'));
+            showError(t('experimental.analysis.messages.resumeFailed'));
         } finally {
             setLoading(false);
         }
@@ -470,7 +522,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const handleCreateComparison = async () => {
         if (!comparisonBaselineId || !comparisonCandidateId) {
-            setMessage(t('experimental.analysis.messages.selectComparisonRuns'));
+            showError(t('experimental.analysis.messages.selectComparisonRuns'));
             return;
         }
 
@@ -501,13 +553,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     status: 'processing'
                 }], true)
             }));
-            setMessage(t('experimental.analysis.messages.comparisonStarted'));
+            showInfo(t('experimental.analysis.messages.comparisonStarted'));
             setComparisonBaselineId('');
             setComparisonCandidateId('');
             await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Comparison creation error:', err);
-            setMessage(t('experimental.analysis.messages.comparisonFailed'));
+            showError(t('experimental.analysis.messages.comparisonFailed'));
         } finally {
             setComparisonLoading(false);
         }
@@ -608,42 +660,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         <PauseToggleButton isPaused={isPollPaused} onToggle={toggleIsPollPaused} t={t} className="mb-200" />
     );
 
-    // This status line and the one in the startingRun block below both sit
-    // directly beside a real role="progressbar" element, not standing alone
-    // — StatusMessage doesn't have a `progress` variant, and deliberately
-    // shouldn't: determinate progress (a known total, like this batch's
-    // completed/failed/total) isn't an outcome (error/warning/info/success)
-    // or an indeterminate wait (loading), it's a third, different thing, and
-    // StatusMessage already had a bug where two of those "visual modes"
-    // needing block content had to be reconciled by hand. A progress bar
-    // belongs in its own small component if one gets built (bar + plain
-    // role="status" text, same shape as this), not folded into
-    // StatusMessage's props.
     const renderProgressCards = (progressMap) => Object.entries(progressMap).map(([id, prog]) => (
-        <div key={id} className="border p-200 mb-200 rounded bg-light">
-            <div role="status" aria-live="polite"><strong>{prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}</strong>: {getStatusLabel(prog.status)}</div>
-            <div
-                role="progressbar"
-                aria-valuenow={Math.round(prog.percentComplete)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={prog.name || `${t('experimental.analysis.batchPrefix')} ${id.slice(-6)}`}
-                style={{ width: '100%', backgroundColor: '#eee', height: '10px', marginTop: '5px' }}
-            >
-                <div style={{
-                    width: `${prog.percentComplete}%`,
-                    backgroundColor: prog.status === 'failed' ? '#d30800' : '#26374a',
-                    height: '100%',
-                    transition: 'width 0.5s ease-in-out'
-                }}></div>
-            </div>
-            <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
-                {t('experimental.analysis.progressSummary')
-                    .replace('{completed}', formatNumber(prog.completed, lang))
-                    .replace('{failed}', formatNumber(prog.failed, lang))
-                    .replace('{total}', formatNumber(prog.total, lang))}
-            </div>
-        </div>
+        <ProgressCard key={id} id={id} prog={prog} t={t} lang={lang} getStatusLabel={getStatusLabel} />
     ));
 
     const renderAnalyzerRulesTable = (analyzerId, mode) => {
@@ -895,14 +913,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
                         </GcdsButton>
-                        {/* TODO: not migrated to StatusMessage yet — `message` is a shared
-                            bucket for both success and error text across ~13
-                            setMessage(...) call sites with no isError companion (unlike
-                            DatabasePage.js's messageIsError, added in this same pass).
-                            Converting this to variant="error"/"success" needs that same
-                            tracking added first; doing it without that would either lose
-                            the distinction or require guessing per call site. */}
-                        {message && <GcdsText className="mt-200" role="status"><strong>{message}</strong></GcdsText>}
+                        <StatusMessage className="mt-200" variant={runStatus?.variant} message={runStatus?.text} />
                     </section>
 
                     {(startingRun || Object.keys(batchProgress).length > 0) && (
@@ -910,7 +921,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
                             {renderPauseToggle()}
                             {startingRun && (
-                                <div className="border p-200 mb-200 rounded bg-light" role="status" aria-live="polite">
+                                <div ref={startingRunRef} className="border p-200 mb-200 rounded bg-light">
                                     {startingRun.name && (
                                     <div><strong>{startingRun.name}</strong></div>
                                     )}

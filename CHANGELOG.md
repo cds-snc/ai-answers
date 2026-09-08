@@ -1,5 +1,66 @@
 # Changelog
 
+## [1.194.0](https://github.com/cds-snc/ai-answers/compare/v1.193.2...v1.194.0) (2026-09-08)
+
+
+### Features
+
+* show URL filter in Partner dashboard's advanced section ([6a67ad2](https://github.com/cds-snc/ai-answers/commit/6a67ad23bc985a9d46ced5aae5ced038b2a9ea96))
+* show URL filter in Partner dashboard's advanced section ([c00b16b](https://github.com/cds-snc/ai-answers/commit/c00b16b4451a686d3b72e1163f8c910daba02ee1))
+
+
+### Bug Fixes
+
+* expert review panel a11y pass ([a7f92dc](https://github.com/cds-snc/ai-answers/commit/a7f92dca01415f409f76c69609490ff5ece2a28c))
+* remove redundant title attrs from auth form inputs ([9d21458](https://github.com/cds-snc/ai-answers/commit/9d21458382aa3bf41a65881caf87bcf02add1dbc))
+
+
+### Documentation
+
+* add rule for keeping PRs human-reviewable ([32c3727](https://github.com/cds-snc/ai-answers/commit/32c37279ecc7706e53b7180315caa794383a95ca))
+* fix stale dashboard section, counts and gray-matter note in com… ([d261cf2](https://github.com/cds-snc/ai-answers/commit/d261cf2e3a818776cd1a2efa8256dc6cf4c7e774))
+
+
+### Code Refactoring
+
+* retire .wb-inv in favour of .sr-only/.skip-link ([a1b6147](https://github.com/cds-snc/ai-answers/commit/a1b614747a9ba257463da2c1196c5cf93dc16721))
+
+## [1.193.2](https://github.com/cds-snc/ai-answers/compare/v1.193.1...v1.193.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* revise for wait times ([4389636](https://github.com/cds-snc/ai-answers/commit/4389636b69a191597327b9c1a5bc1304da6a8427))
+* tighten diagrams ([dededb2](https://github.com/cds-snc/ai-answers/commit/dededb25c502d903536a81e18d9ae3003605c3d4))
+* update all docs ([7fedac0](https://github.com/cds-snc/ai-answers/commit/7fedac0254b0ec0cf25752dc96f8f307d79a6b14))
+
+## [1.193.1](https://github.com/cds-snc/ai-answers/compare/v1.193.0...v1.193.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* route all admin screen-reader announcements through one site-wide live… ([b229601](https://github.com/cds-snc/ai-answers/commit/b229601e5c85a9f61e30882ae981b9c367744729))
+
+
+### Documentation
+
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([a5a2170](https://github.com/cds-snc/ai-answers/commit/a5a2170076878571ed5e58632ce51d54ab8de1a8))
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([e8bf79e](https://github.com/cds-snc/ai-answers/commit/e8bf79e67511b4812e587a0c17eda5389c42e02f))
+* trim dashboards.md, rewrite tables.md for the shared table design ([1d22b81](https://github.com/cds-snc/ai-answers/commit/1d22b811b737f3580b4b4c2ec35974baf3c4451e))
+* trim dashboards.md, rewrite tables.md for the shared table design ([b0869ce](https://github.com/cds-snc/ai-answers/commit/b0869ced4a748239c8c124f09762db21ce543ae1))
+* trim design-system.md to rules ([0e2dfb3](https://github.com/cds-snc/ai-answers/commit/0e2dfb3a8f29056dc4bd151917096936635123d6))
+* trim design-system.md to rules ([ae070e1](https://github.com/cds-snc/ai-answers/commit/ae070e175c31d28a8198e34ce73505c68f4bb9d2))
+* trim status-and-error-messaging.md to rules and reference points ([bb8dd0b](https://github.com/cds-snc/ai-answers/commit/bb8dd0b0d38bec174dd34ff36b8d38e4d6a11082))
+* trim status-and-error-messaging.md to rules and reference points ([84d9600](https://github.com/cds-snc/ai-answers/commit/84d960062d98c043fed422e3e596e20e8e7f14bb))
+
+## [1.193.0](https://github.com/cds-snc/ai-answers/compare/v1.192.1...v1.193.0) (2026-08-28)
+
+
+### Features
+
+* more reliable dashboard tables readable by screen readers, AutoEval o… ([2a1786f](https://github.com/cds-snc/ai-answers/commit/2a1786f69631e916fe7ba088957efe76fa442c70))
+* more reliable screen-reader reading of grouped dashboard tables, AutoEval on the grouped table, GC DS-style table controls ([8296784](https://github.com/cds-snc/ai-answers/commit/82967840e9670c4bb1800d6f60cbdbd4c23501e9))
+
 ## [1.192.1](https://github.com/cds-snc/ai-answers/compare/v1.192.0...v1.192.1) (2026-08-27)
 
 

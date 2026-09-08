@@ -681,7 +681,8 @@
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
             "mapFeedback": "Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores",
-            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing"
+            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing",
+            "updateInteraction": "Update the interaction with the new evaluation reference (autoEval)"
           }
         },
         "noMatch": {
@@ -735,6 +736,9 @@
     },
     "filters": {
       "title": "Filters",
+      "appliedCount": "{count} applied filters, listed below",
+      "appliedFiltersGroup": "Applied filters. Remove one to change the results.",
+      "selectedCount": "Selected: {count}",
       "sectionHeading": "Choose filter options",
       "clearAll": "Clear all",
       "apply": "Apply",
@@ -823,8 +827,9 @@
       "searchPlaceholder": "e.g. tax, contact, account",
       "filterPlaceholder": "Filter",
       "searchTermPillLabel": "Search: {term}",
-      "noSearchResults": "No search results found.",
+      "noSearchResults": "No results for {term}.",
       "filtersClearedAnnouncement": "Filters cleared.",
+      "resultsLoaded": "Results loaded.",
       "viewChatById": "View chat by ID",
       "originallyAskedIn": "Originally asked in: {language}",
       "sourceText": "Source",
@@ -948,6 +953,7 @@
       "idLabel": "Chat ID",
       "button": "Delete chat",
       "loading": "Deleting...",
+      "notFound": "Cannot delete chat: ID not found.",
       "success": "{chatId} deleted successfully.",
       "error": "Failed to delete chat: {message}"
     },
@@ -956,6 +962,7 @@
       "idLabel": "Chat ID",
       "button": "Delete expert evaluation",
       "loading": "Deleting...",
+      "notFound": "Cannot delete evaluation: ID not found.",
       "success": "Deleted {count} expert feedback record(s) for {chatId}.",
       "error": "Failed to delete expert evaluation: {message}",
       "notEvaluated": "Not evaluated."
@@ -1305,17 +1312,8 @@
     "resumedIndicator": "Automatic updates resumed"
   },
   "eval": {
-    "metric": "Metric",
-    "value": "Value",
     "metrics": {},
-    "sentenceTrace": "Sentence Trace",
-    "sourceSentence": "Source Sentence",
-    "matchStatus": "Match Status",
-    "matchedSentence": "Matched Sentence",
-    "similarity": "Similarity",
-    "explanation": "Explanation",
-    "eval": "Evaluation",
-    "details": "Details",
+    "eval": "Auto-evaluation results",
     "reRun": "Re-run",
     "reRunning": "Re-running...",
     "noMatch": "No match found for this interaction.",
@@ -1364,21 +1362,15 @@
     "deleteExpertFeedback": "Delete expert evaluation",
     "publicFeedbackTitle": "Public feedback",
     "autoEvalTitle": "Automated evaluation",
+    "autoEvalDeletedAnnouncement": "Automated evaluation deleted.",
     "explanation": "Explanation",
     "explanationLabel": "Explanation:",
     "score": "Score",
     "scoreSuffix": "Score: {score}",
     "reason": "Reason",
-    "publicComment": "Public comment",
     "evaluation": "Evaluation",
     "noEvaluation": "No evaluation available.",
-    "processed": "Processed",
-    "hasMatches": "Has matches",
-    "fallback": "Fallback",
     "none": "none",
-    "noMatchReason": "No-match reason",
-    "createdAt": "Created at",
-    "updatedAt": "Updated at",
     "sourceSentenceIndex": "Source sentence index",
     "stageTimeline": "Stage timeline",
     "rawTimeline": "Raw timeline (JSON)",
@@ -1411,11 +1403,7 @@
     "downloadSuccess": "Succeeded",
     "downloadPartial": "Partial",
     "details": "Details",
-    "fallbackCompareRaw": "Fallback compare raw",
-    "expertFeedbackId": "Expert evaluation id",
     "fallbackSourceChatId": "Fallback source chatId",
-    "matchedCitationInteractionId": "Matched citation interactionId",
-    "matchedCitationChatId": "Matched citation chatId",
     "agentCandidateChoices": "Agent candidate choices",
     "candidateIndex": "Candidate index",
     "text": "Text",
@@ -1427,7 +1415,6 @@
     "conditionals": "Conditionals",
     "connectives": "Connectives",
     "modifiers": "Modifiers",
-    "reEvaluate": "Re-evaluate",
     "deleteEvaluation": "Delete evaluation",
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
@@ -1440,12 +1427,9 @@
     "fallbackCandidateAnswer": "Fallback candidate answer",
     "fallbackCandidateCitation": "Candidate citation",
     "fallbackCompareMeta": "Fallback compare meta",
-    "agentSelections": "Agent selections",
-    "agentSelectedIndex": "Agent selected index",
-    "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages",
-    "usedQaChatsTitle": "Past evals used",
+    "usedQaChatsTitle": "Past evaluations used",
     "chatId": "Chat ID"
   },
   "dashboardFilter": {
@@ -1502,7 +1486,7 @@
       "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
@@ -1543,7 +1527,7 @@
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
@@ -1702,7 +1686,6 @@
   "metrics": {
     "title": "Metrics dashboard",
     "dashboard": {
-      "loadedAnnouncement": "Metrics loaded.",
       "totalSessions": "Total sessions",
       "totalQuestions": "Total questions",
       "answerTypes": {
@@ -1808,7 +1791,6 @@
     "title": "Technical metrics",
     "dashboard": {
       "loading": "Loading technical metrics...",
-      "loadedAnnouncement": "Technical metrics loaded.",
       "metric": "Metric",
       "responseTime": {
         "title": "Total response time",

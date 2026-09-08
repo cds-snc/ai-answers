@@ -132,11 +132,11 @@ describe('ExpertFeedbackComponent — explanation required on non-good ratings',
     submit();
 
     // With 2 errors, the field name is shown plainly (not wrapped in the
-    // screen-reader-only .wb-inv span used for the single-error case).
+    // screen-reader-only .sr-only span used for the single-error case).
     const errorMessages = document.querySelectorAll('.form-error-message');
     expect(errorMessages).toHaveLength(2);
     errorMessages.forEach((el) => {
-      expect(el.querySelector('.wb-inv')).toBeNull();
+      expect(el.querySelector('.sr-only')).toBeNull();
       expect(el.textContent).toContain('homepage.expertRating.sentence');
     });
 
@@ -185,8 +185,8 @@ describe('ExpertFeedbackComponent — explanation required on non-good ratings',
     submit();
 
     const errorMessage = document.querySelector('.form-error-message');
-    expect(errorMessage.querySelector('.wb-inv')).toBeTruthy();
-    expect(errorMessage.querySelector('.wb-inv').textContent.trim()).toBe('homepage.expertRating.sentence1');
+    expect(errorMessage.querySelector('.sr-only')).toBeTruthy();
+    expect(errorMessage.querySelector('.sr-only').textContent.trim()).toBe('homepage.expertRating.sentence1');
     expect(document.querySelector('.explanation-error-summary')).toBeNull();
   });
 });

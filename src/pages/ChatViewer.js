@@ -8,7 +8,8 @@ import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
 import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
 import { useChatIdLookup } from '../hooks/admin/useChatIdLookup.js';
-import StatusMessage, { useSrAnnouncer } from '../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import ChatIdMatchList, { buildChatIdMatchesLabels } from '../components/admin/ChatIdMatchList.js';
 import { formatNumber } from '../utils/numberFormat.js';
@@ -85,7 +86,7 @@ const ChatViewer = ({ lang = 'en' }) => {
     nonce: refreshAnnouncementNonce,
     announce: announceRefreshFailed,
     clear: clearRefreshAnnouncement,
-  } = useSrAnnouncer();
+  } = useRepeatableStatus();
   // The confirmed chat's own pageLanguage (normalized to 'en'/'fr'), for the
   // "Trace for: {chatId}" link's href below - buildChatReviewHref routes to
   // the chat's OWN language, not the admin's (official-languages.md Rule 2:
@@ -114,23 +115,21 @@ const ChatViewer = ({ lang = 'en' }) => {
   // The pill <button>s don't announce their new state natively, and the
   // table re-filtering below is a purely visual change (see
   // docs/coding-agent-docs/status-and-error-messaging.md's sr-only-
-  // announcement test). sr-only only - which pill is dark and the table
-  // itself already say this loudly for sighted users.
-  const { message: levelFilterMessage, nonce: levelFilterNonce, announce: announceLevelFilter } = useSrAnnouncer();
-  // Same reasoning, for an initial search's success outcome - the table
+  // announcement test). Announced only, no visible box (announce() in
+  // handleLevelFilter) - which pill is dark and the table itself already
+  // say this loudly for sighted users. Same for an initial search's
+  // success outcome (announce() in resolveConfirmedChat) - the table
   // filling in for the first time already shows it. Refresh results
-  // doesn't get the sr-only-only treatment: a refresh's whole point is that
-  // the data might have changed since last looked at it, so the table
+  // doesn't get the announce-only treatment: a refresh's whole point is
+  // that the data might have changed since last looked at it, so the table
   // looking the same as before isn't itself confirmation it worked.
-  const { message: loadAnnouncement, nonce: loadAnnounceNonce, announce: announceLoad } = useSrAnnouncer();
-  // Visible (not sr-only, unlike the announcers above) confirmation that a
-  // Refresh results click actually re-fetched.
+  // Visible confirmation that a Refresh results click actually re-fetched.
   const {
     message: refreshResultsMessage,
     nonce: refreshResultsNonce,
     announce: announceRefreshResults,
     clear: clearRefreshResultsMessage,
-  } = useSrAnnouncer();
+  } = useRepeatableStatus();
 
   // Declared ahead of useChatLogsTable below (rather than alongside the
   // page's other handlers further down) so it exists in time to be passed
@@ -193,7 +192,7 @@ const ChatViewer = ({ lang = 'en' }) => {
     const count = nextLevels.length > 0
       ? logs.filter((log) => nextLevels.includes(log.logLevel)).length
       : logs.length;
-    announceLevelFilter(
+    announce(
       nextLevels.length > 0
         ? t('logging.levelFilterAnnouncement')
             .replace('{count}', formatNumber(count, lang))
@@ -275,7 +274,7 @@ const ChatViewer = ({ lang = 'en' }) => {
       if (source === 'refresh') {
         announceRefreshResults(successMessage);
       } else {
-        announceLoad(successMessage);
+        announce(successMessage);
       }
     }
 
@@ -455,10 +454,8 @@ const ChatViewer = ({ lang = 'en' }) => {
             >
               {isBusy ? t('logging.refreshPending') : t('logging.refreshResults')}
             </GcdsButton>
-            {/* Visible (not sr-only) - see refreshResultsMessage's own
-                declaration. */}
+            {/* Visible - see refreshResultsMessage's own declaration. */}
             <StatusMessage
-              persistent
               variant="success"
               message={refreshResultsMessage}
               nonce={refreshResultsNonce}
@@ -472,17 +469,15 @@ const ChatViewer = ({ lang = 'en' }) => {
               a failed refresh - only one is ever meaningful at a time
               (resolveConfirmedChat clears chatIdStatus once a chat is
               confirmed). refreshAnnouncement only ever holds error text -
-              see its own declaration. persistent+nonce only actually drive
+              see its own declaration. nonce only actually drives
               refreshAnnouncement's own re-announcement (chatIdStatus has no
-              nonce of its own), but are harmless either way here since the
+              nonce of its own), but is harmless either way here since the
               two are mutually exclusive. */}
           <StatusMessage
-            persistent
             variant={chatIdStatus ? chatIdStatus.variant : (refreshAnnouncement ? 'error' : undefined)}
             message={chatIdStatus ? chatIdStatus.text : refreshAnnouncement}
             nonce={refreshAnnouncementNonce}
           />
-          <StatusMessage persistent className="sr-only" message={loadAnnouncement} nonce={loadAnnounceNonce} />
 
           {hasConfirmedChat && stepTimeline && (
             <div>
@@ -657,7 +652,6 @@ const ChatViewer = ({ lang = 'en' }) => {
                   );
                 })}
               </div>
-              <StatusMessage persistent className="sr-only" message={levelFilterMessage} nonce={levelFilterNonce} />
               {/* Always mounted, even with zero logs — DataTables shows its
                   own localized empty state (see useChatLogsTable), keeping
                   tableRef stable so focus can be captured/restored across

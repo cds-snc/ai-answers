@@ -225,7 +225,7 @@ describe('FilterPanel', () => {
     // means two closable pills exist here: the date range, and the
     // "Public" user-type pill (see effectiveUserType in FilterPanel.js —
     // 'public' isn't the universal 'all', so it's a real, removable filter).
-    const removeButtons = await findAllByLabelText(/Remove filter - /);
+    const removeButtons = await findAllByLabelText(/ - Remove filter$/);
     expect(removeButtons.length).toBeGreaterThanOrEqual(2);
     const labels = removeButtons.map((b) => b.getAttribute('aria-label'));
     expect(new Set(labels).size).toBe(labels.length);
@@ -335,7 +335,7 @@ describe('FilterPanel', () => {
     const { container, queryByText, findByLabelText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
     await waitFor(() => getDateRangeInput(container));
     expect(queryByText('Users: All')).toBeNull();
-    const removeButton = await findByLabelText('Remove filter - Public');
+    const removeButton = await findByLabelText('Public - Remove filter');
     expect(removeButton.closest('.filter-pill')?.className).toContain('filter-pill--closable');
   });
 
@@ -378,7 +378,7 @@ describe('FilterPanel', () => {
     const { container, findByLabelText, queryByText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
     await waitFor(() => getDateRangeInput(container));
 
-    const removeButton = await findByLabelText('Remove filter - Public');
+    const removeButton = await findByLabelText('Public - Remove filter');
     removeButton.focus();
     expect(document.activeElement).toBe(removeButton);
 
@@ -405,7 +405,7 @@ describe('FilterPanel', () => {
     expect(dateRemoveButton).not.toBeNull();
     fireEvent.click(dateRemoveButton);
 
-    const userTypeRemoveButton = await findByLabelText('Remove filter - Public');
+    const userTypeRemoveButton = await findByLabelText('Public - Remove filter');
     fireEvent.click(userTypeRemoveButton);
 
     await waitFor(() => expect(queryByText('Users: All')).not.toBeNull());

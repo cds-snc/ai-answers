@@ -6,6 +6,7 @@ import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 import BatchList from '../BatchList.js';
 import BatchService from '../../../services/BatchService.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 vi.mock('../../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({
@@ -233,7 +234,7 @@ describe('BatchList row action buttons', () => {
     expect(csvButton.disabled).toBe(false);
   });
 
-  it('announces the deleted batch by name in the shared sr-only region once onDelete resolves true', async () => {
+  it('announces the deleted batch by name once onDelete resolves true', async () => {
     const originalConfirm = window.confirm;
     window.confirm = vi.fn(() => true);
     const onDelete = vi.fn(() => Promise.resolve(true)); // matches BatchPage.js's onDelete contract
@@ -251,7 +252,8 @@ describe('BatchList row action buttons', () => {
     });
 
     expect(onDelete).toHaveBeenCalledWith('batch-1', 'Weekly digest test');
-    expect(container.textContent).toContain('Deleted: Weekly digest test.');
+    await waitForAnnouncement('Deleted: Weekly digest test.');
+    expect(container.textContent).not.toContain('Deleted: Weekly digest test.');
 
     window.confirm = originalConfirm;
   });

@@ -66,7 +66,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // syntheticCount (see the ajax callback below) is a pagination trick, not
   // a real count, so search completions pass count: null here and get the
   // count-less "results updated" message instead of "N results found".
-  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   // Tracked so a zero-result global search doesn't feed FilterPanel's own
   // "reopen on zero results" effect - see the filterResultCount prop below
@@ -307,7 +307,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       title: t('admin.evalDashboard.columns.feedback'), data: 'feedback', width: '60px', render: v => {
         // Icon + hidden text, same tight pattern as the Download column
         // below (FA icon since GC DS has no thumbs glyph, aria-hidden, real
-        // meaning carried in wb-inv text) instead of a spelled-out pill -
+        // meaning carried in sr-only text) instead of a spelled-out pill -
         // keeps this column narrow. Coloured with --gcds-border-default -
         // the same grey the row/cell dividers use (see .group-cell's
         // border-right and the other border rules above) - rather than
@@ -316,17 +316,17 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // not a pass/fail outcome like Download's states.
         //
         // data-tooltip (+ .eval-tooltip's CSS, see admin.css) gives sighted
-        // mouse users a hover tooltip with the same text the wb-inv span
+        // mouse users a hover tooltip with the same text the sr-only span
         // already gives screen-reader users - a custom CSS tooltip rather
         // than the native title attribute so the appear delay is ours to
         // set (0.5s - native title's delay is fixed by the browser, not
         // controllable). Safe to add now specifically because the icon
         // stays aria-hidden: an arbitrary data-* attribute on an
         // aria-hidden element isn't exposed to the accessibility tree
-        // either, so it can't compete with/double up on the wb-inv
+        // either, so it can't compete with/double up on the sr-only
         // announcement. Two channels, one source of truth each.
-        if (v === 'yes') return `<i class="fa-solid fa-thumbs-up eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}</span>`;
-        if (v === 'no') return `<i class="fa-solid fa-thumbs-down eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}</span>`;
+        if (v === 'yes') return `<i class="fa-solid fa-thumbs-up eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}</span>`;
+        if (v === 'no') return `<i class="fa-solid fa-thumbs-down eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}</span>`;
         return '';
       }, searchable: false, orderable: true
     },
@@ -343,17 +343,17 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // data-tooltip (custom CSS tooltip, see the matching comment on the
         // Feedback column above for why not the native title attribute)
         // gives sighted mouse users a hover tooltip with the same text the
-        // wb-inv span gives screen-reader users.
+        // sr-only span gives screen-reader users.
         if (v === 'success') {
-          return `<span class="text-status--positive"><i class="fa-solid fa-check eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
+          return `<span class="text-status--positive"><i class="fa-solid fa-check eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
         }
         if (v === 'partial') {
           // Smaller than the other two icons - a filled circle shape reads
           // visually larger than the check/x glyphs at the same font-size.
-          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke eval-tooltip" style="font-size: 1.2em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
+          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke eval-tooltip" style="font-size: 1.2em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
         }
         if (v === 'failed') {
-          return `<span class="text-status--negative"><i class="fa-solid fa-xmark eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.fail'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
+          return `<span class="text-status--negative"><i class="fa-solid fa-xmark eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.fail'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
         }
         return '';
       },
@@ -393,7 +393,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           screen-reader users a heading/landmark entry point into the filter
           section. Distinct text from FilterPanel's "Filters" summary label. */}
       <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -427,11 +426,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           that the applied filters themselves are wrong (same distinction as
           ChatDashboardPage.js's noSearchResults/noDataForFilters split). */}
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {/* A sub-component of the Filters box above, not a peer - same
@@ -652,7 +651,8 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // count-less "results updated" message instead of "N
                     // results found". TODO: pass the real count once a cheap
                     // one is available from the backend.
-                    noteSearchResult(searchValue, syntheticCount === 0 ? 0 : null);
+                    const loadCount = syntheticCount === 0 ? 0 : null;
+                    if (!noteSearchResult(searchValue, loadCount)) noteLoadResult(loadCount);
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load eval dashboard data', err);

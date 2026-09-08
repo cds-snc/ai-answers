@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../hooks/useTranslations.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import EvaluationService from '../services/EvaluationService.js';
@@ -95,10 +96,12 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
     filtersRef.current = getDefaultEvalFilters();
     tableApiRef.current = null;
     setHasAppliedFilters(false);
+    // Same announcement Chat/Eval make on Clear all.
+    announce(t('admin.common.filtersClearedAnnouncement'));
     setPageResultCount(0);
     setError(null);
     setLoading(false);
-  }, [LOCAL_TABLE_STORAGE_KEY]);
+  }, [LOCAL_TABLE_STORAGE_KEY, t]);
 
   // Columns: Chat ID, #, Department, AI eval, Partner eval, Processed, Matches, Fallback, No-match reason, Date
   const columns = useMemo(() => ([
@@ -189,6 +192,7 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && (
         <StatusMessage
           variant="info"
+          assertive
           message={activeColumnFilterText
             ? t('admin.autoEvalDashboard.noColumnFilterResults').replace('{term}', () => activeColumnFilterText)
             : t('common.noDataForFilters')}
@@ -402,7 +406,10 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
                       : rows.length;
                     const syntheticCount = start + syntheticUnitCount + (hasMore ? 1 : 0);
                     setPageResultCount(syntheticCount);
+                    // Same completion rule as every dashboard: "Results
+                    // loaded." with data, the visible no-data box on zero.
                     if (syntheticCount === 0) setZeroResultNonce((n) => n + 1);
+                    else announce(t('admin.common.resultsLoaded'), { assertive: true });
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load auto-eval dashboard data', err);

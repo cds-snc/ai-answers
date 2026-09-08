@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VectorPage from '../VectorPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -85,8 +86,7 @@ describe('VectorPage StatusMessage roles (reinitialize index)', () => {
     const button = await screen.findByText('vector.reinitializeIndex');
     fireEvent.click(button);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('index build failed');
+    await waitForAnnouncement('index build failed', 'assertive');
   });
 
   it('announces a successful reinitialize as role="status", not window.alert()', async () => {
@@ -101,7 +101,7 @@ describe('VectorPage StatusMessage roles (reinitialize index)', () => {
     await waitFor(() => {
       expect(screen.getByText('vector.indexCreatedSuccess')).toBeTruthy();
     });
-    expect(screen.getByText('vector.indexCreatedSuccess').closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('vector.indexCreatedSuccess', { selector: '[class*="status-message--"]' })).toBeTruthy();
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
@@ -111,7 +111,7 @@ describe('VectorPage StatusMessage roles (reinitialize index)', () => {
     await waitFor(() => {
       expect(screen.getByText('vector.reinitializeIndex')).toBeTruthy();
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 });
 
@@ -132,7 +132,7 @@ describe('VectorPage embedding generation — was window.alert(), now StatusMess
     await waitFor(() => {
       expect(screen.getByText('vector.allEmbeddingsGenerated')).toBeTruthy();
     });
-    expect(screen.getByText('vector.allEmbeddingsGenerated').closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('vector.allEmbeddingsGenerated', { selector: '[class*="status-message--"]' })).toBeTruthy();
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
@@ -143,8 +143,7 @@ describe('VectorPage embedding generation — was window.alert(), now StatusMess
 
     fireEvent.click(await screen.findByText('vector.generateEmbeddings'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.generateEmbeddingsFailed');
+    await waitForAnnouncement('vector.generateEmbeddingsFailed', 'assertive');
   });
 
   it('shows a distinct "regenerated" success message for Regenerate embeddings, not the same text as Generate', async () => {
@@ -167,8 +166,7 @@ describe('VectorPage embedding generation — was window.alert(), now StatusMess
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.regenerateEmbeddings'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.regenerateEmbeddingsFailed');
+    await waitForAnnouncement('vector.regenerateEmbeddingsFailed', 'assertive');
   });
 });
 
@@ -200,8 +198,7 @@ describe('VectorPage metadata backfill delay — field-tied validation, not a pa
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.backfillEmptyMetadata'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.metadataBackfillFailed');
+    await waitForAnnouncement('vector.metadataBackfillFailed', 'assertive');
   });
 });
 
@@ -221,7 +218,7 @@ describe('VectorPage metadata clear — was window.alert(), now StatusMessage', 
     await waitFor(() => {
       expect(screen.getByText('vector.metadataClearSuccess')).toBeTruthy();
     });
-    expect(screen.getByText('vector.metadataClearSuccess').closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('vector.metadataClearSuccess', { selector: '[class*="status-message--"]' })).toBeTruthy();
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
@@ -231,8 +228,7 @@ describe('VectorPage metadata clear — was window.alert(), now StatusMessage', 
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.clearMetadata'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.metadataClearFailed');
+    await waitForAnnouncement('vector.metadataClearFailed', 'assertive');
   });
 });
 
@@ -242,7 +238,7 @@ describe('VectorPage stop backfill — was silent on success, wrong error text o
     resetMocks();
   });
 
-  it('announces a successful stop via a persistent sr-only region, not a visible box', async () => {
+  it('announces a successful stop politely, with no visible box', async () => {
     mockGetMetadataBackfillJob.mockResolvedValue({
       job: { id: 'job-1', status: 'running', processed: 3 },
     });
@@ -251,11 +247,10 @@ describe('VectorPage stop backfill — was silent on success, wrong error text o
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.stopMetadataBackfill'));
 
-    const announcement = await screen.findByText('vector.metadataBackfillStoppedAnnouncement');
-    expect(announcement.className).toContain('sr-only');
-    expect(announcement.closest('[role="status"]')).toBeTruthy();
+    await waitForAnnouncement('vector.metadataBackfillStoppedAnnouncement');
     // Not the box treatment used for real outcomes elsewhere.
-    expect(announcement.closest('.status-message--success-box')).toBeNull();
+    expect(screen.queryByText('vector.metadataBackfillStoppedAnnouncement')).toBeNull();
+    expect(document.querySelector('.status-message--success-box')).toBeNull();
   });
 
   it('announces a failed stop with its own text, not the backfill-start failure text', async () => {
@@ -267,9 +262,8 @@ describe('VectorPage stop backfill — was silent on success, wrong error text o
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.stopMetadataBackfill'));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.metadataBackfillStopFailed');
-    expect(alert.textContent).not.toContain('vector.metadataBackfillFailed');
+    const announced = await waitForAnnouncement('vector.metadataBackfillStopFailed', 'assertive');
+    expect(announced).not.toContain('vector.metadataBackfillFailed');
   });
 });
 
@@ -313,7 +307,7 @@ describe('VectorPage metadata status — was a plain <p>, now StatusMessage', ()
     fireEvent.click(await screen.findByText('vector.metadataStatus.check'));
 
     const status = await screen.findByText('vector.metadataStatus.complete');
-    expect(status.closest('[role="status"]')).toBeTruthy();
+
     expect(status.closest('.status-message--success-box')).toBeTruthy();
   });
 
@@ -330,7 +324,7 @@ describe('VectorPage metadata status — was a plain <p>, now StatusMessage', ()
     fireEvent.click(await screen.findByText('vector.metadataStatus.check'));
 
     const status = await screen.findByText('vector.metadataStatus.incomplete');
-    expect(status.closest('[role="status"]')).toBeTruthy();
+
     expect(status.closest('.status-message--info-box')).toBeTruthy();
     expect(status.closest('.status-message--warning-box')).toBeNull();
   });
@@ -375,8 +369,7 @@ describe('VectorPage metadata backfill job status, discovered by polling', () =>
 
     renderWithRouter(<VectorPage lang="en" />);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('vector.metadataBackfillFailed');
+    await waitForAnnouncement('vector.metadataBackfillFailed', 'assertive');
   });
 
   it('announces an asynchronously-completed job (found by polling) as role="status", not silently', async () => {
@@ -387,7 +380,7 @@ describe('VectorPage metadata backfill job status, discovered by polling', () =>
     renderWithRouter(<VectorPage lang="en" />);
 
     const status = await screen.findByText('vector.metadataBackfillCompleted');
-    expect(status.closest('[role="status"]')).toBeTruthy();
+
     expect(status.closest('.status-message--success-box')).toBeTruthy();
   });
 });

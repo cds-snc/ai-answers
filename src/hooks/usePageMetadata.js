@@ -11,10 +11,11 @@
 // (server/renderIndexHtml.js), since this app has no SSR to extract Helmet's
 // context into. It'd only swap the effect below for a JSX-based API - a
 // possible future simplification, not a fix for the actual hard part.
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation, useMatches } from 'react-router-dom';
 import { DEFAULT_METADATA, DCTERMS } from '../config/metadata.js';
 import { buildPageTitle } from '../config/pageTitle.js';
+import { announce } from '../utils/liveAnnouncer.js';
 
 // currentLang/t are passed in rather than re-derived here (computeAlternateLangHref/
 // useTranslations) since AppLayout already computes both for its own render -
@@ -32,15 +33,43 @@ export const usePageMetadata = (currentLang, t) => {
   // other titleKey-less route.
   const isChatReviewMode = new URLSearchParams(location.search).get('review') === '1';
 
-  // Only remaining opt-out from the generic focus-to-main AppLayout wires up
-  // via useRouteChangeFocus: the sign-in redirect, by *navigation action*
-  // (location.state.skipRouteFocus, set by LoginPage.js), not by destination
-  // route - a fresh sign-in should load normally rather than force focus
-  // into its heading, regardless of which page getDefaultRouteForRole sends
-  // it to. Scoping this to the admin route itself would also suppress focus
-  // management for unrelated future navigation to admin.
-  const skipRouteFocus =
-    matches.some((m) => m.handle?.skipRouteFocus) || Boolean(location.state?.skipRouteFocus);
+  // Only opt-out from the generic focus-to-main AppLayout wires up via
+  // useRouteChangeFocus: routes whose handle says so (the chat home, whose
+  // textarea autofocus wins instead — see App.js's route table).
+  const skipRouteFocus = matches.some((m) => m.handle?.skipRouteFocus);
+
+  // Each route's titleKey (see App.js's route table) reuses that page's
+  // own <h1> locale key - no duplicate "page title" string to drift from
+  // what actually renders. No titleKey -> generic site title (every route's
+  // previous behaviour). Review mode can't use a static route handle (same
+  // home route, distinguished only by a query param), so it's special-cased
+  // here, reusing ChatReviewPage.js's own eyebrow text.
+  // TODO: isChatReviewMode only checks the query param, not the route -
+  // any route carrying ?review=1 would get the review title. Not reachable
+  // today (nothing links that way); scope to the home route if it is.
+  const pageTitleKey = isChatReviewMode
+    ? 'homepage.chat.review.eyebrow'
+    : matches.find((m) => m.handle?.titleKey)?.handle?.titleKey;
+  const pageTitle = pageTitleKey ? t(pageTitleKey) : null;
+  const title = buildPageTitle(pageTitle, currentLang);
+
+  // A real page load reads the new <title> for free; a client-side route
+  // change (navigate()/<Link>) doesn't - document.title changing is silent
+  // to a screen reader, and useRouteChangeFocus's focus-to-<main> only
+  // says "main". Announce the page's own title so the destination is
+  // named. Skips the first render (a fresh load) and the routes that opt
+  // out of route focus (the chat home). Keyed on location.key, same as
+  // useRouteChangeFocus, so a query-string-only navigation counts too.
+  const isInitialRouteRef = useRef(true);
+  useEffect(() => {
+    if (isInitialRouteRef.current) {
+      isInitialRouteRef.current = false;
+      return;
+    }
+    if (skipRouteFocus) return;
+    announce(pageTitle || title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   // Update <title>/lang/dcterms/og/twitter meta tags based on the current
   // route and language.
@@ -51,20 +80,6 @@ export const usePageMetadata = (currentLang, t) => {
 
     const langKey = currentLang === 'fr' ? 'FR' : 'EN';
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
-    // Each route's titleKey (see App.js's route table) reuses that page's
-    // own <h1> locale key - no duplicate "page title" string to drift from
-    // what actually renders. No titleKey -> generic site title (every route's
-    // previous behaviour). Review mode can't use a static route handle (same
-    // home route, distinguished only by a query param), so it's special-cased
-    // here, reusing ChatReviewPage.js's own eyebrow text.
-    // TODO: isChatReviewMode only checks the query param, not the route -
-    // any route carrying ?review=1 would get the review title. Not reachable
-    // today (nothing links that way); scope to the home route if it is.
-    const pageTitleKey = isChatReviewMode
-      ? 'homepage.chat.review.eyebrow'
-      : matches.find((m) => m.handle?.titleKey)?.handle?.titleKey;
-    const pageTitle = pageTitleKey ? t(pageTitleKey) : null;
-    const title = buildPageTitle(pageTitle, currentLang);
     const description = DEFAULT_METADATA.DESCRIPTION[langKey];
     const dctermsDescription = DEFAULT_METADATA.DESCRIPTION[langKey];
     const dctermsLang = currentLang === 'fr' ? 'fra' : 'eng';

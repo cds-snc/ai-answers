@@ -52,7 +52,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   // sr-only search-narrowing announcement + visible zero-result message
   // (SC 4.1.3) - shared with MetricsDashboard.js.
-  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
 
   const tableApiRef = useRef(null);
@@ -120,7 +120,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // reasoning as EvalDashboardPage.js's own icon cells: title's hover
   // delay is fixed by the browser and can't be shortened, this CSS
   // mechanism controls it. Accessible name for the icon+"AI text" pair
-  // comes from the sibling .wb-inv span carrying the fuller explanation,
+  // comes from the sibling .sr-only span carrying the fuller explanation,
   // not aria-label, matching that same established pattern - the icon and
   // the visible "AI text" label both stay aria-hidden so a screen
   // reader gets the one, fuller phrase instead of "AI text" followed
@@ -151,7 +151,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       `<span class="filter-pill eval-tooltip" data-tooltip="${fullLabel}" style="position: absolute; bottom: 0.5em; left: 0;">` +
       `<i class="fa-solid fa-language" style="font-size: 1.3em;" aria-hidden="true"></i>` +
       `<span aria-hidden="true">${shortLabel}</span>` +
-      `<span class="wb-inv">${fullLabel}</span>` +
+      `<span class="sr-only">${fullLabel}</span>` +
       `</span>`;
   }, [t]);
 
@@ -213,10 +213,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // control (the Clear all button, inside FilterPanel) keeps focus, so
     // this isn't a focus-loss issue like the chat ID search one, but a
     // screen reader user still gets no confirmation the reset actually
-    // took effect. Reuses the same persistent+sr-only searchAnnouncement
-    // region as the search-narrowing announcement, just for a different
-    // message - same nonce bump so it re-announces even if cleared twice
-    // in a row with nothing else changing in between.
+    // took effect.
     announce(t('admin.common.filtersClearedAnnouncement'));
     resetSearchAnnouncement();
     setError(null);
@@ -379,13 +376,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       </StatusMessage>
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
-
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && (
@@ -540,7 +535,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       const total = result?.recordsTotal || 0;
                       setRecordsTotal(total);
 
-                      noteSearchResult(searchValue, total);
+                      if (!noteSearchResult(searchValue, total)) noteLoadResult(total);
 
                       callback({
                         draw: dtParams.draw || 0,
