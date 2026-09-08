@@ -42,13 +42,6 @@
   margin: 0 auto;
   padding-left: 1.5rem;
 }
-/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
-.referring-url-container {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 0 20px;
-}
-
 .container-custom:first-of-type {
   margin-bottom: 0px !important;
 }
@@ -64,16 +57,6 @@
   margin-left: auto;
 }
 
-/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
-.container-custom :after,
-.container-custom :before {
-  display: table;
-}
-
-.container-custom :after {
-  clear: both;
-}
-
 /* Wraps GcdsHeader + the Beta banner (App.js) so the banner's `order: -1`
    below can put it first visually while staying after GcdsHeader in the
    DOM - see the comment at that JSX for why the DOM order matters. */
@@ -83,7 +66,6 @@
 }
 
 /* top banner for alpha/beta warning */
-/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
 .alpha-top {
   order: -1;
   padding-top: 2px !important;
@@ -97,12 +79,6 @@
      original, correct behaviour. */
   z-index: auto;
 }
-.alpha {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: white;
-  z-index: 100;
-}
 .alpha-label {
   background-color: black;
   border: none;
@@ -115,10 +91,6 @@
   margin: 4px 2px;
   border-radius: 0px;
   font-size: 14px !important;
-}
-.alpha-fill {
-  background-color: #f2f2f2;
-  padding: 0.6em 1em 0.6em 0.6em;
 }
 
 /* index.css */
@@ -580,124 +552,6 @@ output {
   color: rgb(85.425, 85.425, 85.425);
 }
 
-.form-control {
-  display: block;
-  width: 100%;
-  height: 37px;
-  padding: 10px 14px;
-  font-size: 16px;
-  line-height: 1.4375;
-  color: rgb(85.425, 85.425, 85.425);
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border-color ease-in-out 0.15s,
-    box-shadow ease-in-out 0.15s;
-  -webkit-transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-}
-
-.form-control:focus {
-  border-color: #66afe9;
-  outline: 0;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-}
-
-.form-control::-moz-placeholder {
-  color: #5c5c5c !important;
-  opacity: 1;
-}
-
-.form-control:-ms-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-webkit-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-ms-expand {
-  background-color: transparent;
-  border: 0;
-}
-
-.form-control[disabled],
-.form-control[readonly],
-fieldset[disabled] .form-control {
-  background-color: rgb(238.425, 238.425, 238.425);
-  opacity: 1;
-}
-
-.form-control[disabled],
-fieldset[disabled] .form-control {
-  cursor: not-allowed;
-}
-
-textarea.form-control {
-  height: auto;
-}
-
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  input[type="date"].form-control,
-  input[type="datetime-local"].form-control,
-  input[type="month"].form-control,
-  input[type="time"].form-control {
-    line-height: 37px;
-  }
-
-  .input-group-sm input[type="date"],
-  .input-group-sm input[type="datetime-local"],
-  .input-group-sm input[type="month"],
-  .input-group-sm input[type="time"],
-  .input-group-sm > .input-group-btn > input[type="date"].btn,
-  .input-group-sm > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-sm > .input-group-btn > input[type="month"].btn,
-  .input-group-sm > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-sm,
-  input[type="datetime-local"].input-sm,
-  input[type="month"].input-sm,
-  input[type="time"].input-sm {
-    line-height: 33px;
-  }
-
-  .input-group-lg input[type="date"],
-  .input-group-lg input[type="datetime-local"],
-  .input-group-lg input[type="month"],
-  .input-group-lg input[type="time"],
-  .input-group-lg > .input-group-btn > input[type="date"].btn,
-  .input-group-lg > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-lg > .input-group-btn > input[type="month"].btn,
-  .input-group-lg > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-lg,
-  input[type="datetime-local"].input-lg,
-  input[type="month"].input-lg,
-  input[type="time"].input-lg {
-    line-height: 46px;
-  }
-}
-
-.gc-chckbxrdio fieldset {
-  min-width: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-}
-
-.answer-improvement label,
-label.expert-citation-url {
-  font-weight: 500 !important;
-}
 .gc-chckbxrdio .checkbox,
 .gc-chckbxrdio .radio {
   position: relative;
@@ -742,9 +596,7 @@ fieldset[disabled] .radio label {
 }
 
 .checkbox input[type="checkbox"],
-.checkbox-inline input[type="checkbox"],
-.radio input[type="radio"],
-.radio-inline input[type="radio"] {
+.radio input[type="radio"] {
   position: absolute;
   margin-left: -20px;
 }
@@ -752,30 +604,6 @@ fieldset[disabled] .radio label {
 .checkbox + .checkbox,
 .radio + .radio {
   margin-top: -5px;
-}
-
-.checkbox-inline,
-.radio-inline {
-  position: relative;
-  display: inline-block;
-  padding-left: 20px;
-  margin-bottom: 0;
-  font-weight: 400;
-  vertical-align: middle;
-  cursor: pointer;
-}
-
-.checkbox-inline.disabled,
-.radio-inline.disabled,
-fieldset[disabled] .checkbox-inline,
-fieldset[disabled] .radio-inline {
-  cursor: not-allowed;
-}
-
-.checkbox-inline + .checkbox-inline,
-.radio-inline + .radio-inline {
-  margin-top: 0;
-  margin-left: 10px;
 }
 
 fieldset.gc-chckbxrdio {
