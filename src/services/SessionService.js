@@ -35,10 +35,7 @@ const SessionService = {
       // "Failed to load sessions: {error}" template via useErrorStatus, so
       // .message is just the raw diagnostic detail (rendered as
       // <code lang="en">, never shown untranslated on its own).
-      const err = new Error(`${resp.status} ${txt}`);
-      err.status = resp.status;
-      err.text = txt;
-      throw err;
+      throw new Error(`${resp.status} ${txt}`);
     }
     const json = await resp.json();
     return json.sessions || [];

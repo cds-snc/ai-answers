@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import StatusMessage from '../components/admin/StatusMessage.js';
 
 // Shared { text } (success) | { prefix, suffix, detail, isError } (error)
@@ -22,7 +22,10 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 // repeat useTranslations() plumbing through this - same shape as
 // useAuthOutcomeMessages taking its dependencies once at the top.
 export const useErrorStatus = (t) => {
-  const buildErrorStatus = (key, error, otherPlaceholders = {}) => {
+  // Stable across renders (as long as t is — see useTranslations.js) so
+  // callers can safely put buildErrorStatus/renderStatusMessage in their own
+  // useCallback/useEffect deps instead of having to omit them.
+  const buildErrorStatus = useCallback((key, error, otherPlaceholders = {}) => {
     let template = t(key);
     for (const [name, value] of Object.entries(otherPlaceholders)) {
       template = template.replace(`{${name}}`, () => value);
@@ -35,13 +38,13 @@ export const useErrorStatus = (t) => {
     const [prefix, suffix] = template.split('{error}');
     const detail = error?.message || String(error);
     return { prefix, suffix, detail, isError: true };
-  };
+  }, [t]);
 
   // successVariant: DatabasePage.js's operations are completed mutations
   // ('success', the default); SettingsPage.js's cache refresh is a neutral
   // confirmation, not a mutation ('info') - a real semantic difference
   // between the two existing callers, not just inconsistency to paper over.
-  const renderStatusMessage = (status, successVariant = 'success') => (
+  const renderStatusMessage = useCallback((status, successVariant = 'success') => (
     <StatusMessage variant={status ? (status.isError ? 'error' : successVariant) : undefined}>
       {status && (
         status.detail !== undefined
@@ -49,7 +52,7 @@ export const useErrorStatus = (t) => {
           : status.text
       )}
     </StatusMessage>
-  );
+  ), []);
 
   return { buildErrorStatus, renderStatusMessage };
 };

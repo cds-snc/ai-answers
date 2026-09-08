@@ -61,11 +61,7 @@ const SessionPage = ({ lang: propLang }) => {
     } finally {
       setLoading(false);
     }
-    // buildErrorStatus deliberately excluded: useErrorStatus() returns a new
-    // function identity every render, and usePausablePolling below re-fires
-    // its effect whenever this callback's identity changes — including it
-    // would poll in a tight loop instead of every 5s.
-  }, [t]);
+  }, [buildErrorStatus]);
 
   // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
   // table.
