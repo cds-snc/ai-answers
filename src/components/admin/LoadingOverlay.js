@@ -30,8 +30,12 @@ import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 // instead of the whole viewport — position: absolute instead of fixed, so
 // the nearest positioned ancestor becomes the coverage area. The caller is
 // responsible for making that ancestor `position: relative` (or otherwise
-// positioned); this component doesn't reach up and set that itself. Same
-// announcement behaviour either way — this only changes what gets covered.
+// positioned) AND giving it its own stacking context (e.g. `isolation:
+// isolate`) — position alone anchors the overlay but doesn't contain its
+// z-index: 9999, so without isolation it can still paint over unrelated
+// page chrome. See ServerDataTable.js's `.server-data-table-loading-wrapper`
+// for the reference pairing. Same announcement behaviour either way — this
+// only changes what gets covered.
 const LoadingOverlay = ({ message, scoped = false }) => {
   const textRef = useRef(null);
   // skippable: a fast load reads just its result, not "Loading" too.

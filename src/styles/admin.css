@@ -65,9 +65,24 @@
 /* Scoped variant (LoadingOverlay's `scoped` prop): covers one positioned
    ancestor section instead of the whole viewport. Caller's wrapper needs
    its own `position: relative` (or otherwise positioned) for this to
-   anchor there rather than further up the tree. */
+   anchor there rather than further up the tree — AND `isolation: isolate`
+   (or another new-stacking-context trigger) so this element's z-index: 9999
+   is compared only within that wrapper, not against the page's root
+   stacking context. `position: relative` alone anchors the overlay but does
+   not contain its z-index, so without isolation a scoped overlay can still
+   paint over unrelated UI elsewhere on the page (sticky nav, toasts,
+   modals). See `.server-data-table-loading-wrapper` below for the reference
+   implementation. */
 .loading-overlay--scoped {
   position: absolute;
+}
+
+/* ServerDataTable.js's positioned+isolated wrapper for its own scoped
+   LoadingOverlay — see the comment on .loading-overlay--scoped above for
+   why both position: relative and isolation: isolate are required. */
+.server-data-table-loading-wrapper {
+  position: relative;
+  isolation: isolate;
 }
 
 /* TODO (design review, low risk): needs review for small screens. */

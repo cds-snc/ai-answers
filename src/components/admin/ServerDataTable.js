@@ -1,10 +1,12 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { escapeHtml } from '../../utils/htmlEscape.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 DataTable.use(DT);
 
@@ -51,9 +53,21 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     pageLength = 10,
     lengthChange = true,
     layout,
-    onError
+    onError,
+    // Overrides the LoadingOverlay text shown while a fetch is in flight
+    // (see `loading` state below) — defaults to the generic common.loading
+    // string, which is fine for a table with nothing more specific to say.
+    loadingMessage
 }, ref) {
+    const { t } = useTranslations(lang);
     const initialResultRef = useRef(initialResult);
+    // Drives the scoped LoadingOverlay below, replacing DataTables' own
+    // `processing: true` node — that node only ever toggles CSS `display`,
+    // never re-inserts itself or changes its text, so most screen readers
+    // never announce it (see dashboards.md's loading-states convention).
+    // Starts true: the ajax callback below fires on mount just like any
+    // later reload, so the first paint is a genuine loading state too.
+    const [loading, setLoading] = useState(true);
     // The live DataTables API instance, captured via initComplete (the same
     // pattern ChatDashboardPage.js already uses) rather than a ref on
     // <DataTable> itself, since datatables.net-react doesn't forward one.
@@ -80,7 +94,6 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     }, [actionsTitle, actionsWidth, columns, renderActions]);
 
     const options = useMemo(() => ({
-        processing: true,
         serverSide: true,
         paging: true,
         searching: true,
@@ -103,6 +116,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
             ...(searchPlaceholder ? { searchPlaceholder } : {})
         },
         ajax: async (params, callback) => {
+            setLoading(true);
             try {
                 const sort = params.order?.[0];
                 const result = initialResultRef.current || await fetchData({
@@ -128,6 +142,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     recordsFiltered,
                     data
                 });
+                setLoading(false);
             } catch (error) {
                 // Previously: swallowed into an empty result with only a
                 // console.error — a genuine fetch failure and "this table
@@ -140,6 +155,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                 console.error('Failed to load table data:', error);
                 onError?.(error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                setLoading(false);
             }
         },
         createdRow: renderActions ? (row, rowData) => {
@@ -160,14 +176,26 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         // horizontally (a wide table, or a narrow viewport) — without it, a
         // keyboard user has no way to scroll the table into view sideways.
         <div className={containerClassName} tabIndex={0}>
-            <DataTable
-                key={tableKey}
-                className="display dashboard-table zebra-stable-on-hover"
-                columns={tableColumns}
-                options={options}
-            >
-                {caption ? <caption className="sr-only">{caption}</caption> : null}
-            </DataTable>
+            {/* server-data-table-loading-wrapper: dedicated positioned
+                ancestor for the scoped LoadingOverlay below — not
+                containerClassName, since that's caller-supplied/shared
+                across other tables and pages, not something this component
+                should redefine the stacking behavior of. isolation: isolate
+                (admin.css) keeps loading-overlay--scoped's z-index confined
+                to this table instead of comparing against the page's root
+                stacking context, which position: relative alone would not
+                do. */}
+            <div className="server-data-table-loading-wrapper">
+                <DataTable
+                    key={tableKey}
+                    className="display dashboard-table zebra-stable-on-hover"
+                    columns={tableColumns}
+                    options={options}
+                >
+                    {caption ? <caption className="sr-only">{caption}</caption> : null}
+                </DataTable>
+                {loading && <LoadingOverlay scoped message={loadingMessage || t('common.loading')} />}
+            </div>
         </div>
     );
 });
