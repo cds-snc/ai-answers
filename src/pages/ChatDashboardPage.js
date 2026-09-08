@@ -120,7 +120,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // reasoning as EvalDashboardPage.js's own icon cells: title's hover
   // delay is fixed by the browser and can't be shortened, this CSS
   // mechanism controls it. Accessible name for the icon+"AI text" pair
-  // comes from the sibling .wb-inv span carrying the fuller explanation,
+  // comes from the sibling .sr-only span carrying the fuller explanation,
   // not aria-label, matching that same established pattern - the icon and
   // the visible "AI text" label both stay aria-hidden so a screen
   // reader gets the one, fuller phrase instead of "AI text" followed
@@ -151,7 +151,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       `<span class="filter-pill eval-tooltip" data-tooltip="${fullLabel}" style="position: absolute; bottom: 0.5em; left: 0;">` +
       `<i class="fa-solid fa-language" style="font-size: 1.3em;" aria-hidden="true"></i>` +
       `<span aria-hidden="true">${shortLabel}</span>` +
-      `<span class="wb-inv">${fullLabel}</span>` +
+      `<span class="sr-only">${fullLabel}</span>` +
       `</span>`;
   }, [t]);
 
