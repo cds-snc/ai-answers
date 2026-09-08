@@ -33,8 +33,8 @@ const getReasonLabel = (scoreKey, t, isPositive) => {
   if (!id) return scoreKey;
   if (id === 'other') {
     return isPositive
-      ? t('metrics.dashboard.userScored.otherYes')
-      : t('metrics.dashboard.userScored.otherNo');
+      ? t('metrics.dashboard.userScored.otherYes', 'Other (yes)')
+      : t('metrics.dashboard.userScored.otherNo', 'Other (no)');
   }
   const translationKey = isPositive
     ? `homepage.publicFeedback.yes.options.${id}`

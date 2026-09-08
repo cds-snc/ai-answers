@@ -41,7 +41,7 @@ const AdminPage = ({ lang = 'en' }) => {
         <AdminNotifications lang={lang} />
       </RoleBasedContent>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
 
         {/* Partner Menu - Visible to everyone (Partner & Admin) */}
         <section className="mb-400">

@@ -11,7 +11,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('technicalMetrics.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>

@@ -380,7 +380,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.evalDashboard.title')}</h1>
+      <h1 className="mb-400">{t('admin.evalDashboard.title', 'Evaluation dashboard')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -539,7 +539,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
                   const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
-                  return `${t('common.page')} ${pageNumber}`;
+                  return `${t('common.page', 'Page')} ${pageNumber}`;
                 },
                 language: {
                   ...dataTableLanguage(lang),

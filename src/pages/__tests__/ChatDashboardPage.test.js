@@ -10,7 +10,7 @@ import DashboardService from '../../services/DashboardService.js';
 // Mock dependencies
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({
-    t: (key) => key
+    t: (key, defaultValue) => defaultValue || key
   })
 }));
 
@@ -95,7 +95,7 @@ describe('ChatDashboardPage rendering', () => {
     const { getByText } = render(<ChatDashboardPage lang="en" />);
 
     await waitFor(() => {
-      expect(getByText('admin.chatDashboard.title')).toBeTruthy();
+      expect(getByText(/Chat dashboard/i)).toBeTruthy();
     });
   });
 

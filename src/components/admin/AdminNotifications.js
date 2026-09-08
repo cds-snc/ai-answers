@@ -54,7 +54,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
         // docs/coding-agent-docs/status-and-error-messaging.md.
         <section
             className={`admin-notifications${hasNotifications ? ' mb-400' : ' admin-notifications--empty'}`}
-            aria-label={t('admin.notifications.ariaLabel')}
+            aria-label={t('admin.notifications.ariaLabel', 'User notifications')}
             role="status"
             aria-live="polite"
         >
@@ -63,7 +63,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
                     <div className="admin-notifications-heading">
                         <span className="gcds-icon fa fa-solid fa-exclamation-circle admin-notifications-icon" aria-hidden="true"></span>
                         <h2 className="admin-notifications-title">
-                            {t('admin.notifications.title')}
+                            {t('admin.notifications.title', 'User notifications')}
                         </h2>
                     </div>
                     {/* role="list": Safari/VoiceOver computes the list/listitem
@@ -75,7 +75,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
                             <li className="admin-notifications-item admin-notifications-item--warning">
                                 <span className="admin-notifications-count">{stats.newInactiveCount}</span>
                                 <span className="admin-notifications-label font-size-text-sm-nr">
-                                    {t('admin.notifications.newInactive')}
+                                    {t('admin.notifications.newInactive', 'new user(s) awaiting activation (last 7 days)')}
                                 </span>
                             </li>
                         )}
@@ -83,7 +83,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
                             <li className="admin-notifications-item">
                                 <span className="admin-notifications-count">{stats.totalInactiveCount}</span>
                                 <span className="admin-notifications-label font-size-text-sm-nr">
-                                    {t('admin.notifications.totalInactive')}
+                                    {t('admin.notifications.totalInactive', 'total inactive user(s)')}
                                 </span>
                             </li>
                         )}
@@ -103,7 +103,7 @@ const AdminNotifications = ({ lang = 'en' }) => {
                           no filter type, no date-range/"last 7 days" concept.
                           Would need a new column filter built there first. */}
                     <GcdsLink href={getPath('users', lang)} className="admin-notifications-action font-size-text-sm-nr">
-                        {t('admin.notifications.viewUsers')}
+                        {t('admin.notifications.viewUsers', 'View and manage users')}
                     </GcdsLink>
                 </div>
             )}
