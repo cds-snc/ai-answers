@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.194.0](https://github.com/cds-snc/ai-answers/compare/v1.193.2...v1.194.0) (2026-09-08)
+
+
+### Features
+
+* show URL filter in Partner dashboard's advanced section ([6a67ad2](https://github.com/cds-snc/ai-answers/commit/6a67ad23bc985a9d46ced5aae5ced038b2a9ea96))
+* show URL filter in Partner dashboard's advanced section ([c00b16b](https://github.com/cds-snc/ai-answers/commit/c00b16b4451a686d3b72e1163f8c910daba02ee1))
+
+
+### Bug Fixes
+
+* expert review panel a11y pass ([a7f92dc](https://github.com/cds-snc/ai-answers/commit/a7f92dca01415f409f76c69609490ff5ece2a28c))
+* remove redundant title attrs from auth form inputs ([9d21458](https://github.com/cds-snc/ai-answers/commit/9d21458382aa3bf41a65881caf87bcf02add1dbc))
+
+
+### Documentation
+
+* add rule for keeping PRs human-reviewable ([32c3727](https://github.com/cds-snc/ai-answers/commit/32c37279ecc7706e53b7180315caa794383a95ca))
+* fix stale dashboard section, counts and gray-matter note in com… ([d261cf2](https://github.com/cds-snc/ai-answers/commit/d261cf2e3a818776cd1a2efa8256dc6cf4c7e774))
+
+
+### Code Refactoring
+
+* retire .wb-inv in favour of .sr-only/.skip-link ([a1b6147](https://github.com/cds-snc/ai-answers/commit/a1b614747a9ba257463da2c1196c5cf93dc16721))
+
 ## [1.193.2](https://github.com/cds-snc/ai-answers/compare/v1.193.1...v1.193.2) (2026-08-31)
 
 
