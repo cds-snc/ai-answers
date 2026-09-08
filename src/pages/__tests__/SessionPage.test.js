@@ -67,7 +67,7 @@ describe('SessionPage StatusMessage roles', () => {
 
     renderWithRouter(<SessionPage lang="en" />);
 
-    await waitForAnnouncement('admin.session.errorGeneric', 'assertive');
+    await waitForAnnouncement('admin.session.errorLoading', 'assertive');
   });
 
   it('announces the loading state as role="status" with the loading spinner box', async () => {

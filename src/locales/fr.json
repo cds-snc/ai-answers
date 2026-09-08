@@ -817,8 +817,7 @@
       "lastLatency": "Dernière latence (ms)",
       "avgLatency": "Latence moyenne (ms)",
       "rpm": "Requêtes / minute",
-      "errorLoading": "Échec du chargement des sessions : {status} {text}",
-      "errorGeneric": "Erreur : {message}"
+      "errorLoading": "Échec du chargement des sessions : {error}"
     },
     "common": {
       "searchLabel": "Rechercher :",
