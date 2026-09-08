@@ -279,9 +279,9 @@ const FeedbackComponent = ({
             className="feedback-link button-as-link link-default hover:link-hover feedback-icon-up"
             onClick={() => handleFeedback(true)}
             tabIndex="0"
-            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.yes", "Yes")}`}
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.yes")}`}
           >
-            {t("common.yes", "Yes")}
+            {t("common.yes")}
           </button>
           <span className="feedback-separator">·</span>
           <button
@@ -289,9 +289,9 @@ const FeedbackComponent = ({
             className="feedback-link button-as-link link-default hover:link-hover feedback-icon-down"
             onClick={() => handleFeedback(false)}
             tabIndex="0"
-            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.no", "No")}`}
+            aria-label={`${t("homepage.publicFeedback.question")} ${t("common.no")}`}
           >
-            {t("common.no", "No")}
+            {t("common.no")}
           </button>
         </span>
         {showSkipButton && (

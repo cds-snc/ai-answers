@@ -165,7 +165,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <h1 className="mb-400">
-                {t('connectivity.title', 'Service Connectivity Dashboard')}
+                {t('connectivity.title')}
             </h1>
 
             <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
@@ -175,8 +175,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </nav>
 
             <GcdsText className="mb-400">
-                {t('connectivity.description',
-                    'Test connectivity to all external services and AI providers used by AI Answers.')}
+                {t('connectivity.description')}
             </GcdsText>
 
             <div className="mb-400">
@@ -185,8 +184,8 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     disabled={loading}
                 >
                     {loading
-                        ? t('connectivity.testing', 'Testing connections...')
-                        : t('connectivity.runTests', 'Run Connectivity Tests')}
+                        ? t('connectivity.testing')
+                        : t('connectivity.runTests')}
                 </GcdsButton>
             </div>
 
@@ -244,7 +243,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.connected}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.connected', 'Connected')}
+                                {t('connectivity.connected')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -252,7 +251,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.errors}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.errors', 'Errors')}
+                                {t('connectivity.errors')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -260,7 +259,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.warnings}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.warnings', 'Warnings')}
+                                {t('connectivity.warnings')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -268,16 +267,16 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.notConfigured}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.notConfigured', 'Not Configured')}
+                                {t('connectivity.notConfigured')}
                             </div>
                         </div>
                     </div>
 
                     <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '16px' }}>
-                        {t('connectivity.lastRun', 'Last run')}: {new Date(results.timestamp).toLocaleString()}
+                        {t('connectivity.lastRun')}: {new Date(results.timestamp).toLocaleString()}
                     </p>
 
-                    <h2 className="mb-300">{t('connectivity.serviceDetails', 'Service Details')}</h2>
+                    <h2 className="mb-300">{t('connectivity.serviceDetails')}</h2>
 
                     {results.services.map((service, index) => (
                         <ServiceCard key={index} service={service} t={t} />

@@ -43,7 +43,7 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
         partial: t('reviewPanels.downloadPartial'),
         failed: t('reviewPanels.fail')
     }[downloadStatus];
-    const title = withAnswerNumber(t('reviewPanels.downloadedPagesTitle') || 'Downloaded pages');
+    const title = withAnswerNumber(t('reviewPanels.downloadedPagesTitle'));
 
     return (
         <details className="review-details">

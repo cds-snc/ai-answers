@@ -9,7 +9,7 @@ let lastDataTableProps = null;
 
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({
-    t: (key, defaultValue) => defaultValue || key
+    t: (key) => key
   })
 }));
 
@@ -59,7 +59,7 @@ describe('eval dashboard pages', () => {
     const { container } = render(<EvalDashboardPage lang="en" />);
 
     await waitFor(() => {
-      expect(within(container).getByRole('heading', { name: 'Evaluation dashboard' })).toBeTruthy();
+      expect(within(container).getByRole('heading', { name: 'admin.evalDashboard.title' })).toBeTruthy();
     });
 
     await waitFor(() => {
@@ -77,7 +77,7 @@ describe('eval dashboard pages', () => {
     const { container } = render(<AutoEvalDashboardPage lang="en" />);
 
     await waitFor(() => {
-      expect(within(container).getByRole('heading', { name: 'Auto-Evaluation dashboard' })).toBeTruthy();
+      expect(within(container).getByRole('heading', { name: 'admin.autoEvalDashboard.title' })).toBeTruthy();
     });
   });
 });

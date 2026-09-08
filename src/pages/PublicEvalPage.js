@@ -48,7 +48,7 @@ const PublicEvalPage = ({ lang: propLang }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.publicEval.title', 'Public Evaluation')}</h1>
+      <h1 className="mb-400">{t('admin.publicEval.title')}</h1>
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
@@ -60,13 +60,13 @@ const PublicEvalPage = ({ lang: propLang }) => {
         data={rows}
         columns={[
           {
-            title: t('admin.publicEval.chatId', 'Chat ID'),
+            title: t('admin.publicEval.chatId'),
             data: 'chatId',
             render: (data) => `<a href="/${lang}?chat=${data}&review=1">${data}</a>`
           },
-          { title: t('admin.publicEval.department', 'Department'), data: 'department' },
+          { title: t('admin.publicEval.department'), data: 'department' },
           {
-            title: t('admin.publicEval.date', 'Date'),
+            title: t('admin.publicEval.date'),
             data: 'date',
             render: (data) => formatDate(data)
           }

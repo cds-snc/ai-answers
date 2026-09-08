@@ -259,7 +259,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
-      title: t('admin.chatDashboard.columns.question', 'Question'),
+      title: t('admin.chatDashboard.columns.question'),
       data: 'redactedQuestion',
       searchable: false,
       orderable: false,
@@ -273,7 +273,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
-      title: t('admin.chatDashboard.columns.answer', 'Answer'),
+      title: t('admin.chatDashboard.columns.answer'),
       data: 'answerContent',
       searchable: false,
       orderable: false,
@@ -281,7 +281,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
-      title: t('admin.chatDashboard.columns.citationUrl', 'Citation link'),
+      title: t('admin.chatDashboard.columns.citationUrl'),
       data: 'citationUrl',
       // Capped so Question/Answer (no fixed width - they auto-fill
       // remaining space) don't get squeezed by this column growing to fit
@@ -331,9 +331,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.chatDashboard.title', 'Chat dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.chatDashboard.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
             {t('common.backToAdmin')}
