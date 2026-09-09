@@ -19,7 +19,7 @@ const tokenizer = getEncoding("cl100k_base");
 // costs nothing on almost every read. It buys the pages that matter — the
 // counter-tariff list's current table alone runs to ~39k tokens, and at the old
 // cap the tail of it was cut off mid-table.
-const DEFAULT_MAX_TOKENS = 48000;
+export const DEFAULT_MAX_TOKENS = 48000;
 
 // Boilerplate that lives *inside* <main> on the GCWeb/Canada.ca templates and
 // is noise in every extraction: page-feedback widgets, share buttons, the
@@ -80,24 +80,69 @@ function isWorthRetrying(error) {
 // a complete one. On a long list page that turns "I did not read that far" into
 // "it is not on the list" — a false negative the agent states with confidence
 // and nothing flags. The notice is the only thing that makes truncation visible.
-function truncationNotice(readTokens, totalTokens) {
-  const percent = Math.max(1, Math.round((readTokens / totalTokens) * 100));
+// Headroom reserved for the notice so a clipped page stays inside the cap.
+// Fixed rather than measured, because the notice names sections taken from the
+// text it is appended to and so is not known until after the clip.
+const NOTICE_TOKEN_RESERVE = 140;
+const MAX_HEADING_CHARS = 80;
+
+// The last two headings in the kept text: the clip landed inside the final
+// one's section, so everything before it survived intact.
+function lastTwoHeadings(md) {
+  const found = [];
+  const heading = /^#{1,6}\s+(.+?)\s*$/gm;
+  let match;
+  while ((match = heading.exec(md)) !== null) {
+    found.push(match[1].slice(0, MAX_HEADING_CHARS));
+    if (found.length > 2) found.shift();
+  }
+  return found;
+}
+
+function truncationNotice(clipped, totalChars) {
+  const percent = Math.max(1, Math.round((clipped.length / totalChars) * 100));
+  const head =
+    `\n\n---\n[TRUNCATED] This page was too long to read in full; you have about the first ` +
+    `${percent}%.`;
+
+  // Naming the boundary is what lets the model use the part it did read. A
+  // blanket "treat nothing as complete" makes it hedge on sections it holds in
+  // full: asked whether a product was on the counter-tariff list, it had read
+  // the whole current list and still would not say the product was absent.
+  const [complete, cut] = lastTwoHeadings(clipped);
+  if (complete && cut) {
+    return (
+      `${head} Sections through "${complete}" were read in full, so a list there is complete.` +
+      ` "${cut}" was cut off partway and any sections after it were not retrieved — do not say` +
+      ` something is absent from those.`
+    );
+  }
   return (
-    `\n\n---\n[TRUNCATED] This page was too long to read in full. You have read about ` +
-    `the first ${percent}% of it; the rest was not retrieved. What you are looking for ` +
-    `may be in the part you did not read, so do not say that something is absent from ` +
-    `this page, and do not treat any list above as complete.`
+    `${head} What you are looking for may be in the part you did not read, so do not say that` +
+    ` something is absent from this page, and do not treat any list above as complete.`
   );
 }
 
+// Every token past the budget is discarded, so encoding a whole long page is
+// work spent on output nobody sees — the counter-tariff list encodes to 206k
+// tokens to keep 48k. Encode a prefix big enough to hold the budget instead.
+// Eight characters per token is a deliberately loose ceiling for prose (English
+// averages about four); the loop covers denser text rather than trusting it.
+const CHARS_PER_TOKEN_CEILING = 8;
+
 function clipByTokens(text, maxTokens = DEFAULT_MAX_TOKENS) {
-  const ids = tokenizer.encode(text);
-  if (ids.length <= maxTokens) return text;
+  let chars = Math.min(text.length, maxTokens * CHARS_PER_TOKEN_CEILING);
+  let ids = tokenizer.encode(text.slice(0, chars));
+  while (ids.length < maxTokens && chars < text.length) {
+    chars = Math.min(text.length, chars * 2);
+    ids = tokenizer.encode(text.slice(0, chars));
+  }
+  if (chars >= text.length && ids.length <= maxTokens) return text;
 
   // Budget for the notice inside the cap so a clipped page never exceeds it.
-  const noticeBudget = tokenizer.encode(truncationNotice(maxTokens, ids.length)).length;
-  const kept = Math.max(1, maxTokens - noticeBudget);
-  return tokenizer.decode(ids.slice(0, kept)) + truncationNotice(kept, ids.length);
+  const kept = Math.max(1, maxTokens - NOTICE_TOKEN_RESERVE);
+  const clipped = tokenizer.decode(ids.slice(0, kept));
+  return clipped + truncationNotice(clipped, text.length);
 }
 
 // Readability keeps the single densest subtree it scores and discards its

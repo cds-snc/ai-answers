@@ -3,10 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
+import { getEncoding } from 'js-tiktoken';
+
 import downloadWebPageTool, {
   REQUEST_TIMEOUT_MS,
   RETRY_TIME_BUDGET_MS,
+  DEFAULT_MAX_TOKENS,
 } from '../downloadWebPage.js';
+
+const encodingForTests = getEncoding('cl100k_base');
 
 const invokeTool = (input) => downloadWebPageTool.invoke(input);
 
@@ -200,6 +205,72 @@ describe('downloadWebPage tool', () => {
 
       expect(output).toContain('Row 0 ');
       expect(output).not.toContain('Row 11999 ');
+    });
+
+    // A page whose sections are the point of it: the first list finishes well
+    // inside the cap, the second is where the clip lands. Mirrors the
+    // counter-tariff page, where hedging on the completed current list was the
+    // whole cost of a blanket warning.
+    const sectionedPage = htmlPage(`
+      <main>
+        <h1>Complete list of products</h1>
+        <details>
+          <summary>Effective September 8, 2026</summary>
+          ${Array.from({ length: 400 }, (_, i) =>
+            `<p>Current ${i} tariff item ${1000 + i}.10.10 with an indicative description.</p>`
+          ).join('')}
+        </details>
+        <details>
+          <summary>Effective up to August 31, 2025</summary>
+          ${Array.from({ length: 12000 }, (_, i) =>
+            `<p>Superseded ${i} tariff item ${2000 + i}.20.20 with an indicative description.</p>`
+          ).join('')}
+        </details>
+      </main>
+    `);
+
+    it('names the last section it read in full', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: sectionedPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/sectioned.html' });
+
+      expect(output).toContain('Sections through "Effective September 8, 2026" were read in full');
+    });
+
+    it('names the section the clip landed in', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: sectionedPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/sectioned.html' });
+
+      expect(output).toContain('"Effective up to August 31, 2025" was cut off partway');
+    });
+
+    it('does not tell the model to distrust a section it read in full', async () => {
+      // The regression this replaced: a blanket "do not treat any list above as
+      // complete" made the model hedge on the current list, which was complete.
+      axios.get.mockResolvedValueOnce({ status: 200, data: sectionedPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/sectioned.html' });
+
+      expect(output).not.toMatch(/do not treat any list above as complete/i);
+      expect(output).toMatch(/a list there is complete/i);
+    });
+
+    it('falls back to the blanket warning when there are no section headings', async () => {
+      // With nothing to name, understating what was read is the safe default.
+      axios.get.mockResolvedValueOnce({ status: 200, data: longPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/long.html' });
+
+      expect(output).toMatch(/do not treat any list above as complete/i);
+    });
+
+    it('stays within the token cap once the notice is appended', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: sectionedPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/sectioned.html' });
+
+      expect(encodingForTests.encode(output).length).toBeLessThanOrEqual(DEFAULT_MAX_TOKENS);
     });
 
     it('says nothing about truncation when the whole page was read', async () => {
