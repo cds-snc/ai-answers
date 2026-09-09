@@ -24,6 +24,32 @@ const realContent = htmlPage(`
 // A client-rendered SPA: HTTP 200, but the body holds no content before hydration.
 const spaShell = htmlPage('<div id="__nuxt"></div><div id="teleports"></div>');
 
+const filler = (word) => `${word} `.repeat(40);
+
+// The shape that broke the counter-tariff page: one <main> holding several
+// dated <details> blocks, the current one small and the superseded one much
+// larger. Readability scores the biggest block highest and keeps only that.
+const accordionPage = htmlPage(`
+  <main>
+    <h1>Complete list of U.S. products subject to counter tariffs</h1>
+    <p>Updated list of products effective September 8, 2026. ${filler('intro')}</p>
+    <details>
+      <summary>Effective September 8, 2026</summary>
+      <table><tbody>
+        <tr><td>0402.10.10</td><td>Milk and cream. ${filler('current')}</td></tr>
+      </tbody></table>
+    </details>
+    <details>
+      <summary>Effective up to August 31, 2025</summary>
+      <table><tbody>
+        <tr><td>0105.11.22</td><td>Live poultry. ${filler('superseded')}</td></tr>
+        <tr><td>9701.91.10</td><td>Other collections. ${filler('superseded')}</td></tr>
+        <tr><td>3305.10.00</td><td>Shampoos. ${filler('superseded')}</td></tr>
+      </tbody></table>
+    </details>
+  </main>
+`);
+
 describe('downloadWebPage tool', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -36,6 +62,153 @@ describe('downloadWebPage tool', () => {
 
     expect(output).toContain('705-424-1200');
     expect(output.trim().length).toBeGreaterThan(50);
+  });
+
+  describe('content extraction', () => {
+    // The regression this whole block exists for: Readability kept only the
+    // largest <details> block, so the agent read a superseded tariff list and
+    // reported it as the current one. Nothing errored — the tool returned
+    // "success" with the wrong list in it.
+    it('keeps every section of a page built from sibling accordion blocks', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      expect(output).toContain('0402.10.10'); // current list
+      expect(output).toContain('0105.11.22'); // superseded list
+      expect(output).toContain('9701.91.10');
+    });
+
+    it('keeps the smaller current section rather than only the largest one', async () => {
+      // Stated separately because this is the exact failure: the biggest block
+      // wins on density, and the block that matters is usually the newest and
+      // therefore the smallest.
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      expect(output).toContain('0402.10.10');
+    });
+
+    it('renders a <summary> as a heading so each section keeps its label', async () => {
+      // Without this the three lists concatenate with no boundary and the agent
+      // cannot tell which effective date it is reading.
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      expect(output).toMatch(/^#+ Effective September 8, 2026$/m);
+      expect(output).toMatch(/^#+ Effective up to August 31, 2025$/m);
+    });
+
+    it('keeps the page intro that sits outside the accordions', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      expect(output).toContain('effective September 8, 2026');
+    });
+
+    it('drops inline styles and scripts from <main>', async () => {
+      const withNoise = htmlPage(`
+        <main>
+          <style>.gc-nav { color: #333; background-image: url(x); }</style>
+          <h1>Funding programs</h1>
+          <p>Business Scale-up and Productivity. ${'funding detail '.repeat(30)}</p>
+          <script>var trackingPixel = 1;</script>
+        </main>
+      `);
+      axios.get.mockResolvedValueOnce({ status: 200, data: withNoise });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/funding.html' });
+
+      expect(output).toContain('Business Scale-up and Productivity');
+      expect(output).not.toContain('background-image');
+      expect(output).not.toContain('trackingPixel');
+    });
+
+    it('falls back to Readability when the page has no <main>', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/no-main.html' });
+
+      expect(output).toContain('705-424-1200');
+    });
+
+    it('falls back when <main> is an empty shell awaiting hydration', async () => {
+      // Some sites render a real <main> and fill it in with JavaScript. Taking
+      // it at face value would return a heading and nothing else.
+      const shellMain = htmlPage(`
+        <main><div id="app"></div></main>
+        <article>
+          <h1>Bring food into Canada</h1>
+          <p>${'You may bring limited quantities of food for personal use. '.repeat(8)}</p>
+        </article>
+      `);
+      axios.get.mockResolvedValueOnce({ status: 200, data: shellMain });
+
+      const output = await invokeTool({ url: 'https://inspection.canada.ca/en/food.html' });
+
+      expect(output).toContain('limited quantities of food');
+    });
+
+    it('does not repeat the title when <main> already carries the h1', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      const headings = output.match(/^# .+$/gm) || [];
+      expect(headings).toHaveLength(1);
+    });
+  });
+
+  describe('truncation', () => {
+    // Long enough to blow any sane cap: distinct numbered rows so the test can
+    // tell which end of the page survived.
+    const longPage = htmlPage(`
+      <main>
+        <h1>Complete list of products</h1>
+        ${Array.from({ length: 12000 }, (_, i) =>
+          `<p>Row ${i} tariff item ${i}.10.10 with an indicative description of the goods.</p>`
+        ).join('')}
+      </main>
+    `);
+
+    it('tells the model when a page was too long to read in full', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: longPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/long.html' });
+
+      expect(output).toContain('[TRUNCATED]');
+    });
+
+    it('warns against concluding something is absent from a page it only partly read', async () => {
+      // The whole point of the notice. A clipped list page otherwise produces a
+      // confident "no, that product is not on the list" from an excerpt.
+      axios.get.mockResolvedValueOnce({ status: 200, data: longPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/long.html' });
+
+      expect(output).toMatch(/do not say that something is absent/i);
+      expect(output).toMatch(/do not treat any list above as complete/i);
+    });
+
+    it('keeps the start of the page, where the current content sits', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: longPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/long.html' });
+
+      expect(output).toContain('Row 0 ');
+      expect(output).not.toContain('Row 11999 ');
+    });
+
+    it('says nothing about truncation when the whole page was read', async () => {
+      axios.get.mockResolvedValueOnce({ status: 200, data: accordionPage });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/list.html' });
+
+      expect(output).not.toContain('[TRUNCATED]');
+    });
   });
 
   it('throws when a 200 response yields no readable content (client-rendered page)', async () => {

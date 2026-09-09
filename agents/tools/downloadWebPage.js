@@ -13,7 +13,38 @@ import {
 } from "../../api/util/transient-retry.js";
 
 const tokenizer = getEncoding("cl100k_base");
-const DEFAULT_MAX_TOKENS = 32000;
+
+// Raised from 32000 after measuring 474 pages drawn from the scenario prompts:
+// the median page is ~1,200 tokens and only six exceed 32k, so the higher cap
+// costs nothing on almost every read. It buys the pages that matter — the
+// counter-tariff list's current table alone runs to ~39k tokens, and at the old
+// cap the tail of it was cut off mid-table.
+const DEFAULT_MAX_TOKENS = 48000;
+
+// Boilerplate that lives *inside* <main> on the GCWeb/Canada.ca templates and
+// is noise in every extraction: page-feedback widgets, share buttons, the
+// "date modified" block. Inline <style>/<script> matter most — a single page
+// carried 5,691 characters of CSS inside <main>.
+const MAIN_NOISE_SELECTOR = [
+  "script",
+  "style",
+  "noscript",
+  "iframe",
+  ".pagedetails",
+  ".gc-pg-hlpfl",
+  ".wb-share",
+  ".gc-rate",
+  ".gc-followus",
+  "#chat-bubble",
+].join(",");
+
+// A <main> holding less than this much text is a shell, not a page: some sites
+// render the real content into it with JavaScript. Below the floor we fall
+// through to Readability, which can sometimes recover the content from
+// elsewhere in the document. Low enough that a short but genuine page — a
+// contact card, a form — still takes the <main> path, and comfortably above
+// MIN_CONTENT_CHARS so anything that clears it also clears the final check.
+const MIN_MAIN_TEXT_CHARS = 200;
 
 // Client-rendered pages (e.g. Nuxt/Angular SPAs) return HTTP 200 with an empty
 // body, so Readability extracts nothing. Without this floor the agent receives
@@ -45,24 +76,66 @@ function isWorthRetrying(error) {
   return isTransientNetworkError(error);
 }
 
+// Clipping used to be silent, which made a partial read indistinguishable from
+// a complete one. On a long list page that turns "I did not read that far" into
+// "it is not on the list" — a false negative the agent states with confidence
+// and nothing flags. The notice is the only thing that makes truncation visible.
+function truncationNotice(readTokens, totalTokens) {
+  const percent = Math.max(1, Math.round((readTokens / totalTokens) * 100));
+  return (
+    `\n\n---\n[TRUNCATED] This page was too long to read in full. You have read about ` +
+    `the first ${percent}% of it; the rest was not retrieved. What you are looking for ` +
+    `may be in the part you did not read, so do not say that something is absent from ` +
+    `this page, and do not treat any list above as complete.`
+  );
+}
+
 function clipByTokens(text, maxTokens = DEFAULT_MAX_TOKENS) {
   const ids = tokenizer.encode(text);
   if (ids.length <= maxTokens) return text;
-  return tokenizer.decode(ids.slice(0, maxTokens));
+
+  // Budget for the notice inside the cap so a clipped page never exceeds it.
+  const noticeBudget = tokenizer.encode(truncationNotice(maxTokens, ids.length)).length;
+  const kept = Math.max(1, maxTokens - noticeBudget);
+  return tokenizer.decode(ids.slice(0, kept)) + truncationNotice(kept, ids.length);
 }
 
-function htmlToLeanMarkdown(html, baseUrl) {
-  // Build DOM & run Readability
-  const dom = new JSDOM(html, { url: baseUrl });
-  const reader = new Readability(dom.window.document);
-  const article = reader.parse();
+// Readability keeps the single densest subtree it scores and discards its
+// siblings. On a page built from several large blocks that silently drops most
+// of the page — and the tool still reports success, so nothing surfaces it.
+// Measured over 474 pages from the scenario prompts, 63 retained under half of
+// their <main> text and 35 under a third. The pages it hurts most are the ones
+// Canada.ca builds from <details> accordions and link lists: top-task pages,
+// sign-in pages, contact pages, funding pages. On the most-cited page in
+// production it returned 138 tokens of a sidebar blurb and dropped the H1 and
+// the entire funding-programs list.
+//
+// <main> is already this function's own fallback, so preferring it is a change
+// of order rather than a new dependency. Readability still runs for the pages
+// that have no usable <main>.
+//
+// Readability.parse() mutates the document it is given, so it must run last —
+// anything read from the DOM after it has been chewed on is unreliable.
+export function pickContent(doc) {
+  const mainEl = doc.querySelector("main") || doc.querySelector('[role="main"]');
 
-  const contentHTML =
-    (article && article.content) ||
-    dom.window.document.querySelector("main")?.innerHTML ||
-    dom.window.document.body?.innerHTML ||
-    "";
+  if (mainEl) {
+    const clone = mainEl.cloneNode(true);
+    clone.querySelectorAll(MAIN_NOISE_SELECTOR).forEach((node) => node.remove());
+    const text = (clone.textContent || "").replace(/\s+/g, " ").trim();
+    if (text.length >= MIN_MAIN_TEXT_CHARS) {
+      return { html: clone.innerHTML, title: doc.title, source: "main" };
+    }
+  }
 
+  const article = new Readability(doc).parse();
+  if (article?.content) {
+    return { html: article.content, title: article.title, source: "readability" };
+  }
+  return { html: doc.body?.innerHTML || "", title: doc.title, source: "body" };
+}
+
+function buildTurndown() {
   // Turndown defaults produce lean Markdown:
   // - Headings/lists kept
   // - Links preserved as [text](url)
@@ -73,10 +146,30 @@ function htmlToLeanMarkdown(html, baseUrl) {
     codeBlockStyle: "fenced",
   });
 
+  // A <summary> labels the block that follows it. Turndown has no rule for it,
+  // so it renders inline and dissolves into the first row of the section it
+  // titles. That is how the counter-tariff page lost all three of its
+  // "Effective <date>" headings, leaving three lists concatenated with no way
+  // to tell which one was current.
+  td.addRule("summary", {
+    filter: "summary",
+    replacement: (content) => `\n\n#### ${content.trim()}\n\n`,
+  });
+
+  return td;
+}
+
+function htmlToLeanMarkdown(html, baseUrl) {
+  const dom = new JSDOM(html, { url: baseUrl });
+  const { html: contentHTML, title } = pickContent(dom.window.document);
+
+  const td = buildTurndown();
   let md = td.turndown(contentHTML);
 
-  // Prepend title if available
-  if (article?.title) md = `# ${article.title}\n\n` + md;
+  // Prepend the title only when the extracted content did not already carry a
+  // heading of its own — taking <main> keeps the page's real <h1>, and adding
+  // the document title on top of it just duplicates the line.
+  if (title && !/^#\s/m.test(md)) md = `# ${title}\n\n` + md;
 
   // Normalize extra blank lines
   md = md

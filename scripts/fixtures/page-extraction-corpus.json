@@ -1,0 +1,84 @@
+{
+  "_comment": "Live pages the downloadWebPage tool must keep reading correctly. Markers are strings that MUST appear in the extracted markdown ('expect') or MUST NOT ('reject'). Ratios are not asserted: the counter-tariff page scored a healthy-looking 0.711 text-coverage while serving an entirely superseded list, so only named content proves the right part of the page was read. Cites = times the page was cited in production over one month, where known.",
+  "pages": [
+    {
+      "url": "https://www.canada.ca/en/prairies-economic-development/services/funding.html",
+      "cites": 42,
+      "why": "Most-cited page in production. Readability returned a 138-token sidebar blurb and dropped the H1 and the whole funding-programs list.",
+      "expect": ["Funding for businesses and not-for-profits", "Business Scale-up and Productivity", "Regional Innovation Ecosystems"]
+    },
+    {
+      "url": "https://www.canada.ca/en/department-finance/programs/international-trade-finance-policy/canadas-response-us-tariffs/complete-list-us-products-subject-to-counter-tariffs.html",
+      "cites": 24,
+      "why": "Three dated lists in sibling <details>. The tool served only the superseded 2025 list, unlabelled, and reported success.",
+      "expect": ["Complete list of U.S. products subject to counter tariffs", "Effective September 8, 2026", "0402.10.10"],
+      "rejectBefore": { "marker": "Effective September 8, 2026", "reject": ["0105.11.22"] },
+      "note": "0402.10.10 is the first item of the September 8, 2026 list; 0105.11.22 belongs to the superseded list that used to crowd it out. The page exceeds the token cap, so a [TRUNCATED] notice is expected and correct."
+    },
+    {
+      "url": "https://www.canada.ca/en/revenue-agency/corporate/contact-information.html",
+      "cites": 9,
+      "why": "34 accordions; roughly two-thirds of the page was being discarded.",
+      "expect": ["Contact the Canada Revenue Agency"]
+    },
+    {
+      "url": "https://www.canada.ca/en/department-finance/programs/international-trade-finance-policy/canadas-response-us-tariffs/support-canadian-workers-employers.html",
+      "cites": 8,
+      "why": "Extraction began mid-page at 'Worker supports', losing the title and the Rapid Response Supports intro.",
+      "expect": ["Support for workers impacted by tariffs", "Workforce Retention and Retraining Program"]
+    },
+    {
+      "url": "https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services.html",
+      "why": "13 accordions; three-quarters of the page discarded.",
+      "expect": ["My Account", "My Business Account", "Represent a Client"]
+    },
+    {
+      "url": "https://www.canada.ca/en/services.html",
+      "why": "Readability dropped the H1 and the entire 'Most requested' top-task list.",
+      "expect": ["Government of Canada services", "Most requested"]
+    },
+    {
+      "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-status.html",
+      "why": "14 accordions; retained 1.6% of <main>. Highest-loss page found in the scenario corpus.",
+      "expect": ["Check your application status"]
+    },
+    {
+      "url": "https://www.canada.ca/en/campaign/canadastrong.html",
+      "why": "Cited from fin-scenarios; retained 13% of <main>.",
+      "expect": ["Canada Strong"]
+    },
+    {
+      "url": "https://feddev-ontario.canada.ca/en/funding-southern-ontario",
+      "cites": 17,
+      "expect": ["funding"]
+    },
+    {
+      "url": "https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/news-notices-pensions-benefits/early-retirement-incentive.html",
+      "cites": 10,
+      "expect": ["Early retirement incentive"]
+    },
+    {
+      "url": "https://www.canada.ca/en/government/sign-in-online-account.html",
+      "why": "Healthy page — guards against the <main> path regressing a page Readability already handled well.",
+      "expect": ["My Service Canada Account", "CRA account"]
+    },
+    {
+      "url": "https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/apply.html",
+      "cites": 16,
+      "why": "Healthy page with accordions — guards against regression.",
+      "expect": ["Canada Disability Benefit"]
+    }
+  ],
+  "unreadable": [
+    {
+      "url": "https://innovation.ised-isde.canada.ca/s",
+      "cites": 21,
+      "why": "JavaScript-rendered; the body says only 'Loading'. The tool correctly refuses it, but the agent cites it anyway. Not fixed by extraction."
+    },
+    {
+      "url": "https://catalogue.servicecanada.gc.ca/content/EForms/en/Detail.html",
+      "cites": 8,
+      "why": "Returns breadcrumbs only and passes MIN_CONTENT_CHARS, so it reports success on a page it did not really read. Not fixed by extraction."
+    }
+  ]
+}
