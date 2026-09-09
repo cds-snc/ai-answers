@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.194.1](https://github.com/cds-snc/ai-answers/compare/v1.194.0...v1.194.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* code review fixes ([4ecc1e0](https://github.com/cds-snc/ai-answers/commit/4ecc1e08ee106556f6cc74c2e726529fe0832c6f))
+* downloadWebPage improvements ([b6301a1](https://github.com/cds-snc/ai-answers/commit/b6301a13efdff6537225b0f65d7302959f07d650))
+* performance and truncation ([9e5b762](https://github.com/cds-snc/ai-answers/commit/9e5b7628f3dd5b5c804b05ea1f43004a1e454dab))
+* remove clone ([64e80e7](https://github.com/cds-snc/ai-answers/commit/64e80e733a26ba18732e6a38f9d3e0d0765c593c))
+* remove dead t() fallback strings ([6ed3f63](https://github.com/cds-snc/ai-answers/commit/6ed3f63d92093fd97d25666c72fa19d6cc946f4d))
+* remove dead t() fallback strings ([e00d641](https://github.com/cds-snc/ai-answers/commit/e00d641f076c4954be315866a6e1928527d1da31))
+* strip dead t() fallback from AdminPage.js nav aria-label ([06dafb2](https://github.com/cds-snc/ai-answers/commit/06dafb22323456f21aebfd2c968dc6f0c4084851))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump qs from 6.15.2 to 6.16.0 in /server ([d585ef2](https://github.com/cds-snc/ai-answers/commit/d585ef2cd8768b0786f8a96c120626bebeb46a29))
+
+
+### Code Refactoring
+
+* delete unused CSS from admin.css ([002a5c6](https://github.com/cds-snc/ai-answers/commit/002a5c6a987f065b58992f670b2e03c0715b8d33))
+* delete unused CSS from chat.css ([e4ee825](https://github.com/cds-snc/ai-answers/commit/e4ee825bc3d818fb09004c4926ba9e347f9134ea))
+* delete unused CSS from global.css ([69e3281](https://github.com/cds-snc/ai-answers/commit/69e3281ae11a0bd9b866a849494ae57bf6034ae2))
+
 ## [1.194.0](https://github.com/cds-snc/ai-answers/compare/v1.193.2...v1.194.0) (2026-09-08)
 
 
