@@ -143,8 +143,14 @@ describe('downloadWebPage tool', () => {
     it('falls back when <main> is an empty shell awaiting hydration', async () => {
       // Some sites render a real <main> and fill it in with JavaScript. Taking
       // it at face value would return a heading and nothing else.
+      // Carries noise inside the shell so the fallback runs on a <main> that
+      // was already stripped in place — pickContent does not clone it.
       const shellMain = htmlPage(`
-        <main><div id="app"></div></main>
+        <main>
+          <style>.app { display: none; }</style>
+          <div class="wb-share">Share this page</div>
+          <div id="app"></div>
+        </main>
         <article>
           <h1>Bring food into Canada</h1>
           <p>${'You may bring limited quantities of food for personal use. '.repeat(8)}</p>
