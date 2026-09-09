@@ -262,6 +262,55 @@ describe('downloadWebPage tool', () => {
       expect(output).toMatch(/a list there is complete/i);
     });
 
+    it('does not call the page title a section it read in full', async () => {
+      // The clip lands inside the only section, so the sole earlier heading is
+      // the page <h1>. Pairing the two claimed "sections through <page title>
+      // were read in full" after reading a fifth of the page and cutting its
+      // only list in half — the exact false assurance this notice exists to
+      // prevent. Reachable on the real page as soon as the current list grows
+      // past the budget.
+      const oneBigSection = htmlPage(`
+        <main>
+          <h1>Complete list of products</h1>
+          <details>
+            <summary>Effective September 8, 2026</summary>
+            ${Array.from({ length: 14000 }, (_, i) =>
+              `<p>Row ${i} tariff item ${1000 + i}.10.10 description of goods.</p>`
+            ).join('')}
+          </details>
+        </main>
+      `);
+      axios.get.mockResolvedValueOnce({ status: 200, data: oneBigSection });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/one-section.html' });
+
+      expect(output).not.toMatch(/Sections through/);
+      expect(output).not.toMatch(/a list there is complete/i);
+      expect(output).toMatch(/do not treat any list above as complete/i);
+    });
+
+    it('does not call a section complete when the clip is inside its sub-section', async () => {
+      const nested = htmlPage(`
+        <main>
+          <h1>Guide</h1>
+          <h2>Effective September 8, 2026</h2>
+          <p>${'Intro to the current list. '.repeat(20)}</p>
+          <h3>Notes on classification</h3>
+          ${Array.from({ length: 14000 }, (_, i) =>
+            `<p>Note ${i} about tariff item ${1000 + i}.10.10 and its description.</p>`
+          ).join('')}
+        </main>
+      `);
+      axios.get.mockResolvedValueOnce({ status: 200, data: nested });
+
+      const output = await invokeTool({ url: 'https://www.canada.ca/en/nested.html' });
+
+      // "Effective September 8, 2026" is the parent of the section that was
+      // cut, so it was not read in full and must not be named as complete.
+      expect(output).not.toMatch(/Sections through "Effective September 8, 2026"/);
+      expect(output).toMatch(/do not treat any list above as complete/i);
+    });
+
     it('falls back to the blanket warning when there are no section headings', async () => {
       // With nothing to name, understating what was read is the safe default.
       axios.get.mockResolvedValueOnce({ status: 200, data: longPage });

@@ -50,12 +50,13 @@
     {
       "url": "https://feddev-ontario.canada.ca/en/funding-southern-ontario",
       "cites": 17,
-      "expect": ["funding"]
+      "why": "Markers must be body copy, not the URL slug: \"funding\" appears in the nav even when extraction collapses to a stub.",
+      "expect": ["Funding for southern Ontario", "Regional Defence Investment Initiative"]
     },
     {
       "url": "https://www.canada.ca/en/treasury-board-secretariat/services/pension-plan/news-notices-pensions-benefits/early-retirement-incentive.html",
       "cites": 10,
-      "expect": ["Early retirement incentive"]
+      "expect": ["Early Retirement Incentive", "application period"]
     },
     {
       "url": "https://www.canada.ca/en/government/sign-in-online-account.html",

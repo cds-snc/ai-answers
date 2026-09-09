@@ -86,17 +86,31 @@ function isWorthRetrying(error) {
 const NOTICE_TOKEN_RESERVE = 140;
 const MAX_HEADING_CHARS = 80;
 
-// The last two headings in the kept text: the clip landed inside the final
-// one's section, so everything before it survived intact.
-function lastTwoHeadings(md) {
+// The last two headings in the kept text, but only when they are peers at the
+// same level: the clip landed inside the final one's section, so the previous
+// *peer* section is the last one that survived intact.
+//
+// Levels are what make the claim safe. Pairing a page <h1> with the first
+// section heading beneath it, or a section with its own sub-heading, names an
+// ancestor as complete when the clip is actually inside it — on the
+// counter-tariff page that produced "sections through 'Complete list of U.S.
+// products...' were read in full" after reading 20% and cutting the only list
+// in half. Returns null when nothing can be claimed, which is the safe default.
+function completeAndCutSections(md) {
   const found = [];
-  const heading = /^#{1,6}\s+(.+?)\s*$/gm;
+  const heading = /^(#{1,6})[ \t]+(.+?)[ \t]*$/gm;
   let match;
   while ((match = heading.exec(md)) !== null) {
-    found.push(match[1].slice(0, MAX_HEADING_CHARS));
+    // A heading flush against the end of the kept text was cut mid-line by the
+    // token clip, so its name is a fragment. Claim nothing rather than quote it.
+    if (match.index + match[0].length >= md.length) return null;
+    found.push({ level: match[1].length, text: match[2].slice(0, MAX_HEADING_CHARS) });
     if (found.length > 2) found.shift();
   }
-  return found;
+  if (found.length < 2) return null;
+
+  const [complete, cut] = found;
+  return complete.level === cut.level ? { complete: complete.text, cut: cut.text } : null;
 }
 
 function truncationNotice(clipped, totalChars) {
@@ -109,8 +123,9 @@ function truncationNotice(clipped, totalChars) {
   // blanket "treat nothing as complete" makes it hedge on sections it holds in
   // full: asked whether a product was on the counter-tariff list, it had read
   // the whole current list and still would not say the product was absent.
-  const [complete, cut] = lastTwoHeadings(clipped);
-  if (complete && cut) {
+  const sections = completeAndCutSections(clipped);
+  if (sections) {
+    const { complete, cut } = sections;
     return (
       `${head} Sections through "${complete}" were read in full, so a list there is complete.` +
       ` "${cut}" was cut off partway and any sections after it were not retrieved — do not say` +

@@ -27,7 +27,15 @@ function parseArgs(argv) {
     const args = { filter: null, verbose: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
-        if (a === '--filter') args.filter = argv[++i];
+        if (a === '--filter') {
+            args.filter = argv[++i];
+            // Without this, a bare --filter (or one followed by another flag)
+            // silently becomes "no filter" and fires every live request.
+            if (!args.filter || args.filter.startsWith('-')) {
+                console.error('--filter needs a value, e.g. --filter tariffs');
+                process.exit(2);
+            }
+        }
         else if (a === '--verbose' || a === '-v') args.verbose = true;
         else if (a === '-h' || a === '--help') { usage(); process.exit(0); }
     }
@@ -125,6 +133,13 @@ if (corpus.unreadable?.length && !args.filter) {
         console.log(`  ${p.url.replace(/^https:\/\//, '')}${p.cites ? ` — cited ${p.cites}x` : ''}`);
         console.log(`      ${p.why}`);
     }
+}
+
+// A guard script that reports green having checked nothing is the failure this
+// file exists to catch, so an empty run is an error rather than a pass.
+if (checked === 0) {
+    console.error(`\nNo pages matched${args.filter ? ` --filter ${args.filter}` : ''} — nothing was checked.`);
+    process.exit(2);
 }
 
 console.log(`\n${checked - failures}/${checked} pages extracted correctly`);
