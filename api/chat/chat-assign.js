@@ -4,6 +4,7 @@ import { User } from '../../models/user.js';
 import { requireString, requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../../src/constants/chatAssign.js';
+import { sharesMembership } from '../util/reviewer-filter.js';
 
 // Assigns a chat to one partner/admin user for review (issue #1656). Single
 // assignee at a time - an already-assigned chat is rejected (409), not
@@ -51,9 +52,7 @@ async function chatAssignHandler(req, res) {
 
     if (req.user.role !== 'admin' && assignedTo !== req.user.userId) {
       const requester = await User.findById(req.user.userId, { institution: 1, group: 1 }).lean();
-      const sharesInstitution = requester?.institution && requester.institution === assignee.institution;
-      const sharesGroup = requester?.group && requester.group === assignee.group;
-      if (!sharesInstitution && !sharesGroup) {
+      if (!sharesMembership(requester, assignee)) {
         return res.status(403).json({ message: 'Partners can only assign chats to themselves or to someone in their own institution/group' });
       }
     }
@@ -125,9 +124,7 @@ async function unassignHandler(req, res) {
           User.findById(req.user.userId, { institution: 1, group: 1 }).lean(),
           User.findById(chat.assignedTo, { institution: 1, group: 1 }).lean(),
         ]);
-        const sharesInstitution = requester?.institution && requester.institution === assignee?.institution;
-        const sharesGroup = requester?.group && requester.group === assignee?.group;
-        allowed = Boolean(sharesInstitution || sharesGroup);
+        allowed = sharesMembership(requester, assignee);
       }
       if (!allowed) {
         return res.status(403).json({ message: 'Not allowed to remove this assignment' });

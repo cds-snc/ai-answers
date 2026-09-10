@@ -121,7 +121,17 @@ export function useChatAssignBar() {
   // Removes an existing assignment (the × pill on an already-assigned row).
   // Caller (ChatDashboardPage.js) is responsible for the window.confirm()
   // gate before calling this, same as every other destructive admin action.
+  //
+  // unassignedCount exists purely for focus management: the pill button the
+  // user just clicked lives inside the table row, and onDone's ajax.reload()
+  // destroys that row (checkbox or a fresh pill takes its place) - so focus
+  // would otherwise drop to <body> with nothing announcing what happened.
+  // ChatDashboardPage.js moves focus onto the assignStatus StatusMessage
+  // when this counter changes, same counter-driven useFocusOnChange pattern
+  // as every other focus-move in this app - only on success, since a failed
+  // unassign doesn't reload the table, so the clicked pill is still there.
   const [unassigning, setUnassigning] = useState(false);
+  const [unassignedCount, setUnassignedCount] = useState(0);
   const unassignChat = useCallback(async (chatId, onDone) => {
     setUnassigning(true);
     setAssignStatus(null);
@@ -130,6 +140,7 @@ export function useChatAssignBar() {
       checkedChatIds.current.delete(chatId);
       setSelectedCount(checkedChatIds.current.size);
       setAssignStatus({ isError: false, unassigned: true });
+      setUnassignedCount((n) => n + 1);
       if (onDone) onDone();
     } catch (error) {
       setAssignStatus({ isError: true, unassignFailed: true });
@@ -174,6 +185,7 @@ export function useChatAssignBar() {
     isChatChecked,
     submitAssign,
     unassigning,
+    unassignedCount,
     unassignChat,
   };
 }

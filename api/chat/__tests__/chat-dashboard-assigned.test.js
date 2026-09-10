@@ -137,3 +137,77 @@ describe('chat-dashboard sort by assignedTo (the Assign column, ChatDashboardPag
     expect(unassignedIndex).toBeLessThan(assignedIndex);
   });
 });
+
+// AccountPage.js's "Your assigned chats for review" table columns.
+describe('chat-dashboard sort by assignedOn/assignedByEmail (AccountPage.js)', () => {
+  it('sorts by assignedOn ascending', async () => {
+    await dbConnect();
+    const assignee = await makeUser();
+    const suffix = Date.now();
+
+    // Created in the OPPOSITE order from their assignedOn values, and the
+    // request also asks for orderDir=asc - so a broken orderBy (silently
+    // falling back to the default createdAt sort, which also honours
+    // orderDir) would report chats in *creation* order and get this
+    // backwards. Only a real assignedOn sort passes.
+    const laterInteraction = await Interaction.create({});
+    await Chat.create({
+      chatId: `sort-assignedon-later-${suffix}`,
+      interactions: [laterInteraction._id],
+      assignedTo: assignee._id,
+      assignedOn: new Date('2024-06-01'),
+    });
+
+    const earlierInteraction = await Interaction.create({});
+    await Chat.create({
+      chatId: `sort-assignedon-earlier-${suffix}`,
+      interactions: [earlierInteraction._id],
+      assignedTo: assignee._id,
+      assignedOn: new Date('2024-01-01'),
+    });
+
+    const res = await runGet({ assignedTo: assignee._id.toString(), orderBy: 'assignedOn', orderDir: 'asc', length: 2000 });
+
+    const rows = res.payload.data.filter((r) => r.chatId.includes(String(suffix)));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    const earlierIndex = rows.findIndex((r) => r.chatId === `sort-assignedon-earlier-${suffix}`);
+    const laterIndex = rows.findIndex((r) => r.chatId === `sort-assignedon-later-${suffix}`);
+    expect(earlierIndex).toBeLessThan(laterIndex);
+  });
+
+  it('sorts by assignedByEmail ascending', async () => {
+    await dbConnect();
+    const assignee = await makeUser();
+    const assignerA = await makeUser({ email: `aaa-assigner-${Date.now()}@example.com` });
+    const assignerZ = await makeUser({ email: `zzz-assigner-${Date.now()}@example.com` });
+    const suffix = Date.now();
+
+    // Same deliberate reversal as the assignedOn test above: created in the
+    // opposite order from the expected assignedByEmail-ascending result, so
+    // a fallback-to-createdAt sort would fail this instead of accidentally
+    // passing.
+    const interactionZ = await Interaction.create({});
+    await Chat.create({
+      chatId: `sort-assignedby-z-${suffix}`,
+      interactions: [interactionZ._id],
+      assignedTo: assignee._id,
+      assignedBy: assignerZ._id,
+    });
+
+    const interactionA = await Interaction.create({});
+    await Chat.create({
+      chatId: `sort-assignedby-a-${suffix}`,
+      interactions: [interactionA._id],
+      assignedTo: assignee._id,
+      assignedBy: assignerA._id,
+    });
+
+    const res = await runGet({ assignedTo: assignee._id.toString(), orderBy: 'assignedByEmail', orderDir: 'asc', length: 2000 });
+
+    const rows = res.payload.data.filter((r) => r.chatId.includes(String(suffix)));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    const aIndex = rows.findIndex((r) => r.chatId === `sort-assignedby-a-${suffix}`);
+    const zIndex = rows.findIndex((r) => r.chatId === `sort-assignedby-z-${suffix}`);
+    expect(aIndex).toBeLessThan(zIndex);
+  });
+});

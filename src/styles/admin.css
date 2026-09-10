@@ -1707,12 +1707,15 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
 }
 
 /* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
-   the batch's default, not-yet-started state - and ChatViewer.js's log
-   table Level column pill: debug isn't a severity tier, so it gets this
-   same neutral grey rather than a colour of its own. */
+   the batch's default, not-yet-started state - ChatViewer.js's log table
+   Level column pill (debug isn't a severity tier, so it gets this same
+   neutral grey rather than a colour of its own), and AccountPage.js's
+   "Evaluated" column ("Pending" - not-yet-scored is the same "hasn't
+   happened yet" meaning as uploaded/debug, not a severity). */
 .label.normal,
 .label.uploaded,
-.label.debug {
+.label.debug,
+.label.pending {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }

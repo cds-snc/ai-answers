@@ -80,6 +80,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   const assignBar = useChatAssignBar();
   const assignErrorRef = useFocusOnChange(assignBar.validationErrorCount);
+  // Unassign destroys the pill the user just clicked (it's inside the
+  // reloaded table row), so focus needs somewhere to land - see
+  // useChatAssignBar.js's unassignedCount comment.
+  const unassignedRef = useFocusOnChange(assignBar.unassignedCount);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -566,6 +570,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 <StatusMessage
                   variant={assignBar.assignStatus.isError ? 'error' : 'success'}
                   message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
+                  ref={assignBar.assignStatus.unassigned ? unassignedRef : undefined}
+                  tabIndex={assignBar.assignStatus.unassigned ? -1 : undefined}
+                  announce={!assignBar.assignStatus.unassigned}
+                  announcedVia={assignBar.assignStatus.unassigned ? 'focus' : undefined}
                 />
               )}
               </div>

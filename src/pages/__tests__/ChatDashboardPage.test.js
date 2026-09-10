@@ -21,7 +21,8 @@ vi.mock('../../services/DashboardService.js', () => ({
       recordsFiltered: 0,
       data: []
     })),
-    assignChat: vi.fn(() => Promise.resolve({}))
+    assignChat: vi.fn(() => Promise.resolve({})),
+    unassignChat: vi.fn(() => Promise.resolve({}))
   }
 }));
 
@@ -207,8 +208,59 @@ describe('ChatDashboardPage rendering', () => {
     const assignButton = await waitFor(() => getByText(/admin\.chatDashboard\.assign\.assignChats/));
     await act(async () => { fireEvent.click(assignButton); });
 
-    expect(await waitFor(() => getByText('admin.chatDashboard.assign.errorNoExpert'))).toBeTruthy();
+    const error = await waitFor(() => getByText('admin.chatDashboard.assign.errorNoExpert'));
+    expect(error).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(error));
     expect(DashboardService.assignChat).not.toHaveBeenCalled();
+  });
+
+  it('unassign pill: confirm -> calls unassignChat -> reloads the table -> moves focus to the outcome message', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
+
+    // Simulate DataTables building a row for an already-assigned chat: build
+    // the real cell HTML via the column's own render (the pill), mount it,
+    // then run createdRow the way the library would - this is what wires
+    // the pill's onclick, same delegated-handler pattern as the checkbox.
+    const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
+    const rowData = { chatId: 'chat-123', assignedToEmail: 'partner@x.ca' };
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.innerHTML = checkboxColumn.render(null, 'display', rowData);
+    row.appendChild(cell);
+    document.body.appendChild(row);
+    act(() => { lastOptions.createdRow(row, rowData); });
+
+    const pill = row.querySelector('button.chat-assign-pill');
+    expect(pill).toBeTruthy();
+    await act(async () => { fireEvent.click(pill); });
+
+    expect(confirmSpy).toHaveBeenCalled();
+    await waitFor(() => expect(DashboardService.unassignChat).toHaveBeenCalledWith({ chatId: 'chat-123' }));
+
+    const outcome = await waitFor(() => getByText('admin.chatDashboard.assign.unassigned'));
+    await waitFor(() => expect(document.activeElement).toBe(outcome));
+
+    const lastInstance = mountedInstances[mountedInstances.length - 1];
+    expect(lastInstance.ajaxReload).toHaveBeenCalled();
+
+    document.body.removeChild(row);
+    confirmSpy.mockRestore();
   });
 
   it('switches the Assign chats button label once a note is typed, with no separate save step', async () => {

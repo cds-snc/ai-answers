@@ -39,14 +39,16 @@ async function makeUser(overrides = {}) {
 }
 
 describe('user-assignable', () => {
-  it('returns no_institution with an empty list for a partner with neither institution nor group set', async () => {
+  it('returns no_institution with just the requester for a partner with neither institution nor group set', async () => {
     await dbConnect();
     const partner = await makeUser();
 
     const res = await runGet({ role: 'partner', userId: partner._id.toString() });
 
     expect(res.statusCode).toBe(200);
-    expect(res.payload.users).toEqual([]);
+    // Self-assign is always allowed (see chat-assign.js), so the picker
+    // isn't empty even with nothing to match institution/group-mates on.
+    expect(res.payload.users.map(u => u.id)).toEqual([partner._id.toString()]);
     expect(res.payload.reason).toBe('no_institution');
   });
 

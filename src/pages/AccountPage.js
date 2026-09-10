@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
@@ -13,6 +13,15 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useAuth } from '../contexts/AuthContext.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
+
+// Bolds just the dashboard-type name(s) inside a "How filter preferences
+// work" label (e.g. "*Chat* and *evaluation* dashboards:") - the locale
+// string marks which word(s) with *asterisks* since that differs per
+// language (French embeds the type mid-sentence, not at the start), so a
+// fixed word-position split in JS can't do it. Odd-indexed segments are the
+// bolded names.
+const renderBoldLabel = (text) => text.split('*').map((segment, i) => (i % 2 === 1 ? <strong key={i}>{segment}</strong> : segment));
 
 // The signed-in user's own account: who they are and which institution /
 // group an admin has placed them in. Read fresh from the server on every
@@ -61,18 +70,21 @@ const AccountPage = ({ lang = 'en' }) => {
   }, []);
 
   // One save path for every self-service field; `setStatus` picks which
-  // StatusMessage (profile vs preferences) reports the outcome, and the
-  // matching saved/error copy. `errorCodeHandlers` lets a specific backend
-  // `code` (see UserService.updateMe) be handled instead of falling back to
-  // the generic status message - used for the institution/group lock below.
-  const saveProfile = async (updates, setStatus, savedKey, errorKey, errorCodeHandlers) => {
+  // StatusMessage (profile vs preferences) reports the outcome, and
+  // `statusText` is the fully-built success copy - callers build it from
+  // their own template ("Account updated: ..." for the institution/group
+  // fields, "Preference saved: ..." for the two checkboxes) so each area
+  // keeps its own voice. `errorCodeHandlers` lets a specific backend `code`
+  // (see UserService.updateMe) be handled instead of falling back to the
+  // generic status message - used for the institution/group lock below.
+  const saveProfile = async (updates, setStatus, statusText, errorKey, errorCodeHandlers) => {
     setSaving(true);
     setStatus(null);
     try {
       const updated = await UserService.updateMe(updates);
       setProfile(updated);
       if (refreshUser) await refreshUser();
-      setStatus({ text: t(savedKey), isError: false });
+      setStatus({ text: statusText, isError: false });
     } catch (error) {
       console.error('Error saving account:', error);
       const handled = errorCodeHandlers && error.code && errorCodeHandlers[error.code];
@@ -88,34 +100,62 @@ const AccountPage = ({ lang = 'en' }) => {
   const handleProfileFieldChange = (field, value) => {
     institutionError.clearError();
     groupError.clearError();
+    const change = field === 'institution'
+      ? (value ? t('account.changeInstitutionSet').replace('{value}', () => value) : t('account.changeInstitutionCleared'))
+      : (value ? t('account.changeGroupSet').replace('{value}', () => value) : t('account.changeGroupCleared'));
     return saveProfile(
       { [field]: value },
       setProfileStatus,
-      'account.profileSaved',
+      t('account.updated').replace('{change}', () => change),
       'account.profileSaveError',
       { institution_locked: institutionError.triggerError, group_locked: groupError.triggerError }
     );
   };
   const handlePrefilterChange = (checked) => {
     if (checked && !profile?.institution) {
+      // A blocked action is still a fresh action - clear a stale success/
+      // error from a previous save, or it sits next to the new inline
+      // validation error looking like it's still in effect.
+      setPrefStatus(null);
       prefError.triggerError();
       return;
     }
     prefError.clearError();
-    return saveProfile({ preferences: { prefilterDepartment: checked } }, setPrefStatus, checked ? 'account.preferences.saved' : 'account.preferences.savedOff', 'account.preferences.saveError');
+    const change = checked ? t('account.preferences.changeInstitutionOn') : t('account.preferences.changeInstitutionOff');
+    return saveProfile(
+      { preferences: { prefilterDepartment: checked } },
+      setPrefStatus,
+      t('account.preferences.savedChange').replace('{change}', () => change),
+      'account.preferences.saveError'
+    );
   };
   const handlePrefilterGroupChange = (checked) => {
     if (checked && !profile?.group) {
+      setPrefStatus(null);
       groupPrefError.triggerError();
       return;
     }
     groupPrefError.clearError();
-    return saveProfile({ preferences: { prefilterGroup: checked } }, setPrefStatus, checked ? 'account.preferences.saved' : 'account.preferences.savedOff', 'account.preferences.saveError');
+    const change = checked ? t('account.preferences.changeGroupOn') : t('account.preferences.changeGroupOff');
+    return saveProfile(
+      { preferences: { prefilterGroup: checked } },
+      setPrefStatus,
+      t('account.preferences.savedChange').replace('{change}', () => change),
+      'account.preferences.saveError'
+    );
   };
 
   // Same Creator / Expert columns as EvalDashboardPage.js: the signed-in
   // account that asked, and the expert who evaluated (blank when not yet).
   const renderEmail = (value) => (value ? `<span lang="en">${escapeHtmlAttribute(value)}</span>` : '');
+  // partnerEval is null/empty until an expert score exists (see
+  // getPartnerEvalAggregationExpression) - this column only cares whether
+  // that's happened yet, not which category it scored, so it collapses
+  // every scored value to one "Completed" pill rather than reusing
+  // evalPills.js's category-specific pills.
+  const renderEvalStatus = (value) => (value
+    ? `<span class="label complete">${escapeHtmlAttribute(t('account.assignedChats.evalStatus.completed'))}</span>`
+    : `<span class="label pending">${escapeHtmlAttribute(t('account.assignedChats.evalStatus.pending'))}</span>`);
   // Same DataTables layout as the Chat/Eval dashboards: search top-left,
   // page length + info bottom-left, paging bottom-right.
   const dashboardLayout = {
@@ -157,21 +197,47 @@ const AccountPage = ({ lang = 'en' }) => {
       orderable: false,
       render: (value, type, row) => (value ? buildChatReviewLinkHtml(value, chatLangFromPageLanguage(row.pageLanguage), row.interactionId, lang) : ''),
     },
-    { title: t('admin.common.columns.program'), data: 'program', orderable: false, render: (value) => escapeHtmlAttribute(value || '') },
-    { title: t('account.assignedChats.columns.assignedOn'), data: 'assignedOn', orderable: false, render: (value) => value ? escapeHtmlAttribute(new Date(value).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')) : '' },
-    { title: t('account.assignedChats.columns.assignedBy'), data: 'assignedByEmail', orderable: false, render: renderEmail },
+    { title: t('admin.common.columns.program'), data: 'program', render: (value) => escapeHtmlAttribute(value || '') },
+    { title: t('account.assignedChats.columns.evaluated'), data: 'partnerEval', render: renderEvalStatus },
+    { title: t('account.assignedChats.columns.assignedOn'), data: 'assignedOn', render: (value) => value ? escapeHtmlAttribute(new Date(value).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')) : '' },
+    { title: t('account.assignedChats.columns.assignedBy'), data: 'assignedByEmail', render: renderEmail },
     { title: t('account.assignedChats.columns.partnerNotes'), data: 'assignedNotes', orderable: false, render: (value) => escapeHtmlAttribute(value || '') },
   ];
 
+  // Same keep-chat-together row grouping as Chat/Eval/AutoEval dashboards
+  // (utils/admin/chatGroupedTable.js) - a multi-turn assigned chat produces
+  // one row per interaction, and every column here is constant across a
+  // chat's rows EXCEPT Evaluated (partnerEval is scored per interaction, so
+  // a chat can genuinely be Completed on one turn and Pending on another) -
+  // that's the one column left out of groupedColumns below.
+  const assignedChatsGroupStateRef = useRef(createChatGroupState());
+  const assignedChatsGroupCallbacks = buildChatGroupCallbacks({
+    stateRef: assignedChatsGroupStateRef,
+    columns: assignedChatColumns,
+    groupedColumns: [
+      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+      { data: 'program' },
+      { data: 'assignedOn' },
+      { data: 'assignedByEmail' },
+      { data: 'assignedNotes' },
+    ],
+  });
+
   const roleLabel = profile?.role ? t(`users.roles.${profile.role}`) : '';
 
-  // Persistent explainer for the two checkboxes above - department and
-  // group are ORed together server-side (api/util/chat-filters.js), not
-  // ANDed, so "both on" widens what shows up rather than narrowing it.
+  // Persistent explainer for the two checkboxes above. With only one
+  // preference on, every dashboard behaves the same (a single condition,
+  // nothing to combine) - one plain-language paragraph covers it. With both
+  // on, chat/eval dashboards OR department+group (api/util/chat-filters.js)
+  // but metrics/partner dashboards AND them (same api/metrics/* pipeline -
+  // see project_metrics_and_or_mismatch memory), so that case gets three
+  // short paragraphs, one per dashboard group, instead of one that has to
+  // hold both rules at once.
   const hasDeptPref = Boolean(profile?.preferences?.prefilterDepartment);
   const hasGroupPref = Boolean(profile?.preferences?.prefilterGroup);
-  const prefilterMessageKey = hasDeptPref && hasGroupPref
-    ? 'account.preferences.filteredBoth'
+  const showBothPrefilterNotice = hasDeptPref && hasGroupPref;
+  const prefilterMessageKey = showBothPrefilterNotice
+    ? null
     : hasDeptPref
       ? 'account.preferences.filteredInstitution'
       : hasGroupPref
@@ -272,8 +338,7 @@ const AccountPage = ({ lang = 'en' }) => {
 
       {profile && (
         <section className="mb-400">
-          <h2 className="mb-0">{t('account.preferences.heading')}</h2>
-          <p id="pref-prefilter-department-hint">{t('account.preferences.prefilterDepartmentHint')}</p>
+          <h2 className="mb-400">{t('account.preferences.heading')}</h2>
           {prefError.hasError && (
             <FeedbackInlineError
               id="pref-prefilter-department-error"
@@ -288,7 +353,7 @@ const AccountPage = ({ lang = 'en' }) => {
                 type="checkbox"
                 id="pref-prefilter-department"
                 checked={Boolean(profile.preferences?.prefilterDepartment)}
-                aria-describedby={prefError.hasError ? 'pref-prefilter-department-error pref-prefilter-department-hint' : 'pref-prefilter-department-hint'}
+                aria-describedby={prefError.hasError ? 'pref-prefilter-department-error' : undefined}
                 aria-invalid={prefError.hasError ? 'true' : undefined}
                 onChange={(e) => handlePrefilterChange(e.target.checked)}
               />
@@ -309,7 +374,7 @@ const AccountPage = ({ lang = 'en' }) => {
                 type="checkbox"
                 id="pref-prefilter-group"
                 checked={Boolean(profile.preferences?.prefilterGroup)}
-                aria-describedby={groupPrefError.hasError ? 'pref-prefilter-group-error pref-prefilter-department-hint' : 'pref-prefilter-department-hint'}
+                aria-describedby={groupPrefError.hasError ? 'pref-prefilter-group-error' : undefined}
                 aria-invalid={groupPrefError.hasError ? 'true' : undefined}
                 onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
               />
@@ -317,31 +382,51 @@ const AccountPage = ({ lang = 'en' }) => {
             </div>
           </div>
           <StatusMessage variant={prefStatus?.isError ? 'error' : 'success'} message={prefStatus?.text || ''} />
-          {prefilterMessageKey && <StatusMessage variant="info" message={t(prefilterMessageKey)} />}
+          {(prefilterMessageKey || showBothPrefilterNotice) && (
+            <GcdsNotice
+              noticeRole="info"
+              noticeTitleTag="h3"
+              noticeTitle={t('account.preferences.filteredNoticeTitle')}
+              className="mt-300 mb-0"
+            >
+              {showBothPrefilterNotice ? (
+                <>
+                  <GcdsText>{renderBoldLabel(t('account.preferences.filteredBothChatEvalLabel'))} {t('account.preferences.filteredBothChatEvalEffect')}</GcdsText>
+                  <GcdsText>{renderBoldLabel(t('account.preferences.filteredBothMetricsPartnerLabel'))} {t('account.preferences.filteredBothMetricsPartnerEffect')}</GcdsText>
+                </>
+              ) : (
+                <GcdsText>{renderBoldLabel(t(prefilterMessageKey))}</GcdsText>
+              )}
+              {/* Public dashboard never consumes this preference (PublicDashboard.js
+                  uses DashboardFilterBar, not FilterPanel) - called out the same way
+                  regardless of which preference(s) are on. */}
+              <GcdsText>{renderBoldLabel(t('account.preferences.filteredPublicLabel'))} {t('account.preferences.filteredPublicEffect')}</GcdsText>
+              <GcdsText>{t('account.preferences.filteredFooter')}</GcdsText>
+            </GcdsNotice>
+          )}
         </section>
       )}
       {profile && (
-        <>
+        <section className="mb-400">
           <h2 className="mb-400">{t('account.activityHeading')}</h2>
-
-          <details className="details-form mb-400">
-            <summary>{t('account.assignedChats.heading')}</summary>
-            {assignedChatsError && <StatusMessage variant="error" message={t('account.assignedChats.loadError')} />}
-            <ServerDataTable
-              tableKey={`assigned-chats-${authUserId || 'none'}`}
-              caption={t('account.assignedChats.heading')}
-              lang={lang}
-              columns={assignedChatColumns}
-              fetchData={fetchAssignedChats}
-              order={[]}
-              ordering={false}
-              layout={dashboardLayout}
-              containerClassName="dashboard-table-container dashboard-table-container--contained"
-              emptyTableText={t('account.assignedChats.empty')}
-              onError={(err) => setAssignedChatsError(err)}
-            />
-          </details>
-        </>
+          {assignedChatsError && <StatusMessage variant="error" message={t('account.assignedChats.loadError')} />}
+          <ServerDataTable
+            tableKey={`assigned-chats-${authUserId || 'none'}`}
+            caption={t('account.assignedChats.heading')}
+            lang={lang}
+            columns={assignedChatColumns}
+            fetchData={fetchAssignedChats}
+            order={[]}
+            grouped
+            preDrawCallback={assignedChatsGroupCallbacks.preDrawCallback}
+            createdRow={assignedChatsGroupCallbacks.createdRow}
+            drawCallback={assignedChatsGroupCallbacks.drawCallback}
+            layout={dashboardLayout}
+            containerClassName="dashboard-table-container dashboard-table-container--contained"
+            emptyTableText={t('account.assignedChats.empty')}
+            onError={(err) => setAssignedChatsError(err)}
+          />
+        </section>
       )}
 
     </GcdsContainer>

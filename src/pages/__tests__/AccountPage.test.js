@@ -37,6 +37,11 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsText: ({ children }) => <p>{children}</p>,
   GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
   GcdsIcon: ({ name }) => <span data-icon={name} />,
+  GcdsNotice: ({ children, noticeRole, noticeTitle, noticeTitleTag }) => (
+    <section data-notice-role={noticeRole} data-notice-title={noticeTitle} data-notice-title-tag={noticeTitleTag}>
+      {children}
+    </section>
+  ),
 }));
 
 describe('AccountPage', () => {
@@ -56,6 +61,7 @@ describe('AccountPage', () => {
     expect(screen.getByText('account.assignedChats.columns.assignedOn')).toBeTruthy();
     expect(screen.getByText('account.assignedChats.columns.assignedBy')).toBeTruthy();
     expect(screen.getAllByText('admin.common.columns.program').length).toBeGreaterThan(0);
+    expect(screen.getByText('account.assignedChats.columns.evaluated')).toBeTruthy();
     expect(screen.getByText('account.assignedChats.columns.partnerNotes')).toBeTruthy();
     expect(screen.queryByText('admin.common.columns.department')).toBeNull();
     expect(screen.getByRole('link', { name: 'common.backToAdmin' }).getAttribute('href')).toBe('/en/admin');
@@ -79,7 +85,7 @@ describe('AccountPage', () => {
     fireEvent.change(institution, { target: { value: 'IRCC' } });
     await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledWith({ institution: 'IRCC' }));
     await waitFor(() => expect(mockRefreshUser).toHaveBeenCalled());
-    expect(screen.getByText('account.profileSaved').closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('account.updated').closest('.status-message--success-box')).toBeTruthy();
   });
 
   it('saves the pre-filter preference and refreshes the auth user', async () => {
@@ -93,7 +99,22 @@ describe('AccountPage', () => {
     await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledWith({ preferences: { prefilterDepartment: true } }));
     await waitFor(() => expect(mockRefreshUser).toHaveBeenCalled());
     expect((await screen.findByLabelText('account.preferences.prefilterDepartment')).checked).toBe(true);
-    expect(screen.getByText('account.preferences.saved').closest('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('account.preferences.savedChange').closest('.status-message--success-box')).toBeTruthy();
+  });
+
+  it('clears a stale success message when a later preference toggle is blocked by validation', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: false, prefilterGroup: false } });
+    mockUpdateMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true, prefilterGroup: false } });
+    mockRefreshUser.mockResolvedValue();
+    render(<AccountPage lang="en" />);
+    fireEvent.click(await screen.findByLabelText('account.preferences.prefilterDepartment'));
+    await waitFor(() => expect(screen.getByText('account.preferences.savedChange').closest('.status-message--success-box')).toBeTruthy());
+
+    // Group isn't set, so this click is blocked by validation rather than
+    // saved - the prior success message must not linger next to the new error.
+    fireEvent.click(screen.getByLabelText('account.preferences.prefilterGroup'));
+    await screen.findByText('account.preferences.noGroup');
+    expect(screen.queryByText('account.preferences.savedChange')).toBeNull();
   });
 
   it('shows a field error instead of saving when no institution is set', async () => {
@@ -103,9 +124,11 @@ describe('AccountPage', () => {
     expect(checkbox.disabled).toBe(false);
     expect(screen.queryByText('account.preferences.noInstitution')).toBeNull();
     fireEvent.click(checkbox);
-    const error = await screen.findByRole('alert');
-    expect(error.textContent).toContain('account.preferences.noInstitution');
+    // FeedbackInlineError skips role="alert" when it has an inputRef to focus
+    // (see the component's comment) - focus is what reads it out instead.
+    const error = await screen.findByText('account.preferences.noInstitution');
     expect(error.id).toBe('pref-prefilter-department-error');
+    await waitFor(() => expect(document.activeElement).toBe(error));
     expect(checkbox.getAttribute('aria-invalid')).toBe('true');
     expect(checkbox.getAttribute('aria-describedby')).toContain('pref-prefilter-department-error');
     expect(checkbox.checked).toBe(false);
@@ -118,18 +141,32 @@ describe('AccountPage', () => {
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true, prefilterGroup: false } });
     render(<AccountPage lang="en" />);
     expect(await screen.findByText('account.preferences.filteredInstitution')).toBeTruthy();
+    // Public dashboard's "not affected" paragraph and the footer are shared
+    // by every variant of the notice.
+    expect(screen.getByText('account.preferences.filteredPublicLabel account.preferences.filteredPublicEffect')).toBeTruthy();
+    expect(screen.getByText('account.preferences.filteredFooter')).toBeTruthy();
     expect(screen.queryByText('account.preferences.filteredGroup')).toBeNull();
-    expect(screen.queryByText('account.preferences.filteredBoth')).toBeNull();
     cleanup();
 
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: 'Military transitions', preferences: { prefilterDepartment: false, prefilterGroup: true } });
     render(<AccountPage lang="en" />);
     expect(await screen.findByText('account.preferences.filteredGroup')).toBeTruthy();
+    expect(screen.getByText('account.preferences.filteredPublicLabel account.preferences.filteredPublicEffect')).toBeTruthy();
+    expect(screen.getByText('account.preferences.filteredFooter')).toBeTruthy();
     cleanup();
 
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: { prefilterDepartment: true, prefilterGroup: true } });
     render(<AccountPage lang="en" />);
-    expect(await screen.findByText('account.preferences.filteredBoth')).toBeTruthy();
+    // Label and effect render as siblings in the same paragraph (the label's
+    // bolded dashboard name(s) only show up when the real locale string's
+    // *asterisk* markers are present - the t() mock just echoes the key, so
+    // there's no <strong> to isolate here; assert the combined text instead.
+    expect(await screen.findByText('account.preferences.filteredBothChatEvalLabel account.preferences.filteredBothChatEvalEffect')).toBeTruthy();
+    expect(screen.getByText('account.preferences.filteredBothMetricsPartnerLabel account.preferences.filteredBothMetricsPartnerEffect')).toBeTruthy();
+    expect(screen.getByText('account.preferences.filteredPublicLabel account.preferences.filteredPublicEffect')).toBeTruthy();
+    // Footer is its own paragraph, shared by every variant of the notice.
+    expect(screen.getByText('account.preferences.filteredFooter')).toBeTruthy();
+    expect(screen.queryByText('account.preferences.filteredInstitution')).toBeNull();
     cleanup();
 
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: '', preferences: { prefilterDepartment: false, prefilterGroup: false } });
@@ -137,7 +174,7 @@ describe('AccountPage', () => {
     await screen.findByText('account.institution');
     expect(screen.queryByText('account.preferences.filteredInstitution')).toBeNull();
     expect(screen.queryByText('account.preferences.filteredGroup')).toBeNull();
-    expect(screen.queryByText('account.preferences.filteredBoth')).toBeNull();
+    expect(screen.queryByText('account.preferences.filteredFooter')).toBeNull();
   });
 
   it('saves the group pre-filter preference, and errors when no group is set', async () => {
@@ -145,7 +182,7 @@ describe('AccountPage', () => {
     render(<AccountPage lang="en" />);
     const checkbox = await screen.findByLabelText('account.preferences.prefilterGroup');
     fireEvent.click(checkbox);
-    expect((await screen.findByRole('alert')).id).toBe('pref-prefilter-group-error');
+    expect((await screen.findByText('account.preferences.noGroup')).id).toBe('pref-prefilter-group-error');
     expect(mockUpdateMe).not.toHaveBeenCalled();
     cleanup();
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
@@ -165,6 +202,10 @@ describe('AccountPage', () => {
     // Nothing that depends on the profile (preferences, activity/assigned
     // chats) should render when it failed to load.
     expect(screen.queryByText('account.preferences.heading')).toBeNull();
+    // account.assignedChats.heading is now sr-only (ServerDataTable's
+    // `caption` prop, mocked away in this test's DataTable mock) rather
+    // than a visible heading - activityHeading is the meaningful check
+    // that the whole assigned-chats section didn't render.
     expect(screen.queryByText('account.activityHeading')).toBeNull();
   });
 });

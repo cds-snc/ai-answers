@@ -509,7 +509,12 @@ async function chatDashboardHandler(req, res) {
       // Assign column (ChatDashboardPage.js): null sorts before any
       // ObjectId ascending, so an ascending sort groups unassigned chats
       // first - the use case this is for.
-      assignedTo: 'assignedTo'
+      assignedTo: 'assignedTo',
+      // Assigned chats table (AccountPage.js). assignedByEmail is a plain
+      // field by the time this $sort runs - materialized earlier in the
+      // pipeline by the assignee/assigner $lookup + $addFields above.
+      assignedOn: 'assignedOn',
+      assignedByEmail: 'assignedByEmail'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     // Default view (no column sort applied - the only way 'createdAt' is
