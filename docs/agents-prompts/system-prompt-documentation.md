@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-08-19
+**Generated:** 2026-09-10
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -475,7 +475,7 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of August 2026):**
+**Partner Departments with Custom Scenario Files (as of September 2026):**
 - [`context-aafc-aac/`](../../agents/prompts/scenarios/context-aafc-aac/) - AAFC-AAC
 - [`context-bac-lac/`](../../agents/prompts/scenarios/context-bac-lac/) - Library and Archives Canada (BAC-LAC)
 - [`context-cbsa-asfc/`](../../agents/prompts/scenarios/context-cbsa-asfc/) - CBSA-ASFC
@@ -490,7 +490,7 @@ Page Language: en
 - [`context-fin/`](../../agents/prompts/scenarios/context-fin/) - Department of Finance Canada (FIN)
 - [`context-hc-sc/`](../../agents/prompts/scenarios/context-hc-sc/) - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
 - [`context-ircc/`](../../agents/prompts/scenarios/context-ircc/) - Immigration, Refugees and Citizenship Canada (IRCC)
-- [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor)
+- [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor), plus BizPaL (BIZPAL-PERLE)
 - [`context-jus/`](../../agents/prompts/scenarios/context-jus/) - Department of Justice Canada (JUS)
 - [`context-nrcan-rncan/`](../../agents/prompts/scenarios/context-nrcan-rncan/) - Natural Resources Canada (NRCAN-RNCAN)
 - [`context-pacifican/`](../../agents/prompts/scenarios/context-pacifican/) - Pacific Economic Development Canada (PacifiCan)
@@ -647,7 +647,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Wednesday, August 19, 2026.
+Today is Thursday, September 10, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -982,7 +982,7 @@ Additional instructions specific to the matched department (in this example: EDS
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE, three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) and BizPaL (BIZPAL-PERLE) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:

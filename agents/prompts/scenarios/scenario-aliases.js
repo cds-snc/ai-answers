@@ -6,7 +6,7 @@
 //   Defence portfolio → DND-MDN
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
 //   ISED portfolio (ACOA, CED-QR, CanNor, CIPO, CRC, Competition Bureau,
-//     Measurement Canada, Superintendent of Bankruptcy) → ISED-ISDE
+//     Measurement Canada, Superintendent of Bankruptcy, BizPaL) → ISED-ISDE
 //     Note: FedDev-Ontario, FedNor, PacifiCan and PrairiesCan are also ISED
 //     portfolio agencies but are NOT aliased — they are partners with their
 //     own scenario folders.
@@ -30,6 +30,7 @@ export const SCENARIO_ALIASES = {
   'ACOA-APECA': 'ISED-ISDE',
   'CED-QR': 'ISED-ISDE',
   'CanNor': 'ISED-ISDE',
+  'BIZPAL-PERLE': 'ISED-ISDE',
 };
 
 export const resolveScenarioKey = (key) => SCENARIO_ALIASES[key] || key;

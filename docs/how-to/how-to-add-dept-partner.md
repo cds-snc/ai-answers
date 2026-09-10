@@ -171,7 +171,7 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
-- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
+- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF`, `BIZPAL-PERLE` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 

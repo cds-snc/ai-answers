@@ -1,6 +1,7 @@
 // Shared scenarios for ISED-ISDE and its portfolio organizations (three of the
 // Regional Development Agencies plus CIPO, CRC, the Competition Bureau,
-// Measurement Canada, and the Office of the Superintendent of Bankruptcy).
+// Measurement Canada, the Office of the Superintendent of Bankruptcy, and
+// BizPaL).
 // The following abbrKeys resolve to this file via scenario-aliases.js:
 //   ISED-ISDE (canonical) — Innovation, Science and Economic Development Canada
 //   CIPO-OPIC      — Canadian Intellectual Property Office
@@ -11,6 +12,8 @@
 //   ACOA-APECA     — Atlantic Canada Opportunities Agency
 //   CED-QR         — Canada Economic Development for Quebec Regions
 //   CanNor         — Canadian Northern Economic Development Agency
+//   BIZPAL-PERLE   — BizPaL business permits and licensing (federal/P/T/municipal
+//                    partnership administered by ISED-ISDE)
 //
 // The other four RDAs — FedDev-Ontario, FedNor, PacifiCan and PrairiesCan — are
 // partners with their own scenario folders and do NOT resolve here.
