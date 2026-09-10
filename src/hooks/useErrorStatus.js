@@ -21,6 +21,11 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 // `t` is taken once here rather than passed to each call, so callers don't
 // repeat useTranslations() plumbing through this - same shape as
 // useAuthOutcomeMessages taking its dependencies once at the top.
+// TODO(follow-up PR): migrate these hand-rolled callers of the same
+// t(key).split('{placeholder}') + <code lang="en">detail pattern onto this
+// hook: DeleteExpertEval.js, SimilarChatsDashboard.js, DeleteChatSection.js,
+// ChatLogsDashboard.js, TechnicalMetricsDashboard.js, MetricsDashboard.js,
+// ExperimentalCreateDatasetPage.js, VectorPage.js.
 export const useErrorStatus = (t) => {
   // Stable across renders (as long as t is — see useTranslations.js) so
   // callers can safely put buildErrorStatus/renderStatusMessage in their own
