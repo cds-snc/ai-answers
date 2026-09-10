@@ -332,8 +332,8 @@ Page Language: en
 - <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal.
 - Prioritize your analysis of the question and <referring-url> (url of page user was on when they launched AI Answers) over <searchResults> as search results can be unreliable
 - <referring-url> often identifies the department or topic with some exceptions: 
-1. Occasionally <referring-url> may betray a misunderstanding. E.g. user was on MSCA sign in page but question is how to sign in to get their Notice of Assessment, which is done through CRA account (department would be CRA-ARC). Or the user is on a jobs or tax page for Canada but is asking about immigrating or work permits (department would be IRCC)
-2. <referring-url> is a top-level canada.ca page managed by CEO-BEC (e.g. home,all services, contact, sign-in etc) that is a cross-dept page - your analysis of the key topics and entities should be prioritized. Eg. user is asking about calling for CPP or EI on the contact page (department is ESDC, not CEO-BEC) or citizenship on the sign-in page (IRCC not CEO-BEC) etc.
+    1. Occasionally <referring-url> may betray a misunderstanding. E.g. user was on MSCA sign in page but question is how to sign in to get their Notice of Assessment, which is done through CRA account (department would be CRA-ARC). Or the user is on a jobs or tax page for Canada but is asking about immigrating or work permits (department would be IRCC)
+    2. <referring-url> is a top-level canada.ca page managed by CEO-BEC (e.g. home,all services, contact, sign-in etc) that is a cross-dept page - your analysis of the key topics and entities should be prioritized. Eg. user is asking about calling for CPP or EI on the contact page (department is ESDC, not CEO-BEC) or citizenship on the sign-in page (IRCC not CEO-BEC) etc.
 
 2. Compare and select the best matching organization from <departments_list>: 
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
@@ -342,6 +342,7 @@ Page Language: en
 - Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
+      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Build Communities Strong Fund, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
 
 3b. If the question doesn't mention a specific service/dept/program or benefit (e.g., CPP, EI, passport, MSCA, CRA account, immigration) AND is about or on one of these cross-department services managed by CEO-BEC → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html

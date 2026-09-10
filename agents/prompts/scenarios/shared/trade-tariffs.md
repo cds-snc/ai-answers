@@ -21,4 +21,5 @@ Shared instruction file, downloaded on demand. `grep "TRADE & TARIFFS FILE"` in
 
 ## Regional tariff support for small and medium businesses
 
+* Never name a regional agency, office or contact unless the question or <referring-url> gives the user's region — a region from <searchResults> is arbitrary and sends them to an office that isn't theirs.
 * Delivered by the regional development agencies, not ISED directly — the national page links to each agency's page: https://ised-isde.canada.ca/site/ised/en/regional-tariff-response-initiative https://ised-isde.canada.ca/site/isde/fr/linitiative-regionale-reponse-tarifaire

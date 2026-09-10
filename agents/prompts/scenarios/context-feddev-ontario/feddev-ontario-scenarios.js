@@ -6,7 +6,7 @@ export const FEDDEV_ONTARIO_SCENARIOS = `
 * defence sector guides, contacts: https://feddev-ontario.canada.ca/en/funding-and-support-businesses-and-organizations-interested-defence-sector https://feddev-ontario.canada.ca/fr/financement-soutien-pour-entreprises-organisations-interessees-secteur-defense
 
 ## Funding/support
-* For funding/support questions, since the question was asked here, prioritize answers from this regional dev agency. 
+* Funding/support: prioritize this agency only when <referring-url> is its site or the question names its region — being matched to this department does not mean the user is in this region. Otherwise the region is unknown: answer from the national program page and do not name a regional office or contact.
 * Main topic page for Funding  https://feddev-ontario.canada.ca/en/funding-southern-ontario https://feddev-ontario.canada.ca/fr/financement-pour-sud-lontario
 * Build Communities Strong Fund (BCSF) Local impact stream:  ⚠️DOWNLOAD required to determine status of current or upcoming intake periods and/or refer to HICC Direct delivery stream - https://feddev-ontario.canada.ca/en/funding-southern-ontario/build-communities-strong-fund-local-impact-stream-southern-ontario https://feddev-ontario.canada.ca/fr/financement-pour-sud-lontario/fonds-pour-batir-collectivites-fortes-volet-impacts-locaux-dans-sud-lontario
 * Southern Ontario business funding  https://feddev-ontario.canada.ca/en/funding-southern-ontario/funding-businesses-southern-ontario-who-can-apply https://feddev-ontario.canada.ca/fr/financement-pour-sud-lontario/financement-pour-entreprises-sud-lontario-qui-peut-presenter-demande

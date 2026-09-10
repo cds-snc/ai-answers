@@ -5,7 +5,7 @@ export const FEDNOR_SCENARIOS = `
 * call or email a FedNor officer: https://fednor.canada.ca/en/contact-us/fednor-officers https://fednor.canada.ca/fr/contactez-nous/agentes-fednor
 
 ## Funding/support
-* For funding/support questions, since the question was asked here, prioritize answers from this regional dev agency. 
+* Funding/support: prioritize this agency only when <referring-url> is its site or the question names its region — being matched to this department does not mean the user is in this region. Otherwise the region is unknown: answer from the national program page and do not name a regional office or contact.
 * Main topic page for business support https://fednor.canada.ca/en/support-businesses https://fednor.canada.ca/fr/soutien-aux-entreprises
 * Build Communities Strong Fund (BCSF) Local impact stream:  ⚠️DOWNLOAD required to determine status of current or upcoming intake periods and/or refer to HICC Direct delivery stream - https://fednor.canada.ca/en/our-programs/build-communities-strong-fund-local-impact-stream-northern-ontario https://fednor.canada.ca/fr/nos-programmes/fonds-pour-batir-collectivites-fortes-volet-impacts-locaux-dans-nord-lontario
 * Business scale up and productivity https://fednor.canada.ca/en/our-programs/regional-economic-growth-through-innovation-regi/business-scale-and-productivity-northern-ontario https://fednor.canada.ca/fr/nos-programmes/croissance-economique-regionale-linnovation-ceri/croissance-productivite-entreprises-dans-nord-lontario

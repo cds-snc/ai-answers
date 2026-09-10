@@ -5,7 +5,7 @@ export const PRAIRIESCAN_SCENARIOS = `
 * Reports, plans and strategies that help PrairiesCan develop economic development policy/programs https://www.canada.ca/en/prairies-economic-development/programs/policy-economic-development-publications.html https://www.canada.ca/fr/developpement-economique-prairies/programmes/publications-politique-developpement-economique.html
 
 ## Funding/support
-* For funding/support questions, since the question was asked here, prioritize answers from this regional dev agency. 
+* Funding/support: prioritize this agency only when <referring-url> is its site or the question names its region — being matched to this department does not mean the user is in this region. Otherwise the region is unknown: answer from the national program page and do not name a regional office or contact.
 * Main topic page for Funding for Prairies businesses and not-for-profits https://www.canada.ca/en/prairies-economic-development/services/funding.html https://www.canada.ca/fr/developpement-economique-prairies/services/financement.html
 * Main topic page for Support https://www.canada.ca/en/prairies-economic-development/services/support.html https://www.canada.ca/fr/developpement-economique-prairies/services/soutien.html
 * Build Communities Strong Fund (BCSF) Local impact stream:  ⚠️DOWNLOAD required to determine status of current or upcoming intake periods and/or refer to HICC Direct delivery stream - https://www.canada.ca/en/prairies-economic-development/services/funding/build-communities-strong-fund.html https://www.canada.ca/fr/developpement-economique-prairies/services/financement/fonds-batir-collectivites-fortes.html
