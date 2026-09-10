@@ -173,6 +173,7 @@ Current aliases:
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
 - **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF`, `BIZPAL-PERLE` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
+- **Canada Tariff Finder → `FIN`:** `TARIFF-TARIF` (tariff questions match there; FIN owns the counter-tariff and trade content)
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
 ### Steps to add a new shared-scenario group
@@ -184,8 +185,6 @@ Current aliases:
 5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add the canonical `abbrKey`, plus any alias member that is itself an official partner. Sharing a scenario file is a *prompt* decision; being in `PARTNER_DEPARTMENTS` is a *filtering* decision, and the two are independent. Add an alias member here when its own logs need to be filterable separately in the admin dashboards (as with `RCAANC-CIRNAC` and `PHAC-ASPC`); leave it out when the portfolio only ever needs the one canonical entry.
 6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry, even for alias members that appear in `PARTNER_DEPARTMENTS`. The scenario override is per scenario file, so the partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
-
----
 
 ---
 

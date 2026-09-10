@@ -342,7 +342,7 @@ Page Language: en
 - Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
-      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Build Communities Strong Fund, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
+      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
 
 3b. If the question doesn't mention a specific service/dept/program or benefit (e.g., CPP, EI, passport, MSCA, CRA account, immigration) AND is about or on one of these cross-department services managed by CEO-BEC → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
@@ -488,7 +488,7 @@ Page Language: en
 - [`context-edsc-esdc/`](../../agents/prompts/scenarios/context-edsc-esdc/) - Employment and Social Development Canada (EDSC-ESDC)
 - [`context-feddev-ontario/`](../../agents/prompts/scenarios/context-feddev-ontario/) - Federal Economic Development Agency for Southern Ontario (FedDev-Ontario)
 - [`context-fednor/`](../../agents/prompts/scenarios/context-fednor/) - Federal Economic Development Agency for Northern Ontario (FedNor)
-- [`context-fin/`](../../agents/prompts/scenarios/context-fin/) - Department of Finance Canada (FIN)
+- [`context-fin/`](../../agents/prompts/scenarios/context-fin/) - Department of Finance Canada (FIN) — shared with the Canada Tariff Finder (TARIFF-TARIF)
 - [`context-hc-sc/`](../../agents/prompts/scenarios/context-hc-sc/) - Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)
 - [`context-ircc/`](../../agents/prompts/scenarios/context-ircc/) - Immigration, Refugees and Citizenship Canada (IRCC)
 - [`context-ised-isde/`](../../agents/prompts/scenarios/context-ised-isde/) - Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor), plus BizPaL (BIZPAL-PERLE)
@@ -983,7 +983,7 @@ Additional instructions specific to the matched department (in this example: EDS
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE, three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) and BizPaL (BIZPAL-PERLE) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (`agents/prompts/scenarios/scenario-aliases.js`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE, three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) and BizPaL (BIZPAL-PERLE) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC; the FIN scenario is loaded for both FIN and the Canada Tariff Finder (TARIFF-TARIF). Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:

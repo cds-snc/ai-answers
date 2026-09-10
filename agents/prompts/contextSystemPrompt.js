@@ -53,7 +53,7 @@ ${departmentsString}
 - Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
-      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Build Communities Strong Fund, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
+      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
 
 3b. If the question doesn't mention a specific service/dept/program or benefit (e.g., CPP, EI, passport, MSCA, CRA account, immigration) AND is about or on one of these cross-department services managed by CEO-BEC → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
