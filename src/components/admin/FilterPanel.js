@@ -718,16 +718,16 @@ const FilterPanel = ({
 
   // Department options — partner list is shared across the app
   const departmentOptions = [
-    { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: '', label: t('admin.filters.allDepartments') },
     ...PARTNER_DEPARTMENTS.map(d => ({ value: d, label: d })),
   ];
 
   // User type options
   const userTypeOptions = [
-    { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
-    { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
-    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
-    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
+    { value: 'all', label: t('admin.filters.allUsers') },
+    { value: 'public', label: t('admin.filters.publicUsers') },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') },
+    { value: 'admin', label: t('admin.filters.adminUsers') }
   ];
 
   // Answer type options
@@ -1103,7 +1103,7 @@ const FilterPanel = ({
         <div className="filter-main-row">
           <div className="filter-row">
             <label htmlFor="dateRangePicker" className="filter-label">
-              {t('admin.filters.dateRange') || 'Date Range'}
+              {t('admin.filters.dateRange')}
             </label>
             <input
               ref={dateRangePickerRef}
@@ -1119,7 +1119,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="department" className="filter-label">
-              {t('admin.filters.department') || 'Department'}
+              {t('admin.filters.department')}
             </label>
             <select
               id="department"
@@ -1137,7 +1137,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="user-type" className="filter-label">
-              {t('admin.filters.users') || 'User Type'}
+              {t('admin.filters.users')}
             </label>
             <select
               id="user-type"
@@ -1171,27 +1171,27 @@ const FilterPanel = ({
             <div className="filter-column">
               <div className="filter-row">
                 <label htmlFor="url-en" className="filter-label">
-                  {t('admin.filters.urlEn') || 'URL (EN)'}
+                  {t('admin.filters.urlEn')}
                 </label>
                 <input
                   type="text"
                   id="url-en"
                   value={urlEn}
                   onChange={(e) => setUrlEn(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
               <div className="filter-row">
                 <label htmlFor="url-fr" className="filter-label">
-                  {t('admin.filters.urlFr') || 'URL (FR)'}
+                  {t('admin.filters.urlFr')}
                 </label>
                 <input
                   type="text"
                   id="url-fr"
                   value={urlFr}
                   onChange={(e) => setUrlFr(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
@@ -1220,7 +1220,7 @@ const FilterPanel = ({
             <>
             <details className="filter-checkbox-details details-form" open onToggle={(e) => e.stopPropagation()}>
               <summary className="filter-label">
-                {t('admin.filters.answerType') || 'Answer Type'}
+                {t('admin.filters.answerType')}
                 {answerType.length > 0 && (
                   <>
                     <span className="filter-count" aria-hidden="true"> ({answerType.length})</span>
@@ -1231,7 +1231,7 @@ const FilterPanel = ({
               <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.answerType')}>
                 <div className="checkbox">
                   <input type="checkbox" id="answerType-all" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} />
-                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes') || 'All'}</label>
+                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes')}</label>
                 </div>
                 {answerTypeOptions.filter(o => o.value !== 'all').map(option => (
                   <div className="checkbox" key={option.value}>
@@ -1249,7 +1249,7 @@ const FilterPanel = ({
               <div className="filter-eval-pair">
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
+                    {t('admin.filters.partnerEval')}
                     {partnerEval.length > 0 && (
                   <>
                     <span className="filter-count" aria-hidden="true"> ({partnerEval.length})</span>
@@ -1260,7 +1260,7 @@ const FilterPanel = ({
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.partnerEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="partnerEval-all" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} />
-                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals') || 'All'}</label>
+                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals')}</label>
                     </div>
                     {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>
@@ -1273,7 +1273,7 @@ const FilterPanel = ({
 
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.aiEval') || 'AI Evaluation'}
+                    {t('admin.filters.aiEval')}
                     {aiEval.length > 0 && (
                   <>
                     <span className="filter-count" aria-hidden="true"> ({aiEval.length})</span>
@@ -1284,7 +1284,7 @@ const FilterPanel = ({
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.aiEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="aiEval-all" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} />
-                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals') || 'All'}</label>
+                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals')}</label>
                     </div>
                     {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>

@@ -15,16 +15,28 @@ import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
 import { getHowTo, HOW_TO_CONTENT_DIR } from '../config/howTos.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 const HowToPage = ({ lang = 'en', howToId }) => {
   const { t } = useTranslations(lang);
   const howTo = getHowTo(howToId);
+  const notFound = !howTo;
   const filename = howTo ? howTo.files[lang] || howTo.files.en : null;
 
   const { frontmatter, content, loading, error } = useMarkdownWithFrontmatter(
     filename,
     HOW_TO_CONTENT_DIR
   );
+  // Explicit focus-move on notFound/error - no client-side route ever
+  // changes howToId under a mounted instance (every link is a plain <a>,
+  // full reload), so each can only go false->true once per mount. Plain
+  // value is fine here (EvalPanel.js's justDeleted), and per
+  // status-and-error-messaging.md, don't share one counter across two
+  // different outcomes - separate refs even though the two are mutually
+  // exclusive on screen.
+  const notFoundRef = useFocusOnChange(notFound);
+  const errorRef = useFocusOnChange(error);
 
   useEffect(() => {
     if (!loading && frontmatter.title) {
@@ -46,12 +58,20 @@ const HowToPage = ({ lang = 'en', howToId }) => {
     </nav>
   );
 
-  if (!howTo) {
+  if (notFound) {
     return (
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t('admin.howTo.notFoundTitle')}</h1>
         {backToAdminNav}
-        <p>{t('admin.howTo.notFound')}</p>
+        <StatusMessage
+          variant="error"
+          message={t('admin.howTo.notFound')}
+          ref={notFoundRef}
+          tabIndex={-1}
+          announce={false}
+          announcedVia="focus"
+          className="focus-target"
+        />
       </GcdsContainer>
     );
   }
@@ -59,7 +79,7 @@ const HowToPage = ({ lang = 'en', howToId }) => {
   if (loading) {
     return (
       <GcdsContainer layout="page" className="mb-600">
-        <p>{t('admin.howTo.loading')}</p>
+        <StatusMessage loading message={t('admin.howTo.loading')} />
       </GcdsContainer>
     );
   }
@@ -69,7 +89,15 @@ const HowToPage = ({ lang = 'en', howToId }) => {
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{t(howTo.titleKey)}</h1>
         {backToAdminNav}
-        <p>{t('admin.howTo.loadError')}</p>
+        <StatusMessage
+          variant="error"
+          message={t('admin.howTo.loadError')}
+          ref={errorRef}
+          tabIndex={-1}
+          announce={false}
+          announcedVia="focus"
+          className="focus-target"
+        />
       </GcdsContainer>
     );
   }

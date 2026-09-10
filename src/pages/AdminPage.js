@@ -41,7 +41,7 @@ const AdminPage = ({ lang = 'en' }) => {
         <AdminNotifications lang={lang} />
       </RoleBasedContent>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
 
         {/* The user's own account comes first, above both menus */}
         <ul className="list-none p-0">

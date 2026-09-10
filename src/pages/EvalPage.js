@@ -119,7 +119,7 @@ const EvalPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page">
-      <h1 className="mb-400">{t('admin.navigation.eval', 'Evaluation Administration')}</h1>
+      <h1 className="mb-400">{t('admin.navigation.eval')}</h1>
       
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -128,96 +128,96 @@ const EvalPage = ({ lang = 'en' }) => {
       </nav>
 
       <div className="mb-400">
-        <h2>{t('admin.evalPage.similarityTitle', 'Similarity-Based Expert Feedback Transfer')}</h2>
+        <h2>{t('admin.evalPage.similarityTitle')}</h2>
         <GcdsText>
-          {t('admin.evalPage.similarityDescription', 'This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.')}
+          {t('admin.evalPage.similarityDescription')}
         </GcdsText>
         {expertFeedbackCount !== null && (
           <GcdsText>
-            <strong>{t('admin.evalPage.label.expertEvaluations', 'Expert Evaluations in System:')}</strong> {expertFeedbackCount}
+            <strong>{t('admin.evalPage.label.expertEvaluations')}</strong> {expertFeedbackCount}
           </GcdsText>
         )}
         {nonEmptyEvalCount !== null && (
           <GcdsText>
-            <strong>{t('admin.evalPage.label.nonEmptyEvaluations', 'Non-Empty Evaluations in System:')}</strong> {nonEmptyEvalCount}
+            <strong>{t('admin.evalPage.label.nonEmptyEvaluations')}</strong> {nonEmptyEvalCount}
           </GcdsText>
         )}
-        <GcdsDetails detailsTitle={t('admin.evalPage.detailsTitle', 'Detailed Evaluation Process')} className="mt-400">
+        <GcdsDetails detailsTitle={t('admin.evalPage.detailsTitle')} className="mt-400">
           <ol className="mb-200">
             <li>
-              <strong>{t('admin.evalPage.step.initialValidation.title', 'Initial Validation')}:</strong>
+              <strong>{t('admin.evalPage.step.initialValidation.title')}:</strong>
               {' '}
-              {t('admin.evalPage.step.initialValidation.description', 'The system first validates that the interaction has question and answer content, then checks if an evaluation already exists.')}
+              {t('admin.evalPage.step.initialValidation.description')}
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.embeddingRetrieval.title', 'Embedding Retrieval')}:</strong>
+              <strong>{t('admin.evalPage.step.embeddingRetrieval.title')}:</strong>
               {' '}
-              {t('admin.evalPage.step.embeddingRetrieval.description', 'Finds vector embeddings for the interaction (question+answer combined, answer-only, and sentence-level).')}
+              {t('admin.evalPage.step.embeddingRetrieval.description')}
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.findingSimilar.title', 'Finding Similar Content')}:</strong>
+              <strong>{t('admin.evalPage.step.findingSimilar.title')}:</strong>
               {' '}
-              {t('admin.evalPage.step.findingSimilar.description', 'Searches for interactions with existing expert feedback and strong QA similarity; returns up to 20 closest matches. Filters out results from the same chat and ensures sentence embeddings exist for candidates.')}
+              {t('admin.evalPage.step.findingSimilar.description')}
               <ul>
-                <li>{t('admin.evalPage.step.findingSimilar.item.expertFeedback', 'Existing expert feedback')}</li>
-                <li>{t('admin.evalPage.step.findingSimilar.item.qaSimilarity', 'Question(s)+answer similarity above threshold (e.g., 0.85)')}</li>
-                <li>{t('admin.evalPage.step.findingSimilar.item.maxMatches', 'Returns up to 20 closest matches (candidates are re-sorted by similarity)')}</li>
+                <li>{t('admin.evalPage.step.findingSimilar.item.expertFeedback')}</li>
+                <li>{t('admin.evalPage.step.findingSimilar.item.qaSimilarity')}</li>
+                <li>{t('admin.evalPage.step.findingSimilar.item.maxMatches')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.sentenceMatching.title', 'Sentence-Level Matching')}:</strong>
+              <strong>{t('admin.evalPage.step.sentenceMatching.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.sentenceMatching.item.findMostSimilar', 'For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)')}</li>
-                <li>{t('admin.evalPage.step.sentenceMatching.item.threshold', 'Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors')}</li>
-                <li>{t('admin.evalPage.step.sentenceMatching.item.transfer', 'If all or a sufficient number of sentences are matched, transfer sentence-level feedback and create a detailed evaluation')}</li>
-                <li>{t('admin.evalPage.step.sentenceMatching.item.telemetry', 'Optionally run a sentence-compare agent for extra verification and capture telemetry (provider/model/latency/tokens)')}</li>
+                <li>{t('admin.evalPage.step.sentenceMatching.item.findMostSimilar')}</li>
+                <li>{t('admin.evalPage.step.sentenceMatching.item.threshold')}</li>
+                <li>{t('admin.evalPage.step.sentenceMatching.item.transfer')}</li>
+                <li>{t('admin.evalPage.step.sentenceMatching.item.telemetry')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.citationMatch.title', 'Citation Matching')}:</strong>
+              <strong>{t('admin.evalPage.step.citationMatch.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.citationMatch.item.compare', 'Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match')}</li>
-                <li>{t('admin.evalPage.step.citationMatch.item.score', 'Score and record a citation match (score, explanation, matched interaction/chat ids)')}</li>
-                <li>{t('admin.evalPage.step.citationMatch.item.searchPage', 'Search page citations may be handled specially and scored zero')}</li>
+                <li>{t('admin.evalPage.step.citationMatch.item.compare')}</li>
+                <li>{t('admin.evalPage.step.citationMatch.item.score')}</li>
+                <li>{t('admin.evalPage.step.citationMatch.item.searchPage')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.qaFallback.title', 'QA High Score Fallback')}:</strong>
+              <strong>{t('admin.evalPage.step.qaFallback.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.qaFallback.item.checkTop', 'If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores')}</li>
-                <li>{t('admin.evalPage.step.qaFallback.item.citationCheck', 'For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source')}</li>
-                <li>{t('admin.evalPage.step.qaFallback.item.useQaOnly', 'If a candidate passes checks, create an evaluation using the QA match (QA-high-score fallback) and record fallback metadata and candidate traces')}</li>
+                <li>{t('admin.evalPage.step.qaFallback.item.checkTop')}</li>
+                <li>{t('admin.evalPage.step.qaFallback.item.citationCheck')}</li>
+                <li>{t('admin.evalPage.step.qaFallback.item.useQaOnly')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.fallbackCompare.title', 'Fallback Compare Checks')}:</strong>
+              <strong>{t('admin.evalPage.step.fallbackCompare.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.fallbackCompare.item.agent', 'A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded')}</li>
-                <li>{t('admin.evalPage.step.fallbackCompare.item.record', 'Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability')}</li>
+                <li>{t('admin.evalPage.step.fallbackCompare.item.agent')}</li>
+                <li>{t('admin.evalPage.step.fallbackCompare.item.record')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.creation.title', 'Evaluation Creation & Scoring')}:</strong>
+              <strong>{t('admin.evalPage.step.creation.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.creation.item.createFeedback', "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')")}</li>
-                <li>{t('admin.evalPage.step.creation.item.computeScore', 'Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.')}</li>
-                <li>{t('admin.evalPage.step.creation.item.mapFeedback', 'Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores')}</li>
-                <li>{t('admin.evalPage.step.creation.item.recordSimilarities', 'Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing')}</li>
-                <li>{t('admin.evalPage.step.creation.item.updateInteraction', 'Update the interaction with the new evaluation reference (autoEval)')}</li>
+                <li>{t('admin.evalPage.step.creation.item.createFeedback')}</li>
+                <li>{t('admin.evalPage.step.creation.item.computeScore')}</li>
+                <li>{t('admin.evalPage.step.creation.item.mapFeedback')}</li>
+                <li>{t('admin.evalPage.step.creation.item.recordSimilarities')}</li>
+                <li>{t('admin.evalPage.step.creation.item.updateInteraction')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.noMatch.title', 'No Match / Rejection Cases')}:</strong>
+              <strong>{t('admin.evalPage.step.noMatch.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.noMatch.item.recordNoMatch', 'If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes')}</li>
-                <li>{t('admin.evalPage.step.noMatch.item.trace', 'No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected')}</li>
+                <li>{t('admin.evalPage.step.noMatch.item.recordNoMatch')}</li>
+                <li>{t('admin.evalPage.step.noMatch.item.trace')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.timeline.title', 'Stage Timeline & Telemetry')}:</strong>
+              <strong>{t('admin.evalPage.step.timeline.title')}:</strong>
               <ul>
-                <li>{t('admin.evalPage.step.timeline.item.record', 'The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics')}</li>
-                <li>{t('admin.evalPage.step.timeline.item.telemetry', 'Agent and VectorService telemetry (latency, tokens, model) are captured where applicable')}</li>
+                <li>{t('admin.evalPage.step.timeline.item.record')}</li>
+                <li>{t('admin.evalPage.step.timeline.item.telemetry')}</li>
               </ul>
             </li>
           </ol>
@@ -225,7 +225,7 @@ const EvalPage = ({ lang = 'en' }) => {
         <br/>
         {/* Evaluation metrics summary */}
         <div className="mt-400">
-          <h3>{t('admin.evalPage.metrics.title', 'Evaluation metrics')}</h3>
+          <h3>{t('admin.evalPage.metrics.title')}</h3>
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -237,22 +237,22 @@ const EvalPage = ({ lang = 'en' }) => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.total', 'Total evaluations')}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.total')}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{evalMetrics.total}</td>
                   </tr>
                   <tr>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.processed', 'Processed evaluations')}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.processed')}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{evalMetrics.processed}</td>
                   </tr>
                   <tr>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.hasMatches', 'Evaluations with matches')}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{t('admin.evalPage.metrics.hasMatches')}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{evalMetrics.hasMatches}</td>
                   </tr>
                 </tbody>
               </table>
 
               <div className="mt-200">
-                <h4>{t('admin.evalPage.metrics.noMatchReasons', 'No-match reasons')}</h4>
+                <h4>{t('admin.evalPage.metrics.noMatchReasons')}</h4>
                   {evalMetrics.noMatchByReason && Object.keys(evalMetrics.noMatchByReason).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
@@ -264,19 +264,19 @@ const EvalPage = ({ lang = 'en' }) => {
                     <tbody>
                       {Object.entries(evalMetrics.noMatchByReason).map(([k, v]) => (
                         <tr key={`nm-${k}`}>
-                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k ? t(`eval.noMatchReasonTypes.${k}`, k) : t('admin.evalPage.metrics.unknown', 'unknown')}</td>
+                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k ? t(`eval.noMatchReasonTypes.${k}`, k) : t('admin.evalPage.metrics.unknown')}</td>
                           <td style={{ border: '1px solid #ddd', padding: '8px' }}>{v}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 ) : (
-                  <div>{t('admin.evalPage.metrics.noMatchNone', 'No no-match reason data available.')}</div>
+                  <div>{t('admin.evalPage.metrics.noMatchNone')}</div>
                 )}
               </div>
 
               <div className="mt-200">
-                <h4>{t('admin.evalPage.metrics.fallbackTypes', 'Fallback types')}</h4>
+                <h4>{t('admin.evalPage.metrics.fallbackTypes')}</h4>
                 {evalMetrics.fallbackByType && Object.keys(evalMetrics.fallbackByType).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
                     <thead>
@@ -288,21 +288,21 @@ const EvalPage = ({ lang = 'en' }) => {
                     <tbody>
                       {Object.entries(evalMetrics.fallbackByType).map(([k, v]) => (
                         <tr key={`fb-${k}`}>
-                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k || t('admin.evalPage.metrics.unknown', 'unknown')}</td>
+                          <td style={{ border: '1px solid #ddd', padding: '8px' }}>{k || t('admin.evalPage.metrics.unknown')}</td>
                           <td style={{ border: '1px solid #ddd', padding: '8px' }}>{v}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 ) : (
-                  <div>{t('admin.evalPage.metrics.fallbackNone', 'No fallback usage data available.')}</div>
+                  <div>{t('admin.evalPage.metrics.fallbackNone')}</div>
                 )}
               </div>
 
               <div className="mt-200">
                 <button onClick={() => {
                   EvaluationService.getEvalMetrics().then(setEvalMetrics).catch(() => {});
-                }}>{t('admin.evalPage.metrics.refresh', 'Refresh metrics')}</button>
+                }}>{t('admin.evalPage.metrics.refresh')}</button>
               </div>
             </div>
           ) : (
@@ -311,7 +311,7 @@ const EvalPage = ({ lang = 'en' }) => {
         </div>
         <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
           <label>
-            {t('admin.evalPage.date.startLabel', 'Start Date')}:
+            {t('admin.evalPage.date.startLabel')}:
             <input
               type="date"
               value={startTime}
@@ -320,7 +320,7 @@ const EvalPage = ({ lang = 'en' }) => {
             />
           </label>
           <label>
-            {t('admin.evalPage.date.endLabel', 'End Date')}:
+            {t('admin.evalPage.date.endLabel')}:
             <input
               type="date"
               value={endTime}
@@ -335,7 +335,7 @@ const EvalPage = ({ lang = 'en' }) => {
             disabled={evalProgress?.loading || isAutoProcessingEvals || isRegeneratingAll}
             className="mb-200 mr-200"
           >
-            {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? t('admin.evalPage.button.processing', 'Processing...') : t('admin.evalPage.button.generate', 'Generate Evaluations')}
+            {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? t('admin.evalPage.button.processing') : t('admin.evalPage.button.generate')}
           </GcdsButton>
           <GcdsButton 
             onClick={handleDeleteEvals}
@@ -343,7 +343,7 @@ const EvalPage = ({ lang = 'en' }) => {
             buttonRole="danger"
             className="mb-200 mr-200"
           >
-            {t('admin.evalPage.button.deleteAll', 'Delete Evaluations')}
+            {t('admin.evalPage.button.deleteAll')}
           </GcdsButton>
           <GcdsButton 
             onClick={handleDeleteEmptyEvals}
@@ -351,29 +351,29 @@ const EvalPage = ({ lang = 'en' }) => {
             buttonRole="danger"
             className="mb-200"
           >
-            {t('admin.evalPage.button.deleteEmpty', 'Delete Empty Evaluations')}
+            {t('admin.evalPage.button.deleteEmpty')}
           </GcdsButton>
         </div>
           {evalProgress && (
           <StatusMessage tag="div" className="mb-200">
             <p>
               {evalProgress.processed !== undefined && (
-                <span> • {t('admin.evalPage.progress.processed', 'Processed')}: {evalProgress.processed}</span>
+                <span> • {t('admin.evalPage.progress.processed')}: {evalProgress.processed}</span>
               )}
               {evalProgress.failed !== undefined && (
-                <span> • {t('admin.evalPage.progress.failed', 'Failed')}: {evalProgress.failed}</span>
+                <span> • {t('admin.evalPage.progress.failed')}: {evalProgress.failed}</span>
               )}
               {evalProgress.remaining !== undefined && (
-                <span> • {t('admin.evalPage.progress.remaining', 'Remaining')}: {evalProgress.remaining}</span>
+                <span> • {t('admin.evalPage.progress.remaining')}: {evalProgress.remaining}</span>
               )}
               {evalProgress.duration !== undefined && (
-                <span> • {t('admin.evalPage.progress.duration', 'Duration')}: {evalProgress.duration}s</span>
+                <span> • {t('admin.evalPage.progress.duration')}: {evalProgress.duration}s</span>
               )}
               {isAutoProcessingEvals && !isRegeneratingAll && (
-                <span> • <strong>{t('admin.evalPage.progress.autoProcessing', 'Auto-processing active')}</strong></span>
+                <span> • <strong>{t('admin.evalPage.progress.autoProcessing')}</strong></span>
               )}
               {isRegeneratingAll && (
-                <span> • <strong>{t('admin.evalPage.progress.regeneratingAll', 'Regenerating all evaluations')}</strong></span>
+                <span> • <strong>{t('admin.evalPage.progress.regeneratingAll')}</strong></span>
               )}
             </p>
           </StatusMessage>

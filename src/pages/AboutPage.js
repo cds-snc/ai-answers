@@ -22,11 +22,18 @@ import ReactMarkdown from 'react-markdown';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { DCTERMS } from '../config/metadata.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 const AboutPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const filename = lang === 'fr' ? 'about-fr.md' : 'about-en.md';
   const { frontmatter, sections, loading, error } = useMarkdownWithFrontmatter(filename);
+  // Explicit focus-move on error - language toggle is a full page reload
+  // (GcdsHeader's langHref is a plain <a>), so error can only go
+  // false->true once per mount. Plain value is fine here (EvalPanel.js's
+  // justDeleted), no counter needed.
+  const errorRef = useFocusOnChange(error);
 
   // Update page metadata from frontmatter
   useEffect(() => {
@@ -115,7 +122,7 @@ const AboutPage = ({ lang = 'en' }) => {
   if (loading) {
     return (
       <div className="mb-600 container-custom">
-        <p>{t('aboutPage.loading')}</p>
+        <StatusMessage loading message={t('aboutPage.loading')} />
       </div>
     );
   }
@@ -125,7 +132,15 @@ const AboutPage = ({ lang = 'en' }) => {
     return (
       <div className="mb-600 container-custom">
         <h1>{t('aboutPage.title')}</h1>
-        <p>{t('aboutPage.loadError')}</p>
+        <StatusMessage
+          variant="error"
+          message={t('aboutPage.loadError')}
+          ref={errorRef}
+          tabIndex={-1}
+          announce={false}
+          announcedVia="focus"
+          className="focus-target"
+        />
       </div>
     );
   }
