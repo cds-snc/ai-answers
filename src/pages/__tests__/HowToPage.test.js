@@ -15,6 +15,7 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <div>{children}</div>,
+  GcdsIcon: ({ name }) => <span data-icon={name} />,
   GcdsLink: ({ href, target, lang, children }) => (
     <a href={href} target={target} data-gcds-link lang={lang}>
       {children}
@@ -121,5 +122,24 @@ describe('HowToPage', () => {
 
     expect(screen.getByText('admin.howTo.notFound')).not.toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('moves focus to the not-found message, since there is no prior interaction to anchor to', () => {
+    render(<HowToPage lang="en" howToId="does-not-exist" />);
+
+    const notice = screen.getByText('admin.howTo.notFound').closest('.status-message--error-box');
+    expect(notice.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(notice);
+  });
+
+  it('moves focus to the load-error message when the guide fetch fails', async () => {
+    global.fetch = vi.fn(() => Promise.resolve({ ok: false, status: 500, text: () => Promise.resolve('boom') }));
+
+    render(<HowToPage lang="en" howToId="eval-informed-answers" />);
+
+    const notice = await screen.findByText('admin.howTo.loadError');
+    const box = notice.closest('.status-message--error-box');
+    expect(box.getAttribute('tabindex')).toBe('-1');
+    await waitFor(() => expect(document.activeElement).toBe(box));
   });
 });
