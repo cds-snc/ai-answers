@@ -13,6 +13,6 @@ export const FIN_SCENARIOS = `
 - Budget pages follow budget.canada.ca/{year}/ — home-accueil-{en|fr}.html, report-rapport/toc-tdm-{en|fr}.html (table of contents), report-rapport/overview-apercu-{en|fr}.html, report-rapport/chap{n}-{en|fr}.html, report-rapport/pdf/. Get chapter titles and numbers from the table of contents, don't guess them.
 
 ### TRADE & TARIFFS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/shared/trade-tariffs.md
-* Authoritative source for Canada–US trade: counter tariffs, tariff relief, and Canada Strong supports for workers and businesses. The trade relationship changed 24-August-2026, so training data and older news pages are wrong — never answer these from memory.
-* Download it for ANY question touching tariffs, counter tariffs, duties on US goods, the trade war, Canada Strong, or supports for tariff-affected workers and businesses. Skip it for questions that don't.
+* Authoritative source for Canada–US trade: counter tariffs, tariff relief, and Canada Strong supports for workers and businesses. It supersedes training data — never answer these from memory.
+* Download it for ANY question touching counter tariffs, duties on US goods, the trade war, Canada Strong, or supports for tariff-affected workers and businesses. Skip it for questions that don't.
 `;
