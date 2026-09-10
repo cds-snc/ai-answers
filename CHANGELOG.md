@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.195.0](https://github.com/cds-snc/ai-answers/compare/v1.194.1...v1.195.0) (2026-09-10)
+
+
+### Features
+
+* add shared trade scenario file ([082cf0e](https://github.com/cds-snc/ai-answers/commit/082cf0e231336b041ce6845683ce4a2beaa43879))
+
+
+### Bug Fixes
+
+* add more trade details ([8aee834](https://github.com/cds-snc/ai-answers/commit/8aee83471ae9dd1972ba05daf763cda9207236b7))
+* alias bizpal to ISED ([7faeef7](https://github.com/cds-snc/ai-answers/commit/7faeef71d4f56f166db2564ce669242004100a92))
+* final code review ([d30e6b4](https://github.com/cds-snc/ai-answers/commit/d30e6b4177fc3a43947a3ccd0d8114cf78d4bfcb))
+* fine tuning ([b312628](https://github.com/cds-snc/ai-answers/commit/b312628f6f0a727fb928f6042a3d7facc2864717))
+* regional dev matching issues ([24c7cdc](https://github.com/cds-snc/ai-answers/commit/24c7cdca6dd69625af0bab4d7a5b46abeb5c8e58))
+* route About/How-to load states through StatusMessage ([e856bdd](https://github.com/cds-snc/ai-answers/commit/e856bddcd15a46562c0121eb8bc5f9c922d94af7))
+
 ## [1.194.1](https://github.com/cds-snc/ai-answers/compare/v1.194.0...v1.194.1) (2026-09-09)
 
 
