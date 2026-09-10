@@ -28,6 +28,28 @@ class DashboardService {
       throw error;
     }
   }
+
+  static async assignChat({ chatId, assignedTo, notes }) {
+    const response = await AuthService.fetch(getApiUrl('chat-assign'), {
+      method: 'POST',
+      body: JSON.stringify({ chatId, assignedTo, notes })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to assign chat');
+    }
+    return response.json();
+  }
+
+  static async unassignChat({ chatId }) {
+    const response = await AuthService.fetch(getApiUrl('chat-assign'), {
+      method: 'DELETE',
+      body: JSON.stringify({ chatId })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to remove assignment');
+    }
+    return response.json();
+  }
 }
 
 export default DashboardService;

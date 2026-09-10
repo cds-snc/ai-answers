@@ -619,6 +619,17 @@ export function getChatFilterConditions(filters, options = {}) {
   // $lookup'd user / interactions.expertFeedback by the time it runs the
   // shared $match (chat-export-logs.js overwrites `user` with the looked-up
   // array; most others still hold the ObjectId there).
+  //
+  // reviewerMatch here is keyed off `group` specifically (institution never
+  // reaches this - FilterPanel has no manual Group control, only the
+  // Account-page "your group" preference sets it). department is a
+  // different axis entirely - the chat's own subject-matter context, not
+  // who handled it - so when both are active they're combined with $or
+  // below rather than each pushed as its own $and condition: "about my
+  // institution's department" and "handled by my group" are two separate
+  // reasons a chat is relevant, not two conditions the same chat must both
+  // satisfy.
+  let reviewerMatchCondition = null;
   if (filters.reviewerMatch) {
     const { userIds = [], feedbackIds = [] } = filters.reviewerMatch;
     const branches = [];
@@ -632,13 +643,22 @@ export function getChatFilterConditions(filters, options = {}) {
     }
     // Nobody matched (unknown institution, email with no hits): match nothing
     // rather than silently dropping the filter.
-    conditions.push(branches.length ? { $or: branches } : { _id: null });
+    reviewerMatchCondition = branches.length ? { $or: branches } : { _id: null };
   }
 
   // department
+  let departmentCondition = null;
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ [withPath('department')]: { $regex: escaped, $options: 'i' } });
+    departmentCondition = { [withPath('department')]: { $regex: escaped, $options: 'i' } };
+  }
+
+  if (reviewerMatchCondition && departmentCondition) {
+    conditions.push({ $or: [reviewerMatchCondition, departmentCondition] });
+  } else if (reviewerMatchCondition) {
+    conditions.push(reviewerMatchCondition);
+  } else if (departmentCondition) {
+    conditions.push(departmentCondition);
   }
 
   // referringUrl

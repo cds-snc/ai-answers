@@ -887,6 +887,30 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
+      },
+      "assign": {
+        "toggleOn": "Attribuer un ou des clavardages à un évaluateur",
+        "selectColumn": "Attribuer",
+        "selectChat": "Sélectionner le clavardage",
+        "expertLabel": "Compte de l'évaluateur",
+        "expertPlaceholder": "Choisir un compte",
+        "noInstitution": "Choisissez une institution ou un groupe sur votre page de compte pour voir les personnes à qui attribuer.",
+        "addNote": "Ajouter une note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} caractères",
+        "noteClear": "Effacer la note",
+        "assignChats": "Attribuer à un évaluateur ({count})",
+        "assignChatsWithNote": "Attribuer à un évaluateur ({count}) avec une note",
+        "errorNoExpert": "Vous devez choisir un expert à qui attribuer.",
+        "errorNoChat": "Vous devez choisir au moins un clavardage à attribuer à l'aide de la case à cocher dans la colonne d'attribution.",
+        "assignSuccess": "{count} clavardage(s) attribué(s).",
+        "assignSuccessWithNote": "{count} clavardage(s) attribué(s) avec une note.",
+        "assignError": "Échec de l'attribution de {count} clavardage(s).",
+        "loadError": "Impossible de charger la liste des personnes à qui vous pouvez attribuer.",
+        "removeAssignment": "Retirer l'attribution de",
+        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution ?",
+        "unassigned": "Attribution retirée.",
+        "unassignError": "Impossible de retirer l'attribution."
       }
     },
     "evalDashboard": {
@@ -1061,43 +1085,39 @@
     "role": "Rôle",
     "institution": "Institution",
     "group": "Groupe",
-    "memberSince": "Membre depuis",
+    "institutionLocked": "Communiquez avec un administrateur pour changer votre institution.",
+    "groupLocked": "Communiquez avec un administrateur pour changer votre groupe.",
     "profileSaved": "Compte mis à jour.",
     "profileSaveError": "Impossible de mettre à jour votre compte.",
     "loadError": "Impossible de charger votre compte.",
-    "groupChats": {
-      "heading": "Clavardages et évaluations du groupe {group}",
-      "description": "Clavardages commencés ou évalués par les membres de votre groupe au cours des 12 derniers mois.",
-      "empty": "Aucun clavardage de votre groupe pour l'instant.",
-      "underReview": "En évaluation : la préférence de filtre pourrait remplacer ce tableau",
-      "loadError": "Impossible de charger les clavardages du groupe."
-    },
     "assignedChats": {
       "heading": "Clavardages qui vous sont attribués",
-      "comingSoon": "Bientôt disponible",
-      "description": "Clavardages attribués par les membres de votre groupe, ou par vous pour les évaluer plus tard.",
-      "inProgress": "Fonctionnalité en cours. Les clavardages qui vous sont attribués pour évaluation s'afficheront ici.",
+      "empty": "Aucun clavardage ne vous est attribué pour l'instant.",
+      "loadError": "Impossible de charger vos clavardages attribués.",
       "columns": {
         "assignedOn": "Attribué le",
         "assignedBy": "Attribué par",
-        "partnerNotes": "Notes du partenaire"
+        "partnerNotes": "Notes"
       }
     },
     "preferences": {
-      "heading": "Préférences de filtre",
+      "heading": "Préférences de filtre du tableau de bord",
       "prefilterDepartment": "Votre institution",
-      "prefilterDepartmentHint": "Les tableaux de bord peuvent démarrer par défaut avec les options suivantes :",
-      "prefilterGroup": "Seulement les clavardages créés ou évalués par les membres de votre groupe",
-      "noGroup": "Choisissez votre groupe ci-dessus avant d'activer cette option.",
-      "noInstitution": "Choisissez votre institution ci-dessus avant d'activer cette option.",
+      "prefilterDepartmentHint": "Les filtres peuvent préétablir votre préférence d'affichage",
+      "prefilterGroup": "Votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "noGroup": "Vous devez choisir un groupe.",
+      "noInstitution": "Vous devez choisir une institution.",
       "saved": "Préférence enregistrée. Les tableaux de bord démarreront maintenant avec ce filtre appliqué par défaut.",
       "savedOff": "Préférence enregistrée.",
-      "saveError": "Impossible d'enregistrer la préférence."
+      "saveError": "Impossible d'enregistrer la préférence.",
+      "filteredInstitution": "Les tableaux de bord sont préfiltrés selon votre institution.",
+      "filteredGroup": "Les tableaux de bord sont préfiltrés selon votre groupe. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBoth": "Les tableaux de bord sont préfiltrés selon votre institution et votre groupe. Vous verrez tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué."
     }
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
-    "institutionNone": "Non défini",
+    "institutionNone": "Aucune",
     "groupNone": "Aucun",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {

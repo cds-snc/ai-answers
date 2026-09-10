@@ -887,6 +887,30 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
+      },
+      "assign": {
+        "toggleOn": "Assign chat(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectChat": "Select chat",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "noInstitution": "Pick an institution or group on your account page to see people to assign to.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign to reviewer ({count})",
+        "assignChatsWithNote": "Assign to reviewer ({count}) with note",
+        "errorNoExpert": "You must choose an expert to assign to.",
+        "errorNoChat": "You must choose at least one chat to assign using the checkbox in the assign column.",
+        "assignSuccess": "Assigned {count} chat(s).",
+        "assignSuccessWithNote": "Assigned {count} chat(s) with a note.",
+        "assignError": "Failed to assign {count} chat(s).",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
       }
     },
     "evalDashboard": {
@@ -1061,43 +1085,39 @@
     "role": "Role",
     "institution": "Institution",
     "group": "Group",
-    "memberSince": "Member since",
+    "institutionLocked": "Contact an admin to change your institution.",
+    "groupLocked": "Contact an admin to change your group.",
     "profileSaved": "Account updated.",
     "profileSaveError": "Failed to update your account.",
     "loadError": "Failed to load your account.",
-    "groupChats": {
-      "heading": "{group} chats and reviews",
-      "description": "Chats started or evaluated by members of your group in the last 12 months.",
-      "empty": "No chats from your group yet.",
-      "underReview": "Under review: the filter preference may replace this table",
-      "loadError": "Failed to load group chats."
-    },
     "assignedChats": {
       "heading": "Chats assigned to you",
-      "comingSoon": "Coming soon",
-      "description": "Chats assigned to you by group members, or by you to review later.",
-      "inProgress": "Feature in progress. Chats assigned to you for evaluation will appear here.",
+      "empty": "No chats assigned to you yet.",
+      "loadError": "Failed to load your assigned chats.",
       "columns": {
         "assignedOn": "Assigned on",
         "assignedBy": "Assigned by",
-        "partnerNotes": "Partner notes"
+        "partnerNotes": "Notes"
       }
     },
     "preferences": {
-      "heading": "Filter preferences",
+      "heading": "Dashboard filter preferences",
       "prefilterDepartment": "Your institution",
-      "prefilterDepartmentHint": "Dashboards can start by default with the following options:",
-      "prefilterGroup": "Only chats created or reviewed by your group's members",
-      "noGroup": "Pick your group above before turning this on.",
-      "noInstitution": "Pick your institution above before turning this on.",
+      "prefilterDepartmentHint": "Filters can preset your viewing preference",
+      "prefilterGroup": "Your group (chats created or reviewed by your group's members)",
+      "noGroup": "You must pick a group.",
+      "noInstitution": "You must pick an institution.",
       "saved": "Preference saved. Dashboards will now start with this filter applied by default.",
       "savedOff": "Preference saved.",
-      "saveError": "Failed to save preference."
+      "saveError": "Failed to save preference.",
+      "filteredInstitution": "Dashboards are pre-filtered to your institution.",
+      "filteredGroup": "Dashboards are pre-filtered to your group. You'll only see questions and answers your group created or reviewed.",
+      "filteredBoth": "Dashboards are pre-filtered to your institution and your group. You'll see everything for your institution, plus anything your group created or reviewed."
     }
   },
   "users": {
     "title": "Manage user accounts",
-    "institutionNone": "Not set",
+    "institutionNone": "None",
     "groupNone": "None",
     "filterLabel": "Filter users",
     "columns": {

@@ -40,7 +40,30 @@ const UserService = {
             body: JSON.stringify(updates)
         });
         if (!response.ok) {
-            throw new Error('Failed to update profile');
+            // Institution/group lock (see api/user/user-me.js) responds with a
+            // stable `code`, not just free text - carry it onto the thrown
+            // error so the caller can map it via resolveErrorMessage() instead
+            // of showing a generic failure for a specific, actionable reason.
+            let code;
+            try { ({ code } = await response.json()); } catch { /* no body */ }
+            const error = new Error('Failed to update profile');
+            error.code = code;
+            throw error;
+        }
+        return response.json();
+    },
+
+    /**
+     * Fetch the users the signed-in user is allowed to assign a chat to
+     * (see api/user/user-assignable.js and api/chat/chat-assign.js). A
+     * partner only ever sees people sharing their own institution/group
+     * (never the full directory); an admin sees everyone active.
+     * @returns {Promise<{users: Array, reason?: 'no_institution'}>}
+     */
+    async getAssignable() {
+        const response = await AuthService.fetch(getApiUrl('user-assignable'));
+        if (!response.ok) {
+            throw new Error('Failed to fetch assignable users');
         }
         return response.json();
     },

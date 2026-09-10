@@ -51,8 +51,8 @@ describe('AccountPage', () => {
     expect(screen.getByLabelText('account.group').value).toBe('Military transitions');
     expect(screen.getByText('account.accountName')).toBeTruthy();
     expect(screen.getByText('users.status.active')).toBeTruthy();
-    // Assigned-chats placeholder table renders with its column shape
-    expect(screen.getByTestId('mock-datatable')).toBeTruthy();
+    // Both group-chats and assigned-chats now render via ServerDataTable.
+    expect(screen.getAllByTestId('mock-server-table').length).toBeGreaterThan(0);
     expect(screen.getByText('account.assignedChats.columns.assignedOn')).toBeTruthy();
     expect(screen.getByText('account.assignedChats.columns.assignedBy')).toBeTruthy();
     expect(screen.getAllByText('admin.common.columns.program').length).toBeGreaterThan(0);
@@ -114,28 +114,30 @@ describe('AccountPage', () => {
     expect(error.compareDocumentPosition(checkbox) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('shows the Group chats table only when the user has a group, filtered by that group', async () => {
-    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
-    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 0, recordsFiltered: 0 });
+  it('shows the right persistent pre-filter explainer for institution-only, group-only, both, or neither', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true, prefilterGroup: false } });
     render(<AccountPage lang="en" />);
-    expect(await screen.findByText('Military transitions chats and reviews')).toBeTruthy();
-    expect(screen.getByTestId('mock-server-table')).toBeTruthy();
-    expect(screen.getByText('admin.common.columns.user')).toBeTruthy();
-    expect(screen.getByText('admin.evalDashboard.columns.creatorEmail')).toBeTruthy();
-    expect(screen.getByText('admin.evalDashboard.columns.expertEmail')).toBeTruthy();
-    await waitFor(() => expect(mockGetChatDashboard).toHaveBeenCalled());
-    const query = mockGetChatDashboard.mock.calls[0][0];
-    expect(query.group).toBe('Military transitions');
-    expect(query.startDate && query.endDate).toBeTruthy();
-    expect(query).toEqual(expect.objectContaining({ start: 0, length: 10, orderBy: 'createdAt', orderDir: 'desc' }));
-  });
+    expect(await screen.findByText('account.preferences.filteredInstitution')).toBeTruthy();
+    expect(screen.queryByText('account.preferences.filteredGroup')).toBeNull();
+    expect(screen.queryByText('account.preferences.filteredBoth')).toBeNull();
+    cleanup();
 
-  it('hides the Group chats section when the group is none', async () => {
-    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'IRCC', group: '', preferences: {} });
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: 'Military transitions', preferences: { prefilterDepartment: false, prefilterGroup: true } });
     render(<AccountPage lang="en" />);
-    await screen.findByLabelText('account.institution');
-    expect(screen.queryByText(/chats and reviews$/)).toBeNull();
-    expect(mockGetChatDashboard).not.toHaveBeenCalled();
+    expect(await screen.findByText('account.preferences.filteredGroup')).toBeTruthy();
+    cleanup();
+
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: { prefilterDepartment: true, prefilterGroup: true } });
+    render(<AccountPage lang="en" />);
+    expect(await screen.findByText('account.preferences.filteredBoth')).toBeTruthy();
+    cleanup();
+
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: '', preferences: { prefilterDepartment: false, prefilterGroup: false } });
+    render(<AccountPage lang="en" />);
+    await screen.findByText('account.institution');
+    expect(screen.queryByText('account.preferences.filteredInstitution')).toBeNull();
+    expect(screen.queryByText('account.preferences.filteredGroup')).toBeNull();
+    expect(screen.queryByText('account.preferences.filteredBoth')).toBeNull();
   });
 
   it('saves the group pre-filter preference, and errors when no group is set', async () => {
@@ -154,10 +156,15 @@ describe('AccountPage', () => {
     await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledWith({ preferences: { prefilterGroup: true } }));
   });
 
-  it('announces a load failure', async () => {
+  it('moves focus to the load error and hides profile/activity content', async () => {
     mockGetMe.mockRejectedValue(new Error('nope'));
     render(<AccountPage lang="en" />);
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('account.loadError');
+    const message = await screen.findByText('account.loadError');
+    await waitFor(() => expect(document.activeElement).toBe(message));
+    expect(message.getAttribute('data-announced-via')).toBe('focus');
+    // Nothing that depends on the profile (preferences, activity/assigned
+    // chats) should render when it failed to load.
+    expect(screen.queryByText('account.preferences.heading')).toBeNull();
+    expect(screen.queryByText('account.activityHeading')).toBeNull();
   });
 });

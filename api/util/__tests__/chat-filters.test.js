@@ -232,3 +232,30 @@ describe('getChatFilterConditions - reviewerMatch (Institution / Reviewer email 
     expect(getChatFilterConditions({ reviewerMatch: null })).toEqual([]);
   });
 });
+
+describe('getChatFilterConditions - department + reviewerMatch combine with OR', () => {
+  const userIds = ['u1'];
+
+  it('ORs department and reviewerMatch together when both are set', () => {
+    const conditions = getChatFilterConditions(
+      { department: 'IRCC', reviewerMatch: { userIds, feedbackIds: [] } },
+      { basePath: 'interactions', userField: 'user' }
+    );
+    expect(conditions).toEqual([{
+      $or: [
+        { $or: [{ user: { $in: userIds } }, { 'user._id': { $in: userIds } }] },
+        { 'interactions.department': { $regex: 'IRCC', $options: 'i' } }
+      ]
+    }]);
+  });
+
+  it('keeps department as its own condition when reviewerMatch is not set', () => {
+    const conditions = getChatFilterConditions({ department: 'IRCC' }, { basePath: 'interactions' });
+    expect(conditions).toEqual([{ 'interactions.department': { $regex: 'IRCC', $options: 'i' } }]);
+  });
+
+  it('keeps reviewerMatch as its own condition when department is not set', () => {
+    const conditions = getChatFilterConditions({ reviewerMatch: { userIds, feedbackIds: [] } }, { userField: 'user' });
+    expect(conditions).toEqual([{ $or: [{ user: { $in: userIds } }, { 'user._id': { $in: userIds } }] }]);
+  });
+});

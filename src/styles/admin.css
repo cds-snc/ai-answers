@@ -564,6 +564,67 @@
   background: var(--gcds-button-secondary-hover-background);
 }
 
+/* ChatDashboardPage.js bulk chat-assign toolbar: reuses .filter-panel/
+   .filter-panel-summary/.filter-panel-content as-is (same expand/collapse
+   details, chevron, and box treatment as "Filters" and EvalDashboardPage's
+   eval-search-chat-id) - no chat-assign-panel box CSS of its own. The
+   panel/border stays full width like every other .filter-panel; .text-
+   measure (global.css) is on .filter-panel-content itself (in JSX), not the
+   outer box, so only the content readably narrows - same idea as
+   BatchUpload's form, just scoped one level in.
+   One override: the shared closed-state summary (.filter-panel:not([open])
+   > .filter-panel-summary, above) is solid blue - a "primary" look that's
+   right for "Filters" but not wanted here, so this panel gets its own
+   closed-state look instead, same tokens .filter-button-outline uses
+   elsewhere in this panel (secondary/outline, not primary). */
+.chat-assign-panel:not([open]) > .filter-panel-summary {
+  background: var(--gcds-button-secondary-default-background);
+  border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+.chat-assign-panel:not([open]) > .filter-panel-summary:hover {
+  background: var(--gcds-button-secondary-hover-background);
+}
+
+/* :focus:hover ties this override's own specificity (both are 3 components)
+   with the shared .filter-panel-summary:focus:hover rule (admin.css, GCDS
+   focus states) - a real collision, not a hypothetical one: clicking the
+   summary keeps focus on it while the cursor is still over it, so this
+   combination is what actually happens right after every click. Without
+   this, that shared rule's white text (--gcds-details-focus-text) wins on
+   source order, unreadable against this panel's now-light background.
+   outline/box-shadow (the actual focus indicator) are untouched - only
+   background-color/color are overridden here. */
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus,
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus:hover {
+  background-color: var(--gcds-button-secondary-hover-background);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+/* Left-aligned, under the expert picker - .filter-actions itself is
+   right-aligned (FilterPanel's own Apply/Clear row), not what's wanted here. */
+.chat-assign-actions {
+  justify-content: flex-start;
+  padding-top: var(--gcds-spacing-150);
+}
+
+.chat-assign-note {
+  margin-top: var(--gcds-spacing-150);
+}
+
+/* Same width as the expert <select> above it (.filter-input/.filter-select
+   both default to width:100% of the panel) - aligned edges, not a
+   narrower field of its own. */
+.chat-assign-note-textarea {
+  width: 100%;
+}
+
+.chat-assign-note-count {
+  margin: var(--gcds-spacing-50) 0 0;
+  color: var(--gcds-text-secondary);
+}
+
 /* Same link look as .filter-button-secondary, flush left and sized like the
    surrounding text — for when it sits inline in a list of GcdsLinks instead
    of a button row. GcdsLink defaults to size="inherit", so matching it here
@@ -3357,25 +3418,6 @@ details gcds-button::part(button) {
 
 .account-profile dd {
   margin: 0;
-}
-
-/* "Coming soon" label beside a section heading */
-.account-badge {
-  display: inline-block;
-  margin-left: var(--gcds-spacing-200);
-  padding: 0 var(--gcds-spacing-150);
-  border-radius: 6px;
-  background: var(--gcds-color-blue-100);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.6;
-  vertical-align: middle;
-}
-
-/* Yellow "tip" variant (same tokens as the yellow StatusMessage box) */
-.account-badge--tip {
-  background: var(--gcds-color-yellow-100);
-  color: var(--gcds-color-yellow-800);
 }
 
 @media (max-width: 600px) {

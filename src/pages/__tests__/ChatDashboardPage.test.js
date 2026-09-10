@@ -20,9 +20,13 @@ vi.mock('../../services/DashboardService.js', () => ({
       recordsTotal: 0,
       recordsFiltered: 0,
       data: []
-    }))
+    })),
+    assignChat: vi.fn(() => Promise.resolve({}))
   }
 }));
+
+const { mockGetAssignable } = vi.hoisted(() => ({ mockGetAssignable: vi.fn() }));
+vi.mock('../../services/UserService.js', () => ({ default: { getAssignable: mockGetAssignable } }));
 
 // A closer-to-real DataTables mock than a plain `() => null`: captures the
 // `options` given to the most recently rendered instance (so a test can call
@@ -80,7 +84,8 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <div>{children}</div>,
   GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
-  GcdsIcon: () => <span aria-hidden="true" />
+  GcdsIcon: () => <span aria-hidden="true" />,
+  GcdsButton: ({ children, onClick, disabled }) => <button onClick={onClick} disabled={disabled}>{children}</button>
 }));
 
 describe('ChatDashboardPage rendering', () => {
@@ -89,6 +94,7 @@ describe('ChatDashboardPage rendering', () => {
     lastColumns = null;
     lastOptions = null;
     mountedInstances = [];
+    mockGetAssignable.mockReset();
   });
 
   it('renders without crashing', async () => {
@@ -97,6 +103,143 @@ describe('ChatDashboardPage rendering', () => {
     await waitFor(() => {
       expect(getByText('admin.chatDashboard.title')).toBeTruthy();
     });
+  });
+
+  it('hides the Assign chats toggle when there are no results', async () => {
+    const { container, queryByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    // Default mock resolves recordsTotal: 0.
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+
+    expect(queryByText('admin.chatDashboard.assign.toggleOn')).toBeNull();
+  });
+
+  it('assign mode adds a checkbox column and loads the assignable dropdown', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    // The Assign chats toggle only appears once the table actually has
+    // results - simulate the real DataTables ajax callback firing with one.
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastColumns).not.toBeNull());
+    expect(lastColumns.some((c) => c.data === 'chatId' && c.className === 'chat-assign-checkbox-col')).toBe(false);
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
+    await waitFor(() => expect(getByText('partner@x.ca')).toBeTruthy());
+
+    // The GC DS checkbox's visible box/checkmark is drawn on the <label>'s
+    // own ::before - putting sr-only on the label itself (rather than a
+    // span inside it) clips that pseudo-element away too, making the
+    // checkbox invisible. Regression coverage for that exact bug.
+    const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
+    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123' });
+    expect(html).toContain('class="gc-chckbxrdio sm"');
+    expect(html).toMatch(/<label for="[^"]+"><span class="sr-only">/);
+    expect(html).not.toMatch(/<label[^>]*class="sr-only"/);
+  });
+
+  it('shows an assignee pill with a remove button instead of a checkbox, for an already-assigned chat', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
+
+    const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
+    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123', assignedToEmail: 'partner@x.ca' });
+    expect(html).toContain('class="filter-pill filter-pill--closable chat-assign-pill"');
+    expect(html).toContain('data-chat-id="chat-123"');
+    expect(html).toContain('partner@x.ca');
+    expect(html).not.toContain('type="checkbox"');
+  });
+
+  it('shows a validation error instead of assigning, when Assign chats is clicked with nothing chosen', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
+
+    const assignButton = await waitFor(() => getByText(/admin\.chatDashboard\.assign\.assignChats/));
+    await act(async () => { fireEvent.click(assignButton); });
+
+    expect(await waitFor(() => getByText('admin.chatDashboard.assign.errorNoExpert'))).toBeTruthy();
+    expect(DashboardService.assignChat).not.toHaveBeenCalled();
+  });
+
+  it('switches the Assign chats button label once a note is typed, with no separate save step', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText, queryByText } = render(<ChatDashboardPage lang="en" />);
+
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
+
+    expect(getByText(/admin\.chatDashboard\.assign\.assignChats(?!WithNote)/)).toBeTruthy();
+
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.addNote')); });
+    // No separate "Save note" button anymore.
+    expect(queryByText('admin.chatDashboard.assign.noteSubmit')).toBeNull();
+
+    const textarea = container.querySelector('#chat-assign-note');
+    await act(async () => { fireEvent.change(textarea, { target: { value: 'please double-check this one' } }); });
+
+    expect(getByText('admin.chatDashboard.assign.assignChatsWithNote')).toBeTruthy();
+    expect(queryByText(/^admin\.chatDashboard\.assign\.assignChats$/)).toBeNull();
   });
 
   // The chatId column's review link routes to the reviewed chat's own
