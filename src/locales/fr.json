@@ -416,6 +416,7 @@
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
       "partnerMenu": "Menu partenaire",
+      "account": "Gérer votre compte",
       "aiAnswers": "Utiliser Réponses IA avec les options d'évaluation",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -752,6 +753,7 @@
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Institution partenaire",
       "allDepartments": "Toutes les institutions",
+      "group": "Groupe",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -852,6 +854,7 @@
         "chatId": "ID de chat",
         "department": "Ministère",
         "program": "Service",
+        "user": "Utilisateur",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Langue de la page"
       }
@@ -884,6 +887,30 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
+      },
+      "assign": {
+        "toggleOn": "Attribuer un ou des clavardages à un évaluateur",
+        "selectColumn": "Attribuer",
+        "selectChat": "Sélectionner le clavardage",
+        "expertLabel": "Compte de l'évaluateur",
+        "expertPlaceholder": "Choisir un compte",
+        "noInstitution": "Vous ne pouvez attribuer des clavardages qu'à vous-même. Choisissez une institution ou un groupe sur votre page de compte pour aussi attribuer des clavardages à des collègues.",
+        "addNote": "Ajouter une note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} caractères",
+        "noteClear": "Effacer la note",
+        "assignChats": "Attribuer à un évaluateur ({count})",
+        "assignChatsWithNote": "Attribuer à un évaluateur ({count}) avec une note",
+        "errorNoExpert": "Vous devez choisir un expert à qui attribuer.",
+        "errorNoChat": "Vous devez choisir au moins un clavardage à attribuer à l'aide de la case à cocher dans la colonne d'attribution.",
+        "assignSuccess": "{count} clavardage(s) attribué(s).",
+        "assignSuccessWithNote": "{count} clavardage(s) attribué(s) avec une note.",
+        "assignError": "Échec de l'attribution de {count} clavardage(s).",
+        "loadError": "Impossible de charger la liste des personnes à qui vous pouvez attribuer.",
+        "removeAssignment": "Retirer l'attribution de",
+        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution ?",
+        "unassigned": "Attribution retirée.",
+        "unassignError": "Impossible de retirer l'attribution."
       }
     },
     "evalDashboard": {
@@ -1049,15 +1076,76 @@
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
   },
+  "account": {
+    "title": "Gérer votre compte",
+    "profileHeading": "Détails du compte",
+    "accountName": "Nom du compte",
+    "activityHeading": "Vos clavardages et évaluations",
+    "status": "Statut",
+    "role": "Rôle",
+    "institution": "Institution",
+    "group": "Groupe",
+    "institutionLocked": "Communiquez avec un administrateur pour changer votre institution.",
+    "groupLocked": "Communiquez avec un administrateur pour changer votre groupe.",
+    "updated": "Compte mis à jour : {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution retirée",
+    "changeGroupSet": "groupe {value}",
+    "changeGroupCleared": "groupe retiré",
+    "profileSaveError": "Impossible de mettre à jour votre compte.",
+    "loadError": "Impossible de charger votre compte.",
+    "assignedChats": {
+      "heading": "Vos clavardages attribués pour évaluation",
+      "empty": "Aucun clavardage ne vous est attribué pour l'instant.",
+      "loadError": "Impossible de charger vos clavardages attribués.",
+      "columns": {
+        "assignedOn": "Attribué le",
+        "assignedBy": "Attribué par",
+        "partnerNotes": "Notes",
+        "evaluated": "Évalué"
+      },
+      "evalStatus": {
+        "completed": "Terminé",
+        "pending": "En attente"
+      }
+    },
+    "preferences": {
+      "heading": "Préférences de filtre du tableau de bord",
+      "prefilterDepartment": "Votre institution",
+      "prefilterGroup": "Votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "noGroup": "Vous devez choisir un groupe.",
+      "noInstitution": "Vous devez choisir une institution.",
+      "savedChange": "Préférence enregistrée : {change}",
+      "changeInstitutionOn": "institution sélectionnée",
+      "changeInstitutionOff": "institution désélectionnée",
+      "changeGroupOn": "groupe sélectionné",
+      "changeGroupOff": "groupe désélectionné",
+      "saveError": "Impossible d'enregistrer la préférence.",
+      "filteredNoticeTitle": "Fonctionnement des préférences de filtre",
+      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, de *mesures* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
+      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, de *mesures* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage* et d'*évaluation* :",
+      "filteredBothChatEvalEffect": "tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué.",
+      "filteredBothMetricsPartnerLabel": "Tableaux de bord de *mesures* et *partenaire* :",
+      "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
+      "filteredPublicLabel": "Tableau de bord *public* :",
+      "filteredPublicEffect": "non concerné.",
+      "filteredFooter": "Vous pouvez toujours modifier ou effacer ces filtres à tout moment dans chaque tableau de bord."
+    }
+  },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "institutionNone": "Aucune",
+    "groupNone": "Aucun",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Groupe"
     },
     "roles": {
       "admin": "Administrateur",

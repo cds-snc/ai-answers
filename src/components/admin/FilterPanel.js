@@ -7,6 +7,8 @@ import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
+import { useAuth } from '../../contexts/AuthContext.js';
+import { getPreferredDepartment, getPreferredGroup } from '../../utils/admin/accountPreferences.js';
 
 const FilterPanel = ({
   lang,
@@ -187,7 +189,19 @@ const FilterPanel = ({
 
   // Store dates as strings (like original FilterPanel.js)
   const [dateRange, setDateRange] = useState(getDefaultDates());
-  const [department, setDepartment] = useState('');
+  // Account preference: open with the user's own institution selected. Same
+  // default-vs-universal split as defaultUserType - Clear returns to this
+  // default, the pill's x goes to the universal '' (all). useAuth() is
+  // undefined outside an AuthProvider (unit tests), hence the optional chain.
+  const authUser = useAuth()?.currentUser;
+  const preferredDepartment = getPreferredDepartment(authUser);
+  const [department, setDepartment] = useState(preferredDepartment);
+  // "Filter dashboards to my group" preference: no control of its own here -
+  // it rides along as a hidden `group` filter (chats created or evaluated by
+  // the group's members, resolved server-side) with a closable pill, so it
+  // is visible and droppable per visit like any other applied filter.
+  const preferredGroup = getPreferredGroup(authUser);
+  const [group, setGroup] = useState(preferredGroup);
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState(defaultUserType);
@@ -212,7 +226,8 @@ const FilterPanel = ({
       const defaultFilters = {
         startDate: startObj ? startObj.toISOString() : undefined,
         endDate: endObj ? endObj.toISOString() : undefined,
-        department: '',
+        department: preferredDepartment,
+        group: preferredGroup,
         urlEn: '',
         urlFr: '',
         userType: defaultUserType,
@@ -792,6 +807,7 @@ const FilterPanel = ({
       startDate: startObj ? startObj.toISOString() : undefined,
       endDate: endObj ? endObj.toISOString() : undefined,
       department,
+      group,
       urlEn,
       urlFr,
       userType,
@@ -808,7 +824,8 @@ const FilterPanel = ({
   const handleClear = () => {
     const defaultDates = getDefaultDates();
     setDateRange(defaultDates);
-    setDepartment('');
+    setDepartment(preferredDepartment);
+    setGroup(preferredGroup);
     setUrlEn('');
     setUrlFr('');
     setUserType(defaultUserType);
@@ -834,7 +851,8 @@ const FilterPanel = ({
     const defaultFilters = {
       startDate: startObj ? startObj.toISOString() : undefined,
       endDate: endObj ? endObj.toISOString() : undefined,
-      department: '',
+      department: preferredDepartment,
+      group: preferredGroup,
       urlEn: '',
       urlFr: '',
       userType: defaultUserType,
@@ -881,6 +899,7 @@ const FilterPanel = ({
       }, 50);
       return;
     } else if (key === 'department') { setDepartment(''); next.department = ''; }
+    else if (key === 'group') { setGroup(''); next.group = ''; }
     else if (key === 'userType') {
       // Reset to the universal 'all', not defaultUserType — a page whose
       // default isn't 'all' (e.g. MetricsDashboard.js's 'public') would
@@ -933,6 +952,12 @@ const FilterPanel = ({
       label: deptIsDefault ? t('admin.filters.allDepartments') : appliedFilters.department,
       info: deptIsDefault,
     });
+
+    // Group scope from the account preference - only ever present when set,
+    // and always closable (there is no "all groups" state to announce).
+    if (appliedFilters.group) {
+      pills.push({ key: 'group', label: formatPillLabel(t('admin.filters.group'), appliedFilters.group) });
+    }
 
     // The non-closable info pill is reserved for the true 'all', not for
     // "whatever this page's default happens to be" — a 'public' default

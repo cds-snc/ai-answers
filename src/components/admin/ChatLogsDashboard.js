@@ -56,6 +56,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (filters.startDate) params.append('startDate', filters.startDate);
         if (filters.endDate) params.append('endDate', filters.endDate);
         if (filters.department) params.append('department', filters.department);
+        if (filters.group) params.append('group', filters.group);
         if (filters.urlEn) params.append('urlEn', filters.urlEn);
         if (filters.urlFr) params.append('urlFr', filters.urlFr);
         if (filters.userType && filters.userType !== 'all') {

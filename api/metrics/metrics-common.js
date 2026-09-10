@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import { getChatFilterConditions } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
@@ -52,7 +53,7 @@ const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
 const HOURS_IN_DAY = 24;
 const DEFAULT_DAYS = 7;
 
-export function parseRequestFilters(req) {
+export async function parseRequestFilters(req) {
     const { startDate, endDate, timezoneOffsetMinutes } = req.query;
 
     // 1. Date Filter
@@ -76,7 +77,8 @@ export function parseRequestFilters(req) {
 
     // 2. Base Filters (exclude computed fields and context-based fields)
     const { answerType, partnerEval, aiEval, userType, department, urlEn, urlFr } = req.query;
-    const interactionFilters = { userType, urlEn, urlFr }; // department is context-based, handled separately
+    const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
+    const interactionFilters = { userType, urlEn, urlFr, reviewerMatch }; // department is context-based, handled separately
     const extraFilterConditions = getChatFilterConditions(interactionFilters);
 
     // 2b. Department filter (applied after context lookup, built inline)

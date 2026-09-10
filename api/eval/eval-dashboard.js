@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
@@ -384,7 +385,9 @@ async function evalDashboardHandler(req, res) {
       andFilters.push({ 'eval.fallbackType': { $regex: `^${escaped}$`, $options: 'i' } });
     }
 
+    const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
     const sharedFilters = getChatFilterConditions({
+      reviewerMatch,
       department,
       referringUrl,
       urlEn,

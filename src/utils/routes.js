@@ -13,6 +13,7 @@ export const ROUTE_SLUGS = {
   batch:                   { en: 'batch',                        fr: 'lot' },
   'chat-viewer':           { en: 'chat-viewer',                  fr: 'visualiseur-de-clavardage' },
   users:                   { en: 'users',                        fr: 'utilisateurs' },
+  account:                 { en: 'account',                      fr: 'compte' },
   eval:                    { en: 'eval',                         fr: 'evaluation' },
   'eval-dashboard':        { en: 'eval-dashboard',               fr: 'tableau-de-bord-evaluation' },
   'auto-eval-dashboard':   { en: 'auto-eval-dashboard',          fr: 'tableau-de-bord-auto-evaluation' },

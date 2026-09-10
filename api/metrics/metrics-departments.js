@@ -150,7 +150,7 @@ async function getDepartmentMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildDepartmentPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
