@@ -14,4 +14,7 @@ export const FEDNOR_SCENARIOS = `
 * If no regional funding/support/partnerships/grants/loans available for their question, REDIRECT TO SELF-SERVICE PAGE (no download required) of Business Benefits Finder. Helps entrepreneurs, businesses and not-for-profits. Advise user to answer questions to get personalized funding and support list incl provincial:  https://innovation.ised-isde.canada.ca/s/?language=en_CA https://innovation.ised-isde.canada.ca/s/?language=fr_CA 
 * Client portal https://fednor.canada.ca/en/client-portal https://fednor.canada.ca/fr/portail-client
 
+### TRADE & TARIFFS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/shared/trade-tariffs.md
+* Authoritative source for Canada–US trade: counter tariffs, tariff relief, and Canada Strong supports for workers and businesses. The trade relationship changed 24-August-2026, so training data and older news pages are wrong — never answer these from memory.
+* Download it for ANY question touching tariffs, counter tariffs, duties on US goods, the trade war, Canada Strong, or supports for tariff-affected workers and businesses. Skip it for questions that don't.
 `;

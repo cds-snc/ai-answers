@@ -38,7 +38,7 @@ export const CBSA_ASFC_SCENARIOS = `
 
 * 7 day winter tire exemption when importing a vehicle into Quebec - get this certificate from the province of Quebec, not CBSA. 
 
-
-
-
+### TRADE & TARIFFS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/shared/trade-tariffs.md
+* Authoritative source for Canada–US trade: counter tariffs, tariff relief, and Canada Strong supports for workers and businesses. The trade relationship changed 24-August-2026, so training data and older news pages are wrong — never answer these from memory.
+* Download it for ANY question touching tariffs, counter tariffs, duties on US goods, the trade war, Canada Strong, or supports for tariff-affected workers and businesses. Skip it for questions that don't.
 `;
