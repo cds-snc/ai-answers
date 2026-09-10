@@ -171,8 +171,9 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
-- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
+- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF`, `BIZPAL-PERLE` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
+- **Canada Tariff Finder → `FIN`:** `TARIFF-TARIF` (tariff questions match there; FIN owns the counter-tariff and trade content)
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
 ### Steps to add a new shared-scenario group
@@ -187,6 +188,57 @@ Current aliases:
 
 ---
 
+## Shared instruction files (downloaded on demand by several departments)
+
+An alias makes several `abbrKey`s load *the same whole scenario file*. That is the
+wrong tool when a **topic** is shared by departments that otherwise need their own
+scenarios — cross-cutting subjects like Canada–US trade, which FIN, ISED-ISDE, the
+regional development agencies and CBSA-ASFC all field questions about.
+
+For those, put the content in one markdown file and have each scenario tell the
+agent to download it *when the question calls for it*.
+
+### How it works
+
+The markdown file lives in the repo and is fetched at answer time over
+`raw.githubusercontent.com` — there is no import, and **nothing loads until the
+branch is merged to `main`**. `agenticBase.js` exempts these URLs from the
+three-download budget, so a shared file never costs a department its research
+downloads.
+
+Current shared files:
+- `agents/prompts/scenarios/shared/trade-tariffs.md` — Canada–US trade, counter
+  tariffs and Canada Strong supports. `grep "TRADE & TARIFFS FILE"` in
+  `agents/prompts/scenarios/` for the current consumers.
+
+Single-department files use the same mechanism but stay in the department folder
+(`context-sac-isc/sac-isc-contacts.md`, `context-dnd-mdn/dnd-mdn-transition-scenarios.md`).
+
+### Steps to add one
+
+1. **Create the markdown file** under `agents/prompts/scenarios/shared/` (or the
+   department folder if only one department will ever load it).
+2. **Add an identical pointer block** to each scenario file that should load it —
+   the raw `main` URL, what the file is authoritative for, and *when to download it*.
+   The trigger sentence matters more than the content list: the agent only fetches
+   the file if it recognises the question as in scope.
+3. **Keep the block identical across files** so `grep` finds every consumer when the
+   path or triggers change.
+4. **Don't tell the agent to cite the raw URL** — `citationInstructions.js` already
+   restricts citations to canada.ca/gc.ca. Cite the pages the file names.
+5. **Keep department-specific links in that department's own scenario, not here.**
+   A shared file is loaded by departments that have no way of knowing which one
+   applies — a per-department list in it is both duplication and mostly noise at
+   the point of use. Name the national/entry page and let the department's own
+   scenario carry its page.
+6. `agents/__tests__/scenario-instruction-files.test.js` asserts every
+   `raw.githubusercontent.com/cds-snc/ai-answers/...` URL in `agents/prompts/`
+   resolves to a file that exists — a renamed or mistyped file fails there instead
+   of 404ing silently at answer time.
+
+> **Pin to `main`, not a branch.** A branch-pinned URL keeps working until the branch
+> is deleted, then 404s in production with no error and no failing test.
+
 ## Checklist for Adding a Department as a Partner
 
 - [ ] Look up `abbrKey` in `departments_EN.js` or `departments_FR.js`
@@ -195,6 +247,7 @@ Current aliases:
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Update "Current Departments" table in this document (alphabetically)
+- [ ] Check the shared instruction files — does this department field questions on a shared topic? If so, paste the pointer block into its scenario file (a new RDA, for example, needs the `TRADE & TARIFFS FILE` block). This doesn't follow from `PARTNER_DEPARTMENTS` or the alias map.
 - [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
@@ -240,6 +293,7 @@ If the partner is part of a shared-scenario group (see [Shared scenarios](#share
 - [ ] Remove the row from the "Current Departments" table in this document
 - [ ] Remove the `getDepartmentDisplayName` entry in the generator script (if present)
 - [ ] Handle `scenario-aliases.js` if the partner is part of a shared-scenario group
+- [ ] Check `agents/prompts/scenarios/shared/` for anything naming this department (deleting `context-{slug}/` takes its pointer block with it, but a shared file that names the department is orphaned and stays)
 - [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
 - [ ] Confirm no dangling references: `grep -rn "context-{slug}\|{UPPER_KEY}_SCENARIOS" --include="*.js" --include="*.md" .`
 - [ ] Leave `departments_EN.js`, `departments_FR.js`, and `contextSystemPrompt.js` routing intact

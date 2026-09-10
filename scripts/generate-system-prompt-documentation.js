@@ -68,13 +68,13 @@ function getDepartmentDisplayName(contextCode) {
     'CDS-SNC': 'Canadian Digital Service (CDS-SNC)',
     'DND-MDN': 'National Defence portfolio — shared by National Defence (DND-MDN), Canadian Forces Housing Agency (CFHA-ALFC), Defence Construction Canada (DCC-CDC), Defence Investment Agency (DIA-AID), Defence Research and Development Canada (DRDC-RDDC), Independent Review Panel for Defence Acquisition (IRPDA-CIEAD), and Office of the Ombudsman for DND and the Canadian Armed Forces (ONDCAF)',
     'EDSC-ESDC': 'Employment and Social Development Canada (EDSC-ESDC)',
-    'FIN': 'Department of Finance Canada (FIN)',
+    'FIN': 'Department of Finance Canada (FIN) — shared with the Canada Tariff Finder (TARIFF-TARIF)',
     'HC-SC': 'Health Canada (HC-SC) — shared with the Public Health Agency of Canada (PHAC-ASPC)',
     'IRCC': 'Immigration, Refugees and Citizenship Canada (IRCC)',
     'SAC-ISC': 'Indigenous Services Canada (SAC-ISC) — shared with Crown-Indigenous Relations and Northern Affairs Canada (RCAANC-CIRNAC)',
     'TBS-SCT': 'Treasury Board Secretariat (TBS-SCT)',
     'ECCC': 'Environment and Climate Change Canada (ECCC)',
-    'ISED-ISDE': 'Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor)',
+    'ISED-ISDE': 'Innovation, Science and Economic Development Canada (ISED-ISDE) — shared with three Regional Development Agencies: Atlantic Canada Opportunities Agency (ACOA-APECA), Canada Economic Development for Quebec Regions (CED-QR), and Canadian Northern Economic Development Agency (CanNor), plus BizPaL (BIZPAL-PERLE)',
     'FEDDEV-ONTARIO': 'Federal Economic Development Agency for Southern Ontario (FedDev-Ontario)',
     'FEDNOR': 'Federal Economic Development Agency for Northern Ontario (FedNor)',
     'PACIFICAN': 'Pacific Economic Development Canada (PacifiCan)',
@@ -454,7 +454,7 @@ Additional instructions specific to the matched department (in this example: ${d
 - Important URLs and resources
 - Special handling instructions
 
-**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (\`agents/prompts/scenarios/scenario-aliases.js\`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE and three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC. Other departments use only the general scenarios until their partner scenario files are created.
+**Note:** Only partner departments with custom scenario files get this section. This is a growing list as new departments are onboarded. Some scenario files are shared by a portfolio of related departments via an alias map (\`agents/prompts/scenarios/scenario-aliases.js\`): the DND-MDN scenario is loaded for any of DND-MDN, CFHA-ALFC, DCC-CDC, DIA-AID, DRDC-RDDC, IRPDA-CIEAD, or ONDCAF; the SAC-ISC scenario is loaded for both SAC-ISC and RCAANC-CIRNAC; the ISED-ISDE scenario is loaded for ISED-ISDE, three Regional Development Agencies (ACOA-APECA, CED-QR, CanNor) and BizPaL (BIZPAL-PERLE) — the other four RDAs (FedDev-Ontario, FedNor, PacifiCan, PrairiesCan) are partners with their own scenario files; the HC-SC scenario is loaded for both HC-SC and PHAC-ASPC; the FIN scenario is loaded for both FIN and the Canada Tariff Finder (TARIFF-TARIF). Other departments use only the general scenarios until their partner scenario files are created.
 
 ### 4. Base System Prompt (Workflow Steps)
 Seven-step process that all responses must follow:
