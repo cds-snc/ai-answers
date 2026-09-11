@@ -876,7 +876,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             (sentence) => typeof sentence === 'string' && sentence.trim()
           );
           return sentences.map((sentence, sentenceIndex) => (
-            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang}>
+            <p key={`${messageId}-p${index}-s${sentenceIndex}`} className="ai-sentence" lang={answerLang} dir="auto">
               {decodeHTMLEntities(sentence)}
             </p>
           ));

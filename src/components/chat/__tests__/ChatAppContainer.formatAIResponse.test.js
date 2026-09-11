@@ -99,3 +99,57 @@ describe('ChatAppContainer - formatAIResponse blank-sentence filtering', () => {
         expect(disclaimer.getAttribute('lang')).toBe('fr');
     });
 });
+
+describe('ChatAppContainer - formatAIResponse bidi isolation', () => {
+    afterEach(() => {
+        cleanup();
+        capturedFormatAIResponse = undefined;
+    });
+
+    it('marks each answer sentence dir="auto" so an RTL name or phrase keeps its own base direction', async () => {
+        vi.mocked(usePageContext).mockReturnValue({ url: '', department: '' });
+        render(<ChatAppContainer lang="en" />);
+
+        expect(capturedFormatAIResponse).toBeInstanceOf(Function);
+
+        const message = {
+            id: 'm-bidi-1',
+            interaction: {
+                answer: {
+                    paragraphs: ['<s-1>Hello أحمد, your file number is 12345.</s-1>'],
+                    questionLanguage: 'eng',
+                },
+            },
+        };
+
+        const { container } = render(<div>{capturedFormatAIResponse('openai', message)}</div>);
+
+        const sentence = container.querySelector('p.ai-sentence');
+        expect(sentence.textContent).toBe('Hello أحمد, your file number is 12345.');
+        expect(sentence.getAttribute('dir')).toBe('auto');
+        expect(sentence.getAttribute('lang')).toBe('en');
+    });
+
+    it('keeps dir="auto" on a fully RTL answer without changing the tagged answer language', async () => {
+        vi.mocked(usePageContext).mockReturnValue({ url: '', department: '' });
+        render(<ChatAppContainer lang="en" />);
+
+        expect(capturedFormatAIResponse).toBeInstanceOf(Function);
+
+        const message = {
+            id: 'm-bidi-2',
+            interaction: {
+                answer: {
+                    paragraphs: ['<s-1>نعم، يمكنك التجديد عبر الإنترنت.</s-1>'],
+                    questionLanguage: 'ara',
+                },
+            },
+        };
+
+        const { container } = render(<div>{capturedFormatAIResponse('openai', message)}</div>);
+
+        const sentence = container.querySelector('p.ai-sentence');
+        expect(sentence.getAttribute('dir')).toBe('auto');
+        expect(sentence.getAttribute('lang')).toBe('ar');
+    });
+});

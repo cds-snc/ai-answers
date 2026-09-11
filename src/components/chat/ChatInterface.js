@@ -678,6 +678,12 @@ const ChatInterface = ({
                   // differs from the collapse-to-English rule used in the
                   // eval/dashboard tools.
                   lang={toLangAttr(message.questionLanguage)}
+                  // dir="auto" (WCAG bidi): the question is free-typed text
+                  // that can mix RTL scripts (an Arabic/Persian name or
+                  // phrase) into LTR text - the paragraph takes its base
+                  // direction from its own first strong character so trailing
+                  // punctuation and numbers stay on the right side.
+                  dir="auto"
                 >
                   {message.text}
                 </p>

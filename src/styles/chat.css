@@ -137,6 +137,17 @@
   line-height: 1.6em;
 }
 
+/* Bidi isolation for user-typed chat content (WCAG 2.2 success criterion
+   1.3.2, language of parts direction): each bubble paragraph carries
+   dir="auto" so it takes its base direction from its own first strong
+   character - an Arabic/Persian name or phrase inside LTR text (or vice
+   versa) keeps its punctuation and numbers on the right side. isolate
+   keeps that direction from leaking into the surrounding LTR chrome. */
+.user-message-box p,
+.ai-sentence {
+  unicode-bidi: isolate;
+}
+
 .citation-divider {
   border: none;
   border-top: 3px solid #d9d9d9;
@@ -170,7 +181,9 @@
 
 .new-tab-link-icon {
   display: inline-block;
-  margin-left: 4px;
+  /* Logical property so the icon gap flips with the bubble's own base
+     direction (dir="auto") instead of staying glued to the left. */
+  margin-inline-start: 4px;
 }
 
 /* Only apply mobile ellipsis styles to long URLs */
