@@ -19,10 +19,11 @@ vi.mock('../../services/SessionService.js', () => ({
 }));
 
 // A stable `t` reference matters here: SessionPage's fetchSessions is a
-// useCallback keyed on [t], and the mocked usePausablePolling below re-fires
-// its effect whenever that callback's identity changes — a fresh arrow
-// function per render would cause an infinite refetch loop instead of
-// settling on the error/loading state under test.
+// useCallback keyed on [buildErrorStatus] (from useErrorStatus, itself keyed
+// on [t]), and the mocked usePausablePolling below re-fires its effect
+// whenever that callback's identity changes — a fresh arrow function per
+// render would cause an infinite refetch loop instead of settling on the
+// error/loading state under test.
 const mockT = (key) => key;
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
@@ -67,7 +68,7 @@ describe('SessionPage StatusMessage roles', () => {
 
     renderWithRouter(<SessionPage lang="en" />);
 
-    await waitForAnnouncement('admin.session.errorGeneric', 'assertive');
+    await waitForAnnouncement('admin.session.errorLoading', 'assertive');
   });
 
   it('announces the loading state as role="status" with the loading spinner box', async () => {
