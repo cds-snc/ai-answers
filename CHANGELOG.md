@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.195.1](https://github.com/cds-snc/ai-answers/compare/v1.195.0...v1.195.1) (2026-09-11)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @vitest/mocker and vitest ([f25e89a](https://github.com/cds-snc/ai-answers/commit/f25e89a8ade810203f567d732533bbfced537a4c))
+
 ## [1.195.0](https://github.com/cds-snc/ai-answers/compare/v1.194.1...v1.195.0) (2026-09-10)
 
 
