@@ -106,7 +106,7 @@
     "turndown": "^7.2.1",
     "undici": "^7.29.0",
     "uuid": "^14.0.0",
-    "vitest": "^4.1.0",
+    "vitest": "^4.1.11",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
