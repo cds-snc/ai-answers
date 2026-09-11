@@ -9,6 +9,7 @@ import ExperimentalQueueService from '../ExperimentalQueueService.js';
 import ExperimentalAnalyzerRegistry from '../ExperimentalAnalyzerRegistry.js';
 import { getGraphApp } from '../../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../../agents/graphs/requestContext.js';
+import { DEFAULT_WORKFLOW, WORKFLOW_VALUES } from '../../../src/config/workflows.js';
 
 // Mock dependencies
 vi.mock('../ExperimentalQueueService.js', () => ({
@@ -734,7 +735,13 @@ describe('ExperimentalBatchService', () => {
 
             await ExperimentalBatchService._processItem(batch._id, item._id);
 
-            expect(getGraphApp).toHaveBeenCalledWith('GenericWorkflowGraph');
+            // The legacy 'DefaultGraph' alias must resolve to the shared
+            // default workflow — a name that actually exists in the graph
+            // registry (GenericWorkflowGraph was removed in May 2026, so
+            // pinning it here meant every default-workflow batch item failed
+            // with 'Graph GenericWorkflowGraph not found').
+            expect(getGraphApp).toHaveBeenCalledWith(DEFAULT_WORKFLOW);
+            expect(WORKFLOW_VALUES).toContain(DEFAULT_WORKFLOW);
             runSpy.mockRestore();
         });
 

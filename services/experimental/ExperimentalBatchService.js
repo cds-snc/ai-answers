@@ -11,6 +11,13 @@ import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
 import { pickExplicitReferenceAnswer } from './datasetColumns.js';
+// Single source of truth for the fallback graph (also used by live chat via
+// api/chat/chat-graph-run.js and seeded as 'workflow.default'). The legacy
+// 'DefaultGraph' alias below must keep pointing at it — it previously named
+// 'GenericWorkflowGraph', which was removed from the graph registry in May
+// 2026, so every batch without an explicit config.workflow failed item by
+// item with 'Graph GenericWorkflowGraph not found' (issue #1792).
+import { DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -18,7 +25,7 @@ const MAX_ITEM_RETRIES = parseInt(process.env.BATCH_ITEM_MAX_RETRIES, 10) || 3;
 const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ANSWER_ALIASES = ['answer', 'redactedAnswer', 'response'];
 const WORKFLOW_ALIASES = {
-    DefaultGraph: 'GenericWorkflowGraph'
+    DefaultGraph: DEFAULT_WORKFLOW
 };
 const CHAT_ID_ALIASES = ['chatid'];
 const SOURCE_CHAT_ID_ALIASES = ['chatid'];
