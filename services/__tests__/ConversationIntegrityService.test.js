@@ -1,5 +1,6 @@
 import ConversationIntegrityService from '../ConversationIntegrityService.js';
 import { describe, it, expect, vi } from 'vitest';
+import crypto from 'crypto';
 
 describe('ConversationIntegrityService', () => {
     const mockHistory = [
@@ -96,6 +97,23 @@ describe('ConversationIntegrityService', () => {
             ];
             const isValid = ConversationIntegrityService.verifyHistory(tamperedHistory, signature);
             expect(isValid).toBe(false);
+        });
+
+        it('should compare signatures in constant time', () => {
+            const signature = ConversationIntegrityService.calculateSignature(mockHistory);
+            const spy = vi.spyOn(crypto, 'timingSafeEqual');
+            try {
+                expect(ConversationIntegrityService.verifyHistory(mockHistory, signature)).toBe(true);
+                expect(spy).toHaveBeenCalled();
+            } finally {
+                spy.mockRestore();
+            }
+        });
+
+        it('should return false (not throw) for a different-length signature', () => {
+            const signature = ConversationIntegrityService.calculateSignature(mockHistory);
+            expect(ConversationIntegrityService.verifyHistory(mockHistory, `${signature}00`)).toBe(false);
+            expect(ConversationIntegrityService.verifyHistory(mockHistory, 'short')).toBe(false);
         });
 
         // End-to-end regression for the same bug as above, at the signature

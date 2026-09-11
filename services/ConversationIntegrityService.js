@@ -159,7 +159,15 @@ class ConversationIntegrityService {
             // eslint-disable-next-line no-console
             console.log('[ConversationIntegrityService] verifyHistory:', { signature, expected, match: signature === expected });
         }
-        return signature === expected;
+        // Constant-time comparison: a plain === leaks how many leading
+        // characters matched through timing, letting an attacker forge the
+        // HMAC byte by byte. timingSafeEqual throws on length mismatch, so
+        // unequal lengths are rejected first (a client-supplied signature can
+        // be any length).
+        const provided = Buffer.from(String(signature), 'utf8');
+        const wanted = Buffer.from(expected, 'utf8');
+        if (provided.length !== wanted.length) return false;
+        return crypto.timingSafeEqual(provided, wanted);
     }
 
     /**
