@@ -1068,6 +1068,7 @@
       "inactive": "Inactif"
     },
     "actions": {
+      "save": "Enregistrer",
       "delete": "Supprimer",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
       "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs.",
