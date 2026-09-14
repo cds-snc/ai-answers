@@ -416,6 +416,7 @@
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
       "partnerMenu": "Partner menu",
+      "account": "Manage your account",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -752,6 +753,7 @@
       "urlPlaceholder": "Filter by full or partial URL",
       "department": "Partner institution",
       "allDepartments": "All institutions",
+      "group": "Group",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -852,6 +854,7 @@
         "chatId": "Chat ID",
         "department": "Department",
         "program": "Service",
+        "user": "User",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Page language"
       }
@@ -884,6 +887,30 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
+      },
+      "assign": {
+        "toggleOn": "Assign chat(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectChat": "Select chat",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "noInstitution": "You can only assign chats to yourself. Pick an institution or group on your account page to also assign chats to teammates.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign to reviewer ({count})",
+        "assignChatsWithNote": "Assign to reviewer ({count}) with note",
+        "errorNoExpert": "You must choose an expert to assign to.",
+        "errorNoChat": "You must choose at least one chat to assign using the checkbox in the assign column.",
+        "assignSuccess": "Assigned {count} chat(s).",
+        "assignSuccessWithNote": "Assigned {count} chat(s) with a note.",
+        "assignError": "Failed to assign {count} chat(s).",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
       }
     },
     "evalDashboard": {
@@ -1049,15 +1076,76 @@
     "pendingReceived": "We've received your account request.",
     "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
   },
+  "account": {
+    "title": "Manage your account",
+    "profileHeading": "Account details",
+    "accountName": "Account name",
+    "activityHeading": "Your chats and evaluations",
+    "status": "Status",
+    "role": "Role",
+    "institution": "Institution",
+    "group": "Group",
+    "institutionLocked": "Contact an admin to change your institution.",
+    "groupLocked": "Contact an admin to change your group.",
+    "updated": "Account updated: {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution removed",
+    "changeGroupSet": "{value} group",
+    "changeGroupCleared": "group removed",
+    "profileSaveError": "Failed to update your account.",
+    "loadError": "Failed to load your account.",
+    "assignedChats": {
+      "heading": "Your assigned chats for review",
+      "empty": "No chats assigned to you yet.",
+      "loadError": "Failed to load your assigned chats.",
+      "columns": {
+        "assignedOn": "Assigned on",
+        "assignedBy": "Assigned by",
+        "partnerNotes": "Notes",
+        "evaluated": "Evaluated"
+      },
+      "evalStatus": {
+        "completed": "Completed",
+        "pending": "Pending"
+      }
+    },
+    "preferences": {
+      "heading": "Dashboard filter preferences",
+      "prefilterDepartment": "Your institution",
+      "prefilterGroup": "Your group (chats created or reviewed by your group's members)",
+      "noGroup": "You must pick a group.",
+      "noInstitution": "You must pick an institution.",
+      "savedChange": "Preference saved: {change}",
+      "changeInstitutionOn": "selected your institution",
+      "changeInstitutionOff": "unselected your institution",
+      "changeGroupOn": "selected your group",
+      "changeGroupOff": "unselected your group",
+      "saveError": "Failed to save preference.",
+      "filteredNoticeTitle": "How filter preferences work",
+      "filteredInstitution": "*Chat*, *evaluation*, *metrics*, and *partner* dashboards open filtered to your institution by default.",
+      "filteredGroup": "*Chat*, *evaluation*, *metrics*, and *partner* dashboards open filtered to your group by default. You'll only see questions and answers your group created or reviewed.",
+      "filteredBothChatEvalLabel": "*Chat* and *evaluation* dashboards:",
+      "filteredBothChatEvalEffect": "everything for your institution, plus anything your group created or reviewed.",
+      "filteredBothMetricsPartnerLabel": "*Metrics* and *partner* dashboards:",
+      "filteredBothMetricsPartnerEffect": "only chats that match both your institution and your group.",
+      "filteredPublicLabel": "*Public* dashboard:",
+      "filteredPublicEffect": "not affected.",
+      "filteredFooter": "You can still change or clear these filters anytime on each dashboard."
+    }
+  },
   "users": {
     "title": "Manage user accounts",
+    "institutionNone": "None",
+    "groupNone": "None",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created at",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Group"
     },
     "roles": {
       "admin": "Admin",

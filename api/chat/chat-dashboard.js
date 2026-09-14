@@ -1,8 +1,10 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
+import { normalizeObjectIdString } from '../util/db-query.js';
 import { frForProgram } from '../util/programActionFr.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
@@ -91,7 +93,8 @@ async function chatDashboardHandler(req, res) {
       orderDir: orderDirParam,
       draw: drawParam,
       search: searchParam,
-      timezoneOffsetMinutes: timezoneOffsetParam
+      timezoneOffsetMinutes: timezoneOffsetParam,
+      assignedTo: assignedToParam
     } = req.query;
 
     const parsedTimezoneOffset = Number.isFinite(parseInt(timezoneOffsetParam, 10)) ? parseInt(timezoneOffsetParam, 10) : undefined;
@@ -132,6 +135,17 @@ async function chatDashboardHandler(req, res) {
       }
     }
 
+    // AccountPage.js's "Chats assigned to you" table reuses this same
+    // aggregate with assignedTo=<own userId> rather than a parallel
+    // endpoint - see api/chat/chat-assign.js for how assignedTo is set.
+    if (assignedToParam) {
+      const assignedToId = normalizeObjectIdString(assignedToParam);
+      if (!assignedToId) {
+        return res.status(400).json({ error: 'Invalid assignedTo' });
+      }
+      initialMatch.assignedTo = new mongoose.Types.ObjectId(assignedToId);
+    }
+
     if (Object.keys(initialMatch).length) {
       pipeline.push({ $match: initialMatch });
     }
@@ -146,7 +160,11 @@ async function chatDashboardHandler(req, res) {
         user: 1,
         pageLanguage: 1,
         createdAt: 1,
-        interactionIds: '$interactions'
+        interactionIds: '$interactions',
+        assignedTo: 1,
+        assignedBy: 1,
+        assignedOn: 1,
+        assignedNotes: 1
       }
     });
 
@@ -295,7 +313,10 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true })
+        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true }),
+        // Reviewer identity for "who evaluated this" columns (Manage your
+        // account page's group table); expertFeedbackDocs is dropped below.
+        'interactions.reviewerEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] }
       }
     });
 
@@ -369,7 +390,34 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({ $project: { creator: 0 } });
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
+    // Lookup assignee/assigner emails for display (chat-assign.js only
+    // stores the ObjectIds) - same shape as the creator lookup just above.
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'assignedTo',
+        foreignField: '_id',
+        as: 'assignee'
+      }
+    });
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'assignedBy',
+        foreignField: '_id',
+        as: 'assigner'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        assignedToEmail: { $ifNull: [{ $arrayElemAt: ['$assignee.email', 0] }, ''] },
+        assignedByEmail: { $ifNull: [{ $arrayElemAt: ['$assigner.email', 0] }, ''] }
+      }
+    });
+    pipeline.push({ $project: { assignee: 0, assigner: 0 } });
+
+    const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic, reviewerMatch };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
@@ -403,6 +451,13 @@ async function chatDashboardHandler(req, res) {
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
+        creatorEmail: 1,
+        reviewerEmail: '$interactions.reviewerEmail',
+        assignedTo: { $ifNull: ['$assignedTo', null] },
+        assignedToEmail: 1,
+        assignedByEmail: 1,
+        assignedOn: 1,
+        assignedNotes: 1,
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
@@ -450,7 +505,16 @@ async function chatDashboardHandler(req, res) {
       department: 'department',
       program: 'program',
       partnerEval: 'partnerEval',
-      aiEval: 'aiEval'
+      aiEval: 'aiEval',
+      // Assign column (ChatDashboardPage.js): null sorts before any
+      // ObjectId ascending, so an ascending sort groups unassigned chats
+      // first - the use case this is for.
+      assignedTo: 'assignedTo',
+      // Assigned chats table (AccountPage.js). assignedByEmail is a plain
+      // field by the time this $sort runs - materialized earlier in the
+      // pipeline by the assignee/assigner $lookup + $addFields above.
+      assignedOn: 'assignedOn',
+      assignedByEmail: 'assignedByEmail'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     // Default view (no column sort applied - the only way 'createdAt' is
@@ -579,7 +643,14 @@ async function chatDashboardHandler(req, res) {
       partnerEval: row.partnerEval || '',
       aiEval: row.aiEval || '',
       partnerHasContentIssue: !!row.partnerHasContentIssue,
-      userType: row.userType || 'public'
+      userType: row.userType || 'public',
+      creatorEmail: row.creatorEmail || '',
+      reviewerEmail: row.reviewerEmail || '',
+      assignedTo: row.assignedTo ? String(row.assignedTo) : '',
+      assignedToEmail: row.assignedToEmail || '',
+      assignedByEmail: row.assignedByEmail || '',
+      assignedOn: row.assignedOn ? row.assignedOn.toISOString() : null,
+      assignedNotes: row.assignedNotes || ''
     }));
 
     if (isDataTablesMode) {

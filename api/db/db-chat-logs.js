@@ -1,5 +1,6 @@
 // chat-logs-docdb.js
 
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
@@ -77,6 +78,7 @@ async function chatLogsHandler(req, res) {
       limit = 100, lastId,
     } = req.query;
     let { batchId } = req.query;
+    const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
 
     // Validate eval category inputs (supports comma-separated multi-select)
     const validCategories = ['all', 'correct', 'needsImprovement', 'hasError', 'hasCitationError', 'harmful', 'noEval'];
@@ -168,8 +170,8 @@ async function chatLogsHandler(req, res) {
     let chats;
     let totalCount = 0;
 
-    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
-    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
+    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval/group filters are used, we use an aggregation pipeline
+    if (reviewerMatch || department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
@@ -318,6 +320,7 @@ async function chatLogsHandler(req, res) {
 
       // Build AND filters - now includes all conditions including partnerEval and aiEval
       const allConditions = getChatFilterConditions({
+        reviewerMatch,
         department,
         referringUrl,
         urlEn,

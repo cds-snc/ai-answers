@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import { requireObjectIdString } from '../util/db-query.js';
+import { normalizeInstitution, normalizeGroup } from '../util/user-profile.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function usersHandler(req, res) {
@@ -18,13 +19,34 @@ async function usersHandler(req, res) {
 
         case 'PATCH':
             try {
-                const { userId, active, role } = req.body;
+                const { userId, active, role, institution, group } = req.body;
                 if (!userId || typeof userId !== 'string') {
                     return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
                 const updateFields = {};
                 if (typeof active === 'boolean') updateFields.active = active;
                 if (role && typeof role === 'string') updateFields.role = role;
+                if (institution !== undefined) {
+                    const value = normalizeInstitution(institution);
+                    if (value === null) return res.status(400).json({ message: 'Invalid institution' });
+                    updateFields.institution = value;
+                }
+                if (group !== undefined) {
+                    const value = normalizeGroup(group);
+                    if (value === null) return res.status(400).json({ message: 'Invalid group' });
+                    updateFields.group = value;
+                }
+                // Same invariant as user-me.js's self-service PATCH: an
+                // admin clearing a user's institution/group here has to
+                // clear that user's matching prefilter preference too, or
+                // it stays stuck checked for a filter with nothing left to
+                // prefilter to.
+                if (updateFields.institution === '') {
+                    updateFields['preferences.prefilterDepartment'] = false;
+                }
+                if (updateFields.group === '') {
+                    updateFields['preferences.prefilterGroup'] = false;
+                }
                 if (Object.keys(updateFields).length === 0) {
                     return res.status(400).json({ message: 'No valid fields to update' });
                 }

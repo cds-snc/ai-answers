@@ -428,6 +428,16 @@
   font: var(--gcds-input-font-desktop);
 }
 
+/* Narrow variant for a select/input whose values are short (abbrKeys,
+   group names, yes/no) and would otherwise stretch to its container -
+   .filter-select is width:100%. Reusable anywhere a form field sits in a
+   wide layout; first used on the Account dashboard page. */
+.filter-select--narrow,
+.filter-input--narrow {
+  width: 100%;
+  max-width: 20rem;
+}
+
 /* SettingsPage's .filter-input/.filter-select fields are width:100% of
    whatever contains them — without a cap that's the full GcdsContainer
    layout="page" width, which reads as very wide on a large monitor.
@@ -552,6 +562,67 @@
 
 .filter-button-outline:hover:not(:disabled) {
   background: var(--gcds-button-secondary-hover-background);
+}
+
+/* ChatDashboardPage.js bulk chat-assign toolbar: reuses .filter-panel/
+   .filter-panel-summary/.filter-panel-content as-is (same expand/collapse
+   details, chevron, and box treatment as "Filters" and EvalDashboardPage's
+   eval-search-chat-id) - no chat-assign-panel box CSS of its own. The
+   panel/border stays full width like every other .filter-panel; .text-
+   measure (global.css) is on .filter-panel-content itself (in JSX), not the
+   outer box, so only the content readably narrows - same idea as
+   BatchUpload's form, just scoped one level in.
+   One override: the shared closed-state summary (.filter-panel:not([open])
+   > .filter-panel-summary, above) is solid blue - a "primary" look that's
+   right for "Filters" but not wanted here, so this panel gets its own
+   closed-state look instead, same tokens .filter-button-outline uses
+   elsewhere in this panel (secondary/outline, not primary). */
+.chat-assign-panel:not([open]) > .filter-panel-summary {
+  background: var(--gcds-button-secondary-default-background);
+  border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+.chat-assign-panel:not([open]) > .filter-panel-summary:hover {
+  background: var(--gcds-button-secondary-hover-background);
+}
+
+/* :focus:hover ties this override's own specificity (both are 3 components)
+   with the shared .filter-panel-summary:focus:hover rule (admin.css, GCDS
+   focus states) - a real collision, not a hypothetical one: clicking the
+   summary keeps focus on it while the cursor is still over it, so this
+   combination is what actually happens right after every click. Without
+   this, that shared rule's white text (--gcds-details-focus-text) wins on
+   source order, unreadable against this panel's now-light background.
+   outline/box-shadow (the actual focus indicator) are untouched - only
+   background-color/color are overridden here. */
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus,
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus:hover {
+  background-color: var(--gcds-button-secondary-hover-background);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+/* Left-aligned, under the expert picker - .filter-actions itself is
+   right-aligned (FilterPanel's own Apply/Clear row), not what's wanted here. */
+.chat-assign-actions {
+  justify-content: flex-start;
+  padding-top: var(--gcds-spacing-150);
+}
+
+.chat-assign-note {
+  margin-top: var(--gcds-spacing-150);
+}
+
+/* Same width as the expert <select> above it (.filter-input/.filter-select
+   both default to width:100% of the panel) - aligned edges, not a
+   narrower field of its own. */
+.chat-assign-note-textarea {
+  width: 100%;
+}
+
+.chat-assign-note-count {
+  margin: var(--gcds-spacing-50) 0 0;
+  color: var(--gcds-text-secondary);
 }
 
 /* Same link look as .filter-button-secondary, flush left and sized like the
@@ -814,6 +885,14 @@
   overflow-x: auto;
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
+}
+/* Same table styling, but kept inside its parent instead of bleeding to
+   90vw - for tables that sit inside a section or <details> rather than
+   owning the page (Manage your account page). */
+.dashboard-table-container--contained {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
 }
 /* overflow-x: auto above makes this a scrollable region, which browsers
    treat as implicitly keyboard-focusable (so arrow keys can scroll it when
@@ -1628,12 +1707,15 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
 }
 
 /* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
-   the batch's default, not-yet-started state - and ChatViewer.js's log
-   table Level column pill: debug isn't a severity tier, so it gets this
-   same neutral grey rather than a colour of its own. */
+   the batch's default, not-yet-started state - ChatViewer.js's log table
+   Level column pill (debug isn't a severity tier, so it gets this same
+   neutral grey rather than a colour of its own), and AccountPage.js's
+   "Evaluated" column ("Pending" - not-yet-scored is the same "hasn't
+   happened yet" meaning as uploaded/debug, not a severity). */
 .label.normal,
 .label.uploaded,
-.label.debug {
+.label.debug,
+.label.pending {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
@@ -3319,4 +3401,34 @@ table.dataTable.table-key-value > tbody > tr > td {
 details gcds-button::part(button) {
   transition: background-color .15s ease-in-out, color .15s ease-in-out,
     border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* Account dashboard page (AccountPage.js) - labelled profile grid */
+.account-profile {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gcds-spacing-150) var(--gcds-spacing-400);
+  margin: 0 0 var(--gcds-spacing-400);
+}
+
+.account-profile__row {
+  display: contents;
+}
+
+.account-profile dt {
+  font-weight: 600;
+}
+
+.account-profile dd {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .account-profile {
+    grid-template-columns: 1fr;
+    gap: var(--gcds-spacing-100);
+  }
+  .account-profile dd {
+    margin-bottom: var(--gcds-spacing-200);
+  }
 }

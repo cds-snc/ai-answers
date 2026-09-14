@@ -610,10 +610,55 @@ export function getChatFilterConditions(filters, options = {}) {
     });
   }
 
+  // reviewerMatch - pre-resolved by api/util/reviewer-filter.js's
+  // resolveReviewerMatch (the Institution / Reviewer email filters): chats
+  // created by one of the users
+  // OR carrying an expert evaluation written by one of them. Each side is
+  // matched both as a raw ref and as a looked-up doc's _id, so the same
+  // condition works in every consumer pipeline regardless of whether it has
+  // $lookup'd user / interactions.expertFeedback by the time it runs the
+  // shared $match (chat-export-logs.js overwrites `user` with the looked-up
+  // array; most others still hold the ObjectId there).
+  //
+  // reviewerMatch here is keyed off `group` specifically (institution never
+  // reaches this - FilterPanel has no manual Group control, only the
+  // Account-page "your group" preference sets it). department is a
+  // different axis entirely - the chat's own subject-matter context, not
+  // who handled it - so when both are active they're combined with $or
+  // below rather than each pushed as its own $and condition: "about my
+  // institution's department" and "handled by my group" are two separate
+  // reasons a chat is relevant, not two conditions the same chat must both
+  // satisfy.
+  let reviewerMatchCondition = null;
+  if (filters.reviewerMatch) {
+    const { userIds = [], feedbackIds = [] } = filters.reviewerMatch;
+    const branches = [];
+    if (userIds.length) {
+      branches.push({ [userField]: { $in: userIds } });
+      branches.push({ [`${userField}._id`]: { $in: userIds } });
+    }
+    if (feedbackIds.length) {
+      branches.push({ [withPath('expertFeedback')]: { $in: feedbackIds } });
+      branches.push({ [withPath('expertFeedback._id')]: { $in: feedbackIds } });
+    }
+    // Nobody matched (unknown institution, email with no hits): match nothing
+    // rather than silently dropping the filter.
+    reviewerMatchCondition = branches.length ? { $or: branches } : { _id: null };
+  }
+
   // department
+  let departmentCondition = null;
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ [withPath('department')]: { $regex: escaped, $options: 'i' } });
+    departmentCondition = { [withPath('department')]: { $regex: escaped, $options: 'i' } };
+  }
+
+  if (reviewerMatchCondition && departmentCondition) {
+    conditions.push({ $or: [reviewerMatchCondition, departmentCondition] });
+  } else if (reviewerMatchCondition) {
+    conditions.push(reviewerMatchCondition);
+  } else if (departmentCondition) {
+    conditions.push(departmentCondition);
   }
 
   // referringUrl

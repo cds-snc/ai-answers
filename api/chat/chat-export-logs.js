@@ -1,4 +1,5 @@
 // chat-export-logs.js - Server-side streaming export for chat logs
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
@@ -493,6 +494,7 @@ export async function chatExportHandler(req, res) {
             format = 'xlsx'
         } = req.query;
         let { batchId } = req.query;
+        const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
         const requestedChatIds = parseChatIdList(req.query.chatIds);
         const useExplicitChatIds = requestedChatIds.length > 0;
 
@@ -583,7 +585,7 @@ export async function chatExportHandler(req, res) {
         //    I will need to ADD conditional lookups to the pipeline based on `view`.
 
         const isAggregate = !useExplicitChatIds && (
-            department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic'
+            reviewerMatch || department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic'
         );
 
         if (isAggregate) {
@@ -694,7 +696,7 @@ export async function chatExportHandler(req, res) {
             });
 
             // Filtering Logic - now includes all conditions including partnerEval and aiEval
-            const allConditions = getChatFilterConditions({ department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval, evalLogic }, { skipUserCondition: true });
+            const allConditions = getChatFilterConditions({ reviewerMatch, department, referringUrl, urlEn, urlFr, userType, answerType, partnerEval, aiEval, evalLogic }, { skipUserCondition: true });
             if (allConditions.length) pipeline.push({ $match: { $and: allConditions } });
 
             // Reconstruct Chat Object Structure

@@ -12,6 +12,17 @@ const ChatSchema = new mongoose.Schema({
     pageLanguage: { type: String, required: false, default: '' },
     appVersion: { type: String, required: false, default: '' },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    // Chat assignment (issue #1656): a partner/admin hands this chat to one
+    // partner user for review. Single assignee at a time - assigning again
+    // overwrites the previous assignment rather than keeping history.
+    assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    assignedOn: { type: Date, default: null },
+    // Length capped in api/chat/chat-assign.js (ASSIGN_NOTE_MAX_LENGTH,
+    // src/constants/chatAssign.js) - that's the real enforcement, since
+    // findOneAndUpdate there doesn't run Mongoose validators by default.
+    // maxlength here is defense-in-depth for any other write path.
+    assignedNotes: { type: String, default: '', maxlength: 500 },
 }, {
     timestamps: true,
     versionKey: false,
@@ -55,5 +66,7 @@ ChatSchema.index({ user: 1 });
 // full collection scan; db-chat-search.js's new partial-match $regex search
 // makes that same gap matter more.
 ChatSchema.index({ chatId: 1 });
+// AccountPage's "Assigned to me" table looks this up per signed-in user.
+ChatSchema.index({ assignedTo: 1 });
 
 export const Chat = mongoose.models.Chat || mongoose.model('Chat', ChatSchema);

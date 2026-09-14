@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { UserPlus } from 'lucide-react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -16,6 +17,10 @@ import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js
 import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 import { resolveDisplayContent } from '../utils/answerLanguage.js';
+import { useChatAssignBar } from '../hooks/admin/useChatAssignBar.js';
+import { ASSIGN_NOTE_MAX_LENGTH } from '../constants/chatAssign.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 DataTable.use(DT);
 
@@ -41,6 +46,25 @@ const getTimezoneOffsetMinutes = (value) => {
 
 const TABLE_STORAGE_KEY = `chatDashboard_tableState_v2_`;
 
+// One assignStatus shape covers assign, unassign, and the assignable-list
+// load failure - this just picks the right message/key for whichever
+// outcome it actually is.
+function resolveAssignStatusMessage(status, t) {
+  if (status.loadFailed) return t('admin.chatDashboard.assign.loadError');
+  if (status.unassignFailed) return t('admin.chatDashboard.assign.unassignError');
+  if (status.unassigned) return t('admin.chatDashboard.assign.unassigned');
+  if (status.isError) return t('admin.chatDashboard.assign.assignError').replace('{count}', () => status.count);
+  const key = status.hadNote ? 'admin.chatDashboard.assign.assignSuccessWithNote' : 'admin.chatDashboard.assign.assignSuccess';
+  return t(key).replace('{count}', () => status.count);
+}
+
+// The Assign button's own label is the note confirmation - no separate
+// "Save note" step (see useChatAssignBar.js's clearNote).
+function resolveAssignButtonLabel(assignBar, t) {
+  const key = assignBar.noteText.trim() ? 'admin.chatDashboard.assign.assignChatsWithNote' : 'admin.chatDashboard.assign.assignChats';
+  return t(key).replace('{count}', () => assignBar.selectedCount);
+}
+
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [loading, setLoading] = useState(false);
@@ -54,6 +78,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // (SC 4.1.3) - shared with MetricsDashboard.js.
   const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
+  const assignBar = useChatAssignBar();
+  const assignErrorRef = useFocusOnChange(assignBar.validationErrorCount);
+  // Unassign destroys the pill the user just clicked (it's inside the
+  // reloaded table row), so focus needs somewhere to land - see
+  // useChatAssignBar.js's unassignedCount comment.
+  const unassignedRef = useFocusOnChange(assignBar.unassignedCount);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -221,6 +251,52 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
 
   const columns = useMemo(() => ([
+    // Bulk-assign checkbox column, only while assign mode is on (see
+    // useChatAssignBar). Plain HTML + delegated onchange in createdRow
+    // below, like UsersPage.js's row controls - not a React-mounted cell,
+    // since checked state only needs to survive redraws via the ref, not
+    // re-render reactively.
+    ...(assignBar.assignMode ? [{
+      title: t('admin.chatDashboard.assign.selectColumn'),
+      // Sorts on assignment state (null < any ObjectId ascending, per
+      // chat-dashboard.js's sortFieldMap) rather than chatId, so someone
+      // can sort this column to find the unassigned rows. The cell itself
+      // still needs the row's chatId, read via `row` below - not `value`.
+      data: 'assignedTo',
+      orderable: true,
+      searchable: false,
+      className: 'chat-assign-checkbox-col',
+      // GC DS checkbox styling (gc-chckbxrdio sm, see FilterPanel.js's own
+      // checkbox groups / global.css) needs a real sibling <label> - its
+      // custom box/checkmark is drawn on the label's own ::before, not the
+      // input. Putting sr-only on the <label> itself clips that pseudo-
+      // element away too, making the checkbox invisible - the label has to
+      // stay a normal, visible element; only its text goes in an sr-only
+      // span, so this column stays checkbox-only visually.
+      //
+      // An already-assigned row shows the assignee as a pill (same shape as
+      // FilterPanel's removable filter pills) instead of a checkbox - it
+      // can't be picked for a bulk assign (chat-assign.js rejects that,
+      // 409), and the pill's × is how to remove the assignment instead.
+      render: (value, type, row) => {
+        const chatId = row?.chatId;
+        if (!chatId) return '';
+        const safeChatId = escapeHtmlAttribute(chatId);
+        if (row?.assignedToEmail) {
+          const safeEmail = escapeHtmlAttribute(row.assignedToEmail);
+          const removeLabel = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.removeAssignment'))} ${safeEmail}`;
+          return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-chat-id="${safeChatId}" aria-label="${removeLabel}">` +
+            `${safeEmail}<span class="filter-pill__close" aria-hidden="true">×</span>` +
+            `</button>`;
+        }
+        const safeId = escapeHtmlAttribute(`chat-assign-${chatId}`);
+        const labelText = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.selectChat'))} ${safeChatId}`;
+        return `<div class="gc-chckbxrdio sm"><div class="checkbox">` +
+          `<input type="checkbox" class="chat-assign-checkbox" id="${safeId}" data-chat-id="${safeChatId}">` +
+          `<label for="${safeId}"><span class="sr-only">${labelText}</span></label>` +
+          `</div></div>`;
+      }
+    }] : []),
     {
       title: t('admin.common.columns.chatId'),
       data: 'chatId',
@@ -327,7 +403,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // pointless column. row.pageLanguage itself is still used internally by
     // the Chat ID column's render() above (chatLangFromPageLanguage) to
     // route the transcript correctly; only the visible column is gone.
-  ]), [renderLanguageAwareText, truncateUrl, t, lang]);
+  ]), [renderLanguageAwareText, truncateUrl, t, lang, assignBar.assignMode]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -385,6 +461,125 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       {hasAppliedFilters && (
         <div>
+          {recordsTotal > 0 && (
+            <details
+              className="filter-panel chat-assign-panel mb-200"
+              open={assignBar.assignMode}
+              onToggle={() => { assignBar.toggleAssignMode(); setTableKey((k) => k + 1); }}
+            >
+              <summary className="filter-panel-summary">
+                <UserPlus className="filter-panel-summary__icon" aria-hidden="true" />
+                {t('admin.chatDashboard.assign.toggleOn')}
+              </summary>
+              <div className="filter-panel-content text-measure">
+              {assignBar.assignableReason === 'no_institution' && (
+                <StatusMessage variant="info" message={t('admin.chatDashboard.assign.noInstitution')} />
+              )}
+
+              <div className="filter-row">
+                <label htmlFor="chat-assign-expert" className="filter-label">{t('admin.chatDashboard.assign.expertLabel')}</label>
+                {assignBar.validationErrorCode && (
+                  <FeedbackInlineError
+                    id="chat-assign-validation-error"
+                    message={t(
+                      assignBar.validationErrorCode === 'no_expert'
+                        ? 'admin.chatDashboard.assign.errorNoExpert'
+                        : 'admin.chatDashboard.assign.errorNoChat'
+                    )}
+                    errorCount={assignBar.validationErrorCount}
+                    inputRef={assignErrorRef}
+                  />
+                )}
+                <select
+                  id="chat-assign-expert"
+                  className="filter-select"
+                  value={assignBar.selectedAssigneeId}
+                  onChange={(e) => assignBar.setSelectedAssigneeId(e.target.value)}
+                  disabled={assignBar.assignableLoading || assignBar.assignableUsers.length === 0}
+                  aria-describedby={assignBar.validationErrorCode === 'no_expert' ? 'chat-assign-validation-error' : undefined}
+                  aria-invalid={assignBar.validationErrorCode === 'no_expert' ? 'true' : undefined}
+                >
+                  <option value="">{t('admin.chatDashboard.assign.expertPlaceholder')}</option>
+                  {assignBar.assignableUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.email}</option>
+                  ))}
+                </select>
+              </div>
+
+              {!assignBar.noteOpen && (
+                <div className="filter-actions chat-assign-actions">
+                  <button
+                    type="button"
+                    className="filter-button filter-button-primary"
+                    onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                    disabled={assignBar.assigning}
+                  >
+                    {resolveAssignButtonLabel(assignBar, t)}
+                  </button>
+                  <button
+                    type="button"
+                    className="filter-button filter-button-outline"
+                    onClick={() => assignBar.setNoteOpen(true)}
+                  >
+                    {t('admin.chatDashboard.assign.addNote')}
+                  </button>
+                </div>
+              )}
+
+              {assignBar.noteOpen && (
+                <div className="chat-assign-note">
+                  <div className="filter-row">
+                    <label htmlFor="chat-assign-note" className="filter-label">{t('admin.chatDashboard.assign.noteLabel')}</label>
+                    <textarea
+                      id="chat-assign-note"
+                      className="filter-input chat-assign-note-textarea"
+                      value={assignBar.noteText}
+                      onChange={(e) => assignBar.setNoteText(e.target.value)}
+                      maxLength={ASSIGN_NOTE_MAX_LENGTH}
+                      aria-describedby="chat-assign-note-count"
+                    />
+                    {/* Plain visible text, not announce() - a per-keystroke
+                        live announcement would talk over typing. The
+                        textarea's own aria-describedby is enough for a
+                        screen-reader user to check the count on demand. */}
+                    <p id="chat-assign-note-count" className="font-size-text-xxs-nr chat-assign-note-count">
+                      {t('admin.chatDashboard.assign.noteCount').replace('{count}', () => assignBar.noteText.length).replace('{max}', () => ASSIGN_NOTE_MAX_LENGTH)}
+                    </p>
+                  </div>
+                  {/* No separate "Save note" - typing is enough, the Assign
+                      button's own label ("...with note") is the confirmation.
+                      Moves down here (bottom-left) while the note is open,
+                      rather than sitting in a now-empty row above. */}
+                  <div className="filter-actions chat-assign-actions">
+                    <button
+                      type="button"
+                      className="filter-button filter-button-primary"
+                      onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                      disabled={assignBar.assigning}
+                    >
+                      {resolveAssignButtonLabel(assignBar, t)}
+                    </button>
+                    <button type="button" className="filter-button filter-button-secondary" onClick={assignBar.clearNote}>
+                      {t('admin.chatDashboard.assign.noteClear')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {assignBar.assignStatus && (
+                <StatusMessage
+                  variant={assignBar.assignStatus.isError ? 'error' : 'success'}
+                  message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
+                  ref={assignBar.assignStatus.unassigned ? unassignedRef : undefined}
+                  tabIndex={assignBar.assignStatus.unassigned ? -1 : undefined}
+                  announce={!assignBar.assignStatus.unassigned}
+                  announcedVia={assignBar.assignStatus.unassigned ? 'focus' : undefined}
+                />
+              )}
+              </div>
+            </details>
+          )}
+
           {dataTableReady && (
             <div className="dashboard-table-container dashboard-table-container--grouped">
               {/* Sibling of the Filters h2 above, not nested under it - matches
@@ -480,15 +675,36 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   },
                   // Striping and keep-chat-together cells - see
                   // utils/admin/chatGroupedTable.js.
-                  ...buildChatGroupCallbacks({
-                    stateRef: chatGroupStateRef,
-                    columns,
-                    groupedColumns: [
-                      { data: 'program' },
-                      { data: 'department' },
-                      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
-                    ],
-                  }),
+                  ...(() => {
+                    const groupCallbacks = buildChatGroupCallbacks({
+                      stateRef: chatGroupStateRef,
+                      columns,
+                      groupedColumns: [
+                        { data: 'program' },
+                        { data: 'department' },
+                        { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                      ],
+                    });
+                    return {
+                      ...groupCallbacks,
+                      createdRow: (row, data) => {
+                        groupCallbacks.createdRow(row, data);
+                        if (!assignBar.assignMode) return;
+                        const checkbox = row.querySelector('input.chat-assign-checkbox');
+                        if (checkbox) {
+                          checkbox.checked = assignBar.isChatChecked(data.chatId);
+                          checkbox.onchange = () => assignBar.toggleChatChecked(data.chatId, checkbox.checked);
+                        }
+                        const pill = row.querySelector('button.chat-assign-pill');
+                        if (pill) {
+                          pill.onclick = () => {
+                            if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
+                            assignBar.unassignChat(data.chatId, () => tableApiRef.current?.ajax.reload());
+                          };
+                        }
+                      },
+                    };
+                  })(),
                   initComplete: function () {
                     const api = this.api();
                     tableApiRef.current = api;
