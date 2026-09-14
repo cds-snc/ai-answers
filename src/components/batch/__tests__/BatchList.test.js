@@ -18,6 +18,9 @@ vi.mock('../../../hooks/useTranslations.js', () => ({
         'batch.list.actions.excel': 'Excel',
         'batch.list.actions.confirmDelete': 'Are you sure?',
         'batch.list.actions.confirmDeleteNamed': 'Are you sure you want to delete "{name}"?',
+        'batch.list.columns.searchProvider': 'Search provider',
+        'homepage.chat.options.searchSelection.canadaca': 'Canada.ca',
+        'common.na': 'N/A',
         'batch.list.totalsLabel': '{finished}/{total}',
         'batch.list.deletedAnnouncement': 'Deleted: {name}.',
         'common.processing': 'Processing…',
@@ -67,6 +70,7 @@ vi.mock('@gcds-core/components-react', () => ({
 vi.mock('datatables.net-dt', () => ({ default: () => null }));
 
 let lastOptions = null;
+let lastColumns = null;
 // Increments only on a genuine remount (key change tearing down and
 // recreating the component), not on an ordinary re-render with the same
 // key - a mount-only effect (empty deps) is what makes that distinction,
@@ -75,6 +79,7 @@ let mountCount = 0;
 vi.mock('datatables.net-react', () => {
   const MockDataTable = (props) => {
     lastOptions = props.options;
+    lastColumns = props.columns;
     React.useEffect(() => { mountCount += 1; }, []);
     return React.createElement('div', { 'data-testid': 'mock-data-table' });
   };
@@ -82,13 +87,13 @@ vi.mock('datatables.net-react', () => {
   return { default: MockDataTable };
 });
 
-// Builds a bare 9-<td> row matching BatchList's real column count, so
+// Builds a bare 10-<td> row matching BatchList's real column count, so
 // createdRow's `row.querySelectorAll('td')` / `td:last-child` /
 // `previousElementSibling` lookups behave exactly as they do against a real
 // DataTables-rendered row.
 function makeRow() {
   const row = document.createElement('tr');
-  for (let i = 0; i < 9; i++) row.appendChild(document.createElement('td'));
+  for (let i = 0; i < 10; i++) row.appendChild(document.createElement('td'));
   document.body.appendChild(row); // real layout/focus needs the row attached
   return row;
 }
@@ -105,6 +110,7 @@ const baseBatchData = (overrides = {}) => ({
 describe('BatchList row action buttons', () => {
   beforeEach(() => {
     lastOptions = null;
+    lastColumns = null;
     mountCount = 0;
     mockIsPaused = false;
     mockTogglePause.mockClear();
@@ -114,6 +120,19 @@ describe('BatchList row action buttons', () => {
     cleanup();
     document.body.innerHTML = '';
     vi.clearAllMocks();
+  });
+
+  it('includes the stored search provider as a table column', () => {
+    render(<BatchList lang="en" processingBatches={[]} />);
+
+    expect(lastColumns).toContainEqual(expect.objectContaining({
+      title: 'Search provider',
+      data: 'searchProvider'
+    }));
+
+    const searchProviderColumn = lastColumns.find((column) => column.data === 'searchProvider');
+    expect(searchProviderColumn.render('canadaca')).toBe('Canada.ca');
+    expect(searchProviderColumn.render(undefined)).toBe('N/A');
   });
 
   it('restores focus to the row after a click-triggered remount instead of dropping it to <body>', async () => {

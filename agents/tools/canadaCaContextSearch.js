@@ -1,10 +1,15 @@
 import { tool } from "@langchain/core/tools";
+import {
+    createSearchProviderError,
+    normalizeSearchInput,
+    SearchProviderError,
+} from './searchProviderContract.js';
 
 /**
  * Extracts search results from the Coveo Search API response.
  * @param {object} results - The Coveo search results object.
  * @param {number} numResults - The number of top results to extract.
- * @returns {string} - The formatted top search results with summary, link, and link text.
+ * @returns {string} - The formatted top search results with summary, link, and source organization.
  */
 function extractSearchResults(results, numResults = 3) {
     let extractedResults = "";
@@ -14,8 +19,13 @@ function extractSearchResults(results, numResults = 3) {
             const link = result.clickUri;
             const linkText = result.title || "No title available";
             const summary = result.excerpt || "No summary available";
+            const sourceOrganization = getSourceOrganization(result.raw);
 
-            extractedResults += `Summary: ${summary}\nLink: ${link}\nLink Text: ${linkText}\n\n`;
+            extractedResults += `Title: ${linkText}\nLink: ${link}\n`;
+            if (sourceOrganization) {
+                extractedResults += `Source organization: ${sourceOrganization}\n`;
+            }
+            extractedResults += `Summary: ${summary}\n\n`;
         });
     }
 
@@ -28,69 +38,86 @@ function extractSearchResults(results, numResults = 3) {
  * @returns {object|null} - The Coveo search results.
  */
 async function contextSearch(query, lang) {
-    // Set originLevel3 based on language
-    const originLevel3 = lang && lang.toLowerCase().startsWith('fr') 
-        ? '/fr/sr/srb.html' 
-        : '/en/sr/srb.html';
-
-    console.log(`Starting search with query: ${query} at endpoint: ${process.env.CANADA_CA_SEARCH_URI}`);
-    const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${process.env.CANADA_CA_SEARCH_API_KEY}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ 
-            q: query,
-            searchHub: "canada-gouv-public-websites",
-            originLevel3: originLevel3
-        }),
-        timeout: 30000 // 30 seconds timeout
-    });
-
-    if (!response.ok) {
-        // Try to log the full error response
-        const errorBody = await response.text();
-        console.error("HTTP Error Response:", {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorBody
-        });
-        throw new Error(`HTTP error! Status: ${response.status}, StatusText: ${response.statusText}`);
+    const input = normalizeSearchInput(query, lang, 'canadaca');
+    const searchUri = process.env.CANADA_CA_SEARCH_URI;
+    const searchApiKey = process.env.CANADA_CA_SEARCH_API_KEY;
+    if (!searchUri || !searchApiKey) {
+        throw createSearchProviderError(
+            'canadaca',
+            'SEARCH_PROVIDER_CONFIG',
+            'Canada.ca search is not configured'
+        );
     }
-    const extractedResults = extractSearchResults(await response.json());
-    return {
-        results: extractedResults,
-        provider: "canadaca"
-    };
+
+    // Coveo uses locale to select language-aware ranking and stemming. Keep the
+    // existing hub as the default, while allowing the deployment to override it
+    // if Coveo confirms a different hub for this organization.
+    const locale = input.lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
+    const searchHub = process.env.CANADA_CA_SEARCH_HUB || 'canada-gouv-public-websites';
+
+    console.log(`Starting search with query: ${input.query} at endpoint: ${searchUri}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+        const response = await fetch(searchUri, {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+                "Authorization": `Bearer ${searchApiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                q: input.query,
+                searchHub,
+                locale,
+                forwardLanguageToCoveoIndex: true,
+            }),
+        });
+
+        if (!response.ok) {
+            throw createSearchProviderError(
+                'canadaca',
+                'SEARCH_PROVIDER_HTTP',
+                `Canada.ca search request failed with HTTP ${response.status}`,
+                { status: response.status }
+            );
+        }
+
+        return {
+            results: extractSearchResults(await response.json()),
+            provider: "canadaca"
+        };
+    } catch (error) {
+        if (error instanceof SearchProviderError) throw error;
+        throw createSearchProviderError(
+            'canadaca',
+            'SEARCH_PROVIDER_REQUEST',
+            `Canada.ca search request failed: ${error.message}`
+        );
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+function getSourceOrganization(raw = {}) {
+    const sourceOrganization = raw.sysauthor || raw.author || raw['dcterms.creator'];
+    if (Array.isArray(sourceOrganization)) {
+        return sourceOrganization.filter((value) => typeof value === 'string' && value.trim()).join(', ');
+    }
+    return typeof sourceOrganization === 'string' && sourceOrganization.trim()
+        ? sourceOrganization
+        : '';
 }
 
 /**
  * canadaCASearch tool to perform a search using Coveo.
  */
 const contextSearchTool = tool(
-    async ({ lang, query, searchService = 'canadaca' }) => {
-        try {
-            console.log(`Starting ${searchService} search with query: ${query} in language: ${lang}`);
-
-            const results = await contextSearch(query, lang);
-
-            if (!results) {
-                return `Failed to retrieve search results for query: ${query}`;
-            }
-
-            const extractedResults = extractSearchResults(results);
-            console.log(`Results returned for query: ${query}`);
-            return extractedResults || `No meaningful results extracted for query: ${query}`;
-        } catch (error) {
-            console.error(`Error processing search query: ${query}. Details: ${error.message}`);
-            return `An error occurred while processing the search query: ${query}`;
-        }
-    },
+    async ({ lang, query }) => contextSearch(query, lang),
     {
-        name: "canadaCASearch",
-        description: "Perform a search using Coveo or Google. Provide the 'query' as the search term and lang as the language of the search query.",
+        name: "contextSearch",
+        description: "Perform a search on Canada.ca. Provide 'query' as the search term and 'lang' as the language of the search query.",
         schema: {
             type: "object",
             properties: {
@@ -103,7 +130,7 @@ const contextSearchTool = tool(
                     description: "The language of the search query.",
                 }
             },
-            required: ["lang", "query"],
+            required: ["query"],
         },
     }
 );

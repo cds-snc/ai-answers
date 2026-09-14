@@ -55,6 +55,9 @@ vi.mock('../../hooks/useTranslations.js', () => ({
             'experimental.analysis.messages.deleteFailed': 'Failed to delete batch.',
             'experimental.analysis.messages.exportFailed': 'Failed to export batch.',
             'experimental.analysis.analyzerPrefix': 'Analyzer',
+            'experimental.analysis.columns.searchProvider': 'Search provider',
+            'homepage.chat.options.searchSelection.google': 'Google',
+            'homepage.chat.options.searchSelection.canadaca': 'Canada.ca',
             'experimental.analysis.analyzers.analyzer-1.name': 'Analyzer 1',
             'experimental.analysis.analyzers.analyzer-1.description': 'Analyzer 1 description'
         }[key] || defaultValue || key)
@@ -348,13 +351,19 @@ describe('ExperimentalAnalysisPage', () => {
         fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
             target: { value: 'analyzer-1' }
         });
+        fireEvent.change(screen.getByLabelText('homepage.chat.options.searchSelection.label'), {
+            target: { value: 'canadaca' }
+        });
 
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: 'experimental.analysis.run' }));
         });
 
         const expectedRunName = `Analyzer 1 \u00b7 Dataset 1 \u00b7 workflows.generic \u00b7 models.gpt51`;
-        expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ name: expectedRunName }));
+        expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({
+            name: expectedRunName,
+            config: expect.objectContaining({ searchProvider: 'canadaca' })
+        }));
         expect(screen.getByText(expectedRunName)).toBeTruthy();
         expect(screen.getByText('experimental.analysis.messages.startingRun')).toBeTruthy();
 
@@ -518,7 +527,8 @@ describe('ExperimentalAnalysisPage', () => {
                     config: {
                         analyzerIds: ['bias-detection'],
                         workflow: 'GenericGraph',
-                        aiProvider: 'azure'
+                        aiProvider: 'azure',
+                        searchProvider: 'canadaca'
                     },
                     createdAt: '2026-05-05T00:00:00.000Z',
                     createdBy: { email: 'user@example.com' }
@@ -544,10 +554,12 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.workflow' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.modelFamily' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('columnheader', { name: 'Search provider' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('columnheader', { name: 'experimental.analysis.columns.appVersion' }).length).toBeGreaterThan(0);
         expect(screen.getAllByText('workflows.generic').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getByText('7890abcdef')).toBeTruthy();
         expect(screen.getAllByText('common.na').some(node => node.tagName === 'TD')).toBe(true);
+        expect(screen.getAllByText('Canada.ca').some(node => node.tagName === 'TD')).toBe(true);
         expect(screen.getAllByText('common.na').length).toBeGreaterThan(0);
     });
 

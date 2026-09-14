@@ -13,6 +13,7 @@ import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
 import BatchService from '../../services/BatchService.js';
+import { SEARCH_PROVIDERS } from '../../config/workflows.js';
 
 DataTable.use(DT);
 
@@ -269,6 +270,14 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       },
       { title: t('batch.list.columns.createdDate'), data: 'createdAt' },
       { title: t('batch.list.columns.provider'), data: 'aiProvider' },
+      {
+        title: t('batch.list.columns.searchProvider'),
+        data: 'searchProvider',
+        render: (data) => {
+          const provider = SEARCH_PROVIDERS.find((item) => item.value === data);
+          return provider ? t(provider.labelKey) : t('common.na');
+        },
+      },
       { title: t('batch.list.columns.workflow'), data: 'workflow' },
       {
         title: t('batch.list.columns.type'),

@@ -20,6 +20,13 @@ export const AVAILABLE_MODELS = [
 export const WORKFLOW_VALUES = WORKFLOWS.map(w => w.value);
 export const MODEL_VALUES = AVAILABLE_MODELS.map(m => m.value);
 
+export const SEARCH_PROVIDERS = [
+  { value: 'google', labelKey: 'homepage.chat.options.searchSelection.google' },
+  { value: 'canadaca', labelKey: 'homepage.chat.options.searchSelection.canadaca' },
+];
+
+export const SEARCH_PROVIDER_VALUES = SEARCH_PROVIDERS.map(provider => provider.value);
+
 // Fallback used when the 'workflow.default' setting is missing or invalid.
 // Shared by the server-side resolver (api/chat/chat-graph-run.js), the Settings
 // page, and the chat Options dropdown so they can't drift apart.

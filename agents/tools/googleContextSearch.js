@@ -1,13 +1,27 @@
 import { google } from 'googleapis';
 import { tool } from "@langchain/core/tools";
+import {
+    createSearchProviderError,
+    normalizeSearchInput,
+    SearchProviderError,
+} from './searchProviderContract.js';
 
 const customsearch = google.customsearch('v1');
 
 function maskSecretValue(text) {
     if (!text) return text;
 
-    return String(text)
-        .replace(/([?&]key=)([^&\s]+)/gi, '$1[REDACTED]');
+    let masked = String(text);
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (apiKey) {
+        masked = masked.split(apiKey).join('[REDACTED]');
+    }
+
+    return masked
+        .replace(/([?&](?:key|api[_-]?key)=)([^&\s]+)/gi, '$1[REDACTED]')
+        .replace(/(authorization\s*[:=]\s*bearer\s+)([^\s,]+)/gi, '$1[REDACTED]')
+        .replace(/(x-goog-api-key\s*[:=]\s*)([^\s,]+)/gi, '$1[REDACTED]')
+        .replace(/(["']?(?:key|api[_-]?key)["']?\s*[:=]\s*["']?)([^"',\s}]+)/gi, '$1[REDACTED]');
 }
 
 function sanitizeErrorForLogging(error) {
@@ -90,25 +104,30 @@ function extractSearchResults(results, numResults = 3) {
  * @returns {object|null} - The Google search results.
  */
 const contextSearch = async (query, lang) => {
+    const input = normalizeSearchInput(query, lang, 'google');
     try {
         const CX = process.env.GOOGLE_SEARCH_ENGINE_ID;
         const API_KEY = process.env.GOOGLE_API_KEY;
 
         if (!CX || !API_KEY) {
-            throw new Error("Missing required environment variables: GOOGLE_SEARCH_ENGINE_ID or GOOGLE_API_KEY");
+            throw createSearchProviderError(
+                'google',
+                'SEARCH_PROVIDER_CONFIG',
+                'Google search is not configured'
+            );
         }
 
         // You can use the lang parameter to customize the search if needed
         // For example, to restrict results to a specific language
         const searchOptions = {
             cx: CX,
-            q: query,
+            q: input.query,
             key: API_KEY
         };
         
         // Add language restriction if specified
-        if (lang) {
-            searchOptions.lr = lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
+        if (input.lang) {
+            searchOptions.lr = input.lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
         }
 
         let res;
@@ -137,10 +156,13 @@ const contextSearch = async (query, lang) => {
     } catch (error) {
         const sanitizedError = sanitizeErrorForLogging(error);
         console.error("Error performing Google search:", sanitizedError);
-        return {
-            results: "Search failed: " + maskSecretValue(error.message),
-            provider: "google"
-        };
+        if (error instanceof SearchProviderError) throw error;
+        throw createSearchProviderError(
+            'google',
+            'SEARCH_PROVIDER_REQUEST',
+            `Google search request failed: ${maskSecretValue(error.message)}`,
+            { status: error.status ?? error.response?.status ?? (typeof error.code === 'number' ? error.code : undefined) }
+        );
     }
 };
 

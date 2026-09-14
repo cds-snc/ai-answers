@@ -4,7 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsFileUploader, GcdsFieldset, GcdsStepper, GcdsInput, GcdsSelect } from '@gcds-core/components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
-import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, SEARCH_PROVIDERS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
 import { useAnnouncedError } from '../../hooks/auth/useAnnouncedError.js';
@@ -37,8 +37,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
-  // Hardcoded to 'google' until Canada.ca search is available
-  const selectedSearch = 'google';
+  const [selectedSearch, setSelectedSearch] = useState('google');
   const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
   const fileUploaderRef = useRef(null);
@@ -272,45 +271,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             )}
           </div>
 
-          {/* Search service toggle – commented out until Canada.ca search is available
-          <div className="search-toggle">
-            <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
-                <legend className="ai-toggle_legend">
-                  {t('batch.upload.searchService.label')}
-                </legend>
-
-                <div className="flex-center">
-                  <input
-                    type="radio"
-                    id="google"
-                    name="search-selection"
-                    value="google"
-                    checked={selectedSearch === 'google'}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label className="me-200" htmlFor="google">
-                    {t('batch.upload.searchService.google')}
-                  </label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="canadaca"
-                    name="search-selection"
-                    value="canadaca"
-                    checked={selectedSearch === 'canadaca'}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="canadaca">{t('batch.upload.searchService.canadaca')}</label>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-          */}
-
           <details className="mb-100 details-form">
             <summary className="mb-200">{t('batch.upload.advanced.title')}</summary>
             <GcdsSelect
@@ -336,6 +296,18 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             >
               {AVAILABLE_MODELS.map(m => (
                 <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+              ))}
+            </GcdsSelect>
+
+            <GcdsSelect
+              selectId="search-provider"
+              name="search-provider"
+              label={t('homepage.chat.options.searchSelection.label')}
+              value={selectedSearch}
+              onGcdsChange={(e) => setSelectedSearch(e.detail)}
+            >
+              {SEARCH_PROVIDERS.map(provider => (
+                <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
               ))}
             </GcdsSelect>
           </details>

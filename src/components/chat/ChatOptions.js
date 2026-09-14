@@ -1,7 +1,7 @@
 import React from 'react';
 import { GcdsDetails } from '@gcds-core/components-react';
 import { RoleBasedContent } from '../RoleBasedUI.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, MODEL_VALUES } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, MODEL_VALUES, SEARCH_PROVIDERS } from '../../config/workflows.js';
 
 // workflowSelection / modelSelection are what the dropdowns show, which is not
 // the same thing as what the chat will run: '' means "no override, follow the
@@ -11,7 +11,7 @@ const ChatOptions = ({
   safeT,
   modelSelection,
   handleAIToggle,
-  // selectedSearch,
+  selectedSearch,
   handleSearchToggle,
   workflowSelection,
   handleWorkflowChange,
@@ -70,46 +70,25 @@ const ChatOptions = ({
             </div>
           </div>
 
-          {/* Search selection is hidden for now; Google is forced as the search provider
-              We keep the radio inputs in the DOM (visually hidden) so this can be
-              re-enabled easily in the future. */}
-          <div className="search-toggle" aria-hidden="true">
-            <fieldset className="ai-toggle_fieldset">
-              {/* visually hide the options but keep them in DOM for future re-enable */}
-              <div className="ai-toggle_container" style={{ display: 'none' }}>
-                <legend className="ai-toggle_legend">
-                  {safeT('homepage.chat.options.searchSelection.label')}
-                </legend>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="search-canadaca"
-                    name="search-selection"
-                    value="canadaca"
-                    checked={false}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="search-canadaca">
-                    {safeT('homepage.chat.options.searchSelection.canadaca')}
-                  </label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="search-google"
-                    name="search-selection"
-                    value="google"
-                    checked={true}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="search-google">
-                    {safeT('homepage.chat.options.searchSelection.google')}
-                  </label>
-                </div>
-              </div>
-            </fieldset>
+          <div className="workflow-select">
+            <div className="mrgn-bttm-10">
+              <label htmlFor="search-provider">
+                {safeT('homepage.chat.options.searchSelection.label')}
+              </label>
+              <select
+                id="search-provider"
+                name="search-provider"
+                value={selectedSearch}
+                onChange={handleSearchToggle}
+                className="chat-border"
+              >
+                {SEARCH_PROVIDERS.map(provider => (
+                  <option key={provider.value} value={provider.value}>
+                    {safeT(provider.labelKey)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </RoleBasedContent>
 

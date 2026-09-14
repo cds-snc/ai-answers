@@ -23,26 +23,45 @@ describe('googleContextSearch', () => {
     process.env.GOOGLE_API_KEY = 'secret123';
   });
 
-  it('masks api keys in returned and logged errors', async () => {
+  it('throws the shared normalized error contract and masks api keys', async () => {
     const error = new Error(
-      'Invalid response body while trying to fetch https://customsearch.googleapis.com/customsearch/v1?cx=engine-id&q=SCIS%20definition&key=secret123&lr=lang_en: Premature close'
+      'Invalid response body while trying to fetch https://customsearch.googleapis.com/customsearch/v1?cx=engine-id&q=SCIS%20definition&api_key=secret123&lr=lang_en Authorization: Bearer secret123: Premature close'
     );
     listMock.mockRejectedValue(error);
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const result = await contextSearch('SCIS definition', 'en');
+    let thrownError;
+    try {
+      await contextSearch('SCIS definition', 'en');
+    } catch (error) {
+      thrownError = error;
+    }
 
-    expect(result.results).toContain('Search failed:');
-    expect(result.results).toContain('key=[REDACTED]');
-    expect(result.results).not.toContain('secret123');
+    expect(thrownError).toMatchObject({ provider: 'google', code: 'SEARCH_PROVIDER_REQUEST' });
+    expect(thrownError.message).not.toContain('secret123');
+    expect(thrownError.stack).not.toContain('secret123');
+    expect(thrownError.cause).toBeUndefined();
+    expect(JSON.stringify(thrownError)).not.toContain('secret123');
     expect(consoleSpy).toHaveBeenCalled();
 
     const loggedPayload = consoleSpy.mock.calls[0][1];
     expect(JSON.stringify(loggedPayload)).toContain('[REDACTED]');
     expect(JSON.stringify(loggedPayload)).not.toContain('secret123');
 
+    const retryLog = console.warn.mock.calls[0][1];
+    expect(retryLog).not.toContain('secret123');
+
     consoleSpy.mockRestore();
+  });
+
+  it('throws a normalized configuration error when credentials are missing', async () => {
+    delete process.env.GOOGLE_API_KEY;
+
+    await expect(contextSearch('passport', 'en')).rejects.toMatchObject({
+      provider: 'google',
+      code: 'SEARCH_PROVIDER_CONFIG',
+    });
   });
 
   it('retries on a transient "Premature close" error and then succeeds', async () => {
@@ -73,9 +92,11 @@ describe('googleContextSearch', () => {
     listMock.mockRejectedValue(clientError);
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const result = await contextSearch('child benefits rural', 'en');
-
+    await expect(contextSearch('child benefits rural', 'en')).rejects.toMatchObject({
+      provider: 'google',
+      code: 'SEARCH_PROVIDER_REQUEST',
+      status: 400,
+    });
     expect(listMock).toHaveBeenCalledTimes(1);
-    expect(result.results).toContain('Search failed:');
   });
 });

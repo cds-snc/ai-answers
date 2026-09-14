@@ -5,7 +5,7 @@ import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, SEARCH_PROVIDERS } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 import { getPath } from '../../utils/routes.js';
@@ -116,6 +116,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
+    const [selectedSearch, setSelectedSearch] = useState('google');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -353,6 +354,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 analyzerIds: [selectedAnalyzerId],
                 workflow: normalizeWorkflow(selectedWorkflow),
                 aiProvider: selectedModel || undefined,
+                searchProvider: selectedSearch,
                 datasetId: selectedDatasetId || undefined,
                 analysisMode,
                 trials,
@@ -536,6 +538,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         return model?.labelKey ? t(model.labelKey) : t('common.na');
     };
 
+    const getSearchProviderLabel = (batch) => {
+        const provider = SEARCH_PROVIDERS.find(item => item.value === batch?.config?.searchProvider);
+        return provider?.labelKey ? t(provider.labelKey) : t('common.na');
+    };
+
     const getAppVersionLabel = (batch) => {
         const appVersion = String(batch?.appVersion || '').trim();
         return appVersion ? appVersion.slice(-10) : t('common.na');
@@ -554,6 +561,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         { title: t('experimental.analysis.columns.analyzer'), data: null, width: '8%', render: (_data, _type, row) => getAnalyzerLabel(row) },
         { title: t('experimental.analysis.columns.workflow'), data: null, width: '8%', render: (_data, _type, row) => getWorkflowLabel(row) },
         { title: t('experimental.analysis.columns.modelFamily'), data: null, width: '8%', render: (_data, _type, row) => getModelLabel(row) },
+        { title: t('experimental.analysis.columns.searchProvider'), data: null, width: '8%', render: (_data, _type, row) => getSearchProviderLabel(row) },
         { title: t('experimental.analysis.columns.appVersion'), data: 'appVersion', width: '5%', render: (data, type) => type === 'display' ? getAppVersionLabel({ appVersion: data }) : data },
         { title: t('experimental.analysis.columns.status'), data: 'status', width: '7%', render: (data) => getStatusLabel(data) },
         { title: t('experimental.analysis.columns.completed'), data: 'summary.completed', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
@@ -815,6 +823,24 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 {AVAILABLE_MODELS.map(model => (
                                     <option key={model.value} value={model.value}>
                                         {t(model.labelKey)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="mb-400">
+                            <label htmlFor="search-provider">
+                                {t('homepage.chat.options.searchSelection.label')}
+                            </label>
+                            <select
+                                id="search-provider"
+                                value={selectedSearch}
+                                onChange={(e) => setSelectedSearch(e.target.value)}
+                                className="chat-border"
+                            >
+                                {SEARCH_PROVIDERS.map(provider => (
+                                    <option key={provider.value} value={provider.value}>
+                                        {t(provider.labelKey)}
                                     </option>
                                 ))}
                             </select>

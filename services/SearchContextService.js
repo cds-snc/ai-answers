@@ -6,9 +6,10 @@ import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
+import { normalizeSearchProvider } from '../agents/tools/searchProviderContract.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
+    const provider = normalizeSearchProvider(searchService);
     const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
 
     try {
