@@ -56,7 +56,7 @@ const UsersPage = ({ lang }) => {
   const [triggerRender, setTriggerRender] = useState(0);
   // message/isError/nonce for the outcome box below (see useRepeatableStatus).
   // `moveFocus` is separate — not part of this hook, see saveFocusCount below.
-  const { message: statusText, isError: statusIsError, nonce: statusNonce, announce: setStatusMessage } = useRepeatableStatus();
+  const { message: statusText, isError: statusIsError, nonce: statusNonce, announce: setStatusMessage, clear: clearStatusMessage } = useRepeatableStatus();
   const [statusMovesFocus, setStatusMovesFocus] = useState(false);
   const { currentUser } = useAuth();
 
@@ -64,6 +64,14 @@ const UsersPage = ({ lang }) => {
   // edit re-render just that cell (renderActionsCell) instead of a full
   // DataTable redraw.
   const actionCellsRef = useRef({});
+  // Per-row { email, role, active } snapshot, captured directly from
+  // createdRow's own row data on every redraw (including right after a
+  // successful save, when it refreshes to the newly-committed values).
+  // While an edit is staged but not yet saved, nothing redraws, so this
+  // keeps holding the pre-edit values — exactly the "before" side needed to
+  // describe what changed. Read from here rather than looking values up in
+  // `users` state at save/delete time.
+  const userSnapshotsRef = useRef({});
   // Functional double-submit guard for Save, not a visual `disabled` — that
   // would drop focus off the just-clicked button; see handleSave.
   const savingRef = useRef(new Set());
@@ -109,6 +117,12 @@ const UsersPage = ({ lang }) => {
   };
 
   const handleFieldChange = (userId, field, value) => {
+    // Clear any leftover outcome from a previous save/delete — silent (no
+    // announcement, no focus move), since a stale "User A updated" while
+    // now editing User B is misleading, but pulling focus off the select
+    // they're actively using would be worse.
+    clearStatusMessage();
+
     // Doesn't touch `users`/DataTable's data — render() already reads live
     // values from here, so staging needs no redraw (that's what avoids
     // tearing down the <select> mid-browse).
@@ -133,6 +147,13 @@ const UsersPage = ({ lang }) => {
     const edit = editStatesRef.current[userId];
     if (!edit || !edit.changed) return;
 
+    // The shared message box up top isn't tied to any one row, so name the
+    // user in it — falls back to the id if a snapshot was somehow never
+    // captured. `original` is the pre-edit committed values, used below to
+    // describe which field(s) actually changed.
+    const original = userSnapshotsRef.current[userId];
+    const email = original?.email || userId;
+
     savingRef.current.add(userId);
     try {
       const updatedUser = await UserService.update(userId, {
@@ -147,7 +168,21 @@ const UsersPage = ({ lang }) => {
       // This redraw disables the Save button the user just clicked, so
       // reclaim focus onto this message instead of announcing normally.
       setStatusMovesFocus(true);
-      setStatusMessage(t('users.actions.saveSuccess'), { isError: false });
+
+      // Name which field(s) actually changed rather than a bare
+      // confirmation — falls back to the generic message if nothing
+      // textually differs (e.g. re-picking the same value).
+      const parts = [];
+      if (original && normalizeRole(original.role) !== normalizeRole(updatedUser.role)) {
+        const roleLabel = roleOptions.find(o => o.value === normalizeRole(updatedUser.role))?.label || naLabel;
+        parts.push(t('users.actions.saveSuccessRole').replace('{email}', () => email).replace('{role}', () => roleLabel));
+      }
+      if (original && toBooleanish(original.active) !== toBooleanish(updatedUser.active)) {
+        const statusLabel = t('users.status.' + (toBooleanish(updatedUser.active) ? 'active' : 'inactive'));
+        parts.push(t('users.actions.saveSuccessStatus').replace('{email}', () => email).replace('{status}', () => statusLabel));
+      }
+      const successMessage = parts.length ? parts.join(' ') : t('users.actions.saveSuccess').replace('{email}', () => email);
+      setStatusMessage(successMessage, { isError: false });
       setSaveFocusCount(prev => prev + 1);
     } catch (error) {
       console.error('Error updating user:', error);
@@ -155,7 +190,7 @@ const UsersPage = ({ lang }) => {
       // still right where the user left it. Announce normally instead of
       // moving focus.
       setStatusMovesFocus(false);
-      setStatusMessage(t('users.actions.saveError'), { isError: true });
+      setStatusMessage(t('users.actions.saveError').replace('{email}', () => email), { isError: true });
     } finally {
       savingRef.current.delete(userId);
     }
@@ -169,6 +204,10 @@ const UsersPage = ({ lang }) => {
 
     if (!window.confirm(t('users.actions.confirmDelete'))) return;
 
+    // Captured before the delete — once it succeeds, this user is gone and
+    // there's nothing left to read the snapshot from.
+    const email = userSnapshotsRef.current[userId]?.email || userId;
+
     try {
       await UserService.delete(userId);
 
@@ -177,17 +216,18 @@ const UsersPage = ({ lang }) => {
       // Remove from refs
       delete editStatesRef.current[userId];
       delete actionCellsRef.current[userId];
+      delete userSnapshotsRef.current[userId];
       // The row (and the Delete button just clicked) is gone from the DOM,
       // so reclaim focus onto this message instead of announcing normally.
       setStatusMovesFocus(true);
-      setStatusMessage(t('users.actions.deleteSuccess'), { isError: false });
+      setStatusMessage(t('users.actions.deleteSuccess').replace('{email}', () => email), { isError: false });
       setSaveFocusCount(prev => prev + 1);
     } catch (error) {
       console.error('Error deleting user:', error);
       // The row is untouched on a failed delete, so focus is still on the
       // Delete button — announce normally instead of moving focus.
       setStatusMovesFocus(false);
-      setStatusMessage(t('users.actions.deleteError'), { isError: true });
+      setStatusMessage(t('users.actions.deleteError').replace('{email}', () => email), { isError: true });
     }
   };
 
@@ -366,6 +406,7 @@ const UsersPage = ({ lang }) => {
             // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
             actionCellsRef.current[data._id] = actionsCell;
+            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active };
             renderActionsCell(data._id);
           },
         }}

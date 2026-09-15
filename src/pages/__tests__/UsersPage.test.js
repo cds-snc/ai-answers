@@ -10,7 +10,10 @@ import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
-const mockT = (key) => key;
+// vi.fn() (not a plain arrow function) so one test can override its
+// implementation to check {email} substitution, while every other test gets
+// the plain key-passthrough default.
+const mockT = vi.fn((key) => key);
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
@@ -155,6 +158,7 @@ describe('UsersPage select changes stage instead of autosaving', () => {
     cleanup();
     mockGetAll.mockReset();
     mockUpdate.mockReset();
+    mockT.mockImplementation((key) => key);
   });
 
   it('does not call UserService.update when the role select changes, only when Save is clicked', async () => {
@@ -185,8 +189,35 @@ describe('UsersPage select changes stage instead of autosaving', () => {
     // the button just clicked — it must land on the outcome message instead
     // of silently falling to <body>.
     await waitFor(() => {
-      const successBox = screen.getByText('users.actions.saveSuccess', { selector: '[class*="status-message--"]' });
+      const successBox = screen.getByText('users.actions.saveSuccessRole', { selector: '[class*="status-message--"]' });
       expect(document.activeElement).toBe(successBox);
     });
+  });
+
+  // Regression test: an earlier version of this message used a `users.find()`
+  // lookup that could silently miss, falling back to the raw Mongo id
+  // instead of the email — with the identity-passthrough mockT elsewhere in
+  // this file, that failure mode is invisible (the id and the fallback
+  // literal look the same). Real templates here catch it for real.
+  it('names the actual user and changed field, not a placeholder or a raw id', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'jane@example.com', role: 'partner', active: true }]);
+    mockUpdate.mockImplementation(async (userId, updates) => ({ _id: userId, email: 'jane@example.com', ...updates }));
+    mockT.mockImplementation((key) => ({
+      'users.actions.saveSuccessRole': "{email}'s role updated to {role}.",
+      'users.roles.admin': 'Admin',
+      'users.roles.partner': 'Partner',
+    }[key] ?? key));
+
+    renderWithRouter(<UsersPage lang="en" />);
+
+    const roleSelect = await screen.findByLabelText('users.columns.role — jane@example.com');
+    fireEvent.change(roleSelect, { target: { value: 'admin' } });
+    fireEvent.click(screen.getByText('users.actions.save'));
+
+    await waitFor(() => {
+      expect(screen.getByText("jane@example.com's role updated to Admin.")).toBeTruthy();
+    });
+    expect(screen.queryByText(/\{email\}|\{role\}/)).toBeNull();
+    expect(screen.queryByText('u1', { exact: false })).toBeNull();
   });
 });

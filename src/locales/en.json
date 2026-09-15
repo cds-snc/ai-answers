@@ -1072,10 +1072,12 @@
       "delete": "Delete",
       "confirmDelete": "Are you sure you want to delete this user?",
       "adminOnly": "Only administrators can delete users.",
-      "saveSuccess": "User updated.",
-      "saveError": "Failed to update user.",
-      "deleteSuccess": "User deleted.",
-      "deleteError": "Failed to delete user."
+      "saveSuccess": "{email} updated.",
+      "saveSuccessRole": "{email}'s role updated to {role}.",
+      "saveSuccessStatus": "{email}'s status updated to {status}.",
+      "saveError": "Failed to update {email}.",
+      "deleteSuccess": "{email} deleted.",
+      "deleteError": "Failed to delete {email}."
     }
   },
   "workflows": {
