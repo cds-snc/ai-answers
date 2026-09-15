@@ -11,7 +11,8 @@ import { getCellRoot } from '../utils/dataTableCellRoot.js';
 import UserService from '../services/UserService.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 
 DataTable.use(DT);
 
@@ -53,8 +54,33 @@ const UsersPage = ({ lang }) => {
   // This state is just used to trigger re-renders when editStatesRef changes
   // eslint-disable-next-line no-unused-vars
   const [triggerRender, setTriggerRender] = useState(0);
-  const [statusMessage, setStatusMessage] = useState(null); // { text, isError }
+  // message/isError/nonce for the outcome box below (see useRepeatableStatus).
+  // `moveFocus` is separate — not part of this hook, see saveFocusCount below.
+  const { message: statusText, isError: statusIsError, nonce: statusNonce, announce: setStatusMessage, clear: clearStatusMessage } = useRepeatableStatus();
+  const [statusMovesFocus, setStatusMovesFocus] = useState(false);
   const { currentUser } = useAuth();
+
+  // Per-row Save/Delete <td> refs, captured in createdRow — lets a field
+  // edit re-render just that cell (renderActionsCell) instead of a full
+  // DataTable redraw.
+  const actionCellsRef = useRef({});
+  // Per-row { email, role, active } snapshot, captured directly from
+  // createdRow's own row data on every redraw (including right after a
+  // successful save, when it refreshes to the newly-committed values).
+  // While an edit is staged but not yet saved, nothing redraws, so this
+  // keeps holding the pre-edit values — exactly the "before" side needed to
+  // describe what changed. Read from here rather than looking values up in
+  // `users` state at save/delete time.
+  const userSnapshotsRef = useRef({});
+  // Functional double-submit guard for Save, not a visual `disabled` — that
+  // would drop focus off the just-clicked button; see handleSave.
+  const savingRef = useRef(new Set());
+
+  // Bumped on save/delete completion to move focus onto the outcome message —
+  // Save disables itself, Delete removes the row; both would otherwise drop
+  // focus to <body>. Same pattern as ScenarioOverridesPage.js.
+  const [saveFocusCount, setSaveFocusCount] = useState(0);
+  const statusMessageRef = useFocusOnChange(saveFocusCount);
 
   // Initialize editStates with data from users
   useEffect(() => {
@@ -71,8 +97,35 @@ const UsersPage = ({ lang }) => {
     }
   }, [users]);
 
+  // Re-renders just this row's Save/Delete cell — used after staging so
+  // Save's disabled state updates without a full DataTable redraw (which
+  // would tear down the <select> mid-arrow-key-browsing).
+  const renderActionsCell = (userId) => {
+    const cell = actionCellsRef.current[userId];
+    if (!cell) return;
+    const changed = !!editStatesRef.current[userId]?.changed;
+    getCellRoot(cell).render(
+      <div className="table-row-actions" style={{ display: 'flex', gap: '8px' }}>
+        <GcdsButton size="small" disabled={!changed} onClick={() => handleSave(userId)}>
+          {t('users.actions.save')}
+        </GcdsButton>
+        <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(userId)}>
+          {t('users.actions.delete')}
+        </GcdsButton>
+      </div>
+    );
+  };
+
   const handleFieldChange = (userId, field, value) => {
-    // Update the ref directly for change tracking
+    // Clear any leftover outcome from a previous save/delete — silent (no
+    // announcement, no focus move), since a stale "User A updated" while
+    // now editing User B is misleading, but pulling focus off the select
+    // they're actively using would be worse.
+    clearStatusMessage();
+
+    // Doesn't touch `users`/DataTable's data — render() already reads live
+    // values from here, so staging needs no redraw (that's what avoids
+    // tearing down the <select> mid-browse).
     if (!editStatesRef.current[userId]) {
       const matchingUser = users.find(u => u._id === userId);
       editStatesRef.current[userId] = {
@@ -83,45 +136,63 @@ const UsersPage = ({ lang }) => {
     editStatesRef.current[userId][field] = value;
     editStatesRef.current[userId].changed = true;
 
-    // Update the users state so DataTable re-renders and re-indexes
-    setUsers(prevUsers => prevUsers.map(u =>
-      u._id === userId ? { ...u, [field]: value } : u
-    ));
-
-    // Trigger render is handled by setUsers now, but we keep it for safety if needed
-    setTriggerRender(prev => prev + 1);
+    renderActionsCell(userId);
   };
 
   const handleSave = async (userId) => {
+    // Functional guard against a double-click firing two overlapping saves —
+    // see savingRef's own comment for why this isn't a visual `disabled`.
+    if (savingRef.current.has(userId)) return;
+
     const edit = editStatesRef.current[userId];
-    console.log('Save clicked, current state:', {
-      userId,
-      edit,
-      allStates: { ...editStatesRef.current }
-    });
+    if (!edit || !edit.changed) return;
 
-    if (!edit || !edit.changed) {
-      console.log('No changes to save');
-      return;
-    }
+    // The shared message box up top isn't tied to any one row, so name the
+    // user in it — falls back to the id if a snapshot was somehow never
+    // captured. `original` is the pre-edit committed values, used below to
+    // describe which field(s) actually changed.
+    const original = userSnapshotsRef.current[userId];
+    const email = original?.email || userId;
 
+    savingRef.current.add(userId);
     try {
       const updatedUser = await UserService.update(userId, {
         active: edit.active,
         role: edit.role
       });
 
-      // Update users array
+      // Update users array — this does redraw the table, but only once per
+      // deliberate Save click rather than per keystroke.
       setUsers(prevUsers => prevUsers.map(u => u._id === userId ? updatedUser : u));
-      // Update ref
       editStatesRef.current[userId].changed = false;
-      // Force re-render
-      setTriggerRender(prev => prev + 1);
-      console.log('Save successful, changes:', edit);
-      setStatusMessage({ text: t('users.actions.saveSuccess'), isError: false });
+      // This redraw disables the Save button the user just clicked, so
+      // reclaim focus onto this message instead of announcing normally.
+      setStatusMovesFocus(true);
+
+      // Name which field(s) actually changed rather than a bare
+      // confirmation — falls back to the generic message if nothing
+      // textually differs (e.g. re-picking the same value).
+      const parts = [];
+      if (original && normalizeRole(original.role) !== normalizeRole(updatedUser.role)) {
+        const roleLabel = roleOptions.find(o => o.value === normalizeRole(updatedUser.role))?.label || naLabel;
+        parts.push(t('users.actions.saveSuccessRole').replace('{email}', () => email).replace('{role}', () => roleLabel));
+      }
+      if (original && toBooleanish(original.active) !== toBooleanish(updatedUser.active)) {
+        const statusLabel = t('users.status.' + (toBooleanish(updatedUser.active) ? 'active' : 'inactive'));
+        parts.push(t('users.actions.saveSuccessStatus').replace('{email}', () => email).replace('{status}', () => statusLabel));
+      }
+      const successMessage = parts.length ? parts.join(' ') : t('users.actions.saveSuccess').replace('{email}', () => email);
+      setStatusMessage(successMessage, { isError: false });
+      setSaveFocusCount(prev => prev + 1);
     } catch (error) {
       console.error('Error updating user:', error);
-      setStatusMessage({ text: t('users.actions.saveError'), isError: true });
+      // Nothing redraws here — the row/button are untouched, so focus is
+      // still right where the user left it. Announce normally instead of
+      // moving focus.
+      setStatusMovesFocus(false);
+      setStatusMessage(t('users.actions.saveError').replace('{email}', () => email), { isError: true });
+    } finally {
+      savingRef.current.delete(userId);
     }
   };
   const handleDelete = async (userId) => {
@@ -133,19 +204,30 @@ const UsersPage = ({ lang }) => {
 
     if (!window.confirm(t('users.actions.confirmDelete'))) return;
 
+    // Captured before the delete — once it succeeds, this user is gone and
+    // there's nothing left to read the snapshot from.
+    const email = userSnapshotsRef.current[userId]?.email || userId;
+
     try {
       await UserService.delete(userId);
 
       // Remove from users array
       setUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
-      // Remove from ref
+      // Remove from refs
       delete editStatesRef.current[userId];
-      // Force re-render
-      setTriggerRender(prev => prev + 1);
-      setStatusMessage({ text: t('users.actions.deleteSuccess'), isError: false });
+      delete actionCellsRef.current[userId];
+      delete userSnapshotsRef.current[userId];
+      // The row (and the Delete button just clicked) is gone from the DOM,
+      // so reclaim focus onto this message instead of announcing normally.
+      setStatusMovesFocus(true);
+      setStatusMessage(t('users.actions.deleteSuccess').replace('{email}', () => email), { isError: false });
+      setSaveFocusCount(prev => prev + 1);
     } catch (error) {
       console.error('Error deleting user:', error);
-      setStatusMessage({ text: t('users.actions.deleteError'), isError: true });
+      // The row is untouched on a failed delete, so focus is still on the
+      // Delete button — announce normally instead of moving focus.
+      setStatusMovesFocus(false);
+      setStatusMessage(t('users.actions.deleteError').replace('{email}', () => email), { isError: true });
     }
   };
 
@@ -261,7 +343,18 @@ const UsersPage = ({ lang }) => {
         </GcdsText>
       </nav>
 
-      <StatusMessage variant={statusMessage ? (statusMessage.isError ? 'error' : 'success') : undefined} message={statusMessage?.text} />
+      {/* statusMovesFocus is true only for successful save/delete (both
+          redraw and drop focus off the just-used control); a failed
+          save/delete touches nothing, so this just announces normally. */}
+      <StatusMessage
+        ref={statusMessageRef}
+        tabIndex={-1}
+        announce={!statusMovesFocus}
+        announcedVia={statusMovesFocus ? 'focus' : undefined}
+        variant={statusText ? (statusIsError ? 'error' : 'success') : undefined}
+        message={statusText}
+        nonce={statusNonce}
+      />
 
       <div className="metrics-table-container">
       <DataTable
@@ -293,9 +386,12 @@ const UsersPage = ({ lang }) => {
             setColumnHeaderScope(this.api());
           },
           createdRow: (row, data) => {
-            // Attach select change handlers
-            row.querySelectorAll('select').forEach(select => {
-              select.onchange = async () => {
+            // Only stage the edit (handleFieldChange) — an unopened <select>
+            // fires `change` on every arrow-key press, so autosaving here
+            // could commit an unintended, privilege-escalating role change
+            // before the user lands on the one they meant to pick.
+            row.querySelectorAll('select[data-field]').forEach(select => {
+              select.onchange = () => {
                 const userId = select.getAttribute('data-userid');
                 const field = select.getAttribute('data-field');
                 let value = select.value;
@@ -303,27 +399,15 @@ const UsersPage = ({ lang }) => {
                   value = toBooleanish(value);
                 }
                 handleFieldChange(userId, field, value);
-                try {
-                  await handleSave(userId);
-                } catch (err) {
-                  console.error('Autosave failed:', err);
-                }
               };
             });
 
             // Render Save and Delete buttons. getCellRoot() clears any stale
             // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
-            // Render admin delete button (only admins should reach this page)
-            getCellRoot(actionsCell).render(
-              <GcdsButton
-                size="small"
-                buttonRole="danger"
-                onClick={() => handleDelete(data._id)}
-              >
-                {t('users.actions.delete')}
-              </GcdsButton>
-            );
+            actionCellsRef.current[data._id] = actionsCell;
+            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active };
+            renderActionsCell(data._id);
           },
         }}
       >
