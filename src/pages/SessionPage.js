@@ -11,6 +11,7 @@ import { escapeHtml } from '../utils/htmlEscape.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import SessionService from '../services/SessionService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 
 DataTable.use(DT);
 
@@ -18,8 +19,9 @@ const SessionPage = ({ lang: propLang }) => {
   const { language } = usePageContext();
   const lang = propLang || language || 'en';
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const [sessions, setSessions] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const sessionTypeLabel = React.useCallback((value) => {
     const type = value || 'unknown';
@@ -38,7 +40,7 @@ const SessionPage = ({ lang: propLang }) => {
 
   const fetchSessions = React.useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       const sess = await SessionService.getSessionMetrics();
       // Ensure creditsLeft reflects the session-level value (shared across
@@ -54,17 +56,12 @@ const SessionPage = ({ lang: propLang }) => {
       const normalized = (sess || []).map(r => ({ ...r, creditsLeft: sessionCredits[r.sessionId] ?? r.creditsLeft }));
       setSessions(normalized);
     } catch (e) {
-      // prefer admin.session.errorLoading if status/text available
-      if (e && e.status) {
-        setError(t('admin.session.errorLoading', 'Failed to load sessions: {status} {text}', { status: e.status, text: e.text || '' }));
-      } else {
-        setError(t('admin.session.errorGeneric', 'Error: {message}', { message: e.message }));
-      }
+      setError(buildErrorStatus('admin.session.errorLoading', e));
       setSessions([]);
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [buildErrorStatus]);
 
   // WCAG 2.2.2 (Pause, Stop, Hide): the 5s poll below keeps refreshing the
   // table.
@@ -79,7 +76,7 @@ const SessionPage = ({ lang: propLang }) => {
         </GcdsText>
       </nav>
 
-      <StatusMessage variant={error ? 'error' : undefined} message={error} />
+      {renderStatusMessage(error)}
       {loading && <StatusMessage loading message={t('admin.filters.loading')} />}
 
       <PauseToggleButton isPaused={isPaused} onToggle={togglePause} t={t} className="mb-200" />

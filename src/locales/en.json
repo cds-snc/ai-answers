@@ -817,8 +817,7 @@
       "lastLatency": "Last latency (ms)",
       "avgLatency": "Avg latency (ms)",
       "rpm": "Requests / minute",
-      "errorLoading": "Failed to load sessions: {status} {text}",
-      "errorGeneric": "Error: {message}"
+      "errorLoading": "Failed to load sessions: {error}"
     },
     "common": {
       "searchLabel": "Search:",
