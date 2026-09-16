@@ -37,6 +37,7 @@ describe('canadaCaContextSearch retry', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         process.env.CANADA_CA_SEARCH_URI = 'https://search.test';
         process.env.CANADA_CA_SEARCH_API_KEY = 'api-key';
+        process.env.USER_AGENT = 'test-agent';
         fetchMock = vi.fn();
         globalThis.fetch = fetchMock;
     });
@@ -75,12 +76,11 @@ describe('canadaCaContextSearch retry', () => {
                 Authorization: 'Bearer api-key',
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
+                'User-Agent': 'test-agent',
             }),
         });
         expect(JSON.parse(request.body)).toEqual({
             q: 'q',
-            searchHub: 'canada-gouv-public-websites',
-            originLevel3: '/en/sr/srb.html',
         });
     });
 

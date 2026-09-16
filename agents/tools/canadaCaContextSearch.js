@@ -48,19 +48,16 @@ function extractSearchResults(results, numResults = 3) {
  * body read all belong to it, because a response can start 200 and then have
  * its body stream die.
  */
-async function fetchSearchResults(query, originLevel3) {
+async function fetchSearchResults(query) {
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${process.env.CANADA_CA_SEARCH_API_KEY}`,
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
-        body: JSON.stringify({ 
-            q: query,
-            searchHub: "canada-gouv-public-websites",
-            originLevel3: originLevel3
-        }),
+        body: JSON.stringify({ q: query }),
         timeout: 30000 // 30 seconds timeout
     });
 
@@ -92,17 +89,12 @@ async function fetchSearchResults(query, originLevel3) {
  */
 async function contextSearch(query, lang, { onRetry } = {}) {
     try {
-        // Set originLevel3 based on language
-        const originLevel3 = lang && lang.toLowerCase().startsWith('fr')
-            ? '/fr/sr/srb.html'
-            : '/en/sr/srb.html';
-
         console.log(`Starting search with query: ${query} at endpoint: ${process.env.CANADA_CA_SEARCH_URI}`);
 
         // A dropped socket or a 5xx gets another attempt; a 4xx or a bad API key
         // fails immediately rather than sleeping to return the same error.
         const results = await retryOnTransientError(
-            () => fetchSearchResults(query, originLevel3),
+            () => fetchSearchResults(query),
             {
                 attempts: MAX_SEARCH_ATTEMPTS,
                 baseDelayMs: RETRY_BASE_DELAY_MS,
