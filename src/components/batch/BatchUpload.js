@@ -38,8 +38,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
-  // Hardcoded to 'google' until Canada.ca search is available
-  const selectedSearch = 'google';
+  const [selectedSearch, setSelectedSearch] = useState('google');
   const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
   const fileUploaderRef = useRef(null);
@@ -102,7 +101,9 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     setFileUploaded(false);
   };
 
-  // handleSearchToggle removed — uncomment when Canada.ca search is re-enabled
+  const handleSearchToggle = (e) => {
+    setSelectedSearch(e.detail);
+  };
 
   const handleLanguageToggle = (e) => {
     setSelectedLanguage(e.target.value);
@@ -279,47 +280,19 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
             )}
           </div>
 
-          {/* Search service toggle – commented out until Canada.ca search is available
-          <div className="search-toggle">
-            <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container">
-                <legend className="ai-toggle_legend">
-                  {t('batch.upload.searchService.label')}
-                </legend>
-
-                <div className="flex-center">
-                  <input
-                    type="radio"
-                    id="google"
-                    name="search-selection"
-                    value="google"
-                    checked={selectedSearch === 'google'}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label className="me-200" htmlFor="google">
-                    {t('batch.upload.searchService.google')}
-                  </label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="canadaca"
-                    name="search-selection"
-                    value="canadaca"
-                    checked={selectedSearch === 'canadaca'}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="canadaca">{t('batch.upload.searchService.canadaca')}</label>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-          */}
-
           <details className="mb-100 details-form">
             <summary className="mb-200">{t('batch.upload.advanced.title')}</summary>
+            <GcdsSelect
+              selectId="search-provider"
+              name="searchProvider"
+              label={t('batch.upload.searchService.label')}
+              value={selectedSearch}
+              onGcdsChange={handleSearchToggle}
+            >
+              <option value="google">{t('batch.upload.searchService.google')}</option>
+              <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
+            </GcdsSelect>
+
             <GcdsSelect
               selectId="workflow"
               name="workflow"

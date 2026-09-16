@@ -1132,6 +1132,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         formatAIResponse={formatAIResponse}
         modelSelection={modelIsOverride ? selectedAI : ''}
         selectedSearch={selectedSearch}
+        handleSearchToggle={handleSearchToggle}
         referringUrl={referringUrl}
         chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}

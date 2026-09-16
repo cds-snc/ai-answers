@@ -157,6 +157,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
+    const [selectedSearch, setSelectedSearch] = useState('google');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -405,6 +406,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 analyzerIds: [selectedAnalyzerId],
                 workflow: normalizeWorkflow(selectedWorkflow),
                 aiProvider: selectedModel || undefined,
+                searchProvider: selectedSearch,
                 datasetId: selectedDatasetId || undefined,
                 analysisMode,
                 trials,
@@ -843,6 +845,21 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         {t(model.labelKey)}
                                     </option>
                                 ))}
+                            </select>
+                        </div>
+
+                        <div className="mb-400">
+                            <label htmlFor="search-provider-select" className="filter-label display-block">
+                                {t('batch.upload.searchService.label')}
+                            </label>
+                            <select
+                                id="search-provider-select"
+                                value={selectedSearch}
+                                onChange={(e) => setSelectedSearch(e.target.value)}
+                                className="filter-select settings-form-width"
+                            >
+                                <option value="google">{t('batch.upload.searchService.google')}</option>
+                                <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
                             </select>
                         </div>
 
