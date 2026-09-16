@@ -22,6 +22,9 @@ const t = (key) => {
     'homepage.chat.options.title': 'Evaluation options',
     'homepage.chat.options.workflow.label': 'Workflow:',
     'homepage.chat.options.model.label': 'Model family:',
+    'homepage.chat.options.searchSelection.label': 'Search provider:',
+    'homepage.chat.options.searchSelection.google': 'Google',
+    'homepage.chat.options.searchSelection.canadaca': 'Canada.ca',
     'homepage.chat.options.useSystemSettings': 'Use system settings',
     'homepage.chat.options.referringUrl.label': 'Referring Canada.ca URL (optional)',
     'homepage.chat.options.referringUrl.error': 'Enter a full URL, starting with https:// or http://',
@@ -39,11 +42,14 @@ const renderOptions = (props = {}) => {
   const handleReferringUrlChange = vi.fn();
   const handleWorkflowChange = vi.fn();
   const handleAIToggle = vi.fn();
+  const handleSearchToggle = vi.fn();
   const utils = render(
     <ChatOptions
       safeT={t}
       modelSelection=""
       handleAIToggle={handleAIToggle}
+      selectedSearch="google"
+      handleSearchToggle={handleSearchToggle}
       workflowSelection=""
       handleWorkflowChange={handleWorkflowChange}
       referringUrl=""
@@ -51,7 +57,7 @@ const renderOptions = (props = {}) => {
       {...props}
     />
   );
-  return { ...utils, handleReferringUrlChange, handleWorkflowChange, handleAIToggle };
+  return { ...utils, handleReferringUrlChange, handleWorkflowChange, handleAIToggle, handleSearchToggle };
 };
 
 const applyButton = () => screen.getByRole('button', { name: 'Apply URL' });
@@ -254,5 +260,19 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(capturedWorkflow).toBe('GenericGraph');
     expect(handleAIToggle).toHaveBeenCalledTimes(1);
     expect(capturedModel).toBe('azure');
+  });
+
+  it('places the search-provider select directly after model family and applies it live', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+    let selectedProvider;
+    const handleSearchToggle = vi.fn((event) => { selectedProvider = event.target.value; });
+    renderOptions({ handleSearchToggle });
+
+    const selects = [...document.querySelectorAll('select')];
+    expect(selects.map((select) => select.id)).toEqual(['workflow', 'model', 'search-provider']);
+    fireEvent.change(screen.getByLabelText('Search provider:'), { target: { value: 'canadaca' } });
+
+    expect(handleSearchToggle).toHaveBeenCalledTimes(1);
+    expect(selectedProvider).toBe('canadaca');
   });
 });

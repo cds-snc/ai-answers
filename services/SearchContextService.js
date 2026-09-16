@@ -21,11 +21,9 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
             // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
             onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
         });
-        // The two providers report a spent-all-retries failure differently:
-        // canadaca throws (caught below), google returns `failed` with the error
-        // as its result text so the answer agent can still say the search failed.
-        // Both are errors for metrics purposes — the dashboard's own note defines
-        // this count as "calls that still failed after all retries".
+        // Both providers return `failed: true` after permanent or exhausted
+        // failures, so the technical metrics dashboard counts either provider
+        // on the same basis.
         if (result?.failed) {
             ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         }
@@ -67,11 +65,8 @@ export const SearchContextService = {
         ServerLoggingService.debug('Search results:', chatId, searchResults);
 
         // Retry with a simplified query if search returned 0 or 1 results.
-        // A failed search is excluded: its result text ("Search failed: ...")
-        // counts as 0, which would otherwise spend an LLM rewrite plus a second
-        // full search on an outage that is certain to fail again — and record a
-        // second error for the same outage, putting google's error count on a
-        // different scale from canadaca's, which throws and is counted once.
+        // Failed searches are excluded from the sparse-results retry to avoid a
+        // second doomed call and duplicate error metric.
         const resultCount = countSearchResults(searchResults?.results);
         if (!searchResults?.failed && resultCount <= 1) {
             try {

@@ -4,6 +4,7 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsFileUploader, GcdsFieldset, GcdsStepper, GcdsInput, GcdsSelect } from '@gcds-core/components-react';
 import BatchService from '../../services/BatchService.js';
 import DataStoreService from '../../services/DataStoreService.js';
+import { resolveErrorMessage } from '../../utils/errorCodeMessage.js';
 import { WORKFLOWS, AVAILABLE_MODELS, SEARCH_PROVIDERS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
@@ -100,8 +101,6 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
     setFileUploaded(false);
   };
 
-  // handleSearchToggle removed — uncomment when Canada.ca search is re-enabled
-
   const handleLanguageToggle = (e) => {
     setSelectedLanguage(e.target.value);
   };
@@ -194,18 +193,24 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           setFileUploaderKey((k) => k + 1);
         } catch (persistErr) {
           console.error('Failed to persist batch:', persistErr);
-          setError(persistErr?.message || t('batch.upload.error.saveFailed'));
+          setError(persistErr?.message
+            ? <>{t('batch.upload.error.saveFailed')} <code lang="en">{persistErr.message}</code></>
+            : t('batch.upload.error.saveFailed'));
           // Re-show the upload button so the user can retry
           setFileUploaded(false);
           setProcessing(false);
         }
       } catch (err) {
         // Surface the actual parse error (e.g. missing column, empty file)
-        // so the admin can see what's wrong with the CSV.
-        const detail = {
-          EMPTY_CSV: t('batch.upload.error.invalidCsv'),
-          MISSING_QUESTION_COLUMN: t('batch.upload.error.missingQuestionColumn'),
-        }[err?.code] || err?.message || t('batch.upload.error.readFailed');
+        // so the admin can see what's wrong with the CSV. This feeds
+        // GcdsFileUploader's errorMessage prop, a plain-string web-component
+        // attribute — no way to wrap a raw err.message in <code lang="en">
+        // here, so unlike other error sites, an unrecognized err.code falls
+        // back to the translated generic message rather than raw text.
+        const detail = resolveErrorMessage(err?.code, {
+          EMPTY_CSV: 'batch.upload.error.invalidCsv',
+          MISSING_QUESTION_COLUMN: 'batch.upload.error.missingQuestionColumn',
+        }, 'batch.upload.error.readFailed', t);
         announceFileError(detail);
         fileUploaderRef.current?.focus?.();
         console.error('Error reading file:', err);
@@ -306,7 +311,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               value={selectedSearch}
               onGcdsChange={(e) => setSelectedSearch(e.detail)}
             >
-              {SEARCH_PROVIDERS.map(provider => (
+              {SEARCH_PROVIDERS.map((provider) => (
                 <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
               ))}
             </GcdsSelect>
