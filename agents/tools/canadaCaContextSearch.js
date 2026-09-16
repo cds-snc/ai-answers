@@ -1,4 +1,5 @@
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
+import { maskSecretValue, sanitizeErrorForLogging } from './utils/searchUtils.js';
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 1000;
@@ -69,7 +70,7 @@ async function fetchSearchResults(query, originLevel3) {
         console.error("HTTP Error Response:", {
             status: response.status,
             statusText: response.statusText,
-            body: errorBody
+            body: maskSecretValue(errorBody)
         });
         const error = new Error(`HTTP error! Status: ${response.status}, StatusText: ${response.statusText}`);
         // fetch reports the status on the response, not the error. Without this
@@ -109,7 +110,7 @@ async function contextSearch(query, lang, { onRetry } = {}) {
                 onRetry: (info) => {
                     console.warn(
                         `Canada.ca search attempt ${info.attempt}/${info.attempts} failed with a transient error, retrying:`,
-                        info.error?.message
+                        maskSecretValue(info.error?.message)
                     );
                     if (onRetry) onRetry(info);
                 },
@@ -121,10 +122,10 @@ async function contextSearch(query, lang, { onRetry } = {}) {
             provider: "canadaca"
         };
     } catch (error) {
-        console.error("Error performing Canada.ca search:", error);
+        console.error("Error performing Canada.ca search:", sanitizeErrorForLogging(error));
         return {
             failed: true,
-            results: "Search failed: " + error.message,
+            results: "Search failed: " + maskSecretValue(error.message),
             provider: "canadaca"
         };
     }
