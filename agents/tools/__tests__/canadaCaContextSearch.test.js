@@ -10,7 +10,15 @@ describe('canadaCaContextSearch retry', () => {
     const okResponse = () => ({
         ok: true,
         status: 200,
-        json: async () => ({ results: [{ clickUri: 'https://x', title: 'T', excerpt: 'E' }] }),
+        json: async () => ({ results: [{
+            clickUri: 'https://x',
+            title: 'T',
+            excerpt: 'E',
+            raw: {
+                sysauthor: ['Example organization', '', 'Second organization'],
+                department: 'Example department',
+            },
+        }] }),
     });
 
     const errorResponse = (status) => ({
@@ -67,6 +75,8 @@ describe('canadaCaContextSearch retry', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(value.provider).toBe('canadaca');
         expect(value.results).toContain('Title: T');
+        expect(value.results).toContain('Organization: Example organization, Second organization');
+        expect(value.results).toContain('Department: Example department');
         expect(value.results).toContain('Summary: E');
 
         const [, request] = fetchMock.mock.calls[1];
@@ -81,6 +91,8 @@ describe('canadaCaContextSearch retry', () => {
         });
         expect(JSON.parse(request.body)).toEqual({
             q: 'q',
+            locale: 'en-CA',
+            forwardLanguageToCoveoIndex: true,
         });
     });
 

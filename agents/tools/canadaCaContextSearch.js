@@ -30,16 +30,36 @@ function extractSearchResults(results, numResults = 3) {
     }
 
     const topResults = results.results.slice(0, numResults).map(result => ({
+        department: result.raw?.department,
+        organization: getSourceOrganization(result.raw),
         link: result.clickUri,
         linkText: result.title,
         summary: result.excerpt
     }));
 
-    const extractedResults = topResults.map(result =>
-        `Title: ${result.linkText}\nLink: ${result.link}\nSummary: ${result.summary}\n`
-    ).join("\n");
+    const extractedResults = topResults.map(result => {
+        const ownership = [
+            result.organization && `Organization: ${result.organization}`,
+            result.department && `Department: ${result.department}`,
+        ].filter(Boolean).join("\n");
+        const ownershipLine = ownership ? `${ownership}\n` : '';
+
+        return `Title: ${result.linkText}\n${ownershipLine}Link: ${result.link}\nSummary: ${result.summary}\n`;
+    }).join("\n");
     console.info("Extracted search results:", extractedResults);
     return extractedResults;
+}
+
+function getSourceOrganization(raw = {}) {
+    const sourceOrganization = raw.sysauthor || raw.author || raw['dcterms.creator'];
+    if (Array.isArray(sourceOrganization)) {
+        return sourceOrganization
+            .filter((value) => typeof value === 'string' && value.trim())
+            .join(', ');
+    }
+    return typeof sourceOrganization === 'string' && sourceOrganization.trim()
+        ? sourceOrganization
+        : '';
 }
 
 /**
@@ -48,7 +68,7 @@ function extractSearchResults(results, numResults = 3) {
  * body read all belong to it, because a response can start 200 and then have
  * its body stream die.
  */
-async function fetchSearchResults(query) {
+async function fetchSearchResults(query, lang) {
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         headers: {
@@ -57,7 +77,11 @@ async function fetchSearchResults(query) {
             "Accept": "application/json",
             "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
-        body: JSON.stringify({ q: query }),
+        body: JSON.stringify({
+            q: query,
+            locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
+            forwardLanguageToCoveoIndex: true,
+        }),
         timeout: 30000 // 30 seconds timeout
     });
 
@@ -94,7 +118,7 @@ async function contextSearch(query, lang, { onRetry } = {}) {
         // A dropped socket or a 5xx gets another attempt; a 4xx or a bad API key
         // fails immediately rather than sleeping to return the same error.
         const results = await retryOnTransientError(
-            () => fetchSearchResults(query),
+            () => fetchSearchResults(query, lang),
             {
                 attempts: MAX_SEARCH_ATTEMPTS,
                 baseDelayMs: RETRY_BASE_DELAY_MS,
