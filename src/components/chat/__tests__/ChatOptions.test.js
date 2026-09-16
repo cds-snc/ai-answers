@@ -42,7 +42,8 @@ const renderOptions = (props = {}) => {
   const handleReferringUrlChange = vi.fn();
   const handleWorkflowChange = vi.fn();
   const handleAIToggle = vi.fn();
-  const handleSearchToggle = vi.fn();
+  const selectedSearchValues = [];
+  const handleSearchToggle = vi.fn((e) => selectedSearchValues.push(e.currentTarget.value));
   const utils = render(
     <ChatOptions
       safeT={t}
@@ -57,7 +58,7 @@ const renderOptions = (props = {}) => {
       {...props}
     />
   );
-  return { ...utils, handleReferringUrlChange, handleWorkflowChange, handleAIToggle, handleSearchToggle };
+  return { ...utils, handleReferringUrlChange, handleWorkflowChange, handleAIToggle, handleSearchToggle, selectedSearchValues };
 };
 
 const applyButton = () => screen.getByRole('button', { name: 'Apply URL' });
@@ -77,12 +78,12 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
 
   it('allows admins and partners to select the search provider', () => {
     mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
-    const { handleSearchToggle } = renderOptions();
+    const { handleSearchToggle, selectedSearchValues } = renderOptions();
 
     fireEvent.change(screen.getByLabelText('Search:'), { target: { value: 'canadaca' } });
 
     expect(handleSearchToggle).toHaveBeenCalledTimes(1);
-    expect(handleSearchToggle.mock.calls[0][0].target.value).toBe('canadaca');
+    expect(selectedSearchValues).toEqual(['canadaca']);
   });
 
   it('does not apply on typing alone — only once Apply is clicked', () => {
