@@ -7,6 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import VectorPage from '../VectorPage.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
+import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -370,6 +371,21 @@ describe('VectorPage metadata backfill job status, discovered by polling', () =>
     renderWithRouter(<VectorPage lang="en" />);
 
     await waitForAnnouncement('vector.metadataBackfillFailed', 'assertive');
+  });
+
+  it('does not re-announce a still-failed job on the next poll tick', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockGetMetadataBackfillJob.mockResolvedValue({
+      job: { id: 'job-1', status: 'failed', processed: 5 },
+    });
+
+    renderWithRouter(<VectorPage lang="en" />);
+    await waitForAnnouncement('vector.metadataBackfillFailed', 'assertive');
+
+    // Same job, same status, next 5s tick — must not spam a second
+    // "failed" announcement while nothing actually changed.
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(getAnnouncedTexts('assertive').filter((t) => t === 'vector.metadataBackfillFailed')).toHaveLength(1);
   });
 
   it('announces an asynchronously-completed job (found by polling) as role="status", not silently', async () => {

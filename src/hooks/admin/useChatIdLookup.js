@@ -35,7 +35,14 @@ export function useChatIdLookup({
   const { t } = useTranslations(lang);
   const [chatId, setChatId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [status, setStatusRaw] = useState(null);
+  // Bumped on real outcomes only (not the frequent clear-to-null calls) —
+  // pass as StatusMessage's nonce so a repeat outcome still re-announces.
+  const [statusNonce, setStatusNonce] = useState(0);
+  const setStatus = (value) => {
+    setStatusRaw(value);
+    if (value != null) setStatusNonce((n) => n + 1);
+  };
   // "Empty" and "invalid format" are pre-submit, client-side field
   // validation (this inline slot); "not found"/"invalid target"/"lookup
   // failed" are genuine server-lookup outcomes, so those stay StatusMessages.
@@ -215,6 +222,7 @@ export function useChatIdLookup({
     setLoading,
     status,
     setStatus,
+    statusNonce,
     hasError,
     errorCount,
     errorRef,

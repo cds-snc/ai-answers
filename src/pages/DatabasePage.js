@@ -588,7 +588,7 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        {renderStatusMessage(countsError)}
+        {renderStatusMessage(countsError, 'success', 'counts')}
         {tableCounts ? (
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
@@ -654,7 +654,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
           {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
         </GcdsButton>
-        {renderStatusMessage(exportMessage)}
+        {renderStatusMessage(exportMessage, 'success', 'export')}
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
@@ -710,7 +710,7 @@ const DatabasePage = ({ lang }) => {
                 >
                   {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
                 </GcdsButton>
-                {renderStatusMessage(checksMessages[check.id])}
+                {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
                 <div style={{ minWidth: 220, textAlign: 'right' }}>
                   {checksResults[check.id] ? (
                     <div style={{ fontSize: 13 }}>
@@ -761,7 +761,7 @@ const DatabasePage = ({ lang }) => {
                   </GcdsButton>
                 )}
                 {check.id === 'duplicateKeys' && (
-                  renderStatusMessage(removeDuplicatesMessage)
+                  renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
                 )}
               </div>
             ))}
@@ -853,7 +853,7 @@ const DatabasePage = ({ lang }) => {
           {isImporting ? (
             <div ref={importProgressRef} className="status-message--progress">{importMessage?.text}</div>
           ) : (
-            renderStatusMessage(importMessage)
+            renderStatusMessage(importMessage, 'success', 'import')
           )}
           {/* TODO: this is a raw <input type="file">, so the field-tied error
               below is FeedbackInlineError + aria-describedby (matching
@@ -904,7 +904,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
-        {renderStatusMessage(createIndexesMessage)}
+        {renderStatusMessage(createIndexesMessage, 'success', 'createIndexes')}
         {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
           <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
@@ -936,7 +936,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
         </GcdsButton>
-        {renderStatusMessage(dropIndexesMessage)}
+        {renderStatusMessage(dropIndexesMessage, 'success', 'dropIndexes')}
       </div>
 
       <div className="mb-400">
@@ -964,7 +964,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
         </GcdsButton>
-        {renderStatusMessage(indexStatusMessage)}
+        {renderStatusMessage(indexStatusMessage, 'success', 'indexStatus')}
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
             {/* Was a hand-rolled colored <div> showing indexStatus.message
@@ -1041,7 +1041,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
         </GcdsButton>
-        {renderStatusMessage(deleteSystemLogsMessage)}
+        {renderStatusMessage(deleteSystemLogsMessage, 'success', 'deleteSystemLogs')}
       </div>
 
       <div className="mb-400">
@@ -1057,7 +1057,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
         </GcdsButton>
-        {renderStatusMessage(repairTimestampsMessage)}
+        {renderStatusMessage(repairTimestampsMessage, 'success', 'repairTimestamps')}
       </div>
 
       <div className="mb-400">
@@ -1073,7 +1073,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
         </GcdsButton>
-        {renderStatusMessage(deleteAllBatchesMessage)}
+        {renderStatusMessage(deleteAllBatchesMessage, 'success', 'deleteAllBatches')}
       </div>
 
       <div className="mb-400">
@@ -1089,7 +1089,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
         </GcdsButton>
-        {renderStatusMessage(repairExpertFeedbackMessage)}
+        {renderStatusMessage(repairExpertFeedbackMessage, 'success', 'repairExpertFeedback')}
       </div>
 
       <div className="mb-400">
@@ -1105,7 +1105,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
         </GcdsButton>
-        {renderStatusMessage(migratePublicFeedbackMessage)}
+        {renderStatusMessage(migratePublicFeedbackMessage, 'success', 'migratePublicFeedback')}
       </div>
 
       <div className="mb-400">
@@ -1114,7 +1114,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleRepairQaMatchScores} disabled={isRepairingQaMatchScores} buttonRole="secondary" className="mb-200">
           {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
-        {renderStatusMessage(repairQaMatchScoresMessage)}
+        {renderStatusMessage(repairQaMatchScoresMessage, 'success', 'repairQaMatchScores')}
       </div>
     </GcdsContainer >
   );

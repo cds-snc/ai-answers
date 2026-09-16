@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import StatusMessage from '../components/admin/StatusMessage.js';
 
 // Shared { text } (success) | { prefix, suffix, detail, isError } (error)
@@ -45,19 +45,40 @@ export const useErrorStatus = (t) => {
     return { prefix, suffix, detail, isError: true };
   }, [t]);
 
+  // Nonce per call-site `key`, keyed by status object identity — a fresh
+  // object (even with identical text) is a new outcome.
+  const nonceRef = useRef(new Map());
+
   // successVariant: DatabasePage.js's operations are completed mutations
   // ('success', the default); SettingsPage.js's cache refresh is a neutral
   // confirmation, not a mutation ('info') - a real semantic difference
   // between the two existing callers, not just inconsistency to paper over.
-  const renderStatusMessage = useCallback((status, successVariant = 'success') => (
-    <StatusMessage variant={status ? (status.isError ? 'error' : successVariant) : undefined}>
-      {status && (
-        status.detail !== undefined
-          ? <>{status.prefix}<code lang="en">{status.detail}</code>{status.suffix}</>
-          : status.text
-      )}
-    </StatusMessage>
-  ), []);
+  //
+  // `key` distinguishes sibling boxes on the same hook instance (DatabasePage.js
+  // has ~13). No useCallback — this plain Set must be fresh every render so
+  // the collision check below can catch two calls sharing a key.
+  const seenKeysThisRender = new Set();
+  const renderStatusMessage = (status, successVariant = 'success', key = 'default') => {
+    if (seenKeysThisRender.has(key)) {
+      console.error(`useErrorStatus: renderStatusMessage called more than once with key "${key}" in the same render — pass a distinct key per call site.`);
+    }
+    seenKeysThisRender.add(key);
+
+    const cached = nonceRef.current.get(key);
+    const unchanged = cached && cached.status === status;
+    const nonce = unchanged ? cached.nonce : (cached?.nonce ?? 0) + 1;
+    if (!unchanged) nonceRef.current.set(key, { status, nonce });
+
+    return (
+      <StatusMessage variant={status ? (status.isError ? 'error' : successVariant) : undefined} nonce={nonce}>
+        {status && (
+          status.detail !== undefined
+            ? <>{status.prefix}<code lang="en">{status.detail}</code>{status.suffix}</>
+            : status.text
+        )}
+      </StatusMessage>
+    );
+  };
 
   return { buildErrorStatus, renderStatusMessage };
 };

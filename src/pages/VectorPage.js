@@ -6,7 +6,7 @@ import DataStoreService from '../services/DataStoreService.js';
 import VectorService from '../services/VectorService.js';
 import SimilarChatsDashboard from '../components/admin/SimilarChatsDashboard.js';
 import { formatDecimal, formatNumber } from '../utils/numberFormat.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
@@ -81,14 +81,13 @@ const VectorPage = ({ lang = 'en' }) => {
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // { type: 'success' | 'error', text } per action — was window.alert() for
-  // every one of these; not caught by the earlier StatusMessage migration
-  // pass since these never went through StatusMessage at all (this was
-  // plain incomplete work, not a deliberate skip).
   const [indexMessage, setIndexMessage] = useState(null);
-  const [embeddingMessage, setEmbeddingMessage] = useState(null);
-  const [metadataBackfillMessage, setMetadataBackfillMessage] = useState(null);
-  const [metadataClearMessage, setMetadataClearMessage] = useState(null);
+  const embeddingStatus = useRepeatableStatus();
+  const metadataBackfillStatus = useRepeatableStatus();
+  // Mirrors metadataBackfillStatus so the poll effect (empty deps) can diff
+  // without depending on the hook.
+  const metadataBackfillLastRef = useRef({ isError: undefined, text: null });
+  const metadataClearStatus = useRepeatableStatus();
   // Stopping is deliberately not a visible variant box on success — the
   // progress paragraph below already shows "Stopped" for sighted admins,
   // and the processed count visibly stops climbing; a screen reader gets
@@ -142,10 +141,10 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataLookupChatId, setMetadataLookupChatId] = useState('');
   const [metadataLookupResult, setMetadataLookupResult] = useState(null);
   const [metadataLookupLoading, setMetadataLookupLoading] = useState(false);
-  const [metadataLookupError, setMetadataLookupError] = useState(null);
+  const metadataLookupErrorStatus = useRepeatableStatus();
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
-  const [metadataStatusError, setMetadataStatusError] = useState(null);
+  const metadataStatusErrorStatus = useRepeatableStatus();
   // A job id whose progress/message the admin has explicitly dismissed via
   // an unrelated action (e.g. "Clear metadata") — the poll won't re-surface
   // that same job's inactive-state progress/message again, so clearing
@@ -153,6 +152,16 @@ const VectorPage = ({ lang = 'en' }) => {
   // already-dismissed job record from the server. Cleared implicitly once a
   // *different* job id shows up (a genuinely new backfill).
   const dismissedJobIdRef = useRef(null);
+  // Keeps metadataBackfillLastRef in sync on every write (handler or poll)
+  // so the poll's same-value guard sees handler-set outcomes too.
+  const announceMetadataBackfillMessage = (text, isError) => {
+    metadataBackfillLastRef.current = { text, isError };
+    metadataBackfillStatus.announce(text, { isError });
+  };
+  const clearMetadataBackfillMessage = () => {
+    metadataBackfillLastRef.current = { text: null, isError: undefined };
+    metadataBackfillStatus.clear();
+  };
   // TODO (review): metadataProgress — and by extension "Processed: X" —
   // comes from whatever job the server last has on file, shown as soon as
   // this page mounts, even if the admin hasn't triggered anything this
@@ -213,18 +222,23 @@ const VectorPage = ({ lang = 'en' }) => {
         // a direct start/stop catch block — same failure text, same
         // metadataBackfillMessage StatusMessage, so it's actually announced
         // instead of only ever appearing as plain text in the progress
-        // block below. Functional state-update form + a same-value check so
-        // this doesn't re-fire (and re-render the live region) every 5s
-        // while the job stays failed.
+        // block below. Guarded against metadataBackfillLastRef so it doesn't
+        // spam the live region every 5s while the job stays failed.
         if (job.status === 'failed') {
           const failedText = t('vector.metadataBackfillFailed');
-          setMetadataBackfillMessage((prev) => (prev?.type === 'error' && prev?.text === failedText) ? prev : { type: 'error', text: failedText });
+          const last = metadataBackfillLastRef.current;
+          if (!(last.isError === true && last.text === failedText)) {
+            announceMetadataBackfillMessage(failedText, true);
+          }
         } else if (job.status === 'completed') {
           // Completion had no announcement at all before — not even the
           // plain, unstyled text "failed" used to get — since only 'failed'
-          // was ever checked here. Same guarded functional-update pattern.
+          // was ever checked here. Same guarded pattern.
           const completedText = t('vector.metadataBackfillCompleted');
-          setMetadataBackfillMessage((prev) => (prev?.type === 'success' && prev?.text === completedText) ? prev : { type: 'success', text: completedText });
+          const last = metadataBackfillLastRef.current;
+          if (!(last.isError === false && last.text === completedText)) {
+            announceMetadataBackfillMessage(completedText, false);
+          }
         }
       } catch (err) {
         if (!cancelled) console.error('Error polling embedding metadata backfill job:', err);
@@ -272,7 +286,7 @@ const VectorPage = ({ lang = 'en' }) => {
       setIsRequestInProgress(true);
       if (!isAutoProcess) {
         setIsAutoProcessingEmbeddings(true);
-        setEmbeddingMessage(null);
+        embeddingStatus.clear();
       }
 
       const result = await DataStoreService.generateEmbeddings({ lastProcessedId: lastId, regenerateAll, provider });
@@ -300,7 +314,7 @@ const VectorPage = ({ lang = 'en' }) => {
             // outermost call (recursive auto-process calls always pass
             // isAutoProcess=true), so this is genuinely "which button did
             // they click", not stale state from a recursive step.
-            setEmbeddingMessage({ type: 'success', text: t(regenerateAll ? 'vector.allEmbeddingsRegenerated' : 'vector.allEmbeddingsGenerated') });
+            embeddingStatus.announce(t(regenerateAll ? 'vector.allEmbeddingsRegenerated' : 'vector.allEmbeddingsGenerated'), { isError: false });
           }
         }
       } else {
@@ -311,7 +325,7 @@ const VectorPage = ({ lang = 'en' }) => {
     } catch (generateError) {
       console.error('Error generating embeddings:', generateError);
       if (!isAutoProcess) {
-        setEmbeddingMessage({ type: 'error', text: t(regenerateAll ? 'vector.regenerateEmbeddingsFailed' : 'vector.generateEmbeddingsFailed') });
+        embeddingStatus.announce(t(regenerateAll ? 'vector.regenerateEmbeddingsFailed' : 'vector.generateEmbeddingsFailed'), { isError: true });
       }
       setIsAutoProcessingEmbeddings(false);
     } finally {
@@ -359,11 +373,11 @@ const VectorPage = ({ lang = 'en' }) => {
 
     setIsBackfillingMetadata(true);
     setStopMetadataBackfill(false);
-    setMetadataBackfillMessage(null);
+    clearMetadataBackfillMessage();
     // Backfill and clear are two different actions on the same button-group
     // / same metadata — a stale "Metadata cleared" shouldn't keep showing
     // once a backfill has started.
-    setMetadataClearMessage(null);
+    metadataClearStatus.clear();
     try {
       const { job } = await VectorService.startMetadataBackfillJob({
         phase: 'missing',
@@ -375,14 +389,14 @@ const VectorPage = ({ lang = 'en' }) => {
       setMetadataBatchRecords(job?.latestBatchRecords || []);
     } catch (err) {
       console.error('Error backfilling embedding metadata:', err);
-      setMetadataBackfillMessage({ type: 'error', text: t('vector.metadataBackfillFailed') });
+      announceMetadataBackfillMessage(t('vector.metadataBackfillFailed'), true);
       setIsBackfillingMetadata(false);
     }
   };
 
   const handleStopMetadataBackfill = async () => {
-    setMetadataBackfillMessage(null);
-    setMetadataClearMessage(null);
+    clearMetadataBackfillMessage();
+    metadataClearStatus.clear();
     try {
       const { job } = await VectorService.stopMetadataBackfillJob(metadataProgress?.jobId);
       if (job) {
@@ -396,7 +410,7 @@ const VectorPage = ({ lang = 'en' }) => {
       // Was vector.metadataBackfillFailed ("Failed to backfill...") — wrong
       // text for a stop failure specifically, which could read as "the
       // backfill itself failed" rather than "stopping it failed".
-      setMetadataBackfillMessage({ type: 'error', text: t('vector.metadataBackfillStopFailed') });
+      announceMetadataBackfillMessage(t('vector.metadataBackfillStopFailed'), true);
     }
   };
 
@@ -408,8 +422,8 @@ const VectorPage = ({ lang = 'en' }) => {
 
   const handleClearMetadata = async () => {
     if (isBackfillingMetadata) return;
-    setMetadataClearMessage(null);
-    setMetadataBackfillMessage(null);
+    metadataClearStatus.clear();
+    clearMetadataBackfillMessage();
     try {
       await VectorService.clearMetadata();
       // The backfill job record this progress/message came from still says
@@ -423,10 +437,10 @@ const VectorPage = ({ lang = 'en' }) => {
       setMetadataProgress(null);
       setMetadataBatchRecords([]);
       setMetadataStatus(null);
-      setMetadataClearMessage({ type: 'success', text: t('vector.metadataClearSuccess') });
+      metadataClearStatus.announce(t('vector.metadataClearSuccess'), { isError: false });
     } catch (err) {
       console.error('Error clearing embedding metadata:', err);
-      setMetadataClearMessage({ type: 'error', text: t('vector.metadataClearFailed') });
+      metadataClearStatus.announce(t('vector.metadataClearFailed'), { isError: true });
     }
   };
 
@@ -479,14 +493,14 @@ const VectorPage = ({ lang = 'en' }) => {
     }
     clearMetadataLookupChatIdError();
     setMetadataLookupLoading(true);
-    setMetadataLookupError(null);
+    metadataLookupErrorStatus.clear();
     try {
       const result = await VectorService.lookupMetadata(trimmedChatId);
       setMetadataLookupResult(result);
     } catch (err) {
       console.error('Error looking up embedding metadata:', err);
       setMetadataLookupResult(null);
-      setMetadataLookupError(t('vector.metadataLookup.failed'));
+      metadataLookupErrorStatus.announce(t('vector.metadataLookup.failed'), { isError: true });
     } finally {
       setMetadataLookupLoading(false);
     }
@@ -494,13 +508,13 @@ const VectorPage = ({ lang = 'en' }) => {
 
   const handleMetadataStatus = async () => {
     setMetadataStatusLoading(true);
-    setMetadataStatusError(null);
+    metadataStatusErrorStatus.clear();
     try {
       setMetadataStatus(await VectorService.getMetadataStatus());
     } catch (err) {
       console.error('Error checking embedding metadata status:', err);
       setMetadataStatus(null);
-      setMetadataStatusError(t('vector.metadataStatus.failed'));
+      metadataStatusErrorStatus.announce(t('vector.metadataStatus.failed'), { isError: true });
     } finally {
       setMetadataStatusLoading(false);
     }
@@ -543,8 +557,8 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.reinitializeIndex')}
           </GcdsButton>
         </div>
-        {renderStatusMessage(error)}
-        {renderStatusMessage(indexMessage)}
+        {renderStatusMessage(error, 'success', 'stats')}
+        {renderStatusMessage(indexMessage, 'success', 'indexCreate')}
         {vectorStats && (
           <div className="mb-200">
             <pre>{JSON.stringify(vectorStats, null, 2)}</pre>
@@ -627,7 +641,7 @@ const VectorPage = ({ lang = 'en' }) => {
           {t('vector.embeddingDescription')}
         </GcdsText>
         <div className="button-group">
-          <select value={provider} onChange={e => { setProvider(e.target.value); setEmbeddingMessage(null); }} className="mr-200" aria-label={t('vector.embeddingProviderLabel')}>
+          <select value={provider} onChange={e => { setProvider(e.target.value); embeddingStatus.clear(); }} className="mr-200" aria-label={t('vector.embeddingProviderLabel')}>
             <option value="openai">OpenAI</option>
             <option value="azure">Azure OpenAI</option>
           </select>
@@ -647,7 +661,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {isRegeneratingEmbeddings ? t('vector.regenerating') : t('vector.regenerateEmbeddings')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={embeddingMessage?.type} message={embeddingMessage?.text} />
+        <StatusMessage variant={embeddingStatus.message ? (embeddingStatus.isError ? 'error' : 'success') : undefined} message={embeddingStatus.message} nonce={embeddingStatus.nonce} />
         {/* TODO (review): "Remaining: X" ticks down through many values
             during auto-processing with no role/aria-live at all — silent to
             screen readers the whole time it's actively counting down (the
@@ -751,8 +765,8 @@ const VectorPage = ({ lang = 'en' }) => {
             {t('vector.stopMetadataBackfill')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={metadataBackfillMessage?.type} message={metadataBackfillMessage?.text} />
-        <StatusMessage variant={metadataClearMessage?.type} message={metadataClearMessage?.text} />
+        <StatusMessage variant={metadataBackfillStatus.message ? (metadataBackfillStatus.isError ? 'error' : 'success') : undefined} message={metadataBackfillStatus.message} nonce={metadataBackfillStatus.nonce} />
+        <StatusMessage variant={metadataClearStatus.message ? (metadataClearStatus.isError ? 'error' : 'success') : undefined} message={metadataClearStatus.message} nonce={metadataClearStatus.nonce} />
         {/* TODO (review): this "processed: X, remaining: Y, [active/stopped/
             failed]" block is a live-updating status (refreshed by the
             useEffect poll above, every 5s while a backfill job is active)
@@ -858,7 +872,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataStatusLoading ? t('vector.metadataStatus.loading') : t('vector.metadataStatus.check')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={metadataStatusError ? 'error' : undefined} message={metadataStatusError} />
+        <StatusMessage variant={metadataStatusErrorStatus.message ? 'error' : undefined} message={metadataStatusErrorStatus.message} nonce={metadataStatusErrorStatus.nonce} />
         {metadataStatus && (
           <StatusMessage
             variant={metadataStatus.complete ? 'success' : 'info'}
@@ -906,7 +920,7 @@ const VectorPage = ({ lang = 'en' }) => {
             onChange={(e) => {
               setMetadataLookupChatId(e.target.value);
               clearMetadataLookupChatIdError();
-              setMetadataLookupError(null);
+              metadataLookupErrorStatus.clear();
             }}
             placeholder={t('vector.chatIdPlaceholder')}
             disabled={metadataLookupLoading}
@@ -921,7 +935,7 @@ const VectorPage = ({ lang = 'en' }) => {
             {metadataLookupLoading ? t('vector.metadataLookup.loading') : t('vector.metadataLookup.lookup')}
           </GcdsButton>
         </div>
-        <StatusMessage variant={metadataLookupError ? 'error' : undefined} message={metadataLookupError} />
+        <StatusMessage variant={metadataLookupErrorStatus.message ? 'error' : undefined} message={metadataLookupErrorStatus.message} nonce={metadataLookupErrorStatus.nonce} />
         {metadataLookupResult?.chat && (
           <div className="mb-400">
             <p>

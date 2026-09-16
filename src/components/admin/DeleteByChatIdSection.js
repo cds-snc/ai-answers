@@ -56,6 +56,7 @@ const DeleteByChatIdSection = ({
     setLoading,
     status,
     setStatus,
+    statusNonce,
     hasError,
     errorCount,
     errorRef,
@@ -115,24 +116,24 @@ const DeleteByChatIdSection = ({
         </form>
         {status?.variant === 'info' ? (
           // "Not found" — a genuine server-lookup outcome, not an error.
-          <StatusMessage variant="info" message={status.text} />
+          <StatusMessage variant="info" message={status.text} nonce={statusNonce} />
         ) : status?.variant === 'error' ? (
           // A plain, fully-translated failure message (the lookup/onDelete
           // call itself failed) — no raw exception text to wrap, so this
           // uses `message` directly rather than the prefix/detail/suffix
           // children shape the isError branch below needs.
-          <StatusMessage variant="error" message={status.text} />
+          <StatusMessage variant="error" message={status.text} nonce={statusNonce} />
         ) : status?.isError ? (
           // variant="error" + children (not `message`): the <code lang="en">
           // wrapper a raw exception detail needs (see onDelete's own
           // comment) can't go inside a plain message string. StatusMessage
           // adds its own icon automatically either way (see its own
           // resolveLook comment) — this doesn't need to render one itself.
-          <StatusMessage variant="error">
+          <StatusMessage variant="error" nonce={statusNonce}>
             {status.prefix}{status.detail}{status.suffix}
           </StatusMessage>
         ) : (
-          <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} />
+          <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} nonce={statusNonce} />
         )}
       </div>
     </details>

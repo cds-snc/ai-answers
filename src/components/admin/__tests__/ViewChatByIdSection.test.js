@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ViewChatByIdSection from '../ViewChatByIdSection.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
+import { getAnnouncedTexts } from '../../../utils/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.common.viewChatById': 'View chat by ID',
@@ -106,6 +108,19 @@ describe('ViewChatByIdSection', () => {
       expect(screen.getByText('No chat found with that ID.')).toBeTruthy();
     });
     expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('re-announces two identical consecutive "not found" searches, not just the first', async () => {
+    mockGetChat.mockResolvedValue({ chat: null });
+
+    render(<ViewChatByIdSection lang="en" />);
+    startLookup();
+    await waitForAnnouncement('No chat found with that ID.');
+
+    startLookup();
+    await waitFor(() => {
+      expect(getAnnouncedTexts('polite').filter((t) => t === 'No chat found with that ID.')).toHaveLength(2);
+    });
   });
 
   it('shows a distinct "lookup failed" message, not "not found", when the existence check itself fails', async () => {

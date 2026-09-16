@@ -9,7 +9,7 @@ import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workf
 import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 import { getPath } from '../../utils/routes.js';
-import StatusMessage from '../../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
@@ -161,13 +161,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
     const [comparisons, setComparisons] = useState([]);
-    // Outcome of the last run/resume/comparison action: { variant, text }.
-    // 'info' for "started" messages (starting isn't completing — see
-    // status-and-error-messaging.md), 'error' for failures and rejected
-    // submits.
-    const [runStatus, setRunStatus] = useState(null);
-    const showInfo = (text) => setRunStatus({ variant: 'info', text });
-    const showError = (text) => setRunStatus({ variant: 'error', text });
+    // Outcome of the last run/resume/comparison action; 'info' for "started".
+    const runStatus = useRepeatableStatus();
+    const showInfo = (text) => runStatus.announce(text, { isError: false });
+    const showError = (text) => runStatus.announce(text, { isError: true });
     const [startingRun, setStartingRun] = useState(null);
     // The "starting run" card below is announced when it appears / its
     // text changes, rather than being a live region itself (it's
@@ -390,7 +387,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             status: t('experimental.analysis.startingRun'),
             message: t('experimental.analysis.messages.startingRun')
         });
-        setRunStatus(null);
+        runStatus.clear();
 
         try {
 
@@ -419,7 +416,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 for (const b of result.batches) {
                     try {
                         await ExperimentalBatchClientService.processBatch(b._id);
-                        if (!runStatus) showInfo(t('experimental.analysis.messages.processingStarted'));
+                        if (!runStatus.message) showInfo(t('experimental.analysis.messages.processingStarted'));
                     } catch (err) {
                         console.error('Process batch error:', err);
                         showError(t('experimental.analysis.messages.startProcessingError'));
@@ -913,7 +910,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsButton onClick={handleRunAnalysis} disabled={loading || !selectedAnalyzerId}>
                             {loading ? t('experimental.analysis.starting') : t('experimental.analysis.run')}
                         </GcdsButton>
-                        <StatusMessage className="mt-200" variant={runStatus?.variant} message={runStatus?.text} />
+                        <StatusMessage className="mt-200" variant={runStatus.message ? (runStatus.isError ? 'error' : 'info') : undefined} message={runStatus.message} nonce={runStatus.nonce} />
                     </section>
 
                     {(startingRun || Object.keys(batchProgress).length > 0) && (

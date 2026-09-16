@@ -1,10 +1,12 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, expect, it, afterEach } from 'vitest';
+import { describe, expect, it, afterEach, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { useErrorStatus } from '../useErrorStatus.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
+import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.database.exportError': 'Export failed: {error}.',
@@ -105,6 +107,62 @@ describe('useErrorStatus', () => {
       const raw = el.querySelector('code[lang="en"]');
       expect(raw).toBeTruthy();
       expect(raw.textContent).toBe('disk full');
+    });
+  });
+
+  // Regression: a fresh object with identical text (what every call site
+  // rebuilds on a repeat outcome) must still bump the nonce.
+  describe('renderStatusMessage nonce', () => {
+    it('re-announces a second status object with identical text', async () => {
+      const { rerender } = render(<Host status={{ text: 'Failed.', isError: true }} />);
+      await waitForAnnouncement('Failed.', 'assertive');
+
+      rerender(<Host status={{ text: 'Failed.', isError: true }} />);
+      await waitFor(() => {
+        expect(getAnnouncedTexts('assertive').filter((t) => t === 'Failed.')).toHaveLength(2);
+      });
+    });
+
+    it('does not re-announce when rerendered with the same status object', async () => {
+      const status = { text: 'Done.', isError: false };
+      const { rerender } = render(<Host status={status} />);
+      await waitForAnnouncement('Done.');
+
+      rerender(<Host status={status} extra="unrelated prop change" />);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(getAnnouncedTexts('polite').filter((t) => t === 'Done.')).toHaveLength(1);
+    });
+
+    // DatabasePage.js renders ~13 of these off one hook instance.
+    it('tracks nonce independently per `key`, so sibling boxes on the same hook instance do not interfere', () => {
+      const TwoBoxHost = ({ statusA, statusB }) => {
+        const { renderStatusMessage } = useErrorStatus(t);
+        return (
+          <>
+            {renderStatusMessage(statusA, 'success', 'a')}
+            {renderStatusMessage(statusB, 'success', 'b')}
+          </>
+        );
+      };
+      render(<TwoBoxHost statusA={{ text: 'A done.', isError: false }} statusB={{ text: 'B done.', isError: false }} />);
+      expect(screen.getByText('A done.')).toBeTruthy();
+      expect(screen.getByText('B done.')).toBeTruthy();
+    });
+
+    it('warns when two call sites in the same render share a key (or the default)', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const CollidingHost = () => {
+        const { renderStatusMessage } = useErrorStatus(t);
+        return (
+          <>
+            {renderStatusMessage({ text: 'A done.', isError: false })}
+            {renderStatusMessage({ text: 'B done.', isError: false })}
+          </>
+        );
+      };
+      render(<CollidingHost />);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('key "default"'));
+      errorSpy.mockRestore();
     });
   });
 });
