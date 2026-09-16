@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.196.0](https://github.com/cds-snc/ai-answers/compare/v1.195.0...v1.196.0) (2026-09-16)
+
+
+### Features
+
+* name the user and changed field in UsersPage's save/delete outcome ([fd8f644](https://github.com/cds-snc/ai-answers/commit/fd8f64495f5273c39ab4fa08e975b77a1ff06925))
+
+
+### Bug Fixes
+
+* disable Save when a staged select reverts to its original value ([02f3396](https://github.com/cds-snc/ai-answers/commit/02f33968a4a3d865e3b09af915932b59a62a5a08))
+* session load error via useErrorStatus ([cd524f5](https://github.com/cds-snc/ai-answers/commit/cd524f54bf9e62ffbd1b3a7f6fe929ae98ed0acf))
+* stop autosaving role/status selects on UsersPage ([9bba385](https://github.com/cds-snc/ai-answers/commit/9bba3850b86ca217bfd263afda5b39a01d56bd75))
+* stop autosaving role/status selects on UsersPage ([b703b8f](https://github.com/cds-snc/ai-answers/commit/b703b8f17a7ca7f03c046517bf2e00044ebbbfdc))
+* update ossf scorecard action ([a4e8f87](https://github.com/cds-snc/ai-answers/commit/a4e8f87a7caedc590dc4a2a5c6937c1506e7750a))
+* update ossf scorecard action ([dc04151](https://github.com/cds-snc/ai-answers/commit/dc0415188da78ff23b5e5c0ecf90004938d26338))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @vitest/mocker and vitest ([f25e89a](https://github.com/cds-snc/ai-answers/commit/f25e89a8ade810203f567d732533bbfced537a4c))
+* **deps:** bump baseline-browser-mapping from 2.9.13 to 2.11.21 ([499430a](https://github.com/cds-snc/ai-answers/commit/499430a1802e6956213f916103d1e5d0611e0baf))
+* **deps:** bump browserslist from 4.28.1 to 4.28.9 ([837370e](https://github.com/cds-snc/ai-answers/commit/837370e0851cd7490c57f753b5c6ce373f185234))
+* **deps:** bump browserslist from 4.28.1 to 4.28.9 ([4ddb9ad](https://github.com/cds-snc/ai-answers/commit/4ddb9ad14fe748dc75ab94aa4602f359d3588e54))
+* **deps:** bump qs and express ([390de02](https://github.com/cds-snc/ai-answers/commit/390de02808e1b88ca08fff47d199517c057f22c4))
+* **deps:** bump qs and express ([e248355](https://github.com/cds-snc/ai-answers/commit/e248355aa601a6c06a5c5df39864987e197bf2a2))
+
 ## [1.195.0](https://github.com/cds-snc/ai-answers/compare/v1.194.1...v1.195.0) (2026-09-10)
 
 
