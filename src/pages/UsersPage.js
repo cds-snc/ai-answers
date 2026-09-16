@@ -133,8 +133,16 @@ const UsersPage = ({ lang }) => {
         active: matchingUser?.active || false
       };
     }
-    editStatesRef.current[userId][field] = value;
-    editStatesRef.current[userId].changed = true;
+    const edit = editStatesRef.current[userId];
+    edit[field] = value;
+
+    // Diff against last-committed snapshot, not a flat true — a revert back
+    // to the original value must disable Save again (see SettingsPage.js's
+    // stageChange).
+    const original = userSnapshotsRef.current[userId];
+    edit.changed = !original
+      || normalizeRole(edit.role) !== normalizeRole(original.role)
+      || toBooleanish(edit.active) !== toBooleanish(original.active);
 
     renderActionsCell(userId);
   };

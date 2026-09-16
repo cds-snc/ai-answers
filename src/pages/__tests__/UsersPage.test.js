@@ -220,4 +220,21 @@ describe('UsersPage select changes stage instead of autosaving', () => {
     expect(screen.queryByText(/\{email\}|\{role\}/)).toBeNull();
     expect(screen.queryByText('u1', { exact: false })).toBeNull();
   });
+
+  // Regression: revert to the original value should disable Save again.
+  it('disables Save again when the select is changed back to its original value', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true }]);
+
+    renderWithRouter(<UsersPage lang="en" />);
+
+    const roleSelect = await screen.findByLabelText('users.columns.role — a@b.com');
+    expect((await screen.findByText('users.actions.save')).disabled).toBe(true);
+
+    fireEvent.change(roleSelect, { target: { value: 'admin' } });
+    expect(screen.getByText('users.actions.save').disabled).toBe(false);
+
+    fireEvent.change(roleSelect, { target: { value: 'partner' } });
+    expect(screen.getByText('users.actions.save').disabled).toBe(true);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
 });
