@@ -819,8 +819,7 @@
       "lastLatency": "Dernière latence (ms)",
       "avgLatency": "Latence moyenne (ms)",
       "rpm": "Requêtes / minute",
-      "errorLoading": "Échec du chargement des sessions : {status} {text}",
-      "errorGeneric": "Erreur : {message}"
+      "errorLoading": "Échec du chargement des sessions : {error}"
     },
     "common": {
       "searchLabel": "Rechercher :",
@@ -1156,13 +1155,16 @@
       "inactive": "Inactif"
     },
     "actions": {
+      "save": "Enregistrer",
       "delete": "Supprimer",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
       "adminOnly": "Seuls les administrateurs peuvent supprimer des utilisateurs.",
-      "saveSuccess": "Utilisateur mis à jour.",
-      "saveError": "Échec de la mise à jour de l'utilisateur.",
-      "deleteSuccess": "Utilisateur supprimé.",
-      "deleteError": "Échec de la suppression de l'utilisateur."
+      "saveSuccess": "{email} mis à jour.",
+      "saveSuccessRole": "Rôle de {email} mis à jour : {role}.",
+      "saveSuccessStatus": "Statut de {email} mis à jour : {status}.",
+      "saveError": "Échec de la mise à jour de {email}.",
+      "deleteSuccess": "{email} supprimé.",
+      "deleteError": "Échec de la suppression de {email}."
     }
   },
   "workflows": {

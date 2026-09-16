@@ -11,7 +11,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 
 <StatusMessage variant="success" message={t('some.page.saved')} />
 <StatusMessage loading message={t('some.page.loading')} />
-<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />   // pre-variant convention
+<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />   // pre-variant convention — prefer useRepeatableStatus() for new code (see nonce rule below)
 ```
 
 - `message` of `null`/`undefined`/`''` renders nothing. `id` lets another element reference it via `aria-describedby`.
@@ -43,7 +43,7 @@ Rules:
 - **Don't add a repo-wide lint banning `role="status"`/`aria-live`** — the always-mounted exceptions make it noisy. The accessibility-review skill is the guard.
 - **Ask "does anything else already tell a screen reader this happened?"** A native `<select>` announces its new value; a `StatusMessage` appearing announces itself. A debounced field auto-applying, a background probe finishing, a table re-filtering, a value changing elsewhere on the page — those need an `announce()`.
 - **Data isn't an outcome.** `NoDataCard`s, chart placeholders, table contents are read by navigating to them. The page-level "no data for these filters" `StatusMessage` is the one announcement that case gets.
-- **Repeat of an identical outcome** (save twice, second zero-result search): pass a changing `nonce` to `StatusMessage`. `useRepeatableStatus()` (in `StatusMessage.js`) owns the `message`+`nonce` bookkeeping (`ChatOptions.js`, `ChatViewer.js`). VoiceOver can still skip an identical sentence it just read, so put something that varies in a repeatable message ("No results for {term}.") or word adjacent actions' outcomes differently.
+- **Repeat of an identical outcome** (save twice, second zero-result search): pass a changing `nonce` to `StatusMessage`. `useRepeatableStatus()` (in `StatusMessage.js`) owns the `message`+`nonce` bookkeeping — `announce(text, { isError })` also carries the variant, for a hand-rolled `{ message, isError }` state that would otherwise skip nonce entirely (`UsersPage.js`; `ChatOptions.js`/`ChatViewer.js` use the plain-`message` form, one variant per instance). Keep focus-move (below) a separate counter, not folded into this nonce. VoiceOver can still skip an identical sentence it just read, so put something that varies in a repeatable message ("No results for {term}.") or word adjacent actions' outcomes differently.
 - **"Loading…" is skippable.** `LoadingOverlay` and `StatusMessage loading` announce with `skippable: true` — a short grace, then dropped if the result arrives first. Use `skippable` for in-progress states, never outcomes.
 - **Every dashboard ends a fetch with "Results loaded." (`admin.common.resultsLoaded`, assertive) when there is data, nothing when there is none** — the visible "no data" `StatusMessage` announces the empty case itself with `assertive`. Hook-driven fetches use `useResultsLoadedAnnouncement({ loading, count, t })`; DataTables callbacks use `useSearchAnnouncement`'s `noteLoadResult(count)` or `announce()`. Don't add a per-dashboard "X loaded" string. `assertive` on a non-error `StatusMessage` is for a completion the user is waiting on, not ordinary confirmations.
 - **A message that appears mid-typing is announced late.** Render it with `announce={false}` and `announce()` it from a delayed, cancellable effect (`SettingsPage.js`'s unsaved-changes warning).

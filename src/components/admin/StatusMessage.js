@@ -268,18 +268,36 @@ export default StatusMessage;
 // `clear` resets the message without bumping `nonce` — clearing to empty
 // isn't itself an outcome worth (re-)announcing, it's a caller resetting a
 // stale value before starting a new action.
+//
+// `isError` is optional, passed as `announce(text, { isError })`, for a page
+// whose box swaps between error and success/info text (unlike ChatOptions.js/
+// ChatViewer.js, which only ever announce one variant and never read this
+// field). Generalizes what pages used to hand-roll as `useState(null)` +
+// `{ text, isError }` with no nonce — two identical consecutive outcomes
+// (two failed saves, same text) went silent on the second one. Does NOT also
+// carry focus-move state — that's a separate counter (useFocusOnChange), see
+// UsersPage.js's saveFocusCount.
+//
+// TODO(follow-up PR): migrate these off their own hand-rolled { text/message,
+// isError } + no-nonce state onto this hook (UsersPage.js is the first
+// migrated consumer): SettingsPage.js (settingsCacheStatus only —
+// sectionStatus/sectionSaveNonce already has a working nonce),
+// DatabasePage.js (~13 sites, via useErrorStatus.js's renderStatusMessage),
+// VectorPage.js, useChatIdLookup.js, useChatAssignBar.js (both hooks, not
+// pages — needs composing in, not a page-level swap),
+// ExperimentalAnalysisPage.js.
 export function useRepeatableStatus() {
-  const [message, setMessage] = useState(null);
+  const [status, setStatusState] = useState(null); // { message, isError } | null
   const [nonce, setNonce] = useState(0);
 
-  const announce = useCallback((text) => {
-    setMessage(text);
+  const announce = useCallback((text, { isError } = {}) => {
+    setStatusState({ message: text, isError });
     setNonce((n) => n + 1);
   }, []);
 
   const clear = useCallback(() => {
-    setMessage(null);
+    setStatusState(null);
   }, []);
 
-  return { message, nonce, announce, clear };
+  return { message: status?.message ?? null, isError: status?.isError, nonce, announce, clear };
 }
