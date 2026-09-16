@@ -36,6 +36,7 @@ describe('canadaCaContextSearch retry', () => {
         vi.spyOn(console, 'warn').mockImplementation(() => {});
         vi.spyOn(console, 'error').mockImplementation(() => {});
         process.env.CANADA_CA_SEARCH_URI = 'https://search.test';
+        process.env.CANADA_CA_SEARCH_API_KEY = 'api-key';
         fetchMock = vi.fn();
         globalThis.fetch = fetchMock;
     });
@@ -64,7 +65,23 @@ describe('canadaCaContextSearch retry', () => {
         expect(error).toBeUndefined();
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(value.provider).toBe('canadaca');
+        expect(value.results).toContain('Title: T');
         expect(value.results).toContain('Summary: E');
+
+        const [, request] = fetchMock.mock.calls[1];
+        expect(request).toMatchObject({
+            method: 'POST',
+            headers: expect.objectContaining({
+                Authorization: 'Bearer api-key',
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            }),
+        });
+        expect(JSON.parse(request.body)).toEqual({
+            q: 'q',
+            searchHub: 'canada-gouv-public-websites',
+            originLevel3: '/en/sr/srb.html',
+        });
     });
 
     // Guards the `error.status = response.status` line: fetch reports the status
@@ -77,23 +94,35 @@ describe('canadaCaContextSearch retry', () => {
 
         expect(error).toBeUndefined();
         expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(value.results).toContain('Title: T');
         expect(value.results).toContain('Summary: E');
     });
 
-    it('does not retry a 4xx — it fails on the first attempt', async () => {
+    it('does not retry a 4xx and returns the standard failure contract', async () => {
         fetchMock.mockResolvedValue(errorResponse(404));
 
-        await expect(contextSearch('q', 'en')).rejects.toThrow('HTTP error! Status: 404');
+        const result = await contextSearch('q', 'en');
+
         expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(result).toEqual(expect.objectContaining({
+            failed: true,
+            provider: 'canadaca',
+            results: expect.stringContaining('Search failed: HTTP error! Status: 404'),
+        }));
     });
 
-    it('gives up after 3 attempts and rethrows the last error', async () => {
+    it('returns the standard failure contract after 3 attempts', async () => {
         const reset = undiciFailure('ECONNRESET');
         fetchMock.mockRejectedValue(reset);
 
-        const { error } = await runWithRetries(contextSearch('q', 'en'));
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
 
-        expect(error).toBe(reset);
+        expect(error).toBeUndefined();
+        expect(value).toEqual(expect.objectContaining({
+            failed: true,
+            provider: 'canadaca',
+            results: 'Search failed: fetch failed',
+        }));
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
@@ -114,9 +143,10 @@ describe('canadaCaContextSearch retry', () => {
     it('reads the nested cause when deciding to retry', async () => {
         fetchMock.mockRejectedValue(undiciFailure('EAI_AGAIN'));
 
-        const { error } = await runWithRetries(contextSearch('q', 'en'));
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
 
-        expect(error).toBeDefined();
+        expect(error).toBeUndefined();
+        expect(value.failed).toBe(true);
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 });
