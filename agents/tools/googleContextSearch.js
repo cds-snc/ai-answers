@@ -1,12 +1,9 @@
 import { google } from 'googleapis';
-import { tool } from "@langchain/core/tools";
-import {
-    createSearchProviderError,
-    normalizeSearchInput,
-    SearchProviderError,
-} from './searchProviderContract.js';
+import { retryOnTransientError } from '../../api/util/transient-retry.js';
 
 const customsearch = google.customsearch('v1');
+const MAX_SEARCH_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 250;
 
 function maskSecretValue(text) {
     if (!text) return text;
@@ -36,158 +33,66 @@ function sanitizeErrorForLogging(error) {
     };
 }
 
-const MAX_SEARCH_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 250;
-
-/**
- * Transient transport/network failures (e.g. node-fetch "Premature close" from a
- * dropped keep-alive socket, connection resets, timeouts, 5xx) are worth retrying;
- * client errors (4xx, missing config) are not.
- */
-function isRetryableSearchError(error) {
-    if (!error) return false;
-
-    const status = error.status ?? error.code ?? error.response?.status;
-    if (typeof status === 'number' && status >= 500) return true;
-
-    const code = String(error.code ?? '').toUpperCase();
-    const retryableCodes = [
-        'ECONNRESET',
-        'ETIMEDOUT',
-        'ECONNREFUSED',
-        'EPIPE',
-        'ENOTFOUND',
-        'EAI_AGAIN',
-        'ERR_STREAM_PREMATURE_CLOSE',
-    ];
-    if (retryableCodes.includes(code)) return true;
-
-    const message = String(error.message ?? '').toLowerCase();
-    return (
-        message.includes('premature close') ||
-        message.includes('socket hang up') ||
-        message.includes('network socket disconnected')
-    );
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-
-/**
- * Extracts search results from Google Custom Search API response.
- * @param {object} results - The search results from Google Custom Search API.
- * @param {number} numResults - The number of top results to extract.
- * @returns {string} - The formatted top search results with summary, link, and link text.
- */
 function extractSearchResults(results, numResults = 3) {
-    if (!results?.items || results.items.length === 0) {
-        console.info("No search results found");
-        return "No results found.";
+    if (!results?.items?.length) {
+        console.info('No search results found');
+        return 'No results found.';
     }
 
-    const topResults = results.items.slice(0, numResults).map(result => ({
-        link: result.link,
-        linkText: result.title,
-        summary: result.snippet
-    }));
-
-    const extractedResults = topResults.map(result =>
-        `Title: ${result.linkText}\nLink: ${result.link}\nSummary: ${result.summary}\n`
-    ).join("\n");
-    console.info("Extracted search results:", extractedResults);
+    const extractedResults = results.items.slice(0, numResults).map((result) => (
+        `Title: ${result.title}\nLink: ${result.link}\nSummary: ${result.snippet}\n`
+    )).join('\n');
+    console.info('Extracted search results:', extractedResults);
     return extractedResults;
 }
 
 /**
- * @param {string} query - The search query.
- * @param {string} lang - The language of the search query.
- * @returns {object|null} - The Google search results.
+ * @returns {{ provider: 'google', results: string, failed?: true }}
  */
-const contextSearch = async (query, lang) => {
-    const input = normalizeSearchInput(query, lang, 'google');
+const contextSearch = async (query, lang, { onRetry } = {}) => {
     try {
-        const CX = process.env.GOOGLE_SEARCH_ENGINE_ID;
-        const API_KEY = process.env.GOOGLE_API_KEY;
-
-        if (!CX || !API_KEY) {
-            throw createSearchProviderError(
-                'google',
-                'SEARCH_PROVIDER_CONFIG',
-                'Google search is not configured'
-            );
+        const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+        const apiKey = process.env.GOOGLE_API_KEY;
+        if (!searchEngineId || !apiKey) {
+            throw new Error('Missing required environment variables: GOOGLE_SEARCH_ENGINE_ID or GOOGLE_API_KEY');
         }
 
-        // You can use the lang parameter to customize the search if needed
-        // For example, to restrict results to a specific language
         const searchOptions = {
-            cx: CX,
-            q: input.query,
-            key: API_KEY
+            cx: searchEngineId,
+            q: query,
+            key: apiKey,
         };
-        
-        // Add language restriction if specified
-        if (input.lang) {
-            searchOptions.lr = input.lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
+        if (lang) {
+            searchOptions.lr = lang.toLowerCase().startsWith('fr') ? 'lang_fr' : 'lang_en';
         }
 
-        let res;
-        for (let attempt = 1; attempt <= MAX_SEARCH_ATTEMPTS; attempt++) {
-            try {
-                res = await customsearch.cse.list(searchOptions);
-                break;
-            } catch (attemptError) {
-                if (attempt >= MAX_SEARCH_ATTEMPTS || !isRetryableSearchError(attemptError)) {
-                    throw attemptError;
-                }
-                console.warn(
-                    `Google search attempt ${attempt} failed with a transient error, retrying:`,
-                    maskSecretValue(attemptError.message)
-                );
-                await sleep(RETRY_BASE_DELAY_MS * attempt);
+        const response = await retryOnTransientError(
+            () => customsearch.cse.list(searchOptions),
+            {
+                attempts: MAX_SEARCH_ATTEMPTS,
+                baseDelayMs: RETRY_BASE_DELAY_MS,
+                onRetry: (info) => {
+                    console.warn(
+                        `Google search attempt ${info.attempt} failed with a transient error, retrying:`,
+                        maskSecretValue(info.error?.message)
+                    );
+                    if (onRetry) onRetry(info);
+                },
             }
-        }
+        );
 
-        const results = res.data;
-        const extractedResults = extractSearchResults(results);
         return {
-            results: extractedResults,
-            provider: "google"
+            results: extractSearchResults(response.data),
+            provider: 'google',
         };
     } catch (error) {
-        const sanitizedError = sanitizeErrorForLogging(error);
-        console.error("Error performing Google search:", sanitizedError);
-        if (error instanceof SearchProviderError) throw error;
-        throw createSearchProviderError(
-            'google',
-            'SEARCH_PROVIDER_REQUEST',
-            `Google search request failed: ${maskSecretValue(error.message)}`,
-            { status: error.status ?? error.response?.status ?? (typeof error.code === 'number' ? error.code : undefined) }
-        );
+        console.error('Error performing Google search:', sanitizeErrorForLogging(error));
+        return {
+            failed: true,
+            results: `Search failed: ${maskSecretValue(error.message)}`,
+            provider: 'google',
+        };
     }
 };
 
-const contextSearchTool = tool(
-    async ({ query, lang }) => {
-        return await contextSearch(query, lang);
-    },
-    {
-        name: "contextSearch",
-        description: "Perform a search on Google Custom Search. Provide 'query' as the search term and 'lang' as the language.",
-        schema: {
-            type: "object",
-            properties: {
-                query: {
-                    type: "string",
-                    description: "The search term to query on.",
-                },
-                lang: {
-                    type: "string",
-                    description: "The language of the search query (e.g., 'en' or 'fr').",
-                }
-            },
-            required: ["query"],
-        },
-    }
-);
-
-export { contextSearchTool, contextSearch };
+export { contextSearch };
