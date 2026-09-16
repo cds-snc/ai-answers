@@ -7,47 +7,34 @@
 
 ## Commit messages and releases
 
-Release Please runs on pushes to `main` and uses Conventional Commit prefixes
-from the commit message. When creating a commit, use one of the configured
-prefixes:
-
-`feat`, `feature`, `fix`, `perf`, `revert`, `docs`, `style`, `chore`,
-`refactor`, `test`, `build`, or `ci`.
-
-For example: `feat: add metadata backfill pagination` or
-`fix: prevent backfill timeout`. Branch names and pull request comments do not
-trigger releases. The generated release pull request uses the branch
-`release-please--branches--main` and a title such as
-`chore: AI Answers release v1.171.0`.
+Release Please reads Conventional Commit prefixes from commit messages on `main`.
+Use one of: `feat`, `feature`, `fix`, `perf`, `revert`, `docs`, `style`, `chore`,
+`refactor`, `test`, `build`, `ci` — e.g. `feat: add metadata backfill pagination`.
+Branch names and PR comments do not trigger releases.
 
 ## Do not edit prompts during unrelated coding work
 
-Prompt files in `agents/prompts/` — the system prompt, `agenticBase.js`,
-`citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, and the
-`scenarios/` files — are tuned through a dedicated process: changes are made by
-the prompt maintainers (Lisa Fast and Ryan Hyma) and validated by running
-evaluation **batches** before they ship. They may ask for assistance tuning prompts.
+Everything under `agents/prompts/` (system prompt, `agenticBase.js`,
+`citationInstructions.js`, `safety.js`, `contextSystemPrompt.js`, `scenarios/`) is
+tuned by the prompt maintainers (Lisa Fast and Ryan Hyma) and validated with
+evaluation batches before shipping.
 
-So unless your task is **explicitly** prompt tuning directed by a maintainer:
+Unless your task is **explicitly** prompt tuning directed by a maintainer:
 
 - **Do not edit anything under `agents/prompts/`** as a side effect of other work.
-- If a coding task seems to need a prompt change to work, **stop and flag it**:
-  describe what you think needs to change and why, and let a maintainer decide.
-  Do not make the edit yourself, and do not work around it by editing a prompt.
-
-This applies to all coding work — bug fixes, refactors, new features,
-dashboards — not just prompt-adjacent areas.
+- If a coding task seems to need a prompt change, **stop and flag it**: describe
+  what should change and why, and let a maintainer decide. Don't work around it
+  by editing a prompt.
 
 ## Never drop a prompt tag that code has to inject
 
 Prompts refer to tags — `<referring-url>`, `<output-lang>`, `<searchResults>`,
-`<final-turn>` — that **code** has to inject into the messages sent to the model. The
-prompt names the tag; the message-building code supplies it. If code stops supplying one,
-**nothing fails**: no error, no thrown exception, no red test. The model simply never sees
-the tag, every instruction referencing it goes dead, and answers quietly get worse. This
-is the hardest class of bug to notice in this codebase.
+`<final-turn>` — that **code** injects into the messages sent to the model. If code stops
+supplying one, **nothing fails**: no error, no red test. The model just never sees the tag,
+every instruction referencing it goes dead, and answers quietly get worse. (This happened
+to `<referring-url>` in the graph/helper migration and went unnoticed for months.)
 
-So, when changing anything that builds an agent's messages or payload:
+When changing anything that builds an agent's messages or payload:
 
 - **Never remove a field from a message/payload because it looks unused.** It is almost
   certainly consumed by a prompt, not by JS. Grep the prompt files for the tag first.
@@ -65,12 +52,41 @@ So, when changing anything that builds an agent's messages or payload:
   `agents/graphs/workflows/__tests__/GraphWorkflowHelper.test.js`. This is the only thing
   that turns a silent regression into a loud one.
 
-Worked example: `<referring-url>` was passed to the context agent by the old
-`services/ContextService.js`, then lost in the migration to the graph/helper architecture.
-`contextSystemPrompt.js` kept telling the model to prioritize `<referring-url>` over
-`<searchResults>` — but the tag was never in the input, so the instruction did nothing and
-the agent matched departments off search results alone. It went unnoticed for months
-because no test and no error covered it.
+**The same shape shows up outside prompts: any object rebuilt via `.map()`/spread that
+only copies the fields the current mapper happens to read.** A field added upstream is
+silently absent downstream, with no error (`src/App.js`'s route `.map()` dropped `handle`,
+so `titleKey`/`skipRouteFocus` never reached the router). When a `.map()`/spread rebuilds
+an object, diff the fields old vs. new, and add a test asserting the field survives.
+
+## Never let AI evaluations feed answer generation
+
+Only **human** expert evaluations may feed back into live answers. AI auto-evaluations —
+`ExpertFeedback` documents written with `type: 'ai'` by `services/evaluation.worker.js` —
+must never be denormalized onto embeddings or added to the vector index, so they can never
+be injected as expert-rated examples (eval-informed answering) or served as an instant
+verified answer.
+
+**Why:** the system would grade its own output and then learn from that grade. Errors
+compound with no person in the loop. Every example the model is shown must trace back to a
+human judgement.
+
+The single thing enforcing this is `isAutoEvalFeedback` in
+`services/EmbeddingMetadataService.js`, which *clears* metadata rather than writing it when
+the attached feedback is AI-typed. Nothing downstream re-checks:
+`QuestionAnswerService`, `SimilarAnswerService` and both vector services filter on
+`expertFeedbackId`, rating and recency — never on `feedback.type`. If the metadata gets
+written, the AI eval is retrievable, and no test or error will say so.
+
+- **Never add `syncForInteraction` or `VectorService.addExpertFeedbackEmbedding` to the
+  evaluation worker**, however reasonable "make auto-evals reusable too" sounds.
+- **Never delete the clear-on-`ai` branch as dead code.** It is defensive on purpose.
+- Human feedback is identified by the *absence* of `type: 'ai'` (the expert form leaves
+  `type` as `''`). Anything that starts stamping `type` must keep human values out of
+  `'ai'`.
+- If a task genuinely calls for changing this, **stop and flag it** — it is a policy
+  decision for the maintainers (Lisa Fast and Ryan Hyma), not a refactor.
+
+See [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md#after-the-answer-evaluation-and-the-feedback-loop).
 
 ## How to work well in this codebase
 
@@ -86,6 +102,33 @@ because no test and no error covered it.
 10. **Check for downstream impact.** After changing a shared function, utility, or service, trace its callers to verify the change doesn't break other consumers. Don't assume the only usage is the one you're fixing.
 11. **Prefer central fixes for shared semantics.** If the same derived value, metric, category, or business rule appears in multiple dashboards/pages/components, first look for the shared API, service, hook, helper, or data contract that should define it. Avoid patching each UI consumer with duplicate compensating logic unless the difference is intentionally presentation-specific.
 12. **Prefer fail-fast contracts.** Avoid permissive input handling that guesses between multiple runtime shapes. If a function needs different input forms, make the contract explicit with separate methods, clear types, or strict runtime validation, and fail loudly when the wrong shape arrives.
+13. **Search the codebase for an existing function before writing a new one — then check external packages.** Before generating a new file or hand-rolling an implementation, grep for whether this repo already has a util/hook/service that does it (e.g. `src/utils/htmlEscape.js` exists — don't write another `escapeHtml`). Only once internal reuse is ruled out, consider whether a well-maintained npm package already solves it.
+14. **Keep PRs human-reviewable.** When a change is too large or wide-ranging for a reviewer to take in as one PR, flag it and work out the breakdown. Pieces that share a contract (a schema, a service, a type) need to be built and verified together before splitting for review; independent findings can just ship as their own small PRs as each is ready.
+
+## Keep the pipeline docs in sync — they have different jobs
+
+Three documents describe the same pipeline for different readers. When you add, remove, or
+reorder a pipeline step, update all three:
+
+| Document | Reader | Level |
+|---|---|---|
+| [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
+| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
+
+They are **not** meant to match one-for-one — the card describes processing steps a reader
+can understand (search and context derivation are separate steps there; in code they are
+one `contextNode`), while the architecture doc describes graph nodes. That difference is
+fine and deliberate. What must never differ:
+
+- **Whether a step exists at all**, and whether it runs in production or only in a variant
+  graph.
+- **Any safety or privacy claim** — a guardrail described in one and missing from the other
+  is a governance problem, not a docs nit.
+- **Behavioural claims about the production graph.** Check the graph the
+  `workflow.default` setting names before writing "the system does X"; a claim inherited
+  from an older default silently becomes false (e.g. context reuse, which only the
+  short-circuit variants do).
 
 ## Documentation Regeneration
 
@@ -95,15 +138,13 @@ When you change a **shared** prompt file in `agents/prompts/` — `agenticBase.j
 node scripts/generate-system-prompt-documentation.js
 ```
 
-This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync with the actual prompts.
+This keeps `docs/agents-prompts/system-prompt-documentation.md` in sync.
 
-**Department scenario files do NOT require regeneration.** Changes to any `agents/prompts/scenarios/context-*/` file (partner department scenarios, which change frequently on partner request) never affect the generated documentation: the doc links to those files rather than embedding their contents. Do not run the generator for scenario-file changes.
+**Department scenario files (`agents/prompts/scenarios/context-*/`) do NOT require regeneration** — the doc links to them rather than embedding them.
 
 ## Inspecting a chat run (debugging)
 
-The ChatViewer page (`/en/chat-viewer`, `/fr/visualiseur-de-clavardage`, admin/partner only) has a **"Download logs (JSON)"** button that exports the full graph event stream for any chatId — local, staging, or prod — as a self-describing JSON file: `{ chatId, exportedAt, logCount, logs[] }`.
-
-If the user hands you one of these files (e.g. to diagnose a bad answer or see what evals were injected), parse it with:
+The ChatViewer page (`/en/chat-viewer`, admin/partner only) has a **"Download logs (JSON)"** button that exports the full graph event stream for a chatId. If the user hands you one of these files, parse it with:
 
 ```bash
 node scripts/check-chat-logs.js <file.json>                          # full timeline
@@ -111,40 +152,40 @@ node scripts/check-chat-logs.js <file.json> --summary                # message-t
 node scripts/check-chat-logs.js <file.json> --filter similarQuestions # injected evals only
 ```
 
-What lives in which event: see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing). Key ones: `node:context output` (matched department/topic), `node:similarQuestions output` (injected eval text in `metadata.similarQuestionsText`), `node:answer input/output` (what reached the LLM, what came back), `node:shortCircuit output` (whether the instant-answer path fired).
+What lives in which event: [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md#inspecting-what-was-injected-manual-testing).
 
 ## Official languages
-**English users and admins and partners must be served in English. French users and admins and partners must be served in French.** This applies to all pages and tools — public-facing, admin, and partner.
 
-**Never hardcode user-facing text in components or pages.** All text visible to users must use translation keys via `t()` and have entries in both `src/locales/en.json` and `src/locales/fr.json`. When adding any new text (column headers, labels, buttons, messages, placeholders, error messages, status messages, option labels, etc.), always add the corresponding key to both locale files in the same PR.
-
-**A `t()` call whose fallback argument you're writing or editing must not have one — write `t('some.key')`, never `t('some.key', 'Fallback text')` or `t('some.key') || 'Fallback text'`.** A fallback is not a harmless safety net just because the real key exists in both locale files today — it's exactly what fires if that key is ever mistyped, renamed, or its FR entry goes missing in a later edit, and the app degrades to silently showing English instead of failing loudly. That's the one outcome an Official Languages review can't catch by grepping for missing keys. Add the real key to both `en.json` and `fr.json` in the same PR instead.
-
-This covers brand-new call sites *and* any existing call's fallback argument you're actively editing (e.g. syncing its wording to a locale-key rename) — editing the argument makes it your line, not a pre-existing one you're leaving alone. It does not mean retroactively stripping a fallback from some other pre-existing call in a file you're touching for an unrelated reason — leave those and flag them as a drive-by instead of silently rewriting them.
-
-### Exceptions
-- **Backend/console/database output**: `console.log`, `console.error`, server-side log strings, developer-facing CLI output, and dynamic content retrieved from the database are exempt.
-- **Internal technical identifiers used as option values**: e.g. workflow names like `GenericGraph` where the value and label are the same internal enum — these are not user-facing text.
-
-### Sentence case
-All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+See [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)
+for the full ruleset: the core EN/FR requirement, `t()`/locale-key rules, the
+`lang`-attribute rules (including the two-part Rule 1/Rule 2 split for
+admin/eval tooling vs. the live conversation transcript), locale key parity,
+number/percentage formatting, French punctuation spacing, and the PR review
+checklist. Read it before creating or reviewing any user-facing text —
+nearly every UI change touches at least one of these. Locale key hygiene and
+the content style guide stay in this file.
 
 ### Content style guide
+
+**Sentence case.** All text visible to users uses sentence case (only the first word and proper nouns capitalised). This applies to button labels, column headers, section titles, navigation links, and option labels. Examples: `"Upload file"` not `"Upload File"`, `"Processed batches"` not `"Processed Batches"`, `"Clarifying question"` not `"Clarifying Question"`.
+
 When writing a non-trivial amount of new user-facing copy — a paragraph of explanatory text, an alert/warning/status message, a confirm-dialog body, anything longer than a short label — check it against the [Canada.ca content style guide](https://design.canada.ca/style-guide/index.html) (this is also where the sentence-case rule above comes from). Core rules that matter most for this codebase:
 - **Plain language**: familiar words, active voice, positive phrasing over negative where possible (negative phrasing is fine for genuinely safety/data-loss-critical warnings, e.g. destructive-action confirms).
 - **Short sentences**: aim under ~15–20 words each; split up anything longer rather than stacking clauses.
 - **Second person, direct address**: "you"/"your" for the reader, "we" for the Government of Canada as a whole, where the copy is speaking to a person at all (not always applicable to terse admin/system copy).
-- **No end punctuation on titles/headings/table captions** in English (French keeps its own punctuation rules — see below).
+- **No end punctuation on titles/headings/table captions** in English (French keeps its own punctuation rules — see [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)'s French punctuation spacing section).
 - **Numbers**: digits for 10 and up, ages, dates, percentages; spell out zero to nine in narrative text.
-It's a useful sanity check for any user-facing copy, not just long-form text — just not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
+Not necessary for single words, short labels, or an existing locale string you're not otherwise changing.
+
+**Button-adjacent micro-confirmations are the exception to the "we"/full-sentence framing.** A `StatusMessage` right beside the button that fired it should be terse and echo the button's verb: `"Referring URL applied."` (matching `"Apply URL"`), not `"We've applied the referring URL."`. Full sentences are for page-level outcomes with distance from their trigger (e.g. `signup.pending`).
 
 ### Locale key hygiene
 
-**Before adding a new locale key, check whether one already says the same thing.** For generic, non-page-specific text (status messages, announcements, common labels like "cleared", "no data", "loading"), grep `en.json` for the English string first — `common.*` already holds several of these (e.g. `common.noDataForFilters`) precisely so multiple pages/dashboards share one key instead of each defining its own copy. Adding a second key with an identical value under a page-specific namespace (e.g. `admin.evalDashboard.fooAnnouncement` duplicating `admin.chatDashboard.fooAnnouncement`) is the bug this section exists to prevent — do the reuse check *before* writing the key, not after, via the detector below. This has shipped more than once from copy-pasting an existing page's pattern into a new page without checking if the string itself could just be shared.
+**Before adding a locale key, grep `en.json` for the English string.** Generic text ("cleared", "no data", "loading") usually already has a shared key (e.g. `common.noDataForFilters`). Adding `admin.evalDashboard.fooAnnouncement` with the same value as `admin.chatDashboard.fooAnnouncement` is the bug this prevents — check *before* writing the key, not via the detector after.
 
-**`common.*` is site-wide, not admin-only — don't reuse it for admin-dashboard strings.** `common.*` is genuinely shared across both admin pages and the public-facing chat UI (`src/components/chat/`) — `common.yes`/`common.no`, `common.loading`, `common.error`, `common.close`, etc. are all used by public chat components, not just admin tooling. Shared text that only ever applies to admin dashboards (search labels/placeholders, "no results", "filters cleared", column-header conventions, etc.) belongs in **`admin.common.*`** instead — a separate namespace kept deliberately apart from `common.*` so a future edit made "for the admin dashboards" can never accidentally reach into text the public chat UI also depends on, and vice versa. When consolidating a duplicate that's genuinely admin-only, reuse/add to `admin.common.*`; only reach for top-level `common.*` when the string is (or plausibly could be) shared with the public chat experience too.
+**`common.*` is site-wide (admin pages *and* the public chat UI in `src/components/chat/`). Admin-only shared text goes in `admin.common.*`.** Keeping the namespaces apart means an edit "for the admin dashboards" can't reach public chat text, and vice versa.
 
-After adding, removing, or renaming locale keys, also run the dead key detector as a backstop:
+After adding, removing, or renaming locale keys, run the dead key detector as a backstop:
 
 ```bash
 node scripts/find-dead-locale-keys.cjs
@@ -153,51 +194,9 @@ node scripts/find-dead-locale-keys.cjs
 This reports:
 1. **Dead keys** — keys in `en.json`/`fr.json` with no detected usage in `src/`
 2. **Duplicate keys** — different keys with identical values (consolidation candidates)
-3. **Parity gaps** — keys present in EN but missing from FR, or vice versa
+3. **Parity gaps** — keys present in EN but missing from FR, or vice versa — this is the OL requirement itself (see [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)); the other two are general hygiene.
 
 Parity gaps must be fixed before merging. Dead keys and duplicates are cleaned up incrementally — fix a few per PR rather than all at once.
-
-### Number and percentage formatting
-
-**This is an Official Languages requirement.** French and English have different conventions for numbers and percentages (`1 000` vs `1,000`; `45 %` vs `45%`). Any component or page that displays numeric data to users must format numbers and percentages using the shared helpers in `src/utils/numberFormat.js`:
-
-```js
-import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
-
-const fmtN = (n) => formatNumber(n, lang);   // 1 000 (fr) / 1,000 (en)
-const fmtPct = (n) => formatPercent(n, lang); // 45 % (fr) / 45% (en)
-```
-
-- **`formatNumber(n, lang)`** — formats integers and large numbers with the correct thousands separator (`fr-CA` uses non-breaking space, `en-CA` uses comma). Handles `null`/`undefined` → `0`.
-- **`formatPercent(n, lang)`** — appends `%` with a non-breaking space before it in French (`45 %`), no space in English (`45%`). Takes an already-computed integer (0–100), not a fraction.
-- **`formatDecimal(n, lang, fractionDigits = 3)`** — formats a decimal number with locale-aware separators (`,` vs `.`) and a fixed number of decimal places. Pass-through for `null`/`undefined`/empty/non-numeric values.
-
-Rules:
-- Never use `+ '%'`, `'0%'`, or `'100%'` as literal strings in data displayed to users — always go through `fmtPct`.
-- Never use `n.toFixed(d)` or inline `Intl.NumberFormat` for decimal values displayed to users — always go through `formatDecimal`.
-- For DataTables columns with sorting enabled, pass raw numbers in the data object and use the `render: (d, type) => type === 'display' ? fmtN(d) : d` pattern so sorting operates on the raw value.
-- These helpers apply to dashboards, tables, batch lists, and any other UI that surfaces counts, totals, or percentages.
-
-### French punctuation spacing
-Per the official Government of Canada style guide (*The Canadian Style*, TERMIUM Plus §17.07), Canadian French requires a space only before the colon `:` (e.g. `"Assigné à :"`) — English does not. Unlike France French, Canadian French does **not** put a space before `;`, `!`, or `?` (e.g. `"Continuer?"`, not `"Continuer ?"`). This has slipped through review before in two forms:
-- A static `fr.json` string typed without the space before `:` (e.g. `"Assigné à:"` instead of `"Assigné à :"`).
-- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`.
-
-### PR review checklist — official languages
-Every PR that touches UI components, pages, or locale files must be verified against these before merging.
-
-**Must fix before merging:**
-- [ ] No hardcoded user-facing strings in components or pages (no `'English text'` literals, no `t('key', 'fallback')` or `t('key') || 'fallback'` patterns on any call site you wrote or edited, no `lang === 'en' ? '...' : '...'` inline conditionals)
-- [ ] All translation calls use `t()` or `safeT()` — not raw string literals (`safeT` is a wrapper around `t()` used in chat components that unwraps object results to a plain string; same locale key rules apply)
-- [ ] Every new `t('key')` call has a matching entry in **both** `en.json` and `fr.json`
-- [ ] `node scripts/find-dead-locale-keys.cjs` reports **0 parity gaps**
-- [ ] French translations are real translations — not copied English text or placeholders
-- [ ] All numbers displayed to users go through `formatNumber(n, lang)` — no raw `.toLocaleString()`, `toString()`, or unformatted numeric values
-- [ ] All percentages displayed to users go through `formatPercent(n, lang)` — no `+ '%'`, `'0%'`, or `'100%'` string literals
-- [ ] French text has a space before `:` only (not before `;`, `!`, `?`) — check both static `fr.json` values and any JS that concatenates punctuation onto a label at runtime
-
-**Flag but don't block:**
-- Sentence case is generally preferred for all text visible to users — note inconsistencies (e.g. mid-sentence capitals, ALL-CAPS emphasis) in review and fix opportunistically
 
 ### Markdown-driven pages
 
@@ -208,10 +207,9 @@ the locale files. Edit the markdown, not the component — and always both langu
 - **Admin how-to guides** — `public/content/admin/`, one file per language, with
   screenshots in `public/content/admin/images/`
 
-Both render through `useMarkdownWithFrontmatter`. See
+Both render through `useMarkdownWithFrontmatter` — see
 [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)
-for the frontmatter contract, how to add a new how-to guide, and the GCDS list
-reset that markdown rendering has to work around.
+for the frontmatter contract and how to add a how-to guide.
 
 System card has EN and FR versions — always update both:
  *   - English: SYSTEM_CARD.md
@@ -227,6 +225,8 @@ Before starting work, read the relevant reference doc:
 - **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 - **Any server-side paginated/searchable table, dashboard or not (which wrapper to use, migrating a hand-rolled table):** [docs/coding-agent-docs/tables.md](docs/coding-agent-docs/tables.md)
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)
+- **Creating or reviewing user-facing text (copy, labels, error messages, locale keys, `lang` attributes):** [docs/coding-agent-docs/official-languages.md](docs/coding-agent-docs/official-languages.md)
+- **Rendering a save/delete/import/export/loading outcome, sr-only announcement, or form validation error:** [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md)
 
 ## Database query safety
 
@@ -265,108 +265,9 @@ French slugs must be real translations — not copied English slugs. Once regist
 
 ## Announcing status, errors, and async outcomes
 
-Use `src/components/admin/StatusMessage.js` for any save/delete/import/export/test-run/upload outcome, autosave failure, or general-purpose "still working" state on an admin page — don't hand-roll a plain `<div>`/`<p>`/`alert()` for this. A lot of the admin section had these render as plain DOM text (or a native `alert()` popup) with no ARIA role at all, so screen-reader users got zero indication anything happened; this component is the fix, standardized in one place instead of reinvented per page.
+Read [docs/coding-agent-docs/status-and-error-messaging.md](docs/coding-agent-docs/status-and-error-messaging.md) before rendering any save/delete/import/export/test-run/upload outcome, autosave failure, loading state, sr-only announcement, or form validation error. The short version: use `src/components/admin/StatusMessage.js` for page/section-level outcomes with no single input they belong to, and the form-error family (`AnnouncedError.js`/`FeedbackInlineError.js`/`ExplanationErrorSummary.js`) for anything tied to a specific field — don't hand-roll a plain `<div>`/`<p>`/`alert()` for either. Never show a raw `err.message`/`error.message` directly to the user; the doc covers why and the two established alternatives.
 
-```jsx
-import StatusMessage from '../components/admin/StatusMessage.js';
-
-<StatusMessage message={statusMessage?.text} isError={statusMessage?.isError} />
-// in-progress state, not a completed result — same component, own sub-type:
-<StatusMessage loading message={t('some.page.loading')} />
-// box-styled outcome (role/aria-live, box className, and icon all wired up
-// from one prop instead of the caller building them individually):
-<StatusMessage variant="success" message={t('some.page.saved')} />
-```
-
-It renders `role="alert"`/`aria-live="assertive"` when `isError` (or `variant="error"`), otherwise `role="status"`/`aria-live="polite"`. Pass `null`/`undefined`/`''` as `message` to render nothing. Pass `id` when another element needs to reference it via `aria-describedby` (e.g. a disabled button explaining why).
-
-`variant` (`error` | `warning` | `info` | `success`) is the box-styled outcome family — pass it with `message` as a plain string and StatusMessage builds the box `className`, `role`/`aria-live`, and a leading icon itself, using the GC DS-token box classes in `admin.css`: `status-message--error-box` (red-100/500/700, failures), `status-message--warning-box` (yellow-100/500/700, cautions like unsaved changes), `status-message--info-box` (blue-100/500/700, neutral confirmations), `status-message--success-box` (green-100/500/700, completed saves). Each pairs with a `GcdsIcon` (`warning-triangle` for error/warning, `info-circle` for info) except `success`, which uses a raw FA `check-circle` span (`fa-solid fa-check-circle`) since GC DS's icon font has no checkmark glyph — matching the existing FA precedent in `BatchUpload.js`. Every box state (the four variants plus `loading`) is `width: fit-content` with a `max-width: 65ch` cap by default — content in this app is line-length-restricted (~65 char), so a box never needs to stretch to fill a wide container, and a long message wraps inside a standardized width instead of growing unbounded. Reuse one of these four variants rather than adding a fifth box class or a page's own ad-hoc hex colours — if a genuinely new outcome type comes up, extend `StatusMessage`'s own `VARIANTS` map (a caller passing `children` instead of `message` alongside `variant` gets the box/role treatment while supplying its own richer content, e.g. a bullet list, without needing a new variant). Callers that haven't migrated to `variant` yet (still wiring up `isError`/`className`/`children` manually) are unaffected — it's additive, not a breaking change — but prefer `variant` for anything new.
-
-**Still a TODO:** this whole 4-variant system (colours, icon choices, the FA-vs-GcdsIcon split, spacing) was built engineering-led, not through an actual design pass — treat it as functional but provisional, not a settled design-approved pattern, until that review happens.
-
-**Full-page loading overlay is a separate component — `src/components/admin/LoadingOverlay.js`, not `StatusMessage`.** `StatusMessage`'s `loading` is general-purpose (any page might need an inline "still working" message) and lives here on purpose. `LoadingOverlay` is narrower — a full-page backdrop for when there's genuinely nothing else actionable on the page until the operation finishes (every other control is already disabled for the same duration anyway) — and stays in its own file for that reason, not because it's structurally different (it isn't; it's `role="status"` too). The original, narrower framing of this was "a dashboard's filter-driven fetch reloads" (still the most common case — `PartnerDashboard.js`, `PublicDashboard.js`, `ChatLogsDashboard.js`, `EvalDashboardPage.js`, `AutoEvalDashboardPage.js`, `ChatDashboardPage.js`), but the actual test is broader than dashboards or filters: `ScenarioOverridesPage.js` uses it for a single-department data load and for its Save/Revert actions, neither of which is a dashboard or a filter. If a page's controls are all disabled for a stretch and an inline `StatusMessage loading` is sitting next to them anyway, that's very likely a `LoadingOverlay` case instead — worth checking other pages for that same pattern opportunistically. Determinate progress (a known total, e.g. "chunk 3 of 10") isn't either of these — a third, different thing again — and doesn't belong in `StatusMessage` as a `progress` variant or in `LoadingOverlay` as a mode; see `ExperimentalAnalysisPage.js`'s `renderProgressCards` for the established pattern (a real `role="progressbar"` + a plain `role="status"` text line, its own small component). `loading` and `variant` inside `StatusMessage` are resolved through one lookup (`resolveLook`) rather than three separate hand-synced conditionals — that used to be the failure mode here: `loading` shipped with its content/className correct but its tag-forcing conditional not updated at the same time, so its spinner ended up nested inside an invalid `<p>`. The one-lookup structure is what makes `loading` and `variant` safe to keep in the same component; it's not something to re-split without a reason.
-
-```jsx
-import LoadingOverlay from '../components/admin/LoadingOverlay.js';
-
-{loading && <LoadingOverlay message={t('some.page.loading')} />}
-```
-
-**`StatusMessage` vs. form-field errors:** `StatusMessage` is for page/section-level
-async outcomes with no single input they belong to. A validation error tied to one
-specific field uses a different, separate family instead —
-`src/components/chat/FeedbackInlineError.js`, `src/components/auth/AnnouncedError.js`,
-and `src/components/chat/ExplanationErrorSummary.js` — which wires the error to its
-field via `id`/`aria-describedby` and moves focus to it on submit failure (`inputRef`/
-`tabIndex={-1}`), something `StatusMessage` doesn't do. Don't reach for `StatusMessage`
-for a field-level error, and don't reach for the form-error family for a page-level
-outcome that isn't about one input.
-
-**`FeedbackInlineError` needs `errorCount`, or repeat identical failures go silent.**
-`FeedbackInlineError` renders `<p key={errorCount} role="alert">` — the `key` is what
-forces React to mount a fresh DOM node (and therefore re-announce/re-focus) on every
-trigger. If a call site sets its error message with plain `useState` + `setError(text)`
-instead of passing `errorCount`, then two submits in a row with the *same* invalid input
-(e.g. an empty required field clicked twice with no edit in between) produce the same
-string both times — React bails on the identical-value update, the DOM never mutates,
-and the second failure is silently un-announced to screen-reader users. This has shipped
-more than once from copying an existing field-error call site that itself never passed
-`errorCount` (`DatabasePage.js`'s `fileSelectError` is one such precedent — don't copy it
-further).
-
-For a single required-field validation (the common case: "you must fill in / select
-this"), use `src/hooks/useInlineFormError.js` instead of a bare `useState`:
-
-```jsx
-import { useInlineFormError } from '../hooks/useInlineFormError.js';
-
-const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
-
-// on invalid submit: triggerError();  (increments errorCount even on repeat failures)
-// on valid input / value change: clearError();
-
-{hasError && (
-  <FeedbackInlineError
-    id="my-field-error"
-    message={t('my.field.error')}
-    errorCount={errorCount}
-    inputRef={errorRef}
-  />
-)}
-```
-
-See `PublicFeedbackComponent.js` / `ExpertFeedbackComponent.js` for the established
-usage. If a field's error text genuinely varies per failure (not just a fixed message),
-a bare `useState` is fine, but the `<FeedbackInlineError>` still needs an `errorCount`
-that increments on every trigger — derive it from a counter, not from the message text.
-
-**`FeedbackInlineError` renders above the field it describes, not below.** See
-`SettingsPage.js`'s `SettingsTextArea` for the established order — the error markup comes
-first, the input second, both still linked via `aria-describedby`. Placing it after the
-field is a layout inversion of this convention, not a style choice.
-
-**Prefer rejecting the interaction over disabling the control, when the disabled reason
-needs explaining.** A `disabled` element is pulled out of the tab order, so an
-`aria-describedby` hint attached to it is practically undiscoverable to a keyboard-only or
-screen-reader user — they never land on the control to have the description read. This
-satisfies SC 4.1.2 (Name, Role, Value) in the letter — the disabled state is still
-programmatically exposed — but fails the actual point of pairing it with an explanation.
-Where the "why can't I do this" reason isn't otherwise obvious from context, keep the
-control enabled/focusable, let the interaction happen, and surface the problem via SC 3.3.1
-Error Identification instead — the same `useInlineFormError`/`FeedbackInlineError` pattern
-above, triggered from the control's own change/click handler rather than a submit handler.
-See `ScenarioOverridesPage.js`'s "use this scenario for testing" checkbox: checking it
-before an edit has been made is rejected with an inline error (React's controlled `checked`
-just snaps back since state isn't updated), not blocked by disabling the checkbox. This
-doesn't apply to every disabled control — one disabled for a self-evident reason already
-visible elsewhere on screen (e.g. a Save button disabled because nothing's been typed yet)
-isn't hiding anything and is a normal, accepted gating pattern.
-
-**Interpolating dynamic text (e.g. `error.message`) into a translated template:** don't pass it as the 2nd argument to `String.replace('{placeholder}', dynamicText)` — that argument is a *replacement pattern*, not a literal string, so a `$` sequence in the dynamic text (common in stack traces) gets silently misread as a special token (`$&`, `` $` ``, `$'`, `$$`) and corrupts the message. Use the replacer-*function* form instead, which is used verbatim:
-
-```js
-t('admin.deleteChat.error').replace('{message}', () => error.message || String(error))
-```
+**Never put `role="status"`/`aria-live` on a message, box, or overlay you render conditionally.** A live region inserted into the DOM with its text already in it is dropped by screen readers (VoiceOver especially), so it's silent — and nothing fails, no test goes red. Every announcement goes through the one always-mounted announcer in `src/utils/liveAnnouncer.js`: `StatusMessage`/`LoadingOverlay` do it for you; for an outcome with nothing visible to show, call `announce(text)` directly. The doc explains the mechanism, `nonce`, `announce={false}` for focus-moved messages, and how to test it (`test/liveAnnouncer.js`'s `waitForAnnouncement`, not `findByRole('alert')`).
 
 ## Admin page nav landmark
 
@@ -378,11 +279,11 @@ Every admin/partner page's "back to admin" `<nav>` needs an `aria-label`, or scr
 </nav>
 ```
 
-This is currently copy-pasted onto every admin page rather than centralized into a shared nav/breadcrumb component — don't forget it when adding a new admin page, and feel free to fold it into a shared component if you're touching several of these at once.
+This is copy-pasted onto every admin page rather than centralized — don't forget it on a new admin page.
 
 ## UI architecture and folders
 
-For UI work, follow the layered pattern below so data flow and responsibilities stay clear:
+For UI work, follow the layered pattern:
 
 1. **Service ->** API calls and raw response handling (`fetch`, endpoint URLs, request/response shape)
 2. **Hook ->** stateful UI logic that consumes services (`loading`, `error`, refresh, memoized derived state)

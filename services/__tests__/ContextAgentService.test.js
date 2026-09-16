@@ -100,6 +100,52 @@ describe('ContextAgentService', () => {
     });
   });
 
+  // Regression: a user-sender entry should never carry `.interaction` at all
+  // (src/components/chat/ChatAppContainer.js gives it a plain
+  // questionLanguage string instead) - but the one time that contract was
+  // silently broken, the user bubble and its paired AI bubble both carried
+  // the same `.interaction` object, and this file's only guard was
+  // `!entry.interaction`, which both entries satisfied - so every historical
+  // turn was pushed here twice.
+  it('does not double-count a turn when a user-sender entry also carries the same interaction as its paired AI entry', async () => {
+    const sharedInteraction = {
+      question: 'Earlier question',
+      answer: { content: 'Earlier answer' },
+    };
+
+    await invokeWith({
+      conversationHistory: [
+        { sender: 'user', text: 'Earlier question', interaction: sharedInteraction },
+        { sender: 'ai', interaction: sharedInteraction },
+      ],
+    });
+
+    const historyMessages = capturedMessages.filter((m) => m !== currentUserMessage() && m.role !== 'system');
+    expect(historyMessages).toEqual([
+      { role: 'user', content: 'Earlier question' },
+      { role: 'assistant', content: 'Earlier answer' },
+    ]);
+  });
+
+  it('still processes an unlabelled (no sender field) history entry that carries an interaction, for backward compatibility', async () => {
+    await invokeWith({
+      conversationHistory: [
+        {
+          interaction: {
+            question: 'Earlier question',
+            answer: { content: 'Earlier answer' },
+          },
+        },
+      ],
+    });
+
+    const historyMessages = capturedMessages.filter((m) => m !== currentUserMessage() && m.role !== 'system');
+    expect(historyMessages).toEqual([
+      { role: 'user', content: 'Earlier question' },
+      { role: 'assistant', content: 'Earlier answer' },
+    ]);
+  });
+
   it('passes search results to the system message', async () => {
     await invokeWith({ referringUrl: 'https://www.canada.ca/en/services.html' });
 

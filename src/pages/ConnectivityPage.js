@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce as announceTestComplete } from '../utils/liveAnnouncer.js';
 
 const StatusBadge = ({ status }) => {
     const colors = {
@@ -92,10 +93,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    // Bumped on every test run so StatusMessage's `nonce` forces the sr-only
-    // completion announcement to re-fire even when the result text is identical
-    // to the previous run (e.g. same connected/errors/warnings counts twice in a row).
-    const [testCompleteAnnounceNonce, setTestCompleteAnnounceNonce] = useState(0);
     const [simulatedFailures, setSimulatedFailures] = useState({
         database: false,
         search: false,
@@ -152,18 +149,23 @@ const ConnectivityPage = ({ lang = 'en' }) => {
 
             const data = await response.json();
             setResults(data);
-            setTestCompleteAnnounceNonce((n) => n + 1);
+            announceTestComplete(
+                t('connectivity.testComplete')
+                    .replace('{connected}', data.summary.connected)
+                    .replace('{errors}', data.summary.errors)
+                    .replace('{warnings}', data.summary.warnings)
+            );
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t, announceTestComplete]);
 
     return (
         <GcdsContainer layout="page" className="mb-600">
             <h1 className="mb-400">
-                {t('connectivity.title', 'Service Connectivity Dashboard')}
+                {t('connectivity.title')}
             </h1>
 
             <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
@@ -173,8 +175,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </nav>
 
             <GcdsText className="mb-400">
-                {t('connectivity.description',
-                    'Test connectivity to all external services and AI providers used by AI Answers.')}
+                {t('connectivity.description')}
             </GcdsText>
 
             <div className="mb-400">
@@ -183,8 +184,8 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     disabled={loading}
                 >
                     {loading
-                        ? t('connectivity.testing', 'Testing connections...')
-                        : t('connectivity.runTests', 'Run Connectivity Tests')}
+                        ? t('connectivity.testing')
+                        : t('connectivity.runTests')}
                 </GcdsButton>
             </div>
 
@@ -211,7 +212,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </section>
 
             <StatusMessage variant={error ? 'error' : undefined}>
-                {error && <><strong>{t('connectivity.error')}:</strong> {error}</>}
+                {error && <><strong>{t('connectivity.error')}:</strong> <code lang="en">{error}</code></>}
             </StatusMessage>
 
             {/* TODO: these counts should go through formatNumber(n, lang) per the
@@ -226,18 +227,6 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 DatabasePage.js's move to a { text, isError } status shape ends
                 up establishing a shared "guard the response shape" pattern
                 worth reusing here too. */}
-            <StatusMessage
-                persistent
-                message={results
-                    ? t('connectivity.testComplete')
-                        .replace('{connected}', results.summary.connected)
-                        .replace('{errors}', results.summary.errors)
-                        .replace('{warnings}', results.summary.warnings)
-                    : undefined}
-                nonce={testCompleteAnnounceNonce}
-                className="sr-only"
-            />
-
             {results && (
                 <>
                     <div style={{
@@ -254,7 +243,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.connected}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.connected', 'Connected')}
+                                {t('connectivity.connected')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -262,7 +251,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.errors}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.errors', 'Errors')}
+                                {t('connectivity.errors')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -270,7 +259,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.warnings}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.warnings', 'Warnings')}
+                                {t('connectivity.warnings')}
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -278,16 +267,16 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                                 {results.summary.notConfigured}
                             </div>
                             <div style={{ color: '#666' }}>
-                                {t('connectivity.notConfigured', 'Not Configured')}
+                                {t('connectivity.notConfigured')}
                             </div>
                         </div>
                     </div>
 
                     <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '16px' }}>
-                        {t('connectivity.lastRun', 'Last run')}: {new Date(results.timestamp).toLocaleString()}
+                        {t('connectivity.lastRun')}: {new Date(results.timestamp).toLocaleString()}
                     </p>
 
-                    <h2 className="mb-300">{t('connectivity.serviceDetails', 'Service Details')}</h2>
+                    <h2 className="mb-300">{t('connectivity.serviceDetails')}</h2>
 
                     {results.services.map((service, index) => (
                         <ServiceCard key={index} service={service} t={t} />

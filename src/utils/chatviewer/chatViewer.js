@@ -7,6 +7,36 @@ export function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+// One tag or text run per line, indented by nesting depth. Not a real XML
+// parser - display only, never parsed back - a flat open/close/text walk
+// is enough to nest it the way real markup reads.
+function prettyPrintXml(xml) {
+  const tokens = xml.match(/<[^>]+>|[^<]+/g) || [];
+  let depth = 0;
+  const lines = [];
+
+  for (const rawToken of tokens) {
+    const token = rawToken.trim();
+    if (!token) continue;
+
+    const isClosing = token.startsWith('</');
+    const isSelfClosing = token.endsWith('/>');
+    const isOpening = token.startsWith('<') && !isClosing && !isSelfClosing;
+
+    if (isClosing) {
+      depth = Math.max(0, depth - 1);
+    }
+
+    lines.push('  '.repeat(depth) + token);
+
+    if (isOpening) {
+      depth += 1;
+    }
+  }
+
+  return lines.join('\n');
+}
+
 export function formatMetadataValue(data) {
   const value = data ?? {};
 
@@ -15,7 +45,7 @@ export function formatMetadataValue(data) {
 
     if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
       return {
-        formattedContent: trimmed.replace(/></g, '>\n<').replace(/\s+/g, ' ').trim(),
+        formattedContent: prettyPrintXml(trimmed),
         isXML: true,
       };
     }
@@ -39,19 +69,137 @@ export function formatMetadataValue(data) {
   };
 }
 
-export function buildMetadataCellHtml(data, expandLabel) {
-  const { formattedContent, isXML } = formatMetadataValue(data);
-  const escapedContent = escapeHtml(formattedContent);
+// Mongo bookkeeping, never useful for reading a trace - and the cause of a
+// raw ObjectId sometimes rendering as a wall of "buffer": {"0": 106, ...}
+// noise. Stripped recursively - subdocuments (e.g. a stageTimeline entry)
+// carry their own _id too.
+function stripMongoIds(value) {
+  if (Array.isArray(value)) {
+    return value.map(stripMongoIds);
+  }
+  if (value && typeof value === 'object') {
+    const result = {};
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === '_id') continue;
+      result[key] = stripMongoIds(entry);
+    }
+    return result;
+  }
+  return value;
+}
 
-  return `
-    <div class="metadata-wrapper">
-      <div class="metadata-content" tabindex="0">
-        <pre><code class="language-${isXML ? 'xml' : 'json'}">${escapedContent}</code></pre>
-      </div>
-      <button class="expand-button gcds-button gcds-button--secondary" type="button">
-        ${expandLabel}
-      </button>
-    </div>`;
+// Compact (single-line) form for one metadata value, used only to decide
+// whether it's short enough to show inline - objects/arrays get a plain
+// JSON.stringify, primitives print as themselves. The full, expanded
+// <details> view always pretty-prints instead.
+function formatMetadataPairValue(value) {
+  if (value == null) return String(value);
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+// Judged per field, not a pair count - a short scalar field (pageLanguage,
+// model, inputTokens...) shows in full regardless of how many siblings it
+// has; a field whose own value is a large nested blob (context,
+// cleanedHistory, stageTimeline...) collapses even if it's the only one.
+// ~5 wrapped lines in the metadata column, measured in characters.
+const LONG_VALUE_THRESHOLD = 300;
+
+// One long value's own <details> - a bare <b>key:</b> label line (same as
+// every short field), with the content moved into a "View {key}" disclosure
+// below it instead of a preview crammed next to the label. Pretty-printed +
+// syntax-highlighted once open.
+function buildValueDetailsHtml(key, rawValue, { seeFullFieldLabel, seeFullValueLabel }) {
+  const labelHtml = key != null ? `<div class="metadata-pair"><b>${escapeHtml(key)}:</b></div>` : '';
+  const summaryText = key != null ? seeFullFieldLabel.replace('{key}', key) : seeFullValueLabel;
+  const { formattedContent, isXML } = formatMetadataValue(rawValue);
+  const codeHtml = `<pre><code class="language-${isXML ? 'xml' : 'json'}">${escapeHtml(formattedContent)}</code></pre>`;
+
+  return `${labelHtml}
+    <details class="metadata-more">
+      <summary>${escapeHtml(summaryText)}</summary>
+      ${codeHtml}
+    </details>`;
+}
+
+// <english-answer> is always present (agenticBase.js Step 4); a translated
+// answer adds a second, generic <answer> tag (Step 5 - there's no literal
+// "<french-answer>"). The value can be the raw tagged string directly, or
+// nested one level down under an "answer" field's own .content property.
+const ANSWER_TAGS = ['english-answer', 'answer'];
+
+// Which tag is present, as a label only - not its content.
+function detectAnswerTag(rawValue) {
+  const source =
+    typeof rawValue === 'string'
+      ? rawValue
+      : rawValue && typeof rawValue === 'object' && typeof rawValue.content === 'string'
+        ? rawValue.content
+        : null;
+  if (source == null) return null;
+
+  return ANSWER_TAGS.find((tag) => source.includes(`<${tag}>`)) ?? null;
+}
+
+// Any field whose value (directly, or nested one level under its own
+// .content) is tagged this way gets the same treatment: just the tag name
+// (<english-answer> or <answer>) sits beside the label - the answer text
+// itself stays entirely inside the disclosure below. Always labelled
+// "View answer" regardless of whether the key holding it was "content" or
+// "answer".
+function buildAnswerFieldHtml(key, value, labels) {
+  const tag = detectAnswerTag(value);
+  if (tag == null) {
+    return null;
+  }
+
+  const labelHtml = `<div class="metadata-pair"><b>${escapeHtml(key)}:</b> ${escapeHtml(`<${tag}>`)}</div>`;
+  const summaryText = labels.seeFullFieldLabel.replace('{key}', 'answer');
+  const { formattedContent, isXML } = formatMetadataValue(value);
+  const codeHtml = `<pre><code class="language-${isXML ? 'xml' : 'json'}">${escapeHtml(formattedContent)}</code></pre>`;
+
+  return `${labelHtml}
+    <details class="metadata-more">
+      <summary>${escapeHtml(summaryText)}</summary>
+      ${codeHtml}
+    </details>`;
+}
+
+export function buildMetadataCellHtml(data, labels) {
+  const stripped = stripMongoIds(data);
+
+  // A bare string has no key - one unnamed value to check.
+  if (typeof stripped === 'string') {
+    if (stripped.length <= LONG_VALUE_THRESHOLD) {
+      const { formattedContent, isXML } = formatMetadataValue(stripped);
+      const codeHtml = `<pre><code class="language-${isXML ? 'xml' : 'json'}">${escapeHtml(formattedContent)}</code></pre>`;
+      return `<div class="metadata-cell">${codeHtml}</div>`;
+    }
+    return `<div class="metadata-cell">${buildValueDetailsHtml(null, stripped, labels)}</div>`;
+  }
+
+  const isEmpty =
+    stripped == null || (typeof stripped === 'object' && Object.keys(stripped).length === 0);
+  if (isEmpty) {
+    return '';
+  }
+
+  const entries = Array.isArray(stripped) ? stripped.map((v, i) => [i, v]) : Object.entries(stripped);
+
+  const rowsHtml = entries
+    .map(([key, value]) => {
+      const answerHtml = buildAnswerFieldHtml(key, value, labels);
+      if (answerHtml != null) {
+        return answerHtml;
+      }
+      const compact = formatMetadataPairValue(value);
+      return compact.length <= LONG_VALUE_THRESHOLD
+        ? `<div class="metadata-pair"><b>${escapeHtml(key)}:</b> ${escapeHtml(compact)}</div>`
+        : buildValueDetailsHtml(key, value, labels);
+    })
+    .join('');
+
+  return `<div class="metadata-cell">${rowsHtml}</div>`;
 }
 
 export function buildStepTimeline(logs) {

@@ -38,7 +38,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       // that's worth doing — touches both layers plus a test rewrite, not
       // just this file.
       const [prefix, suffix] = t('admin.deleteChat.error').split('{message}');
-      return { isError: true, prefix, detail: <span lang="en">{error.message || String(error)}</span>, suffix };
+      return { isError: true, prefix, detail: <code lang="en">{error.message || String(error)}</code>, suffix };
     }
   };
 
@@ -49,6 +49,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       idLabelKey="admin.deleteChat.idLabel"
       buttonLabelKey="admin.deleteChat.button"
       loadingLabelKey="admin.deleteChat.loading"
+      notFoundMessageKey="admin.deleteChat.notFound"
       fieldId="chatId"
       onDelete={handleDelete}
     />

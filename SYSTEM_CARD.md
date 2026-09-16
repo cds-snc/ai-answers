@@ -1,7 +1,7 @@
 # AI Answers system card
 
-**Version**: 1.2
-**Date**: July 2026
+**Version**: 1.3
+**Date**: August 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
 
@@ -100,21 +100,67 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 ### Pipeline flow (LangGraph state machine)
 The system uses a **multi-step LangGraph pipeline** that orchestrates all processing server-side. Multiple graph variants exist with different capabilities (e.g. vector short-circuit, eval-informed answers, reasoning models). Not all steps run in every variant.
 
+```mermaid
+flowchart TD
+    Q["Question asked"] --> G["Safety and privacy checks<br/>personal information<br/>blocked, never stored"]
+    G --> S["Government of Canada<br/>content searched"]
+    S --> D["Institution identified<br/>its own instructions added"]
+    D --> E["Expert evaluations of similar<br/>past questions added"]
+    E --> A["Plain-language answer<br/>with verified citation link"]
+    A --> SAVE["Answer shown and saved"]
+    SAVE --> AI["Automated AI evaluation<br/>reporting only"]
+    SAVE --> HUM["Human expert evaluation<br/>of a sample of answers"]
+    HUM -. "improves future answers" .-> E
+```
+
+<details>
+<summary>Image description (alt text)</summary>
+
+A flow chart running top to bottom. A question is asked. It passes through safety and
+privacy checks, where personal information is blocked and never stored. Government of
+Canada content is searched. The institution the question belongs to is identified, and that
+institution's own instructions are added. Expert evaluations of similar past questions are
+added. A plain-language answer is written with a verified citation link. The answer is
+shown and saved.
+
+Saving then branches two ways. One branch is an automated AI evaluation, used for reporting
+only; it ends there. The other is a human expert evaluation of a sample of answers, and a
+dotted arrow returns from it to the step where expert evaluations are added, labelled
+"improves future answers".
+
+</details>
+
+Three things in this flow set AI Answers apart from a general-purpose chatbot.
+
+Answers are built only from Government of Canada content, with the citation link checked
+before the person sees it.
+
+The system works out which institution a question belongs to, then loads that institution's
+own material into the instructions for that one answer — the scenarios, agentic tools and
+files its partner team has written. A question about a passport and a question about a tax
+credit are answered under different institutional instructions, chosen per question, with
+no one having to route the question first.
+
+And the dotted line is a genuine loop: when an expert evaluates an answer, that judgement —
+including what was wrong with it — becomes a worked example the model is shown the next
+time someone asks something similar. Automated AI evaluations feed reporting only. They
+never become examples, so the system never learns from its own judgements.
 
 1. **Initialization**: Set up timing and state tracking
 2. **Short Query Validation** (Programmatic): Block queries that are too short to be meaningful
 3. **Two-Stage Question Blocking**:
    - **Stage 1** (Programmatic): Pattern-based blocking for profanity, threats, and common PI (word lists configurable by admins via Settings page)
    - **Stage 2** (AI - Azure OpenAI GPT-4o, Canada East region): AI detects personal information that slipped through; question is then blocked
-4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing
-5. **Query Rewrite & Search** (AI - mini model): Rewrite the translated question into an optimized search query and run it against Canada.ca or Google. If the first search returns zero or one result, automatically rewrite again with a simplified query and retry; the better result set is kept.
-6. **Context Derivation** (AI - full model): Institution matching and context generation from search results; optionally loads Institution-specific scenarios
-7. **Short-Circuit Check** (AI): Vector similarity search to find previously answered similar questions. Only present in certain graph variants, not the default pipeline
-8. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
-9. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
-10. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
-11. **Auto-Evaluation**: Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
-12. **Task classifier**: (AI - full model): use question and answer to assign program and action (e.g. IRCC account - sign in) to question for reporting and analysis by institutions 
+4. **Translation** (AI - configurable mini model): Detects language and translates to English for processing. The word-list guardrails then re-run on the English text, and for source languages other than English or French the AI personal-information check runs a second time — a threat or personal detail written in another language may only be recognizable once translated
+5. **Instant Verified Answer Check** (AI - vector similarity and reranking): Looks for a past question, rated 100/100 by an expert, that very closely matches the new one, and serves that verified answer directly. Only present in certain graph variants, not in the production pipeline
+6. **Query Rewrite & Search** (AI - mini model): Rewrite the translated question into an optimized search query and run it against Canada.ca or Google. If the first search returns zero or one result, automatically rewrite again with a simplified query and retry; the better result set is kept.
+7. **Context Derivation** (AI - full model): Institution matching and context generation from search results; optionally loads Institution-specific scenarios
+8. **Eval-Informed Answering** (embedding lookup, no language-model call): Retrieve up to three of the most similar expert-rated past question-answer-evaluation sets and add them to the model's instructions as evaluated examples. A similarity floor and a one-year limit on the age of the expert rating keep only genuinely related, current examples; when none qualify, none are added. In production since August 2026
+9. **Answer Generation** (AI - Configurable model): Generate response with citations using specialized tools
+10. **Citation Verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed
+11. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
+12. **Auto-Evaluation** (background; not every answer receives one): Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
+13. **Task classifier** (AI - full model, runs in the background after the answer is delivered): use question and answer to assign program and action (e.g. IRCC account - sign in) to question for reporting and analysis by institutions 
 
 **For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
@@ -238,10 +284,12 @@ The system uses a **multi-step LangGraph pipeline** that orchestrates all proces
 
 Expert evaluations of past answers are not only used for reporting — they can also be fed back into live answer generation. Two mechanisms have been built for this, both drawing on the same store of expert-rated question/answer pairs. 
 
-- **Eval-informed answering (similar questions)**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past question-answer-evals sets and includes them in the model's instructions as evaluated examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used; when no relevant example exists, none is injected. 
+- **Eval-informed answering (similar questions) — in production since August 2026**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past question-answer-evals sets and includes them in the model's instructions as evaluated examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used, and an expert rating older than one year is not reused; when no relevant example exists, none is injected. 
 - **Instant verified answers (short-circuit serving) — not yet in production**: When a new question very closely matches a past question whose answer an expert scored a perfect 100/100, the system would serve that verified answer directly and skip the AI model, reducing cost and latency. Only perfect-score answers would be eligible, and the match must be very close to avoid serving the wrong answer. In testing this approach has not yet performed reliably enough to deploy, so it remains off in production.
 
 Both mechanisms are implemented as selectable pipeline variants ("graphs"), require that expert feedback exists for a past answer, and are designed to degrade gracefully — if the lookup is unavailable, answer generation proceeds normally without examples.
+
+**Only human evaluations feed back into answers.** Automated AI evaluations are used for reporting and monitoring, never as examples for the model: they are deliberately excluded from the store that both mechanisms draw on. The system does not learn from its own judgements — every example an answer is shaped by traces back to a person's assessment.
 
 **For full technical detail, see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 

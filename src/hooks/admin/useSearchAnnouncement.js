@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
+import { announce as liveAnnounce } from '../../utils/liveAnnouncer.js';
 
-// Shared sr-only "search results changed" announcement + visible zero-result
+// Shared "search results changed" announcement + visible zero-result
 // message, for any DataTable with a single global search box.
 //
 // Two tables need two different messages here:
@@ -10,11 +11,12 @@ import { useState, useCallback, useRef } from 'react';
 //     real DB COUNT query, so we say the count-less "Search results
 //     updated" instead. Pass `count: null` for this case.
 //
-// Previously hand-duplicated per-page as searchAnnouncement/
-// searchAnnounceNonce/zeroResultNonce/previousSearchTermRef state.
+// Announcements go straight to the shared live announcer
+// (src/utils/liveAnnouncer.js) — there's no sr-only StatusMessage to render
+// for them any more. `zeroResultNonce` is still state: it drives the
+// visible "no results" StatusMessage's re-announcement when a second search
+// also lands on zero.
 export function useSearchAnnouncement({ t, fmtN }) {
-  const [searchAnnouncement, setSearchAnnouncement] = useState('');
-  const [searchAnnounceNonce, setSearchAnnounceNonce] = useState(0);
   const [zeroResultNonce, setZeroResultNonce] = useState(0);
   const previousSearchTermRef = useRef('');
 
@@ -25,12 +27,12 @@ export function useSearchAnnouncement({ t, fmtN }) {
     // zero-result message below covers that case instead).
     const termChanged = term !== previousSearchTermRef.current;
     previousSearchTermRef.current = term;
+    let announced = false;
     if (term && termChanged && count !== 0) {
-      const message = count === null
+      liveAnnounce(count === null
         ? t('admin.common.searchResultsUpdatedAnnouncement')
-        : t('admin.common.searchResultsAnnouncement').replace('{count}', () => fmtN(count));
-      setSearchAnnouncement(message);
-      setSearchAnnounceNonce((n) => n + 1);
+        : t('admin.common.searchResultsAnnouncement').replace('{count}', () => fmtN(count)));
+      announced = true;
     }
 
     // Zero-result message: bumped on every completion landing on zero, not
@@ -39,13 +41,31 @@ export function useSearchAnnouncement({ t, fmtN }) {
     if (count === 0) {
       setZeroResultNonce((n) => n + 1);
     }
+    // Returns whether it spoke, so the caller can skip noteLoadResult() for
+    // the same fetch — "12 results found" already says the load finished;
+    // adding an assertive "Results loaded." read the two back to back, in
+    // the wrong order.
+    return announced;
   }, [t, fmtN]);
 
-  // For non-search-result announcements that reuse the same persistent
-  // sr-only region (e.g. ChatDashboardPage.js's "Filters cleared").
+  // The one completion announcement every dashboard makes: "Results
+  // loaded." when a fetch finishes with data, nothing on zero (the visible
+  // "no data" StatusMessage announces that itself). Call it from the same
+  // place the table's ajax callback learns the count, only when
+  // noteSearchResult() didn't already announce that fetch. `count: null`
+  // (Eval's synthetic count) is treated as "has data". Assertive: the user
+  // asked for this data and is waiting on it, so it interrupts rather
+  // than queues (same as useResultsLoadedAnnouncement).
+  const noteLoadResult = useCallback((count) => {
+    if (count === 0) return;
+    liveAnnounce(t('admin.common.resultsLoaded'), { assertive: true });
+  }, [t]);
+
+  // For a page's other, non-search announcements (e.g. ChatDashboardPage.js's
+  // "Filters cleared") — same announcer, kept here so callers get one
+  // import.
   const announce = useCallback((message) => {
-    setSearchAnnouncement(message);
-    setSearchAnnounceNonce((n) => n + 1);
+    liveAnnounce(message);
   }, []);
 
   // Called when a "Clear all" action resets the search box out from under
@@ -55,5 +75,5 @@ export function useSearchAnnouncement({ t, fmtN }) {
     previousSearchTermRef.current = '';
   }, []);
 
-  return { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset };
+  return { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset };
 }

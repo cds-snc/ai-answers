@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import TechnicalMetricsDashboard from '../TechnicalMetricsDashboard.js';
 
 const TRANSLATIONS = {
@@ -151,7 +151,7 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
     // Both new tables must be gated on technical (their own data source),
     // not only on usage (only the source of the rate denominator) — a
     // 'technical' failure must not be hidden as a silent "0 errors" row.
-    const alerts = screen.getAllByRole('alert');
+    const alerts = Array.from(document.querySelectorAll('.status-message--error-box'));
     expect(alerts.some((a) => a.textContent.includes('technical fetch failed'))).toBe(true);
   });
 
@@ -163,7 +163,7 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
 
     render(<TechnicalMetricsDashboard lang="en" />);
 
-    const alerts = screen.getAllByRole('alert');
+    const alerts = Array.from(document.querySelectorAll('.status-message--error-box'));
     expect(alerts.some((a) => a.textContent.includes('usage fetch failed'))).toBe(true);
   });
 });

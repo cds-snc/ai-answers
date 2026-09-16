@@ -8,11 +8,14 @@ import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
+import { detectUrlLanguage } from '../utils/dashboard/urlLanguage.js';
 import { normalizeAnswerText } from '../utils/answerText.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
+import { resolveDisplayContent } from '../utils/answerLanguage.js';
 
 DataTable.use(DT);
 
@@ -49,14 +52,18 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   // sr-only search-narrowing announcement + visible zero-result message
   // (SC 4.1.3) - shared with MetricsDashboard.js.
-  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
   // Tracks chat-group striping state across a single draw's rows (reset in
   // preDrawCallback, mutated in createdRow as each row is built in order).
-  const chatGroupStateRef = useRef({ lastChatId: undefined, parity: 0 });
+  const chatGroupStateRef = useRef(createChatGroupState());
+  // Bumped by Clear all and by each ajax call, so a response that lands
+  // after the table was cleared (or superseded) can't set error/count/loading
+  // state on a table that's gone.
+  const ajaxSeqRef = useRef(0);
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
 
@@ -81,13 +88,72 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Question/Answer cell text: strip pipeline-added sentence markers
-  // (<s-1>...</s-1>, added for per-sentence citation/scoring) so they never
-  // show up as literal text, and render the full content - no truncation.
-  const renderAnswerText = useCallback((value) => {
-    if (!value) return '';
-    return escapeHtmlAttribute(normalizeAnswerText(value));
-  }, []);
+  // Same EN/FR-official-languages display rule (shown as-is; non-EN/FR
+  // collapses to English) as ExpertFeedbackPanel.js (resolveDisplayContent) -
+  // questionLanguage drives
+  // both the Question and Answer columns, since the AI answers in whatever
+  // language was detected for the question (agenticBase.js), not a
+  // separately-tracked language per column. DataTables `render` returns a
+  // raw HTML string here, not JSX, so this can't reuse OriginalLanguagePill
+  // (React) directly.
+  //
+  // Wrapping div is position:relative + reserved bottom padding, icon is
+  // position:absolute within it, anchored to the wrapper's own bottom edge
+  // - a static position regardless of how many lines the text above it
+  // wraps to, instead of flowing inline right after text of varying length
+  // (which put it in a different spot every row, and inline-after-text
+  // also pushed translated rows' text down a line vs. untranslated rows'
+  // single-line cells, breaking the table's row-height rhythm).
+  //
+  // Icon font-size is on the <i> itself, not on the .eval-tooltip wrapper -
+  // .eval-tooltip::after (admin.css) has no font-size reset of its own, so
+  // it inherits whatever font-size sits on the element carrying the
+  // eval-tooltip class. Sizing the <i> instead of that wrapper keeps the
+  // tooltip text at its normal size and only enlarges the glyph. 1.3em -
+  // a modest bump over EvalDashboardPage.js's own 1.2em/1.4em icons: the
+  // icon + visible "AI text" label together carry this pill's meaning
+  // at a glance; the fuller "AI Answers' working text" explanation lives in
+  // the tooltip/accessible name below, not visibly on the pill itself -
+  // short label for scanning, full explanation on demand.
+  //
+  // .eval-tooltip/data-tooltip, not the native title attribute - same
+  // reasoning as EvalDashboardPage.js's own icon cells: title's hover
+  // delay is fixed by the browser and can't be shortened, this CSS
+  // mechanism controls it. Accessible name for the icon+"AI text" pair
+  // comes from the sibling .sr-only span carrying the fuller explanation,
+  // not aria-label, matching that same established pattern - the icon and
+  // the visible "AI text" label both stay aria-hidden so a screen
+  // reader gets the one, fuller phrase instead of "AI text" followed
+  // redundantly by "AI Answers' working text".
+  const renderLanguageAwareText = useCallback((original, english, questionLanguage) => {
+    const resolved = resolveDisplayContent({ language: questionLanguage, original, english });
+    if (!resolved.text) return '';
+    const langAttr = resolved.lang ? ` lang="${escapeHtmlAttribute(resolved.lang)}"` : '';
+    const text = escapeHtmlAttribute(normalizeAnswerText(resolved.text));
+    if (!resolved.isSource) {
+      return `<span${langAttr}>${text}</span>`;
+    }
+    const shortLabel = escapeHtmlAttribute(t('admin.common.sourceText'));
+    // "AI Answers' working text" - not "Originally asked in: {language}"
+    // (that's the question's language; this pill is about what the cell
+    // itself is showing - the English text AI Answers worked from/with,
+    // same framing as SourceViewComponent.js's own title).
+    const fullLabel = escapeHtmlAttribute(t('admin.common.workingTextTooltip'));
+    // The pill is a direct sibling here, not nested inside the text div -
+    // its position:absolute needs to resolve against the <td> itself
+    // (position:relative via this column's createdCell, so its box always
+    // matches the row's actual height), not this div, so Question's and
+    // Answer's pills land at the exact same Y position even when one
+    // column's text runs longer than the other's in the same row.
+    return `<div style="padding-bottom: 2.2em;">` +
+      `<span${langAttr}>${text}</span>` +
+      `</div>` +
+      `<span class="filter-pill eval-tooltip" data-tooltip="${fullLabel}" style="position: absolute; bottom: 0.5em; left: 0;">` +
+      `<i class="fa-solid fa-language" style="font-size: 1.3em;" aria-hidden="true"></i>` +
+      `<span aria-hidden="true">${shortLabel}</span>` +
+      `<span class="sr-only">${fullLabel}</span>` +
+      `</span>`;
+  }, [t]);
 
   useEffect(() => {
     setTimeout(() => setDataTableReady(true), 0);
@@ -138,6 +204,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // into calling .ajax.reload() on an already-destroyed table instead of
     // mounting a fresh one.
     tableApiRef.current = null;
+    ajaxSeqRef.current += 1;
     setHasAppliedFilters(false);
     setRecordsTotal(0);
     setSearchTerm('');
@@ -146,10 +213,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // control (the Clear all button, inside FilterPanel) keeps focus, so
     // this isn't a focus-loss issue like the chat ID search one, but a
     // screen reader user still gets no confirmation the reset actually
-    // took effect. Reuses the same persistent+sr-only searchAnnouncement
-    // region as the search-narrowing announcement, just for a different
-    // message - same nonce bump so it re-announces even if cleared twice
-    // in a row with nothing else changing in between.
+    // took effect.
     announce(t('admin.common.filtersClearedAnnouncement'));
     resetSearchAnnouncement();
     setError(null);
@@ -158,25 +222,34 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
   const columns = useMemo(() => ([
     {
-      title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
+      title: t('admin.common.columns.chatId'),
       data: 'chatId',
       searchable: false,
       orderable: false,
       render: (value, type, row) => {
         if (!value) return '';
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang, row.interactionId);
+        // Route to the chat's OWN pageLanguage, not the admin's current UI
+        // language - the reviewed transcript (answer bubbles, citation
+        // heading) must show what the end user actually saw
+        // (docs/coding-agent-docs/official-languages.md Rule 2), so the
+        // route itself has to land on that language. The admin's own
+        // language is carried separately as the `adminLang` query param
+        // (4th arg) for the review page's own chrome (ExpertFeedbackPanel,
+        // "How was this answer?", Chat ID/Date/Referring URL labels) to use
+        // instead - see reviewLink.js and HomePage.js's `adminLang`.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId, lang);
       }
     },
     {
-      title: t('admin.chatDashboard.columns.department', 'Department'),
+      title: t('admin.common.columns.department'),
       data: 'department',
       searchable: false,
       orderable: true,
       render: (value) => escapeHtmlAttribute(value || '')
     },
     {
-      title: t('admin.chatDashboard.columns.program', 'Service'),
+      title: t('admin.common.columns.program'),
       data: 'program',
       searchable: false,
       orderable: true,
@@ -186,22 +259,36 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       }
     },
     {
-      title: t('admin.chatDashboard.columns.question', 'Question'),
+      title: t('admin.chatDashboard.columns.question'),
       data: 'redactedQuestion',
       searchable: false,
       orderable: false,
-      render: (value) => renderAnswerText(value)
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishQuestion, row && row.questionLanguage),
+      // position:relative belongs on the <td> itself, not a wrapper div
+      // inside it - the <td>'s own box stretches to match the row's
+      // tallest cell (normal table behaviour), a div inside it doesn't.
+      // The "Translated" pill's position:absolute needs to resolve
+      // against that actual row-height box to stay anchored to the row's
+      // real bottom edge, not just this cell's own shorter content height.
+      createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
-      title: t('admin.chatDashboard.columns.answer', 'Answer'),
+      title: t('admin.chatDashboard.columns.answer'),
       data: 'answerContent',
       searchable: false,
       orderable: false,
-      render: (value) => renderAnswerText(value)
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishAnswer, row && row.questionLanguage),
+      createdCell: (td) => { td.style.position = 'relative'; }
     },
     {
-      title: t('admin.chatDashboard.columns.citationUrl', 'Citation link'),
+      title: t('admin.chatDashboard.columns.citationUrl'),
       data: 'citationUrl',
+      // Capped so Question/Answer (no fixed width - they auto-fill
+      // remaining space) don't get squeezed by this column growing to fit
+      // a long citation URL - the visible text is already shortened via
+      // truncateUrl() below, this just stops the column itself from
+      // stretching past what that short text actually needs.
+      width: '160px',
       searchable: false,
       orderable: false,
       render: (value) => {
@@ -212,18 +299,41 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         // and handles the new-tab icon/rel/accessible text itself. href is
         // the full citation URL; the visible text stays the shorthand
         // truncated form.
+        //
+        // gcds-link's own `lang` attribute does two unrelated jobs at once:
+        // native HTML lang inheritance (how a screen reader pronounces the
+        // slotted text) AND a plain JS property read (gcds-link.js's
+        // assignLanguage/i18n[lang]) that picks which language string labels
+        // its own icon - here, the "(Opens destination in a new tab.)"
+        // accessible text. Those need different values: the outer element
+        // keeps the admin's own `lang` so that hint announces in the
+        // admin's language, and an inner span carries the citation URL's own
+        // language (detectUrlLanguage) so the truncated citation text itself
+        // is still pronounced correctly (WCAG 3.1.2) - same reasoning as
+        // CountTable.js's citation links, applied here to the raw HTML form.
         const safeHref = escapeHtmlAttribute(value);
         const safeDisplay = escapeHtmlAttribute(truncateUrl(value));
-        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}">${safeDisplay}</gcds-link>`;
+        const citationLang = escapeHtmlAttribute(detectUrlLanguage(value, lang));
+        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}"><span lang="${citationLang}">${safeDisplay}</span></gcds-link>`;
       }
     }
-  ]), [renderAnswerText, truncateUrl, t, lang]);
+    // The "Page" language column (row.pageLanguage) used to live here as
+    // the admin's only advance warning of which language route the Chat ID
+    // link would drop them on - the review page used to switch its whole
+    // chrome to that language. Now that review mode is its own page
+    // (ChatReviewPage.js), the admin's own review chrome stays in their own
+    // language regardless of the reviewed chat's pageLanguage, so that
+    // warning no longer applies - removed rather than left as a now-
+    // pointless column. row.pageLanguage itself is still used internally by
+    // the Chat ID column's render() above (chatLangFromPageLanguage) to
+    // route the transcript correctly; only the visible column is gone.
+  ]), [renderLanguageAwareText, truncateUrl, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.chatDashboard.title', 'Chat dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.chatDashboard.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
             {t('common.backToAdmin')}
@@ -261,19 +371,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         <LoadingOverlay message={t('admin.chatDashboard.loading')} />
       )}
 
-      <StatusMessage
-        variant={error ? 'error' : undefined}
-        message={error ? `${t('admin.chatDashboard.error')} ${String(error)}` : null}
-      />
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.chatDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
 
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
-
       {hasAppliedFilters && !loading && !error && recordsTotal === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && (
@@ -324,7 +431,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     topStart: 'search',
                     topEnd: {},
                     bottomStart: { features: ['pageLength', 'info'] },
-                    bottomEnd: 'paging'
+                    bottomEnd: { paging: { firstLast: false } }
                   },
                   language: {
                     ...dataTableLanguage(lang),
@@ -371,168 +478,24 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     }
                     return null;
                   },
-                  // Each row is one question/answer pair, not one chat - a
-                  // multi-turn chat spans several consecutive rows sharing a
-                  // chatId (see the backend's chatCreatedAt/questionNumber
-                  // sort). Plain per-row zebra striping (see .chat-dashboard-
-                  // table's nth-child rule in admin.css) would cut through
-                  // the middle of a chat's rows and make them look
-                  // unrelated. Stripe by chat GROUP instead: every row
-                  // sharing a chatId gets the same shaded/unshaded class,
-                  // alternating only when the chatId changes, plus a
-                  // top-border marker on the first row of each new group.
-                  preDrawCallback: function () {
-                    chatGroupStateRef.current = { lastChatId: undefined, parity: 0 };
-                  },
-                  createdRow: function (row, data) {
-                    const state = chatGroupStateRef.current;
-                    const chatId = data && data.chatId;
-                    const isFirstRowOfPage = state.lastChatId === undefined;
-                    if (chatId !== state.lastChatId) {
-                      if (!isFirstRowOfPage) {
-                        state.parity = state.parity === 0 ? 1 : 0;
-                        row.classList.add('chat-group-start');
-                      }
-                      state.lastChatId = chatId;
-                    }
-                    row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
-                    // Group hover used to live here (highlighting every row
-                    // belonging to the same chat on mouseenter/mouseleave)
-                    // but was removed: purely decorative with nothing to
-                    // click, so it just read as a false affordance. Native
-                    // per-row hover stays disabled below rather than
-                    // reinstated - it looked broken on the rowspan'd Chat
-                    // ID/Department/Service cells (a spanned cell doesn't
-                    // live in every row it visually covers, so only its own
-                    // anchor row would ever light up) - so there's
-                    // deliberately no hover feedback at all now, not a
-                    // reversion to per-row.
-                  },
-                  // Collapse the Chat ID/Department/Service cells across a
-                  // chat's consecutive rows into single rowspan'd cells,
-                  // instead of repeating identical values on every row -
-                  // both a stronger visual grouping cue than striping
-                  // alone, and better for screen readers (one spanned cell
-                  // announced once, not the same value read out N times).
-                  // Department/Service only merge WITHIN a chat's own rows,
-                  // never across chats - two unrelated chats happening to
-                  // share a department shouldn't look like one group.
-                  // Recomputed from scratch on every draw (paging/sorting/
-                  // filtering all trigger a fresh drawCallback) rather than
-                  // incrementally patched, so it can't drift out of sync
-                  // with whatever rows are currently rendered - safe under
-                  // serverSide mode, which rebuilds row nodes per draw
-                  // rather than reusing stale cached ones.
-                  drawCallback: function () {
-                    try {
-                      const api = this.api();
-                      const rowNodes = api.rows({ page: 'current' }).nodes();
-                      const rowData = api.rows({ page: 'current' }).data().toArray();
-
-                      // valueFn returns the value consecutive rows must
-                      // share to merge; boundByChatId additionally requires
-                      // rows to belong to the same chat (used for
-                      // Department/Service so the merge never crosses a
-                      // chat boundary, even if two different chats happen
-                      // to share the same value).
-                      // extraClass marks the Chat ID column's anchor cells
-                      // specifically (regardless of span size) so the CSS
-                      // vertical divider can target that class instead of
-                      // `:first-child` - cell removal above means the DOM's
-                      // actual first <td> in a row varies (it becomes
-                      // whichever column survived removal), so position-
-                      // based selectors silently pick the wrong cell.
-                      const collapseColumn = (colIndex, valueFn, boundByChatId, extraClass) => {
-                        if (colIndex === -1) return;
-                        let i = 0;
-                        while (i < rowData.length) {
-                          let span = 1;
-                          while (
-                            i + span < rowData.length &&
-                            // Merging on an empty value (several consecutive
-                            // blank cells) doesn't convey anything - just a
-                            // divider-bordered box around nothing. Leave those
-                            // as ordinary, unmerged single-row cells instead.
-                            valueFn(rowData[i]) &&
-                            valueFn(rowData[i + span]) === valueFn(rowData[i]) &&
-                            (!boundByChatId || rowData[i + span].chatId === rowData[i].chatId)
-                          ) {
-                            span += 1;
-                          }
-                          const anchorCell = rowNodes[i] && rowNodes[i].cells[colIndex];
-                          if (anchorCell) {
-                            anchorCell.rowSpan = span;
-                            anchorCell.classList.toggle('row-spanned', span > 1);
-                            if (extraClass) anchorCell.classList.add(extraClass);
-                            // This span's last row is the page's actual
-                            // last row, but the anchor cell itself (where
-                            // the rowspan - and any border-bottom drawn on
-                            // it - actually lives) sits higher up, on
-                            // whichever row started the group. Without this,
-                            // the table's bottom edge has a gap under any
-                            // column still mid-span when the page ends -
-                            // the closing border only reaches the columns
-                            // that still have a real <td> on the last row.
-                            anchorCell.classList.toggle('spans-to-page-end', i + span === rowData.length);
-                          }
-                          for (let j = i + 1; j < i + span; j += 1) {
-                            const cellToRemove = rowNodes[j] && rowNodes[j].cells[colIndex];
-                            if (cellToRemove) cellToRemove.remove();
-                          }
-                          i += span;
-                        }
-                      };
-
-                      // Right-to-left by column index: removing a cell from
-                      // a row shifts every later cell's index in that same
-                      // row's live HTMLCollection, so a column must be
-                      // fully processed before any column to its left.
-                      collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
-                      collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
-                      collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
-
-                      // Sort-icon tooltip text (visual only - see the
-                      // thead th[data-tooltip] comment in admin.css
-                      // for why this is a sighted-user mirror, not itself
-                      // an accessibility mechanism). Runs every draw, not
-                      // just initComplete, because the text depends on
-                      // aria-sort (set by DataTables' own header-update
-                      // logic, which runs as part of every draw cycle
-                      // including sort changes) - "activate for ascending
-                      // sort" needs to flip to "activate for descending
-                      // sort" the moment a column becomes the active sort,
-                      // matching GC DS's own table pattern (see admin.css
-                      // comment above the CSS rules this feeds). Ported
-                      // rather than shared with EvalDashboardPage.js's
-                      // identical version - same reasoning as
-                      // collapseColumn above, each page's DataTables
-                      // options object is otherwise page-specific.
-                      api.columns().header().each((header) => {
-                        if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
-                        const orderSpan = header.querySelector('.dt-column-order');
-                        if (!orderSpan) return;
-                        const title = (header.textContent || '').trim();
-                        const currentSort = header.getAttribute('aria-sort');
-                        // 3-state cycle, not 2 - see the matching comment
-                        // in EvalDashboardPage.js's identical version for
-                        // why (DataTables' own default asSorting is
-                        // ['asc', 'desc', ''], a third click removes
-                        // sorting entirely).
-                        const nextKey = currentSort === 'ascending'
-                          ? 'admin.common.sortActivateDescending'
-                          : currentSort === 'descending'
-                            ? 'admin.common.sortRemove'
-                            : 'admin.common.sortActivateAscending';
-                        header.setAttribute('data-tooltip', t(nextKey).replace('{column}', () => title));
-                      });
-                    } catch (e) { /* ignore drawCallback errors */ }
-                  },
+                  // Striping and keep-chat-together cells - see
+                  // utils/admin/chatGroupedTable.js.
+                  ...buildChatGroupCallbacks({
+                    stateRef: chatGroupStateRef,
+                    columns,
+                    groupedColumns: [
+                      { data: 'program' },
+                      { data: 'department' },
+                      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                    ],
+                  }),
                   initComplete: function () {
                     const api = this.api();
                     tableApiRef.current = api;
                     wireTableAccessibility(api, { t });
                   },
                   ajax: async (dtParams, callback) => {
+                    const seq = ++ajaxSeqRef.current;
                     try {
                       setLoading(true);
                       setError(null);
@@ -568,10 +531,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         query.search = searchValue;
                       }
                       const result = await DashboardService.getChatDashboard(query);
+                      if (seq !== ajaxSeqRef.current) return;
                       const total = result?.recordsTotal || 0;
                       setRecordsTotal(total);
 
-                      noteSearchResult(searchValue, total);
+                      if (!noteSearchResult(searchValue, total)) noteLoadResult(total);
 
                       callback({
                         draw: dtParams.draw || 0,
@@ -581,10 +545,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       });
                     } catch (err) {
                       console.error('Failed to load chat dashboard data', err);
+                      if (seq !== ajaxSeqRef.current) return;
                       setError(err.message || String(err));
                       callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                     } finally {
-                      setLoading(false);
+                      if (seq === ajaxSeqRef.current) setLoading(false);
                     }
                   }
                 }}

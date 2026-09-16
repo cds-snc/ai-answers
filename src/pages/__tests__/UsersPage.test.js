@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import UsersPage from '../UsersPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -84,8 +85,7 @@ describe('UsersPage StatusMessage roles', () => {
     const deleteButton = await screen.findByText('users.actions.delete');
     fireEvent.click(deleteButton);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('users.actions.deleteError');
+    await waitForAnnouncement('users.actions.deleteError', 'assertive');
   });
 
   it('announces a successful delete as role="status"', async () => {
@@ -101,7 +101,7 @@ describe('UsersPage StatusMessage roles', () => {
     await waitFor(() => {
       expect(screen.getByText('users.actions.deleteSuccess')).toBeTruthy();
     });
-    expect(screen.getByText('users.actions.deleteSuccess').closest('[role="status"]')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('users.actions.deleteSuccess', { selector: '[class*="status-message--"]' })).toBeTruthy();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 });

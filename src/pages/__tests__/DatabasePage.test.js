@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import DatabasePage from '../DatabasePage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
 vi.mock('../../hooks/useTranslations.js', () => ({
@@ -57,8 +58,7 @@ describe('DatabasePage StatusMessage roles', () => {
 
     render(<DatabasePage lang="en" />);
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('counts unavailable');
+    await waitForAnnouncement('counts unavailable', 'assertive');
   });
 
   it('does not announce an error when counts load successfully', async () => {
@@ -69,6 +69,6 @@ describe('DatabasePage StatusMessage roles', () => {
     await waitFor(() => {
       expect(screen.getByText('admin.database.tableRecordCounts')).toBeTruthy();
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
 });

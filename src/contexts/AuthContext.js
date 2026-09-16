@@ -3,6 +3,7 @@ import AuthService from '../services/AuthService.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getPath } from '../utils/routes.js';
 import { getPublicAuthExemptPaths } from '../config/appRoutePaths.js';
+import { normalizePathname } from '../utils/normalizePathname.js';
 
 const AuthContext = createContext();
 const SESSION_EXPIRED_REASON = 'session-expired';
@@ -29,8 +30,7 @@ export const AuthProvider = ({ children }) => {
   const publicAuthExemptPaths = useRef(getPublicAuthExemptPaths(requireAuthForChat)).current;
 
   const isPublicAuthExemptPath = useCallback((pathname) => {
-    const normalizedPathname = pathname && pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
-    return publicAuthExemptPaths.has(normalizedPathname || '/');
+    return publicAuthExemptPaths.has(normalizePathname(pathname || '/'));
   }, [publicAuthExemptPaths]);
 
   useEffect(() => {

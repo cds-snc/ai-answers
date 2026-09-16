@@ -1,6 +1,12 @@
 /**
  * Utility functions to categorize expert feedback and AI evals
  */
+// Duplicate of api/util/db-query.js's own escapeRegex (and api/chat/
+// chat-dashboard.js's) - a code review flagged all three as the same
+// function copy-pasted three times (confirmed byte-identical) and worth
+// consolidating to one shared import. Deliberately left as-is here: out of
+// scope for the chat-viewer-a11y work that surfaced it. Safe to
+// consolidate later - see api/util/db-query.js's escapeRegex.
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export function categorizeExpertFeedback(expertFeedback) {

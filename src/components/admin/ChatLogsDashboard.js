@@ -128,7 +128,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
       {exportError && (
         <StatusMessage variant="error">
-          {exportError.prefix}<span lang="en">{exportError.detail}</span>{exportError.suffix}
+          {exportError.prefix}<code lang="en">{exportError.detail}</code>{exportError.suffix}
         </StatusMessage>
       )}
 

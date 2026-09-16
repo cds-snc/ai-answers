@@ -12,9 +12,12 @@ import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
-import { escapeHtmlAttribute, buildChatReviewLinkHtml } from '../utils/reviewLink.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
+import { buildEvalPillsHtml } from '../utils/admin/evalPills.js';
+import { renderDateTimeCell } from '../utils/admin/dateTimeCell.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 
 DataTable.use(DT);
@@ -42,42 +45,6 @@ const truncateUrl = (url) => {
   }
 };
 
-// Partner/AI Eval columns' pill markup. The base value (correct/
-// needsImprovement/hasError/harmful) is its own pill; hasCitationError and
-// (partner only) hasContentIssue are independent boolean flags that stack
-// alongside it rather than being folded into the base value - see
-// getHasCitationErrorAggregationExpression / getPartnerContentIssueAggregationExpression
-// in api/util/chat-filters.js for why. One shared builder for both columns
-// so the two don't drift out of sync with each other.
-//
-// harmful is the one exception to stacking: it suppresses every other pill
-// rather than joining them. An answer flagged harmful can also happen to
-// have a content issue or a citation issue on the same sentence data, but
-// harmful is severe enough on its own that showing it alongside "citation
-// issue"/"content issue" reads as understating it, not adding detail.
-const buildEvalPillsHtml = (t, value, extraFlags = []) => {
-  let html = '';
-  if (value) {
-    const label = t(`admin.chatDashboard.labels.evaluation.${value}`);
-    html += `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label.includes('.') ? value : label)}</span>`;
-  }
-  if (value !== 'harmful') {
-    extraFlags.forEach(({ active, className, labelKey }) => {
-      if (!active) return;
-      const label = t(labelKey);
-      html += `<span class="label ${className}">${escapeHtmlAttribute(label)}</span>`;
-    });
-  }
-  if (!html) return html;
-  // Wrapped in a flex container (see .eval-pills-wrap in admin.css) rather
-  // than relying on .label + .label's margin-left for spacing: when two
-  // pills don't fit on one line, that margin wraps down with the second
-  // pill instead of resetting, so it reads as indented rather than
-  // flush-left on its own row. flex + gap spaces pills correctly on both
-  // the same line and across a wrap.
-  return `<span class="eval-pills-wrap">${html}</span>`;
-};
-
 const getDefaultEvalFilters = () => {
   const now = new Date();
   const start = new Date(now);
@@ -99,7 +66,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // syntheticCount (see the ajax callback below) is a pagination trick, not
   // a real count, so search completions pass count: null here and get the
   // count-less "results updated" message instead of "N results found".
-  const { searchAnnouncement, searchAnnounceNonce, zeroResultNonce, noteSearchResult, announce, reset: resetSearchAnnouncement } =
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   // Tracked so a zero-result global search doesn't feed FilterPanel's own
   // "reopen on zero results" effect - see the filterResultCount prop below
@@ -153,26 +120,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
   // same grouping approach as ChatDashboardPage.js, ported here so a
   // multi-turn chat's evaluated interactions read as one group instead of
   // unrelated rows.
-  const chatGroupStateRef = useRef({ lastChatId: undefined, parity: 0 });
+  const chatGroupStateRef = useRef(createChatGroupState());
+  // Bumped by Clear all and by each ajax call, so a response that lands
+  // after the table was cleared (or superseded) can't set error/count/loading
+  // state on a table that's gone.
+  const ajaxSeqRef = useRef(0);
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const formatDate = useCallback((dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      return new Intl.DateTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    } catch (err) {
-      console.error('Failed to format date', err);
-      return dateStr;
-    }
-  }, [lang]);
 
   useEffect(() => {
     // allow table render
@@ -282,6 +236,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
     // into calling .ajax.reload() on an already-destroyed table instead of
     // mounting a fresh one.
     tableApiRef.current = null;
+    ajaxSeqRef.current += 1;
     setHasAppliedFilters(false);
     setPageResultCount(0);
     setSearchTerm('');
@@ -295,12 +250,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
 
   const columns = useMemo(() => ([
     {
-      title: t('admin.evalDashboard.columns.chatId'),
+      title: t('admin.common.columns.chatId'),
       data: 'chatId',
       render: (value, type, row) => {
         if (!value) return '';
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id);
+        // Route to the reviewed chat's own pageLanguage, not the admin's
+        // current UI language - see the same note in ChatDashboardPage.js.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId || row._id, lang);
       },
       searchable: false,
       orderable: false
@@ -314,6 +271,9 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       // is set as this header's aria-label in initComplete below instead
       // of being spelled out in the visible title.
       title: t('admin.evalDashboard.columns.questionNumber'),
+      // DataTables builds the sort button's aria-label from ariaTitle at
+      // init - the th aria-label set later in initComplete doesn't reach it.
+      ariaTitle: t('admin.evalDashboard.columns.questionNumberAriaLabel'),
       data: 'questionNumber',
       render: (value) => value != null ? String(value) : '',
       width: '40px',
@@ -344,29 +304,29 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       ]), searchable: false, orderable: false
     },
     {
-      title: t('admin.evalDashboard.columns.feedback'), data: 'feedback', width: '60px', className: 'eval-center-cell', render: v => {
+      title: t('admin.evalDashboard.columns.feedback'), data: 'feedback', width: '60px', render: v => {
         // Icon + hidden text, same tight pattern as the Download column
         // below (FA icon since GC DS has no thumbs glyph, aria-hidden, real
-        // meaning carried in wb-inv text) instead of a spelled-out pill -
+        // meaning carried in sr-only text) instead of a spelled-out pill -
         // keeps this column narrow. Coloured with --gcds-border-default -
-        // the same grey the row/cell dividers use (see .row-spanned's
+        // the same grey the row/cell dividers use (see .group-cell's
         // border-right and the other border rules above) - rather than
         // positive/negative green/red or text-status--neutral (blue,
         // despite the name): whether an answer was helpful is subjective,
         // not a pass/fail outcome like Download's states.
         //
         // data-tooltip (+ .eval-tooltip's CSS, see admin.css) gives sighted
-        // mouse users a hover tooltip with the same text the wb-inv span
+        // mouse users a hover tooltip with the same text the sr-only span
         // already gives screen-reader users - a custom CSS tooltip rather
         // than the native title attribute so the appear delay is ours to
         // set (0.5s - native title's delay is fixed by the browser, not
         // controllable). Safe to add now specifically because the icon
         // stays aria-hidden: an arbitrary data-* attribute on an
         // aria-hidden element isn't exposed to the accessibility tree
-        // either, so it can't compete with/double up on the wb-inv
+        // either, so it can't compete with/double up on the sr-only
         // announcement. Two channels, one source of truth each.
-        if (v === 'yes') return `<i class="fa-solid fa-thumbs-up eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}</span>`;
-        if (v === 'no') return `<i class="fa-solid fa-thumbs-down eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}</span>`;
+        if (v === 'yes') return `<i class="fa-solid fa-thumbs-up eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.helpfulYes'))}</span>`;
+        if (v === 'no') return `<i class="fa-solid fa-thumbs-down eval-tooltip" style="font-size: 1.2em; color: var(--gcds-border-default);" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.helpfulNo'))}</span>`;
         return '';
       }, searchable: false, orderable: true
     },
@@ -383,27 +343,27 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         // data-tooltip (custom CSS tooltip, see the matching comment on the
         // Feedback column above for why not the native title attribute)
         // gives sighted mouse users a hover tooltip with the same text the
-        // wb-inv span gives screen-reader users.
+        // sr-only span gives screen-reader users.
         if (v === 'success') {
-          return `<span class="text-status--positive"><i class="fa-solid fa-check eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
+          return `<span class="text-status--positive"><i class="fa-solid fa-check eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.downloadSuccess'))}</span></span>`;
         }
         if (v === 'partial') {
           // Smaller than the other two icons - a filled circle shape reads
           // visually larger than the check/x glyphs at the same font-size.
-          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke eval-tooltip" style="font-size: 1.2em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
+          return `<span class="text-status--warning"><i class="fa-solid fa-circle-half-stroke eval-tooltip" style="font-size: 1.2em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.downloadPartial'))}</span></span>`;
         }
         if (v === 'failed') {
-          return `<span class="text-status--negative"><i class="fa-solid fa-xmark eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.fail'))}"></i><span class="wb-inv">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
+          return `<span class="text-status--negative"><i class="fa-solid fa-xmark eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('reviewPanels.fail'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('reviewPanels.fail'))}</span></span>`;
         }
         return '';
       },
-      width: '50px', className: 'eval-center-cell', searchable: false, orderable: true
+      width: '50px', searchable: false, orderable: true
     },
-    { title: t('admin.evalDashboard.columns.department'), data: 'department', width: '110px', searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.program'), data: 'program', width: '160px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
+    { title: t('admin.common.columns.department'), data: 'department', width: '110px', searchable: false, orderable: true },
+    { title: t('admin.common.columns.program'), data: 'program', width: '160px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.programFr) ? row.programFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.action'), data: 'action', width: '90px', render: (v, type, row) => { const d = (lang === 'fr' && row && row.actionFr) ? row.actionFr : v; return d ? escapeHtmlAttribute(d) : ''; }, searchable: false, orderable: true },
     { title: t('admin.chatDashboard.columns.referringUrl'), data: 'referringUrl', render: v => v ? escapeHtmlAttribute(truncateUrl(v)) : `<span style="color: #666;">${escapeHtmlAttribute(t('reviewPanels.none'))}</span>`, searchable: false, orderable: true },
-    { title: t('admin.evalDashboard.columns.pageLanguage'), data: 'pageLanguage', width: '50px', className: 'eval-center-cell', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
+    { title: t('admin.common.columns.pageLanguage'), ariaTitle: t('admin.common.columns.pageLanguageAriaLabel'), data: 'pageLanguage', width: '50px', render: v => v ? escapeHtmlAttribute(v.toUpperCase()) : '', searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.creatorEmail'), data: 'creatorEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
     { title: t('admin.evalDashboard.columns.expertEmail'), data: 'expertEmail', render: v => escapeHtmlAttribute(truncateEmail(v || '')), searchable: false, orderable: true },
     {
@@ -414,13 +374,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       // dtOrder -> backend-field mapping further down both key off this
       // column's index/data - hiding it keeps that wiring intact while
       // dropping it from the header/rows.
-      title: t('admin.evalDashboard.columns.date'), data: 'date', render: (v) => formatDate(v), searchable: false, orderable: true, visible: false
+      title: t('admin.evalDashboard.columns.date'), data: 'date', render: (v) => renderDateTimeCell(v, lang), searchable: false, orderable: true, visible: false
     }
-  ]), [formatDate, t, lang]);
+  ]), [t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.evalDashboard.title', 'Evaluation dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.evalDashboard.title')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -433,7 +393,6 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
           screen-reader users a heading/landmark entry point into the filter
           section. Distinct text from FilterPanel's "Filters" summary label. */}
       <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -458,21 +417,20 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
         <LoadingOverlay message={t('admin.evalDashboard.loading')} />
       )}
 
-      <StatusMessage
-        variant={error ? 'error' : undefined}
-        message={error ? `${t('admin.evalDashboard.error')} ${String(error)}` : null}
-      />
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.evalDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
 
       {/* Distinct from the filters-driven empty state below - a zero-result
           global search means the search term didn't match anything, not
           that the applied filters themselves are wrong (same distinction as
           ChatDashboardPage.js's noSearchResults/noDataForFilters split). */}
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && searchTerm && (
-        <StatusMessage variant="info" message={t('admin.common.noSearchResults')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && !loading && !error && pageResultCount === 0 && !searchTerm && (
-        <StatusMessage variant="info" message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {/* A sub-component of the Filters box above, not a peer - same
@@ -521,14 +479,14 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     setSearchChatIdNotFound(false);
                     clearSearchChatIdError();
                   }}
-                  placeholder={t('admin.evalDashboard.searchChatIdPlaceholder')}
+                  placeholder={t('admin.common.chatIdSearchPlaceholder')}
                   required
                   aria-required="true"
                   aria-describedby={hasSearchChatIdError ? 'eval-search-chat-id-error' : undefined}
                 />
               </div>
               <button type="submit" className="filter-button filter-button-primary mt-200">
-                {t('admin.evalDashboard.searchButton')}
+                {t('admin.common.chatIdSearchButton')}
               </button>
             </form>
             {searchChatIdNotFound && (
@@ -577,162 +535,34 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                   topStart: 'search',
                   topEnd: {},
                   bottomStart: { features: ['pageLength', 'info'] },
-                  bottomEnd: 'paging'
+                  bottomEnd: { paging: { firstLast: false } }
                 },
                 infoCallback: function (_settings, start, end, _max, _total, _pre) {
                   const pageNumber = Math.floor(Math.max(Number(start) - 1, 0) / Math.max(end - start, 1)) + 1;
-                  return `${t('common.page', 'Page')} ${pageNumber}`;
+                  return `${t('common.page')} ${pageNumber}`;
                 },
                 language: {
                   ...dataTableLanguage(lang),
                   search: t('admin.common.searchLabel'),
                   searchPlaceholder: t('admin.common.searchPlaceholder')
                 },
-                // Chat grouping: same approach as ChatDashboardPage.js
-                // (preDrawCallback/createdRow/drawCallback below) - each row
-                // here is one evaluated interaction, not one chat, and a
-                // multi-turn chat's interactions can span several
-                // consecutive rows sharing a chatId (the backend's sort
-                // stage keeps them adjacent regardless of the active column
-                // sort - see the chatCreatedAt tiebreaker in
-                // api/eval/eval-dashboard.js). Stripe by chat GROUP instead
-                // of per-row index, and rowspan-collapse Chat ID/Department/
-                // Program across a chat's own rows.
-                preDrawCallback: function () {
-                  chatGroupStateRef.current = { lastChatId: undefined, parity: 0 };
-                },
-                createdRow: function (row, data) {
-                  const state = chatGroupStateRef.current;
-                  const chatId = data && data.chatId;
-                  const isFirstRowOfPage = state.lastChatId === undefined;
-                  if (chatId !== state.lastChatId) {
-                    if (!isFirstRowOfPage) {
-                      state.parity = state.parity === 0 ? 1 : 0;
-                      row.classList.add('chat-group-start');
-                    }
-                    state.lastChatId = chatId;
-                  }
-                  row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
-                  // Group hover used to live here (highlighting every row
-                  // belonging to the same chat on mouseenter/mouseleave)
-                  // but was removed: purely decorative with nothing to
-                  // click, so it just read as a false affordance. Native
-                  // per-row hover stays disabled below rather than
-                  // reinstated - it looked broken on the rowspan'd Chat
-                  // ID/Department/Service cells (a spanned cell doesn't
-                  // live in every row it visually covers, so only its own
-                  // anchor row would ever light up) - so there's
-                  // deliberately no hover feedback at all now, not a
-                  // reversion to per-row.
-                },
-                drawCallback: function () {
-                  try {
-                    const api = this.api();
-                    const rowNodes = api.rows({ page: 'current' }).nodes();
-                    const rowData = api.rows({ page: 'current' }).data().toArray();
-
-                    const collapseColumn = (colIndex, valueFn, boundByChatId, extraClass) => {
-                      if (colIndex === -1) return;
-                      let i = 0;
-                      while (i < rowData.length) {
-                        let span = 1;
-                        while (
-                          i + span < rowData.length &&
-                          // Merging on an empty value (several consecutive
-                          // blank cells) doesn't convey anything - just a
-                          // divider-bordered box around nothing. Leave those
-                          // as ordinary, unmerged single-row cells instead.
-                          valueFn(rowData[i]) &&
-                          valueFn(rowData[i + span]) === valueFn(rowData[i]) &&
-                          (!boundByChatId || rowData[i + span].chatId === rowData[i].chatId)
-                        ) {
-                          span += 1;
-                        }
-                        const anchorCell = rowNodes[i] && rowNodes[i].cells[colIndex];
-                        if (anchorCell) {
-                          anchorCell.rowSpan = span;
-                          anchorCell.classList.toggle('row-spanned', span > 1);
-                          if (extraClass) anchorCell.classList.add(extraClass);
-                          anchorCell.classList.toggle('spans-to-page-end', i + span === rowData.length);
-                        }
-                        for (let j = i + 1; j < i + span; j += 1) {
-                          const cellToRemove = rowNodes[j] && rowNodes[j].cells[colIndex];
-                          if (cellToRemove) cellToRemove.remove();
-                        }
-                        i += span;
-                      }
-                    };
-
-                    // Right-to-left by column index - see the matching
-                    // comment in ChatDashboardPage.js's drawCallback for why.
-                    // expertEmail/creatorEmail/pageLanguage/referringUrl/
-                    // action sit at higher column indexes than program/
-                    // department, so they're processed first. All are bound
-                    // by chatId, but not all for the same reason: creatorEmail/
-                    // pageLanguage/referringUrl/department/program are
-                    // genuinely constant for every question within one chat
-                    // (a chat can't switch creator, page language, referring
-                    // URL, department, or service mid-conversation) - but
-                    // expertEmail and action are per-question and CAN
-                    // legitimately differ row to row (a different expert
-                    // reviewing question 2, a clarifying-question turn
-                    // followed by an answer turn); they merge only when two
-                    // adjacent rows happen to share the same value, same as
-                    // any other repeated-value grouping here. Either way,
-                    // boundByChatId stops the span from bridging across
-                    // chats when two unrelated ones share a value by
-                    // coincidence (same admin creating several test chats,
-                    // same 'en'/'fr' page language, same expert reviewing
-                    // two different chats, etc.).
-                    collapseColumn(columns.findIndex((c) => c.data === 'expertEmail'), (r) => r.expertEmail, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'creatorEmail'), (r) => r.creatorEmail, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'pageLanguage'), (r) => r.pageLanguage, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'referringUrl'), (r) => r.referringUrl, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'action'), (r) => r.action, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'program'), (r) => r.program, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'department'), (r) => r.department, true);
-                    collapseColumn(columns.findIndex((c) => c.data === 'chatId'), (r) => r.chatId, false, 'chat-id-cell');
-
-                    // Sort-icon tooltip text (visual only - see the
-                    // thead th[data-tooltip] comment in admin.css
-                    // for why this is a sighted-user mirror, not itself an
-                    // accessibility mechanism). Runs every draw, not just
-                    // initComplete, because the text depends on aria-sort
-                    // (set by DataTables' own header-update logic, which
-                    // runs as part of every draw cycle including sort
-                    // changes) - "activate for ascending sort" needs to
-                    // flip to "activate for descending sort" the moment a
-                    // column becomes the active sort, matching GC DS's own
-                    // table pattern (see admin.css comment above the CSS
-                    // rules this feeds).
-                    api.columns().header().each((header) => {
-                      if (!header.classList.contains('dt-orderable-asc') && !header.classList.contains('dt-orderable-desc')) return;
-                      const orderSpan = header.querySelector('.dt-column-order');
-                      if (!orderSpan) return;
-                      const title = (header.textContent || '').trim();
-                      const currentSort = header.getAttribute('aria-sort');
-                      // DataTables' own default per-column click cycle is
-                      // 3-state, not 2 - asSorting: ['asc', 'desc', ''] in
-                      // its own defaults (neither dashboard overrides it) -
-                      // ascending, then descending, then a third click
-                      // removes sorting entirely (aria-sort is removed,
-                      // same as a column that was never sorted), then back
-                      // to ascending. Matches GC DS's own getSortTitle
-                      // exactly: asc -> "activate descending", desc ->
-                      // "activate to remove sort" (not "activate
-                      // ascending" - that was wrong here before, a two-
-                      // state assumption that didn't match this app's
-                      // actual click behaviour), unsorted -> "activate
-                      // ascending".
-                      const nextKey = currentSort === 'ascending'
-                        ? 'admin.common.sortActivateDescending'
-                        : currentSort === 'descending'
-                          ? 'admin.common.sortRemove'
-                          : 'admin.common.sortActivateAscending';
-                      header.setAttribute('data-tooltip', t(nextKey).replace('{column}', () => title));
-                    });
-                  } catch (e) { /* ignore drawCallback errors */ }
-                },
+                // Striping and keep-chat-together cells - see
+                // utils/admin/chatGroupedTable.js.
+                ...buildChatGroupCallbacks({
+                  stateRef: chatGroupStateRef,
+                  columns,
+                  groupedColumns: [
+                    { data: 'expertEmail' },
+                    { data: 'creatorEmail' },
+                    { data: 'pageLanguage' },
+                    // Empty renders as "None" - merge those too.
+                    { data: 'referringUrl', mergeEmpty: true },
+                    { data: 'action' },
+                    { data: 'program' },
+                    { data: 'department' },
+                    { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                  ],
+                }),
                 // Add per-column header inputs
                 initComplete: function () {
                   try {
@@ -752,12 +582,13 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // - aria-label carries the spelled-out meaning instead.
                     const pageLanguageHeader = api.column(columns.findIndex((c) => c.data === 'pageLanguage')).header();
                     if (pageLanguageHeader) {
-                      pageLanguageHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.pageLanguageAriaLabel'));
+                      pageLanguageHeader.setAttribute('aria-label', t('admin.common.columns.pageLanguageAriaLabel'));
                     }
                   } catch (e) { /* ignore initComplete errors */ }
                 },
                 // ajax collects per-column searches and sends them to backend
                 ajax: async (dtParams, callback) => {
+                  const seq = ++ajaxSeqRef.current;
                   try {
                     setLoading(true);
                     setError(null);
@@ -792,6 +623,7 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     if (searchValue) query.search = searchValue;
                     if (Object.keys(columnSearches).length) query.columnSearch = columnSearches;
                     const result = await EvaluationService.getEvalDashboard(query);
+                    if (seq !== ajaxSeqRef.current) return;
                     const rows = Array.isArray(result?.data) ? result.data : [];
                     const start = Number.isFinite(Number(dtParams.start)) ? Number(dtParams.start) : 0;
                     const hasMore = result?.hasMore === true;
@@ -819,15 +651,17 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     // count-less "results updated" message instead of "N
                     // results found". TODO: pass the real count once a cheap
                     // one is available from the backend.
-                    noteSearchResult(searchValue, syntheticCount === 0 ? 0 : null);
+                    const loadCount = syntheticCount === 0 ? 0 : null;
+                    if (!noteSearchResult(searchValue, loadCount)) noteLoadResult(loadCount);
                     callback({ draw: dtParams.draw || 0, recordsTotal: syntheticCount, recordsFiltered: syntheticCount, data: rows });
                   } catch (err) {
                     console.error('Failed to load eval dashboard data', err);
+                    if (seq !== ajaxSeqRef.current) return;
                     setError(err.message || String(err));
                     setPageResultCount(0);
                     callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                   } finally {
-                    setLoading(false);
+                    if (seq === ajaxSeqRef.current) setLoading(false);
                   }
                 },
                 stateSaveCallback: function (settings, data) {

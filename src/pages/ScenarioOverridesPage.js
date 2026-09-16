@@ -8,6 +8,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import ScenarioSubmitInstructions from '../components/scenario/ScenarioSubmitInstructions.js';
 // The `diff` package is a valid dependency but some eslint configurations
 // (especially with ESM/Type:module projects) may incorrectly flag it as
@@ -103,17 +104,22 @@ class PageErrorBoundary extends React.Component {
   }
   render() {
     if (this.state.hasError) {
-      // this.props.t?.(...), not this.props.t(...): a fallback render must
-      // never itself throw (there's no boundary above this one to catch a
-      // secondary error) — optional-chain the call rather than restoring
-      // main's old `t ? t(key, 'fallback text') : 'fallback text'` guard,
-      // which duplicated a literal fallback string alongside every locale
-      // key (against this repo's t()-takes-only-a-key convention).
+      // Hardcoded and bilingual on purpose, not t()-driven: this is the one
+      // screen in the app that must render even if something above it —
+      // including the translation system itself — is what broke. No prop,
+      // no function call, nothing here that can itself throw and leave the
+      // admin with a blank screen instead of a fallback. Both languages
+      // shown together since we can't safely assume which one the admin
+      // needs. role="alert" so a screen reader announces this immediately
+      // if the boundary trips without a full page navigation (e.g. a
+      // second render after some in-page action).
       return (
         <GcdsContainer layout="page" className="mb-600">
-          <h1 className="mb-400">{this.props.t?.('scenarioOverrides.title')}</h1>
-          <p style={{ color: '#d3080c' }}>{this.props.t?.('scenarioOverrides.error.fallback')}</p>
-          <p>{this.state.error?.toString?.() || ''}</p>
+          <h1 className="mb-400">Edit and test scenarios / Modifier et tester les scénarios</h1>
+          <p role="alert" style={{ color: '#d3080c' }}>
+            An error occurred while loading this page. / Une erreur est survenue lors du chargement de cette page.
+          </p>
+          <p><code lang="en">{this.state.error?.toString?.() || ''}</code></p>
         </GcdsContainer>
       );
     }
@@ -201,8 +207,13 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   // focus to <body> in every browser — moving focus onto the outcome
   // message once the save settles gives keyboard/screen-reader users
   // somewhere sensible to land instead of silently resetting to the top of
-  // the page.
-  const saveStatusRef = useRef(null);
+  // the page. Driven by a counter through useFocusOnChange (an effect, so
+  // it runs after the outcome has actually rendered) rather than calling
+  // .focus() in the same tick as setSaveStatus — at that point the message
+  // isn't in the DOM yet. The counter, not a boolean, so a second save
+  // landing on the identical outcome still re-focuses.
+  const [saveFocusCount, setSaveFocusCount] = useState(0);
+  const saveStatusRef = useFocusOnChange(saveFocusCount);
   const copyStatusRef = useRef(null);
   // Every action on this page already clears both saveStatus and
   // copyStatus explicitly (department switch, text edit, checkbox,
@@ -391,10 +402,10 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       });
     } finally {
       setSaving(false);
-      // Runs after the disabled Save button (or the disabled checkbox) has
-      // already dropped focus to <body> — reclaims it onto the outcome
-      // message, success or error alike.
-      saveStatusRef.current?.focus?.();
+      // The disabled Save button (or the disabled checkbox) has already
+      // dropped focus to <body> — reclaim it onto the outcome message once
+      // it renders, success or error alike.
+      setSaveFocusCount((n) => n + 1);
     }
   };
 
@@ -498,7 +509,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       setSaveStatus({ variant: 'error', message: t('scenarioOverrides.status.revertError') });
     } finally {
       setReverting(false);
-      saveStatusRef.current?.focus?.();
+      setSaveFocusCount((n) => n + 1);
     }
   };
 
@@ -520,7 +531,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   const showTestLink = Boolean(enabled && updatedAt && !dirty);
 
   return (
-    <PageErrorBoundary t={t}>
+    <PageErrorBoundary>
       <GcdsContainer layout="page" className="mb-600">
         <h1 className="mb-400">{pageTitle}</h1>
         <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
@@ -755,17 +766,9 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               {t('scenarioOverrides.buttons.copy')}
             </GcdsButton>
             {/* A completed copy is a real outcome, same as save/revert — the
-                success/error box states, not the plain no-variant style.
-                persistent + tag="div": same reasoning as scenario-save-status
-                below — without both, this was populated-on-insertion (missed
-                by AT) the first time it ever appeared, and StatusMessage's
-                resolved tag flips <p> (empty) → <div> (variant set) between
-                renders without tag="div" pinned, forcing React to destroy
-                and recreate the node either way. */}
+                success/error box states, not the plain no-variant style. */}
             <StatusMessage
               ref={copyStatusRef}
-              tag="div"
-              persistent
               variant={copyStatus === 'copied' ? 'success' : copyStatus === 'error' ? 'error' : undefined}
               message={
                 copyStatus === 'copied' ? t('scenarioOverrides.status.copied')
@@ -774,33 +777,21 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               }
             />
 
-            {/* persistent: this region exists (empty) from first render, so
-                a save outcome landing in it is a content *change* an AT
-                picks up, not a fresh insertion with text already in it —
-                the exact failure mode StatusMessage.js's own doc comment
-                warns about. tabIndex + ref let handleSave reclaim focus
-                here once the (disabled, and therefore focus-dropping) Save
-                button settles. tag="div" is pinned explicitly: without it,
-                StatusMessage's resolved tag flips from <p> (empty) to <div>
-                (once variant is set) between renders, which forces React to
-                destroy and recreate the node — silently reintroducing the
-                same populated-on-insertion problem persistent exists to fix. */}
+            {/* tabIndex + ref let handleSave/handleRevert reclaim focus here
+                once the (disabled, and therefore focus-dropping) Save/Revert
+                button settles — see saveStatusRef's own comment.
+                announce={false} because of that focus move: focus landing
+                on the message already reads it, and a live announcement on
+                top was a double read. */}
             <StatusMessage
               id="scenario-save-status"
               ref={saveStatusRef}
               tabIndex={-1}
-              tag="div"
-              persistent
+              announce={false}
+              announcedVia="focus"
               variant={saveStatus?.variant}
-              message={saveStatus?.variant === 'error' ? saveStatus.message : undefined}
-            >
-              {saveStatus?.variant === 'success' ? (
-                <>
-                  <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
-                  {saveStatus.message}
-                </>
-              ) : undefined}
-            </StatusMessage>
+              message={saveStatus?.message}
+            />
 
             {/* Pulled out of the success message on purpose — this reflects
                 current state ("is there an active saved scenario right now"),

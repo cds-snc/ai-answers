@@ -1,3 +1,5 @@
+import { normalizePathname } from '../utils/normalizePathname.js';
+
 export const PUBLIC_HOME_ROUTE_PATHS = ['/', '/en', '/fr'];
 
 export const PUBLIC_AUTH_ALWAYS_EXEMPT_PATHS = [
@@ -30,6 +32,5 @@ export const getPublicAuthExemptPaths = (requireAuthForChat = false) => {
 };
 
 export const isPublicAuthExemptPath = (pathname, requireAuthForChat = false) => {
-  const normalizedPathname = pathname && pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
-  return getPublicAuthExemptPaths(requireAuthForChat).has(normalizedPathname || '/');
+  return getPublicAuthExemptPaths(requireAuthForChat).has(normalizePathname(pathname || '/'));
 };

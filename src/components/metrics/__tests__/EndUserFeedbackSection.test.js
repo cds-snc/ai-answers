@@ -64,13 +64,14 @@ describe('EndUserFeedbackSection', () => {
     // MetricsDashboard.js's Institution breakdown table — carries the same
     // CSS class so the styled search box/sort-header treatment is ready to
     // go, but paging/searching/ordering stay off deliberately until that's
-    // actually wanted (no layout/initComplete either, since those only do
-    // anything once search/sort are on).
-    expect(reasonsTable.className).toBe('display dashboard-table');
+    // actually wanted (no layout either, since it only does anything once
+    // search/sort are on). initComplete is the one exception: it wires
+    // scope="col" on the headers (WCAG 1.3.1), which every table needs.
+    expect(reasonsTable.className).toBe('display dashboard-table zebra-stable-on-hover');
     expect(reasonsTable.options.paging).toBe(false);
     expect(reasonsTable.options.searching).toBe(false);
     expect(reasonsTable.options.ordering).toBe(false);
     expect(reasonsTable.options.layout).toBeUndefined();
-    expect(reasonsTable.options.initComplete).toBeUndefined();
+    expect(reasonsTable.options.initComplete).toBeTypeOf('function');
   });
 });

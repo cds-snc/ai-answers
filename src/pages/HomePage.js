@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import ChatAppContainer from "../components/chat/ChatAppContainer.js";
+import ChatReviewPage from "./ChatReviewPage.js";
 import {
   GcdsContainer,
   GcdsDetails,
@@ -12,9 +13,10 @@ import { useTranslations } from "../hooks/useTranslations.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import DataStoreService from "../services/DataStoreService.js";
 import OutageComponent from "../components/OutageComponent.js";
-import { useHasAnyRole } from "../components/RoleBasedUI.js";
 import { getPath } from "../utils/routes.js";
 import { CanadaCaAccessibleLabel } from "../utils/pronounceCanadaCa.js";
+import { getAnswerLanguage } from "../utils/answerLanguage.js";
+import { useHasAnyRole } from "../components/RoleBasedUI.js";
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -54,9 +56,24 @@ class ErrorBoundary extends React.Component {
 const HomePage = ({ lang = "en" }) => {
   const { loading: authLoading } = useAuth();
   const { t } = useTranslations(lang);
+  // Flags a live admin/partner testing session — same role gate ChatOptions
+  // itself uses for its evaluation controls, and review mode (ChatReviewPage)
+  // is inherently admin-only already, so this only matters here, on the live
+  // entry point.
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
   const [searchParams] = useSearchParams();
   const reviewChatId = searchParams.get("chat");
   const reviewMode = searchParams.get("review") === "1";
+  // The reviewing admin's own current UI language, carried forward as a
+  // query param by reviewLink.js's buildChatReviewLinkHtml/buildChatReviewHref
+  // rather than by the route itself - the route (`lang`) stays tied to the
+  // reviewed chat's own pageLanguage so the transcript (answer bubbles,
+  // citation heading) shows what the end user actually saw. `adminLang` is
+  // for the admin-only chrome around that transcript (ExpertFeedbackPanel,
+  // "How was this answer?", Chat ID/Date/Referring URL labels) to use
+  // instead of silently inheriting the chat's language. Falls back to the
+  // route's own `lang` outside review mode / when absent.
+  const adminLang = searchParams.get("adminLang") || lang;
   // Parse interaction from hash (e.g. #interaction=interactionId5abcd)
   const getInteractionFromHash = () => {
     try {
@@ -70,7 +87,6 @@ const HomePage = ({ lang = "en" }) => {
     }
   };
   const [targetInteractionId, setTargetInteractionId] = useState(getInteractionFromHash());
-  // const isPrivileged = useHasAnyRole(["admin", "partner"]);
   const [serviceStatus, setServiceStatus] = useState({
     isAvailable: null,
     sessionAvailable: null,
@@ -154,6 +170,16 @@ const HomePage = ({ lang = "en" }) => {
                 id: inter.interactionId,
                 text: inter.question?.redactedQuestion || "",
                 sender: "user",
+                // The detected question language, not the whole interaction
+                // object the paired AI message gets below - without this,
+                // ChatInterface.js's question-bubble lang tag
+                // (toLangAttr(message.questionLanguage)) has nothing to read
+                // and silently renders no lang attribute at all. Deliberately
+                // not `interaction: inter` here - see ChatAppContainer.js's
+                // matching comment for why a user-sender message should
+                // never carry a real `.interaction` (server-side code reads
+                // `.interaction` presence as "this is the AI's turn").
+                questionLanguage: getAnswerLanguage(inter),
               });
             }
             if (inter) {
@@ -195,13 +221,40 @@ const HomePage = ({ lang = "en" }) => {
     return <OutageComponent lang={lang} />;
   }
 
+  // Swapped in for the whole page, same URL - review mode never needed the
+  // public "ask a new question" chrome below (H1/subtitle/privacy
+  // disclosure), and ChatReviewPage.js gives it its own admin-appropriate
+  // header/H1 instead. Data fetched above (initialMessages, chatCreatedAt,
+  // reviewReferringUrl, targetInteractionId) is review-mode-only already -
+  // reused as-is, not recomputed.
+  if (reviewMode) {
+    return (
+      <ChatReviewPage
+        lang={lang}
+        adminLang={adminLang}
+        chatId={chatId}
+        initialMessages={initialMessages}
+        chatCreatedAt={chatCreatedAt}
+        referringUrl={reviewReferringUrl}
+        targetInteractionId={targetInteractionId}
+        onSessionError={handleSessionError}
+        onChatIdUpdate={setChatId}
+      />
+    );
+  }
+
   return (
     <ErrorBoundary t={t}>
       <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
+        {isAdminOrPartner && (
+          <span className="referring-url-label admin-view-label mb-300">
+            {t("homepage.chat.input.adminViewLabel")}
+          </span>
+        )}
         <CanadaCaAccessibleLabel
           as="h2"
-          className="homepage-subtitle mt-400"
+          className="homepage-subtitle mt-0"
           text={t("homepage.subtitle")}
           lang={lang}
         />
@@ -241,10 +294,14 @@ const HomePage = ({ lang = "en" }) => {
         <ChatAppContainer
           lang={lang}
           chatId={chatId}
-          readOnly={reviewMode}
           initialMessages={initialMessages}
-          // Pass saved review value separately, and clientReferrer separately.
-          // ChatAppContainer will prefer pageUrl when present and ignore clientReferrer.
+          // Populated whenever ?chat= is present, review=1 or not - a
+          // ?chat=X URL with no &review=1 resumes that chatId live
+          // (editable), not read-only, so these still matter here even
+          // though reviewMode is guaranteed false past the early return
+          // above. Pass saved review value separately, and clientReferrer
+          // separately - ChatAppContainer will prefer pageUrl when present
+          // and ignore clientReferrer.
           initialReferringUrl={reviewReferringUrl}
           chatCreatedAt={chatCreatedAt}
           clientReferrer={clientReferrer}
@@ -253,16 +310,14 @@ const HomePage = ({ lang = "en" }) => {
           onChatIdUpdate={setChatId}
         />
       </div>
-      {!reviewMode && (
-        <div className="mb-600 container-custom">
-          <p className="mb-300">
-            <CanadaCaAccessibleLabel as="span" text={t("homepage.about.builtBy")} lang={lang} />{" "}
-            <a href={getPath('about', lang)}>
-              {t("homepage.about.learnMore")}
-            </a>.
-          </p>
-        </div>
-      )}
+      <div className="mb-600 container-custom">
+        <p className="mb-300">
+          <CanadaCaAccessibleLabel as="span" text={t("homepage.about.builtBy")} lang={lang} />{" "}
+          <a href={getPath('about', lang)}>
+            {t("homepage.about.learnMore")}
+          </a>.
+        </p>
+      </div>
     </ErrorBoundary>
   );
 };

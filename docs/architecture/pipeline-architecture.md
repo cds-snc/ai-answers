@@ -4,81 +4,89 @@
 
 AI Answers uses a **LangGraph-based state machine architecture** to orchestrate a multi-step pipeline that processes user questions through validation, translation, context derivation, and answer generation stages. This architecture ensures reliable, traceable, and auditable AI interactions.
 
-**Last Updated:** November 2025
+**Last Updated:** August 2026
+
+**Companion documents:** [SYSTEM_CARD.md](../../SYSTEM_CARD.md) and
+[SYSTEM_CARD_FR.md](../../SYSTEM_CARD_FR.md) carry the plain-language version of this
+pipeline for a general and governance audience. This document is the developer view (nodes,
+state, file references); the card is the reader-facing one. They are deliberately at
+different levels of detail, but a step added, removed, or moved out of the production graph
+here has to be reflected there — in both languages. See
+[AGENTS.md](../../AGENTS.md#keep-the-pipeline-docs-in-sync--they-have-different-jobs).
 
 ---
 
 ## Table of Contents
 
-1. [High-Level Architecture](#high-level-architecture)
+1. [Pipeline at a Glance](#pipeline-at-a-glance)
 2. [LangGraph State Machine](#langgraph-state-machine)
 3. [Pipeline Execution Flow](#pipeline-execution-flow)
-4. [Key Components](#key-components)
-5. [State Management](#state-management)
-6. [Error Handling & Resilience](#error-handling--resilience)
-7. [Performance Optimizations](#performance-optimizations)
+4. [Optional Node: Short-Circuit Check](#optional-node-short-circuit-check-shortcircuit--variant-graphs-only)
+5. [After the Answer: Evaluation and the Feedback Loop](#after-the-answer-evaluation-and-the-feedback-loop)
+6. [State Management](#state-management)
+7. [Monitoring & Observability](#monitoring--observability)
 8. [Related Documentation](#related-documentation)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
-## High-Level Architecture
+## Pipeline at a Glance
 
+Every question runs the same graph server-side. The diagram is the production graph
+(`GenericWithQAGraph`); dashed edges are the variant-only short-circuit path and the
+post-answer track that closes the evaluation loop.
+
+```mermaid
+flowchart TD
+    Browser["Browser - SSE stream"] --> API["api/chat/chat-graph-run.js"]
+    API --> init
+
+    subgraph Graph["LangGraph state machine - GenericWithQAGraph, in production"]
+        direction TB
+        init["1. init<br/>timing, initial status"]
+        validate["2. validate<br/>short-query guardrail"]
+        redact["3. redact<br/>word lists + AI PI detection<br/>blocks, never persists"]
+        translate["4. translate<br/>detect language, translate to EN<br/>+ post-translation guard"]
+        ctx["5. contextNode<br/>query rewrite, search,<br/>institution match<br/>→ sets the abbrKey"]
+        sim["6. similarQuestions<br/>eval-informed answering:<br/>inject expert-rated past Q/A"]
+        ans["7. answerNode<br/>systemPrompt.js assembles: base + safety +<br/>citation rules + that institution's scenarios<br/>+ injected evals, then answers with tools"]
+        verify["8. verifyNode<br/>citation URL check, builds result"]
+        persist["9. persistNode<br/>save interaction, create embeddings"]
+
+        init --> validate --> redact --> translate --> ctx --> sim --> ans --> verify --> persist
+    end
+
+    sc["shortCircuit - instant verified answers<br/>variant graphs only, not in production"]
+    translate -.-> sc
+    sc -. "match: skip context and answer" .-> verify
+    sc -. "no match" .-> ctx
+
+    verify -. "result event" .-> Browser
+
+    persist --> classify["program and action classification<br/>background"]
+    persist --> autoeval["auto-evaluation<br/>writes AI-typed ExpertFeedback<br/>reporting only, never reused"]
+    persist --> emb[("Embedding docs<br/>no feedback metadata yet,<br/>not retrievable")]
+
+    human["human expert evaluation<br/>sampled, hours to weeks later"] --> emb
+    emb -. "feedback metadata + vector index entry" .-> sim
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         User/Browser                             │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Frontend (React)                              │
-│  • Chat Interface                                                │
-│  • SSE Status Updates                                            │
-│  • Accessibility Features                                        │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              API Layer: /api/chat/chat-graph-run.js             │
-│  • Entry point for graph execution                              │
-│  • Streams status updates to client                             │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│            LangGraph State Machine (Server-Side)                │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Graph Registry: agents/graphs/registry.js                │  │
-│  │  • Manages available graph workflows                      │  │
-│  │  • DefaultWithVectorGraph (primary)                       │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Graph Nodes (Pipeline with Conditional Branching)       │  │
-│  │  1. init          → Initialize state                      │  │
-│  │  2. validate      → Short query validation                │  │
-│  │  3. redact        → PI detection & question blocking      │  │
-│  │  4. translate     → Language detection & translation      │  │
-│  │  5. shortCircuit  → Similar answer detection              │  │
-│  │     ├─ If match found: → verifyNode (skip context/answer) │  │
-│  │     └─ If no match: → contextNode (continue flow)         │  │
-│  │  6. contextNode   → Search & context derivation           │  │
-│  │  7. answerNode    → Answer generation                     │  │
-│  │  8. verifyNode    → Citation URL verification             │  │
-│  │  9. persistNode   → Save to database                      │  │
-│  │  10. END          → Return result                         │  │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Infrastructure Layer                         │
-│  • AWS DocumentDB: Persistence (MongoDB-compatible)             │
-│  • AI Providers: OpenAI, Azure OpenAI, Anthropic                │
-│  • Search: Canada.ca, Google                                    │
-│  • Embedding Service: Vector similarity                         │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+**Institution-specific instructions:** the `contextNode` match is what makes the next two
+steps institution-aware. Its `abbrKey` (e.g. `EDSC-ESDC`, `CRA-ARC`) is what
+`systemPrompt.js` uses to dynamically import that institution's
+`agents/prompts/scenarios/context-{abbrKey}/` scenarios into the prompt for this one
+answer. No context match means no institution scenarios are loaded — the answer falls back
+to the general prompt.
+
+**Reading the loop:** `persistNode` writes embeddings that nothing can retrieve yet. A
+human expert evaluation attaches the feedback metadata and registers those embeddings in
+the vector index, which is what makes the interaction available to `similarQuestions` for
+future questions. Auto-evaluations never join that corpus — see
+[After the Answer](#after-the-answer-evaluation-and-the-feedback-loop).
+
+For hosting, data stores, model providers and search services, see
+[Infrastructure Diagram](./infrastructure-diagram.md) — this document stays on the request
+pipeline itself.
 
 ---
 
@@ -94,18 +102,19 @@ LangGraph is a framework for building stateful, multi-actor applications with LL
 
 ### Graph Definition
 
-**File:** [`agents/graphs/DefaultWithVectorGraph.js`](../../agents/graphs/DefaultWithVectorGraph.js)
+**File:** [`agents/graphs/GenericWithQAGraph.js`](../../agents/graphs/GenericWithQAGraph.js)
 
-The graph is defined using the `StateGraph` class from `@langchain/langgraph`:
+The graph is defined using the `StateGraph` class from `@langchain/langgraph`. The
+production graph is linear — every question runs the full pipeline:
 
 ```javascript
-const workflow = new StateGraph(GraphState)
+const graph = new StateGraph(GraphState)
   .addNode('init', initNode)
   .addNode('validate', validateNode)
   .addNode('redact', redactNode)
   .addNode('translate', translateNode)
-  .addNode('shortCircuit', shortCircuitNode)
   .addNode('contextNode', contextNode)
+  .addNode('similarQuestions', similarQuestionsNode)
   .addNode('answerNode', answerNode)
   .addNode('verifyNode', verifyNode)
   .addNode('persistNode', persistNode)
@@ -113,20 +122,36 @@ const workflow = new StateGraph(GraphState)
   .addEdge('init', 'validate')
   .addEdge('validate', 'redact')
   .addEdge('redact', 'translate')
-  .addEdge('translate', 'shortCircuit')
-  .addConditionalEdges(
-    'shortCircuit',
-    (state) => state.shortCircuitPayload ? 'skipAnswer' : 'runAnswer',
-    {
-      skipAnswer: 'verifyNode',
-      runAnswer: 'contextNode'
-    }
-  )
-  .addEdge('contextNode', 'answerNode')
+  .addEdge('translate', 'contextNode')
+  .addEdge('contextNode', 'similarQuestions')
+  .addEdge('similarQuestions', 'answerNode')
   .addEdge('answerNode', 'verifyNode')
   .addEdge('verifyNode', 'persistNode')
   .addEdge('persistNode', END);
 ```
+
+### Graph variants
+
+All graphs share the same backbone. They differ only in which eval-driven nodes they
+add — see [Using Evals for Answers](./using-evals-for-answers.md) for the full
+comparison and the retrieval parameters each one passes.
+
+| Graph | `shortCircuit` (instant verified answers) | `similarQuestions` (eval-informed answering) |
+|---|---|---|
+| [`GenericWithQAGraph`](../../agents/graphs/GenericWithQAGraph.js) — **in production** | ❌ | ✅ rating ≤ 100 (`lte`, k=3, threshold=0.75) |
+| [`GenericGraph`](../../agents/graphs/GenericGraph.js) | ❌ | ❌ |
+| [`DefaultWithVectorGraph`](../../agents/graphs/DefaultWithVectorGraph.js) — registry fallback | ✅ rating = 100 | ❌ |
+| [`InstantAndQAGraph`](../../agents/graphs/InstantAndQAGraph.js) | ✅ rating = 100 | ✅ rating < 100 |
+| [`DefaultWithLocalModel`](../../agents/graphs/DefaultWithLocalModel.js) | ✅ (local model ranker) | ❌ |
+
+**Graph selection:** the client names a graph (`src/workflows/GraphClient.js`, following
+the `workflow.default` setting) and [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
+resolves it through [`agents/graphs/registry.js`](../../agents/graphs/registry.js). The
+code-level fallback when no valid name arrives is `DefaultWithVectorGraph`; the
+fallback in `src/config/workflows.js` (`DEFAULT_WORKFLOW`) is `GenericGraph`.
+
+The short-circuit path is **experimental and not deployed** — every graph that relies on
+it is held back.
 
 ### State Annotations
 
@@ -148,17 +173,24 @@ The graph maintains state across all nodes with these key fields:
   overrideUserId: string,        // Override user ID for special cases
   redactedText: string,          // Text after PI redaction
   translationData: object,       // Translation results
-  context: object,               // Derived context (dept, topic, search results)
-  usedExistingContext: boolean,  // Whether context was reused
-  shortCircuitPayload: object,   // Similar answer data (if found)
+  context: object,               // Derived context (department, search results,
+                                 //   similarQuestions block, qaMatches)
+  usedExistingContext: boolean,  // Whether context was reused (always false in the
+                                 //   production graph — see step 5d)
   answer: object,                // Generated answer
   finalCitationUrl: string,      // Verified citation URL
-  confidenceRating: number,      // Answer confidence (0-10)
   status: string,                // Current pipeline status (camelCase)
   result: object,                // Final result object
   startTime: number              // Pipeline start time (ms)
 }
 ```
+
+The `similarQuestions` node writes back into `context` rather than adding a state field —
+it returns `{ ...state.context, similarQuestions, qaMatches }`.
+
+Short-circuit graphs add two more fields: `shortCircuitPayload` (the reused answer, when a
+match is found) and `shortCircuitDebugPayload` (candidates and reason, for ChatViewer).
+`GenericWithQAGraph` declares neither.
 
 ---
 
@@ -173,7 +205,7 @@ The graph maintains state across all nodes with these key fields:
 - Set initial status to `moderatingQuestion`
 - Initialize state fields
 
-**File:** [`agents/graphs/DefaultWithVectorGraph.js:47-51`](../../agents/graphs/DefaultWithVectorGraph.js#L47-L51)
+**File:** [`agents/graphs/GenericWithQAGraph.js`](../../agents/graphs/GenericWithQAGraph.js#L45)
 
 ---
 
@@ -218,7 +250,8 @@ The graph maintains state across all nodes with these key fields:
 
 #### Stage 2: AI-Powered PI Detection
 - AI detects person names, personal IDs, US ZIP codes
-- Uses GPT-4 mini with specialized prompt
+- Uses Azure GPT-4o with a specialized prompt — pinned to gpt-4o regardless of the
+  selected model family so PI detection stays in-region (Canada East)
 - Detected PI is marked with `XXX` to show user what was found
 - Question is then blocked programmatically (blocked questions are never logged or processed)
 
@@ -231,7 +264,7 @@ The graph maintains state across all nodes with these key fields:
 
 ### 4. Translation (`translate` node)
 
-**Type:** AI-powered (GPT-4 mini)
+**Type:** AI-powered (Azure GPT-4.1 mini, `createTranslationAgent`)
 **Status:** `moderatingQuestion`
 
 **Purpose:** Detect language and translate to English for processing
@@ -271,67 +304,46 @@ language to `unsupportedLanguage`.
 
 ---
 
-### 5. Short-Circuit Check (`shortCircuit` node)
-
-**Type:** AI-powered (vector similarity + reranking)
-**Status:** `generatingAnswer`
-
-**Purpose:** Detect if a similar question was already answered **perfectly** (runs BEFORE context derivation)
-
-**Process:**
-1. Skip short-circuit if conversation already has prior AI replies
-2. Generate embedding for current question
-3. Search embeddings database for similar questions **filtered to `expertFeedback.totalScore === 100`** (perfect-score past answers only)
-4. Use reranker agent to validate candidates against the current question
-5. If a perfect-score candidate passes the reranker's `allPass(checks)` verdict:
-   - Set `shortCircuitPayload` with the existing answer
-   - Skip directly to `verifyNode` (bypass context and answer generation)
-6. Otherwise: proceed to `contextNode`
-
-**Why score=100 only:** Short-circuit serves a past answer verbatim with no opportunity for correction. Anything less than a perfect expert score means there is at least one flagged issue in that answer, so it must not be served as-is. The expert-score filter is enforced at the vector retrieval layer (`requestedRating: 100` in `GraphWorkflowHelper.checkSimilarAnswer`).
-
-**Benefits:**
-- Faster responses (no context derivation or answer generation needed)
-- Lower AI costs
-- Consistent, high-quality answers to similar questions
-
-**Note:** `GenericWithQAGraph` and `InstantAndQAGraph` separately surface score-<100 past answers as **context** for the answer node (via a `similarQuestions` node, not via short-circuit) so the model can see "here's what was wrong last time." See `QuestionAnswerService.getSimilarQuestionsContext()`.
-
-**File:** [`api/chat/chat-similar-answer.js`](../../api/chat/chat-similar-answer.js)
-
----
-
-### 6. Context Derivation (`contextNode`)
+### 5. Context Derivation (`contextNode`)
 
 **Type:** AI-powered (multi-step)
 **Status:** `buildingContext` → `generatingAnswer`
 
 **Purpose:** Generate search query, execute search, identify department
 
-**Note:** This node is SKIPPED if short-circuit finds a matching answer
+**Note:** In the short-circuit variant graphs this node is SKIPPED when a matching
+verified answer is found
 
 #### Sub-steps:
 
-**6a. Query Rewrite**
+**5a. Query Rewrite**
 - Craft optimized search query from translated text
 - Consider conversation history
-- Model: GPT-4 mini
+- Model: Azure GPT-4.1 mini (`createQueryRewriteAgent`)
 
-**6b. Search Execution**
+**5b. Search Execution**
 - Execute search using Canada.ca or Google
 - Configurable via `searchProvider` parameter
 - Tools: `canadaCaContextSearch.js`, `googleContextSearch.js`
 
-**6c. Department Matching**
-- Match question to Government of Canada department
-- Identify topic and relevant URLs
-- Parse department code (e.g., `EDSC-ESDC`, `CRA-ARC`)
-- Load department-specific scenarios if available
+**5c. Institution Matching**
+- Match question to a Government of Canada institution
+- Identify relevant URLs
+- Parse the institution code / `abbrKey` (e.g., `EDSC-ESDC`, `CRA-ARC`)
+- The `abbrKey` is what loads that institution's scenarios into the answer prompt (step 7)
+- Categorizing *what the question was about* is not done here — that is the program/action
+  classification, which runs after the answer
+  ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
 
-**6d. Context Reuse (Optimization)**
-- Check if previous message has valid context
-- Reuse if applicable (saves time and cost)
-- Function: `getContextForFlow()`
+**5d. Context Reuse — variant graphs only**
+- **The production graph does not reuse context.** `GenericWithQAGraph` and `GenericGraph`
+  call `deriveContext` directly and hardcode `usedExistingContext: false`
+  ([`GenericWithQAGraph.js:123-139`](../../agents/graphs/GenericWithQAGraph.js#L123)), so
+  fresh context is derived for **every** question, follow-ups included. This matters for
+  institution identification on multi-turn conversations.
+- `DefaultWithVectorGraph` and `InstantAndQAGraph` instead call `getContextForFlow()`,
+  which reuses a previous turn's context when it is still valid and sets
+  `usedExistingContext` accordingly.
 
 **Files:**
 - [`agents/graphs/services/contextService.js`](../../agents/graphs/services/contextService.js)
@@ -340,16 +352,60 @@ language to `unsupportedLanguage`.
 
 ---
 
+### 6. Eval-Informed Answering (`similarQuestions` node)
+
+**Type:** Embedding + vector retrieval (no LLM call — the question is embedded via
+`EmbeddingService`, but nothing is generated or reranked by an LLM. The reranker
+(`rerankerPrompt.js` → `rankerStrategy.js` → `LLMRankerComparator`) belongs to the
+short-circuit path only, through `SimilarAnswerService`.)
+**Status:** `generatingAnswer`
+
+**Purpose:** Retrieve expert-rated past Q/A pairs for this question and hand them to the
+answer node as reference material, so the model can copy what experts marked correct and
+avoid what they flagged as wrong. *This is the production graph's eval-driven step — the
+system card calls it **eval-informed answering**.*
+
+**Process:**
+1. Call `QuestionAnswerService.getSimilarQuestionsContext(userMessage, opts)` with
+   `k: 3`, `threshold: 0.75`, `expertFeedbackRating: 100`, `expertFeedbackComparison: 'lte'`,
+   `recencyDays: 365`, `useDenormalizedPreFilter: true`, `returnDebugData: true`.
+   `lte` means **both** perfect-score and lower-score pairs are eligible: perfect ones as a
+   known-good model, lower ones with the expert's sentence-level comments as mistakes to avoid.
+2. Candidates below the `0.75` cosine-similarity floor are dropped at the vector layer, and
+   hits whose expert feedback is older than 365 days are dropped (unless flagged `neverStale`).
+3. Write the formatted block back into `context.similarQuestions`, plus `context.qaMatches`
+   (chatId, interactionId, similarity, score, question/answer text) for ChatViewer.
+4. Failures are non-fatal: the node logs a warning and continues with an empty block.
+
+**How the model sees it:** `GraphWorkflowHelper.sendAnswerRequest` forwards
+`context.similarQuestions` into `systemPrompt.js`, which renders it under a
+**## Verified Similar Questions** heading with instructions on how to weight scores,
+`correct-url=` corrections, and dates. An empty string renders no block at all.
+
+**Inspecting it:** the `node:similarQuestions output` event carries the injected text, the
+matched records, and the pre-threshold candidates —
+`node scripts/check-chat-logs.js <file.json> --filter similarQuestions`.
+
+**Files:**
+- Node: [`agents/graphs/GenericWithQAGraph.js`](../../agents/graphs/GenericWithQAGraph.js#L146)
+- Service: [`services/QuestionAnswerService.js`](../../services/QuestionAnswerService.js)
+- Prompt assembly: [`agents/prompts/systemPrompt.js`](../../agents/prompts/systemPrompt.js)
+- Full design notes: [Using Evals for Answers](./using-evals-for-answers.md)
+
+---
+
 ### 7. Answer Generation (`answerNode`)
 
 **Type:** AI-powered (configurable model)
 **Status:** `generatingAnswer`
 
-**Purpose:** Generate answer using context and conversation history (SKIPPED if short-circuit found match)
+**Purpose:** Generate answer using context and conversation history (SKIPPED in the
+short-circuit variants when a verified match was found)
 
 **Input:**
 - Translated question
-- Derived context (department, topic, search results)
+- Derived context (department, search results)
+- Expert-rated similar Q/A pairs from the `similarQuestions` node
 - Conversation history
 - Department-specific scenarios (if available)
 - System prompt with instructions
@@ -410,10 +466,14 @@ language to `unsupportedLanguage`.
 **Type:** Database write
 **Status:** `complete` or `needClarification`
 
-**Purpose:** Save interaction to database and trigger evaluation (SKIPPED if short-circuit, as already persisted)
+**Purpose:** Save interaction to database and trigger evaluation (in the short-circuit
+variants this is SKIPPED on a match, because the `shortCircuit` node already persisted)
 
 **Operations:**
-1. Create embeddings via `EmbeddingService`
+1. Create embeddings via `EmbeddingService` — retrievable by
+   [step 6](#6-eval-informed-answering-similarquestions-node) only once a human expert
+   evaluation is attached later; see
+   [After the Answer](#after-the-answer-evaluation-and-the-feedback-loop)
 2. Save to database:
    - Chat
    - Interaction
@@ -422,7 +482,10 @@ language to `unsupportedLanguage`.
    - Answer
    - Citation
    - Tool usage
-3. Trigger evaluation (background or foreground based on deployment mode)
+3. Classify program/action in the background (institution reporting)
+4. Trigger auto-evaluation — awaited in `Vercel` deployment mode, dispatched to a worker
+   pool in `CDS` mode. Not every interaction ends up with an evaluation; see
+   [After the Answer](#after-the-answer-evaluation-and-the-feedback-loop)
 
 **Metadata Tracked:**
 - Response time
@@ -432,7 +495,8 @@ language to `unsupportedLanguage`.
 - Input/output tokens
 - Confidence rating
 
-**File:** [`api/db/db-persist-interaction.js`](../../api/db/db-persist-interaction.js)
+**Files:** [`api/db/db-persist-interaction.js`](../../api/db/db-persist-interaction.js),
+[`services/InteractionPersistenceService.js`](../../services/InteractionPersistenceService.js)
 
 ---
 
@@ -444,6 +508,9 @@ language to `unsupportedLanguage`.
 **Purpose:** Stream final result to client
 
 **Response Format (SSE):**
+The `result` object is built by `verifyNode` (so the client gets it before `persistNode`
+finishes) and emitted as a `result` SSE event with `chatId` merged in:
+
 ```javascript
 {
   answer: {
@@ -454,23 +521,185 @@ language to `unsupportedLanguage`.
     citationUrl: string
   },
   context: {
-    topic: string,
     department: string,
     departmentUrl: string,
-    searchResults: array
+    searchResults: array,
+    similarQuestions: string,   // injected eval block (GenericWithQAGraph)
+    qaMatches: array            // matched past Q/A, for ChatViewer
   },
   question: string,
   citationUrl: string,
-  confidenceRating: number,
-  metadata: {
-    responseTime: number,
-    model: string,
-    toolsUsed: array
-  }
+  historySignature: string,
+  chatId: string
 }
 ```
 
+`status` events stream separately throughout the run; the stream is drained to the end
+after the result so `persistNode` still completes.
+
 **File:** [`api/chat/chat-graph-run.js`](../../api/chat/chat-graph-run.js)
+
+---
+
+## Optional Node: Short-Circuit Check (`shortCircuit`) — variant graphs only
+
+**Type:** AI-powered (vector similarity + reranking)
+**Status:** `generatingAnswer`
+**Graphs:** `DefaultWithVectorGraph`, `InstantAndQAGraph`, `DefaultWithLocalModel` —
+**not** the production graph. Public-facing name: **instant verified answers**.
+
+**Status of this path:** experimental. In testing it has not been reliable enough to
+deploy (risk of serving a near-match's answer to a subtly different question), so the
+graphs that use it are held back.
+
+**Purpose:** Detect if a similar question was already answered **perfectly** (runs after
+`translate`, BEFORE context derivation)
+
+**Process:**
+1. Skip short-circuit if conversation already has prior AI replies
+2. Generate embedding for current question
+3. Search embeddings database for similar questions **filtered to `expertFeedback.totalScore === 100`** (perfect-score past answers only)
+4. Use reranker agent to validate candidates against the current question
+5. If a perfect-score candidate passes the reranker's `allPass(checks)` verdict:
+   - Persist the interaction immediately, set `shortCircuitPayload` with the existing answer
+   - Skip directly to `verifyNode` (bypass context and answer generation)
+6. Otherwise: record `shortCircuitDebugPayload` and proceed to `contextNode`
+
+**Why score=100 only:** Short-circuit serves a past answer verbatim with no opportunity for correction. Anything less than a perfect expert score means there is at least one flagged issue in that answer, so it must not be served as-is. The expert-score filter is enforced at the vector retrieval layer (`requestedRating: 100` in `GraphWorkflowHelper.checkSimilarAnswer`).
+
+**Benefits (if deployed):**
+- Faster responses (no context derivation or answer generation needed)
+- Lower AI costs
+- Consistent, high-quality answers to similar questions
+
+**Files:** [`services/SimilarAnswerService.js`](../../services/SimilarAnswerService.js),
+[`agents/graphs/workflows/GraphWorkflowHelper.js`](../../agents/graphs/workflows/GraphWorkflowHelper.js)
+(`checkSimilarAnswer`)
+
+---
+
+## After the Answer: Evaluation and the Feedback Loop
+
+The graph ends at `persistNode`. Everything below happens **after** the user has their
+answer, on a separate track: some of it runs for every interaction, and the part that
+matters most — human expert evaluation — happens only for the sampled chats an expert
+reviews. This is the loop that supplies [step 6](#6-eval-informed-answering-similarquestions-node).
+
+```
+answerNode → verifyNode → persistNode
+                              │
+                              ├─ Embedding docs created (no feedback metadata yet
+                              │    → NOT retrievable by step 6)
+                              │
+                              ├─ program/action classification (background)
+                              │
+                              ├─ auto-evaluation → ExpertFeedback(type:'ai') + Eval
+                              │      → reporting and dashboards only; never denormalized
+                              │        onto embeddings, so it can never be injected
+                              │
+                              └─ human expert evaluation (sampled, hours-to-weeks later)
+                                     ├─ syncForInteraction → feedback metadata on Embedding
+                                     └─ addExpertFeedbackEmbedding → live vector index
+                                                  │
+                                                  ▼
+                                    retrievable by step 6 (and by the
+                                    short-circuit path) for future questions
+```
+
+### Always: post-persistence work inside `persistNode`
+
+`InteractionPersistenceService.persistInteraction` does three things after the documents
+are saved:
+
+1. **Program/action classification** — `ProgramActionClassificationService.classifyInteractionInBackground(...)`
+   ([`services/InteractionPersistenceService.js:152`](../../services/InteractionPersistenceService.js#L152)),
+   fire-and-forget; assigns a program and action (e.g. *IRCC account – sign in*) for
+   institution reporting.
+2. **Embedding creation** — `EmbeddingService.createEmbedding`
+   ([`:163-169`](../../services/InteractionPersistenceService.js#L163)) writes one
+   `Embedding` document (`questionsEmbedding`, `answerEmbedding`,
+   `questionsAnswerEmbedding`) plus one `SentenceEmbedding` per answer sentence. A failure
+   here is logged and swallowed — persistence continues without embeddings.
+   **These embeddings are not yet retrievable by step 6.** They carry no expert-feedback
+   metadata, and `QuestionAnswerService` drops every hit that has no `expertFeedbackId`.
+   They become retrievable only once a human evaluation is attached (below).
+3. **Auto-evaluation trigger** — `EvaluationService.evaluateInteraction`
+   ([`:172-200`](../../services/InteractionPersistenceService.js#L172)); awaited in
+   `Vercel` deployment mode, dispatched to a Piscina worker pool and not awaited in `CDS`
+   mode (the default).
+
+### Automatic AI evaluation (`services/evaluation.worker.js`)
+
+- Skips the interaction if it already has an `autoEval` — e.g. one linked from a QA match
+  ([`evaluation.worker.js:435-447`](../../services/evaluation.worker.js#L435)).
+- Vector-searches similar past interactions **that carry human expert feedback**, matches
+  the new answer sentence by sentence against that feedback, and checks the citation.
+- On a match it writes a new `ExpertFeedback` with `type: 'ai'`, inheriting the matched
+  human scores and explanations, recomputes `totalScore`, saves an `Eval`, and links it as
+  `interaction.autoEval`. With no match, a no-match evaluation is recorded instead.
+- **AI evaluations never enter the retrieval corpus — this is a deliberate invariant, not
+  an implementation detail.** See the callout below.
+- Full detail: [Evaluation Service Architecture](./evaluation-service.md).
+
+
+> ### Invariant: AI evaluations never feed answer generation
+>
+> Only **human** expert evaluations may feed back into live answers. An `ExpertFeedback`
+> written with `type: 'ai'` must never be denormalized onto an embedding or added to the
+> vector index, so it can never be injected as an expert-rated example in step 6 and can
+> never be served as an instant verified answer.
+>
+> **Why:** the system would grade its own output and then learn from that grade — errors
+> compound with no person in the loop. Every example the model sees must trace back to a
+> human judgement.
+>
+> **What enforces it — one guard, nothing else.** `isAutoEvalFeedback` in
+> [`services/EmbeddingMetadataService.js:55-58`](../../services/EmbeddingMetadataService.js#L55)
+> makes `syncForInteraction` *clear* metadata instead of writing it
+> ([`:220-229`](../../services/EmbeddingMetadataService.js#L220)), and
+> `services/evaluation.worker.js` never calls `addExpertFeedbackEmbedding`. Nothing
+> downstream re-checks: `QuestionAnswerService`, `SimilarAnswerService` and both vector
+> services filter on `expertFeedbackId`, rating and recency — **never** on `feedback.type`.
+> Write the metadata and the AI eval becomes retrievable, silently.
+>
+> **Do not undo it silently.** Never add `syncForInteraction` or
+> `addExpertFeedbackEmbedding` to the evaluation worker; never remove the clear-on-`ai`
+> branch as dead code. Changing this is a policy decision for the prompt/eval maintainers,
+> not a refactor. Recorded as a standing rule in
+> [AGENTS.md](../../AGENTS.md#never-let-ai-evaluations-feed-answer-generation).
+>
+> **Test coverage today:** `services/__tests__/EmbeddingMetadataService.test.js:519`
+> ("defensively clears metadata if an ai-typed feedback document is attached") covers the
+> metadata guard through `backfillBatch`. Nothing asserts that the evaluation worker makes
+> no vector-index call — a regression there would pass CI.
+
+### Human expert evaluation — what actually makes an answer reusable
+
+Not every chat is evaluated; experts review a sample, often well after the conversation
+ended. When an evaluation is saved
+([`api/feedback/feedback-persist-expert.js`](../../api/feedback/feedback-persist-expert.js)):
+
+1. The `ExpertFeedback` document is saved (with `expertEmail` from the session) and linked
+   on the interaction. The expert form leaves `type` unset — only `type: 'ai'` marks an
+   auto-eval, so anything else counts as human.
+2. `EmbeddingMetadataService.syncForInteraction` denormalizes `expertFeedbackId`,
+   `expertFeedbackTotalScore`, `expertFeedbackCreatedAt`, `expertFeedbackNeverStale` and
+   the `pageLanguage`/`interactionLanguage` onto the interaction's existing `Embedding`
+   document. This is what `useDenormalizedPreFilter` filters on at retrieval time.
+3. `VectorService.addExpertFeedbackEmbedding(...)` registers those already-created
+   embeddings — questions, questions+answer, and sentence vectors — in the live vector
+   index together with the feedback metadata.
+
+Only after step 3 can the Q/A be returned by `matchQuestions` and reach the
+`similarQuestions` node. Note the timestamp used downstream is `expertFeedback.createdAt`,
+written here at evaluation time — which is why the 365-day recency filter measures the age
+of the *judgement*, not of the conversation.
+
+Older interactions are brought up to date by the backfill job
+([`services/EmbeddingMetadataBackfillJobService.js`](../../services/EmbeddingMetadataBackfillJobService.js),
+`EmbeddingMetadataService.backfillBatch`), not by this endpoint.
+
+---
 
 ## State Management
 
@@ -487,20 +716,22 @@ User Question
     ↓
 [translate] → Add translationData to state
     ↓
-[shortCircuit] → Check for similar answer
-    ├─ If match found: Set shortCircuitPayload → Skip to verifyNode
-    └─ If no match: Continue to contextNode
+[contextNode] → Add context (department, searchResults) to state
     ↓
-[contextNode] → Add context (department, topic, searchResults) to state
+[similarQuestions] → Add context.similarQuestions + context.qaMatches
     ↓
 [answerNode] → Add answer to state
     ↓
-[verifyNode] → Set finalCitationUrl
+[verifyNode] → Set finalCitationUrl and build result
     ↓
 [persistNode] → Save and return result
     ↓
 END
 ```
+
+In the short-circuit variant graphs, a `[shortCircuit]` node sits between `[translate]`
+and `[contextNode]`: on a match it sets `shortCircuitPayload` and jumps straight to
+`[verifyNode]`, skipping context and answer generation.
 
 ### State Mutations
 
@@ -526,7 +757,7 @@ Emitted via SSE to client:
 ```javascript
 {
   status: 'moderatingQuestion',    // Initial validation
-  status: 'buildingContext',       // Context derivation (if not short-circuited)
+  status: 'buildingContext',       // Context derivation
   status: 'generatingAnswer',      // Answer generation
   status: 'verifyingCitation',     // URL validation
   status: 'complete'               // Done (or 'needClarification' for clarifying questions)
@@ -548,7 +779,8 @@ Tracked per interaction:
 - Input/output tokens
 - Tool invocations
 - Confidence rating
-- Short-circuit hit/miss
+- Similar-questions hits injected (`qaMatches`)
+- Short-circuit hit/miss (variant graphs only)
 
 ### Blocked-query counter (safety/security)
 
@@ -582,6 +814,8 @@ filter is applied).
 
 ### Core Documentation
 - **[System Prompts](../agents-prompts/system-prompt-documentation.md)**: Complete AI agent prompts for all steps
+- **[Using Evals for Answers](./using-evals-for-answers.md)**: How expert evaluations feed back into live answers (eval-informed answering and instant verified answers)
+- **[Evaluation Service Architecture](./evaluation-service.md)**: The auto-evaluation worker, its trigger modes and scoring flow
 - **[SYSTEM_CARD.md](../../SYSTEM_CARD.md)**: System card with safety measures and evaluation framework
 
 ### API Documentation
@@ -611,10 +845,12 @@ filter is applied).
 - Check network connectivity
 - Verify API keys are valid
 
-**4. Short-circuit not working**
-- Check embedding service is running
-- Verify vector database has embeddings
-- Check similarity threshold settings
+**4. No similar questions injected**
+- Confirm the workflow in use is `GenericWithQAGraph` (`workflow.default` setting)
+- Check the embedding service is running and the vector index has embeddings
+- Compare `preThresholdRecords` and `matchedRecords` in the `node:similarQuestions output`
+  event — candidates present but unmatched means the `0.75` similarity floor or the
+  365-day expert-feedback recency filter dropped them
 
 ---
 
@@ -624,7 +860,7 @@ The LangGraph-based architecture provides:
 
 ✅ **Reliability**: Deterministic execution with clear error handling
 ✅ **Observability**: Complete state tracking and logging
-✅ **Performance**: Short-circuit optimization, context reuse, prompt caching
+✅ **Performance**: Prompt caching (plus context reuse and short-circuit reuse in the experimental variants)
 ✅ **Maintainability**: Clear node boundaries, easy to extend
 ✅ **Scalability**: Stateless execution, horizontal scaling ready
 ✅ **Auditability**: Complete execution history for compliance

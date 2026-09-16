@@ -1,17 +1,3 @@
-.admin-navigation {
-  margin-left: auto;
-  padding: 0.5rem 1rem;
-}
-.admin-link {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-}
-.admin-link:hover {
-  text-decoration: underline;
-}
-
 /* Shared status-colour text utilities — plain text, no background, always
    paired with a label. Same colour values as .stat-card__value--green and
    .donut-card__centre-value--green (not yet migrated to these — TODO), but
@@ -116,67 +102,90 @@
   font-size: 2px;
 }
 
-/* Metadata and code styling */
-.metadata-content {
-  position: relative;
+/* Metadata column - ChatViewer.js's log table (useChatLogsTable.js /
+   utils/chatviewer/chatViewer.js's buildMetadataCellHtml). Every field
+   prints inline unless its own value is long enough to need collapsing,
+   in which case a native <details>/<summary> holds it. No fixed height or
+   scrolling - expanding one just grows the row in place. */
+.metadata-cell {
+  word-break: break-word;
 }
 
-.expand-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 12px !important;
-  padding: 4px 8px !important;
-  min-height: auto !important;
+.metadata-pair {
+  margin-bottom: 2px;
 }
 
-/* Syntax highlighting overrides */
+.metadata-more summary {
+  cursor: pointer;
+}
+
+/* :not(:focus): global.css's own summary:focus rule turns the text white
+   against its solid blue focus background, but admin.css loads after
+   global.css, so without this guard the link colour here wins on focus
+   and leaves dark text on a dark-blue background. */
+.metadata-more summary:not(:focus) {
+  color: var(--gcds-link-default);
+}
+
+.metadata-more[open] summary {
+  margin-bottom: var(--gcds-spacing-75);
+}
+
+/* Every <pre>/<code> in the metadata column wraps instead of scrolling.
+   prismjs/themes/prism.css's own code[class*="language-"],
+   pre[class*="language-"] rule hardcodes white-space: pre +
+   word-break/word-wrap: normal on both tags - equal specificity to a plain
+   descendant selector, so !important is needed regardless of bundle order. */
+.metadata-cell pre,
+.metadata-cell code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  /* Also overrides prism.css's own hardcoded #f5f2f0 background - white
+     gives the most contrast headroom for the 4.5:1 colours below. */
+  background: var(--gcds-color-white) !important;
+}
+
+.metadata-cell pre {
+  margin: 0;
+}
+
+/* Syntax highlighting overrides - GC DS colour tokens throughout, chosen to
+   clear 4.5:1 (1.4.3) against the background above. prismjs/themes/prism.css's
+   own .token.* colours were tuned for a dark theme and fall short of 4.5:1
+   here (2.6:1-4:1 measured); color: black is fine at 18.7:1 and left alone.
+   Semantic mapping: property/tag = identifier, string/attr-name = text
+   value, number/attr-value = data value, boolean = its own accent,
+   null/punctuation/operator/comment = de-emphasized. */
 .language-json {
-  color: #000;
+  color: var(--gcds-text-primary);
 }
 
-.language-json .token.property {
-  color: #2e86de;
+.language-json .token.property,
+.language-xml .token.tag {
+  color: var(--gcds-color-blue-700);
 }
 
-.language-json .token.string {
-  color: #10ac84;
+.language-json .token.string,
+.language-xml .token.attr-name {
+  color: var(--gcds-color-green-700);
 }
 
-.language-json .token.number {
-  color: #ee5253;
+.language-json .token.number,
+.language-xml .token.attr-value {
+  color: var(--gcds-color-red-700);
 }
 
 .language-json .token.boolean {
-  color: #ff9f43;
+  color: var(--gcds-color-yellow-800);
 }
 
-.language-json .token.null {
-  color: #8395a7;
-}
-
-.language-xml .token.tag {
-  color: #2e86de;
-}
-
-.language-xml .token.attr-name {
-  color: #10ac84;
-}
-
-.language-xml .token.attr-value {
-  color: #ee5253;
-}
-
-/* Modal styling */
-.metadata-modal {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.metadata-modal pre {
-  margin: 0;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 4px;
+.language-json .token.null,
+.language-json .token.punctuation,
+.language-json .token.operator,
+.language-xml .token.punctuation,
+.token.comment {
+  color: var(--gcds-color-grayscale-700);
 }
 
 /* Filter Panel Styles */
@@ -409,18 +418,13 @@
   outline-offset: var(--gcds-input-border-width) !important;
 }
 
-/* SettingsPage reuses .filter-label/.filter-input/.filter-select for the
-   border/focus-ring/select-arrow treatment that already matches GC DS —
-   but FilterPanel deliberately sizes those at a compact 16px for a dense
-   filter sidebar, and SettingsPage isn't that: its fields should read at
-   GC DS's normal input/label size. Scoped to .settings-page so FilterPanel,
-   ChatLogsDashboard, and ChatViewer keep their own compact sizing. */
-.settings-page .filter-label {
+/* GC DS's normal desktop field size, vs. FilterPanel's compact 16px default. */
+.filter-fields-full-size .filter-label {
   font: var(--gcds-label-font-desktop);
 }
 
-.settings-page .filter-input,
-.settings-page .filter-select {
+.filter-fields-full-size .filter-input,
+.filter-fields-full-size .filter-select {
   font: var(--gcds-input-font-desktop);
 }
 
@@ -472,88 +476,8 @@
   border: none;
 }
 
-/* Quick set buttons styling */
-
-/* Radio button styling */
-.filter-radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.filter-radio-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.filter-radio-item input[type="radio"] {
-  width: 1rem;
-  height: 1rem;
-  color: #3b82f6;
-  border-color: #d1d5db;
-  border-radius: 50%;
-}
-
-.filter-radio-item input[type="radio"]:focus {
-  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
-  outline-offset: 2px;
-}
-
-.filter-radio-item span {
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-/* Fieldset and legend styling */
-.filter-fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-.filter-legend {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
 .dt-container {
   font-size: 70%; /* temp fix to resize */
-}
-
-/* Current selection styling */
-.current-selection {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.current-selection h3 {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.current-selection-content {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.current-selection-content p {
-  margin-bottom: 0.25rem;
-}
-
-.current-selection-content strong {
-  color: #374151;
-}
-
-.date-range-picker {
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  overflow: hidden;
 }
 
 /* Visible focus indicator for the daterangepicker plugin's calendar cells,
@@ -763,16 +687,52 @@
   background: #f3f4f6;
 }
 /* Shared by EvalDashboardPage.js's search field and ChatIdLookupField.js's
-   own input - both are block-level wrappers around a chat-ID input, not
-   just a width cap: without it, once the input stops being width:100%
-   (which forced the button below it by consuming the whole line), the
-   input and its inline-level GcdsButton sibling had room to sit side by
-   side again in normal flow. Wrapping the input in its own block
-   guarantees the button starts on a new line regardless of either
-   element's own display type. */
+   own input - a block-level wrapper around the chat-ID input, not just a
+   width cap: it guarantees the button below starts on a new line
+   regardless of either element's own display type. */
 .eval-search-chat-id__field,
 .chat-id-lookup-field {
   max-width: 40rem;
+}
+
+/* ChatIdLookupField.js's own input (ViewChatByIdSection.js/DeleteChatSection.js/
+   DeleteExpertEval.js) - .filter-input's shared default read short and small
+   next to a real GC DS input, so it's sized up to gcds-input's own tokens
+   here rather than changing .filter-input itself, which plenty of other
+   admin fields also share. */
+.chat-id-lookup-field .filter-input {
+  font: var(--gcds-input-font-desktop) !important;
+  padding: var(--gcds-input-padding) !important;
+  min-height: var(--gcds-input-min-width-and-height);
+}
+
+/* ChatIdLookupField.js's own label - same reasoning as the input rule
+   above, but the label is a sibling of .chat-id-lookup-field, so it needs
+   its own wrapper - see .chat-id-lookup-group in ChatIdLookupField.js. */
+.chat-id-lookup-group .filter-label {
+  font: var(--gcds-label-font-desktop);
+}
+
+/* ChatIdLookupField.js's partial-match pick-list - one button per matching
+   chatId (.filter-button.filter-button-outline, same bordered look
+   PauseToggleButton.js already uses elsewhere), stacked instead of
+   DataTables' row-per-result convention since this is a short, capped list
+   (db-chat-search.js's MAX_RESULTS) meant to be scanned and picked from
+   directly, not paged/sorted/filtered like a real results table. */
+.chat-id-match-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gcds-spacing-100);
+  max-width: 40rem;
+}
+
+.chat-id-match-list button {
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ChatLogsDashboard.js's export View/Format dropdowns. Previously
@@ -813,6 +773,21 @@
   padding-block: var(--gcds-spacing-100);
   padding-inline: var(--gcds-spacing-150);
   min-width: 24rem;
+}
+/* Filter-style search boxes (sr-only <label>: chat viewer log entries,
+   settings history, batch list, metrics institutions, Sessions, Users,
+   Similar chats) have nothing visible to their left - sit flush. */
+.metrics-table-container div.dt-container .dt-search:has(> label > .sr-only) input,
+.dashboard-table-container div.dt-container .dt-search:has(> label > .sr-only) input {
+  margin-left: 0;
+  /* md (2px), matching AutoEval's per-column filter boxes. */
+  border-width: var(--gcds-border-width-md);
+}
+/* Those same boxes have no search-term pill, so the native clear (x)
+   stays - it is what clears them. */
+.metrics-table-container div.dt-container .dt-search:has(> label > .sr-only) input[type="search"]::-webkit-search-cancel-button,
+.dashboard-table-container div.dt-container .dt-search:has(> label > .sr-only) input[type="search"]::-webkit-search-cancel-button {
+  display: inline-block;
 }
 .metrics-table-container div.dt-container .dt-search input:focus-visible {
   outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
@@ -993,10 +968,10 @@
 
    Row hover is disabled outright below, not just re-themed: it's purely
    decorative here (no click action beyond the Chat ID link, no row
-   selection), and since Chat ID/Department/Service can rowspan across a
-   chat's rows, DataTables' per-row hover only lit up the OTHER cells of a
-   non-anchor row - the spanned cell doesn't belong to every row it visually
-   covers, so hovering looked like it was highlighting half a row.
+   selection), and since Chat ID/Department/Service are shown once per
+   chat group (the repeated cells below the first are visually blank -
+   see utils/admin/chatGroupedTable.js), per-row hover lit up a row whose
+   grouped cells looked empty, reading as half a row highlighted.
 
    Striping itself is driven purely by the chat-group-a/chat-group-b classes
    (set in ChatDashboardPage.js's and EvalDashboardPage.js's createdRow -
@@ -1014,8 +989,7 @@
    guaranteed (neither page imports that CSS itself; it's pulled in
    globally by other pages that do, e.g. UsersPage.js). Neither rule has
    :hover in its selector, so hover state changes nothing - that's the
-   point. AutoEval Dashboard is unaffected (for now) - it only carries the
-   base .dashboard-table class, not this modifier. */
+   point. */
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > * {
   box-shadow: none;
   /* Lightened from DataTables' own border-top: 1px solid rgba(0,0,0,0.15) -
@@ -1028,6 +1002,13 @@ table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > * {
      clobbering the thicker group-boundary divider entirely instead of
      just thinning the ordinary per-row ones. */
   border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+/* Keep-chat-together cells (utils/admin/chatGroupedTable.js): no divider
+   between a group's rows so it reads as one merged cell. One extra class
+   beats the blanket tr > * rule above. */
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > td.group-cell--mid,
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > td.group-cell--end {
+  border-top-color: transparent;
 }
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group-start > * {
   border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
@@ -1083,13 +1064,8 @@ table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .s
 table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .sorting_3 {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
 }
-/* Chat ID/Department/Service(-or-Program)/Referring URL cells collapsed via
-   rowspan (see drawCallback in ChatDashboardPage.js and
-   EvalDashboardPage.js) - centered vertically within their span (the
-   browser's own table default) so they read as belonging to every row of
-   the group equally, not anchored to just the first one. */
-.dashboard-table--grouped tbody td.row-spanned {
-  vertical-align: middle;
+/* Every cell of a multi-row group (utils/admin/chatGroupedTable.js). */
+.dashboard-table--grouped tbody td.group-cell {
   /* Vertical divider on both sides of every merged cell - scanning down a
      merged column to see where it ends and the next one begins is hard
      without a line to follow, especially once a cell spans several rows.
@@ -1108,14 +1084,6 @@ table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .s
    divide it from Department next to it). */
 .dashboard-table--grouped tbody td.chat-id-cell {
   border-left: none;
-}
-/* Feedback/Download/Page columns (EvalDashboardPage.js) - each holds only
-   a short, fixed-content value (an icon, or a 2-letter EN/FR code) in a
-   narrow fixed-width cell, so DataTables' default left-aligned text reads
-   as off-center against the column's own width. Centered so the content
-   sits in the middle of the column like the header above it. */
-.eval-center-cell {
-  text-align: center;
 }
 /* Feedback/Download icon hover tooltips (data-tooltip attribute, not the
    native title attribute - see the render-function comments in
@@ -1156,19 +1124,50 @@ table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .s
   opacity: 1;
   transition-delay: 0.5s;
 }
-/* Close off the table's actual bottom edge. DataTables already puts a
-   border-bottom on every cell that's present in a row, so a normal last
-   row is fine - but when a Chat ID/Department/Service rowspan is still
-   open at the page's last row, that column's cell doesn't live on the last
-   row at all (it's the anchor cell higher up), so there's nothing there
-   for DataTables' rule to draw a border on - leaving a gap under that
-   column at the very end of the table. .spans-to-page-end (set in
-   ChatDashboardPage.js's and EvalDashboardPage.js's drawCallback) marks
-   that anchor cell so it gets its own closing border regardless of which
-   row it actually sits on. */
-.dashboard-table--grouped tbody tr:last-child > td,
-.dashboard-table--grouped tbody td.spans-to-page-end {
+/* Close off the table's actual bottom edge. */
+.dashboard-table--grouped tbody tr:last-child > td {
   border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+/* AutoEvalDashboardPage.js's per-column filter controls. Fill the column
+   (default input width ~180px forced narrow columns open; size=1 at
+   creation lets this 100% shrink). */
+.dt-col-filter-container .dt-col-search {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* Browser defaults were ~21px tall / 13.33px text: below WCAG 2.2
+     SC 2.5.8's 24px target and this app's 14px text floor. */
+  min-height: 32px;
+  padding: 4px 6px;
+  font-size: 14px;
+  color: var(--gcds-color-black);
+  /* md (2px), one step heavier than the search box's sm. */
+  border: var(--gcds-border-width-md) solid var(--gcds-color-black);
+  border-radius: var(--gcds-border-radius-sm);
+  /* White, not transparent: the header hover highlight showed through. */
+  background-color: var(--gcds-color-white);
+}
+/* Same focus ring as the global search box and the entries-per-page
+   select (.dt-search input / .dt-length select above). */
+/* Native clear (x) always visible once there is a value - Chrome only
+   reveals it on hover/focus, and global.css's appearance: none on search
+   inputs would drop it entirely. Not keyboard-operable (native control);
+   Backspace/Delete clears the box for keyboard users. */
+.dt-col-filter-container input.dt-col-search::-webkit-search-cancel-button {
+  -webkit-appearance: searchfield-cancel-button;
+  appearance: auto;
+  opacity: 1;
+  cursor: pointer;
+  margin-left: var(--gcds-spacing-50);
+}
+/* A box holding a filter gets the sorted column's pale blue (blue-50),
+   so a filtered table is visibly filtered even after a refresh. */
+.dt-col-filter-container .dt-col-search--active {
+  background-color: rgba(235, 242, 250, 1);
+}
+.dt-col-filter-container .dt-col-search:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
 }
 /* Solid black rule under the column headers - true black
    (--gcds-color-black, not --gcds-text-primary's #333) and bold weight per
@@ -1177,7 +1176,7 @@ table.dataTable.dashboard-table:not(.dashboard-table--grouped) > tbody > tr > .s
    A vertical divider used to run after just the Chat ID column
    (targeting .chat-id-cell, set in both pages' drawCallback for exactly
    this) before being removed to preview the table without it - now back,
-   generalized to every merged cell via .row-spanned's own border-right
+   generalized to every merged cell via .group-cell's own border-right
    above rather than re-adding a Chat-ID-specific rule. */
 .dashboard-table--grouped thead th {
   border-bottom: var(--gcds-border-width-lg) solid var(--gcds-color-black);
@@ -1374,61 +1373,6 @@ table.dataTable.dashboard-table thead > tr > th:has(.dt-column-order:focus) {
   background-color: var(--gcds-focus-background) !important;
   color: var(--gcds-focus-text) !important;
 }
-/* Sort-icon tooltip text (data-tooltip set per-header in each page's
-   drawCallback - see EvalDashboardPage.js/ChatDashboardPage.js). GC DS's
-   own table component uses a native title attribute for this
-   (getSortTitle()); this app avoids title elsewhere (see .eval-tooltip's
-   own comment, further down) because its appear-delay isn't controllable,
-   so this reuses that same CSS-tooltip mechanism instead - shared chrome
-   via the .chart-tooltip group below. Shown on :hover and :focus-visible
-   (via :has(), since the real focus target is the descendant
-   .dt-column-order span, not the <th>) - same SC 1.4.13 reasoning as the
-   icon-reveal above.
-
-   Lives on <th>[data-tooltip], not .dt-column-order[data-tooltip] - that
-   was the first version, and it was a real bug, not just a style
-   preference: .dt-column-order already owns its own ::after
-   (DataTables' own CSS renders the down-arrow glyph there,
-   .dt-orderable-desc .dt-column-order:after { content: "▼"; ... }). An
-   element has exactly one ::after; putting the tooltip's
-   content: attr(data-tooltip) there too meant the two rules fought over
-   the same pseudo-element, and this one - table.dataTable.dashboard-table
-   thead > tr > th .dt-column-order[data-tooltip]::after, (0,4,3) - beat
-   DataTables' own (0,2,4) on class-specificity alone, silently replacing
-   the arrow glyph's actual rendered content everywhere, not just
-   competing over background/timing as it first looked. <th> has no
-   competing pseudo-element usage, so this fully separates the two.
-
-   Not itself an accessibility mechanism - CSS generated content
-   (::after / attr()) is never exposed to the accessibility tree, so this
-   is a sighted-user mirror only; the real accessible name/state comes from
-   aria-sort (already correct, set by DataTables) and .dt-column-order's
-   own aria-label (also DataTables' own, untouched - see the drawCallback
-   comment for why the two aren't required to say the same thing). */
-table.dataTable.dashboard-table thead th[data-tooltip] {
-  position: relative;
-}
-table.dataTable.dashboard-table thead th[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  color: var(--gcds-text-primary);
-  white-space: nowrap;
-  z-index: 30;
-  pointer-events: none;
-  opacity: 0;
-  font-family: 'Noto Sans', sans-serif;
-  font-weight: 400;
-  text-transform: none;
-  transition: opacity 0.1s ease 0s;
-}
-table.dataTable.dashboard-table thead th[data-tooltip]:hover::after,
-table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focus)::after {
-  opacity: 1;
-  transition-delay: 0.5s;
-}
 /* Global search box (topStart - see the `layout` option in
    ChatDashboardPage.js and EvalDashboardPage.js, both now the same zones)
    - larger, bolder treatment now that it's the table's primary search
@@ -1470,17 +1414,94 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
   outline-offset: 2px;
 }
-/* TODO(a11y): pagination buttons (.dt-paging-button, incl. the
-   .dt-paging-button.current active-page marker) still have no custom
-   focus treatment - left untouched for now (paused mid-session; a
-   :focus rule here kept losing to DataTables' own bundled
-   .dt-paging-button.current, .dt-paging-button.current:hover
-   { color: inherit !important; ... }, which is both !important and
-   higher-specificity than a plain match). Needs a fresh pass with a
-   multi-page table to actually verify hover vs. focus behaviour before
-   trying again - see the search box and page-length select rules above
-   for the established pattern (:focus-visible, outline only) to start
-   from once that verification happens. */
+/* Pagination on every DataTables instance, styled like GC DS
+   gcds-pagination (list display) with its global tokens, at ~70% size for
+   these dense tables (14px text, 2.125rem targets - above WCAG 2.2's
+   24px). Styling only: DataTables 2 already renders numbers, ellipsis and
+   Previous/Next as <button role="link"> with aria-current; the « » first/
+   last buttons are turned off per table ({ paging: { firstLast: false } }).
+   div.dt-paging adds one element over DataTables' own selectors so these
+   win regardless of stylesheet order (a tie made its 1px hover border
+   flicker against this 2px one); !important on color mirrors its own. */
+div.dt-container div.dt-paging {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gcds-spacing-50);
+}
+div.dt-container div.dt-paging .dt-paging-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.125rem;
+  height: 2.125rem;
+  margin: 0;
+  padding: 0 var(--gcds-spacing-75);
+  font: var(--gcds-pagination-font-desktop);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gcds-pagination-default-text) !important;
+  text-decoration: underline !important;
+  background: var(--gcds-color-white);
+  border: var(--gcds-pagination-border-width) solid transparent;
+  border-radius: var(--gcds-pagination-border-radius);
+  box-shadow: none;
+}
+div.dt-container div.dt-paging .dt-paging-button:hover {
+  color: var(--gcds-pagination-hover-text) !important;
+  background: var(--gcds-pagination-hover-background);
+  border-color: transparent;
+}
+div.dt-container div.dt-paging .dt-paging-button.current,
+div.dt-container div.dt-paging .dt-paging-button.current:hover,
+div.dt-container div.dt-paging .dt-paging-button:active {
+  color: var(--gcds-pagination-active-text) !important;
+  background: var(--gcds-pagination-active-background);
+  border-color: var(--gcds-pagination-active-background);
+  text-decoration: none !important;
+  box-shadow: none;
+}
+div.dt-container div.dt-paging .dt-paging-button:focus-visible {
+  color: var(--gcds-pagination-focus-text) !important;
+  background: var(--gcds-pagination-focus-background);
+  border-color: var(--gcds-pagination-focus-background);
+  outline: var(--gcds-pagination-focus-outline-width) solid var(--gcds-pagination-focus-background);
+  outline-offset: var(--gcds-pagination-border-width);
+  box-shadow: var(--gcds-pagination-focus-box-shadow);
+  text-decoration: none !important;
+}
+/* GC DS omits Previous on the first page and Next on the last; DataTables
+   renders them disabled - hide to match. Keyboard focus that was on the
+   hidden button is handed to the current page number by
+   installPagingFocusGuard (utils/admin/dataTableAccessibility.js). */
+div.dt-container div.dt-paging .dt-paging-button.disabled {
+  display: none;
+}
+div.dt-container div.dt-paging .ellipsis {
+  padding: 0 var(--gcds-spacing-50);
+  font: var(--gcds-pagination-font-desktop);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gcds-text-primary);
+}
+/* Previous/Next chevrons: a masked SVG with empty content, not a text
+   glyph, so screen readers hear only the button's word label. */
+div.dt-container div.dt-paging .dt-paging-button.previous::before,
+div.dt-container div.dt-paging .dt-paging-button.next::after {
+  content: '';
+  width: 0.75em;
+  height: 0.75em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M8.6 4.6 7.2 6l6 6-6 6 1.4 1.4L16 12z'/></svg>") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M8.6 4.6 7.2 6l6 6-6 6 1.4 1.4L16 12z'/></svg>") center / contain no-repeat;
+}
+div.dt-container div.dt-paging .dt-paging-button.previous::before {
+  transform: scaleX(-1);
+  margin-right: var(--gcds-spacing-50);
+}
+div.dt-container div.dt-paging .dt-paging-button.next::after {
+  margin-left: var(--gcds-spacing-50);
+}
 /* Hide the native type="search" clear ("x") button - the search-term pill
    next to it already has its own labeled "x" to clear, and having both
    right beside each other read as a confusing double-clear control.
@@ -1543,6 +1564,18 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   flex-wrap: wrap;
   gap: var(--gcds-spacing-50);
 }
+/* AutoEvalDashboardPage.js fixed-width columns: the Chat ID UUID has no
+   break opportunities, so it needs an explicit wrap to honour the width
+   (two lines at 150px); AI/Partner eval widths fit the widest pill. */
+.dashboard-table td.col-chat-id {
+  max-width: 150px;
+  overflow-wrap: anywhere;
+}
+/* Short coded values (e.g. Fallback's "qa-high-score") whose hyphens would
+   otherwise let the browser wrap them mid-value. */
+.dashboard-table td.col-nowrap {
+  white-space: nowrap;
+}
 .eval-pills-wrap > .label + .label {
   margin-left: 0;
 }
@@ -1571,12 +1604,15 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* User type labels — shared with DatabasePage.js's .label.building
-   ("building" has no neutral tier of its own below), and BatchList.js's
-   in_progress status pill below (same "actively working" meaning as
-   building's blue tier). */
+   ("building" has no neutral tier of its own below), BatchList.js's
+   in_progress status pill (same "actively working" meaning as building's
+   blue tier), and ChatViewer.js's log table Level column pill
+   (useChatLogsTable.js), whose logLevel values (info/debug/warn/error)
+   are literal class names — same "info" reuses this tier directly. */
 .label.public,
 .label.building,
-.label.in_progress {
+.label.in_progress,
+.label.info {
   background-color: var(--gcds-color-blue-100);
   color: var(--gcds-color-blue-650);
 }
@@ -1592,9 +1628,12 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
-   the batch's default, not-yet-started state. */
+   the batch's default, not-yet-started state - and ChatViewer.js's log
+   table Level column pill: debug isn't a severity tier, so it gets this
+   same neutral grey rather than a colour of its own. */
 .label.normal,
-.label.uploaded {
+.label.uploaded,
+.label.debug {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
@@ -1666,22 +1705,13 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
    .label.admin/.clarifying-question/.not-gc/.pt-muni above (no matching
    GC DS token). #915700 clears 4.64:1 on #FFE0B2 (old #a14b00 was 4.70:1;
    #e65100 before that was 2.99:1) - shares .text-status--warning's hex,
-   tuned for a higher green:red ratio so it reads orange, not red/brown. */
-.label.hasContentIssue {
+   tuned for a higher green:red ratio so it reads orange, not red/brown.
+   ChatViewer.js's log table Level column pill reuses this same tier for
+   "warn" - same amber, same severity meaning. */
+.label.hasContentIssue,
+.label.warn {
   background-color: #FFE0B2;
   color: #915700;
-}
-
-/* Table summary stats */
-.chat-dashboard-summary {
-  display: flex;
-  gap: var(--gcds-spacing-200);
-  font-size: 14px;
-  margin-bottom: var(--gcds-spacing-200);
-}
-
-.chat-dashboard-no-results {
-  font-size: 14px;
 }
 
 /* Answer type / Partner evaluation / AI evaluation are collapsible
@@ -1701,11 +1731,10 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   min-width: 0;
 }
 
-/* Shared radio toggle UI — used in ChatOptions and BatchUpload (both auth-gated) */
-.ai-toggle {
-  margin-bottom: 10px;
-}
-
+/* Shared radio toggle UI for the search-service picker — not currently
+   rendered; both ChatOptions.js and BatchUpload.js keep this markup
+   commented out until Canada.ca search is available again. Kept here so
+   the CSS is ready when that JSX is uncommented. */
 .ai-toggle_fieldset {
   border: none;
   padding: 0;
@@ -1729,19 +1758,6 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 
 .ai-toggle_radio-input {
   margin-right: 5px;
-}
-
-.ai-toggle_label {
-  margin-right: 15px;
-}
-
-/* Shared input border style — used in ChatOptions and BatchUpload (both auth-gated) */
-.chat-border {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 /* =================================================================
@@ -1846,6 +1862,9 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
   margin-bottom: 0;
 }
 
+/* Not currently used, but kept alongside .dashboard-col-third: dashboards
+   get restructured often enough (columns swapping between full/third/etc.)
+   that this is worth keeping on hand rather than re-adding later. */
 .dashboard-col-full {
   flex: 1 1 100%;
   min-width: 0;
@@ -2318,13 +2337,10 @@ table.dataTable.dashboard-table thead th[data-tooltip]:has(.dt-column-order:focu
 }
 
 /* Shared recharts custom tooltip chrome - also the chrome for .eval-tooltip
-   (EvalDashboardPage.js's Feedback/Download icon hover tooltips) and the
-   sortable column header tooltip (thead th[data-tooltip], further up) via
-   ::after, so all three read as the same "tooltip" visual language
-   across the admin section instead of different-looking ones. */
+   (EvalDashboardPage.js's Feedback/Download icon hover tooltips) via
+   ::after, so both read as the same "tooltip" visual language. */
 .chart-tooltip,
-.eval-tooltip::after,
-table.dataTable.dashboard-table thead th[data-tooltip]::after {
+.eval-tooltip::after {
   background: #fff;
   border: 1px solid var(--gcds-color-grayscale-100);
   border-radius: 6px;
@@ -2492,6 +2508,15 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   border: 1px solid #e0e0e0;
   padding: var(--gcds-spacing-150) var(--gcds-spacing-250) var(--gcds-spacing-100);
 }
+/* After a preset activation, focus lands on the "Date range" <p> inside
+   (DashboardFilterBar.js, a ring-less tabindex="-1" target); the ring is
+   drawn around the whole box instead. :focus-visible keeps it keyboard-
+   only - browsers carry the input modality into script-moved focus, so
+   Tab + Enter shows it and a mouse click does not. */
+.filter-bar:has(.filter-bar__label:focus-visible) {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
+}
 
 .filter-bar__row {
   display: flex;
@@ -2529,15 +2554,6 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   border-radius: var(--gcds-border-radius-sm);
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
-}
-
-.filter-bar__select {
-  padding: 7px 12px;
-  border: 1px solid #bdbdbd;
-  border-radius: var(--gcds-border-radius-sm);
-  font-size: 16px;
-  font-family: 'Noto Sans', sans-serif;
-  min-width: 200px;
 }
 
 /* Date preset toggle buttons */
@@ -2625,7 +2641,6 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   color: var(--gcds-focus-text) !important;
 }
 
-.filter-bar__select:focus-visible,
 .filter-bar__input:focus-visible {
   outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
   outline-offset: 2px;
@@ -2668,6 +2683,26 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
   font-family: 'Noto Sans', sans-serif;
 }
 
+/* The pills themselves are a real list (one <li> per applied filter,
+   removable or fixed) so a screen reader gets "list, N items" and
+   item-by-item navigation; the <ul> lays out exactly like the row it
+   sits in. role="list" is set on the <ul> in markup because VoiceOver
+   drops list semantics from a list-style: none list otherwise. */
+.filter-pills-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.filter-pills-list > li {
+  display: inline-flex;
+}
+
 /* Exec dashboard pills align with the bordered filter box content */
 .filter-bar-wrapper .filter-bar__pills-row {
   padding-left: var(--gcds-spacing-250);
@@ -2676,6 +2711,17 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
 .filter-bar__showing {
   font-weight: 600;
   color: var(--gcds-text-primary);
+}
+
+/* Wraps 2+ pills that need to sit together inline with breathing room
+   between them - e.g. OriginalLanguagePill.js's language pill plus its
+   FR-only "English only" companion pill. Same 6px gap as
+   .filter-bar__pills-row, for visual consistency with the rest of the pill
+   system, but flex-wrap isn't needed here (always just 1-2 short pills). */
+.pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* GC DS–style filter pill */
@@ -2932,97 +2978,138 @@ table.dataTable.dashboard-table thead th[data-tooltip]::after {
 .table-scroll {
   overflow-x: auto;
 }
+/* A scrolling table wrapper carries tabIndex=0 so keyboard users can reach
+   and scroll it in every browser (Chrome focuses overflow regions on its
+   own; Safari/Firefox do not - SC 2.1.1). Same ring as the other focus
+   targets in this file. */
+.table-scroll:focus-visible {
+  outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
+  outline-offset: 2px;
+}
 
 /* AdminNotifications (admin dashboard "N pending items" banner) — folded in
    from its own AdminNotifications.css so all admin styling lives in this one
    stylesheet, consistent with the rest of the admin section.
-   TODO: this panel predates StatusMessage's variant box treatment
-   (.status-message--warning-box etc., using --gcds-color-yellow-100/500/750 —
-   see above) and still hand-rolls its own yellow/amber palette and
-   gradient background instead of it. Worth reviewing whether this can be
-   consolidated onto that shared warning styling rather than keeping a
-   second, slightly different amber-box pattern. */
+   TODO (design review): worth another look at whether this should become a
+   StatusMessage variant, but it's not a drop-in fit today - it's not a
+   generic warning box. Its layout (a stat list + an action link) doesn't
+   match StatusMessage's single-message/children shape, and its content
+   isn't uniformly "warning" either: the two item types are deliberately
+   split blue (info, --gcds-color-blue-vivid) vs. grey
+   (--gcds-color-grayscale-700), not both yellow. A StatusMessage migration
+   would need to accommodate that shape and that two-tone split, not just
+   swap classes. For now it keeps this bespoke markup, reusing GC DS tokens
+   directly, with its own role="status" aria-live="polite" + role="list"
+   wiring (AdminNotifications.js) instead of StatusMessage's built-in
+   version of the same thing. See
+   docs/coding-agent-docs/status-and-error-messaging.md. */
 .admin-notifications {
   margin-bottom: var(--gcds-spacing-400);
 }
 
-.admin-notifications-panel {
-  background: linear-gradient(135deg, #fef7e0 0%, #fef3cd 100%);
-  border: 1px solid #ffc107;
-  border-left: 4px solid #ffc107;
-  border-radius: 8px;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+/* Region is mounted empty while there's nothing to show (see
+   AdminNotifications.js's persistent-region comment) - zero the margin so
+   that doesn't leave a visible gap. Same purpose as StatusMessage's
+   status-message--empty. */
+.admin-notifications--empty {
+  margin-bottom: 0;
 }
 
-.admin-notifications-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #856404;
-  margin: 0 0 0.75rem 0;
+.admin-notifications-panel {
+  background: var(--gcds-color-yellow-50);
+  /* Left bar only. --gcds-notice-border-width is GcdsNotice's own closest
+     real token (0.375rem/6px, used internally for its icon accents) -
+     GcdsNotice itself has no border-left at all, this is the nearest
+     equivalent. yellow-500 is the most saturated step in the yellow scale
+     (no dedicated -vivid token for yellow, unlike blue) - fine here since
+     it's a border, not held to the text-contrast rules the heading/icon
+     colour below is. */
+  border-left: var(--gcds-notice-border-width) solid var(--gcds-color-yellow-500);
+  padding: 0.85rem 1.5rem;
+}
+
+.admin-notifications-heading {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.admin-notifications-title::before {
-  content: "⚠️";
+.admin-notifications-icon {
+  /* No font-size set: this inherits the ambient text size on purpose (no
+     GC DS body font-size override exists to match against - forcing in a
+     text token here would change the rendered size, not preserve it). */
+  color: var(--gcds-color-yellow-700);
+  flex-shrink: 0;
+  padding-right: var(--gcds-spacing-50);
+}
+
+.admin-notifications-title {
+  font: var(--gcds-heading-h5-desktop);
+  color: var(--gcds-color-yellow-750);
+  margin: 0;
 }
 
 .admin-notifications-list {
   list-style: none;
-  padding: 0;
-  margin: 0 0 1rem 0;
+  /* 50px has no exact GC DS spacing token - sits exactly between
+     --gcds-spacing-600 (48px) and --gcds-spacing-650 (52px), rounded down. */
+  padding-left: var(--gcds-spacing-600);
+  padding-right: var(--gcds-spacing-600);
+  margin: 0 0 var(--gcds-spacing-100) 0;
+  /* content-sized rows (not full list width), one per line */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .admin-notifications-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(133, 100, 4, 0.15);
+  padding: 0.3rem 0;
+  /* "total inactive" (the default/non-warning item) reads as neutral grey,
+     matching .label.normal/.uploaded's own grey text. */
+  color: var(--gcds-color-grayscale-700);
 }
 
-.admin-notifications-item:last-child {
-  border-bottom: none;
+/* "new users" reads as info (blue) rather than warning (yellow) - blue-vivid
+   (GC DS's actual "vivid" blue token) rather than blue-700, which read too
+   close to the grey above to tell apart at this size/weight. The
+   "--warning" name is a holdover from when this tier really was yellow -
+   worth a rename once nothing else depends on it. */
+.admin-notifications-item--warning {
+  color: var(--gcds-color-blue-vivid);
 }
 
-.admin-notifications-item--warning .admin-notifications-count {
-  /* #d97706 was ~3.19:1 against the white badge text, below the 4.5:1
-     minimum for normal-size text (SC 1.4.3). --gcds-color-yellow-700
-     reaches ~5:1. */
-  background: var(--gcds-color-yellow-700);
-  color: white;
-}
-
+/* Outline only, no fill - border: currentColor so it always matches
+   whichever colour (grey/blue-vivid) the row above sets, no separate
+   colour to keep in sync between the two item types. */
 .admin-notifications-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 28px;
   height: 28px;
-  padding: 0 0.5rem;
-  background: #6b7280;
-  color: white;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
   font-weight: 700;
-  font-size: 0.9rem;
-  border-radius: 14px;
+  color: inherit;
 }
 
 .admin-notifications-label {
-  color: #4b5563;
-  font-size: 0.95rem;
+  /* font-size comes from .font-size-text-sm-nr on the element itself
+     (global.css) - our own existing 18px utility, not redeclared here. */
+  color: inherit;
 }
 
 .admin-notifications-action {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
   font-weight: 500;
-}
-
-.admin-notifications-action::after {
-  content: "→";
+  /* font-size comes from .font-size-text-sm-nr on the element itself
+     (global.css) - our own existing 18px utility, not redeclared here. */
 }
 
 /* BatchUpload.js's step-2 form card. Deliberately its own class, not built
@@ -3100,6 +3187,47 @@ table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_1,
 table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_2,
 table.dataTable.display.zebra-stable-on-hover > tbody > tr:hover > .sorting_3 {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1) !important;
+}
+
+/* .table-slim-padding - general-purpose utility for any table that wants
+   tighter rows than the default cell padding, DataTables-driven or not
+   (widened from a table.dataTable-only selector - EvalPanel.js's plain
+   .review-table tables are a consumer now too). ChatViewer.js's pipeline
+   step timeline table was the only consumer before - opt-in per table
+   rather than changing every table site-wide. */
+table.table-slim-padding > tbody > tr > th,
+table.table-slim-padding > tbody > tr > td {
+  padding: 4px 10px;
+}
+/* .table-fixed-layout - opt-in for a table whose rows arrive one at a
+   time (VectorPage.js's DocDB capability probes): with auto layout every
+   new row re-measures every column and the whole table shifts. Pair with a
+   <colgroup> setting each column's share. */
+table.dataTable.table-fixed-layout {
+  table-layout: fixed;
+}
+table.dataTable.table-fixed-layout > tbody > tr > td {
+  overflow-wrap: anywhere;
+}
+table.dataTable.table-fixed-layout > thead > tr > th {
+  white-space: nowrap;
+}
+/* Key/value tables (VectorPage.js's embedding metadata status): the row
+   label is a <th scope="row"> and DataTables' base CSS centres every <th>,
+   which read as the whole table floating in the middle. Left, like the
+   cell next to it. */
+table.dataTable > tbody > tr > th[scope="row"] {
+  text-align: left;
+}
+/* .table-key-value - a two-column label/value table shrinks to its
+   content instead of DataTables' width: 100%, so the value sits beside its
+   label rather than at the far edge of the page. */
+table.dataTable.table-key-value {
+  width: auto;
+  margin: 0;
+}
+table.dataTable.table-key-value > tbody > tr > td {
+  padding-left: var(--gcds-spacing-300);
 }
 
 /* BatchList.js's visible "paused" design element - sits under the pause

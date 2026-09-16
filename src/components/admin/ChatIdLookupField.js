@@ -1,6 +1,7 @@
 import React from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import FeedbackInlineError from '../chat/FeedbackInlineError.js';
+import ChatIdMatchList from './ChatIdMatchList.js';
 
 // Shared label + input + submit button for a "do something with this chat
 // ID" form — the part that's identical across ViewChatByIdSection.js/
@@ -35,11 +36,25 @@ const ChatIdLookupField = ({
   // *description* (not the name, which stays plain "Chat ID" — see
   // SC 2.5.3 Label in Name).
   describedById,
+  // Partial-match pick-list, from useChatIdLookup.js's searchChats/matches -
+  // optional: DeleteByChatIdSection.js's exact-only lookup never passes
+  // these. matchesHeading is a pre-translated
+  // strings (this component does no i18n of its own) so the caller
+  // controls the interpolated {count}.
+  matches,
+  matchesHeading,
+  onSelectMatch,
+  hrefForMatch,
 }) => {
   const errorId = `${fieldId}-error`;
   const describedBy = [describedById, hasError && errorId].filter(Boolean).join(' ') || undefined;
   return (
-    <>
+    // chat-id-lookup-group: lets admin.css give this field's label the same
+    // real GC DS desktop font as ChatViewer.js's/SettingsPage.js's own
+    // fields - this component doesn't own a page wrapper to get that from,
+    // and the label isn't inside .chat-id-lookup-field below (input-only,
+    // for the width cap).
+    <div className="chat-id-lookup-group">
       <label htmlFor={fieldId} className="filter-label display-block">
         {label}
       </label>
@@ -64,10 +79,18 @@ const ChatIdLookupField = ({
           aria-describedby={describedBy}
         />
       </div>
-      <GcdsButton type="submit" buttonRole={buttonRole} disabled={disabled} className="mt-200 mb-300">
+      <GcdsButton type="submit" buttonRole={buttonRole} disabled={disabled} className="mt-200">
         {buttonLabel}
       </GcdsButton>
-    </>
+      {/* Below the button, where every other outcome StatusMessage sits. */}
+      <ChatIdMatchList
+        fieldId={fieldId}
+        matches={matches}
+        matchesHeading={matchesHeading}
+        onSelectMatch={onSelectMatch}
+        hrefForMatch={hrefForMatch}
+      />
+    </div>
   );
 };
 

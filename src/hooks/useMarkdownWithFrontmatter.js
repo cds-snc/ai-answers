@@ -1,14 +1,5 @@
 import { useState, useEffect } from 'react';
-import { load as loadYaml } from 'js-yaml';
-
-/**
- * Default frontmatter structure
- */
-const DEFAULT_FRONTMATTER = {
-  title: '',
-  description: '',
-  ogImage: null
-};
+import { DEFAULT_FRONTMATTER, parseFrontmatter } from '../utils/markdownFrontmatter.js';
 
 /**
  * Generic hook to fetch and parse markdown content with YAML frontmatter
@@ -85,51 +76,6 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
 
   return { frontmatter, content, sections, loading, error };
 };
-
-/**
- * Matches a leading YAML frontmatter block: --- on its own line, the YAML body,
- * then a closing --- on its own line. Tolerates CRLF endings.
- */
-const FRONTMATTER_PATTERN = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-
-/**
- * Parse YAML frontmatter from markdown content.
- *
- * Uses js-yaml directly rather than gray-matter: gray-matter calls the
- * `yaml.safeLoad` API that js-yaml 4 removed, and this repo pins js-yaml to 4.x
- * for every dependency via `overrides` in package.json. Under that pin every
- * gray-matter call throws, which previously left the raw frontmatter in the
- * rendered markdown.
- *
- * @param {string} markdown - Raw markdown content
- * @returns {Object} - { frontmatter, contentBody }
- */
-function parseFrontmatter(markdown) {
-  // The opening --- must be the very first thing in the file, so drop any BOM.
-  const source = markdown.replace(/^﻿/, '');
-  const match = source.match(FRONTMATTER_PATTERN);
-
-  if (!match) {
-    return { frontmatter: DEFAULT_FRONTMATTER, contentBody: source.trim() };
-  }
-
-  // Strip the block whether or not its YAML parses, so malformed frontmatter is
-  // never rendered to the page as content.
-  const contentBody = source.slice(match[0].length).trim();
-
-  try {
-    const data = loadYaml(match[1]) || {};
-
-    // Merge with defaults to ensure all expected fields exist
-    return {
-      frontmatter: { ...DEFAULT_FRONTMATTER, ...data },
-      contentBody
-    };
-  } catch (err) {
-    console.warn(`Failed to parse YAML frontmatter in markdown:`, err.message);
-    return { frontmatter: DEFAULT_FRONTMATTER, contentBody };
-  }
-}
 
 /**
  * Parse markdown content into sections by h2 headings

@@ -334,6 +334,21 @@ class DataStoreService {
     }
   }
 
+  // Partial-or-full chatId search, backing useChatIdLookup.js's multi-match
+  // picker (db-chat-search.js caps results server-side; see its own comment
+  // for why - this is a "narrow down to a short pick-list" search, not a
+  // paginated browse).
+  static async searchChats(query) {
+    try {
+      const response = await AuthService.fetch(getApiUrl(`db-chat-search?q=${encodeURIComponent(query)}`));
+      if (!response.ok) throw new Error('Failed to search chats');
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching chats:', error);
+      throw error;
+    }
+  }
+
   static async migratePublicFeedback() {
     try {
       const response = await AuthService.fetch(getApiUrl('db-migrate-public-feedback'), {

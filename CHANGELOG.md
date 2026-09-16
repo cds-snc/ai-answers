@@ -1,5 +1,208 @@
 # Changelog
 
+## [1.195.0](https://github.com/cds-snc/ai-answers/compare/v1.194.1...v1.195.0) (2026-09-10)
+
+
+### Features
+
+* add shared trade scenario file ([082cf0e](https://github.com/cds-snc/ai-answers/commit/082cf0e231336b041ce6845683ce4a2beaa43879))
+
+
+### Bug Fixes
+
+* add more trade details ([8aee834](https://github.com/cds-snc/ai-answers/commit/8aee83471ae9dd1972ba05daf763cda9207236b7))
+* alias bizpal to ISED ([7faeef7](https://github.com/cds-snc/ai-answers/commit/7faeef71d4f56f166db2564ce669242004100a92))
+* final code review ([d30e6b4](https://github.com/cds-snc/ai-answers/commit/d30e6b4177fc3a43947a3ccd0d8114cf78d4bfcb))
+* fine tuning ([b312628](https://github.com/cds-snc/ai-answers/commit/b312628f6f0a727fb928f6042a3d7facc2864717))
+* regional dev matching issues ([24c7cdc](https://github.com/cds-snc/ai-answers/commit/24c7cdca6dd69625af0bab4d7a5b46abeb5c8e58))
+* route About/How-to load states through StatusMessage ([e856bdd](https://github.com/cds-snc/ai-answers/commit/e856bddcd15a46562c0121eb8bc5f9c922d94af7))
+
+## [1.194.1](https://github.com/cds-snc/ai-answers/compare/v1.194.0...v1.194.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* code review fixes ([4ecc1e0](https://github.com/cds-snc/ai-answers/commit/4ecc1e08ee106556f6cc74c2e726529fe0832c6f))
+* downloadWebPage improvements ([b6301a1](https://github.com/cds-snc/ai-answers/commit/b6301a13efdff6537225b0f65d7302959f07d650))
+* performance and truncation ([9e5b762](https://github.com/cds-snc/ai-answers/commit/9e5b7628f3dd5b5c804b05ea1f43004a1e454dab))
+* remove clone ([64e80e7](https://github.com/cds-snc/ai-answers/commit/64e80e733a26ba18732e6a38f9d3e0d0765c593c))
+* remove dead t() fallback strings ([6ed3f63](https://github.com/cds-snc/ai-answers/commit/6ed3f63d92093fd97d25666c72fa19d6cc946f4d))
+* remove dead t() fallback strings ([e00d641](https://github.com/cds-snc/ai-answers/commit/e00d641f076c4954be315866a6e1928527d1da31))
+* strip dead t() fallback from AdminPage.js nav aria-label ([06dafb2](https://github.com/cds-snc/ai-answers/commit/06dafb22323456f21aebfd2c968dc6f0c4084851))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump qs from 6.15.2 to 6.16.0 in /server ([d585ef2](https://github.com/cds-snc/ai-answers/commit/d585ef2cd8768b0786f8a96c120626bebeb46a29))
+
+
+### Code Refactoring
+
+* delete unused CSS from admin.css ([002a5c6](https://github.com/cds-snc/ai-answers/commit/002a5c6a987f065b58992f670b2e03c0715b8d33))
+* delete unused CSS from chat.css ([e4ee825](https://github.com/cds-snc/ai-answers/commit/e4ee825bc3d818fb09004c4926ba9e347f9134ea))
+* delete unused CSS from global.css ([69e3281](https://github.com/cds-snc/ai-answers/commit/69e3281ae11a0bd9b866a849494ae57bf6034ae2))
+
+## [1.194.0](https://github.com/cds-snc/ai-answers/compare/v1.193.2...v1.194.0) (2026-09-08)
+
+
+### Features
+
+* show URL filter in Partner dashboard's advanced section ([6a67ad2](https://github.com/cds-snc/ai-answers/commit/6a67ad23bc985a9d46ced5aae5ced038b2a9ea96))
+* show URL filter in Partner dashboard's advanced section ([c00b16b](https://github.com/cds-snc/ai-answers/commit/c00b16b4451a686d3b72e1163f8c910daba02ee1))
+
+
+### Bug Fixes
+
+* expert review panel a11y pass ([a7f92dc](https://github.com/cds-snc/ai-answers/commit/a7f92dca01415f409f76c69609490ff5ece2a28c))
+* remove redundant title attrs from auth form inputs ([9d21458](https://github.com/cds-snc/ai-answers/commit/9d21458382aa3bf41a65881caf87bcf02add1dbc))
+
+
+### Documentation
+
+* add rule for keeping PRs human-reviewable ([32c3727](https://github.com/cds-snc/ai-answers/commit/32c37279ecc7706e53b7180315caa794383a95ca))
+* fix stale dashboard section, counts and gray-matter note in com… ([d261cf2](https://github.com/cds-snc/ai-answers/commit/d261cf2e3a818776cd1a2efa8256dc6cf4c7e774))
+
+
+### Code Refactoring
+
+* retire .wb-inv in favour of .sr-only/.skip-link ([a1b6147](https://github.com/cds-snc/ai-answers/commit/a1b614747a9ba257463da2c1196c5cf93dc16721))
+
+## [1.193.2](https://github.com/cds-snc/ai-answers/compare/v1.193.1...v1.193.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* revise for wait times ([4389636](https://github.com/cds-snc/ai-answers/commit/4389636b69a191597327b9c1a5bc1304da6a8427))
+* tighten diagrams ([dededb2](https://github.com/cds-snc/ai-answers/commit/dededb25c502d903536a81e18d9ae3003605c3d4))
+* update all docs ([7fedac0](https://github.com/cds-snc/ai-answers/commit/7fedac0254b0ec0cf25752dc96f8f307d79a6b14))
+
+## [1.193.1](https://github.com/cds-snc/ai-answers/compare/v1.193.0...v1.193.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* route all admin screen-reader announcements through one site-wide live… ([b229601](https://github.com/cds-snc/ai-answers/commit/b229601e5c85a9f61e30882ae981b9c367744729))
+
+
+### Documentation
+
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([a5a2170](https://github.com/cds-snc/ai-answers/commit/a5a2170076878571ed5e58632ce51d54ab8de1a8))
+* trim AGENTS.md, remove duplication, fold examples to 1 liners ([e8bf79e](https://github.com/cds-snc/ai-answers/commit/e8bf79e67511b4812e587a0c17eda5389c42e02f))
+* trim dashboards.md, rewrite tables.md for the shared table design ([1d22b81](https://github.com/cds-snc/ai-answers/commit/1d22b811b737f3580b4b4c2ec35974baf3c4451e))
+* trim dashboards.md, rewrite tables.md for the shared table design ([b0869ce](https://github.com/cds-snc/ai-answers/commit/b0869ced4a748239c8c124f09762db21ce543ae1))
+* trim design-system.md to rules ([0e2dfb3](https://github.com/cds-snc/ai-answers/commit/0e2dfb3a8f29056dc4bd151917096936635123d6))
+* trim design-system.md to rules ([ae070e1](https://github.com/cds-snc/ai-answers/commit/ae070e175c31d28a8198e34ce73505c68f4bb9d2))
+* trim status-and-error-messaging.md to rules and reference points ([bb8dd0b](https://github.com/cds-snc/ai-answers/commit/bb8dd0b0d38bec174dd34ff36b8d38e4d6a11082))
+* trim status-and-error-messaging.md to rules and reference points ([84d9600](https://github.com/cds-snc/ai-answers/commit/84d960062d98c043fed422e3e596e20e8e7f14bb))
+
+## [1.193.0](https://github.com/cds-snc/ai-answers/compare/v1.192.1...v1.193.0) (2026-08-28)
+
+
+### Features
+
+* more reliable dashboard tables readable by screen readers, AutoEval o… ([2a1786f](https://github.com/cds-snc/ai-answers/commit/2a1786f69631e916fe7ba088957efe76fa442c70))
+* more reliable screen-reader reading of grouped dashboard tables, AutoEval on the grouped table, GC DS-style table controls ([8296784](https://github.com/cds-snc/ai-answers/commit/82967840e9670c4bb1800d6f60cbdbd4c23501e9))
+
+## [1.192.1](https://github.com/cds-snc/ai-answers/compare/v1.192.0...v1.192.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* add scope="col" and caption to ChatViewer's log-entries table ([aa1a0c1](https://github.com/cds-snc/ai-answers/commit/aa1a0c10a04cde502ee70fff7a40a8c18ea8fbf1))
+* add scope="col" and caption to ChatViewer's log-entries table ([159a9a2](https://github.com/cds-snc/ai-answers/commit/159a9a230be77a249d844c9c2c5bca6f23140d44))
+* give account-side route changes proper focus, page titles, and reading order ([d82b5a3](https://github.com/cds-snc/ai-answers/commit/d82b5a3ec7a84bd1271c7dca312be05a30461c42))
+* give account-side route changes proper focus, page titles, and reading order ([c91b8ee](https://github.com/cds-snc/ai-answers/commit/c91b8ee53342ef7689bd6e93f52a24a35a3bc61a))
+
+
+### Documentation
+
+* capture accessibility-review and code-reuse lessons learned ([a695837](https://github.com/cds-snc/ai-answers/commit/a695837f4539f4cccb2d4022a6ee81ae773e2dca))
+* capture accessibility-review and code-reuse lessons learned ([1f00707](https://github.com/cds-snc/ai-answers/commit/1f0070753b266f083fde81aa8d4e18189ce7837b))
+* make accessibility-review skill terser to cut load cost ([c9d22fc](https://github.com/cds-snc/ai-answers/commit/c9d22fc0449c8458079605028c44d9ded4aa2269))
+* make accessibility-review skill terser to cut load cost ([d6c54e0](https://github.com/cds-snc/ai-answers/commit/d6c54e0e6525153c0e6f0d22beefb8bd46970dbf))
+
+## [1.192.0](https://github.com/cds-snc/ai-answers/compare/v1.191.6...v1.192.0) (2026-08-27)
+
+
+### Features
+
+* redesign ChatViewer admin page for accessibility ([f4e89a7](https://github.com/cds-snc/ai-answers/commit/f4e89a7f69a3bda6a09b75a182ed3587ac065e0d))
+* redesign ChatViewer admin page for accessibility ([e301cc7](https://github.com/cds-snc/ai-answers/commit/e301cc765f741f9ebd3432e9ff31f00263f7a3a2))
+
+
+### Bug Fixes
+
+* capture focus at click-time so Apply's auto-close doesn't lose it to a disabled button ([46ffa3a](https://github.com/cds-snc/ai-answers/commit/46ffa3aa31672350f693be08eb514dbb03e58f8a))
+* chat ID lookup correctness and accessibility fixes ([093d8b0](https://github.com/cds-snc/ai-answers/commit/093d8b0c7ee170a4ef6647441313f0d4a1c726a6))
+* code review ([9f910b6](https://github.com/cds-snc/ai-answers/commit/9f910b6eae10b8708a77a1485b43b9dd4f8f27dc))
+* mark interrupted eval-analysis run as a warning, not info ([265d6c3](https://github.com/cds-snc/ai-answers/commit/265d6c31c55050b260fa9a3864394e65a71ff06b))
+* mark interrupted eval-analysis run as a warning, not info ([decf78c](https://github.com/cds-snc/ai-answers/commit/decf78cb94ff69557a691b6133dd716a07331683))
+* raw untranslated err.message to text except true developer strings ([d7ab90e](https://github.com/cds-snc/ai-answers/commit/d7ab90e7e092eac4afe467d70ebc87de5fca1908))
+* replace text-glyph disclosure chevron with a CSS mask ([7ac85e7](https://github.com/cds-snc/ai-answers/commit/7ac85e77e1974e67958fe426b133f3e6d60120a7))
+* replace text-glyph disclosure chevron with a CSS mask ([e4de494](https://github.com/cds-snc/ai-answers/commit/e4de49406a4dfb5297f0860c48d342fee12c52b4))
+* restore chevron visibility in forced-colors mode ([09db432](https://github.com/cds-snc/ai-answers/commit/09db43296af88d978f9f7faa23734d453a8a4235))
+* restore focus to filter panel summary when Apply auto-closes it ([46661e1](https://github.com/cds-snc/ai-answers/commit/46661e195e870c08c60dd493fceb3fdb7b66029a))
+* stop showing raw untranslated err.message to users ([1edee94](https://github.com/cds-snc/ai-answers/commit/1edee94217bbce1e3852b1b323dd65ecec1478cb))
+
+## [1.191.6](https://github.com/cds-snc/ai-answers/compare/v1.191.5...v1.191.6) (2026-08-25)
+
+
+### Bug Fixes
+
+* remove un-pausable auto-redirects, only navigate to admin when a… ([5a8cd31](https://github.com/cds-snc/ai-answers/commit/5a8cd316f830783f3bf2535fb6d0cd3004a8b17b))
+
+## [1.191.5](https://github.com/cds-snc/ai-answers/compare/v1.191.4...v1.191.5) (2026-08-25)
+
+
+### Bug Fixes
+
+* add date ([a9c6e16](https://github.com/cds-snc/ai-answers/commit/a9c6e1665506d795451f9922fe85b151734e6f26))
+* announce admin-view mode to screen readers on chat load ([cc09e2d](https://github.com/cds-snc/ai-answers/commit/cc09e2d3d628f86febb6ad79882433a3d2b1c795))
+* announce admin-view mode to screen readers on chat load ([988e780](https://github.com/cds-snc/ai-answers/commit/988e78055d8bb1d109c2a262b77b7e87fc78bcd0))
+* pause between admin hint and label in aria-labelledby announcement ([03b2120](https://github.com/cds-snc/ai-answers/commit/03b212083f3b59c55798e594993d4c579f31d29d))
+* update FIN scenario for USA tariffs ([e66030a](https://github.com/cds-snc/ai-answers/commit/e66030a47c3dbb9f2be7cbe6273938581aacbaa3))
+* update per discuss with Annie ([87e0ffa](https://github.com/cds-snc/ai-answers/commit/87e0ffa0e29448b8c1db398af011ea5beea48b46))
+* update url to avoid ([1bc2ea9](https://github.com/cds-snc/ai-answers/commit/1bc2ea9647ba934617619fd90381b88eea7ff4e2))
+
+## [1.191.4](https://github.com/cds-snc/ai-answers/compare/v1.191.3...v1.191.4) (2026-08-25)
+
+
+### Bug Fixes
+
+* add sr-only useSrAnnouncer to Statusmessages, add consumers, a11y chat-options ([930f54f](https://github.com/cds-snc/ai-answers/commit/930f54f6aa9dcf1f255eb63229fe58bcbecc26b1))
+* referring-URL Apply/Clear a11y polish, shared sr-announcer hook, status-messaging docs extraction ([41f13cf](https://github.com/cds-snc/ai-answers/commit/41f13cf09f46709a0b305f883bf2a13384afbe0c))
+
+
+### Miscellaneous Chores
+
+* remove dead handleSearchToggle pass-through, document why ([8415631](https://github.com/cds-snc/ai-answers/commit/84156311b7b18b00fdcdfaa18a58626a324ae662))
+
+## [1.191.3](https://github.com/cds-snc/ai-answers/compare/v1.191.2...v1.191.3) (2026-08-24)
+
+
+### Bug Fixes
+
+* complete admin-language handling for referring/citation URLs ([60a8503](https://github.com/cds-snc/ai-answers/commit/60a8503d535301803b7991b28225e70ae5649fc8))
+* language-aware display for non-EN/FR questions and answers ([7c584f2](https://github.com/cds-snc/ai-answers/commit/7c584f223c7067d0a65ea0b691f71b54bb223b35))
+
+## [1.191.2](https://github.com/cds-snc/ai-answers/compare/v1.191.1...v1.191.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* serialize authentication requests ([d4461f5](https://github.com/cds-snc/ai-answers/commit/d4461f584a8c85ec0f2f3f56144265c439405ad9))
+* wait for logout before redirecting ([5069d80](https://github.com/cds-snc/ai-answers/commit/5069d8022098958307c9ea11b54a3f597e06e113))
+* wait for logout before redirecting ([f285e04](https://github.com/cds-snc/ai-answers/commit/f285e04459415eed979ec60ded8617046b43407f))
+
+## [1.191.1](https://github.com/cds-snc/ai-answers/compare/v1.191.0...v1.191.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* address PR review comments on how-to pages ([94927d6](https://github.com/cds-snc/ai-answers/commit/94927d6628237aa2ec9e654bc14654805b564946))
+* double icon bug, already part of statusmessage ([c63071e](https://github.com/cds-snc/ai-answers/commit/c63071e36b005b42343b80662c7d26c36bee2699))
+* double icon bug, already part of statusmessage ([9a5488b](https://github.com/cds-snc/ai-answers/commit/9a5488b4f3e18e680fcac8c5fc163fd88184076c))
+
 ## [1.191.0](https://github.com/cds-snc/ai-answers/compare/v1.190.4...v1.191.0) (2026-08-24)
 
 

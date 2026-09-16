@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GcdsContainer, GcdsText } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -11,8 +11,10 @@ import MetricsService from '../../services/MetricsService.js';
 import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
 import SectionLoadingIndicator from './SectionLoadingIndicator.js';
-import { wireTableAccessibility } from '../../utils/admin/dataTableAccessibility.js';
+import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.js';
+import { escapeHtml } from '../../utils/htmlEscape.js';
 import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 
 DataTable.use(DT);
@@ -113,14 +115,29 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   // fetchSection's own finally (runs for every section either way).
   const [hasAnySectionSettled, setHasAnySectionSettled] = useState(false);
 
-  // sr-only announcement of the Institution breakdown table's own search box
+  // Announcement of the Institution breakdown table's own search box
   // narrowing (SC 4.1.3) — shared with ChatDashboardPage.js. Also reused
-  // below (announce()) for the one "metrics loaded" completion message, same
-  // shared-persistent-region pattern as ChatDashboardPage.js's Clear-all.
-  const { searchAnnouncement, searchAnnounceNonce, noteSearchResult, announce } = useSearchAnnouncement({ t, fmtN });
-  // Guards the completion announcement to fire once per fetch cycle, not on
-  // every render where allSettled happens to still be true.
-  const announcedCompletionRef = useRef(false);
+  const { noteSearchResult } = useSearchAnnouncement({ t, fmtN });
+
+  // Memoized: the DataTables React wrapper rebuilds every row when the
+  // `data` prop's identity changes, and this component re-renders on each
+  // filter keystroke (noteSearchResult sets state) - an inline array meant
+  // a full rebuild per keystroke, which also jumped the page to the top.
+  const byDepartmentRows = useMemo(
+    () => Object.entries(metrics.byDepartment).map(([department, data]) => ({
+      department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
+      totalQuestions: data.total,
+      expertScoredTotal: data.expertScored.total,
+      expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) : 0,
+      expertScoredHasError: data.expertScored.hasError,
+      // null (not '-' directly): this column has real ordering
+      // on (unlike Accuracy summary's twin above), so the raw
+      // sort/type value has to stay numeric-or-null, with '-'
+      // only substituted at display time below.
+      expertScoredAccuracyPct: data.expertScored.total ? 100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : null
+    })),
+    [metrics.byDepartment, t]
+  );
 
   const updateLoading = useCallback((key, isLoading) => {
     setLoadingState(prev => ({ ...prev, [key]: isLoading }));
@@ -141,7 +158,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     const f = filters || getDefaultDateRange();
     setHasStartedLoading(true);
     setHasAnySectionSettled(false);
-    announcedCompletionRef.current = false;
 
     // Clear errors but keep stale data visible during loading (no flash)
     setErrorState({
@@ -193,17 +209,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     };
   }, []);
 
-  // One "metrics loaded" sr-only announcement once every section has
-  // settled — the counterpart to the LoadingOverlay shown until the first
-  // one does (see render below). announcedCompletionRef prevents firing
-  // again on a later re-render where allSettled is still true.
+  // The one completion announcement every dashboard makes ("Results
+  // loaded.", nothing on zero) once every section has settled — the
+  // counterpart to the LoadingOverlay shown until the first one does (see
+  // render below).
   const allSettled = hasStartedLoading && !Object.values(loadingState).some(Boolean);
-  useEffect(() => {
-    if (allSettled && !announcedCompletionRef.current) {
-      announcedCompletionRef.current = true;
-      announce(t('metrics.dashboard.loadedAnnouncement'));
-    }
-  }, [allSettled, announce, t]);
+  useResultsLoadedAnnouncement({
+    loading: hasStartedLoading && !allSettled,
+    count: metrics.totalQuestions,
+    // Any section failing shows its own error box; "Results loaded." on
+    // top of that would contradict it.
+    error: Object.values(errorState).some(Boolean),
+    t,
+  });
 
   const handleApplyFilters = (filters) => {
     fetchMetrics(filters);
@@ -246,7 +264,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         )}
         {error && !isLoading && (
           <StatusMessage variant="error">
-            {fetchErrorPrefix}<span lang="en">{error}</span>{fetchErrorSuffix}
+            {fetchErrorPrefix}<code lang="en">{error}</code>{fetchErrorSuffix}
           </StatusMessage>
         )}
         {/* No loading-dim/disable while a section refetches — removed rather
@@ -317,13 +335,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         />
       </div>
 
-      {/* Always mounted (not inside the loading-gated blocks below) so it's
-          a pre-existing empty live region — required for `persistent` to
-          work at all (see StatusMessage.js's own comment) — before either
-          the completion announcement or the Institution breakdown table's
-          own search-narrowing announcement can ever fire into it. */}
-      <StatusMessage persistent message={searchAnnouncement} nonce={searchAnnounceNonce} className="sr-only" />
-
       {/* Blocks the whole results area until the first of the 6 sections
           settles (success or error) — same LoadingOverlay pattern as
           ChatDashboardPage.js/EvalDashboardPage.js's single-fetch tables,
@@ -350,7 +361,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         return (
           <>
             {isEmptyPeriod && (
-              <StatusMessage variant="info" message={t('common.noDataForFilters')} />
+              <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
             )}
 
             {hasAnySectionSettled && !isEmptyPeriod && (
@@ -375,7 +386,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     buildCountPctRow(t('metrics.dashboard.questions.thirdOrMore'), metrics.sessionsByQuestionCount.threeQuestions, metrics.totalQuestions)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questions.title')}</caption>
                 </DataTable>
@@ -429,7 +440,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('metrics.dashboard.accuracy.accuracyPctEn'), data: 'accuracyPctEn', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d },
                     { title: t('metrics.dashboard.accuracy.accuracyPctFr'), data: 'accuracyPctFr', type: 'num', render: (d, type) => type === 'display' ? fmtPct(d) : d }
                   ]}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.accuracy.title')}</caption>
                 </DataTable>
@@ -446,7 +457,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { ...buildCountPctRow(t('metrics.dashboard.totalSessions'), { total: metrics.totalConversations, en: metrics.totalConversationsEn, fr: metrics.totalConversationsFr }, metrics.totalConversations), percentage: 100 }
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.sessions.title')}</caption>
                 </DataTable>
@@ -464,7 +475,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     buildCountPctRow(t('metrics.dashboard.answerTypes.notGc'), metrics.answerTypes['not-gc'], metrics.totalQuestions)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
-                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, className: 'display', language: dataTableLanguage(lang) }}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.questionTypes.title')}</caption>
                 </DataTable>
@@ -500,10 +511,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang)
                   }}
                 >
@@ -530,10 +542,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   options={{
                     paging: false,
                     searching: false,
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
                     ordering: false,
                     info: false,
                     stripe: true,
-                    className: 'display',
+                    className: 'display zebra-stable-on-hover',
                     language: dataTableLanguage(lang)
                   }}
                 >
@@ -558,19 +571,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     className on <DataTable> below, not this wrapper. */}
                 <div className="metrics-table-container">
                 <DataTable
-                  className="display dashboard-table"
-                  data={Object.entries(metrics.byDepartment).map(([department, data]) => ({
-                    department: (!department || department === 'Unknown') ? t('metrics.dashboard.byDepartment.noContextDept') : department,
-                    totalQuestions: data.total,
-                    expertScoredTotal: data.expertScored.total,
-                    expertScoredPct: data.total ? Math.round((data.expertScored.total / data.total) * 100) : 0,
-                    expertScoredHasError: data.expertScored.hasError,
-                    // null (not '-' directly): this column has real ordering
-                    // on (unlike Accuracy summary's twin above), so the raw
-                    // sort/type value has to stay numeric-or-null, with '-'
-                    // only substituted at display time below.
-                    expertScoredAccuracyPct: data.expertScored.total ? 100 - Math.round((data.expertScored.hasError / data.expertScored.total) * 100) : null
-                  }))}
+                  className="display dashboard-table zebra-stable-on-hover"
+                  data={byDepartmentRows}
                   columns={[
                     { title: t('metrics.dashboard.byDepartment.department'), data: 'department' },
                     { title: t('metrics.dashboard.totalQuestions'), data: 'totalQuestions', render: (d, type) => type === 'display' ? fmtN(d) : d },
@@ -605,12 +607,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                       topStart: 'search',
                       topEnd: {},
                       bottomStart: { features: ['pageLength', 'info'] },
-                      bottomEnd: 'paging'
+                      bottomEnd: { paging: { firstLast: false } }
                     },
-                    language: dataTableLanguage(lang),
+                    language: {
+                      ...dataTableLanguage(lang),
+                      // Filter-style box like the batch list / log entries:
+                      // sr-only <label> text, "Filter" placeholder, native x
+                      // to clear (no search-term pill).
+                      search: `<span class="sr-only">${escapeHtml(t('metrics.dashboard.byDepartment.filterLabel'))}</span>`,
+                      searchPlaceholder: t('admin.common.filterPlaceholder'),
+                    },
                     initComplete: function () {
                       const api = this.api();
-                      wireTableAccessibility(api, { t });
+                      setColumnHeaderScope(api);
                       api.on('search.dt', () => {
                         noteSearchResult(api.search(), api.rows({ search: 'applied' }).count());
                       });

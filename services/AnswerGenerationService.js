@@ -14,7 +14,21 @@ const convertInteractionsToMessages = (interactions) => {
     const reversed = [...interactions].reverse();
     for (let i = reversed.length - 1; i >= 0; i--) {
         const item = reversed[i];
-        if (item && item.interaction && item.interaction.question && item.interaction.answer) {
+        // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
+        // hand-duplicated in 2 other files - ContextAgentService.js and
+        // ConversationIntegrityService.js's serializeHistory (search for
+        // "isUser" there). All three independently implement the same
+        // invariant (originally by the same author, Ryan Hyma, in commits
+        // a2c70182 and b585a348 - a2c70182 wrote this file's own copy;
+        // b585a348, five weeks later, added the other two after a real
+        // conversation-integrity hash-mismatch bug from them being out of
+        // sync). Keep this in sync with the other two if you touch it -
+        // consider a shared helper only if that becomes a recurring cost.
+        // item.sender === 'user' is defense-in-depth, not the primary guard -
+        // a user-sender entry should never carry `.interaction` at all
+        // (src/components/chat/ChatAppContainer.js), but the one time that
+        // contract broke, every historical turn got pushed here twice.
+        if (item && item.sender !== 'user' && item.interaction && item.interaction.question && item.interaction.answer) {
             messages.push({ role: 'user', content: item.interaction.question });
             messages.push({ role: 'assistant', content: item.interaction.answer.content });
         }

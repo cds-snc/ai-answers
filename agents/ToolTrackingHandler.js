@@ -35,6 +35,13 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
             this.toolCalls.push({
                 runId, // Store runId for matching with completion
                 tool: toolName,
+                // LangChain fires handleToolStart with the model's raw argument,
+                // before the tool body runs — so for downloadWebPage/checkURL this
+                // is the pre-normalizeFetchUrl URL (possibly http://), while
+                // `output` below reflects whatever the tool actually did with the
+                // normalized (https://) URL. The two can disagree on scheme for
+                // the same recorded call; that's expected, not a logging bug. Seen
+                // by an admin via ChatViewer's "Download logs (JSON)" export.
                 input: input,
                 startTime: Date.now(),
                 status: 'started',

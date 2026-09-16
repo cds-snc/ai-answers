@@ -60,6 +60,19 @@ const FilterPanel = ({
   // does - see the appliedFilters effect below.
   const panelSummaryRef = useRef(null);
   const pendingClearFocusRef = useRef(false);
+  // Captured in handleApply itself, not re-derived later from
+  // document.activeElement: a caller like PartnerDashboard.js ties
+  // applyDisabled to the same loading state Apply triggers, so the Apply
+  // button gets disabled - and the browser blurs a disabled element to
+  // <body> immediately, well before any fetch resolves - before the
+  // auto-close effect below would otherwise get a chance to check who's
+  // focused. This is the last point guaranteed to still see the real
+  // target. Collapsing a native <details> hides everything except its
+  // <summary> - if focus was still on the Apply button (a keyboard/
+  // screen-reader user who just pressed it) that button vanishes from the
+  // accessibility tree, so this drives the same redirect-to-summary fix as
+  // pendingClearFocusRef above.
+  const focusWasInPanelOnApplyRef = useRef(false);
   // Removing a single pill (removeFilter, as opposed to Clear all above) -
   // buildPills() always pushes exactly one entry per category in the same
   // fixed order, so whatever's now at the same array index the clicked pill
@@ -95,16 +108,33 @@ const FilterPanel = ({
       // (hasAppliedFilters stays true throughout), this branch never runs, so
       // their existing skip-then-consume flow below is unaffected.
       skipNextAutoClose.current = false;
+      focusWasInPanelOnApplyRef.current = false;
       return;
     }
     if (filterLoading) return;
     if (skipNextAutoClose.current) {
       skipNextAutoClose.current = false;
+      // Same staleness concern as skipNextAutoClose above: a Clear fired
+      // while an earlier Apply's loading was still in flight shouldn't let
+      // that Apply's armed flag silently redirect focus on some later,
+      // unrelated close.
+      focusWasInPanelOnApplyRef.current = false;
       return;
     }
     if (filterError || filterResultCount === 0) {
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(true);
     } else if (filterResultCount > 0) {
+      // panelSummaryRef.current is always mounted (a native <summary> stays
+      // visible whether its <details> is open or closed), so there's no
+      // need to wait for the collapse to actually commit before focusing it
+      // - unlike pendingClearFocusRef's case (Clear reopens the panel, so
+      // the target isn't rendered yet when Clear fires), the redirect
+      // target here already exists at arm time.
+      if (focusWasInPanelOnApplyRef.current) {
+        panelSummaryRef.current?.focus();
+      }
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(false);
     }
   }, [hasAppliedFilters, filterLoading, filterError, filterResultCount]);
@@ -673,16 +703,16 @@ const FilterPanel = ({
 
   // Department options — partner list is shared across the app
   const departmentOptions = [
-    { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: '', label: t('admin.filters.allDepartments') },
     ...PARTNER_DEPARTMENTS.map(d => ({ value: d, label: d })),
   ];
 
   // User type options
   const userTypeOptions = [
-    { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
-    { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
-    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
-    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
+    { value: 'all', label: t('admin.filters.allUsers') },
+    { value: 'public', label: t('admin.filters.publicUsers') },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') },
+    { value: 'admin', label: t('admin.filters.adminUsers') }
   ];
 
   // Answer type options
@@ -729,6 +759,16 @@ const FilterPanel = ({
   ];
 
   const handleApply = () => {
+    // Captured here, synchronously, before anything else runs - see
+    // focusWasInPanelOnApplyRef's own comment above for why this can't be
+    // deferred to the auto-close effect below. .closest('details') rather
+    // than .parentElement: names the actual ancestor relationship this
+    // depends on instead of a one-hop DOM fact that happens to hold today.
+    const activeEl = document.activeElement;
+    const panelEl = panelSummaryRef.current?.closest('details');
+    focusWasInPanelOnApplyRef.current =
+      !!panelEl && !!activeEl && activeEl !== panelSummaryRef.current && panelEl.contains(activeEl);
+
     // Prefer the picker's live state over React state: the picker tracks the
     // user's calendar selection in real-time, so dates are correct even when
     // the user chose a custom range without clicking Apply inside the calendar.
@@ -1008,8 +1048,11 @@ const FilterPanel = ({
     pendingPillFocusIndexRef.current = null;
     const row = pillsRowRef.current;
     if (!row) return;
-    const target = (idx < pills.length ? row.children[idx] : null) || row.children[Math.max(0, idx - 1)];
-    target?.focus();
+    // The pills are <li>s inside the row's <ul>; the focusable element is
+    // the <li>'s single child (a pill button, or a tabIndex={-1} info span).
+    const items = row.querySelectorAll('.filter-pills-list > li');
+    const slot = (idx < pills.length ? items[idx] : null) || items[Math.max(0, idx - 1)];
+    slot?.firstElementChild?.focus();
   }, [appliedFilters]);
 
   if (!isVisible) return null;
@@ -1020,8 +1063,14 @@ const FilterPanel = ({
       <summary className="filter-panel-summary" ref={panelSummaryRef}>
         <SlidersHorizontal className="filter-panel-summary__icon" aria-hidden="true" />
         {t('admin.filters.title')}
+        {/* The badge is decorative for AT; the sr-only phrase says what the
+            number means ("Filters, Applied filters: 4"). aria-label on a
+            <span> isn't reliably exposed, so hidden text instead. */}
         {appliedFilters && pills.length > 0 && (
-          <span className="filter-panel-summary__count">{pills.length}</span>
+          <>
+            <span className="filter-panel-summary__count" aria-hidden="true">{pills.length}</span>
+            <span className="sr-only">{t('admin.filters.appliedCount').replace('{count}', () => pills.length)}</span>
+          </>
         )}
       </summary>
       <div className="filter-panel-content">
@@ -1029,7 +1078,7 @@ const FilterPanel = ({
         <div className="filter-main-row">
           <div className="filter-row">
             <label htmlFor="dateRangePicker" className="filter-label">
-              {t('admin.filters.dateRange') || 'Date Range'}
+              {t('admin.filters.dateRange')}
             </label>
             <input
               ref={dateRangePickerRef}
@@ -1045,7 +1094,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="department" className="filter-label">
-              {t('admin.filters.department') || 'Department'}
+              {t('admin.filters.department')}
             </label>
             <select
               id="department"
@@ -1063,7 +1112,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="user-type" className="filter-label">
-              {t('admin.filters.users') || 'User Type'}
+              {t('admin.filters.users')}
             </label>
             <select
               id="user-type"
@@ -1097,27 +1146,27 @@ const FilterPanel = ({
             <div className="filter-column">
               <div className="filter-row">
                 <label htmlFor="url-en" className="filter-label">
-                  {t('admin.filters.urlEn') || 'URL (EN)'}
+                  {t('admin.filters.urlEn')}
                 </label>
                 <input
                   type="text"
                   id="url-en"
                   value={urlEn}
                   onChange={(e) => setUrlEn(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
               <div className="filter-row">
                 <label htmlFor="url-fr" className="filter-label">
-                  {t('admin.filters.urlFr') || 'URL (FR)'}
+                  {t('admin.filters.urlFr')}
                 </label>
                 <input
                   type="text"
                   id="url-fr"
                   value={urlFr}
                   onChange={(e) => setUrlFr(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
@@ -1146,13 +1195,18 @@ const FilterPanel = ({
             <>
             <details className="filter-checkbox-details details-form" open onToggle={(e) => e.stopPropagation()}>
               <summary className="filter-label">
-                {t('admin.filters.answerType') || 'Answer Type'}
-                {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
+                {t('admin.filters.answerType')}
+                {answerType.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({answerType.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => answerType.length)}</span>
+                  </>
+                )}
               </summary>
               <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.answerType')}>
                 <div className="checkbox">
                   <input type="checkbox" id="answerType-all" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} />
-                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes') || 'All'}</label>
+                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes')}</label>
                 </div>
                 {answerTypeOptions.filter(o => o.value !== 'all').map(option => (
                   <div className="checkbox" key={option.value}>
@@ -1170,13 +1224,18 @@ const FilterPanel = ({
               <div className="filter-eval-pair">
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                    {t('admin.filters.partnerEval')}
+                    {partnerEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({partnerEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => partnerEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.partnerEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="partnerEval-all" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} />
-                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals') || 'All'}</label>
+                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals')}</label>
                     </div>
                     {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>
@@ -1189,13 +1248,18 @@ const FilterPanel = ({
 
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.aiEval') || 'AI Evaluation'}
-                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                    {t('admin.filters.aiEval')}
+                    {aiEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({aiEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => aiEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.aiEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="aiEval-all" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} />
-                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals') || 'All'}</label>
+                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals')}</label>
                     </div>
                     {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>
@@ -1236,15 +1300,24 @@ const FilterPanel = ({
     </details>
 
     {pills.length > 0 && (
-      <div className="filter-bar__pills-row" ref={pillsRowRef}>
+      // role="group" + name: what the row is (the applied filters) and what
+      // the pills do (remove one to change the results). Without it a
+      // screen reader arriving on the first pill just hears "Remove filter
+      // - Last 30 days, button".
+      <div className="filter-bar__pills-row" ref={pillsRowRef} role="group" aria-label={t('admin.filters.appliedFiltersGroup')}>
+        {/* A real list, fixed and removable pills alike: fixed ones are
+            plain text (not in the tab order), so list navigation is the
+            only way a screen-reader user reads the whole applied set and
+            gets its count. role="list" explicitly - see .filter-pills-list. */}
+        <ul className="filter-pills-list" role="list">
         {pills.map((pill, index) => (
-          pill.connector || pill.info ? (
+          <li key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}>
+          {pill.connector || pill.info ? (
             // tabIndex={-1}: not in the tab order (it's not interactive),
             // but still a valid target for the removeFilter effect above to
             // land on programmatically when this info pill is what now
             // occupies a just-cleared pill's old slot.
             <span
-              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
               className={`filter-pill${pill.connector ? ' filter-pill--connector' : ' filter-pill--info'}`}
               tabIndex={-1}
             >
@@ -1259,7 +1332,6 @@ const FilterPanel = ({
             // button - a button inside a button is invalid HTML anyway),
             // carried entirely by this button's own aria-label.
             <button
-              key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
               type="button"
               className="filter-pill filter-pill--closable"
               onClick={() => {
@@ -1275,13 +1347,17 @@ const FilterPanel = ({
                 }
                 removeFilter(pill.key, pill.value);
               }}
-              aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
+              // Value first, action second: someone reading the row to
+              // learn what's applied hears the filter before "remove".
+              aria-label={`${pill.label} - ${t('dashboardFilter.removeFilter')}`}
             >
               {pill.label}
               <span className="filter-pill__close" aria-hidden="true">×</span>
             </button>
-          )
+          )}
+          </li>
         ))}
+        </ul>
         {pills.some(p => !p.info) && (
           <button
             type="button"

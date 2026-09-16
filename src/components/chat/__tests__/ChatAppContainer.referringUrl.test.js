@@ -34,6 +34,7 @@ vi.mock('../ChatInterface', () => ({
         <div data-testid="chat-interface">
             <div data-testid="url-display">{referringUrl}</div>
             <button data-testid="change-btn" onClick={() => handleReferringUrlChange({ target: { value: 'manual-url' } })}>Change</button>
+            <button data-testid="clear-btn" onClick={() => handleReferringUrlChange({ target: { value: '' } })}>Clear</button>
             <div data-testid="turn-count">{turnCount}</div>
             {turnCount === 0 && referringUrl && !readOnly && (
                 <div data-testid="hint">Hint: {referringUrl}</div>
@@ -84,6 +85,39 @@ describe('ChatAppContainer - Referring URL', () => {
         // Change it
         fireEvent.click(screen.getByTestId('change-btn'));
 
+        await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe('manual-url'));
+    });
+
+    // Regression test: the pageUrl-backfill effect (above) also fires on
+    // every referringUrl change, including the one Clear itself makes — so
+    // without userSetReferringUrlRef guarding it, this immediately
+    // repopulated from pageUrl on the very next render and Clear never
+    // actually worked. Found in PR #1750 review.
+    it('keeps the URL cleared after Clear, even though it opened with a pageUrl', async () => {
+        vi.mocked(usePageContext).mockReturnValue({ url: 'original-url', department: '' });
+        render(<ChatAppContainer lang="en" />);
+
+        // Initial pageUrl backfill still happens
+        await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe('original-url'));
+
+        fireEvent.click(screen.getByTestId('clear-btn'));
+
+        // Must stay cleared, not snap back to pageUrl
+        await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe(''));
+        // Give the backfill effect another tick to (wrongly) fire, if it were going to
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(screen.getByTestId('url-display').textContent).toBe('');
+    });
+
+    it('still allows changing to a new value after having cleared a pageUrl-backed one', async () => {
+        vi.mocked(usePageContext).mockReturnValue({ url: 'original-url', department: '' });
+        render(<ChatAppContainer lang="en" />);
+
+        await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe('original-url'));
+        fireEvent.click(screen.getByTestId('clear-btn'));
+        await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe(''));
+
+        fireEvent.click(screen.getByTestId('change-btn'));
         await waitFor(() => expect(screen.getByTestId('url-display').textContent).toBe('manual-url'));
     });
 });

@@ -228,4 +228,41 @@ describe('api/chat/chat-dashboard filter handling', () => {
     const groupStage = Array.isArray(capturedPipeline) && capturedPipeline.find(stage => stage && stage.$group);
     expect(groupStage).toBeUndefined();
   });
+
+  it('does not add the questionLanguage match for an unrelated search term', async () => {
+    let capturedPipeline;
+    ChatModel.Chat.aggregate.mockImplementationOnce((pipeline) => {
+      capturedPipeline = pipeline;
+      return { allowDiskUse: () => Promise.resolve([]) };
+    });
+    ChatModel.Chat.aggregate.mockImplementationOnce(() => ({ allowDiskUse: () => Promise.resolve([]) }));
+
+    const req = {
+      method: 'GET',
+      query: {
+        search: 'passport',
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      }
+    };
+
+    const res = {
+      status: vi.fn(() => res),
+      json: vi.fn(() => res)
+    };
+
+    try {
+      await handler(req, res);
+    } catch (e) {
+      // ignore errors as long as aggregate was invoked
+    }
+
+    const searchMatch = Array.isArray(capturedPipeline) && capturedPipeline.find(stage =>
+      stage && stage.$match && Array.isArray(stage.$match.$or) &&
+      stage.$match.$or.some(cond => cond.redactedQuestion)
+    );
+
+    expect(searchMatch).toBeDefined();
+    expect(searchMatch.$match.$or.some(cond => cond.questionLanguage)).toBe(false);
+  });
 });

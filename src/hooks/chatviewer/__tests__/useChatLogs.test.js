@@ -59,4 +59,30 @@ describe('useChatLogs', () => {
     expect(outcome.error).toBeNull();
     expect(outcome.logs).toEqual([]);
   });
+
+  // Regression: ChatViewer.js's useChatIdLookup can resolve a partial search
+  // to a specific chatId *while* a caller is already holding an earlier
+  // render's `refreshLogs` reference (a real network round trip inside that
+  // search re-renders this hook before the caller's own await resolves).
+  // refreshLogs must fetch for the *current* chatId at call time, not
+  // whatever chatId its own closure was created with.
+  it('fetches for the current chatId even when called via a refreshLogs reference from an earlier render', async () => {
+    getLogs.mockImplementation((chatId) => Promise.resolve({ logs: [{ message: `log for ${chatId}` }] }));
+    const { result, rerender } = renderHook(({ chatId }) => useChatLogs(chatId), {
+      initialProps: { chatId: 'chat-old' },
+    });
+
+    const staleRefreshLogs = result.current.refreshLogs;
+    rerender({ chatId: 'chat-new' });
+
+    let outcome;
+    await act(async () => {
+      outcome = await staleRefreshLogs();
+    });
+
+    expect(getLogs).toHaveBeenCalledWith('chat-new');
+    expect(getLogs).not.toHaveBeenCalledWith('chat-old');
+    expect(outcome.logs).toEqual([{ message: 'log for chat-new' }]);
+    expect(result.current.logs).toEqual([{ message: 'log for chat-new' }]);
+  });
 });

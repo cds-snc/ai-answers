@@ -28,7 +28,7 @@ const ScenarioOverrideBanner = ({ activeOverride, t }) => {
 
   return (
     <div
-      className={`scenario-override-banner mb-300${hasContent ? '' : ' scenario-override-banner--empty'}`}
+      className={`scenario-override-banner${hasContent ? '' : ' scenario-override-banner--empty'}`}
       role="status"
       aria-live="polite"
     >

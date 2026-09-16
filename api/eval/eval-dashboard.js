@@ -3,6 +3,7 @@ import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpressionWithoutCitation, getAiEvalAggregationExpressionWithoutCitation, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getFeedbackDataProjection } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
+import { escapeRegex } from '../util/db-query.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -31,8 +32,6 @@ const getDateRange = (query) => {
   const start = new Date(now.getTime() - HOURS_IN_DAY * 60 * 60 * 1000);
   return { $gte: start, $lte: now };
 };
-
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 async function evalDashboardHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });

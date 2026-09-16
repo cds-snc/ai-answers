@@ -27,8 +27,10 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
+      "viewSource": "Consulter le texte source en anglais",
       "thankYou": "Merci d'avoir donné votre rétroaction !",
-      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
+      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur.",
+      "expertFeedbackDeletedAnnouncement": "Rétroaction d'expert supprimée. Vous pouvez évaluer cette réponse à nouveau."
     },
     "publicFeedback": {
       "send": "Envoyer la rétroaction",
@@ -90,6 +92,7 @@
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse.",
         "referringPage": "Page où vous étiez :",
         "referringURL": "URL de référence :",
+        "adminViewLabel": "Vue administrateur avec options d'évaluation",
         "disclaimer": "L'IA peut faire des erreurs, vérifiez la réponse ou posez une question de suivi ci-dessous."
       },
       "textarea": {
@@ -106,7 +109,7 @@
         "reloadSessionAriaLabel": "Recharger la page — session expirée"
       },
       "options": {
-        "title": "Options",
+        "title": "Options d'évaluation",
         "aiSelection": {
           "label": "IA :",
           "anthropic": "Anthropic",
@@ -126,7 +129,14 @@
         },
         "useSystemSettings": "Utiliser les paramètres système",
         "referringUrl": {
-          "label": "URL de référence Canada.ca (facultatif)"
+          "label": "URL de référence Canada.ca (facultatif)",
+          "error": "Entrez une URL complète, commençant par https:// ou http://",
+          "emptyError": "Veuillez inclure une URL",
+          "noUrlToClearError": "Aucune URL à effacer",
+          "applyLabel": "Appliquer l'URL",
+          "clearLabel": "Effacer l'URL",
+          "removedAnnouncement": "URL de référence effacée.",
+          "appliedAnnouncement": "URL de référence appliquée."
         }
       },
       "messages": {
@@ -173,6 +183,7 @@
         "heading": "Continuez avec ce lien :"
       },
       "review": {
+        "eyebrow": "Vue administrateur",
         "chatDate": "Date (AAAA-MM-JJ):",
         "referringUrl": "URL de provenance :",
         "noDepartment": "Aucun"
@@ -215,7 +226,10 @@
       "submit": "Soumettre l'évaluation",
       "intro": "Évaluez les phrases de la réponse et/ou la citation",
       "answerNumberLabel": "Réponse {number}",
-      "labelWithAnswer": "{label} : {answer}"
+      "labelWithAnswer": "{label} : {answer}",
+      "sourceView": {
+        "title": "Texte source de Réponses IA"
+      }
     }
   },
   "batch": {
@@ -295,7 +309,7 @@
       }
     },
     "list": {
-      "searchPlaceholder": "Nom du lot ou ID du lot",
+      "filterLabel": "Filtrer les lots par nom ou ID",
       "columns": {
         "batchName": "Nom",
         "totals": "Totaux",
@@ -353,8 +367,9 @@
     }
   },
   "logging": {
-    "title": "Visualiseur de chat",
-    "refresh": "Actualiser",
+    "title": "Tracer un clavardage",
+    "chatIdSectionHeading": "ID du clavardage",
+    "refreshResults": "Actualiser les résultats",
     "refreshPending": "Patientez...",
     "refreshComplete": "Journaux actualisés. {count} entrées chargées.",
     "refreshFailed": "Échec de l'actualisation. Les journaux n'ont pas été mis à jour.",
@@ -365,16 +380,20 @@
     "message": "Message",
     "metadata": "Métadonnées",
     "enterChatId": "Entrez l'identifiant du clavardage :",
+    "traceFor": "Trace pour :",
     "filterByLevel": "Filtrer par niveau :",
+    "filterEntriesLabel": "Filtrer les entrées du journal",
     "all": "Tous",
     "info": "Info",
     "debug": "Débogage",
     "warn": "Avertissement",
     "error": "Erreur",
+    "levelFilterAnnouncement": "Affichage de {count} entrées pour le niveau : {level}",
+    "levelFilterAnnouncementAll": "Affichage de {count} entrées",
     "noLogs": "Aucun journal disponible",
-    "metadataDetails": "Détails des métadonnées",
-    "expand": "Développer",
-    "close": "Fermer",
+    "entriesHeading": "Entrées de journal",
+    "metadataSeeFullField": "Voir {key}",
+    "metadataSeeFullValue": "Voir la valeur",
     "timeline": {
       "title": "Chronologie des étapes du pipeline",
       "graph": "Graphe",
@@ -490,6 +509,10 @@
       "checkIndexStatusButton": "Vérifier l'état des index",
       "checkingLabel": "Vérification...",
       "indexStatusError": "Échec de la vérification de l'état des index : {error}",
+      "indexStatusBuilding": "Certains index sont en cours de création.",
+      "indexStatusComplete": "Tous les index sont complets.",
+      "indexStatusIncomplete": "Certains index pourraient être incomplets.",
+      "countsError": "Échec de la récupération des totaux de la table : {error}",
       "indexCreationFailed": "La création d'index a échoué pour les collections suivantes :",
       "collectionColumn": "Collection",
       "currentColumn": "Actuel",
@@ -591,7 +614,6 @@
     },
     "viewChat": {
       "label": "ID de chat",
-      "button": "Afficher le chat",
       "loading": "Recherche en cours...",
       "invalidFormat": "Format d'ID de chat invalide"
     },
@@ -659,7 +681,8 @@
             "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
             "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
             "mapFeedback": "Mapper la rétroaction à la nouvelle interaction (niveau phrase ou QA uniquement) et enregistrer la trace de correspondance des phrases et les scores de similarité",
-            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit"
+            "recordSimilarities": "Enregistrer les scores de similarité, les IDs d'interaction/chat de citation appariés, les métadonnées de repli et une chronologie détaillée des étapes pour l'audit",
+            "updateInteraction": "Mettre à jour l'interaction avec la nouvelle référence d'évaluation (autoEval)"
           }
         },
         "noMatch": {
@@ -713,6 +736,9 @@
     },
     "filters": {
       "title": "Filtres",
+      "appliedCount": "{count} filtres appliqués, listés ci-dessous",
+      "appliedFiltersGroup": "Filtres appliqués. Retirez-en un pour modifier les résultats.",
+      "selectedCount": "Sélectionnés : {count}",
       "sectionHeading": "Choisir des options de filtrage",
       "clearAll": "Tout effacer",
       "apply": "Appliquer",
@@ -768,6 +794,7 @@
     },
     "session": {
       "title": "Sessions",
+      "filterLabel": "Filtrer les sessions",
       "sessionId": "ID de session",
       "sessionType": "Type de session",
       "sessionTypes": {
@@ -797,33 +824,46 @@
     "common": {
       "searchLabel": "Rechercher :",
       "searchPlaceholder": "p. ex. impôt, contact, compte",
+      "filterPlaceholder": "Filtrer",
       "searchTermPillLabel": "Recherche : {term}",
-      "noSearchResults": "Aucun résultat de recherche trouvé.",
+      "noSearchResults": "Aucun résultat pour {term}.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
+      "resultsLoaded": "Résultats chargés.",
       "viewChatById": "Voir le chat par ID",
+      "originallyAskedIn": "Posée à l'origine en : {language}",
+      "sourceText": "Source",
+      "workingTextTooltip": "Texte source de Réponses IA",
+      "aiAnswersSource": "Texte source : en anglais seulement",
       "chatIdRequired": "Veuillez entrer un identifiant de clavardage.",
       "chatIdPlaceholder": "Entrez l'ID complet du chat",
+      "chatIdSearchPlaceholder": "Entrez l'ID de clavardage (partiel ou complet)",
+      "chatIdSearchButton": "Rechercher l'ID de clavardage",
+      "chatIdSearchTooShort": "Entrez au moins 4 caractères.",
+      "chatFound": "Clavardage trouvé.",
+      "chatIdMatchesFound": "{count} clavardages correspondants trouvés. Sélectionnez-en un pour continuer.",
+      "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
-      "sortActivateAscending": "{column} : activer le tri croissant",
-      "sortActivateDescending": "{column} : activer le tri décroissant",
-      "sortRemove": "{column} : activer pour annuler le tri",
       "fetchError": "Échec du chargement des données : {message}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
       "metricsLoading": "Chargement des métriques...",
-      "resultsHeading": "Résultats"
+      "resultsHeading": "Résultats",
+      "columns": {
+        "chatId": "ID de chat",
+        "department": "Ministère",
+        "program": "Service",
+        "pageLanguage": "Page",
+        "pageLanguageAriaLabel": "Langue de la page"
+      }
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
       "loading": "Chargement des chats...",
       "error": "Impossible de charger les données de chat.",
       "columns": {
-        "chatId": "ID de chat",
-        "department": "Ministère",
         "question": "Question",
         "answer": "Réponse",
-        "program": "Service",
         "citationUrl": "Lien de citation",
         "referringUrl": "URL de référence",
         "date": "Date",
@@ -852,19 +892,12 @@
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
       "searchChatIdInputLabel": "ID de chat",
-      "searchChatIdPlaceholder": "Entrez l'ID de chat (partiel ou complet)",
-      "searchButton": "Rechercher l'ID de chat",
       "columns": {
-        "chatId": "ID de chat",
         "questionNumber": "#",
         "questionNumberAriaLabel": "Numéro de question",
         "partnerEval": "Partenaire",
         "aiEval": "IA",
-        "department": "Ministère",
-        "program": "Service",
         "action": "Action",
-        "pageLanguage": "Page",
-        "pageLanguageAriaLabel": "Langue de la page",
         "creatorEmail": "Créateur",
         "expertEmail": "Expert",
         "feedback": "Public",
@@ -877,19 +910,15 @@
       "description": "Filtrez les évaluations automatiques et explorez les détails dans le tableau ci-dessous.",
       "loading": "Chargement des évaluations...",
       "error": "Impossible de charger les données d'évaluation.",
+      "noColumnFilterResults": "Aucun résultat pour les filtres de colonne : {term}.",
       "resultsSummary": "Total des évaluations correspondantes : {count}",
       "totalCount": "Total des lignes d'évaluation dans la plage : {total}",
-      "searchLabel": "Rechercher par ID de chat ou d'interaction :",
-      "searchPlaceholder": "Entrez l'ID",
-      "columnFilterPlaceholder": "Filtrer",
       "columns": {
         "chatId": "ID de chat",
-        "questionNumber": "Q #",
-        "department": "Ministère",
         "pageLanguage": "Page",
         "autoEval": "Éval. automatique",
         "processed": "Traité",
-        "matches": "Correspondances trouvées",
+        "matches": "Correspondances",
         "fallback": "Repli",
         "any": "Tous",
         "reason": "Raison de non-correspondance",
@@ -901,6 +930,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer le chat",
       "loading": "Suppression en cours...",
+      "notFound": "Impossible de supprimer le chat : ID introuvable.",
       "success": "{chatId} supprimé avec succès.",
       "error": "Échec de la suppression du chat : {message}"
     },
@@ -909,6 +939,7 @@
       "idLabel": "ID de chat",
       "button": "Supprimer l'évaluation d'expert",
       "loading": "Suppression en cours...",
+      "notFound": "Impossible de supprimer l'évaluation : ID introuvable.",
       "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
       "error": "Échec de la suppression de l'évaluation d'expert : {message}",
       "notEvaluated": "Non évalué."
@@ -944,7 +975,9 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
     "errorOccurred": "Une erreur est survenue lors de l'inscription.",
-    "submitting": "Création du compte...en attente d'approbation"
+    "submitting": "Création du compte...",
+    "pendingReceived": "Nous avons reçu votre demande de compte.",
+    "pendingActivation": "Un administrateur communiquera avec vous une fois votre compte activé et vous pourrez vous connecter."
   },
   "login": {
     "title": "Se connecter à l'administration de Réponses IA",
@@ -1008,7 +1041,7 @@
       "confirm": "Confirmer le nouveau mot de passe",
       "submit": "Définir le mot de passe",
       "submitting": "Envoi...",
-      "success": "Mot de passe mis à jour. Redirection vers la page de connexion...",
+      "success": "Nous avons mis à jour votre mot de passe.",
       "error": "Échec de la réinitialisation du mot de passe.",
       "invalid": "Lien de réinitialisation invalide.",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
@@ -1019,6 +1052,7 @@
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
@@ -1059,6 +1093,9 @@
     "title": "Paramètres",
     "saveSuccessIn": "Modifications de {section} enregistrées.",
     "saveError": "Échec de l'enregistrement du paramètre.",
+    "fieldError": {
+      "unexpected": "Erreur inattendue : {error}"
+    },
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
@@ -1126,6 +1163,8 @@
       "title": "Historique des paramètres",
       "description": "Consultez qui a modifié les paramètres et à quel moment.",
       "empty": "Aucune modification des paramètres n’a été enregistrée.",
+      "filterLabel": "Filtrer l'historique des paramètres",
+      "loadError": "Échec du chargement de l'historique : {error}",
       "user": "Utilisateur",
       "action": "Action",
       "setting": "Paramètre",
@@ -1224,17 +1263,8 @@
     "resumedIndicator": "Mises à jour automatiques reprises"
   },
   "eval": {
-    "metric": "Métrique",
-    "value": "Valeur",
     "metrics": {},
-    "sentenceTrace": "Trace de phrases",
-    "sourceSentence": "Phrase source",
-    "matchStatus": "Statut d'appariement",
-    "matchedSentence": "Phrase appariée",
-    "similarity": "Similarité",
-    "explanation": "Explication",
-    "eval": "Évaluation",
-    "details": "Détails",
+    "eval": "Résultats de l'évaluation automatisée",
     "reRun": "Relancer",
     "reRunning": "Relance en cours...",
     "noMatch": "Aucune correspondance trouvée pour cette interaction.",
@@ -1272,8 +1302,7 @@
   },
   "reviewPanels": {
     "sentence": "Phrase",
-    "sentenceEnglish": "Phrase en anglais",
-    "englishQuestion": "Question en anglais",
+    "question": "Question :",
     "expertScore": "Note de l'expert",
     "feedback": "Rétroaction",
     "helpfulYes": "Utile - oui",
@@ -1283,17 +1312,14 @@
     "deleteExpertFeedback": "Supprimer l'évaluation d'expert",
     "publicFeedbackTitle": "Rétroaction publique",
     "autoEvalTitle": "Évaluation automatisée",
+    "autoEvalDeletedAnnouncement": "Évaluation automatisée supprimée.",
     "explanation": "Explication",
     "explanationLabel": "Explication :",
     "score": "Note",
     "scoreSuffix": "Note : {score}",
     "reason": "Raison",
-    "publicComment": "Commentaire public",
     "notAvailable": "N/D",
     "evaluation": "Évaluation",
-    "processed": "Traité",
-    "hasMatches": "Correspondances trouvées",
-    "fallback": "Repli",
     "none": "aucun",
     "sourceSentenceIndex": "Index de la phrase source",
     "sourceText": "Texte source",
@@ -1315,16 +1341,9 @@
     "fallbackCandidateAnswer": "Réponse candidate de repli",
     "fallbackCandidateCitation": "Citation du candidat",
     "fallbackCompareMeta": "Métadonnées de la comparaison de repli",
-    "fallbackCompareRaw": "Données brutes de la comparaison de repli",
-    "agentSelections": "Sélections de l'agent",
-    "agentSelectedIndex": "Index sélectionné par l'agent",
-    "agentSelectionExplanation": "Explication de la sélection de l'agent",
     "neverStale": "Toujours valide",
     "downloadedPagesTitle": "Pages téléchargées",
     "noEvaluation": "Aucune évaluation disponible.",
-    "noMatchReason": "Raison de non-correspondance",
-    "createdAt": "Créé le",
-    "updatedAt": "Mis à jour le",
     "stageTimeline": "Chronologie des étapes",
     "rawTimeline": "Chronologie brute (JSON)",
     "noStageTimeline": "Aucune chronologie d'étapes disponible.",
@@ -1347,10 +1366,7 @@
     "downloadSuccess": "Réussi",
     "downloadPartial": "Partiel",
     "details": "Détails",
-    "expertFeedbackId": "ID d'évaluation d'expert",
     "fallbackSourceChatId": "ID de chat source pour le repli",
-    "matchedCitationInteractionId": "ID d'interaction de citation appariée",
-    "matchedCitationChatId": "ID de chat de citation appariée",
     "agentCandidateChoices": "Choix de candidats de l'agent",
     "candidateIndex": "Index du candidat",
     "text": "Texte",
@@ -1362,7 +1378,6 @@
     "conditionals": "Conditionnels",
     "connectives": "Connectifs",
     "modifiers": "Modificateurs",
-    "reEvaluate": "Réévaluer",
     "deleteEvaluation": "Supprimer l'évaluation",
     "runEvaluation": "Lancer l'évaluation",
     "usedQaChatsTitle": "Évaluations antérieures utilisées",
@@ -1422,7 +1437,7 @@
       "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
     },
     "charts": {
-      "accuracyDonutTitle": "Exactitude des réponses",
+      "accuracyDonutTitle": "Exactitude des réponses (expert + IA)",
       "accuracyCentre": "précision",
       "accuracyByLang": "EN : {en} · FR : {fr}",
       "accurate": "Exactes",
@@ -1463,7 +1478,7 @@
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
-      "accuracyDonutTitle": "Exactitude des réponses",
+      "accuracyDonutTitle": "Exactitude des réponses (expert + IA)",
       "accuracyCentre": "précision",
       "accuracyByLang": "EN : {en} · FR : {fr}",
       "accurate": "Exactes",
@@ -1622,7 +1637,6 @@
   "metrics": {
     "title": "Tableau de bord des métriques",
     "dashboard": {
-      "loadedAnnouncement": "Métriques chargées.",
       "totalSessions": "Total des sessions",
       "totalQuestions": "Total des questions",
       "answerTypes": {
@@ -1717,6 +1731,7 @@
       },
       "byDepartment": {
         "title": "Répartition par institution des évaluations d'experts",
+        "filterLabel": "Filtrer les institutions",
         "department": "Institution",
         "noContextDept": "Aucun contexte d'institution",
         "pctEvaluated": "% évalué"
@@ -1727,7 +1742,6 @@
     "title": "Métriques techniques",
     "dashboard": {
       "loading": "Chargement des métriques techniques...",
-      "loadedAnnouncement": "Métriques techniques chargées.",
       "metric": "Métrique",
       "responseTime": {
         "title": "Temps de réponse total",
@@ -1753,7 +1767,7 @@
       },
       "searchCalls": {
         "title": "Appels de recherche",
-        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google), une ligne par fournisseur. Le % d'erreurs est estimé par rapport au total des questions, puisque chaque question ne déclenche pas nécessairement une nouvelle recherche. Une nouvelle tentative se produit automatiquement lorsqu'un appel de recherche échoue; les erreurs sont des appels ayant échoué même après toutes les tentatives. Les nouvelles tentatives sont affichées sous forme de nombre, et non de taux, puisque la recherche d'une question peut faire l'objet de plus d'une nouvelle tentative.",
+        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
         "provider": {
           "title": "Fournisseur",
           "canadaca": "Recherche Canada.ca (Coveo)",
@@ -1779,6 +1793,7 @@
     "loading": "Chargement...",
     "fetchStats": "Afficher les statistiques des vecteurs",
     "statsLoaded": "Statistiques des vecteurs chargées.",
+    "statsLoadError": "Échec du chargement des statistiques des vecteurs : {error}",
     "reinitializeIndex": "Réinitialiser l'index",
     "createIndex": "Créer un index de vecteurs",
     "embeddingManagement": "Gestion des embeddings",
@@ -1899,6 +1914,7 @@
     },
     "similarChats": "Trouver des chats similaires",
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
+    "similarChatsFilterLabel": "Filtrer les chats similaires",
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
     "loadingSimilarChats": "Chargement des chats similaires...",
@@ -1919,6 +1935,7 @@
     "regenerateEmbeddingsFailed": "Échec de la régénération des incorporations. Vérifiez la console pour plus de détails.",
     "regenerateConfirm": "Cela supprimera toutes les incorporations existantes et les régénérera depuis le début. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "indexCreatedSuccess": "Index vectoriel créé et service vectoriel réinitialisé avec succès.",
+    "indexCreateError": "Échec de la réinitialisation du service vectoriel : {error}",
     "docdb8Capability": {
       "title": "Test des capacités de recherche vectorielle de DocumentDB 8",
       "description": "Exécutez des tests d'agrégation dans DocumentDB 8 pour vérifier si les filtres peuvent réduire l'ensemble des candidats avant la recherche vectorielle.",
@@ -1929,6 +1946,7 @@
       "yes": "Oui",
       "no": "Non",
       "noError": "Aucune erreur",
+      "errorDetail": "Échec du test : {error}",
       "probeComplete": "{label} : {status}",
       "notAvailable": "Non disponible",
       "estimatedFeedbackSelectivity": "Sélectivité estimée des rétroactions",
@@ -2027,9 +2045,6 @@
       "step1": "Communiquez avec l'équipe Réponses IA à {email}, et joignez une copie du texte modifié à votre courriel.",
       "step2": "L'équipe Réponses IA examinera les modifications, puis les appliquera dans le produit Réponses IA en direct."
     },
-    "error": {
-      "fallback": "Une erreur est survenue lors du chargement de cette page."
-    },
     "empty": {
       "never": "Jamais"
     }
@@ -2101,6 +2116,7 @@
       "creatingInstantAnswer": "Génération de questions équivalentes et création de l’ensemble de données...",
       "goldenAnswerSuccess": "L’ensemble de réponses de référence a été créé avec succès.",
       "goldenAnswerFailed": "Échec de la création de l’ensemble de réponses de référence.",
+      "goldenAnswerFailedDetail": "Échec de la création de l’ensemble de réponses de référence : {error}",
       "instantAnswerSuccess": "L’ensemble d’essai des réponses instantanées a été créé avec succès.",
       "instantAnswerQueued": "La création de l’ensemble de données de réponses instantanées a été mise en file d’attente. Vous pouvez suivre son état sur la page des ensembles de données.",
       "instantAnswerFailed": "Échec de la création de l’ensemble d’essai des réponses instantanées.",
@@ -2120,6 +2136,7 @@
       "errorLoadingRows": "Échec du chargement des données.",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet ensemble de données ? Cette action est irréversible.",
       "inUse": "Cet ensemble de données est utilisé par des lots actifs et ne peut pas être supprimé.",
+      "deleteFailed": "Échec de la suppression de l'ensemble de données.",
       "nameLabel": "Nom de l'ensemble de données",
       "descLabel": "Description",
       "typeLabel": "Type d'ensemble de données",

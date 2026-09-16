@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import mongoose from 'mongoose';
 import {
+  escapeRegex,
   normalizeLiteralString,
   normalizeObjectId,
   normalizeObjectIdString,
@@ -63,5 +64,15 @@ describe('db query helpers', () => {
   it('throws for invalid plain string values', () => {
     expect(() => requireString('', 'setting value')).toThrow('Invalid setting value');
     expect(() => requireString({ value: 'openai-gpt51' }, 'setting value')).toThrow('Invalid setting value');
+  });
+
+  it('escapes regex special characters so a $regex search matches them literally', () => {
+    expect(escapeRegex('a.b*c')).toBe('a\\.b\\*c');
+    // Without escaping, a user-typed chatId fragment containing regex syntax
+    // (e.g. a stray `(`) would either throw as an invalid pattern or match
+    // unrelated chatIds - db-chat-search.js relies on this for its partial-
+    // match search.
+    expect(escapeRegex('(evil)+.*')).toBe('\\(evil\\)\\+\\.\\*');
+    expect(escapeRegex('plain-uuid-fragment')).toBe('plain-uuid-fragment');
   });
 });

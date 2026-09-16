@@ -80,3 +80,12 @@ export function requireString(value, fieldName = 'value') {
   }
   return normalized;
 }
+
+// Escapes a user-controlled string for safe use inside a Mongo $regex value
+// (e.g. a partial-match search), so characters like `.`/`*`/`(` are matched
+// literally instead of being interpreted as regex syntax. Shared by
+// db-chat-search.js and eval-dashboard.js's own free-text search.
+const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
+export function escapeRegex(value) {
+  return String(value).replace(REGEX_SPECIAL_CHARS, '\\$&');
+}

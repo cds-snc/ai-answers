@@ -276,10 +276,13 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
       {/* A past run loaded in a non-terminal state (interrupted mid-run —
           e.g. the tab was closed) has no report to show; say so instead of
-          rendering nothing. */}
+          rendering nothing. variant="warning", not "info" — unlike the
+          precheck messages above (an objective fact about the dataset the
+          user can't act on), this represents a genuinely broken/failed run
+          with only one way forward (re-run it), which is warning-shaped. */}
       {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
         <div className="dashboard-section">
-          <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.incomplete')} />
+          <StatusMessage variant="warning" message={t('partnerDashboard.evalAnalysis.report.incomplete')} />
         </div>
       )}
     </div>
