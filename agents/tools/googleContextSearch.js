@@ -1,37 +1,10 @@
 import { google } from 'googleapis';
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
+import { maskSearchSecrets, sanitizeSearchErrorForLogging } from '../../api/util/search-error-redaction.js';
 
 const customsearch = google.customsearch('v1');
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 250;
-
-function maskSecretValue(text) {
-    if (!text) return text;
-
-    let masked = String(text);
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (apiKey) {
-        masked = masked.split(apiKey).join('[REDACTED]');
-    }
-
-    return masked
-        .replace(/([?&](?:key|api[_-]?key)=)([^&\s]+)/gi, '$1[REDACTED]')
-        .replace(/(authorization\s*[:=]\s*bearer\s+)([^\s,]+)/gi, '$1[REDACTED]')
-        .replace(/(x-goog-api-key\s*[:=]\s*)([^\s,]+)/gi, '$1[REDACTED]')
-        .replace(/(["']?(?:key|api[_-]?key)["']?\s*[:=]\s*["']?)([^"',\s}]+)/gi, '$1[REDACTED]');
-}
-
-function sanitizeErrorForLogging(error) {
-    if (!error) return error;
-
-    return {
-        name: error.name,
-        message: maskSecretValue(error.message),
-        code: error.code,
-        status: error.status,
-        stack: maskSecretValue(error.stack),
-    };
-}
 
 function extractSearchResults(results, numResults = 3) {
     if (!results?.items?.length) {
@@ -74,7 +47,7 @@ const contextSearch = async (query, lang, { onRetry } = {}) => {
                 onRetry: (info) => {
                     console.warn(
                         `Google search attempt ${info.attempt} failed with a transient error, retrying:`,
-                        maskSecretValue(info.error?.message)
+                        maskSearchSecrets(info.error?.message, [apiKey])
                     );
                     if (onRetry) onRetry(info);
                 },
@@ -86,10 +59,10 @@ const contextSearch = async (query, lang, { onRetry } = {}) => {
             provider: 'google',
         };
     } catch (error) {
-        console.error('Error performing Google search:', sanitizeErrorForLogging(error));
+        console.error('Error performing Google search:', sanitizeSearchErrorForLogging(error, [process.env.GOOGLE_API_KEY]));
         return {
             failed: true,
-            results: `Search failed: ${maskSecretValue(error.message)}`,
+            results: `Search failed: ${maskSearchSecrets(error.message, [process.env.GOOGLE_API_KEY])}`,
             provider: 'google',
         };
     }
