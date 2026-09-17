@@ -17,7 +17,8 @@ French users. Both are stored exactly as written here.
 | English | Français |
 |---|---|
 | Canada Disability Benefit | Prestation canadienne pour les personnes handicapées |
-| Canada Education Savings Grant | Subvention canadienne pour l'épargne-études |
+| Canada Disability Savings Grant and Canada Disability Savings Bond | Subvention canadienne pour l'épargne-invalidité et Bon canadien pour l'épargne-invalidité |
+| Canada Education Savings Grant and Canada Learning Bond| Subvention canadienne pour l'épargne-études et Bon d’études canadien|
 | Canada Pension Plan | Régime de pensions du Canada |
 | Canada Student Grants and Canada Student Loans | Bourses d'études canadiennes et prêts d'études canadiens |
 | Canadian Dental Care Plan | Régime canadien de soins dentaires |

@@ -24,16 +24,17 @@ French users. Both are stored exactly as written here.
 | Display Fireworks Safety | Sécurité des pièces pyrotechniques à grand déploiement |
 | Fall prevention for seniors | Prévention des chutes chez les aînés |
 | Food safety | Salubrité des aliments |
-| Group insurance plans | Régimes d'assurance collective |
 | Health complaints office | Bureau des plaintes en matière de santé |
-| Healthy Pregnancy Guide | Guide pour une grossesse en santé |
+| Your Guide to a Healthy Pregnancy | Votre guide pour une grossesse en santé |
 | Home and garden safety | Sécurité à la maison et au jardin |
 | Measles public health guidance | Directives de santé publique sur la rougeole |
 | Medical assistance in dying (MAID) | Aide médicale à mourir (AMM) |
 | Mental health support | Soutien en santé mentale |
+| National Dosimetry Services | Services nationaux de dosimétrie |
 | Pest Control Products | Produits antiparasitaires |
 | Product safety certification | Certification de la sécurité des produits |
 | Public Health Hygiene Guidelines | Directives d'hygiène en santé publique |
+| Travel health notices | Conseils de santé aux voyageurs |
 | Diseases and conditions | Maladies et affections |
 | Drug Product Database | Base de données sur les produits pharmaceutiques |
 | Public health notices | Avis de santé publique |

@@ -21,11 +21,17 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
+| Alberta Indigenous Clean Energy Initiative (AICEI) | Initiative sur l'énergie propre pour les Autochtones de l'Alberta |
 | Build Communities Strong Fund – Local Impact Stream | Fonds pour bâtir des collectivités fortes – volet Impacts locaux |
 | Business Benefits Finder | Repérage des avantages pour les entreprises |
 | Business Scale-up and Productivity | Croissance et productivité des entreprises |
+| Community Economic Development and Diversification | Développement économique et diversification des collectivités |
+| Economic Development Initiative | Initiative de développement économique |
 | PacifiCan and PrairiesCan funding application portal | Portail de demande de financement de PacifiCan et PrairiesCan |
 | Prairies Business Service Network | Réseau de services aux entreprises des Prairies |
-| Prairies Economic Development Canada (PrairiesCan) | Développement économique Canada pour les Prairies (PrairiesCan) |
 | Regional Artificial Intelligence Initiative | Initiative régionale en matière d'intelligence artificielle |
+| Regional Defence Investment Initiative | Initiative régionale d'investissement dans la défense |
+| Regional Innovation Ecosystems | Écosystèmes d'innovation régionaux |
+| Regional Quantum Initiative | Initiative quantique régionale |
 | Regional Tariff Response Initiative | Initiative régionale de réponse tarifaire |
+| Women's Enterprise Initiative | Initiative pour les femmes entrepreneurs |

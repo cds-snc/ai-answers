@@ -15,5 +15,8 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Justice Laws Website | Site Web de la législation (Justice) |
+| Central Registry of Divorce Proceedings | Bureau d'enregistrement des actions en divorce |
 | Criminal conviction review | Révision des condamnations criminelles |
+| Indigenous Justice Program | Programme de justice autochtone |
+| Justice Laws Website | Site Web de la législation (Justice) |
+| Victims Fund | Fonds d'aide aux victimes |

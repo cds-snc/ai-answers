@@ -19,7 +19,7 @@ French users. Both are stored exactly as written here.
 | Genealogy | Généalogie |
 | Census records | Documents de recensement |
 | Research help | Aide à la recherche |
-| Ask a reference librarian | Poser une question à un bibliothécaire de référence |
+| Ask us a question | Posez-nous une question |
 | Ordering material | Commande de documents |
 | Services for publishers | Services aux éditeurs |
 | Aurora library catalogue | Catalogue de bibliothèque Aurora |

@@ -15,11 +15,16 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
+| Advance Payments Program | Programme de paiements anticipés |
 | AgriInvest | Agri-investissement |
+| AgriMarketing Program | Programme Agri-marketing |
 | AgriStability | Agri-stabilité |
 | My AAFC account | Mon dossier AAC |
-| AgPAL | AgPAL |
-| Poultry and Egg Farm Investment | Investissement à la ferme pour la volaille et les œufs |
+| AgPal | AgriGuichet |
+| Farm Debt Mediation Service | Service de médiation en matière d'endettement agricole |
+| Poultry and Egg On-Farm Investment Program | Programme d'investissement à la ferme pour la volaille et les œufs |
 | Canadian Drought Monitor | Outil de surveillance des sécheresses au Canada |
 | Geospatial products | Produits géospatiaux |
 | Market intelligence reports | Rapports de renseignements sur les marchés |
+| Wine Sector Support Program | Programme d'aide au secteur du vin |
+| Youth Employment and Skills Program | Programme d'emploi et de compétences des jeunes |
