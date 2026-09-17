@@ -97,6 +97,7 @@ describe('useChatAssignBar', () => {
     expect(result.current.noteText).toBe('please review'); // note stays visible, not cleared
     expect(result.current.assignStatus).toEqual({ count: 2, isError: false, hadNote: true });
     expect(onDone).toHaveBeenCalled();
+    expect(result.current.outcomeFocusCount).toBe(1); // page moves focus onto the outcome
   });
 
   it('marks hadNote false in assignStatus when no note was sent', async () => {
@@ -165,7 +166,7 @@ describe('useChatAssignBar', () => {
     expect(result.current.noteText).toBe('');
   });
 
-  it('reports a failure count and keeps the selection when some assigns fail', async () => {
+  it('on a partial failure, reports the failure count, unticks the ones that worked, and reloads', async () => {
     mockAssignChat
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce(new Error('nope'));
@@ -177,9 +178,27 @@ describe('useChatAssignBar', () => {
       result.current.setSelectedAssigneeId('u1');
     });
 
-    await act(async () => { await result.current.submitAssign(); });
+    const onDone = vi.fn();
+    await act(async () => { await result.current.submitAssign(onDone); });
 
     expect(result.current.assignStatus).toEqual({ count: 1, isError: true });
+    expect(result.current.isChatChecked('chat-1')).toBe(false); // succeeded
+    expect(result.current.isChatChecked('chat-2')).toBe(true); // failed, stays for retry
+    expect(result.current.selectedCount).toBe(1);
+    expect(onDone).toHaveBeenCalled();
+  });
+
+  it('does not reload when every assign failed', async () => {
+    mockAssignChat.mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => useChatAssignBar());
+    act(() => {
+      result.current.toggleChatChecked('chat-1', true);
+      result.current.setSelectedAssigneeId('u1');
+    });
+    const onDone = vi.fn();
+    await act(async () => { await result.current.submitAssign(onDone); });
+    expect(onDone).not.toHaveBeenCalled();
+    expect(result.current.selectedCount).toBe(1);
   });
 
   it('clears a stale assignStatus when the assignee dropdown, a checkbox, or the note text changes', async () => {

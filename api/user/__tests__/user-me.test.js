@@ -96,6 +96,23 @@ describe('user-me PATCH institution/group lock', () => {
   });
 });
 
+describe('user-me PATCH rejects a prefilter with no field to prefilter to', () => {
+  it('400s prefilterDepartment: true when no institution is set', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+    const res = await run('PATCH', { preferences: { prefilterDepartment: true } }, { role: 'partner', userId: partner._id.toString() });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('accepts prefilterGroup: true when the group is set in the same request', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+    const res = await run('PATCH', { group: 'Military transitions', preferences: { prefilterGroup: true } }, { role: 'partner', userId: partner._id.toString() });
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.preferences.prefilterGroup).toBe(true);
+  });
+});
+
 describe('user-me PATCH clears stale prefilter preferences', () => {
   it('clears prefilterDepartment when an admin clears their own institution', async () => {
     await dbConnect();

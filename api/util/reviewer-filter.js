@@ -1,6 +1,7 @@
 import { User } from '../../models/user.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { escapeRegex, normalizeLiteralString } from './db-query.js';
+import { normalizeGroup } from './user-profile.js';
 
 // institution (abbrKey) has no spaces, but group names do (e.g. "Military
 // transitions" - src/constants/partnerGroups.js), so the default literal-
@@ -55,7 +56,13 @@ export function membershipConditions(user) {
  */
 export async function resolveReviewerMatch({ institution, group, reviewerEmail } = {}) {
   const institutionValue = normalizeLiteralString(institution, { pattern: LITERAL_STRING_WITH_SPACES }) || '';
-  const groupValue = normalizeLiteralString(group, { pattern: LITERAL_STRING_WITH_SPACES }) || '';
+  // Group is checked against the curated list (same validator the profile
+  // routes use) rather than a character pattern, so a group name with an
+  // accent or apostrophe still filters; an unknown group matches nothing
+  // rather than silently dropping the filter.
+  const groupRaw = typeof group === 'string' ? group.trim() : '';
+  const groupValue = groupRaw ? normalizeGroup(groupRaw) : '';
+  if (groupValue === null) return { userIds: [], feedbackIds: [] };
   const emailValue = typeof reviewerEmail === 'string' ? reviewerEmail.trim() : '';
   if (!institutionValue && !groupValue && !emailValue) return null;
 

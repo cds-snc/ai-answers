@@ -41,6 +41,12 @@ describe('resolveReviewerMatch', () => {
     expect(result).toEqual({ userIds: ['u3'], feedbackIds: [] });
   });
 
+  it('unknown group: matches nothing, without querying', async () => {
+    const result = await resolveReviewerMatch({ group: 'Not a real group' });
+    expect(mockUserFind).not.toHaveBeenCalled();
+    expect(result).toEqual({ userIds: [], feedbackIds: [] });
+  });
+
   it('institution with no members: empty sets, no evaluation query', async () => {
     mockUserFind.mockReturnValue(lean([]));
     const result = await resolveReviewerMatch({ institution: 'FIN' });

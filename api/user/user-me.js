@@ -63,10 +63,21 @@ async function meHandler(req, res) {
                 }
                 updateFields.group = value;
             }
+            // A prefilter needs a field to prefilter to - the effective value
+            // after this request (a same-request institution/group wins over
+            // the stored one). Mirrors the clear branch below, which turns the
+            // preference off when the field is cleared.
+            const effective = {
+                prefilterDepartment: updateFields.institution !== undefined ? updateFields.institution : currentUser.institution,
+                prefilterGroup: updateFields.group !== undefined ? updateFields.group : currentUser.group
+            };
             for (const key of ['prefilterDepartment', 'prefilterGroup']) {
                 if (preferences?.[key] === undefined) continue;
                 if (typeof preferences[key] !== 'boolean') {
                     return res.status(400).json({ message: `preferences.${key} must be a boolean` });
+                }
+                if (preferences[key] === true && !effective[key]) {
+                    return res.status(400).json({ message: `preferences.${key} needs ${key === 'prefilterDepartment' ? 'an institution' : 'a group'} to be set` });
                 }
                 updateFields[`preferences.${key}`] = preferences[key];
             }

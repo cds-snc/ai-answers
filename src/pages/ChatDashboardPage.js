@@ -80,10 +80,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
   const assignBar = useChatAssignBar();
   const assignErrorRef = useFocusOnChange(assignBar.validationErrorCount);
-  // Unassign destroys the pill the user just clicked (it's inside the
-  // reloaded table row), so focus needs somewhere to land - see
-  // useChatAssignBar.js's unassignedCount comment.
-  const unassignedRef = useFocusOnChange(assignBar.unassignedCount);
+  // After an assign (button disabled while it ran) or an unassign (pill
+  // destroyed by the reload), focus needs somewhere to land - see
+  // useChatAssignBar.js's outcomeFocusCount comment.
+  const outcomeRef = useFocusOnChange(assignBar.outcomeFocusCount);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -282,8 +282,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         const chatId = row?.chatId;
         if (!chatId) return '';
         const safeChatId = escapeHtmlAttribute(chatId);
-        if (row?.assignedToEmail) {
-          const safeEmail = escapeHtmlAttribute(row.assignedToEmail);
+        // Keyed on assignedTo, not the email: the email lookup comes back
+        // empty for a deleted account, and that chat still needs its pill so
+        // the assignment can be removed.
+        if (row?.assignedTo) {
+          const safeEmail = escapeHtmlAttribute(row.assignedToEmail || t('admin.chatDashboard.assign.unknownAccount'));
           const removeLabel = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.removeAssignment'))} ${safeEmail}`;
           return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-chat-id="${safeChatId}" aria-label="${removeLabel}">` +
             `${safeEmail}<span class="filter-pill__close" aria-hidden="true">×</span>` +
@@ -575,16 +578,22 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 </div>
               )}
 
-              {assignBar.assignStatus && (
-                <StatusMessage
-                  variant={assignBar.assignStatus.isError ? 'error' : 'success'}
-                  message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
-                  ref={assignBar.assignStatus.unassigned ? unassignedRef : undefined}
-                  tabIndex={assignBar.assignStatus.unassigned ? -1 : undefined}
-                  announce={!assignBar.assignStatus.unassigned}
-                  announcedVia={assignBar.assignStatus.unassigned ? 'focus' : undefined}
-                />
-              )}
+              {assignBar.assignStatus && (() => {
+                // Outcomes that took focus away (assign done, unassign done)
+                // are read by focus landing on them; the two that didn't
+                // (list load failed, unassign failed) announce normally.
+                const movesFocus = !assignBar.assignStatus.loadFailed && !assignBar.assignStatus.unassignFailed;
+                return (
+                  <StatusMessage
+                    variant={assignBar.assignStatus.isError ? 'error' : 'success'}
+                    message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
+                    ref={movesFocus ? outcomeRef : undefined}
+                    tabIndex={movesFocus ? -1 : undefined}
+                    announce={!movesFocus}
+                    announcedVia={movesFocus ? 'focus' : undefined}
+                  />
+                );
+              })()}
               </div>
             </details>
 

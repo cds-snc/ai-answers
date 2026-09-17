@@ -900,14 +900,15 @@
         "assignChats": "Attribuer ({count}) à un évaluateur",
         "assignChatsWithNote": "Attribuer ({count}) à un évaluateur avec une note",
         "assigning": "Attribution en cours…",
-        "errorNoExpert": "Vous devez choisir un expert à qui attribuer.",
-        "errorNoChat": "Vous devez choisir au moins un clavardage à attribuer à l'aide de la case à cocher dans la colonne d'attribution.",
+        "errorNoExpert": "Choisissez un évaluateur à qui attribuer.",
+        "errorNoChat": "Choisissez au moins un clavardage dans la colonne Attribuer.",
         "assignSuccess": "{count} clavardage(s) attribué(s).",
         "assignSuccessWithNote": "{count} clavardage(s) attribué(s) avec une note.",
         "assignError": "Échec de l'attribution de {count} clavardage(s).",
         "loadError": "Impossible de charger la liste des personnes à qui vous pouvez attribuer.",
         "removeAssignment": "Retirer l'attribution de",
-        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution ?",
+        "unknownAccount": "Compte inconnu",
+        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution?",
         "unassigned": "Attribution retirée.",
         "unassignError": "Impossible de retirer l'attribution."
       }

@@ -53,8 +53,8 @@ const AccountPage = ({ lang = 'en' }) => {
   const institutionDirty = Boolean(profile) && draft.institution !== (profile.institution || '');
   const groupDirty = Boolean(profile) && draft.group !== (profile.group || '');
   const profileDirty = institutionDirty || groupDirty;
-  // Functional double-submit guard for Save, not a visual `disabled` while
-  // saving - that would drop focus off the just-clicked button (UsersPage.js).
+  // Double-submit guard for Save, alongside the visual `disabled` while
+  // saving (same as SettingsPage's per-section Save).
   const profileSavingRef = useRef(false);
   // A successful save leaves Save disabled (nothing dirty), so focus would
   // drop to <body>; move it onto the outcome message instead, same counter

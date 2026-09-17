@@ -20,9 +20,8 @@ export function useChatAssignBar() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [assigning, setAssigning] = useState(false);
-  // Functional double-submit guard, not a visual `disabled` on the Assign
-  // button - that would drop focus off the just-clicked button (same rule
-  // as UsersPage.js's savingRef).
+  // Double-submit guard, alongside the Assign button's visual `disabled`
+  // while a request runs (same as SettingsPage's Save).
   const assigningRef = useRef(false);
   const [assignStatus, setAssignStatus] = useState(null); // { text, isError }
   const [selectedCount, setSelectedCount] = useState(0);
@@ -113,49 +112,54 @@ export function useChatAssignBar() {
       const results = await Promise.allSettled(
         batch.map((chatId) => DashboardService.assignChat({ chatId, assignedTo: selectedAssigneeId, notes: noteText }))
       );
-      failures += results.filter((r) => r.status === 'rejected').length;
+      results.forEach((r, idx) => {
+        if (r.status === 'rejected') failures += 1;
+        // Untick the ones that went through, so a retry after a partial
+        // failure only re-sends the failures (a re-send would 409).
+        else checkedChatIds.current.delete(batch[idx]);
+      });
     }
     assigningRef.current = false;
     setAssigning(false);
+    setSelectedCount(checkedChatIds.current.size);
     if (failures === 0) {
       // Note text stays visible on success (not cleared) - it's what was
       // just sent with the assignment, not a stale draft.
       setAssignStatus({ count: chatIds.length, isError: false, hadNote: Boolean(noteText.trim()) });
-      resetSelection();
-      if (onDone) onDone();
     } else {
       setAssignStatus({ count: failures, isError: true });
     }
-  }, [selectedAssigneeId, noteText, resetSelection]);
+    setOutcomeFocusCount((n) => n + 1);
+    // Reload even on partial failure so the rows that did assign show
+    // their pill instead of a stale checkbox.
+    if (failures < chatIds.length && onDone) onDone();
+  }, [selectedAssigneeId, noteText]);
 
   // Removes an existing assignment (the × pill on an already-assigned row).
   // Caller (ChatDashboardPage.js) is responsible for the window.confirm()
   // gate before calling this, same as every other destructive admin action.
   //
-  // unassignedCount exists purely for focus management: the pill button the
-  // user just clicked lives inside the table row, and onDone's ajax.reload()
-  // destroys that row (checkbox or a fresh pill takes its place) - so focus
-  // would otherwise drop to <body> with nothing announcing what happened.
-  // ChatDashboardPage.js moves focus onto the assignStatus StatusMessage
-  // when this counter changes, same counter-driven useFocusOnChange pattern
-  // as every other focus-move in this app - only on success, since a failed
-  // unassign doesn't reload the table, so the clicked pill is still there.
-  const [unassigning, setUnassigning] = useState(false);
-  const [unassignedCount, setUnassignedCount] = useState(0);
+  // outcomeFocusCount exists purely for focus management. Two cases lose
+  // focus: an unassign, whose pill lives inside the table row that onDone's
+  // ajax.reload() destroys; and an assign, whose button is disabled while
+  // the request runs (a focused button that becomes disabled drops focus to
+  // <body>). ChatDashboardPage.js moves focus onto the assignStatus
+  // StatusMessage when this counter changes, same counter-driven
+  // useFocusOnChange pattern as UsersPage.js's Save. Not bumped for a failed
+  // unassign (the pill is still there) or a failed list load (nothing was
+  // disabled).
+  const [outcomeFocusCount, setOutcomeFocusCount] = useState(0);
   const unassignChat = useCallback(async (chatId, onDone) => {
-    setUnassigning(true);
     setAssignStatus(null);
     try {
       await DashboardService.unassignChat({ chatId });
       checkedChatIds.current.delete(chatId);
       setSelectedCount(checkedChatIds.current.size);
       setAssignStatus({ isError: false, unassigned: true });
-      setUnassignedCount((n) => n + 1);
+      setOutcomeFocusCount((n) => n + 1);
       if (onDone) onDone();
     } catch (error) {
       setAssignStatus({ isError: true, unassignFailed: true });
-    } finally {
-      setUnassigning(false);
     }
   }, []);
 
@@ -194,8 +198,7 @@ export function useChatAssignBar() {
     toggleChatChecked,
     isChatChecked,
     submitAssign,
-    unassigning,
-    unassignedCount,
+    outcomeFocusCount,
     unassignChat,
   };
 }

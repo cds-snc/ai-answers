@@ -183,11 +183,17 @@ describe('ChatDashboardPage rendering', () => {
     await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
 
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
-    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123', assignedToEmail: 'partner@x.ca' });
+    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123', assignedTo: 'u1', assignedToEmail: 'partner@x.ca' });
     expect(html).toContain('class="filter-pill filter-pill--closable chat-assign-pill"');
     expect(html).toContain('data-chat-id="chat-123"');
     expect(html).toContain('partner@x.ca');
     expect(html).not.toContain('type="checkbox"');
+
+    // Assignee account deleted: no email, but still assigned - keep the pill.
+    const orphan = checkboxColumn.render(null, 'display', { chatId: 'chat-124', assignedTo: 'u2', assignedToEmail: '' });
+    expect(orphan).toContain('chat-assign-pill');
+    expect(orphan).toContain('admin.chatDashboard.assign.unknownAccount');
+    expect(orphan).not.toContain('type="checkbox"');
   });
 
   it('shows a validation error instead of assigning, when Assign chats is clicked with nothing chosen', async () => {
@@ -241,7 +247,7 @@ describe('ChatDashboardPage rendering', () => {
     // then run createdRow the way the library would - this is what wires
     // the pill's onclick, same delegated-handler pattern as the checkbox.
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
-    const rowData = { chatId: 'chat-123', assignedToEmail: 'partner@x.ca' };
+    const rowData = { chatId: 'chat-123', assignedTo: 'u1', assignedToEmail: 'partner@x.ca' };
     const row = document.createElement('tr');
     const cell = document.createElement('td');
     cell.innerHTML = checkboxColumn.render(null, 'display', rowData);
