@@ -1,6 +1,11 @@
 import { User } from '../../models/user.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
-import { escapeRegex } from './db-query.js';
+import { escapeRegex, normalizeLiteralString } from './db-query.js';
+
+// institution (abbrKey) has no spaces, but group names do (e.g. "Military
+// transitions" - src/constants/partnerGroups.js), so the default literal-
+// string pattern needs widening for this field.
+const LITERAL_STRING_WITH_SPACES = /^[-A-Za-z0-9 ._:]+$/;
 
 /**
  * The chat-assignment membership rule, shared by chat-assign.js's assign and
@@ -49,8 +54,8 @@ export function membershipConditions(user) {
  *   into "show everything".
  */
 export async function resolveReviewerMatch({ institution, group, reviewerEmail } = {}) {
-  const institutionValue = typeof institution === 'string' ? institution.trim() : '';
-  const groupValue = typeof group === 'string' ? group.trim() : '';
+  const institutionValue = normalizeLiteralString(institution, { pattern: LITERAL_STRING_WITH_SPACES }) || '';
+  const groupValue = normalizeLiteralString(group, { pattern: LITERAL_STRING_WITH_SPACES }) || '';
   const emailValue = typeof reviewerEmail === 'string' ? reviewerEmail.trim() : '';
   if (!institutionValue && !groupValue && !emailValue) return null;
 

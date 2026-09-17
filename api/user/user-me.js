@@ -2,7 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, withProtection } from '../../middleware/auth.js';
-import { normalizeInstitution, normalizeGroup } from '../util/user-profile.js';
+import { normalizeInstitution, normalizeGroup, normalizeMembershipProfile } from '../util/user-profile.js';
 
 // The signed-in user's own profile, read fresh from the database. The session
 // object on req.user only carries userId/email/role (see config/passport.js),
@@ -14,12 +14,7 @@ const toProfile = (user) => ({
     email: user.email,
     role: user.role,
     active: Boolean(user.active),
-    institution: user.institution || '',
-    group: user.group || '',
-    preferences: {
-        prefilterDepartment: Boolean(user.preferences?.prefilterDepartment),
-        prefilterGroup: Boolean(user.preferences?.prefilterGroup)
-    }
+    ...normalizeMembershipProfile(user)
 });
 
 async function meHandler(req, res) {

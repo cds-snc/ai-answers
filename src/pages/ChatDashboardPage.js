@@ -739,6 +739,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
                       const query = {
                         ...normalizedFilters,
+                        includeAssignee: 'true',
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,
                         orderBy,

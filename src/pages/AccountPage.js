@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
@@ -150,7 +150,9 @@ const AccountPage = ({ lang = 'en' }) => {
 
   // Same Creator / Expert columns as EvalDashboardPage.js: the signed-in
   // account that asked, and the expert who evaluated (blank when not yet).
-  const renderEmail = (value) => (value ? `<span lang="en">${escapeHtmlAttribute(value)}</span>` : '');
+  // No lang="en" wrap - email addresses aren't prose, a screen reader's
+  // language voice has little effect on them either way.
+  const renderEmail = (value) => (value ? escapeHtmlAttribute(value) : '');
   // partnerEval is null/empty until an expert score exists (see
   // getPartnerEvalAggregationExpression) - this column only cares whether
   // that's happened yet, not which category it scored, so it collapses
@@ -173,11 +175,19 @@ const AccountPage = ({ lang = 'en' }) => {
   const [assignedChatsError, setAssignedChatsError] = useState(null);
   const fetchAssignedChats = useCallback(async ({ start, length, search, orderBy, orderDir }) => {
     if (!authUserId) return { data: [], recordsTotal: 0, recordsFiltered: 0 };
+    // TODO: a chat created >1 year ago but assigned today won't show up
+    // here (this filters on the chat's createdAt, not assignedOn - chat-
+    // dashboard.js has no all-time mode). Removing the window outright is
+    // probably safe since this query is already scoped by the indexed
+    // assignedTo field (models/chat.js), but that's reasoned, not verified
+    // against DocumentDB's query planner - run explain("executionStats")
+    // against a real DocumentDB cluster before doing it.
     const end = new Date();
     const startDate = new Date(end);
     startDate.setFullYear(end.getFullYear() - 1);
     const result = await DashboardService.getChatDashboard({
       assignedTo: authUserId,
+      includeAssigner: 'true',
       startDate: startDate.toISOString(),
       endDate: end.toISOString(),
       start,
@@ -193,7 +203,7 @@ const AccountPage = ({ lang = 'en' }) => {
     };
   }, [authUserId]);
 
-  const assignedChatColumns = [
+  const assignedChatColumns = useMemo(() => [
     {
       title: t('admin.common.columns.chatId'),
       data: 'chatId',
@@ -205,7 +215,7 @@ const AccountPage = ({ lang = 'en' }) => {
     { title: t('account.assignedChats.columns.assignedOn'), data: 'assignedOn', render: (value) => value ? escapeHtmlAttribute(new Date(value).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')) : '' },
     { title: t('account.assignedChats.columns.assignedBy'), data: 'assignedByEmail', render: renderEmail },
     { title: t('account.assignedChats.columns.partnerNotes'), data: 'assignedNotes', orderable: false, render: (value) => escapeHtmlAttribute(value || '') },
-  ];
+  ], [t, lang]);
 
   // Same keep-chat-together row grouping as Chat/Eval/AutoEval dashboards
   // (utils/admin/chatGroupedTable.js) - a multi-turn assigned chat produces
@@ -214,7 +224,7 @@ const AccountPage = ({ lang = 'en' }) => {
   // a chat can genuinely be Completed on one turn and Pending on another) -
   // that's the one column left out of groupedColumns below.
   const assignedChatsGroupStateRef = useRef(createChatGroupState());
-  const assignedChatsGroupCallbacks = buildChatGroupCallbacks({
+  const assignedChatsGroupCallbacks = useMemo(() => buildChatGroupCallbacks({
     stateRef: assignedChatsGroupStateRef,
     columns: assignedChatColumns,
     groupedColumns: [
@@ -224,7 +234,7 @@ const AccountPage = ({ lang = 'en' }) => {
       { data: 'assignedByEmail' },
       { data: 'assignedNotes' },
     ],
-  });
+  }), [assignedChatColumns]);
 
   const roleLabel = profile?.role ? t(`users.roles.${profile.role}`) : '';
 

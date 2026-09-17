@@ -1,5 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
+import { normalizeMembershipProfile } from '../util/user-profile.js';
 
 // Session user (userId/email/role from config/passport.js) merged with the
 // profile fields an admin or the user can change after login - institution,
@@ -23,14 +24,7 @@ const meHandler = async (req, res) => {
             await dbConnect();
             const dbUser = await User.findById(req.user.userId, PROFILE_FIELDS).lean();
             if (dbUser) {
-                profile = {
-                    institution: dbUser.institution || '',
-                    group: dbUser.group || '',
-                    preferences: {
-                        prefilterDepartment: Boolean(dbUser.preferences?.prefilterDepartment),
-                        prefilterGroup: Boolean(dbUser.preferences?.prefilterGroup)
-                    }
-                };
+                profile = normalizeMembershipProfile(dbUser);
             }
         } catch (profileError) {
             // Auth still succeeds without the profile extras.

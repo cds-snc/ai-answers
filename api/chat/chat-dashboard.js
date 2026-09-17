@@ -392,29 +392,28 @@ async function chatDashboardHandler(req, res) {
 
     // Lookup assignee/assigner emails for display (chat-assign.js only
     // stores the ObjectIds) - same shape as the creator lookup just above.
-    pipeline.push({
-      $lookup: {
-        from: 'users',
-        localField: 'assignedTo',
-        foreignField: '_id',
-        as: 'assignee'
+    // Each is its own join, so only run the one(s) the caller actually
+    // displays: ChatDashboardPage.js shows assignedToEmail, AccountPage.js
+    // (already scoped to one assignee) shows assignedByEmail - neither
+    // needs both.
+    const wantAssigneeEmail = req.query.includeAssignee === 'true';
+    const wantAssignerEmail = req.query.includeAssigner === 'true';
+    if (wantAssigneeEmail || wantAssignerEmail) {
+      const addFields = {};
+      const dropFields = {};
+      if (wantAssigneeEmail) {
+        pipeline.push({ $lookup: { from: 'users', localField: 'assignedTo', foreignField: '_id', as: 'assignee' } });
+        addFields.assignedToEmail = { $ifNull: [{ $arrayElemAt: ['$assignee.email', 0] }, ''] };
+        dropFields.assignee = 0;
       }
-    });
-    pipeline.push({
-      $lookup: {
-        from: 'users',
-        localField: 'assignedBy',
-        foreignField: '_id',
-        as: 'assigner'
+      if (wantAssignerEmail) {
+        pipeline.push({ $lookup: { from: 'users', localField: 'assignedBy', foreignField: '_id', as: 'assigner' } });
+        addFields.assignedByEmail = { $ifNull: [{ $arrayElemAt: ['$assigner.email', 0] }, ''] };
+        dropFields.assigner = 0;
       }
-    });
-    pipeline.push({
-      $addFields: {
-        assignedToEmail: { $ifNull: [{ $arrayElemAt: ['$assignee.email', 0] }, ''] },
-        assignedByEmail: { $ifNull: [{ $arrayElemAt: ['$assigner.email', 0] }, ''] }
-      }
-    });
-    pipeline.push({ $project: { assignee: 0, assigner: 0 } });
+      pipeline.push({ $addFields: addFields });
+      pipeline.push({ $project: dropFields });
+    }
 
     const reviewerMatch = await resolveReviewerMatch({ institution: req.query.institution, group: req.query.group, reviewerEmail: req.query.reviewerEmail });
     const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic, reviewerMatch };

@@ -349,7 +349,7 @@ const UsersPage = ({ lang }) => {
         const label = value || t('users.institutionNone');
         if (type === 'display') {
           const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.institutionNone'))}</option>`;
-          const optionsHtml = PARTNER_DEPARTMENTS.map(d => `<option value="${d}"${d === value ? ' selected' : ''}>${d}</option>`).join('');
+          const optionsHtml = PARTNER_DEPARTMENTS.map(d => `<option value="${escapeHtmlAttribute(d)}"${d === value ? ' selected' : ''}>${escapeHtmlAttribute(d)}</option>`).join('');
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.institution')} — ${row.email || userId}`);
           return `<select data-userid="${userId}" data-field="institution" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
         }

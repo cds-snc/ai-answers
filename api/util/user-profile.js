@@ -22,3 +22,20 @@ export function normalizeGroup(value) {
   if (trimmed === '') return '';
   return PARTNER_GROUPS.includes(trimmed) ? trimmed : null;
 }
+
+/**
+ * Shared institution/group/preferences shape for a profile response -
+ * defaults each field the same way whether the caller is auth-me.js (only
+ * institution/group/preferences) or user-me.js (that plus email/role/active,
+ * added by the caller on top of this).
+ */
+export function normalizeMembershipProfile(user) {
+  return {
+    institution: user?.institution || '',
+    group: user?.group || '',
+    preferences: {
+      prefilterDepartment: Boolean(user?.preferences?.prefilterDepartment),
+      prefilterGroup: Boolean(user?.preferences?.prefilterGroup)
+    }
+  };
+}

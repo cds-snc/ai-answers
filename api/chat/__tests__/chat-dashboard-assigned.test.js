@@ -74,7 +74,7 @@ describe('chat-dashboard assignedTo filter', () => {
       assignedTo: other._id,
     });
 
-    const res = await runGet({ assignedTo: assignee._id.toString() });
+    const res = await runGet({ assignedTo: assignee._id.toString(), includeAssignee: 'true', includeAssigner: 'true' });
 
     expect(res.statusCode).toBe(200);
     expect(res.payload.data).toHaveLength(1);
@@ -84,6 +84,24 @@ describe('chat-dashboard assignedTo filter', () => {
     expect(row.assignedToEmail).toBe(assignee.email);
     expect(row.assignedByEmail).toBe(other.email);
     expect(row.assignedNotes).toBe('please review');
+  });
+
+  it('omits assignedToEmail/assignedByEmail when neither include flag is set (the two joins are opt-in)', async () => {
+    await dbConnect();
+    const assignee = await makeUser();
+    const interaction = await Interaction.create({});
+    const chat = await Chat.create({
+      chatId: `chat-dashboard-no-include-${Date.now()}`,
+      interactions: [interaction._id],
+      assignedTo: assignee._id,
+    });
+
+    const res = await runGet({ assignedTo: assignee._id.toString() });
+    const row = res.payload.data.find((r) => r.chatId === chat.chatId);
+
+    expect(row).toBeTruthy();
+    expect(row.assignedToEmail).toBe('');
+    expect(row.assignedByEmail).toBe('');
   });
 
   it('rejects an invalid assignedTo value', async () => {
@@ -202,7 +220,7 @@ describe('chat-dashboard sort by assignedOn/assignedByEmail (AccountPage.js)', (
       assignedBy: assignerA._id,
     });
 
-    const res = await runGet({ assignedTo: assignee._id.toString(), orderBy: 'assignedByEmail', orderDir: 'asc', length: 2000 });
+    const res = await runGet({ assignedTo: assignee._id.toString(), includeAssigner: 'true', orderBy: 'assignedByEmail', orderDir: 'asc', length: 2000 });
 
     const rows = res.payload.data.filter((r) => r.chatId.includes(String(suffix)));
     expect(rows.length).toBeGreaterThanOrEqual(2);
