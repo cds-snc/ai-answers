@@ -61,6 +61,12 @@ export async function resolveReviewerMatch({ institution, group, reviewerEmail }
 
   const emailRegex = emailValue ? { $regex: escapeRegex(emailValue), $options: 'i' } : null;
 
+  // institution and group are ANDed here (both keys on one query object) if
+  // both are ever passed together - not the "independent filters" the params
+  // doc above implies. No caller passes both today, so this is untested;
+  // whoever wires a combined institution+group filter needs to decide
+  // AND vs OR and fix this (and the doc) deliberately, not inherit it by
+  // accident.
   const userQuery = {};
   if (institutionValue) userQuery.institution = institutionValue;
   if (groupValue) userQuery.group = groupValue;

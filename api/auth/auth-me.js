@@ -7,6 +7,11 @@ import { normalizeMembershipProfile } from '../util/user-profile.js';
 // group, preferences - read fresh so a change shows up on the next page load
 // without re-authenticating. FilterPanel reads preferences/institution off
 // the AuthContext user this returns.
+//
+// This is a DB read on every call, including AuthContext.js's window-focus/
+// visibilitychange revalidation - a deliberate freshness-over-cost tradeoff
+// (self-service institution/group edits need to show up without a re-login),
+// not an oversight.
 const PROFILE_FIELDS = { institution: 1, group: 1, preferences: 1 };
 
 const meHandler = async (req, res) => {
