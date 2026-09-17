@@ -853,7 +853,6 @@
         "chatId": "ID de chat",
         "department": "Ministère",
         "program": "Service",
-        "user": "Utilisateur",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Langue de la page"
       }
@@ -900,6 +899,7 @@
         "noteClear": "Effacer la note",
         "assignChats": "Attribuer ({count}) à un évaluateur",
         "assignChatsWithNote": "Attribuer ({count}) à un évaluateur avec une note",
+        "assigning": "Attribution en cours…",
         "errorNoExpert": "Vous devez choisir un expert à qui attribuer.",
         "errorNoChat": "Vous devez choisir au moins un clavardage à attribuer à l'aide de la case à cocher dans la colonne d'attribution.",
         "assignSuccess": "{count} clavardage(s) attribué(s).",
@@ -1080,7 +1080,6 @@
     "profileHeading": "Détails du compte",
     "accountName": "Nom du compte",
     "activityHeading": "Vos clavardages et évaluations",
-    "status": "Statut",
     "role": "Rôle",
     "institution": "Institution",
     "group": "Groupe",
@@ -1095,7 +1094,7 @@
     "loadError": "Impossible de charger votre compte.",
     "assignedChats": {
       "heading": "Vos clavardages attribués pour évaluation",
-      "empty": "Aucun clavardage ne vous est attribué pour l'instant.",
+      "filterLabel": "Filtrer les clavardages attribués",
       "loadError": "Impossible de charger vos clavardages attribués.",
       "columns": {
         "assignedOn": "Attribué le",

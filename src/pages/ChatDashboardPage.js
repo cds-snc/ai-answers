@@ -60,6 +60,7 @@ function resolveAssignStatusMessage(status, t) {
 // The Assign button's own label is the note confirmation - no separate
 // "Save note" step (see useChatAssignBar.js's clearNote).
 function resolveAssignButtonLabel(assignBar, t) {
+  if (assignBar.assigning) return t('admin.chatDashboard.assign.assigning');
   const key = assignBar.noteText.trim() ? 'admin.chatDashboard.assign.assignChatsWithNote' : 'admin.chatDashboard.assign.assignChats';
   return t(key).replace('{count}', () => assignBar.selectedCount);
 }
@@ -460,12 +461,22 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       {hasAppliedFilters && (
         <div>
-          {recordsTotal > 0 && (
-            <details
-              className="filter-panel chat-assign-panel"
-              open={assignBar.assignMode}
-              onToggle={() => { assignBar.toggleAssignMode(); setTableKey((k) => k + 1); }}
-            >
+          {/* Stays mounted (hidden, not unmounted, at zero results) and reads
+              e.target.open rather than flipping: browsers fire toggle when the
+              open attribute is added on mount, so an unmount/remount with
+              open already true would otherwise flip the mode with no click.
+              Same idempotent pattern as FilterPanel's own <details>. */}
+          <details
+            className="filter-panel chat-assign-panel"
+            open={assignBar.assignMode}
+            hidden={recordsTotal === 0}
+            onToggle={(e) => {
+              const open = e.target.open;
+              if (open === assignBar.assignMode) return;
+              assignBar.setAssignMode(open);
+              setTableKey((k) => k + 1);
+            }}
+          >
               <summary className="filter-panel-summary">
                 {t('admin.chatDashboard.assign.toggleOn')}
               </summary>
@@ -576,7 +587,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               )}
               </div>
             </details>
-          )}
 
           {dataTableReady && (
             <div className="dashboard-table-container dashboard-table-container--grouped">
@@ -739,7 +749,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
                       const query = {
                         ...normalizedFilters,
-                        includeAssignee: 'true',
+                        // Assignee email is only rendered by the Assign
+                        // column, so only pay for its users $lookup then.
+                        ...(assignBar.assignMode ? { includeAssignee: 'true' } : {}),
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,
                         orderBy,

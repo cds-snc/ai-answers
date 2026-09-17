@@ -14,7 +14,7 @@ import { usePageContext } from '../hooks/usePageParam.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
-import { PARTNER_GROUPS } from '../constants/partnerGroups.js';
+import { PARTNER_GROUPS, getPartnerGroupLabel } from '../constants/partnerGroups.js';
 
 DataTable.use(DT);
 
@@ -364,10 +364,10 @@ const UsersPage = ({ lang }) => {
       render: (data, type, row) => {
         const userId = row._id;
         const value = editStatesRef.current[userId]?.group ?? data ?? '';
-        const label = value || t('users.groupNone');
+        const label = value ? getPartnerGroupLabel(value, lang) : t('users.groupNone');
         if (type === 'display') {
           const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
-          const optionsHtml = PARTNER_GROUPS.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(g)}</option>`).join('');
+          const optionsHtml = PARTNER_GROUPS.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${row.email || userId}`);
           return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
         }

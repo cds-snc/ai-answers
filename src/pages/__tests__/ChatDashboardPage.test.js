@@ -106,7 +106,7 @@ describe('ChatDashboardPage rendering', () => {
     });
   });
 
-  it('hides the Assign chats toggle when there are no results', async () => {
+  it('hides (but keeps mounted) the Assign chats toggle when there are no results', async () => {
     const { container, queryByText } = render(<ChatDashboardPage lang="en" />);
 
     const applyButton = await waitFor(() => {
@@ -121,7 +121,10 @@ describe('ChatDashboardPage rendering', () => {
       await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
     });
 
-    expect(queryByText('admin.chatDashboard.assign.toggleOn')).toBeNull();
+    // Hidden rather than unmounted: a remount with open already true fires
+    // a toggle event with no click (see the details' comment in the page).
+    const details = queryByText('admin.chatDashboard.assign.toggleOn').closest('details');
+    expect(details.hidden).toBe(true);
   });
 
   it('assign mode adds a checkbox column and loads the assignable dropdown', async () => {

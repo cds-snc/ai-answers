@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
+import { GcdsButton, GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
-import { PARTNER_GROUPS } from '../constants/partnerGroups.js';
+import { PARTNER_GROUPS, getPartnerGroupLabel } from '../constants/partnerGroups.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import UserService from '../services/UserService.js';
@@ -38,7 +38,34 @@ const AccountPage = ({ lang = 'en' }) => {
   const loadErrorRef = useFocusOnChange(loadErrorCount);
   const [prefStatus, setPrefStatus] = useState(null); // { text, isError }
   const [profileStatus, setProfileStatus] = useState(null); // { text, isError }
-  const [saving, setSaving] = useState(false);
+  // Institution/group are staged here and written by an explicit Save (SC
+  // 3.2.2), never on the select's change event: a closed <select> fires
+  // change on every arrow key in Chrome/Firefox, and for a partner the
+  // first save locks the value (api/user/user-me.js) - so a keyboard user
+  // browsing the list would have been locked into the first option.
+  const [draft, setDraft] = useState({ institution: '', group: '' });
+  // Every profile write (load, save) resets the draft in the same render so
+  // the selects never show a stale value for a frame.
+  const applyProfile = (data) => {
+    setProfile(data);
+    setDraft({ institution: data?.institution || '', group: data?.group || '' });
+  };
+  const institutionDirty = Boolean(profile) && draft.institution !== (profile.institution || '');
+  const groupDirty = Boolean(profile) && draft.group !== (profile.group || '');
+  const profileDirty = institutionDirty || groupDirty;
+  // Functional double-submit guard for Save, not a visual `disabled` while
+  // saving - that would drop focus off the just-clicked button (UsersPage.js).
+  const profileSavingRef = useRef(false);
+  // A successful save leaves Save disabled (nothing dirty), so focus would
+  // drop to <body>; move it onto the outcome message instead, same counter
+  // pattern as UsersPage.js. A failed save keeps the button enabled and
+  // focused, so that path announces normally.
+  const [profileStatusMovesFocus, setProfileStatusMovesFocus] = useState(false);
+  // Same as SettingsPage's per-section Save: greyed and labelled "Saving..."
+  // while the request runs.
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveFocusCount, setProfileSaveFocusCount] = useState(0);
+  const profileStatusRef = useFocusOnChange(profileSaveFocusCount);
   // Field-level validation for the pre-filter checkbox: it needs an
   // institution first.
   const prefError = useInlineFormError();
@@ -57,7 +84,7 @@ const AccountPage = ({ lang = 'en' }) => {
   useEffect(() => {
     let didCancel = false;
     UserService.getMe()
-      .then((data) => { if (!didCancel) setProfile(data); })
+      .then((data) => { if (!didCancel) applyProfile(data); })
       .catch((error) => {
         console.error('Error loading account profile:', error);
         if (!didCancel) {
@@ -74,11 +101,8 @@ const AccountPage = ({ lang = 'en' }) => {
   // `statusText` is the fully-built success copy - callers build it from
   // their own template ("Account updated: ..." for the institution/group
   // fields, "Preference saved: ..." for the two checkboxes) so each area
-  // keeps its own voice. `errorCodeHandlers` lets a specific backend `code`
-  // (see UserService.updateMe) be handled instead of falling back to the
-  // generic status message - used for the institution/group lock below.
-  const saveProfile = async (updates, setStatus, statusText, errorKey, errorCodeHandlers) => {
-    setSaving(true);
+  // keeps its own voice.
+  const saveProfile = async (updates, setStatus, statusText, errorKey) => {
     setStatus(null);
     try {
       const updated = await UserService.updateMe(updates);
@@ -87,31 +111,66 @@ const AccountPage = ({ lang = 'en' }) => {
       setStatus({ text: statusText, isError: false });
     } catch (error) {
       console.error('Error saving account:', error);
-      const handled = errorCodeHandlers && error.code && errorCodeHandlers[error.code];
-      if (handled) {
-        handled();
-      } else {
-        setStatus({ text: t(errorKey), isError: true });
-      }
-    } finally {
-      setSaving(false);
+      setStatus({ text: t(errorKey), isError: true });
     }
   };
-  const handleProfileFieldChange = (field, value) => {
+  // Staging only - see `draft`. A fresh edit supersedes the last outcome and
+  // any lock error from a previous Save.
+  const handleDraftChange = (field, value) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
+    setProfileStatus(null);
     setPrefStatus(null);
     institutionError.clearError();
     groupError.clearError();
-    const change = field === 'institution'
-      ? (value ? t('account.changeInstitutionSet').replace('{value}', () => value) : t('account.changeInstitutionCleared'))
-      : (value ? t('account.changeGroupSet').replace('{value}', () => value) : t('account.changeGroupCleared'));
-    return saveProfile(
-      { [field]: value },
-      setProfileStatus,
-      t('account.updated').replace('{change}', () => change),
-      'account.profileSaveError',
-      { institution_locked: institutionError.triggerError, group_locked: groupError.triggerError }
-    );
   };
+  const handleProfileSave = async () => {
+    if (profileSavingRef.current || !profileDirty) return;
+    const updates = {};
+    if (institutionDirty) updates.institution = draft.institution;
+    if (groupDirty) updates.group = draft.group;
+    const changes = [];
+    if (institutionDirty) {
+      changes.push(draft.institution
+        ? t('account.changeInstitutionSet').replace('{value}', () => draft.institution)
+        : t('account.changeInstitutionCleared'));
+    }
+    if (groupDirty) {
+      changes.push(draft.group
+        ? t('account.changeGroupSet').replace('{value}', () => getPartnerGroupLabel(draft.group, lang))
+        : t('account.changeGroupCleared'));
+    }
+    profileSavingRef.current = true;
+    setProfileSaving(true);
+    setProfileStatus(null);
+    setPrefStatus(null);
+    try {
+      const updated = await UserService.updateMe(updates);
+      applyProfile(updated);
+      if (refreshUser) await refreshUser();
+      prefError.clearError();
+      groupPrefError.clearError();
+      setProfileStatusMovesFocus(true);
+      setProfileStatus({ text: t('account.updated').replace('{change}', () => changes.join(', ')), isError: false });
+      setProfileSaveFocusCount((n) => n + 1);
+    } catch (error) {
+      console.error('Error saving account:', error);
+      setProfileStatusMovesFocus(false);
+      // The lock 403 (a race with an admin setting it meanwhile - the field
+      // renders read-only once the profile shows it locked) lands on the
+      // field itself; anything else is the generic outcome message.
+      if (error.code === 'institution_locked') institutionError.triggerError();
+      else if (error.code === 'group_locked') groupError.triggerError();
+      else setProfileStatus({ text: t('account.profileSaveError'), isError: true });
+    } finally {
+      profileSavingRef.current = false;
+      setProfileSaving(false);
+    }
+  };
+  // Partners get one self-pick per field (api/user/user-me.js); once set,
+  // show the value read-only with the "ask an admin" hint up front rather
+  // than an enabled select that fails after the fact (SC 3.3.3).
+  const institutionLocked = profile?.role !== 'admin' && Boolean(profile?.institution);
+  const groupLocked = profile?.role !== 'admin' && Boolean(profile?.group);
   const handlePrefilterChange = (checked) => {
     if (checked && !profile?.institution) {
       // A blocked action is still a fresh action - clear a stale success/
@@ -175,21 +234,11 @@ const AccountPage = ({ lang = 'en' }) => {
   const [assignedChatsError, setAssignedChatsError] = useState(null);
   const fetchAssignedChats = useCallback(async ({ start, length, search, orderBy, orderDir }) => {
     if (!authUserId) return { data: [], recordsTotal: 0, recordsFiltered: 0 };
-    // TODO: a chat created >1 year ago but assigned today won't show up
-    // here (this filters on the chat's createdAt, not assignedOn - chat-
-    // dashboard.js has no all-time mode). Removing the window outright is
-    // probably safe since this query is already scoped by the indexed
-    // assignedTo field (models/chat.js), but that's reasoned, not verified
-    // against DocumentDB's query planner - run explain("executionStats")
-    // against a real DocumentDB cluster before doing it.
-    const end = new Date();
-    const startDate = new Date(end);
-    startDate.setFullYear(end.getFullYear() - 1);
+    // No date window: assignments are all-time (chat-dashboard.js only
+    // requires one when there's no assignedTo to bound the query).
     const result = await DashboardService.getChatDashboard({
       assignedTo: authUserId,
       includeAssigner: 'true',
-      startDate: startDate.toISOString(),
-      endDate: end.toISOString(),
       start,
       length,
       search,
@@ -292,59 +341,89 @@ const AccountPage = ({ lang = 'en' }) => {
                 <dd>{roleLabel}</dd>
               </div>
               <div className="account-profile__row">
-                <dt>{t('account.status')}</dt>
-                <dd>{t(`users.status.${profile.active ? 'active' : 'inactive'}`)}</dd>
-              </div>
-              <div className="account-profile__row">
-                <dt><label htmlFor="account-institution">{t('account.institution')}</label></dt>
+                <dt>{institutionLocked ? t('account.institution') : <label htmlFor="account-institution">{t('account.institution')}</label>}</dt>
                 <dd>
-                  {institutionError.hasError && (
-                    <FeedbackInlineError
-                      id="account-institution-error"
-                      message={t('account.institutionLocked')}
-                      errorCount={institutionError.errorCount}
-                      inputRef={institutionError.errorRef}
-                    />
+                  {institutionLocked ? (
+                    <>
+                      {profile.institution}
+                      <span className="account-profile__hint">{t('account.institutionLocked')}</span>
+                    </>
+                  ) : (
+                    <>
+                      {institutionError.hasError && (
+                        <FeedbackInlineError
+                          id="account-institution-error"
+                          message={t('account.institutionLocked')}
+                          errorCount={institutionError.errorCount}
+                          inputRef={institutionError.errorRef}
+                        />
+                      )}
+                      <select
+                        id="account-institution"
+                        className="filter-select filter-select--narrow"
+                        value={draft.institution}
+                        aria-describedby={institutionError.hasError ? 'account-institution-error' : undefined}
+                        aria-invalid={institutionError.hasError ? 'true' : undefined}
+                        onChange={(e) => handleDraftChange('institution', e.target.value)}
+                      >
+                        <option value="">{t('users.institutionNone')}</option>
+                        {PARTNER_DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </>
                   )}
-                  <select
-                    id="account-institution"
-                    className="filter-select filter-select--narrow"
-                    value={profile.institution || ''}
-                    aria-describedby={institutionError.hasError ? 'account-institution-error' : undefined}
-                    aria-invalid={institutionError.hasError ? 'true' : undefined}
-                    onChange={(e) => { prefError.clearError(); handleProfileFieldChange('institution', e.target.value); }}
-                  >
-                    <option value="">{t('users.institutionNone')}</option>
-                    {PARTNER_DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
                 </dd>
               </div>
               <div className="account-profile__row">
-                <dt><label htmlFor="account-group">{t('account.group')}</label></dt>
+                <dt>{groupLocked ? t('account.group') : <label htmlFor="account-group">{t('account.group')}</label>}</dt>
                 <dd>
-                  {groupError.hasError && (
-                    <FeedbackInlineError
-                      id="account-group-error"
-                      message={t('account.groupLocked')}
-                      errorCount={groupError.errorCount}
-                      inputRef={groupError.errorRef}
-                    />
+                  {groupLocked ? (
+                    <>
+                      {getPartnerGroupLabel(profile.group, lang)}
+                      <span className="account-profile__hint">{t('account.groupLocked')}</span>
+                    </>
+                  ) : (
+                    <>
+                      {groupError.hasError && (
+                        <FeedbackInlineError
+                          id="account-group-error"
+                          message={t('account.groupLocked')}
+                          errorCount={groupError.errorCount}
+                          inputRef={groupError.errorRef}
+                        />
+                      )}
+                      <select
+                        id="account-group"
+                        className="filter-select filter-select--narrow"
+                        value={draft.group}
+                        aria-describedby={groupError.hasError ? 'account-group-error' : undefined}
+                        aria-invalid={groupError.hasError ? 'true' : undefined}
+                        onChange={(e) => handleDraftChange('group', e.target.value)}
+                      >
+                        <option value="">{t('users.groupNone')}</option>
+                        {PARTNER_GROUPS.map((g) => <option key={g} value={g}>{getPartnerGroupLabel(g, lang)}</option>)}
+                      </select>
+                    </>
                   )}
-                  <select
-                    id="account-group"
-                    className="filter-select filter-select--narrow"
-                    value={profile.group || ''}
-                    aria-describedby={groupError.hasError ? 'account-group-error' : undefined}
-                    aria-invalid={groupError.hasError ? 'true' : undefined}
-                    onChange={(e) => { groupPrefError.clearError(); handleProfileFieldChange('group', e.target.value); }}
-                  >
-                    <option value="">{t('users.groupNone')}</option>
-                    {PARTNER_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </select>
                 </dd>
               </div>
             </dl>
-            <StatusMessage variant={profileStatus?.isError ? 'error' : 'success'} message={profileStatus?.text || ''} />
+            {!(institutionLocked && groupLocked) && (
+              <div className="mb-300">
+                {/* Same Save as SettingsPage/UsersPage: GcdsButton, disabled until
+                    something is staged. */}
+                <GcdsButton type="button" disabled={!profileDirty || profileSaving} onClick={handleProfileSave}>
+                  {profileSaving ? t('settings.saving') : t('users.actions.save')}
+                </GcdsButton>
+              </div>
+            )}
+            <StatusMessage
+              ref={profileStatusRef}
+              tabIndex={-1}
+              announce={!profileStatusMovesFocus}
+              announcedVia={profileStatusMovesFocus ? 'focus' : undefined}
+              variant={profileStatus?.isError ? 'error' : 'success'}
+              message={profileStatus?.text || ''}
+            />
           </>
         )}
       </section>
@@ -426,6 +505,8 @@ const AccountPage = ({ lang = 'en' }) => {
           <ServerDataTable
             tableKey={`assigned-chats-${authUserId || 'none'}`}
             caption={t('account.assignedChats.heading')}
+            searchLabelSrOnly={t('account.assignedChats.filterLabel')}
+            searchPlaceholder={t('admin.common.filterPlaceholder')}
             lang={lang}
             columns={assignedChatColumns}
             fetchData={fetchAssignedChats}
@@ -435,8 +516,7 @@ const AccountPage = ({ lang = 'en' }) => {
             createdRow={assignedChatsGroupCallbacks.createdRow}
             drawCallback={assignedChatsGroupCallbacks.drawCallback}
             layout={dashboardLayout}
-            containerClassName="dashboard-table-container dashboard-table-container--contained"
-            emptyTableText={t('account.assignedChats.empty')}
+            containerClassName="metrics-table-container table-scroll mt-200"
             onError={(err) => setAssignedChatsError(err)}
           />
         </section>

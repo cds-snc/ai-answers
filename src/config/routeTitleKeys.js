@@ -35,6 +35,7 @@ const ROUTE_NAME_TITLE_KEYS = {
   batch: 'batch.title',
   'chat-viewer': 'logging.title',
   users: 'users.title',
+  account: 'account.title',
   eval: 'admin.navigation.eval',
   'eval-dashboard': 'admin.evalDashboard.title',
   'auto-eval-dashboard': 'admin.autoEvalDashboard.title',

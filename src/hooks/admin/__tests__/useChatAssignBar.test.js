@@ -17,15 +17,41 @@ describe('useChatAssignBar', () => {
     mockAssignChat.mockReset();
   });
 
+  it('setting the same mode again is a no-op (details fires toggle on mount with open=true)', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [] });
+    const { result } = renderHook(() => useChatAssignBar());
+    act(() => { result.current.setAssignMode(true); });
+    act(() => { result.current.toggleChatChecked('chat-1', true); });
+    act(() => { result.current.setAssignMode(true); });
+    expect(result.current.assignMode).toBe(true);
+    expect(result.current.selectedCount).toBe(1); // selection not reset
+  });
+
+  it('ignores a second submitAssign while one is in flight', async () => {
+    let resolveFirst;
+    mockAssignChat.mockImplementationOnce(() => new Promise((r) => { resolveFirst = r; }));
+    const { result } = renderHook(() => useChatAssignBar());
+    act(() => {
+      result.current.toggleChatChecked('chat-1', true);
+      result.current.setSelectedAssigneeId('u1');
+    });
+    let first;
+    act(() => { first = result.current.submitAssign(); });
+    await act(async () => { await result.current.submitAssign(); });
+    expect(mockAssignChat).toHaveBeenCalledTimes(1);
+    await act(async () => { resolveFirst({}); await first; });
+    expect(result.current.assignStatus).toEqual({ count: 1, isError: false, hadNote: false });
+  });
+
   it('loads the assignable list only once, on the first toggle to on', async () => {
     mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'a@x.ca' }] });
     const { result } = renderHook(() => useChatAssignBar());
 
-    act(() => { result.current.toggleAssignMode(); });
+    act(() => { result.current.setAssignMode(true); });
     await waitFor(() => expect(result.current.assignableUsers).toHaveLength(1));
 
-    act(() => { result.current.toggleAssignMode(); }); // off
-    act(() => { result.current.toggleAssignMode(); }); // on again
+    act(() => { result.current.setAssignMode(false); }); // off
+    act(() => { result.current.setAssignMode(true); }); // on again
     expect(mockGetAssignable).toHaveBeenCalledTimes(1);
   });
 
@@ -33,7 +59,7 @@ describe('useChatAssignBar', () => {
     mockGetAssignable.mockResolvedValue({ users: [], reason: 'no_institution' });
     const { result } = renderHook(() => useChatAssignBar());
 
-    act(() => { result.current.toggleAssignMode(); });
+    act(() => { result.current.setAssignMode(true); });
     await waitFor(() => expect(result.current.assignableReason).toBe('no_institution'));
   });
 
@@ -41,11 +67,11 @@ describe('useChatAssignBar', () => {
     mockGetAssignable.mockResolvedValue({ users: [] });
     const { result } = renderHook(() => useChatAssignBar());
 
-    act(() => { result.current.toggleAssignMode(); });
+    act(() => { result.current.setAssignMode(true); });
     act(() => { result.current.toggleChatChecked('chat-1', true); });
     expect(result.current.selectedCount).toBe(1);
 
-    act(() => { result.current.toggleAssignMode(); }); // off
+    act(() => { result.current.setAssignMode(false); }); // off
     expect(result.current.selectedCount).toBe(0);
     expect(result.current.isChatChecked('chat-1')).toBe(false);
   });

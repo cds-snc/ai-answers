@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import AccountPage from '../AccountPage.js';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
-  useTranslations: () => ({ t: (key) => (key === 'account.groupChats.heading' ? '{group} chats and reviews' : key) }),
+  useTranslations: () => ({ t: (key) => key }),
 }));
 
 const { mockGetMe, mockUpdateMe, mockRefreshUser } = vi.hoisted(() => ({ mockGetMe: vi.fn(), mockUpdateMe: vi.fn(), mockRefreshUser: vi.fn() }));
@@ -36,6 +36,7 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <p>{children}</p>,
   GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
+  GcdsButton: ({ children, onClick, disabled }) => <button type="button" onClick={onClick} disabled={disabled}>{children}</button>,
   GcdsIcon: ({ name }) => <span data-icon={name} />,
   GcdsNotice: ({ children, noticeRole, noticeTitle, noticeTitleTag }) => (
     <section data-notice-role={noticeRole} data-notice-title={noticeTitle} data-notice-title-tag={noticeTitleTag}>
@@ -47,15 +48,14 @@ vi.mock('@gcds-core/components-react', () => ({
 describe('AccountPage', () => {
   afterEach(() => { cleanup(); mockGetMe.mockReset(); mockUpdateMe.mockReset(); mockRefreshUser.mockReset(); mockGetChatDashboard.mockReset(); });
 
-  it('shows the signed-in user profile with institution and group', async () => {
-    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions', createdAt: '2026-01-15T00:00:00.000Z' });
+  it('shows the signed-in user profile with institution and group (admin: both stay editable)', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'admin', active: true, institution: 'DND-MDN', group: 'Military transitions', createdAt: '2026-01-15T00:00:00.000Z' });
     render(<AccountPage lang="en" />);
     expect(await screen.findByText('a@dnd.ca')).toBeTruthy();
-    expect(screen.getByText('users.roles.partner')).toBeTruthy();
+    expect(screen.getByText('users.roles.admin')).toBeTruthy();
     expect(screen.getByLabelText('account.institution').value).toBe('DND-MDN');
     expect(screen.getByLabelText('account.group').value).toBe('Military transitions');
     expect(screen.getByText('account.accountName')).toBeTruthy();
-    expect(screen.getByText('users.status.active')).toBeTruthy();
     // Both group-chats and assigned-chats now render via ServerDataTable.
     expect(screen.getAllByTestId('mock-server-table').length).toBeGreaterThan(0);
     expect(screen.getByText('account.assignedChats.columns.assignedOn')).toBeTruthy();
@@ -76,16 +76,67 @@ describe('AccountPage', () => {
     expect(screen.getByLabelText('account.group').options[0].textContent).toBe('users.groupNone');
   });
 
-  it('saves a self-picked institution and refreshes the auth user', async () => {
+  it('stages a self-picked institution until Save, then saves it, refreshes the auth user and moves focus to the outcome', async () => {
     mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'partner', institution: '', group: '', preferences: { prefilterDepartment: false } });
     mockUpdateMe.mockResolvedValue({ email: 'b@x.ca', role: 'partner', institution: 'IRCC', group: '', preferences: { prefilterDepartment: false } });
     mockRefreshUser.mockResolvedValue();
     render(<AccountPage lang="en" />);
     const institution = await screen.findByLabelText('account.institution');
+    const save = screen.getByRole('button', { name: 'users.actions.save' });
+    expect(save.disabled).toBe(true);
+    // Changing the select (what an arrow key on a closed select does in
+    // Chrome/Firefox) must not save - for a partner the first save locks it.
     fireEvent.change(institution, { target: { value: 'IRCC' } });
+    expect(mockUpdateMe).not.toHaveBeenCalled();
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
     await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledWith({ institution: 'IRCC' }));
     await waitFor(() => expect(mockRefreshUser).toHaveBeenCalled());
-    expect(screen.getByText('account.updated').closest('.status-message--success-box')).toBeTruthy();
+    const outcome = await screen.findByText('account.updated');
+    expect(outcome.closest('.status-message--success-box')).toBeTruthy();
+    // Save disables itself once nothing is dirty, so focus lands on the message.
+    await waitFor(() => expect(document.activeElement).toBe(outcome));
+    expect(outcome.getAttribute('data-announced-via')).toBe('focus');
+  });
+
+  it('sends both fields in one PATCH when both were changed', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'IRCC', group: '', preferences: {} });
+    mockUpdateMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    mockRefreshUser.mockResolvedValue();
+    render(<AccountPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('account.institution'), { target: { value: 'DND-MDN' } });
+    fireEvent.change(screen.getByLabelText('account.group'), { target: { value: 'Military transitions' } });
+    fireEvent.click(screen.getByRole('button', { name: 'users.actions.save' }));
+    await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledTimes(1));
+    expect(mockUpdateMe).toHaveBeenCalledWith({ institution: 'DND-MDN', group: 'Military transitions' });
+  });
+
+  it('renders a locked institution/group read-only with the admin hint, and no Save button, for a partner', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="en" />);
+    expect(await screen.findByText('DND-MDN')).toBeTruthy();
+    expect(screen.getByText('Military transitions')).toBeTruthy();
+    expect(screen.getByText('account.institutionLocked')).toBeTruthy();
+    expect(screen.getByText('account.groupLocked')).toBeTruthy();
+    expect(screen.queryByLabelText('account.institution')).toBeNull();
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'users.actions.save' })).toBeNull();
+  });
+
+  it('keeps an unset field editable for a partner while the set one is locked', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    expect(await screen.findByText('account.institutionLocked')).toBeTruthy();
+    expect(screen.getByLabelText('account.group').tagName).toBe('SELECT');
+    expect(screen.getByRole('button', { name: 'users.actions.save' })).toBeTruthy();
+  });
+
+  it('shows the French group label in the French UI', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'admin', institution: '', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="fr" />);
+    const group = await screen.findByLabelText('account.group');
+    expect(group.value).toBe('Military transitions');
+    expect(group.selectedOptions[0].textContent).toBe('Transitions militaires');
   });
 
   it('saves the pre-filter preference and refreshes the auth user', async () => {

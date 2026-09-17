@@ -23,10 +23,13 @@ const userSchema = new mongoose.Schema({
     default: true
   },
   // Institution the user belongs to, as a partner department abbrKey from
-  // src/constants/partnerDepartments.js ('' = unassigned). Drives the
-  // dashboards' "Institution" filter (chats created or reviewed by anyone in
-  // the institution). Orthogonal to a chat's context.department - a DND
-  // reviewer can evaluate an IRCC chat.
+  // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
+  // (Manage user accounts page) or once by the user (Manage your account
+  // page; api/user/user-me.js locks it for partners after that). Seeds the
+  // dashboards' department filter via preferences.prefilterDepartment and
+  // scopes who a partner can assign chats to (api/chat/chat-assign.js).
+  // Orthogonal to a chat's context.department - a DND reviewer can
+  // evaluate an IRCC chat.
   institution: {
     type: String,
     default: '',
@@ -34,8 +37,10 @@ const userSchema = new mongoose.Schema({
     index: true
   },
   // Group / team within the institution, one of
-  // src/constants/partnerGroups.js ('' = none). Self-declared at signup,
-  // confirmed by an admin. Informational only for now.
+  // src/constants/partnerGroups.js ('' = none). Set the same two ways as
+  // institution (not collected at signup). Drives the reviewer filter
+  // (api/util/reviewer-filter.js) via preferences.prefilterGroup and the
+  // chat-assign membership rule.
   group: {
     type: String,
     default: '',

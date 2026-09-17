@@ -9,6 +9,7 @@ import 'daterangepicker/daterangepicker.css';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { getPreferredDepartment, getPreferredGroup } from '../../utils/admin/accountPreferences.js';
+import { getPartnerGroupLabel } from '../../constants/partnerGroups.js';
 
 const FilterPanel = ({
   lang,
@@ -956,7 +957,7 @@ const FilterPanel = ({
     // Group scope from the account preference - only ever present when set,
     // and always closable (there is no "all groups" state to announce).
     if (appliedFilters.group) {
-      pills.push({ key: 'group', label: formatPillLabel(t('admin.filters.group'), appliedFilters.group) });
+      pills.push({ key: 'group', label: formatPillLabel(t('admin.filters.group'), getPartnerGroupLabel(appliedFilters.group, lang)) });
     }
 
     // The non-closable info pill is reserved for the true 'all', not for

@@ -99,7 +99,12 @@ async function chatDashboardHandler(req, res) {
 
     const parsedTimezoneOffset = Number.isFinite(parseInt(timezoneOffsetParam, 10)) ? parseInt(timezoneOffsetParam, 10) : undefined;
     const dateRange = getDateRange({ startDate, endDate, timezoneOffsetMinutes: parsedTimezoneOffset });
-    if (!dateRange) {
+    // The date window is the only thing bounding the scan for the dashboard,
+    // so it's required there. An assignedTo query (AccountPage.js's assigned
+    // chats table) is already bounded by the indexed assignedTo field and
+    // must not be windowed: a chat created long ago but assigned today
+    // still has to show up.
+    if (!dateRange && !assignedToParam) {
       return res.status(400).json({ error: 'startDate and endDate are required and must be valid dates' });
     }
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
@@ -313,10 +318,7 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({
       $addFields: {
-        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true }),
-        // Reviewer identity for "who evaluated this" columns (Manage your
-        // account page's group table); expertFeedbackDocs is dropped below.
-        'interactions.reviewerEmail': { $ifNull: [{ $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] }, ''] }
+        'interactions.expertFeedbackData': getFeedbackDataProjection('$expertFeedbackDocs', { includeContentIssue: true })
       }
     });
 
@@ -450,8 +452,6 @@ async function chatDashboardHandler(req, res) {
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
-        creatorEmail: 1,
-        reviewerEmail: '$interactions.reviewerEmail',
         assignedTo: { $ifNull: ['$assignedTo', null] },
         assignedToEmail: 1,
         assignedByEmail: 1,
@@ -643,8 +643,6 @@ async function chatDashboardHandler(req, res) {
       aiEval: row.aiEval || '',
       partnerHasContentIssue: !!row.partnerHasContentIssue,
       userType: row.userType || 'public',
-      creatorEmail: row.creatorEmail || '',
-      reviewerEmail: row.reviewerEmail || '',
       assignedTo: row.assignedTo ? String(row.assignedTo) : '',
       assignedToEmail: row.assignedToEmail || '',
       assignedByEmail: row.assignedByEmail || '',

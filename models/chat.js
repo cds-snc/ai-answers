@@ -13,8 +13,9 @@ const ChatSchema = new mongoose.Schema({
     appVersion: { type: String, required: false, default: '' },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     // Chat assignment (issue #1656): a partner/admin hands this chat to one
-    // partner user for review. Single assignee at a time - assigning again
-    // overwrites the previous assignment rather than keeping history.
+    // partner user for review. Single assignee at a time - assigning an
+    // already-assigned chat is rejected (409 in chat-assign.js); unassign
+    // first. No history is kept.
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     assignedOn: { type: Date, default: null },

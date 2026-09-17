@@ -905,14 +905,6 @@
   margin-block-start: var(--gcds-spacing-200);
   padding: var(--gcds-spacing-200);
 }
-/* Same table styling, but kept inside its parent instead of bleeding to
-   90vw - for tables that sit inside a section or <details> rather than
-   owning the page (Manage your account page). */
-.dashboard-table-container--contained {
-  width: auto;
-  margin-left: 0;
-  margin-right: 0;
-}
 /* overflow-x: auto above makes this a scrollable region, which browsers
    treat as implicitly keyboard-focusable (so arrow keys can scroll it when
    the table is wider than the viewport lets it show, e.g. BatchList.js's 9
@@ -3445,6 +3437,12 @@ details gcds-button::part(button) {
 
 .account-profile dd {
   margin: 0;
+}
+
+/* "Contact an admin to change ..." under a locked (read-only) value */
+.account-profile__hint {
+  display: block;
+  color: var(--gcds-text-secondary);
 }
 
 @media (max-width: 600px) {

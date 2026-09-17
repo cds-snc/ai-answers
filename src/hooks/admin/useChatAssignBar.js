@@ -20,6 +20,10 @@ export function useChatAssignBar() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [assigning, setAssigning] = useState(false);
+  // Functional double-submit guard, not a visual `disabled` on the Assign
+  // button - that would drop focus off the just-clicked button (same rule
+  // as UsersPage.js's savingRef).
+  const assigningRef = useRef(false);
   const [assignStatus, setAssignStatus] = useState(null); // { text, isError }
   const [selectedCount, setSelectedCount] = useState(0);
   // Validation, not a disabled button (see ChatDashboardPage.js) - code is
@@ -34,9 +38,12 @@ export function useChatAssignBar() {
     setSelectedCount(0);
   }, []);
 
-  const toggleAssignMode = useCallback(() => {
+  // Takes the target state rather than flipping: the caller is a native
+  // <details> onToggle, and browsers fire toggle when the open attribute is
+  // added on mount too, so a flip would run without a click.
+  const setAssignModeTo = useCallback((next) => {
     setAssignMode((prev) => {
-      const next = !prev;
+      if (next === prev) return prev;
       resetSelection();
       setSelectedAssigneeId('');
       setNoteOpen(false);
@@ -94,6 +101,8 @@ export function useChatAssignBar() {
       setValidationErrorCount((n) => n + 1);
       return;
     }
+    if (assigningRef.current) return;
+    assigningRef.current = true;
     setValidationErrorCode(null);
     setAssigning(true);
     setAssignStatus(null);
@@ -106,6 +115,7 @@ export function useChatAssignBar() {
       );
       failures += results.filter((r) => r.status === 'rejected').length;
     }
+    assigningRef.current = false;
     setAssigning(false);
     if (failures === 0) {
       // Note text stays visible on success (not cleared) - it's what was
@@ -165,7 +175,7 @@ export function useChatAssignBar() {
 
   return {
     assignMode,
-    toggleAssignMode,
+    setAssignMode: setAssignModeTo,
     assignableUsers,
     assignableReason,
     assignableLoading,

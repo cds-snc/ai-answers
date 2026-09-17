@@ -853,7 +853,6 @@
         "chatId": "Chat ID",
         "department": "Department",
         "program": "Service",
-        "user": "User",
         "pageLanguage": "Page",
         "pageLanguageAriaLabel": "Page language"
       }
@@ -900,6 +899,7 @@
         "noteClear": "Clear note",
         "assignChats": "Assign ({count}) to reviewer",
         "assignChatsWithNote": "Assign ({count}) to reviewer with note",
+        "assigning": "Assigning…",
         "errorNoExpert": "You must choose an expert to assign to.",
         "errorNoChat": "You must choose at least one chat to assign using the checkbox in the assign column.",
         "assignSuccess": "Assigned {count} chat(s).",
@@ -1080,7 +1080,6 @@
     "profileHeading": "Account details",
     "accountName": "Account name",
     "activityHeading": "Your chats and evaluations",
-    "status": "Status",
     "role": "Role",
     "institution": "Institution",
     "group": "Group",
@@ -1095,7 +1094,7 @@
     "loadError": "Failed to load your account.",
     "assignedChats": {
       "heading": "Your assigned chats for review",
-      "empty": "No chats assigned to you yet.",
+      "filterLabel": "Filter assigned chats",
       "loadError": "Failed to load your assigned chats.",
       "columns": {
         "assignedOn": "Assigned on",
