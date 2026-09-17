@@ -69,6 +69,7 @@ function getSourceOrganization(raw = {}) {
  * its body stream die.
  */
 async function fetchSearchResults(query, lang) {
+    const language = lang && lang.toLowerCase().startsWith('fr') ? 'French' : 'English';
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         headers: {
@@ -78,7 +79,7 @@ async function fetchSearchResults(query, lang) {
             "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
         body: JSON.stringify({
-            q: query,
+            q: `@language=${language} ${query}`,
             locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
             forwardLanguageToCoveoIndex: true,
         }),

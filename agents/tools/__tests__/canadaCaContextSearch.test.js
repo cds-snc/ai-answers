@@ -90,8 +90,21 @@ describe('canadaCaContextSearch retry', () => {
             }),
         });
         expect(JSON.parse(request.body)).toEqual({
-            q: 'q',
+            q: '@language=English q',
             locale: 'en-CA',
+            forwardLanguageToCoveoIndex: true,
+        });
+    });
+
+    it('adds the French language qualifier for French searches', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('terme de recherche', 'fr');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toEqual({
+            q: '@language=French terme de recherche',
+            locale: 'fr-CA',
             forwardLanguageToCoveoIndex: true,
         });
     });
