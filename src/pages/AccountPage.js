@@ -98,6 +98,7 @@ const AccountPage = ({ lang = 'en' }) => {
     }
   };
   const handleProfileFieldChange = (field, value) => {
+    setPrefStatus(null);
     institutionError.clearError();
     groupError.clearError();
     const change = field === 'institution'
@@ -121,6 +122,7 @@ const AccountPage = ({ lang = 'en' }) => {
       return;
     }
     prefError.clearError();
+    setProfileStatus(null);
     const change = checked ? t('account.preferences.changeInstitutionOn') : t('account.preferences.changeInstitutionOff');
     return saveProfile(
       { preferences: { prefilterDepartment: checked } },
@@ -136,6 +138,7 @@ const AccountPage = ({ lang = 'en' }) => {
       return;
     }
     groupPrefError.clearError();
+    setProfileStatus(null);
     const change = checked ? t('account.preferences.changeGroupOn') : t('account.preferences.changeGroupOff');
     return saveProfile(
       { preferences: { prefilterGroup: checked } },

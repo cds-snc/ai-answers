@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { UserPlus } from 'lucide-react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -463,12 +462,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         <div>
           {recordsTotal > 0 && (
             <details
-              className="filter-panel chat-assign-panel mb-200"
+              className="filter-panel chat-assign-panel"
               open={assignBar.assignMode}
               onToggle={() => { assignBar.toggleAssignMode(); setTableKey((k) => k + 1); }}
             >
               <summary className="filter-panel-summary">
-                <UserPlus className="filter-panel-summary__icon" aria-hidden="true" />
                 {t('admin.chatDashboard.assign.toggleOn')}
               </summary>
               <div className="filter-panel-content text-measure">
@@ -693,7 +691,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         const checkbox = row.querySelector('input.chat-assign-checkbox');
                         if (checkbox) {
                           checkbox.checked = assignBar.isChatChecked(data.chatId);
-                          checkbox.onchange = () => assignBar.toggleChatChecked(data.chatId, checkbox.checked);
+                          row.classList.toggle('chat-row--selected', checkbox.checked);
+                          checkbox.onchange = () => {
+                            assignBar.toggleChatChecked(data.chatId, checkbox.checked);
+                            row.classList.toggle('chat-row--selected', checkbox.checked);
+                          };
                         }
                         const pill = row.querySelector('button.chat-assign-pill');
                         if (pill) {

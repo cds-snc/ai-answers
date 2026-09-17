@@ -357,6 +357,8 @@ const UsersPage = ({ lang }) => {
       }
     },
     {
+      // TODO: groups are a hardcoded PARTNER_GROUPS list; add a "manage
+      // groups" page/section here to create/edit them instead.
       title: t('users.columns.group'),
       data: 'group',
       render: (data, type, row) => {

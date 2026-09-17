@@ -577,6 +577,26 @@
    right for "Filters" but not wanted here, so this panel gets its own
    closed-state look instead, same tokens .filter-button-outline uses
    elsewhere in this panel (secondary/outline, not primary). */
+/* Matches .dashboard-table-container's breakout below it, not FilterPanel's
+   narrower container above - so its left edge lines up with the table/
+   search, not the filters. */
+/* gcds-spacing-300 offset baked into the panel's own position (not the
+   summary), so it stays put across open/closed instead of jumping. */
+.chat-assign-panel {
+  width: calc(90vw - var(--gcds-spacing-300));
+  margin-left: calc(50% - 45vw + var(--gcds-spacing-300));
+  margin-right: calc(50% - 45vw);
+}
+
+.chat-assign-panel:not([open]) > .filter-panel-summary {
+  margin-bottom: 0;
+}
+
+.chat-assign-panel > .filter-panel-content {
+  margin-left: var(--gcds-spacing-300);
+  margin-bottom: var(--gcds-spacing-300);
+}
+
 .chat-assign-panel:not([open]) > .filter-panel-summary {
   background: var(--gcds-button-secondary-default-background);
   border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
@@ -613,11 +633,10 @@
   margin-top: var(--gcds-spacing-150);
 }
 
-/* Same width as the expert <select> above it (.filter-input/.filter-select
-   both default to width:100% of the panel) - aligned edges, not a
-   narrower field of its own. */
+/* Same width as the expert <select> above it. */
 .chat-assign-note-textarea {
   width: 100%;
+  height: 100px;
 }
 
 .chat-assign-note-count {
@@ -1120,6 +1139,11 @@ table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_1,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_2,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_3 {
+  box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
+}
+/* Checked-for-assignment row: whole-row fill, same pale blue and technique
+   as the sort highlight above. */
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-row--selected > * {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
 }
 /* Same blue highlight, for plain (non-grouped) .dashboard-table instances -
