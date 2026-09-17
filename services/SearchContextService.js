@@ -20,9 +20,8 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
             // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
             onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
         });
-        // The two providers report a spent-all-retries failure differently:
-        // canadaca throws (caught below), google returns `failed` with the error
-        // as its result text so the answer agent can still say the search failed.
+        // Both providers return `failed` with the error as their result text when
+        // retries are exhausted, so the answer agent can still say the search failed.
         // Both are errors for metrics purposes — the dashboard's own note defines
         // this count as "calls that still failed after all retries".
         if (result?.failed) {

@@ -32,9 +32,9 @@ function extractSearchResults(results, numResults = 3) {
     const topResults = results.results.slice(0, numResults).map(result => ({
         department: result.raw?.department,
         organization: getSourceOrganization(result.raw),
-        link: result.clickUri,
-        linkText: result.title,
-        summary: result.excerpt
+        link: result.clickUri || 'No link available',
+        linkText: result.title || 'No title available',
+        summary: result.excerpt || 'No summary available'
     }));
 
     const extractedResults = topResults.map(result => {

@@ -109,6 +109,21 @@ describe('canadaCaContextSearch retry', () => {
         });
     });
 
+    it('uses safe fallbacks when a result omits citation fields', async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ results: [{ raw: {} }] }),
+        });
+
+        const result = await contextSearch('q', 'en');
+
+        expect(result.results).toContain('Title: No title available');
+        expect(result.results).toContain('Link: No link available');
+        expect(result.results).toContain('Summary: No summary available');
+        expect(result.results).not.toContain('undefined');
+    });
+
     // Guards the `error.status = response.status` line: fetch reports the status
     // on the response, so without it a 503 arrives as a bare Error and is
     // misread as permanent.
