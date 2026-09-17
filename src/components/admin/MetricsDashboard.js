@@ -16,6 +16,7 @@ import { escapeHtml } from '../../utils/htmlEscape.js';
 import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.js';
 import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 DataTable.use(DT);
 
@@ -27,6 +28,32 @@ const getDefaultDateRange = () => {
     endDate: end.toISOString()
   };
 };
+
+// Module-level, not defined inside MetricsDashboard: React keys remounting
+// on component *type* identity, and a function declared inside a render
+// body is a new type every render — that used to remount this whole
+// subtree (including StatusMessage) on every dashboard re-render, wiping
+// StatusMessage's own announce-dedup memory and re-announcing an unchanged
+// error every time a sibling section's fetch settled. `t`/`renderStatusMessage`
+// come in as props instead of closure for the same reason. `sectionKey`:
+// distinct renderStatusMessage key per instance, so sibling sections erroring
+// together don't collide on 'default'.
+const SectionWrapper = ({ children, isLoading, title, status, sectionKey, t, renderStatusMessage }) => (
+  <div className="mb-600">
+    <div>
+      {title && <h2 className="mb-0">{title}</h2>}
+      {isLoading && (
+        <SectionLoadingIndicator message={t('common.loading')} />
+      )}
+      {status && !isLoading && renderStatusMessage(status, 'success', sectionKey)}
+      {/* No loading-dim/disable while a section refetches — removed rather
+          than replaced the Tailwind-shaped classes here, which were never
+          real CSS in this project. Same gap in
+          TechnicalMetricsDashboard.js's identical SectionWrapper. */}
+      {children}
+    </div>
+  </div>
+);
 
 const initialMetricsState = {
   totalConversations: 0,
@@ -75,17 +102,16 @@ const initialMetricsState = {
 
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   // err.message is raw, untranslated exception text — wrap it in its own
-  // lang="en" span in SectionWrapper below rather than rendering it inside a
-  // translated StatusMessage, same pattern as DeleteChatSection.js.
+  // lang="en" span via buildErrorStatus, same pattern as DeleteChatSection.js.
   // admin.common.fetchError: shared with TechnicalMetricsDashboard.js's
   // identical fetch-error template (was two duplicate page-scoped keys).
   // TODO (Official Languages): still just a pronunciation fix, not a
   // translation — needs the metrics-* API routes to return a stable error
   // code instead of free text before this can be properly localized.
-  const [fetchErrorPrefix, fetchErrorSuffix] = t('admin.common.fetchError').split('{message}');
   const [metrics, setMetrics] = useState(initialMetricsState);
   const [loadingState, setLoadingState] = useState({
     usage: false,
@@ -255,26 +281,23 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     accuracyPctFr: total.fr ? 100 - Math.round((hasError.fr / total.fr) * 100) : 0
   });
 
-  const SectionWrapper = ({ children, isLoading, title, error }) => (
-    <div className="mb-600">
-      <div>
-        {title && <h2 className="mb-0">{title}</h2>}
-        {isLoading && (
-          <SectionLoadingIndicator message={t('common.loading')} />
-        )}
-        {error && !isLoading && (
-          <StatusMessage variant="error">
-            {fetchErrorPrefix}<code lang="en">{error}</code>{fetchErrorSuffix}
-          </StatusMessage>
-        )}
-        {/* No loading-dim/disable while a section refetches — removed rather
-            than replaced the Tailwind-shaped classes here, which were never
-            real CSS in this project. Same gap in
-            TechnicalMetricsDashboard.js's identical SectionWrapper. */}
-        {children}
-      </div>
-    </div>
+  // Built once per section, keyed on that section's own error string — not
+  // inline in SectionWrapper's JSX — so renderStatusMessage's identity-based
+  // nonce only bumps when the error actually changes, not on every dashboard
+  // re-render a sibling section's fetch settling causes (buildErrorStatus is
+  // itself useCallback-stable, so this only recomputes on a real change).
+  const useSectionErrorStatus = (error) => useMemo(
+    () => (error ? buildErrorStatus('admin.common.fetchError', { message: error }) : null),
+    [error, buildErrorStatus]
   );
+  const questionsStatus = useSectionErrorStatus(errorState.usage || errorState.session);
+  const accuracyStatus = useSectionErrorStatus(errorState.expert || errorState.ai || errorState.usage);
+  const sessionsStatus = useSectionErrorStatus(errorState.session);
+  const questionTypesStatus = useSectionErrorStatus(errorState.usage);
+  const expertScoredStatus = useSectionErrorStatus(errorState.expert);
+  const aiScoredStatus = useSectionErrorStatus(errorState.ai);
+  const publicFbStatus = useSectionErrorStatus(errorState.publicFb);
+  const deptStatus = useSectionErrorStatus(errorState.dept);
 
   return (
     <GcdsContainer size="xl">
@@ -369,7 +392,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
 
                 <div>
             {/* Table 1: Questions by position */}
-            <SectionWrapper isLoading={loadingState.usage || loadingState.session} title={t('metrics.dashboard.questions.title')} error={errorState.usage || errorState.session}>
+            <SectionWrapper isLoading={loadingState.usage || loadingState.session} title={t('metrics.dashboard.questions.title')} status={questionsStatus} sectionKey="questions" t={t} renderStatusMessage={renderStatusMessage}>
               <div>
                 <DataTable
                   data={[
@@ -394,7 +417,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* Table 2: Accuracy summary */}
-            <SectionWrapper isLoading={loadingState.expert || loadingState.ai || loadingState.usage} title={t('metrics.dashboard.accuracy.title')} error={errorState.expert || errorState.ai || errorState.usage}>
+            <SectionWrapper isLoading={loadingState.expert || loadingState.ai || loadingState.usage} title={t('metrics.dashboard.accuracy.title')} status={accuracyStatus} sectionKey="accuracy" t={t} renderStatusMessage={renderStatusMessage}>
               <p className="mb-300">{t('metrics.dashboard.accuracy.note')}</p>
               <div>
                 <DataTable
@@ -448,7 +471,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* Table 3: Sessions */}
-            <SectionWrapper isLoading={loadingState.session} title={t('metrics.dashboard.sessions.title')} error={errorState.session}>
+            <SectionWrapper isLoading={loadingState.session} title={t('metrics.dashboard.sessions.title')} status={sessionsStatus} sectionKey="sessions" t={t} renderStatusMessage={renderStatusMessage}>
               <div>
                 <DataTable
                   data={[
@@ -465,7 +488,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* Table 4: Question types */}
-            <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.questionTypes.title')} error={errorState.usage}>
+            <SectionWrapper isLoading={loadingState.usage} title={t('metrics.dashboard.questionTypes.title')} status={questionTypesStatus} sectionKey="questionTypes" t={t} renderStatusMessage={renderStatusMessage}>
               <div>
                 <DataTable
                   data={[
@@ -483,7 +506,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* Expert Scored Section */}
-            <SectionWrapper isLoading={loadingState.expert} title={t('metrics.dashboard.expertScored.title')} error={errorState.expert}>
+            <SectionWrapper isLoading={loadingState.expert} title={t('metrics.dashboard.expertScored.title')} status={expertScoredStatus} sectionKey="expertScored" t={t} renderStatusMessage={renderStatusMessage}>
               <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.expertScored.description')}</GcdsText>
               <div>
                 {/* TODO: "Has answer error" below can undercount - see the
@@ -525,7 +548,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
             {/* AI Scored Section */}
-            <SectionWrapper isLoading={loadingState.ai} title={t('metrics.dashboard.aiScored.title')} error={errorState.ai}>
+            <SectionWrapper isLoading={loadingState.ai} title={t('metrics.dashboard.aiScored.title')} status={aiScoredStatus} sectionKey="aiScored" t={t} renderStatusMessage={renderStatusMessage}>
               <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.aiScored.description')}</GcdsText>
               <div>
                 <DataTable
@@ -556,11 +579,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             </SectionWrapper>
 
 
-            <SectionWrapper isLoading={loadingState.publicFb} title={null} error={errorState.publicFb}>
+            <SectionWrapper isLoading={loadingState.publicFb} title={null} status={publicFbStatus} sectionKey="publicFb" t={t} renderStatusMessage={renderStatusMessage}>
               <EndUserFeedbackSection t={t} metrics={metrics} lang={lang} />
             </SectionWrapper>
 
-            <SectionWrapper isLoading={loadingState.dept} title={null} error={errorState.dept}>
+            <SectionWrapper isLoading={loadingState.dept} title={null} status={deptStatus} sectionKey="dept" t={t} renderStatusMessage={renderStatusMessage}>
               <div className="mb-600">
                 <h2 className="mb-0">{t('metrics.dashboard.byDepartment.title')}</h2>
                 {/* metrics-table-container (admin.css): same styled search
