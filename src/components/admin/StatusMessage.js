@@ -278,14 +278,15 @@ export default StatusMessage;
 // carry focus-move state — that's a separate counter (useFocusOnChange), see
 // UsersPage.js's saveFocusCount.
 //
-// TODO(follow-up PR): migrate these off their own hand-rolled { text/message,
-// isError } + no-nonce state onto this hook (UsersPage.js is the first
-// migrated consumer): SettingsPage.js (settingsCacheStatus only —
-// sectionStatus/sectionSaveNonce already has a working nonce),
-// DatabasePage.js (~13 sites, via useErrorStatus.js's renderStatusMessage),
-// VectorPage.js, useChatIdLookup.js, useChatAssignBar.js (both hooks, not
-// pages — needs composing in, not a page-level swap),
-// ExperimentalAnalysisPage.js.
+// Other nonce fixes: SettingsPage.js/DatabasePage.js via useErrorStatus.js's
+// own tracking; useChatIdLookup.js via a nonce bolted onto its own setStatus
+// (its status shape is a multi-caller union, doesn't fit this hook's).
+//
+// TODO(follow-up PR): these three shapes only diverged because `announce`
+// only takes a plain string. Letting it take a ReactNode too would let
+// useErrorStatus.js's renderStatusMessage call this hook instead of
+// reimplementing its own nonce tracking, and useChatIdLookup.js's union
+// could likely collapse into it as well. Touches ~20 call sites — own PR.
 export function useRepeatableStatus() {
   const [status, setStatusState] = useState(null); // { message, isError } | null
   const [nonce, setNonce] = useState(0);

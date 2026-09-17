@@ -42,6 +42,7 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
     loading,
     setLoading,
     status,
+    statusNonce,
     hasError,
     errorCount,
     errorRef,
@@ -112,7 +113,7 @@ const ViewChatByIdSection = ({ lang = 'en' }) => {
             hrefForMatch={hrefForMatch}
           />
         </form>
-        <StatusMessage variant={status?.variant} message={status?.text} />
+        <StatusMessage variant={status?.variant} message={status?.text} nonce={statusNonce} />
       </div>
     </details>
   );

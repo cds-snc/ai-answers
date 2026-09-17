@@ -624,7 +624,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
         </GcdsButton>
-        {renderStatusMessage(settingsCacheStatus, 'info')}
+        {renderStatusMessage(settingsCacheStatus, 'info', 'settingsCache')}
       </div>
       {/* Per-section "Unsaved changes" only shows while that section's
           <details> is open — a page-level one stays visible regardless of
@@ -1470,7 +1470,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             belongs in its own tab on this page, or behind a details/summary
             disclosure — either would let a lighter "recent changes" view
             replace this full search/paginate table for the common case. */}
-        {renderStatusMessage(auditLoadStatus)}
+        {renderStatusMessage(auditLoadStatus, 'success', 'auditLoad')}
         <ServerDataTable
           ref={auditTableRef}
           tableKey="settings-audit-history"
