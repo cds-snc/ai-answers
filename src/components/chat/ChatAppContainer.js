@@ -8,6 +8,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 import DataStoreService from '../../services/DataStoreService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS, MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../config/workflows.js';
+import { DEFAULT_SEARCH_PROVIDER } from '../../config/searchProviders.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
@@ -133,9 +134,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   );
   const [selectedSearch, setSelectedSearch] = useState(() => {
     try {
-      return localStorage.getItem(storageKey('selectedSearch')) || 'google';
+      return localStorage.getItem(storageKey('selectedSearch')) || DEFAULT_SEARCH_PROVIDER;
     } catch (e) {
-      return 'google';
+      return DEFAULT_SEARCH_PROVIDER;
     }
   });
   const [workflow, setWorkflow] = useState(() => readStoredOverride('workflow', WORKFLOW_VALUES));

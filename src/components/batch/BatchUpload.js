@@ -8,6 +8,7 @@ import { resolveErrorMessage } from '../../utils/errorCodeMessage.js';
 import { WORKFLOWS, AVAILABLE_MODELS } from '../../config/workflows.js';
 import { parseBatchCsv } from '../../utils/spreadsheets/csv.js';
 import { MAX_BATCH_ITEMS } from '../../config/batch.js';
+import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../../config/searchProviders.js';
 import { useAnnouncedError } from '../../hooks/auth/useAnnouncedError.js';
 import AnnouncedError from '../auth/AnnouncedError.js';
 import StatusMessage from '../admin/StatusMessage.js';
@@ -38,7 +39,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
-  const [selectedSearch, setSelectedSearch] = useState('google');
+  const [selectedSearch, setSelectedSearch] = useState(DEFAULT_SEARCH_PROVIDER);
   const [selectedWorkflow, setSelectedWorkflow] = useState('GenericGraph');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
   const fileUploaderRef = useRef(null);
@@ -289,8 +290,11 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
               value={selectedSearch}
               onGcdsChange={handleSearchToggle}
             >
-              <option value="google">{t('batch.upload.searchService.google')}</option>
-              <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
+              {SEARCH_PROVIDER_VALUES.map((provider) => (
+                <option key={provider} value={provider}>
+                  {t(`batch.upload.searchService.${provider}`)}
+                </option>
+              ))}
             </GcdsSelect>
 
             <GcdsSelect
