@@ -6,8 +6,8 @@ import { Interaction } from '../../../models/interaction.js';
 import { User } from '../../../models/user.js';
 
 // Focused on the assignedTo filter / assignedToEmail projection added for
-// the chat-assign feature (issue #1656) - not a full pipeline test, this
-// file has none yet.
+// the chat-assign-interaction feature (issue #1656) - assignment lives on the question
+// (Interaction), one row per question. Not a full pipeline test.
 
 function createReq(query) {
   return {
@@ -51,14 +51,10 @@ describe('chat-dashboard assignedTo filter', () => {
     const assignee = await makeUser();
     const other = await makeUser();
 
-    const interaction = await Interaction.create({});
+    const interaction = await Interaction.create({ assignedTo: assignee._id, assignedBy: other._id, assignedOn: new Date(), assignedNotes: 'please review' });
     const assignedChat = await Chat.create({
       chatId: `chat-dashboard-assigned-${Date.now()}`,
       interactions: [interaction._id],
-      assignedTo: assignee._id,
-      assignedBy: other._id,
-      assignedOn: new Date(),
-      assignedNotes: 'please review',
     });
 
     const unassignedInteraction = await Interaction.create({});
@@ -67,11 +63,10 @@ describe('chat-dashboard assignedTo filter', () => {
       interactions: [unassignedInteraction._id],
     });
 
-    const otherInteraction = await Interaction.create({});
+    const otherInteraction = await Interaction.create({ assignedTo: other._id });
     await Chat.create({
       chatId: `chat-dashboard-other-assignee-${Date.now()}`,
       interactions: [otherInteraction._id],
-      assignedTo: other._id,
     });
 
     const res = await runGet({ assignedTo: assignee._id.toString(), includeAssignee: 'true', includeAssigner: 'true' });
@@ -86,14 +81,29 @@ describe('chat-dashboard assignedTo filter', () => {
     expect(row.assignedNotes).toBe('please review');
   });
 
+  it('returns only the assigned question of a multi-question chat, not its sibling rows', async () => {
+    await dbConnect();
+    const assignee = await makeUser();
+    const q1 = await Interaction.create({});
+    const q2 = await Interaction.create({ assignedTo: assignee._id });
+    const q3 = await Interaction.create({});
+    const chat = await Chat.create({ chatId: `chat-dashboard-multi-${Date.now()}`, interactions: [q1._id, q2._id, q3._id] });
+
+    const res = await runGet({ assignedTo: assignee._id.toString() });
+
+    const rows = res.payload.data.filter((r) => r.chatId === chat.chatId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]._id).toBe(q2._id.toString());
+    expect(rows[0].questionNumber).toBe(2);
+  });
+
   it('omits assignedToEmail/assignedByEmail when neither include flag is set (the two joins are opt-in)', async () => {
     await dbConnect();
     const assignee = await makeUser();
-    const interaction = await Interaction.create({});
+    const interaction = await Interaction.create({ assignedTo: assignee._id });
     const chat = await Chat.create({
       chatId: `chat-dashboard-no-include-${Date.now()}`,
       interactions: [interaction._id],
-      assignedTo: assignee._id,
     });
 
     const res = await runGet({ assignedTo: assignee._id.toString() });
@@ -132,11 +142,10 @@ describe('chat-dashboard sort by assignedTo (the Assign column, ChatDashboardPag
     const assignee = await makeUser();
     const suffix = Date.now();
 
-    const assignedInteraction = await Interaction.create({});
+    const assignedInteraction = await Interaction.create({ assignedTo: assignee._id });
     await Chat.create({
       chatId: `sort-assigned-${suffix}`,
       interactions: [assignedInteraction._id],
-      assignedTo: assignee._id,
     });
 
     const unassignedInteraction = await Interaction.create({});
@@ -168,20 +177,16 @@ describe('chat-dashboard sort by assignedOn/assignedByEmail (AccountPage.js)', (
     // falling back to the default createdAt sort, which also honours
     // orderDir) would report chats in *creation* order and get this
     // backwards. Only a real assignedOn sort passes.
-    const laterInteraction = await Interaction.create({});
+    const laterInteraction = await Interaction.create({ assignedTo: assignee._id, assignedOn: new Date('2024-06-01') });
     await Chat.create({
       chatId: `sort-assignedon-later-${suffix}`,
       interactions: [laterInteraction._id],
-      assignedTo: assignee._id,
-      assignedOn: new Date('2024-06-01'),
     });
 
-    const earlierInteraction = await Interaction.create({});
+    const earlierInteraction = await Interaction.create({ assignedTo: assignee._id, assignedOn: new Date('2024-01-01') });
     await Chat.create({
       chatId: `sort-assignedon-earlier-${suffix}`,
       interactions: [earlierInteraction._id],
-      assignedTo: assignee._id,
-      assignedOn: new Date('2024-01-01'),
     });
 
     const res = await runGet({ assignedTo: assignee._id.toString(), orderBy: 'assignedOn', orderDir: 'asc', length: 2000 });
@@ -204,20 +209,16 @@ describe('chat-dashboard sort by assignedOn/assignedByEmail (AccountPage.js)', (
     // opposite order from the expected assignedByEmail-ascending result, so
     // a fallback-to-createdAt sort would fail this instead of accidentally
     // passing.
-    const interactionZ = await Interaction.create({});
+    const interactionZ = await Interaction.create({ assignedTo: assignee._id, assignedBy: assignerZ._id });
     await Chat.create({
       chatId: `sort-assignedby-z-${suffix}`,
       interactions: [interactionZ._id],
-      assignedTo: assignee._id,
-      assignedBy: assignerZ._id,
     });
 
-    const interactionA = await Interaction.create({});
+    const interactionA = await Interaction.create({ assignedTo: assignee._id, assignedBy: assignerA._id });
     await Chat.create({
       chatId: `sort-assignedby-a-${suffix}`,
       interactions: [interactionA._id],
-      assignedTo: assignee._id,
-      assignedBy: assignerA._id,
     });
 
     const res = await runGet({ assignedTo: assignee._id.toString(), includeAssigner: 'true', orderBy: 'assignedByEmail', orderDir: 'asc', length: 2000 });

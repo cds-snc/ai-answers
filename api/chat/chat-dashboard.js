@@ -1,5 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { Interaction } from '../../models/interaction.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
@@ -139,15 +140,20 @@ async function chatDashboardHandler(req, res) {
       }
     }
 
-    // AccountPage.js's "Chats assigned to you" table reuses this same
+    // AccountPage.js's "Questions assigned to you" table reuses this same
     // aggregate with assignedTo=<own userId> rather than a parallel
-    // endpoint - see api/chat/chat-assign.js for how assignedTo is set.
+    // endpoint - see api/chat/chat-assign-interaction.js for how assignedTo is set.
+    // Assignment lives on the question (Interaction), so: look the
+    // assigned questions up first (indexed), bound the chat scan to the
+    // chats holding them, then keep only those rows after the unwind.
+    let assignedToId = null;
     if (assignedToParam) {
-      const assignedToId = normalizeObjectIdString(assignedToParam);
+      assignedToId = normalizeObjectIdString(assignedToParam);
       if (!assignedToId) {
         return res.status(400).json({ error: 'Invalid assignedTo' });
       }
-      initialMatch.assignedTo = new mongoose.Types.ObjectId(assignedToId);
+      const assigned = await Interaction.find({ assignedTo: new mongoose.Types.ObjectId(assignedToId) }, { _id: 1 }).lean();
+      initialMatch.interactions = { $in: assigned.map((i) => i._id) };
     }
 
     if (Object.keys(initialMatch).length) {
@@ -164,11 +170,7 @@ async function chatDashboardHandler(req, res) {
         user: 1,
         pageLanguage: 1,
         createdAt: 1,
-        interactionIds: '$interactions',
-        assignedTo: 1,
-        assignedBy: 1,
-        assignedOn: 1,
-        assignedNotes: 1
+        interactionIds: '$interactions'
       }
     });
 
@@ -199,6 +201,10 @@ async function chatDashboardHandler(req, res) {
         preserveNullAndEmptyArrays: false
       }
     });
+
+    if (assignedToId) {
+      pipeline.push({ $match: { 'interactions.assignedTo': new mongoose.Types.ObjectId(assignedToId) } });
+    }
 
     pipeline.push({
       $addFields: {
@@ -391,8 +397,9 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({ $project: { creator: 0 } });
 
-    // Lookup assignee/assigner emails for display (chat-assign.js only
-    // stores the ObjectIds) - same shape as the creator lookup just above.
+    // Lookup assignee/assigner emails for display (chat-assign-interaction.js only
+    // stores the ObjectIds on the question) - same shape as the creator
+    // lookup just above.
     // Each is its own join, so only run the one(s) the caller actually
     // displays: ChatDashboardPage.js shows assignedToEmail, AccountPage.js
     // (already scoped to one assignee) shows assignedByEmail - neither
@@ -403,12 +410,12 @@ async function chatDashboardHandler(req, res) {
       const addFields = {};
       const dropFields = {};
       if (wantAssigneeEmail) {
-        pipeline.push({ $lookup: { from: 'users', localField: 'assignedTo', foreignField: '_id', as: 'assignee' } });
+        pipeline.push({ $lookup: { from: 'users', localField: 'interactions.assignedTo', foreignField: '_id', as: 'assignee' } });
         addFields.assignedToEmail = { $ifNull: [{ $arrayElemAt: ['$assignee.email', 0] }, ''] };
         dropFields.assignee = 0;
       }
       if (wantAssignerEmail) {
-        pipeline.push({ $lookup: { from: 'users', localField: 'assignedBy', foreignField: '_id', as: 'assigner' } });
+        pipeline.push({ $lookup: { from: 'users', localField: 'interactions.assignedBy', foreignField: '_id', as: 'assigner' } });
         addFields.assignedByEmail = { $ifNull: [{ $arrayElemAt: ['$assigner.email', 0] }, ''] };
         dropFields.assigner = 0;
       }
@@ -450,11 +457,11 @@ async function chatDashboardHandler(req, res) {
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
-        assignedTo: { $ifNull: ['$assignedTo', null] },
+        assignedTo: { $ifNull: ['$interactions.assignedTo', null] },
         assignedToEmail: 1,
         assignedByEmail: 1,
-        assignedOn: 1,
-        assignedNotes: 1,
+        assignedOn: '$interactions.assignedOn',
+        assignedNotes: '$interactions.assignedNotes',
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
@@ -504,10 +511,10 @@ async function chatDashboardHandler(req, res) {
       partnerEval: 'partnerEval',
       aiEval: 'aiEval',
       // Assign column (ChatDashboardPage.js): null sorts before any
-      // ObjectId ascending, so an ascending sort groups unassigned chats
+      // ObjectId ascending, so an ascending sort groups unassigned questions
       // first - the use case this is for.
       assignedTo: 'assignedTo',
-      // Assigned chats table (AccountPage.js). assignedByEmail is a plain
+      // Assigned questions table (AccountPage.js). assignedByEmail is a plain
       // field by the time this $sort runs - materialized earlier in the
       // pipeline by the assignee/assigner $lookup + $addFields above.
       assignedOn: 'assignedOn',

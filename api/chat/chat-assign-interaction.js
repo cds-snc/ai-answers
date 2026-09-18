@@ -1,15 +1,17 @@
 import dbConnect from '../db/db-connect.js';
-import { Chat } from '../../models/chat.js';
+import { Interaction } from '../../models/interaction.js';
 import { User } from '../../models/user.js';
-import { requireString, requireObjectIdString } from '../util/db-query.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../../src/constants/chatAssign.js';
 import { sharesMembership } from '../util/reviewer-filter.js';
 
-// Assigns a chat to one partner/admin user for review (issue #1656). Single
-// assignee at a time - an already-assigned chat is rejected (409), not
-// silently overwritten; DELETE clears the assignment (the "×" pill on
-// ChatDashboardPage.js's assign column).
+// Assigns one question (an Interaction, keyed by its _id as `interactionId`)
+// to one partner/admin user for review (issue #1656). Per question, not per
+// chat: the questions in a chat can belong to different departments and go
+// to different reviewers. Single assignee at a time - an already-assigned
+// question is rejected (409), not silently overwritten; DELETE clears the
+// assignment (the "×" pill on ChatDashboardPage.js's assign column). Route: /api/chat/chat-assign-interaction.
 //
 // Who can be assigned is deliberately narrow for v1, since a partner has no
 // visibility into the full account directory (that stays admin-only, via
@@ -29,14 +31,14 @@ async function chatAssignHandler(req, res) {
   }
   try {
     await dbConnect();
-    let { chatId, assignedTo, notes } = req.body || {};
-    if (!chatId) {
-      return res.status(400).json({ message: 'chatId is required' });
+    let { interactionId, assignedTo, notes } = req.body || {};
+    if (!interactionId) {
+      return res.status(400).json({ message: 'interactionId is required' });
     }
     if (!assignedTo) {
       return res.status(400).json({ message: 'assignedTo is required' });
     }
-    chatId = requireString(chatId, 'chatId');
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
     assignedTo = requireObjectIdString(assignedTo, 'assignedTo');
     if (notes !== undefined && typeof notes !== 'string') {
       return res.status(400).json({ message: 'notes must be a string' });
@@ -53,76 +55,76 @@ async function chatAssignHandler(req, res) {
     if (req.user.role !== 'admin' && assignedTo !== req.user.userId) {
       const requester = await User.findById(req.user.userId, { institution: 1, group: 1 }).lean();
       if (!sharesMembership(requester, assignee)) {
-        return res.status(403).json({ message: 'Partners can only assign chats to themselves or to someone in their own institution/group' });
+        return res.status(403).json({ message: 'Partners can only assign questions to themselves or to someone in their own institution/group' });
       }
     }
 
     // assignedTo: null in the filter makes this an atomic check-and-set -
-    // two concurrent assigns on the same unassigned chat can't both "win".
-    const chat = await Chat.findOneAndUpdate(
-      { chatId, assignedTo: null },
+    // two concurrent assigns on the same unassigned question can't both "win".
+    const interaction = await Interaction.findOneAndUpdate(
+      { _id: interactionId, assignedTo: null },
       {
         assignedTo,
         assignedBy: req.user.userId,
         assignedOn: new Date(),
         assignedNotes: (notes || '').trim(),
       },
-      { new: true, select: 'chatId assignedTo assignedBy assignedOn assignedNotes' }
+      { new: true, select: 'assignedTo assignedBy assignedOn assignedNotes' }
     ).lean();
 
-    if (!chat) {
-      const existing = await Chat.findOne({ chatId }, { _id: 1 }).lean();
+    if (!interaction) {
+      const existing = await Interaction.findOne({ _id: interactionId }, { _id: 1 }).lean();
       if (!existing) {
-        return res.status(404).json({ message: 'Chat not found' });
+        return res.status(404).json({ message: 'Question not found' });
       }
-      return res.status(409).json({ code: 'already_assigned', message: 'This chat is already assigned.' });
+      return res.status(409).json({ code: 'already_assigned', message: 'This question is already assigned.' });
     }
 
     return res.status(200).json({
-      chatId: chat.chatId,
-      assignedTo: chat.assignedTo.toString(),
+      interactionId: interaction._id.toString(),
+      assignedTo: interaction.assignedTo.toString(),
       assignedToEmail: assignee.email,
-      assignedBy: chat.assignedBy.toString(),
-      assignedOn: chat.assignedOn,
-      assignedNotes: chat.assignedNotes,
+      assignedBy: interaction.assignedBy.toString(),
+      assignedOn: interaction.assignedOn,
+      assignedNotes: interaction.assignedNotes,
     });
   } catch (error) {
-    console.error('Error assigning chat:', error);
-    return res.status(500).json({ message: 'Failed to assign chat' });
+    console.error('Error assigning question:', error);
+    return res.status(500).json({ message: 'Failed to assign question' });
   }
 }
 
 // Same reach as assigning: the current assignee, whoever made the
 // assignment, an institution/group-mate of the current assignee, or an
-// admin. Unassigning an already-unassigned chat is a no-op success, not an
-// error - the pill that triggers this only exists on an assigned chat, so a
+// admin. Unassigning an already-unassigned question is a no-op success, not
+// an error - the pill that triggers this only exists on an assigned question, so a
 // second click landing here (a slow network, a double-click) shouldn't
 // surface as a failure.
 async function unassignHandler(req, res) {
   try {
     await dbConnect();
-    let { chatId } = req.body || {};
-    if (!chatId) {
-      return res.status(400).json({ message: 'chatId is required' });
+    let { interactionId } = req.body || {};
+    if (!interactionId) {
+      return res.status(400).json({ message: 'interactionId is required' });
     }
-    chatId = requireString(chatId, 'chatId');
+    interactionId = requireObjectIdString(interactionId, 'interactionId');
 
-    const chat = await Chat.findOne({ chatId }, { assignedTo: 1, assignedBy: 1 }).lean();
-    if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
+    const current = await Interaction.findOne({ _id: interactionId }, { assignedTo: 1, assignedBy: 1 }).lean();
+    if (!current) {
+      return res.status(404).json({ message: 'Question not found' });
     }
-    if (!chat.assignedTo) {
-      return res.status(200).json({ chatId });
+    if (!current.assignedTo) {
+      return res.status(200).json({ interactionId });
     }
 
     if (req.user.role !== 'admin') {
-      const isCurrentAssignee = String(chat.assignedTo) === req.user.userId;
-      const isOriginalAssigner = chat.assignedBy && String(chat.assignedBy) === req.user.userId;
+      const isCurrentAssignee = String(current.assignedTo) === req.user.userId;
+      const isOriginalAssigner = current.assignedBy && String(current.assignedBy) === req.user.userId;
       let allowed = isCurrentAssignee || isOriginalAssigner;
       if (!allowed) {
         const [requester, assignee] = await Promise.all([
           User.findById(req.user.userId, { institution: 1, group: 1 }).lean(),
-          User.findById(chat.assignedTo, { institution: 1, group: 1 }).lean(),
+          User.findById(current.assignedTo, { institution: 1, group: 1 }).lean(),
         ]);
         allowed = sharesMembership(requester, assignee);
       }
@@ -134,17 +136,17 @@ async function unassignHandler(req, res) {
     // Clear only the assignment that was just authorized: if someone else
     // unassigned and reassigned in between, the filter no longer matches and
     // the newer assignment is left alone.
-    const result = await Chat.updateOne(
-      { chatId, assignedTo: chat.assignedTo },
+    const result = await Interaction.updateOne(
+      { _id: interactionId, assignedTo: current.assignedTo },
       { assignedTo: null, assignedBy: null, assignedOn: null, assignedNotes: '' }
     );
     if (result.matchedCount === 0) {
       return res.status(409).json({ code: 'assignment_changed', message: 'This assignment changed while you were removing it. Reload and try again.' });
     }
-    return res.status(200).json({ chatId });
+    return res.status(200).json({ interactionId });
   } catch (error) {
-    console.error('Error unassigning chat:', error);
-    return res.status(500).json({ message: 'Failed to unassign chat' });
+    console.error('Error unassigning question:', error);
+    return res.status(500).json({ message: 'Failed to unassign question' });
   }
 }
 

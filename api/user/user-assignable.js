@@ -3,11 +3,11 @@ import { User } from '../../models/user.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { membershipConditions } from '../util/reviewer-filter.js';
 
-// The picker list for chat-assign.js: who the signed-in user is allowed to
+// The picker list for chat-assign-interaction.js: who the signed-in user is allowed to
 // assign a chat to. Deliberately NOT the full account directory
 // (user-users.js stays admin-only) - a partner only ever sees people who
 // share their own institution or group (same membership rule enforced in
-// chat-assign.js), plus themselves - self-assign is always allowed there
+// chat-assign-interaction.js), plus themselves - self-assign is always allowed there
 // regardless of institution/group, so the picker must always include the
 // requester too, not just their institution/group-mates. An admin sees
 // everyone active, same reach they already have via user-users.js.
@@ -35,7 +35,7 @@ async function userAssignableHandler(req, res) {
     const requester = await User.findById(req.user.userId, { institution: 1, group: 1 }).lean();
     const conditions = membershipConditions(requester);
     const noInstitutionOrGroup = conditions.length === 0;
-    // Self-assign is always allowed (see chat-assign.js), so the requester
+    // Self-assign is always allowed (see chat-assign-interaction.js), so the requester
     // is always in the picker list even with no institution/group set.
     conditions.push({ _id: req.user.userId });
 

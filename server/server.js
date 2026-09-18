@@ -111,7 +111,7 @@ import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.j
 import dbRepairQaMatchScoresHandler from '../api/db/db-repair-qa-match-scores.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
-import chatAssignHandler from '../api/chat/chat-assign.js';
+import chatAssignInteractionHandler from '../api/chat/chat-assign-interaction.js';
 import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
@@ -401,7 +401,7 @@ app.get('/api/user/user-stats', userStatsHandler);
 app.get('/api/user/user-assignable', userAssignableHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);
-app.all('/api/chat/chat-assign', chatAssignHandler);
+app.all('/api/chat/chat-assign-interaction', chatAssignInteractionHandler);
 app.get('/api/chat/chat-export-logs', chatExportLogsHandler);
 app.post('/api/db/db-generate-embeddings', generateEmbeddingsHandler);
 app.post('/api/db/db-generate-evals', generateEvalsHandler);
