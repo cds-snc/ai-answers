@@ -82,6 +82,7 @@ describe('canadaCaContextSearch retry', () => {
         const [, request] = fetchMock.mock.calls[1];
         expect(request).toMatchObject({
             method: 'POST',
+            signal: expect.any(AbortSignal),
             headers: expect.objectContaining({
                 Authorization: 'Bearer api-key',
                 'Content-Type': 'application/json',

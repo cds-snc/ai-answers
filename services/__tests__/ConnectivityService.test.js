@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SettingsService } from '../SettingsService.js';
-import { testAzureOpenAI, testDocumentDB, testGoogleSearch } from '../ConnectivityService.js';
+import { testAzureOpenAI, testCanadaCaSearch, testDocumentDB, testGoogleSearch } from '../ConnectivityService.js';
 
 let originalCache = {};
 
@@ -34,6 +34,20 @@ describe('ConnectivityService simulation controls', () => {
 
     expect(result).toMatchObject({
       service: 'Google search',
+      status: 'error',
+      statusCode: 503,
+      message: 'Simulated connection failure',
+      details: { simulated: true },
+    });
+  });
+
+  it('simulates a Canada.ca search connection failure when enabled', async () => {
+    SettingsService.cache['connectivity.simulation.search'] = 'true';
+
+    const result = await testCanadaCaSearch();
+
+    expect(result).toMatchObject({
+      service: 'Canada.ca search',
       status: 'error',
       statusCode: 503,
       message: 'Simulated connection failure',

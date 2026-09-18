@@ -92,7 +92,7 @@ describe('SearchContextService error recording', () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({ query: 'Rewritten Query' });
     });
 
-    it('records a search error for the canadaca provider and still throws', async () => {
+    it('records an unexpected thrown error from the canadaca provider', async () => {
         canadaContextSearch.mockRejectedValue(new Error('search down'));
 
         await expect(SearchContextService.search({ chatId: 'test' })).rejects.toThrow('search down');
@@ -108,11 +108,9 @@ describe('SearchContextService error recording', () => {
         expect(recordErrorMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
     });
 
-    // googleContextSearch deliberately does not throw — it returns the failure as
-    // its result text so the answer agent can say the search failed. That made
-    // the Google error count on the technical metrics dashboard structurally
-    // zero: the row rendered "0 errors" during a full Google outage. The tool
-    // now marks the result, and this is what keeps that marker wired up.
+    // Search tools return their failure as text so the answer agent can say the
+    // search failed. The `failed` marker keeps that failure visible to the
+    // technical metrics dashboard.
     it('records a search error when google reports a failure without throwing', async () => {
         googleContextSearch.mockResolvedValue({
             failed: true,
@@ -127,10 +125,9 @@ describe('SearchContextService error recording', () => {
         expect(result.results).toContain('Search failed:');
     });
 
-    // search() re-runs the whole rewrite-and-search when a result looks sparse,
-    // and a failed google search reads as 0 results. Without the `failed` guard
-    // an outage cost a second LLM rewrite plus a second doomed search, and
-    // recorded the error twice — while canadaca, which throws, recorded once.
+    // search() re-runs the whole rewrite-and-search when a result looks sparse.
+    // Without the `failed` guard, an outage costs a second LLM rewrite plus a
+    // second doomed search and records the error twice.
     it('does not re-search or double-count when google reports a failure', async () => {
         googleContextSearch.mockResolvedValue({
             failed: true,

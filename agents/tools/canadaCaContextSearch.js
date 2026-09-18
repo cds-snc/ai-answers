@@ -3,6 +3,7 @@ import { maskSecretValue, sanitizeErrorForLogging } from './utils/searchUtils.js
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 1000;
+const SEARCH_REQUEST_TIMEOUT_MS = 30000;
 
 // Checked after a failure, before starting another attempt, so a slow-*failing*
 // origin cannot have its wait multiplied by MAX_SEARCH_ATTEMPTS. Failures that
@@ -72,6 +73,7 @@ async function fetchSearchResults(query, lang) {
     const language = lang && lang.toLowerCase().startsWith('fr') ? 'French' : 'English';
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
+        signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
         headers: {
             "Authorization": `Bearer ${process.env.CANADA_CA_SEARCH_API_KEY}`,
             "Content-Type": "application/json",
@@ -83,7 +85,6 @@ async function fetchSearchResults(query, lang) {
             locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
             forwardLanguageToCoveoIndex: true,
         }),
-        timeout: 30000 // 30 seconds timeout
     });
 
     if (!response.ok) {

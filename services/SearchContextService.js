@@ -68,8 +68,7 @@ export const SearchContextService = {
         // A failed search is excluded: its result text ("Search failed: ...")
         // counts as 0, which would otherwise spend an LLM rewrite plus a second
         // full search on an outage that is certain to fail again — and record a
-        // second error for the same outage, putting google's error count on a
-        // different scale from canadaca's, which throws and is counted once.
+        // second error for the same outage.
         const resultCount = countSearchResults(searchResults?.results);
         if (!searchResults?.failed && resultCount <= 1) {
             try {
