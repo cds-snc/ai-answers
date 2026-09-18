@@ -11,6 +11,7 @@ import ExperimentalServerDataTable from '../../components/experimental/Experimen
 import { getPath } from '../../utils/routes.js';
 import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../../config/searchProviders.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
 // component (not a StatusMessage `progress` variant) because determinate
@@ -157,7 +158,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
-    const [selectedSearch, setSelectedSearch] = useState('google');
+    const [selectedSearch, setSelectedSearch] = useState(DEFAULT_SEARCH_PROVIDER);
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -855,8 +856,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => setSelectedSearch(e.target.value)}
                                 className="filter-select settings-form-width"
                             >
-                                <option value="google">{t('batch.upload.searchService.google')}</option>
-                                <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
+                                {SEARCH_PROVIDER_VALUES.map((provider) => (
+                                    <option key={provider} value={provider}>
+                                        {t(`batch.upload.searchService.${provider}`)}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

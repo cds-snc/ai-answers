@@ -5,6 +5,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
+import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
@@ -74,6 +75,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'site.baseUrl': '',
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
+  'search.default': DEFAULT_SEARCH_PROVIDER,
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
@@ -119,7 +121,7 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+    'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
   health: [
     'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
@@ -174,6 +176,7 @@ const FIELD_META = {
   'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
   'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
+  'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
   'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
@@ -241,6 +244,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
+  const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
   const [chatTransport, setChatTransport] = useState('sse');
 
   // Canadian Indigenous language blocking guardrail (on by default)
@@ -396,6 +400,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       const defaultWorkflowSetting = settings['workflow.default'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
+      setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
       setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
@@ -769,6 +774,24 @@ const SettingsPage = ({ lang = 'en' }) => {
             {AVAILABLE_MODELS.map(m => (
               <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
             ))}
+          </select>
+
+            {fieldErrors['search.default'] && (
+              <FeedbackInlineError id="default-search-provider-error" message={fieldErrors['search.default']} announce={false} />
+            )}
+          <label htmlFor="default-search-provider" className="filter-label display-block mt-200">
+            {t('settings.defaultSearchProvider.label')}
+          </label>
+          <select
+            id="default-search-provider"
+            className="filter-select"
+            value={defaultSearchProvider}
+            onChange={(e) => { const v = e.target.value; setDefaultSearchProvider(v); stageChange('search.default', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
+          >
+            <option value="google">{t('settings.defaultSearchProvider.options.google')}</option>
+            <option value="canadaca">{t('settings.defaultSearchProvider.options.canadaca')}</option>
           </select>
 
             {fieldErrors['guardrail.indigenousLanguageBlocking'] && (

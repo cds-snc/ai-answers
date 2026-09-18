@@ -2,6 +2,7 @@ import { ChatWorkflowService, ShortQueryValidation, RedactionError } from './Cha
 import AuthService from './AuthService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 import SessionService from './SessionService.js';
+import { DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
 
 /**
  * Client-side batch runner that treats each spreadsheet row as its own chat.
@@ -52,7 +53,7 @@ class BatchService {
    * Start a batch: decide whether to derive context or send batch messages.
    * Returns whatever the underlying service returns (usually an object with batchId).
    */
-  async startBatch({ entries = [], selectedAI = 'openai-gpt51', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
+  async startBatch({ entries = [], selectedAI = 'openai-gpt51', selectedLanguage = 'en', batchName = '', selectedSearch = DEFAULT_SEARCH_PROVIDER, workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
     if (!entries || !entries.length) throw new Error('No entries provided to startBatch');
     if (!batchId) throw new Error('startBatch requires a server-persisted batchId; call persistBatch first');
 
