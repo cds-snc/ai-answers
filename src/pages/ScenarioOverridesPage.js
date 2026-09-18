@@ -596,7 +596,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
           <section aria-labelledby="scenario-department-heading">
             <h2 id="scenario-department-heading" ref={departmentHeadingRef} tabIndex={-1} className="mt-100 mb-0">{departmentKey}</h2>
             <div className="mb-200" style={{ fontSize: '0.9rem', color: '#54616c' }}>
-              {t('scenarioOverrides.table.lastUpdated')}: {formattedUpdatedAt || emptyLabel}
+              {t('scenarioOverrides.table.lastUpdated')} {formattedUpdatedAt || emptyLabel}
             </div>
 
             <label htmlFor="scenario-override-text" className="filter-label display-block mb-100">
