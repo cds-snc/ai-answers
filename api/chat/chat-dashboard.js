@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
@@ -423,7 +424,8 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $project: dropFields });
     }
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
+    const reviewerMatch = await resolveReviewerMatch(req.query);
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic, reviewerMatch };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
