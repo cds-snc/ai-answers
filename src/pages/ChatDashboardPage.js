@@ -734,47 +734,56 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   },
                   // Striping and keep-chat-together cells - see
                   // utils/admin/chatGroupedTable.js.
-                  ...(() => {
-                    const groupCallbacks = buildChatGroupCallbacks({
-                      stateRef: chatGroupStateRef,
-                      columns,
-                      groupedColumns: [
-                        // The assign column is deliberately NOT grouped:
-                        // assignment is per question, so every row keeps
-                        // its own checkbox/pill.
-                        { data: 'program' },
-                        { data: 'department' },
-                        { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
-                      ],
-                    });
-                    return {
-                      ...groupCallbacks,
-                      createdRow: (row, data) => {
-                        groupCallbacks.createdRow(row, data);
-                        const checkbox = row.querySelector('input.chat-assign-checkbox');
-                        if (checkbox) {
-                          checkbox.checked = assignBar.isQuestionChecked(data._id);
-                          row.classList.toggle('chat-row--selected', checkbox.checked);
-                          checkbox.onchange = () => {
-                            assignBar.toggleQuestionChecked(data._id, checkbox.checked);
-                            row.classList.toggle('chat-row--selected', checkbox.checked);
-                          };
-                        }
-                        const pill = row.querySelector('button.chat-assign-pill');
-                        if (pill) {
-                          assignBar.forgetQuestion(data._id);
-                          pill.onclick = () => {
-                            if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
-                            assignBar.unassignQuestion(data._id, () => tableApiRef.current?.ajax.reload());
-                          };
-                        }
-                      },
-                    };
-                  })(),
+                  ...buildChatGroupCallbacks({
+                    stateRef: chatGroupStateRef,
+                    columns,
+                    groupedColumns: [
+                      // The assign column is deliberately NOT grouped:
+                      // assignment is per question, so every row keeps
+                      // its own checkbox/pill.
+                      { data: 'program' },
+                      { data: 'department' },
+                      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                    ],
+                  }),
                   initComplete: function () {
                     const api = this.api();
                     tableApiRef.current = api;
                     wireTableAccessibility(api, { t });
+                    // Assign checkboxes/pills are wired once here, by
+                    // delegation on the table body, not per row in
+                    // createdRow: the Assign column starts hidden, and
+                    // DataTables keeps a hidden column's cells out of the
+                    // row until it is shown - so at createdRow time the
+                    // checkbox isn't in the row to find. The listeners read
+                    // the question id off the control itself.
+                    const body = api.table().body();
+                    body.addEventListener('change', (e) => {
+                      const box = e.target.closest('input.chat-assign-checkbox');
+                      if (!box) return;
+                      assignBar.toggleQuestionChecked(box.dataset.questionId, box.checked);
+                      box.closest('tr')?.classList.toggle('chat-row--selected', box.checked);
+                    });
+                    body.addEventListener('click', (e) => {
+                      const pill = e.target.closest('button.chat-assign-pill');
+                      if (!pill) return;
+                      if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
+                      assignBar.unassignQuestion(pill.dataset.questionId, () => tableApiRef.current?.ajax.reload());
+                    });
+                    // Re-apply the ticked state after every draw and when
+                    // the column is shown (rows are rebuilt on each fetch;
+                    // the selection lives in the hook's ref). A row that
+                    // came back assigned can't stay selected.
+                    const syncAssignControls = () => {
+                      body.querySelectorAll('input.chat-assign-checkbox').forEach((box) => {
+                        const checked = assignBar.isQuestionChecked(box.dataset.questionId);
+                        box.checked = checked;
+                        box.closest('tr')?.classList.toggle('chat-row--selected', checked);
+                      });
+                      body.querySelectorAll('button.chat-assign-pill').forEach((pill) => assignBar.forgetQuestion(pill.dataset.questionId));
+                    };
+                    api.on('draw', syncAssignControls);
+                    api.on('column-visibility', syncAssignControls);
                   },
                   ajax: async (dtParams, callback) => {
                     const seq = ++ajaxSeqRef.current;
