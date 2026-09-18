@@ -653,6 +653,9 @@ export function getChatFilterConditions(filters, options = {}) {
     departmentCondition = { [withPath('department')]: { $regex: escaped, $options: 'i' } };
   }
 
+  // TODO(design, parked): this ORs department + group, while the
+  // metrics pipelines AND them (metrics-common.js applies department
+  // separately). Known and accepted for now; one rule later.
   if (reviewerMatchCondition && departmentCondition) {
     conditions.push({ $or: [reviewerMatchCondition, departmentCondition] });
   } else if (reviewerMatchCondition) {

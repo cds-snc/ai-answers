@@ -468,7 +468,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               e.target.open rather than flipping: browsers fire toggle when the
               open attribute is added on mount, so an unmount/remount with
               open already true would otherwise flip the mode with no click.
-              Same idempotent pattern as FilterPanel's own <details>. */}
+              Same set-to-what-the-box-says pattern as FilterPanel's own <details>.
+              TODO(deferred): toggling adds/removes the tickbox column, which
+              changes the column count, so DataTables drops the saved page
+              length on each toggle (sort/search are cleared on purpose
+              anyway). Fix is a permanent column toggled via visible(); not
+              worth it yet. */}
           <details
             className="filter-panel chat-assign-panel"
             open={assignBar.assignMode}

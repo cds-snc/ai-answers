@@ -410,7 +410,9 @@ const AccountPage = ({ lang = 'en' }) => {
             {!(institutionLocked && groupLocked) && (
               <div className="mb-300">
                 {/* Same Save as SettingsPage/UsersPage: GcdsButton, disabled until
-                    something is staged. */}
+                    something is staged. GcdsButton renders `disabled` as
+                    aria-disabled (stays focusable), so no focus is lost while
+                    it is greyed. */}
                 <GcdsButton type="button" disabled={!profileDirty || profileSaving} onClick={handleProfileSave}>
                   {profileSaving ? t('settings.saving') : t('users.actions.save')}
                 </GcdsButton>

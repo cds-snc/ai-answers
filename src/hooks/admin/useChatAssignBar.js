@@ -40,6 +40,8 @@ export function useChatAssignBar() {
   // Takes the target state rather than flipping: the caller is a native
   // <details> onToggle, and browsers fire toggle when the open attribute is
   // added on mount too, so a flip would run without a click.
+  // Note: the resets and the fetch run inside the updater. Fine without
+  // StrictMode (this app has none); restructure if that ever changes.
   const setAssignModeTo = useCallback((next) => {
     setAssignMode((prev) => {
       if (next === prev) return prev;
