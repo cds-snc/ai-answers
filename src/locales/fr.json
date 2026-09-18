@@ -1100,9 +1100,9 @@
     "profileSaveError": "Impossible de mettre à jour votre compte.",
     "loadError": "Impossible de charger votre compte.",
     "assignedChats": {
-      "heading": "Vos clavardages attribués pour évaluation",
-      "filterLabel": "Filtrer les clavardages attribués",
-      "loadError": "Impossible de charger vos clavardages attribués.",
+      "heading": "Vos questions attribuées pour évaluation",
+      "filterLabel": "Filtrer les questions attribuées",
+      "loadError": "Impossible de charger vos questions attribuées.",
       "columns": {
         "assignedOn": "Attribué le",
         "assignedBy": "Attribué par",

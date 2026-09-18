@@ -1100,9 +1100,9 @@
     "profileSaveError": "Failed to update your account.",
     "loadError": "Failed to load your account.",
     "assignedChats": {
-      "heading": "Your assigned chats for review",
-      "filterLabel": "Filter assigned chats",
-      "loadError": "Failed to load your assigned chats.",
+      "heading": "Your assigned questions for review",
+      "filterLabel": "Filter assigned questions",
+      "loadError": "Failed to load your assigned questions.",
       "columns": {
         "assignedOn": "Assigned on",
         "assignedBy": "Assigned by",
