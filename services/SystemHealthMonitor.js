@@ -5,7 +5,7 @@ import { parseRecipients } from './parseRecipients.js';
 import {
   testAzureOpenAI,
   testDocumentDB,
-  testGoogleSearch,
+  testSearchProviders,
 } from './ConnectivityService.js';
 
 /*
@@ -121,7 +121,7 @@ class SystemHealthMonitor {
     loggingService = ServerLoggingService,
     dependencyChecks = {
       [CATEGORY.DATABASE]: testDocumentDB,
-      [CATEGORY.SEARCH]: testGoogleSearch,
+      [CATEGORY.SEARCH]: testSearchProviders,
       [CATEGORY.LLM]: testAzureOpenAI,
     },
   } = {}) {
