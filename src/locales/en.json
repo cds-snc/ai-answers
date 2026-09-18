@@ -416,6 +416,7 @@
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
       "partnerMenu": "Partner menu",
+      "account": "Manage your account",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -1076,6 +1077,39 @@
     "submitting": "Creating account...",
     "pendingReceived": "We've received your account request.",
     "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
+  },
+  "account": {
+    "title": "Manage your account",
+    "profileHeading": "Account details",
+    "accountName": "Account name",
+    "activityHeading": "Your chats and evaluations",
+    "role": "Role",
+    "institution": "Institution",
+    "group": "Group",
+    "institutionLocked": "Contact an admin to change your institution.",
+    "groupLocked": "Contact an admin to change your group.",
+    "updated": "Account updated: {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution removed",
+    "changeGroupSet": "{value} group",
+    "changeGroupCleared": "group removed",
+    "profileSaveError": "Failed to update your account.",
+    "loadError": "Failed to load your account.",
+    "assignedChats": {
+      "heading": "Your assigned questions for review",
+      "filterLabel": "Filter assigned questions",
+      "loadError": "Failed to load your assigned questions.",
+      "columns": {
+        "assignedOn": "Assigned on",
+        "assignedBy": "Assigned by",
+        "partnerNotes": "Notes",
+        "evaluated": "Evaluated"
+      },
+      "evalStatus": {
+        "completed": "Completed",
+        "pending": "Pending"
+      }
+    }
   },
   "users": {
     "title": "Manage user accounts",

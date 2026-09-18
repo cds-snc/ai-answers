@@ -22,3 +22,13 @@ export function normalizeGroup(value) {
   if (trimmed === '') return '';
   return PARTNER_GROUPS.includes(trimmed) ? trimmed : null;
 }
+
+/**
+ * Shared institution/group shape for a profile response.
+ */
+export function normalizeMembershipProfile(user) {
+  return {
+    institution: user?.institution || '',
+    group: user?.group || ''
+  };
+}
