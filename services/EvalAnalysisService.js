@@ -1,4 +1,5 @@
 import dbConnect from '../api/db/db-connect.js';
+import { resolveReviewerMatch } from '../api/util/reviewer-filter.js';
 import { Chat } from '../models/chat.js';
 import { EvalAnalysis } from '../models/evalAnalysis.js';
 import {
@@ -38,7 +39,7 @@ const parseDateRange = (filters = {}) => {
 // user/chat fields stay on the base document. Human evals only: the filter is
 // interactions.expertFeedback — AI auto-evals hang off interactions.autoEval
 // and never enter this pipeline.
-function buildPipeline(filters = {}, { countOnly = false } = {}) {
+async function buildPipeline(filters = {}, { countOnly = false } = {}) {
     const pipeline = [
         { $project: { chatId: 1, user: 1, pageLanguage: 1, interactions: 1 } },
         { $lookup: { from: 'interactions', localField: 'interactions', foreignField: '_id', as: 'interactions' } },
@@ -87,7 +88,8 @@ function buildPipeline(filters = {}, { countOnly = false } = {}) {
         pipeline.push({ $addFields: { 'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackDoc') } });
     }
 
-    const shared = getChatFilterConditions(filters, { basePath: 'interactions', userField: 'user' });
+    const reviewerMatch = await resolveReviewerMatch(filters);
+    const shared = getChatFilterConditions({ ...filters, reviewerMatch }, { basePath: 'interactions', userField: 'user' });
     if (shared.length) pipeline.push({ $match: { $and: shared } });
 
     if (countOnly) {
@@ -176,7 +178,7 @@ const toClientDoc = (doc) => {
 class EvalAnalysisServiceClass {
     async countEvals(filters = {}) {
         await dbConnect();
-        const result = await Chat.aggregate(buildPipeline(filters, { countOnly: true }));
+        const result = await Chat.aggregate(await buildPipeline(filters, { countOnly: true }));
         return result.length ? result[0].count : 0;
     }
 
@@ -272,7 +274,7 @@ class EvalAnalysisServiceClass {
     }
 
     async #snapshotAndProposePrograms(doc) {
-        const aggRows = await Chat.aggregate(buildPipeline(doc.filters || {}));
+        const aggRows = await Chat.aggregate(await buildPipeline(doc.filters || {}));
         const rows = aggRows.map(toCompactRow);
         if (rows.length < MIN_EVALS) {
             const err = new Error(`Too few evaluations to analyze (${rows.length} < ${MIN_EVALS})`);
