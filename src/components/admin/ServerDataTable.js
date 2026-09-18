@@ -29,6 +29,9 @@ DataTable.use(DT);
 // having to consider "does this break Settings/Chat dashboard/etc.?"
 const ServerDataTable = forwardRef(function ServerDataTable({
     columns,
+    // Accessible name for the table (rendered as an sr-only <caption>) -
+    // pass the section heading so AT users get a named table.
+    caption,
     fetchData,
     lang = 'en',
     actionsTitle,
@@ -43,15 +46,26 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     // text sr-only so the input still has an accessible name.
     searchLabelSrOnly,
     searchPlaceholder,
-    // sr-only <caption> naming the table for screen readers.
-    caption,
     actionsWidth,
     autoWidth = true,
     ordering = true,
     pageLength = 10,
     lengthChange = true,
     layout,
-    onError
+    onError,
+    // Optional DataTables lifecycle hooks a caller can pass straight
+    // through - e.g. utils/admin/chatGroupedTable.js's row-grouping trio
+    // (AccountPage.js's assigned-chats table). Composed with this
+    // component's own createdRow (renderActions) below, never replacing
+    // it - every other caller passes none of these and sees no change.
+    createdRow: createdRowProp,
+    preDrawCallback,
+    drawCallback,
+    // Adds dashboard-table--grouped (admin.css) alongside the trio above -
+    // that's the class the chat-group-a/b striping and group-cell rules are
+    // actually scoped to, same as ChatDashboardPage/EvalDashboardPage/
+    // AutoEvalDashboardPage's own hand-rolled DataTable className.
+    grouped = false
 }, ref) {
     const initialResultRef = useRef(initialResult);
     // The live DataTables API instance, captured via initComplete (the same
@@ -142,18 +156,24 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
             }
         },
-        createdRow: renderActions ? (row, rowData) => {
-            const actionsCell = row.querySelector('td:last-child');
-            if (!actionsCell) return;
-            if (actionsCell._serverDataTableRoot) actionsCell._serverDataTableRoot.unmount();
-            const root = createRoot(actionsCell);
-            actionsCell._serverDataTableRoot = root;
-            root.render(renderActions(rowData));
+        createdRow: (renderActions || createdRowProp) ? (row, rowData) => {
+            if (renderActions) {
+                const actionsCell = row.querySelector('td:last-child');
+                if (actionsCell) {
+                    if (actionsCell._serverDataTableRoot) actionsCell._serverDataTableRoot.unmount();
+                    const root = createRoot(actionsCell);
+                    actionsCell._serverDataTableRoot = root;
+                    root.render(renderActions(rowData));
+                }
+            }
+            createdRowProp?.(row, rowData);
         } : undefined,
+        preDrawCallback,
+        drawCallback,
         initComplete: function () {
             tableApiRef.current = this.api();
         }
-    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
+    }), [autoWidth, createdRowProp, drawCallback, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, preDrawCallback, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
 
     return (
         // tabIndex makes this reachable by keyboard when its content overflows
@@ -162,7 +182,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         <div className={containerClassName} tabIndex={0}>
             <DataTable
                 key={tableKey}
-                className="display dashboard-table zebra-stable-on-hover"
+                className={`display dashboard-table zebra-stable-on-hover${grouped ? ' dashboard-table--grouped' : ''}`}
                 columns={tableColumns}
                 options={options}
             >
