@@ -416,6 +416,7 @@
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
       "partnerMenu": "Menu partenaire",
+      "account": "Gérer votre compte",
       "aiAnswers": "Utiliser Réponses IA avec les options d'évaluation",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -1079,6 +1080,39 @@
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "lockedOut": "Trop de tentatives échouées. Veuillez réessayer plus tard.",
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
+    }
+  },
+  "account": {
+    "title": "Gérer votre compte",
+    "profileHeading": "Détails du compte",
+    "accountName": "Nom du compte",
+    "activityHeading": "Vos clavardages et évaluations",
+    "role": "Rôle",
+    "institution": "Institution",
+    "group": "Groupe",
+    "institutionLocked": "Communiquez avec un administrateur pour changer votre institution.",
+    "groupLocked": "Communiquez avec un administrateur pour changer votre groupe.",
+    "updated": "Compte mis à jour : {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution retirée",
+    "changeGroupSet": "groupe {value}",
+    "changeGroupCleared": "groupe retiré",
+    "profileSaveError": "Impossible de mettre à jour votre compte.",
+    "loadError": "Impossible de charger votre compte.",
+    "assignedChats": {
+      "heading": "Vos clavardages attribués pour évaluation",
+      "filterLabel": "Filtrer les clavardages attribués",
+      "loadError": "Impossible de charger vos clavardages attribués.",
+      "columns": {
+        "assignedOn": "Attribué le",
+        "assignedBy": "Attribué par",
+        "partnerNotes": "Notes",
+        "evaluated": "Évalué"
+      },
+      "evalStatus": {
+        "completed": "Terminé",
+        "pending": "En attente"
+      }
     }
   },
   "users": {

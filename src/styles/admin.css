@@ -445,6 +445,16 @@
   font: var(--gcds-input-font-desktop);
 }
 
+/* Narrow variant for a select/input whose values are short (abbrKeys,
+   group names, yes/no) and would otherwise stretch to its container -
+   .filter-select is width:100%. Reusable anywhere a form field sits in a
+   wide layout; first used on the Account dashboard page. */
+.filter-select--narrow,
+.filter-input--narrow {
+  width: 100%;
+  max-width: 20rem;
+}
+
 /* SettingsPage's .filter-input/.filter-select fields are width:100% of
    whatever contains them — without a cap that's the full GcdsContainer
    layout="page" width, which reads as very wide on a large monitor.
@@ -1754,12 +1764,15 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
 }
 
 /* Answer type labels, also shared by BatchList.js's "uploaded" status pill -
-   the batch's default, not-yet-started state - and ChatViewer.js's log
-   table Level column pill: debug isn't a severity tier, so it gets this
-   same neutral grey rather than a colour of its own. */
+   the batch's default, not-yet-started state - ChatViewer.js's log table
+   Level column pill (debug isn't a severity tier, so it gets this same
+   neutral grey rather than a colour of its own), and AccountPage.js's
+   "Evaluated" column ("Pending" - not-yet-scored is the same "hasn't
+   happened yet" meaning as uploaded/debug, not a severity). */
 .label.normal,
 .label.uploaded,
-.label.debug {
+.label.debug,
+.label.pending {
   background-color: var(--gcds-color-grayscale-50);
   color: var(--gcds-color-grayscale-700);
 }
@@ -3416,4 +3429,40 @@ table.dataTable.table-key-value > tbody > tr > td {
 details gcds-button::part(button) {
   transition: background-color .15s ease-in-out, color .15s ease-in-out,
     border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+/* Account dashboard page (AccountPage.js) - labelled profile grid */
+.account-profile {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gcds-spacing-150) var(--gcds-spacing-400);
+  margin: 0 0 var(--gcds-spacing-400);
+}
+
+.account-profile__row {
+  display: contents;
+}
+
+.account-profile dt {
+  font-weight: 600;
+}
+
+.account-profile dd {
+  margin: 0;
+}
+
+/* "Contact an admin to change ..." under a locked (read-only) value */
+.account-profile__hint {
+  display: block;
+  color: var(--gcds-text-secondary);
+}
+
+@media (max-width: 600px) {
+  .account-profile {
+    grid-template-columns: 1fr;
+    gap: var(--gcds-spacing-100);
+  }
+  .account-profile dd {
+    margin-bottom: var(--gcds-spacing-200);
+  }
 }
