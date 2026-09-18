@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   // (Manage user accounts page) or once by the user (Manage your account
   // page; api/user/user-me.js locks it for partners after that). Seeds the
   // dashboards' department filter via preferences.prefilterDepartment and
-  // scopes who a partner can assign chats to (api/chat/chat-assign.js).
+  // scopes who a partner can assign chats to (api/chat/chat-assign-interaction.js).
   // Orthogonal to a chat's context.department - a DND reviewer can
   // evaluate an IRCC chat.
   institution: {
@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
   // src/constants/partnerGroups.js ('' = none). Set the same two ways as
   // institution (not collected at signup). Drives the reviewer filter
   // (api/util/reviewer-filter.js) via preferences.prefilterGroup and the
-  // chat-assign membership rule.
+  // chat-assign-interaction membership rule.
   group: {
     type: String,
     default: '',
