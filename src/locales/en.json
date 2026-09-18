@@ -1054,13 +1054,17 @@
   },
   "users": {
     "title": "Manage user accounts",
+    "institutionNone": "None",
+    "groupNone": "None",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created at",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Group"
     },
     "roles": {
       "admin": "Admin",
