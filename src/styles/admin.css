@@ -1731,35 +1731,6 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
   min-width: 0;
 }
 
-/* Shared radio toggle UI for the search-service picker — not currently
-   rendered; both ChatOptions.js and BatchUpload.js keep this markup
-   commented out until Canada.ca search is available again. Kept here so
-   the CSS is ready when that JSX is uncommented. */
-.ai-toggle_fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-.ai-toggle_container {
-  display: flex;
-  align-items: center;
-}
-
-.ai-toggle_legend {
-  margin-right: 10px;
-}
-
-.ai-toggle_option {
-  display: flex;
-  align-items: center;
-  margin-right: 15px;
-}
-
-.ai-toggle_radio-input {
-  margin-right: 5px;
-}
-
 /* =================================================================
    Partner + Exec dashboards — layout, cards, and sub-components
 

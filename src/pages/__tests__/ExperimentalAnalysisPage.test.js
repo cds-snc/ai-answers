@@ -261,7 +261,6 @@ describe('ExperimentalAnalysisPage', () => {
         fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
             target: { value: 'analyzer-1' }
         });
-
         expect(screen.getByText('Analyzer details')).toBeTruthy();
         expect(screen.getByText('Analyzer 1 description')).toBeTruthy();
     });
@@ -348,6 +347,9 @@ describe('ExperimentalAnalysisPage', () => {
         fireEvent.change(screen.getByLabelText('experimental.analysis.selectAnalyzers'), {
             target: { value: 'analyzer-1' }
         });
+        fireEvent.change(screen.getByLabelText('batch.upload.searchService.label'), {
+            target: { value: 'canadaca' }
+        });
 
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: 'experimental.analysis.run' }));
@@ -355,6 +357,9 @@ describe('ExperimentalAnalysisPage', () => {
 
         const expectedRunName = `Analyzer 1 \u00b7 Dataset 1 \u00b7 workflows.generic \u00b7 models.gpt51`;
         expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({ name: expectedRunName }));
+        expect(mockCreateBatch).toHaveBeenCalledWith(expect.objectContaining({
+            config: expect.objectContaining({ searchProvider: 'canadaca' })
+        }));
         expect(screen.getByText(expectedRunName)).toBeTruthy();
         expect(screen.getByText('experimental.analysis.messages.startingRun')).toBeTruthy();
 

@@ -1,7 +1,9 @@
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
+import { maskSecretValue, sanitizeErrorForLogging } from './utils/searchUtils.js';
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 1000;
+const SEARCH_REQUEST_TIMEOUT_MS = 30000;
 
 // Checked after a failure, before starting another attempt, so a slow-*failing*
 // origin cannot have its wait multiplied by MAX_SEARCH_ATTEMPTS. Failures that
@@ -23,19 +25,42 @@ const RETRY_TIME_BUDGET_MS = 10000;
  * @returns {string} - The formatted top search results with summary, link, and link text.
  */
 function extractSearchResults(results, numResults = 3) {
-    let extractedResults = "";
-
-    if (results && results.results) {
-        results.results.slice(0, numResults).forEach((result) => {
-            const link = result.clickUri;
-            const linkText = result.title || "No title available";
-            const summary = result.excerpt || "No summary available";
-
-            extractedResults += `Summary: ${summary}\nLink: ${link}\nLink Text: ${linkText}\n\n`;
-        });
+    if (!results?.results || results.results.length === 0) {
+        console.info("No search results found");
+        return "No results found.";
     }
 
-    return extractedResults || "No results found.";
+    const topResults = results.results.slice(0, numResults).map(result => ({
+        department: result.raw?.department,
+        organization: getSourceOrganization(result.raw),
+        link: result.clickUri || 'No link available',
+        linkText: result.title || 'No title available',
+        summary: result.excerpt || 'No summary available'
+    }));
+
+    const extractedResults = topResults.map(result => {
+        const ownership = [
+            result.organization && `Organization: ${result.organization}`,
+            result.department && `Department: ${result.department}`,
+        ].filter(Boolean).join("\n");
+        const ownershipLine = ownership ? `${ownership}\n` : '';
+
+        return `Title: ${result.linkText}\n${ownershipLine}Link: ${result.link}\nSummary: ${result.summary}\n`;
+    }).join("\n");
+    console.info("Extracted search results:", extractedResults);
+    return extractedResults;
+}
+
+function getSourceOrganization(raw = {}) {
+    const sourceOrganization = raw.sysauthor || raw.author || raw['dcterms.creator'];
+    if (Array.isArray(sourceOrganization)) {
+        return sourceOrganization
+            .filter((value) => typeof value === 'string' && value.trim())
+            .join(', ');
+    }
+    return typeof sourceOrganization === 'string' && sourceOrganization.trim()
+        ? sourceOrganization
+        : '';
 }
 
 /**
@@ -44,20 +69,22 @@ function extractSearchResults(results, numResults = 3) {
  * body read all belong to it, because a response can start 200 and then have
  * its body stream die.
  */
-async function fetchSearchResults(query, originLevel3) {
+async function fetchSearchResults(query, lang) {
+    const language = lang && lang.toLowerCase().startsWith('fr') ? 'French' : 'English';
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
+        signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
         headers: {
             "Authorization": `Bearer ${process.env.CANADA_CA_SEARCH_API_KEY}`,
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
-        body: JSON.stringify({ 
-            q: query,
-            searchHub: "canada-gouv-public-websites",
-            originLevel3: originLevel3
+        body: JSON.stringify({
+            q: `@language=${language} ${query}`,
+            locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
+            forwardLanguageToCoveoIndex: true,
         }),
-        timeout: 30000 // 30 seconds timeout
     });
 
     if (!response.ok) {
@@ -66,7 +93,7 @@ async function fetchSearchResults(query, originLevel3) {
         console.error("HTTP Error Response:", {
             status: response.status,
             statusText: response.statusText,
-            body: errorBody
+            body: maskSecretValue(errorBody)
         });
         const error = new Error(`HTTP error! Status: ${response.status}, StatusText: ${response.statusText}`);
         // fetch reports the status on the response, not the error. Without this
@@ -78,20 +105,6 @@ async function fetchSearchResults(query, originLevel3) {
 }
 
 /**
- * Unlike googleContextSearch, this throws once its retries are spent instead of
- * degrading gracefully, and nothing up the chain catches it: not performSearch
- * (it rethrows), not SearchContextService.search (its first performSearch call
- * is unwrapped), not GraphWorkflowHelper.deriveContext, not any of the graphs
- * that call it. So a Coveo outage fails the whole turn, while a Google outage
- * returns `failed: true` with "Search failed:" as the result text and lets the
- * answer agent tell the user the search failed.
- *
- * That asymmetry is not deliberate — it is just how the two tools grew. Worth
- * settling when we get direct API access: match Google's contract here
- * (`{ failed: true, results: "Search failed: ..." }`) so a search outage
- * degrades instead of dropping the answer. Note that SearchContextService's
- * error metric already handles both shapes, so only this function has to change.
- *
  * @param {string} query - The search query.
  * @param {string} lang - The language of the search query.
  * @param {object} [options]
@@ -101,36 +114,39 @@ async function fetchSearchResults(query, originLevel3) {
  * @returns {object|null} - The Coveo search results.
  */
 async function contextSearch(query, lang, { onRetry } = {}) {
-    // Set originLevel3 based on language
-    const originLevel3 = lang && lang.toLowerCase().startsWith('fr') 
-        ? '/fr/sr/srb.html' 
-        : '/en/sr/srb.html';
+    try {
+        console.log(`Starting search with query: ${query} at endpoint: ${process.env.CANADA_CA_SEARCH_URI}`);
 
-    console.log(`Starting search with query: ${query} at endpoint: ${process.env.CANADA_CA_SEARCH_URI}`);
+        // A dropped socket or a 5xx gets another attempt; a 4xx or a bad API key
+        // fails immediately rather than sleeping to return the same error.
+        const results = await retryOnTransientError(
+            () => fetchSearchResults(query, lang),
+            {
+                attempts: MAX_SEARCH_ATTEMPTS,
+                baseDelayMs: RETRY_BASE_DELAY_MS,
+                maxElapsedMs: RETRY_TIME_BUDGET_MS,
+                onRetry: (info) => {
+                    console.warn(
+                        `Canada.ca search attempt ${info.attempt}/${info.attempts} failed with a transient error, retrying:`,
+                        maskSecretValue(info.error?.message)
+                    );
+                    if (onRetry) onRetry(info);
+                },
+            }
+        );
 
-    // A dropped socket or a 5xx gets another attempt; a 4xx or a bad API key
-    // fails immediately rather than sleeping 3s to return the same error.
-    const results = await retryOnTransientError(
-        () => fetchSearchResults(query, originLevel3),
-        {
-            attempts: MAX_SEARCH_ATTEMPTS,
-            baseDelayMs: RETRY_BASE_DELAY_MS,
-            maxElapsedMs: RETRY_TIME_BUDGET_MS,
-            onRetry: (info) => {
-                console.warn(
-                    `Canada.ca search attempt ${info.attempt}/${info.attempts} failed with a transient error, retrying:`,
-                    info.error?.message
-                );
-                if (onRetry) onRetry(info);
-            },
-        }
-    );
-
-    const extractedResults = extractSearchResults(results);
-    return {
-        results: extractedResults,
-        provider: "canadaca"
-    };
+        return {
+            results: extractSearchResults(results),
+            provider: "canadaca"
+        };
+    } catch (error) {
+        console.error("Error performing Canada.ca search:", sanitizeErrorForLogging(error));
+        return {
+            failed: true,
+            results: "Search failed: " + maskSecretValue(error.message),
+            provider: "canadaca"
+        };
+    }
 }
 
 export { contextSearch };

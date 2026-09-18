@@ -76,7 +76,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 2. **Backend**: Node.js with LangGraph state machine orchestration
 3. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models (e.g. Cohere, Anthropic) through Amazon Bedrock if deployed/procured
 4. **Database**: AWS DocumentDB 
-5. **Search**: Google, with plans to migrate to Canada.ca search API
+5. **Search**: Google or Canada.ca search, based on the selected search provider
 
 **For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 

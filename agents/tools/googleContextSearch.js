@@ -1,26 +1,8 @@
 import { google } from 'googleapis';
 import { retryOnTransientError } from '../../api/util/transient-retry.js';
+import { maskSecretValue, sanitizeErrorForLogging } from './utils/searchUtils.js';
 
 const customsearch = google.customsearch('v1');
-
-function maskSecretValue(text) {
-    if (!text) return text;
-
-    return String(text)
-        .replace(/([?&]key=)([^&\s]+)/gi, '$1[REDACTED]');
-}
-
-function sanitizeErrorForLogging(error) {
-    if (!error) return error;
-
-    return {
-        name: error.name,
-        message: maskSecretValue(error.message),
-        code: error.code,
-        status: error.status,
-        stack: maskSecretValue(error.stack),
-    };
-}
 
 const MAX_SEARCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 250;

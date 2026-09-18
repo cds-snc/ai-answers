@@ -40,6 +40,7 @@ const ChatInterface = ({
   formatAIResponse,
   modelSelection,
   selectedSearch,
+  handleSearchToggle,
   referringUrl,
   chatCreatedAt,
   turnCount,
@@ -1233,6 +1234,7 @@ const ChatInterface = ({
       modelSelection={modelSelection}
       handleAIToggle={handleAIToggle}
       selectedSearch={selectedSearch}
+      handleSearchToggle={handleSearchToggle}
       workflowSelection={workflowSelection}
       handleWorkflowChange={handleWorkflowChange}
       referringUrl={referringUrl}

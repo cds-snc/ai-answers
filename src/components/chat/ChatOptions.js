@@ -15,6 +15,8 @@ const ChatOptions = ({
   safeT,
   modelSelection,
   handleAIToggle,
+  selectedSearch,
+  handleSearchToggle,
   workflowSelection,
   handleWorkflowChange,
   referringUrl,
@@ -183,61 +185,21 @@ const ChatOptions = ({
             </select>
           </div>
 
-          {/* Search selection is hidden for now; Google is forced as the search
-              provider. Commented out rather than aria-hidden + display:none:
-              the outer <fieldset> still had browser-default border/padding,
-              so it was creating a visible gap even with its content hidden.
-              Kept here, inert, for whenever this is re-enabled:
-
-              Re-enabling this also needs handleSearchToggle prop-threaded
-              back in — it was removed as dead pass-through (ChatOptions no
-              longer read it) once this block was commented out:
-              ChatAppContainer.js's own JSX passing it to <ChatInterface>,
-              and ChatInterface.js's own prop destructuring + its pass to
-              <ChatOptions> below. The handler/state in ChatAppContainer.js
-              itself (handleSearchToggle, selectedSearch) were left alone —
-              still genuinely live, sent to the backend on every message —
-              only the two-hop forwarding down to this now-commented-out UI
-              was removed.
-
-          <div className="search-toggle" aria-hidden="true">
-            <fieldset className="ai-toggle_fieldset">
-              <div className="ai-toggle_container" style={{ display: 'none' }}>
-                <legend className="ai-toggle_legend">
-                  {safeT('homepage.chat.options.searchSelection.label')}
-                </legend>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="search-canadaca"
-                    name="search-selection"
-                    value="canadaca"
-                    checked={false}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="search-canadaca">
-                    {safeT('homepage.chat.options.searchSelection.canadaca')}
-                  </label>
-                </div>
-                <div className="ai-toggle_option">
-                  <input
-                    type="radio"
-                    id="search-google"
-                    name="search-selection"
-                    value="google"
-                    checked={true}
-                    onChange={handleSearchToggle}
-                    className="ai-toggle_radio-input"
-                  />
-                  <label htmlFor="search-google">
-                    {safeT('homepage.chat.options.searchSelection.google')}
-                  </label>
-                </div>
-              </div>
-            </fieldset>
+          <div className="mrgn-bttm-10 settings-form-width">
+            <label htmlFor="search-provider" className="filter-label display-block">
+              {safeT('homepage.chat.options.searchSelection.label')}
+            </label>
+            <select
+              id="search-provider"
+              name="searchProvider"
+              value={selectedSearch}
+              onChange={handleSearchToggle}
+              className="filter-select"
+            >
+              <option value="google">{safeT('homepage.chat.options.searchSelection.google')}</option>
+              <option value="canadaca">{safeT('homepage.chat.options.searchSelection.canadaca')}</option>
+            </select>
           </div>
-          */}
         </RoleBasedContent>
 
         {/* Referring URL visible to both admin and partner. No
