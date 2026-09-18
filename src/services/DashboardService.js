@@ -35,7 +35,15 @@ class DashboardService {
       body: JSON.stringify({ chatId, assignedTo, notes })
     });
     if (!response.ok) {
-      throw new Error('Failed to assign chat');
+      // chat-assign.js answers with a stable `code` for the reasons a caller
+      // can act on (already_assigned, note_too_long); carry it and the
+      // status so the hook can say which one happened.
+      let code;
+      try { ({ code } = await response.json()); } catch { /* no body */ }
+      const error = new Error('Failed to assign chat');
+      error.code = code;
+      error.status = response.status;
+      throw error;
     }
     return response.json();
   }

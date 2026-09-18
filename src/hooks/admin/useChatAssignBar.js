@@ -78,6 +78,14 @@ export function useChatAssignBar() {
 
   const isChatChecked = useCallback((chatId) => checkedChatIds.current.has(chatId), []);
 
+  // Drops a chat from the selection without touching the outcome message -
+  // for a row that a reload shows as already assigned (e.g. after a 409),
+  // which can no longer be ticked and must not keep counting.
+  const forgetChat = useCallback((chatId) => {
+    if (!checkedChatIds.current.delete(chatId)) return;
+    setSelectedCount(checkedChatIds.current.size);
+  }, []);
+
   // Clears the note text and collapses the editor - "Clear", not "Close",
   // so unlike toggling assign mode off this genuinely discards the draft.
   // "Add a note" reappears since it's hidden while noteOpen.
@@ -109,13 +117,14 @@ export function useChatAssignBar() {
     setAssignStatus(null);
     const BATCH_SIZE = 5;
     let failures = 0;
+    const failureCodes = new Set();
     for (let i = 0; i < chatIds.length; i += BATCH_SIZE) {
       const batch = chatIds.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map((chatId) => DashboardService.assignChat({ chatId, assignedTo: selectedAssigneeId, notes: noteText }))
       );
       results.forEach((r, idx) => {
-        if (r.status === 'rejected') failures += 1;
+        if (r.status === 'rejected') { failures += 1; failureCodes.add(r.reason?.code || (r.reason?.status === 403 ? 'not_allowed' : null)); }
         // Untick the ones that went through, so a retry after a partial
         // failure only re-sends the failures (a re-send would 409).
         else checkedChatIds.current.delete(batch[idx]);
@@ -129,7 +138,11 @@ export function useChatAssignBar() {
       // just sent with the assignment, not a stale draft.
       setAssignStatus({ count: chatIds.length, isError: false, hadNote: Boolean(noteText.trim()) });
     } else {
-      setAssignStatus({ count: failures, isError: true });
+      // One shared reason (all 409, all 403...) gets its own message;
+      // mixed reasons fall back to the generic count.
+      const codes = [...failureCodes].filter(Boolean);
+      const code = codes.length === 1 && failureCodes.size === 1 ? codes[0] : null;
+      setAssignStatus({ count: failures, isError: true, code });
     }
     setOutcomeFocusCount((n) => n + 1);
     // Reload even on partial failure so the rows that did assign show
@@ -199,6 +212,8 @@ export function useChatAssignBar() {
     selectedCount,
     toggleChatChecked,
     isChatChecked,
+    forgetChat,
+    resetSelection,
     submitAssign,
     outcomeFocusCount,
     unassignChat,
