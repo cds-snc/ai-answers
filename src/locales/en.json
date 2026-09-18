@@ -884,6 +884,32 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
+      },
+      "assign": {
+        "toggleOn": "Assign chat(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectChat": "Select chat",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "noInstitution": "You can only assign chats to yourself. Pick an institution or group on your account page to also assign chats to teammates.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign ({count}) to reviewer",
+        "assignChatsWithNote": "Assign ({count}) to reviewer with note",
+        "assigning": "Assigning…",
+        "errorNoExpert": "Choose a reviewer to assign to.",
+        "errorNoChat": "Choose at least one chat in the Assign column.",
+        "assignSuccess": "Assigned {count} chat(s).",
+        "assignSuccessWithNote": "Assigned {count} chat(s) with a note.",
+        "assignError": "Failed to assign {count} chat(s).",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unknownAccount": "Unknown account",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
       }
     },
     "evalDashboard": {
