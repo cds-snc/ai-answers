@@ -131,7 +131,16 @@ async function unassignHandler(req, res) {
       }
     }
 
-    await Chat.updateOne({ chatId }, { assignedTo: null, assignedBy: null, assignedOn: null, assignedNotes: '' });
+    // Clear only the assignment that was just authorized: if someone else
+    // unassigned and reassigned in between, the filter no longer matches and
+    // the newer assignment is left alone.
+    const result = await Chat.updateOne(
+      { chatId, assignedTo: chat.assignedTo },
+      { assignedTo: null, assignedBy: null, assignedOn: null, assignedNotes: '' }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(409).json({ code: 'assignment_changed', message: 'This assignment changed while you were removing it. Reload and try again.' });
+    }
     return res.status(200).json({ chatId });
   } catch (error) {
     console.error('Error unassigning chat:', error);
