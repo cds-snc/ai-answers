@@ -6,7 +6,7 @@ import { Interaction } from '../../../models/interaction.js';
 import { User } from '../../../models/user.js';
 
 // Focused on the assignedTo filter / assignedToEmail projection added for
-// the chat-assign feature (issue #1656) - assignment lives on the question
+// the chat-assign-interaction feature (issue #1656) - assignment lives on the question
 // (Interaction), one row per question. Not a full pipeline test.
 
 function createReq(query) {

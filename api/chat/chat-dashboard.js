@@ -142,7 +142,7 @@ async function chatDashboardHandler(req, res) {
 
     // AccountPage.js's "Questions assigned to you" table reuses this same
     // aggregate with assignedTo=<own userId> rather than a parallel
-    // endpoint - see api/chat/chat-assign.js for how assignedTo is set.
+    // endpoint - see api/chat/chat-assign-interaction.js for how assignedTo is set.
     // Assignment lives on the question (Interaction), so: look the
     // assigned questions up first (indexed), bound the chat scan to the
     // chats holding them, then keep only those rows after the unwind.
@@ -397,7 +397,7 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({ $project: { creator: 0 } });
 
-    // Lookup assignee/assigner emails for display (chat-assign.js only
+    // Lookup assignee/assigner emails for display (chat-assign-interaction.js only
     // stores the ObjectIds on the question) - same shape as the creator
     // lookup just above.
     // Each is its own join, so only run the one(s) the caller actually

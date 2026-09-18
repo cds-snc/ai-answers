@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import handler from '../chat-assign.js';
+import handler from '../chat-assign-interaction.js';
 import dbConnect from '../../db/db-connect.js';
 import { Interaction } from '../../../models/interaction.js';
 import mongoose from 'mongoose';
@@ -9,7 +9,7 @@ function createReq({ method = 'POST', body, user }) {
   return {
     method,
     body,
-    path: '/api/chat/chat-assign',
+    path: '/api/chat/chat-assign-interaction',
     user,
     isAuthenticated: () => true
   };
@@ -47,7 +47,7 @@ async function makeUser(overrides = {}) {
   return User.create({ email: `assign-${Date.now()}-${Math.random()}@example.com`, password: 'password123', role: 'partner', active: true, ...overrides });
 }
 
-describe('chat-assign (per question)', () => {
+describe('chat-assign-interaction', () => {
   it('lets a partner assign a question to themselves', async () => {
     await dbConnect();
     const partner = await makeUser();
@@ -232,7 +232,7 @@ describe('chat-assign (per question)', () => {
   });
 });
 
-describe('chat-assign DELETE (unassign)', () => {
+describe('chat-assign-interaction DELETE (unassign)', () => {
   afterEach(() => { vi.restoreAllMocks(); });
 
   it('409s instead of clearing a newer assignment made after the authorization read', async () => {

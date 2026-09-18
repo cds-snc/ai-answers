@@ -46,7 +46,7 @@ describe('user-assignable', () => {
     const res = await runGet({ role: 'partner', userId: partner._id.toString() });
 
     expect(res.statusCode).toBe(200);
-    // Self-assign is always allowed (see chat-assign.js), so the picker
+    // Self-assign is always allowed (see chat-assign-interaction.js), so the picker
     // isn't empty even with nothing to match institution/group-mates on.
     expect(res.payload.users.map(u => u.id)).toEqual([partner._id.toString()]);
     expect(res.payload.reason).toBe('no_institution');

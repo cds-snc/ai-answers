@@ -11,7 +11,7 @@ import { sharesMembership } from '../util/reviewer-filter.js';
 // chat: the questions in a chat can belong to different departments and go
 // to different reviewers. Single assignee at a time - an already-assigned
 // question is rejected (409), not silently overwritten; DELETE clears the
-// assignment (the "×" pill on ChatDashboardPage.js's assign column).
+// assignment (the "×" pill on ChatDashboardPage.js's assign column). Route: /api/chat/chat-assign-interaction.
 //
 // Who can be assigned is deliberately narrow for v1, since a partner has no
 // visibility into the full account directory (that stays admin-only, via
