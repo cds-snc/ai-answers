@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.198.0](https://github.com/cds-snc/ai-answers/compare/v1.197.0...v1.198.0) (2026-09-18)
+
+
+### Features
+
+* add webpage cache lifecycle rule ([106d504](https://github.com/cds-snc/ai-answers/commit/106d504467ffadc09de71918b2ab91968bf239fe))
+
 ## [1.197.0](https://github.com/cds-snc/ai-answers/compare/v1.196.0...v1.197.0) (2026-09-18)
 
 
