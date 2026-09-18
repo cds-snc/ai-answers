@@ -268,14 +268,70 @@ describe('ChatDashboardPage rendering', () => {
     expect(confirmSpy).toHaveBeenCalled();
     await waitFor(() => expect(DashboardService.unassignChat).toHaveBeenCalledWith({ chatId: 'chat-123' }));
 
-    const outcome = await waitFor(() => getByText('admin.chatDashboard.assign.unassigned'));
-    await waitFor(() => expect(document.activeElement).toBe(outcome));
+    // Longer waits: this test drives a DOM row outside React, and the focus
+    // move lands on the next render - slow under a parallel run.
+    const outcome = await waitFor(() => getByText('admin.chatDashboard.assign.unassigned'), { timeout: 4000 });
+    await waitFor(() => expect(document.activeElement).toBe(outcome), { timeout: 4000 });
 
     const lastInstance = mountedInstances[mountedInstances.length - 1];
     expect(lastInstance.ajaxReload).toHaveBeenCalled();
 
     document.body.removeChild(row);
     confirmSpy.mockRestore();
+  });
+
+  it('Clear all leaves assign mode, so the next Apply does not come back with the column hidden but the mode on', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(container.querySelector('details.chat-assign-panel').open).toBe(true));
+
+    const clearButton = Array.from(container.querySelectorAll('button')).find((b) => /clear/i.test(b.textContent));
+    await act(async () => { fireEvent.click(clearButton); });
+    expect(container.querySelector('details.chat-assign-panel')).toBeNull();
+
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    await act(async () => { fireEvent.click(container.querySelector('#filter-apply-button')); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 2 }, vi.fn());
+    });
+    expect(container.querySelector('details.chat-assign-panel').open).toBe(false);
+  });
+
+  it('moves focus into the note on Add a note, and back to Add a note on Clear note', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
+
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.addNote')); });
+    await waitFor(() => expect(document.activeElement).toBe(container.querySelector('#chat-assign-note')));
+
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.noteClear')); });
+    await waitFor(() => expect(document.activeElement).toBe(getByText('admin.chatDashboard.assign.addNote')));
   });
 
   it('switches the Assign chats button label once a note is typed, with no separate save step', async () => {

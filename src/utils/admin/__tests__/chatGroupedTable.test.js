@@ -179,4 +179,26 @@ describe('buildChatGroupCallbacks', () => {
     expect(cells[3].classList.contains('group-cell')).toBe(false);
   });
 
+  it('empties the repeated cells instead of keeping sr-only text when the column opts in via blankRepeats', () => {
+    const data = [
+      { chatId: 'abc', questionNumber: 1, department: '', question: 'q1' },
+      { chatId: 'abc', questionNumber: 2, department: '', question: 'q2' },
+      { chatId: 'abc', questionNumber: 3, department: '', question: 'q3' },
+    ];
+    const rendered = renderTable(data);
+    // Mimic a control rendered per row (the Chat dashboard's assign checkbox).
+    rendered.rowEls.forEach((tr) => { tr.cells[2].innerHTML = '<input type="checkbox" id="chat-assign-abc"><label for="chat-assign-abc">Select chat abc</label>'; });
+    const callbacks = build({ groupedColumns: [{ data: 'department', mergeEmpty: true, blankRepeats: true }] });
+    callbacks.preDrawCallback();
+    rendered.rowEls.forEach((tr, i) => callbacks.createdRow(tr, data[i]));
+    callbacks.drawCallback.call({ api: () => rendered.api });
+    const cells = rendered.rowEls.map((tr) => tr.cells[2]);
+    // One control for the chat, on its first row; nothing (not even sr-only
+    // text) below it, so ids stay unique.
+    expect(cells[0].querySelector('input')).toBeTruthy();
+    expect(cells[1].innerHTML).toBe('');
+    expect(cells[2].innerHTML).toBe('');
+    expect(rendered.rowEls[0].closest('table').querySelectorAll('#chat-assign-abc').length).toBe(1);
+  });
+
 });

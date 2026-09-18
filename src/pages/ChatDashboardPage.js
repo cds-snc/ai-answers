@@ -52,7 +52,14 @@ function resolveAssignStatusMessage(status, t) {
   if (status.loadFailed) return t('admin.chatDashboard.assign.loadError');
   if (status.unassignFailed) return t('admin.chatDashboard.assign.unassignError');
   if (status.unassigned) return t('admin.chatDashboard.assign.unassigned');
-  if (status.isError) return t('admin.chatDashboard.assign.assignError').replace('{count}', () => status.count);
+  if (status.isError) {
+    const byCode = {
+      already_assigned: 'admin.chatDashboard.assign.assignErrorAlreadyAssigned',
+      note_too_long: 'admin.chatDashboard.assign.assignErrorNoteTooLong',
+      not_allowed: 'admin.chatDashboard.assign.assignErrorNotAllowed',
+    };
+    return t(byCode[status.code] || 'admin.chatDashboard.assign.assignError').replace('{count}', () => status.count);
+  }
   const key = status.hadNote ? 'admin.chatDashboard.assign.assignSuccessWithNote' : 'admin.chatDashboard.assign.assignSuccess';
   return t(key).replace('{count}', () => status.count);
 }
@@ -84,6 +91,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // destroyed by the reload), focus needs somewhere to land - see
   // useChatAssignBar.js's outcomeFocusCount comment.
   const outcomeRef = useFocusOnChange(assignBar.outcomeFocusCount);
+  // "Add a note" hides itself when the note opens, and "Clear note" hides
+  // the note again - both would drop focus to <body>, so hand it to the
+  // textarea on open and back to "Add a note" on close.
+  const noteTextareaRef = useRef(null);
+  const addNoteButtonRef = useRef(null);
+  const noteWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (assignBar.noteOpen) noteTextareaRef.current?.focus();
+    else if (noteWasOpenRef.current) addNoteButtonRef.current?.focus();
+    noteWasOpenRef.current = assignBar.noteOpen;
+  }, [assignBar.noteOpen]);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -196,6 +214,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
+    // New filters, new rows: a selection made on the old rows would keep
+    // counting chats that are no longer on screen.
+    assignBar.resetSelection();
     setHasAppliedFilters(true);
     setLoading(true);
     try {
@@ -207,7 +228,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [assignBar]);
 
   // Clear all is a restart, not a re-apply: unlike removing a single pill or
   // reopening the panel to change one field (both of which keep the results
@@ -235,6 +256,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // mounting a fresh one.
     tableApiRef.current = null;
     ajaxSeqRef.current += 1;
+    // The results section (assign box included) unmounts; leave assign
+    // mode too, or the next Apply comes back with the mode on and the
+    // column hidden.
+    assignBar.setAssignMode(false);
     setHasAppliedFilters(false);
     setRecordsTotal(0);
     setSearchTerm('');
@@ -248,7 +273,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     resetSearchAnnouncement();
     setError(null);
     setLoading(false);
-  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
+  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement, assignBar]);
 
   const columns = useMemo(() => ([
     // Bulk-assign checkbox column. Always defined, hidden until assign mode
@@ -536,6 +561,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   <button
                     type="button"
                     className="filter-button filter-button-outline"
+                    ref={addNoteButtonRef}
                     onClick={() => assignBar.setNoteOpen(true)}
                   >
                     {t('admin.chatDashboard.assign.addNote')}
@@ -549,6 +575,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     <label htmlFor="chat-assign-note" className="filter-label">{t('admin.chatDashboard.assign.noteLabel')}</label>
                     <textarea
                       id="chat-assign-note"
+                      ref={noteTextareaRef}
                       className="filter-input chat-assign-note-textarea"
                       value={assignBar.noteText}
                       onChange={(e) => assignBar.setNoteText(e.target.value)}
@@ -614,7 +641,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 columns={columns}
                 className="display dashboard-table dashboard-table--grouped"
                 options={{
-                  processing: true,
                   serverSide: true,
                   paging: true,
                   searching: true,
@@ -708,6 +734,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       stateRef: chatGroupStateRef,
                       columns,
                       groupedColumns: [
+                        // One checkbox/pill per chat, on its first row; the
+                        // rows below are emptied (no duplicate ids, no
+                        // control per interaction).
+                        { data: 'assignedTo', mergeEmpty: true, blankRepeats: true },
                         { data: 'program' },
                         { data: 'department' },
                         { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
@@ -728,6 +758,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         }
                         const pill = row.querySelector('button.chat-assign-pill');
                         if (pill) {
+                          assignBar.forgetChat(data.chatId);
                           pill.onclick = () => {
                             if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
                             assignBar.unassignChat(data.chatId, () => tableApiRef.current?.ajax.reload());
@@ -770,7 +801,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         ...normalizedFilters,
                         // The Assign column's pills need the assignee email
                         // whenever the column is shown, and showing it must
-                        // not refetch - so always ask for it.
+                        // not refetch - so always ask for it. Trade-off: one
+                        // extra users $lookup on every page/sort/search for
+                        // everyone, chosen over a refetch (and loading
+                        // overlay) each time assign mode is toggled.
                         includeAssignee: 'true',
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,

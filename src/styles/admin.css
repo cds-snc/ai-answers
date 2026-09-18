@@ -578,16 +578,13 @@
   margin-right: calc(50% - 45vw);
 }
 
-.chat-assign-panel:not([open]) > .filter-panel-summary {
-  margin-bottom: 0;
-}
-
 .chat-assign-panel > .filter-panel-content {
   margin-left: var(--gcds-spacing-300);
   margin-bottom: var(--gcds-spacing-300);
 }
 
 .chat-assign-panel:not([open]) > .filter-panel-summary {
+  margin-bottom: 0;
   background: var(--gcds-button-secondary-default-background);
   border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
   color: var(--gcds-button-secondary-default-text);

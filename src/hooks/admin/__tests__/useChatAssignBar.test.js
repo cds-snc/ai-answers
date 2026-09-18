@@ -181,11 +181,37 @@ describe('useChatAssignBar', () => {
     const onDone = vi.fn();
     await act(async () => { await result.current.submitAssign(onDone); });
 
-    expect(result.current.assignStatus).toEqual({ count: 1, isError: true });
+    expect(result.current.assignStatus).toEqual({ count: 1, isError: true, code: null });
     expect(result.current.isChatChecked('chat-1')).toBe(false); // succeeded
     expect(result.current.isChatChecked('chat-2')).toBe(true); // failed, stays for retry
     expect(result.current.selectedCount).toBe(1);
     expect(onDone).toHaveBeenCalled();
+  });
+
+  it('forgetChat drops a chat from the selection without clearing the outcome message', async () => {
+    mockAssignChat.mockResolvedValue({});
+    const { result } = renderHook(() => useChatAssignBar());
+    act(() => { result.current.toggleChatChecked('chat-1', true); result.current.toggleChatChecked('chat-2', true); result.current.setSelectedAssigneeId('u1'); });
+    await act(async () => { await result.current.submitAssign(); });
+    act(() => { result.current.toggleChatChecked('chat-3', true); });
+    act(() => { result.current.forgetChat('chat-3'); });
+    expect(result.current.selectedCount).toBe(0);
+    expect(result.current.isChatChecked('chat-3')).toBe(false);
+  });
+
+  it('reports one shared failure reason as its code (409 already assigned), mixed reasons as none', async () => {
+    const conflict = Object.assign(new Error('nope'), { code: 'already_assigned', status: 409 });
+    mockAssignChat.mockRejectedValue(conflict);
+    const { result } = renderHook(() => useChatAssignBar());
+    act(() => { result.current.toggleChatChecked('chat-1', true); result.current.toggleChatChecked('chat-2', true); result.current.setSelectedAssigneeId('u1'); });
+    await act(async () => { await result.current.submitAssign(); });
+    expect(result.current.assignStatus).toEqual({ count: 2, isError: true, code: 'already_assigned' });
+
+    mockAssignChat.mockReset();
+    mockAssignChat.mockRejectedValueOnce(conflict).mockRejectedValueOnce(Object.assign(new Error('nope'), { status: 403 }));
+    act(() => { result.current.toggleChatChecked('chat-3', true); result.current.toggleChatChecked('chat-4', true); });
+    await act(async () => { await result.current.submitAssign(); });
+    expect(result.current.assignStatus).toEqual({ count: 2, isError: true, code: null });
   });
 
   it('does not reload when every assign failed', async () => {
