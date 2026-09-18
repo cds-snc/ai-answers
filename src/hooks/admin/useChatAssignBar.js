@@ -2,11 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 import UserService from '../../services/UserService.js';
 import DashboardService from '../../services/DashboardService.js';
 
-// Bulk chat-assign toolbar state for ChatDashboardPage.js: toggle, checkbox
+// Bulk question-assign toolbar state for ChatDashboardPage.js: toggle, checkbox
 // selection (ref-backed so it survives page/redraw without re-render), the
 // assignable-experts dropdown, note text, and the assign call itself.
 //
-// checkedChatIds is a ref (not state) because DataTables owns each row's
+// checkedQuestionIds (Interaction _ids - assignment is per question, not
+// per chat) is a ref (not state) because DataTables owns each row's
 // checkbox DOM lifecycle (createdRow) independently of React's render
 // cycle - a ref stays valid across redraws without needing the DataTable
 // to re-read fresh props. selectedCount is state, purely to drive the UI
@@ -30,10 +31,10 @@ export function useChatAssignBar() {
   // announce-on-repeat same as every other inline form error in this app.
   const [validationErrorCode, setValidationErrorCode] = useState(null);
   const [validationErrorCount, setValidationErrorCount] = useState(0);
-  const checkedChatIds = useRef(new Set());
+  const checkedQuestionIds = useRef(new Set());
 
   const resetSelection = useCallback(() => {
-    checkedChatIds.current.clear();
+    checkedQuestionIds.current.clear();
     setSelectedCount(0);
   }, []);
 
@@ -66,24 +67,24 @@ export function useChatAssignBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignableUsers.length, assignableLoading, resetSelection]);
 
-  const toggleChatChecked = useCallback((chatId, checked) => {
-    if (checked) checkedChatIds.current.add(chatId);
-    else checkedChatIds.current.delete(chatId);
-    setSelectedCount(checkedChatIds.current.size);
+  const toggleQuestionChecked = useCallback((questionId, checked) => {
+    if (checked) checkedQuestionIds.current.add(questionId);
+    else checkedQuestionIds.current.delete(questionId);
+    setSelectedCount(checkedQuestionIds.current.size);
     if (checked) setValidationErrorCode((prev) => (prev === 'no_chat' ? null : prev));
     // A new pick/uncheck makes the last assign/unassign outcome stale -
     // same "fresh action supersedes it" rule as everything else here.
     setAssignStatus(null);
   }, []);
 
-  const isChatChecked = useCallback((chatId) => checkedChatIds.current.has(chatId), []);
+  const isQuestionChecked = useCallback((questionId) => checkedQuestionIds.current.has(questionId), []);
 
   // Drops a chat from the selection without touching the outcome message -
   // for a row that a reload shows as already assigned (e.g. after a 409),
   // which can no longer be ticked and must not keep counting.
-  const forgetChat = useCallback((chatId) => {
-    if (!checkedChatIds.current.delete(chatId)) return;
-    setSelectedCount(checkedChatIds.current.size);
+  const forgetQuestion = useCallback((questionId) => {
+    if (!checkedQuestionIds.current.delete(questionId)) return;
+    setSelectedCount(checkedQuestionIds.current.size);
   }, []);
 
   // Clears the note text and collapses the editor - "Clear", not "Close",
@@ -99,13 +100,13 @@ export function useChatAssignBar() {
   // dedicated bulk endpoint; kept simple for v1, revisit if selection sizes
   // grow past a page's worth.
   const submitAssign = useCallback(async (onDone) => {
-    const chatIds = Array.from(checkedChatIds.current);
+    const questionIds = Array.from(checkedQuestionIds.current);
     if (!selectedAssigneeId) {
       setValidationErrorCode('no_expert');
       setValidationErrorCount((n) => n + 1);
       return;
     }
-    if (chatIds.length === 0) {
+    if (questionIds.length === 0) {
       setValidationErrorCode('no_chat');
       setValidationErrorCount((n) => n + 1);
       return;
@@ -118,25 +119,25 @@ export function useChatAssignBar() {
     const BATCH_SIZE = 5;
     let failures = 0;
     const failureCodes = new Set();
-    for (let i = 0; i < chatIds.length; i += BATCH_SIZE) {
-      const batch = chatIds.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < questionIds.length; i += BATCH_SIZE) {
+      const batch = questionIds.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
-        batch.map((chatId) => DashboardService.assignChat({ chatId, assignedTo: selectedAssigneeId, notes: noteText }))
+        batch.map((questionId) => DashboardService.assignQuestion({ interactionId: questionId, assignedTo: selectedAssigneeId, notes: noteText }))
       );
       results.forEach((r, idx) => {
         if (r.status === 'rejected') { failures += 1; failureCodes.add(r.reason?.code || (r.reason?.status === 403 ? 'not_allowed' : null)); }
         // Untick the ones that went through, so a retry after a partial
         // failure only re-sends the failures (a re-send would 409).
-        else checkedChatIds.current.delete(batch[idx]);
+        else checkedQuestionIds.current.delete(batch[idx]);
       });
     }
     assigningRef.current = false;
     setAssigning(false);
-    setSelectedCount(checkedChatIds.current.size);
+    setSelectedCount(checkedQuestionIds.current.size);
     if (failures === 0) {
       // Note text stays visible on success (not cleared) - it's what was
       // just sent with the assignment, not a stale draft.
-      setAssignStatus({ count: chatIds.length, isError: false, hadNote: Boolean(noteText.trim()) });
+      setAssignStatus({ count: questionIds.length, isError: false, hadNote: Boolean(noteText.trim()) });
     } else {
       // One shared reason (all 409, all 403...) gets its own message;
       // mixed reasons fall back to the generic count.
@@ -147,7 +148,7 @@ export function useChatAssignBar() {
     setOutcomeFocusCount((n) => n + 1);
     // Reload even on partial failure so the rows that did assign show
     // their pill instead of a stale checkbox.
-    if (failures < chatIds.length && onDone) onDone();
+    if (failures < questionIds.length && onDone) onDone();
   }, [selectedAssigneeId, noteText]);
 
   // Removes an existing assignment (the × pill on an already-assigned row).
@@ -164,12 +165,12 @@ export function useChatAssignBar() {
   // unassign (the pill is still there) or a failed list load (nothing was
   // disabled).
   const [outcomeFocusCount, setOutcomeFocusCount] = useState(0);
-  const unassignChat = useCallback(async (chatId, onDone) => {
+  const unassignQuestion = useCallback(async (questionId, onDone) => {
     setAssignStatus(null);
     try {
-      await DashboardService.unassignChat({ chatId });
-      checkedChatIds.current.delete(chatId);
-      setSelectedCount(checkedChatIds.current.size);
+      await DashboardService.unassignQuestion({ interactionId: questionId });
+      checkedQuestionIds.current.delete(questionId);
+      setSelectedCount(checkedQuestionIds.current.size);
       setAssignStatus({ isError: false, unassigned: true });
       setOutcomeFocusCount((n) => n + 1);
       if (onDone) onDone();
@@ -210,12 +211,12 @@ export function useChatAssignBar() {
     assigning,
     assignStatus,
     selectedCount,
-    toggleChatChecked,
-    isChatChecked,
-    forgetChat,
+    toggleQuestionChecked,
+    isQuestionChecked,
+    forgetQuestion,
     resetSelection,
     submitAssign,
     outcomeFocusCount,
-    unassignChat,
+    unassignQuestion,
   };
 }
