@@ -1375,7 +1375,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langEnglish')}</h2>
 
             <label htmlFor="redaction.profanity.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.profanity')} (EN)
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.profanity.en"
@@ -1386,7 +1386,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.threat.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.threat')} (EN)
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.threat.en"
@@ -1397,7 +1397,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.manipulation.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.manipulation')} (EN)
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.manipulation.en"
@@ -1412,7 +1412,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langFrench')}</h2>
 
             <label htmlFor="redaction.profanity.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.profanity')} (FR)
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.profanity.fr"
@@ -1423,7 +1423,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.threat.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.threat')} (FR)
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.threat.fr"
@@ -1434,7 +1434,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.manipulation.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.manipulation')} (FR)
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.manipulation.fr"

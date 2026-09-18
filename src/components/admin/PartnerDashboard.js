@@ -125,8 +125,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip__title">{row.name}</div>
-        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
-        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+        <div>{t('blockedQueries.colTotal')} {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')} {fmtN(row.en)} · {t('blockedQueries.colFr')} {fmtN(row.fr)}</div>
       </div>
     );
   };

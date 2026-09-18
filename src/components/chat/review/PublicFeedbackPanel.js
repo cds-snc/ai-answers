@@ -89,7 +89,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
                 {loading && <StatusMessage loading message={t('common.loading')} />}
                 {error && (
                   <StatusMessage variant="error">
-                    {t('common.error')}: <code lang="en">{error}</code>
+                    {t('common.error')} <code lang="en">{error}</code>
                   </StatusMessage>
                 )}
                 <dl className="public-feedback-summary">

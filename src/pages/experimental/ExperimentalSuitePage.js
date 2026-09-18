@@ -45,7 +45,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                 <div className="mb-200">
                     {dataset?.category && (
                         <span className="mr-300">
-                            <strong>{t('experimental.suite.categoryLabel')}:</strong> {dataset.category}
+                            <strong>{t('experimental.suite.categoryLabel')}</strong> {dataset.category}
                         </span>
                     )}
                 </div>
