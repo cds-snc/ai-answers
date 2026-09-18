@@ -19,7 +19,7 @@ const UserService = {
 
     /**
      * Fetch the users the signed-in user is allowed to assign a chat to
-     * (see api/user/user-assignable.js and api/chat/chat-assign.js). A
+     * (see api/user/user-assignable.js and api/chat/chat-assign-interaction.js). A
      * partner only ever sees people sharing their own institution/group
      * (never the full directory); an admin sees everyone active.
      * @returns {Promise<{users: Array, reason?: 'no_institution'}>}

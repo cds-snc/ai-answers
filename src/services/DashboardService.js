@@ -31,12 +31,12 @@ class DashboardService {
 
   // Assignment is per question: interactionId is the Interaction's _id.
   static async assignQuestion({ interactionId, assignedTo, notes }) {
-    const response = await AuthService.fetch(getApiUrl('chat-assign'), {
+    const response = await AuthService.fetch(getApiUrl('chat-assign-interaction'), {
       method: 'POST',
       body: JSON.stringify({ interactionId, assignedTo, notes })
     });
     if (!response.ok) {
-      // chat-assign.js answers with a stable `code` for the reasons a caller
+      // chat-assign-interaction.js answers with a stable `code` for the reasons a caller
       // can act on (already_assigned, note_too_long); carry it and the
       // status so the hook can say which one happened.
       let code;
@@ -50,7 +50,7 @@ class DashboardService {
   }
 
   static async unassignQuestion({ interactionId }) {
-    const response = await AuthService.fetch(getApiUrl('chat-assign'), {
+    const response = await AuthService.fetch(getApiUrl('chat-assign-interaction'), {
       method: 'DELETE',
       body: JSON.stringify({ interactionId })
     });

@@ -306,7 +306,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       //
       // An already-assigned question shows the assignee as a pill (same
       // shape as FilterPanel's removable filter pills) instead of a checkbox
-      // - it can't be picked for a bulk assign (chat-assign.js rejects that,
+      // - it can't be picked for a bulk assign (chat-assign-interaction.js rejects that,
       // 409), and the pill's × is how to remove the assignment instead.
       render: (value, type, row) => {
         const questionId = row?._id;
