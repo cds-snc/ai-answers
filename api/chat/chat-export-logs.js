@@ -767,6 +767,10 @@ export async function chatExportHandler(req, res) {
         }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+        // TODO: include the applied institution (department) and, once the
+        // user-group feature lands, the group in the filename so a download
+        // says what it contains. Keep ChatLogsDashboard.js's fallback name
+        // in step.
         const filename = `chat-logs-${view}-${timestamp}`;
 
         if (format === 'json') {
