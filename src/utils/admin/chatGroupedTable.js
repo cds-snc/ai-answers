@@ -35,7 +35,7 @@ export function createChatGroupState() {
  * @param {object} config
  * @param {{ current: object }} config.stateRef - ref holding createChatGroupState()
  * @param {Array<{ data: string }>} config.columns - the table's column definitions, in order
- * @param {Array<{ data: string, boundByChatId?: boolean, mergeEmpty?: boolean, blankRepeats?: boolean, extraClass?: string }>} config.groupedColumns
+ * @param {Array<{ data: string, boundByChatId?: boolean, mergeEmpty?: boolean, extraClass?: string }>} config.groupedColumns
  *   Columns whose repeated values collapse across a chat's consecutive rows.
  *   `boundByChatId` (default true) additionally requires the rows to share a
  *   chatId, so two unrelated chats that happen to share a department never
@@ -46,11 +46,7 @@ export function createChatGroupState() {
  *   that placeholder down every row of the chat otherwise. `extraClass`
  *   is added to every cell of that column, grouped or not (the Chat ID
  *   column uses it so CSS can target that column without relying on
- *   position). `blankRepeats` (default false) empties the repeated cells
- *   instead of keeping their text as sr-only - for a column holding a
- *   control (the Chat dashboard's assign checkbox/pill), where repeating
- *   it would mean duplicate ids and a control per interaction rather than
- *   per chat.
+ *   position).
  * @returns {{ preDrawCallback: function, createdRow: function, drawCallback: function }}
  */
 export function buildChatGroupCallbacks({ stateRef, columns, groupedColumns }) {
@@ -72,7 +68,7 @@ export function buildChatGroupCallbacks({ stateRef, columns, groupedColumns }) {
     row.classList.add(state.parity === 0 ? 'chat-group-a' : 'chat-group-b');
   };
 
-  const collapseColumn = (api, rowData, { data, boundByChatId = true, mergeEmpty = false, blankRepeats = false, extraClass }) => {
+  const collapseColumn = (api, rowData, { data, boundByChatId = true, mergeEmpty = false, extraClass }) => {
     const colIndex = columns.findIndex((c) => c.data === data);
     if (colIndex === -1) return;
     // Cells via the API, not rowNode.cells[colIndex]: DataTables detaches
@@ -106,14 +102,10 @@ export function buildChatGroupCallbacks({ stateRef, columns, groupedColumns }) {
         for (let j = i + 1; j < i + span; j += 1) {
           const cell = cellNodes[j];
           if (!cell) continue;
-          if (blankRepeats) {
-            cell.replaceChildren();
-          } else {
-            const srText = document.createElement('span');
-            srText.className = 'sr-only';
-            srText.textContent = (cell.textContent || '').trim();
-            cell.replaceChildren(srText);
-          }
+          const srText = document.createElement('span');
+          srText.className = 'sr-only';
+          srText.textContent = (cell.textContent || '').trim();
+          cell.replaceChildren(srText);
           cell.classList.add(GROUP_CELL, j === i + span - 1 ? GROUP_CELL_END : GROUP_CELL_MID);
         }
       }
