@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
   getGraphApp: vi.fn(),
   recordRequest: vi.fn(),
+  streamInput: null,
 }));
 
 vi.mock('../../../services/SettingsService.js', () => ({
@@ -89,7 +90,8 @@ function createRequest() {
 
 function setupGraphStream() {
   mocks.getGraphApp.mockResolvedValue({
-    stream: async function* () {
+    stream: async function* (input) {
+      mocks.streamInput = input;
       yield { init: { status: 'buildingContext' } };
       yield { verify: { result: { answer: { answerType: 'normal', content: 'done' } } } };
       yield { persist: { status: 'complete' } };
@@ -102,6 +104,7 @@ function mockSettingsTransport(transport) {
     if (key === 'chat.transport') return transport;
     if (key === 'workflow.default') return 'GenericGraph';
     if (key === 'model.default') return 'openai-gpt51';
+    if (key === 'search.default') return 'google';
     return null;
   });
 }
@@ -194,6 +197,37 @@ describe('chatGraphRunHandler transport setting', () => {
         errorType: null,
       })
     );
+  });
+
+  it('uses the configured search provider for public chats', async () => {
+    mockSettingsTransport('sse');
+    mocks.settingsGet.mockImplementation((key) => {
+      if (key === 'chat.transport') return 'sse';
+      if (key === 'workflow.default') return 'GenericGraph';
+      if (key === 'model.default') return 'openai-gpt51';
+      if (key === 'search.default') return 'canadaca';
+      return null;
+    });
+    setupGraphStream();
+    const req = createRequest();
+    req.body.input.searchProvider = 'google';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.searchProvider).toBe('canadaca');
+  });
+
+  it('preserves the explicitly passed search provider for authenticated chats', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.user = { userId: 'user-123' };
+    req.isAuthenticated = () => true;
+    req.body.input.searchProvider = 'canadaca';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.searchProvider).toBe('canadaca');
   });
 
 });

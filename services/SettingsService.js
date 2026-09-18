@@ -3,6 +3,7 @@ import { Setting } from '../models/setting.js';
 import { requireLiteralString, requireString } from '../api/util/db-query.js';
 import SettingsAuditService from './SettingsAuditService.js';
 import { DEFAULT_WORKFLOW } from '../src/config/workflows.js';
+import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../src/config/searchProviders.js';
 import { parseRecipients } from './parseRecipients.js';
 
 // Lightweight "does this look like an email" check — not full RFC 5322
@@ -67,6 +68,11 @@ const isPlausibleEmail = (value) => {
 // than build detection for that, the message itself names both likely
 // causes (settings.validation.invalidEmail: "Invalid email or ; spacing").
 const FIELD_VALIDATORS = {
+  'search.default': (value) => (
+    SEARCH_PROVIDER_VALUES.includes(value)
+      ? null
+      : { i18nKey: 'settings.validation.invalidSearchProvider' }
+  ),
   'systemHealth.alertRecipients': (value) => {
     const invalid = parseRecipients(value).some((email) => !isPlausibleEmail(email));
     return invalid ? { i18nKey: 'settings.validation.invalidEmail' } : null;
@@ -115,6 +121,8 @@ const SETTING_DEFAULTS = {
   // Settings page and in the chat Options dropdown.
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
+  'search.default': DEFAULT_SEARCH_PROVIDER,
+  'searchContext.cache.enabled': 'false',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',

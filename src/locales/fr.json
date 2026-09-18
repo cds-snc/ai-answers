@@ -1101,7 +1101,8 @@
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
-      "invalidEmail": "Courriel ou espacement du « ; » invalide"
+      "invalidEmail": "Courriel ou espacement du « ; » invalide",
+      "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
     "general": {
       "title": "Paramètres généraux"
@@ -1111,6 +1112,21 @@
     },
     "defaultModel": {
       "label": "Famille de modèles par défaut"
+    },
+    "defaultSearchProvider": {
+      "label": "Fournisseur de recherche par défaut du clavardage public",
+      "options": {
+        "google": "Google",
+        "canadaca": "Canada.ca"
+      }
+    },
+    "searchContextCache": {
+      "enabledLabel": "Mettre en cache les résultats de recherche",
+      "description": "Lorsqu’il est activé, les résultats Google et Canada.ca sont mis en cache pendant un maximum de 12 heures.",
+      "clear": "Vider les résultats de recherche en cache",
+      "clearing": "Suppression des résultats de recherche en cache...",
+      "clearSuccess": "{count} résultats de recherche en cache supprimés.",
+      "clearError": "Impossible de vider les résultats de recherche en cache."
     },
     "chatTransport": {
       "label": "Transport des événements de clavardage",
@@ -1175,7 +1191,8 @@
       "notApplicable": "Sans objet",
       "actions": {
         "settingUpdated": "Paramètre modifié",
-        "cacheRefreshed": "Cache des paramètres rafraîchi"
+        "cacheRefreshed": "Cache des paramètres rafraîchi",
+        "searchCacheCleared": "Cache de recherche vidé"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",

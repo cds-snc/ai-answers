@@ -5,6 +5,7 @@ import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
+import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../../src/config/searchProviders.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 
@@ -184,6 +185,12 @@ async function handler(req, res) {
   if (!req.user) {
     // Unauthenticated users: forced to use the system default model
     input.selectedAI = defaultModel;
+    // Public chats use the administrator-selected search provider. Authenticated
+    // chats keep the provider passed by their normal caller.
+    const defaultSearchProvider = SettingsService.get('search.default');
+    input.searchProvider = SEARCH_PROVIDER_VALUES.includes(defaultSearchProvider)
+      ? defaultSearchProvider
+      : DEFAULT_SEARCH_PROVIDER;
   } else if (!input.selectedAI) {
     // Authenticated users: use default model when client didn't explicitly set one
     input.selectedAI = defaultModel;
