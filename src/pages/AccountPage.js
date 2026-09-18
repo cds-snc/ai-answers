@@ -158,7 +158,7 @@ const AccountPage = ({ lang = 'en' }) => {
     bottomEnd: 'paging',
   };
 
-  // Questions assigned to the signed-in user (api/chat/chat-assign.js), via the
+  // Questions assigned to the signed-in user (api/chat/chat-assign-interaction.js), via the
   // chat-dashboard aggregate's assignedTo filter.
   const [assignedChatsError, setAssignedChatsError] = useState(null);
   const fetchAssignedChats = useCallback(async ({ start, length, search, orderBy, orderDir }) => {
