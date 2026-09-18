@@ -122,6 +122,7 @@ const SETTING_DEFAULTS = {
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'search.default': DEFAULT_SEARCH_PROVIDER,
+  'searchContext.cache.enabled': 'false',
   'chat.transport': 'sse',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
