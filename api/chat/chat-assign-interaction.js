@@ -4,7 +4,7 @@ import { User } from '../../models/user.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../../src/constants/chatAssign.js';
-import { sharesMembership } from '../util/reviewer-filter.js';
+import { sharesMembership } from '../../services/UserService.js';
 
 // Assigns one question (an Interaction, keyed by its _id as `interactionId`)
 // to one partner/admin user for review (issue #1656). Per question, not per
