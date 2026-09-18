@@ -5,9 +5,11 @@ import { ExperimentalBatchClientService } from '../../services/experimental/Expe
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
 import StatusMessage from '../../components/admin/StatusMessage.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const { wrapErrorDetail } = useErrorStatus(t);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [method, setMethod] = useState('golden-answer');
@@ -81,12 +83,12 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
             // The server occasionally returns a specific, genuinely useful
             // validation reason (data.error) — kept, but wrapped in
             // <code lang="en"> behind a translated prefix rather than shown
-            // raw, same pattern as buildErrorStatus (useErrorStatus.js).
+            // raw, via wrapErrorDetail (useErrorStatus.js).
             const detail = err.response?.data?.error;
             let goldenAnswerText = t('experimental.datasets.goldenAnswerFailed');
             if (detail) {
-                const [prefix, suffix] = t('experimental.datasets.goldenAnswerFailedDetail').split('{error}');
-                goldenAnswerText = <>{prefix}<code lang="en">{detail}</code>{suffix}</>;
+                const wrapped = wrapErrorDetail('experimental.datasets.goldenAnswerFailedDetail', { message: detail });
+                goldenAnswerText = <>{wrapped.prefix}{wrapped.detail}{wrapped.suffix}</>;
             }
             setMessage({
                 type: 'error',

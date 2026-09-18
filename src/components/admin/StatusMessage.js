@@ -282,11 +282,12 @@ export default StatusMessage;
 // own tracking; useChatIdLookup.js via a nonce bolted onto its own setStatus
 // (its status shape is a multi-caller union, doesn't fit this hook's).
 //
-// TODO(follow-up PR): these three shapes only diverged because `announce`
-// only takes a plain string. Letting it take a ReactNode too would let
-// useErrorStatus.js's renderStatusMessage call this hook instead of
-// reimplementing its own nonce tracking, and useChatIdLookup.js's union
-// could likely collapse into it as well. Touches ~20 call sites — own PR.
+// TODO(follow-up PR): these shapes only diverged because `announce` only
+// takes a plain string. Letting it take a ReactNode too would let
+// useErrorStatus.js's renderStatusMessage, useChatIdLookup.js's bolted-on
+// nonce, and DeleteByChatIdSection.js's own statusNonce (needs children for
+// wrapErrorDetail's <code lang="en"> output, not just message) all collapse
+// onto this hook. Touches ~20 call sites — own PR.
 export function useRepeatableStatus() {
   const [status, setStatusState] = useState(null); // { message, isError } | null
   const [nonce, setNonce] = useState(0);

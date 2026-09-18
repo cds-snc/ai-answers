@@ -23,6 +23,7 @@ const {
   mockClearMetadata,
   mockGetMetadataStatus,
   mockGetMetadataBackfillJob,
+  mockRunDocdb8CapabilityTest,
 } = vi.hoisted(() => ({
   mockReinitialize: vi.fn(),
   mockStartMetadataBackfillJob: vi.fn(),
@@ -30,6 +31,7 @@ const {
   mockClearMetadata: vi.fn(),
   mockGetMetadataStatus: vi.fn(),
   mockGetMetadataBackfillJob: vi.fn().mockResolvedValue({ job: null }),
+  mockRunDocdb8CapabilityTest: vi.fn(),
 }));
 vi.mock('../../services/VectorService.js', () => ({
   default: {
@@ -41,7 +43,7 @@ vi.mock('../../services/VectorService.js', () => ({
     startMetadataBackfillJob: mockStartMetadataBackfillJob,
     stopMetadataBackfillJob: mockStopMetadataBackfillJob,
     clearMetadata: mockClearMetadata,
-    runDocdb8CapabilityTest: vi.fn(),
+    runDocdb8CapabilityTest: mockRunDocdb8CapabilityTest,
   },
 }));
 
@@ -70,6 +72,7 @@ const resetMocks = () => {
   mockGenerateEmbeddings.mockReset();
   mockGetMetadataStatus.mockReset();
   mockGetMetadataBackfillJob.mockReset().mockResolvedValue({ job: null });
+  mockRunDocdb8CapabilityTest.mockReset();
   vi.restoreAllMocks();
 };
 
@@ -398,5 +401,28 @@ describe('VectorPage metadata backfill job status, discovered by polling', () =>
     const status = await screen.findByText('vector.metadataBackfillCompleted');
 
     expect(status.closest('.status-message--success-box')).toBeTruthy();
+  });
+});
+
+describe('VectorPage docdb8 capability probe error rendering', () => {
+  afterEach(() => {
+    cleanup();
+    resetMocks();
+  });
+
+  it('wraps a probe failure detail in a single lang="en" span, not double-wrapped', async () => {
+    mockRunDocdb8CapabilityTest.mockRejectedValue(new Error('driver timeout'));
+
+    renderWithRouter(<VectorPage lang="en" />);
+
+    const probeButton = await screen.findByText('vector.docdb8Capability.probes.annAllThenFeedbackPostFilter');
+    fireEvent.click(probeButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('driver timeout', { selector: 'code[lang="en"]' })).toBeTruthy();
+    });
+    // Exactly one wrap, not nested — same bug class as
+    // SimilarChatsDashboard.js's double <code lang="en">.
+    expect(document.querySelectorAll('code[lang="en"]').length).toBe(1);
   });
 });

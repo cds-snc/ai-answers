@@ -13,8 +13,11 @@ const mocks = vi.hoisted(() => ({
     previewInstant: vi.fn()
 }));
 
+const TRANSLATIONS = {
+    'experimental.datasets.goldenAnswerFailedDetail': 'Failed to create golden answer dataset: {error}',
+};
 vi.mock('../../hooks/useTranslations.js', () => ({
-    useTranslations: () => ({ t: key => key })
+    useTranslations: () => ({ t: key => TRANSLATIONS[key] || key })
 }));
 
 vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => ({
@@ -74,5 +77,28 @@ describe('ExperimentalCreateDatasetPage', () => {
             }));
         });
         expect(mocks.createGolden).not.toHaveBeenCalled();
+    });
+
+    it('wraps a server-reported golden-answer failure reason in a single lang="en" span', async () => {
+        mocks.createGolden.mockRejectedValue({ response: { data: { error: 'Duplicate name' } } });
+
+        render(<ExperimentalCreateDatasetPage lang="en" />);
+
+        fireEvent.change(screen.getByLabelText('experimental.datasets.nameLabel'), { target: { value: 'SCIS variants' } });
+        fireEvent.change(screen.getByLabelText('experimental.datasets.startDate'), { target: { value: '2026-06-01' } });
+        fireEvent.change(screen.getByLabelText('experimental.datasets.endDate'), { target: { value: '2026-06-30' } });
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'experimental.datasets.createButton' }).disabled).toBe(false);
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'experimental.datasets.createButton' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Duplicate name', { selector: 'code[lang="en"]' })).toBeTruthy();
+        });
+        // Exactly one wrap, not nested — same bug class as
+        // SimilarChatsDashboard.js's double <code lang="en">.
+        expect(document.querySelectorAll('code[lang="en"]').length).toBe(1);
+        expect(screen.getByText(/Failed to create golden answer dataset:/)).toBeTruthy();
     });
 });
