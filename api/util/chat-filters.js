@@ -610,10 +610,53 @@ export function getChatFilterConditions(filters, options = {}) {
     });
   }
 
+  // reviewerMatch - pre-resolved by api/util/reviewer-filter.js's
+  // resolveReviewerMatch from the institution / group / reviewerEmail query
+  // params: chats created by one of the resolved users OR carrying an
+  // expert evaluation written by one of them. Each side is matched both as
+  // a raw ref and as a looked-up doc's _id, so the same condition works in
+  // every consumer pipeline regardless of whether it has $lookup'd user /
+  // interactions.expertFeedback by the time it runs the shared $match
+  // (chat-export-logs.js overwrites `user` with the looked-up array; most
+  // others still hold the ObjectId there).
+  //
+  // department is a different axis - the chat's own subject-matter context,
+  // not who handled it - so when both are active they're combined with $or
+  // below rather than each pushed as its own $and condition: "about this
+  // department" and "handled by these people" are two separate reasons a
+  // chat is relevant, not two conditions the same chat must both satisfy.
+  let reviewerMatchCondition = null;
+  if (filters.reviewerMatch) {
+    // Empty lists (unknown institution, email with no hits) match nothing,
+    // like the assignee filter in chat-dashboard.js.
+    const { userIds = [], feedbackIds = [] } = filters.reviewerMatch;
+    reviewerMatchCondition = {
+      $or: [
+        { [userField]: { $in: userIds } },
+        { [`${userField}._id`]: { $in: userIds } },
+        { [withPath('expertFeedback')]: { $in: feedbackIds } },
+        { [withPath('expertFeedback._id')]: { $in: feedbackIds } }
+      ]
+    };
+  }
+
   // department
+  let departmentCondition = null;
   if (filters.department) {
     const escaped = escapeRegex(filters.department);
-    conditions.push({ [withPath('department')]: { $regex: escaped, $options: 'i' } });
+    departmentCondition = { [withPath('department')]: { $regex: escaped, $options: 'i' } };
+  }
+
+  // TODO(design, parked): this ORs department + group. The metrics
+  // endpoints (wired in the follow-up PR, feat/reviewer-filter-metrics) AND
+  // them instead, because metrics-common.js applies department separately.
+  // Known and accepted for now; to discuss whether it should be one rule.
+  if (reviewerMatchCondition && departmentCondition) {
+    conditions.push({ $or: [reviewerMatchCondition, departmentCondition] });
+  } else if (reviewerMatchCondition) {
+    conditions.push(reviewerMatchCondition);
+  } else if (departmentCondition) {
+    conditions.push(departmentCondition);
   }
 
   // referringUrl
