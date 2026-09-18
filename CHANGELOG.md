@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.197.0](https://github.com/cds-snc/ai-answers/compare/v1.196.0...v1.197.0) (2026-09-18)
+
+
+### Features
+
+* health check for canada.ca search ([875f280](https://github.com/cds-snc/ai-answers/commit/875f280300819526bc76713ac67eeec16a8bd72c))
+* health check for canada.ca search ([e50cc63](https://github.com/cds-snc/ai-answers/commit/e50cc6353111faf23cc06808ed52004aaa1d0a47))
+
+
+### Bug Fixes
+
+* harden Canada.ca search result handling ([a5c902b](https://github.com/cds-snc/ai-answers/commit/a5c902b56701319f44d524bf554af9709880e3ec))
+
+
+### Miscellaneous Chores
+
+* add test coverage ([37e6c28](https://github.com/cds-snc/ai-answers/commit/37e6c28f44ad62653896a65d7b700555d45e8f05))
+* cleanup docs, remove bad comments ([b89debc](https://github.com/cds-snc/ai-answers/commit/b89debc599218ab208e2a233fed7f86346ccdb2a))
+
 ## [1.196.0](https://github.com/cds-snc/ai-answers/compare/v1.195.0...v1.196.0) (2026-09-16)
 
 
