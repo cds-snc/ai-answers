@@ -753,6 +753,7 @@
       "urlPlaceholder": "Filter by full or partial URL",
       "department": "Partner institution",
       "allDepartments": "All institutions",
+      "group": "Group",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -1113,6 +1114,29 @@
         "completed": "Completed",
         "pending": "Pending"
       }
+    },
+    "preferences": {
+      "heading": "Dashboard filter preferences",
+      "prefilterDepartment": "Your institution",
+      "prefilterGroup": "Your group (chats created or reviewed by your group's members)",
+      "noGroup": "You must pick a group.",
+      "noInstitution": "You must pick an institution.",
+      "savedChange": "Preference saved: {change}",
+      "changeInstitutionOn": "selected your institution",
+      "changeInstitutionOff": "unselected your institution",
+      "changeGroupOn": "selected your group",
+      "changeGroupOff": "unselected your group",
+      "saveError": "Failed to save preference.",
+      "filteredNoticeTitle": "How filter preferences work",
+      "filteredInstitution": "*Chat*, *evaluation*, *metrics*, and *partner* dashboards open filtered to your institution by default.",
+      "filteredGroup": "*Chat*, *evaluation*, *metrics*, and *partner* dashboards open filtered to your group by default. You'll only see questions and answers your group created or reviewed.",
+      "filteredBothChatEvalLabel": "*Chat* and *evaluation* dashboards:",
+      "filteredBothChatEvalEffect": "everything for your institution, plus anything your group created or reviewed.",
+      "filteredBothMetricsPartnerLabel": "*Metrics* and *partner* dashboards:",
+      "filteredBothMetricsPartnerEffect": "only chats that match both your institution and your group.",
+      "filteredPublicLabel": "*Public* dashboard:",
+      "filteredPublicEffect": "not affected.",
+      "filteredFooter": "You can still change or clear these filters anytime on each dashboard."
     }
   },
   "users": {
