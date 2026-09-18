@@ -15,12 +15,17 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Access to Information | Accès à l'information |
-| Commerce and Purchasing collective agreement | Convention collective Commerce et achat |
+| Access to Information and Privacy | Accès à l’information et protection des renseignements personnels |
+| Build Canada Exchange | Échanges pour bâtir le Canada |
+| Collective agreements and rates of pay for the public service | Conventions collectives de la fonction publique |
 | Conflict of interest disclosure | Divulgation de conflit d'intérêts |
 | Early Retirement Incentive | Incitation à la retraite anticipée |
-| Economic Development Collective Agreement | Convention collective Développement économique |
+| Federal Identity Program | Programme fédéral de l'image de marque |
 | Government of Canada AI Strategy | Stratégie d'intelligence artificielle du gouvernement du Canada |
+| Greening government | Écologiser le gouvernement |
+| Guide to Risk Taxonomies | Guide sur les taxonomies des risques |
+| On-site presence in the public service | Présence sur place dans la fonction publique |
+| Open Government Portal | Portail du gouvernement ouvert |
 | Pay equity | Équité salariale |
 | Pensioners' Dental Services Plan | Régime de services dentaires pour les pensionnés |
 | Performance management program | Programme de gestion du rendement |
@@ -32,6 +37,5 @@ French users. Both are stored exactly as written here.
 | Public Service Labour Relations | Relations de travail dans la fonction publique |
 | Public Service Pension Plan | Régime de retraite de la fonction publique |
 | Public Service Supplementary Death Benefit | Prestation supplémentaire de décès de la fonction publique |
-| Treasury Board Secretariat risk taxonomy | Taxonomie des risques du Secrétariat du Conseil du Trésor |
 | Values and Ethics in the Public Sector | Valeurs et éthique dans le secteur public |
 | Workforce Adjustment Policy | Politique sur le réaménagement des effectifs |
