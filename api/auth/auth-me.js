@@ -1,6 +1,4 @@
-import dbConnect from '../db/db-connect.js';
-import { User } from '../../models/user.js';
-import { normalizeMembershipProfile } from '../util/user-profile.js';
+import UserService from '../../services/UserService.js';
 
 // Session user (userId/email/role from config/passport.js) merged with the
 // profile fields an admin or the user can change after login - institution,
@@ -12,8 +10,6 @@ import { normalizeMembershipProfile } from '../util/user-profile.js';
 // visibilitychange revalidation - a deliberate freshness-over-cost tradeoff
 // (self-service institution/group edits need to show up without a re-login),
 // not an oversight.
-const PROFILE_FIELDS = { institution: 1, group: 1, preferences: 1 };
-
 const meHandler = async (req, res) => {
     try {
         // req.user is automatically populated by Passport if authenticated
@@ -26,11 +22,7 @@ const meHandler = async (req, res) => {
 
         let profile = {};
         try {
-            await dbConnect();
-            const dbUser = await User.findById(req.user.userId, PROFILE_FIELDS).lean();
-            if (dbUser) {
-                profile = normalizeMembershipProfile(dbUser);
-            }
+            profile = await UserService.getMembershipProfile(req.user.userId);
         } catch (profileError) {
             // Auth still succeeds without the profile extras.
             console.error('Get current user profile error:', profileError);

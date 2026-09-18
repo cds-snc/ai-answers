@@ -1,16 +1,11 @@
-import dbConnect from '../db/db-connect.js';
-import { User } from '../../models/user.js';
-import { requireObjectIdString } from '../util/db-query.js';
-import { normalizeInstitution, normalizeGroup } from '../util/user-profile.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
+import UserService from '../../services/UserService.js';
 
 async function usersHandler(req, res) {
     switch (req.method) {
         case 'GET':
             try {
-                await dbConnect();
-                const users = await User.find({}, { password: 0 }).sort({ createdAt: -1 });
-                res.status(200).json(users);
+                res.status(200).json(await UserService.listUsers());
             } catch (error) {
                 console.error('Error retrieving users:', error);
                 res.status(500).json({ message: 'Failed to retrieve users', error: error.message });
@@ -19,50 +14,13 @@ async function usersHandler(req, res) {
 
         case 'PATCH':
             try {
-                const { userId, active, role, institution, group } = req.body;
+                const { userId, ...fields } = req.body;
                 if (!userId || typeof userId !== 'string') {
                     return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
-                const updateFields = {};
-                if (typeof active === 'boolean') updateFields.active = active;
-                if (role && typeof role === 'string') updateFields.role = role;
-                if (institution !== undefined) {
-                    const value = normalizeInstitution(institution);
-                    if (value === null) return res.status(400).json({ message: 'Invalid institution' });
-                    updateFields.institution = value;
-                }
-                if (group !== undefined) {
-                    const value = normalizeGroup(group);
-                    if (value === null) return res.status(400).json({ message: 'Invalid group' });
-                    updateFields.group = value;
-                }
-                // Same invariant as user-me.js's self-service PATCH: an
-                // admin clearing a user's institution/group here has to
-                // clear that user's matching prefilter preference too, or
-                // it stays stuck checked for a filter with nothing left to
-                // prefilter to.
-                if (updateFields.institution === '') {
-                    updateFields['preferences.prefilterDepartment'] = false;
-                }
-                if (updateFields.group === '') {
-                    updateFields['preferences.prefilterGroup'] = false;
-                }
-                if (Object.keys(updateFields).length === 0) {
-                    return res.status(400).json({ message: 'No valid fields to update' });
-                }
-                await dbConnect();
-                const user = await User.findByIdAndUpdate(
-                    requireObjectIdString(userId, 'user ID'),
-                    updateFields,
-                    { new: true, select: '-password' }
-                );
-
-                if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
-
-                res.status(200).json(user);
+                res.status(200).json(await UserService.adminUpdateUser(userId, fields));
             } catch (error) {
+                if (error.status) return res.status(error.status).json({ message: error.message });
                 console.error('Error updating user:', error);
                 res.status(500).json({ message: 'Failed to update user', error: error.message });
             }
@@ -74,13 +32,10 @@ async function usersHandler(req, res) {
                 if (!userId || typeof userId !== 'string') {
                     return res.status(400).json({ message: 'Valid user ID (string) is required' });
                 }
-                await dbConnect();
-                const user = await User.findByIdAndDelete(requireObjectIdString(userId, 'user ID'));
-                if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
+                await UserService.deleteUser(userId);
                 res.status(200).json({ message: 'User deleted' });
             } catch (error) {
+                if (error.status) return res.status(error.status).json({ message: error.message });
                 console.error('Error deleting user:', error);
                 res.status(500).json({ message: 'Failed to delete user', error: error.message });
             }
