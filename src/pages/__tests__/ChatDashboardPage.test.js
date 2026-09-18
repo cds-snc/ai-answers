@@ -51,6 +51,7 @@ vi.mock('datatables.net-react', () => {
     if (!apiRef.current) {
       apiRef.current = {
         ajaxReload: vi.fn(),
+        columnVisible: vi.fn(),
         headerCells: [{ setAttribute: vi.fn() }, { setAttribute: vi.fn() }]
       };
       mountedInstances.push(apiRef.current);
@@ -61,6 +62,7 @@ vi.mock('datatables.net-react', () => {
       const settings = {
         api: () => ({
           ajax: { reload: apiRef.current.ajaxReload },
+          column: () => ({ visible: apiRef.current.columnVisible }),
           columns: () => ({ header: () => ({ each: (fn) => headerCells.forEach(fn) }) }),
           table: () => ({ container: () => ({ querySelector: () => null }) }),
           search: () => '',
@@ -127,7 +129,7 @@ describe('ChatDashboardPage rendering', () => {
     expect(details.hidden).toBe(true);
   });
 
-  it('assign mode adds a checkbox column and loads the assignable dropdown', async () => {
+  it('assign mode shows the (always-present, hidden) checkbox column without rebuilding the table, and loads the assignable dropdown', async () => {
     mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
     // The Assign chats toggle only appears once the table actually has
     // results - simulate the real DataTables ajax callback firing with one.
@@ -141,7 +143,9 @@ describe('ChatDashboardPage rendering', () => {
     });
     await act(async () => { fireEvent.click(applyButton); });
     await waitFor(() => expect(lastColumns).not.toBeNull());
-    expect(lastColumns.some((c) => c.data === 'chatId' && c.className === 'chat-assign-checkbox-col')).toBe(false);
+    // The column is always defined, hidden until assign mode is on.
+    expect(lastColumns.find((c) => c.className === 'chat-assign-checkbox-col').visible).toBe(false);
+    const instancesBeforeToggle = mountedInstances.length;
 
     await act(async () => {
       await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
@@ -150,8 +154,10 @@ describe('ChatDashboardPage rendering', () => {
     await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
 
     await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
     await waitFor(() => expect(getByText('partner@x.ca')).toBeTruthy());
+    // Shown in place through the API - no table remount, no refetch.
+    expect(mountedInstances.length).toBe(instancesBeforeToggle);
+    expect(mountedInstances[mountedInstances.length - 1].columnVisible).toHaveBeenCalledWith(true);
 
     // The GC DS checkbox's visible box/checkmark is drawn on the <label>'s
     // own ::before - putting sr-only on the label itself (rather than a

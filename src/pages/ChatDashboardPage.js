@@ -251,12 +251,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
 
   const columns = useMemo(() => ([
-    // Bulk-assign checkbox column, only while assign mode is on (see
-    // useChatAssignBar). Plain HTML + delegated onchange in createdRow
-    // below, like UsersPage.js's row controls - not a React-mounted cell,
-    // since checked state only needs to survive redraws via the ref, not
-    // re-render reactively.
-    ...(assignBar.assignMode ? [{
+    // Bulk-assign checkbox column. Always defined, hidden until assign mode
+    // is on - shown/hidden through the DataTables API rather than added and
+    // removed, so toggling the mode never rebuilds the table (which would
+    // refetch the rows and drop the saved page length). Plain HTML +
+    // delegated onchange in createdRow below, like UsersPage.js's row
+    // controls - not a React-mounted cell, since checked state only needs
+    // to survive redraws via the ref, not re-render reactively.
+    {
+      name: 'assign',
+      visible: false,
       title: t('admin.chatDashboard.assign.selectColumn'),
       // Sorts on assignment state (null < any ObjectId ascending, per
       // chat-dashboard.js's sortFieldMap) rather than chatId, so someone
@@ -299,7 +303,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           `<label for="${safeId}"><span class="sr-only">${labelText}</span></label>` +
           `</div></div>`;
       }
-    }] : []),
+    },
     {
       title: t('admin.common.columns.chatId'),
       data: 'chatId',
@@ -406,7 +410,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // pointless column. row.pageLanguage itself is still used internally by
     // the Chat ID column's render() above (chatLangFromPageLanguage) to
     // route the transcript correctly; only the visible column is gone.
-  ]), [renderLanguageAwareText, truncateUrl, t, lang, assignBar.assignMode]);
+  ]), [renderLanguageAwareText, truncateUrl, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -468,12 +472,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               e.target.open rather than flipping: browsers fire toggle when the
               open attribute is added on mount, so an unmount/remount with
               open already true would otherwise flip the mode with no click.
-              Same set-to-what-the-box-says pattern as FilterPanel's own <details>.
-              TODO(deferred): toggling adds/removes the tickbox column, which
-              changes the column count, so DataTables drops the saved page
-              length on each toggle (sort/search are cleared on purpose
-              anyway). Fix is a permanent column toggled via visible(); not
-              worth it yet. */}
+              Same set-to-what-the-box-says pattern as FilterPanel's own <details>. */}
           <details
             className="filter-panel chat-assign-panel"
             open={assignBar.assignMode}
@@ -482,7 +481,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               const open = e.target.open;
               if (open === assignBar.assignMode) return;
               assignBar.setAssignMode(open);
-              setTableKey((k) => k + 1);
+              // Show/hide the column in place: no rebuild, no refetch.
+              tableApiRef.current?.column('assign:name').visible(open);
             }}
           >
               <summary className="filter-panel-summary">
@@ -688,6 +688,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         if (parsed && parsed.order) {
                           delete parsed.order;
                         }
+                        // Column visibility too: the Assign column is the only
+                        // one that ever toggles, and it must start hidden to
+                        // match assign mode being off on load.
+                        if (parsed && parsed.columns) {
+                          delete parsed.columns;
+                        }
                         return parsed;
                       }
                     } catch (e) {
@@ -711,7 +717,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       ...groupCallbacks,
                       createdRow: (row, data) => {
                         groupCallbacks.createdRow(row, data);
-                        if (!assignBar.assignMode) return;
                         const checkbox = row.querySelector('input.chat-assign-checkbox');
                         if (checkbox) {
                           checkbox.checked = assignBar.isChatChecked(data.chatId);
@@ -763,9 +768,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
                       const query = {
                         ...normalizedFilters,
-                        // Assignee email is only rendered by the Assign
-                        // column, so only pay for its users $lookup then.
-                        ...(assignBar.assignMode ? { includeAssignee: 'true' } : {}),
+                        // The Assign column's pills need the assignee email
+                        // whenever the column is shown, and showing it must
+                        // not refetch - so always ask for it.
+                        includeAssignee: 'true',
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,
                         orderBy,
