@@ -827,6 +827,7 @@
       "noSearchResults": "No results for {term}.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "resultsLoaded": "Results loaded.",
+      "noData": "No data.",
       "viewChatById": "View chat by ID",
       "originallyAskedIn": "Originally asked in: {language}",
       "sourceText": "Source",

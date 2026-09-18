@@ -827,6 +827,7 @@
       "noSearchResults": "Aucun résultat pour {term}.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "resultsLoaded": "Résultats chargés.",
+      "noData": "Aucune donnée.",
       "viewChatById": "Voir le chat par ID",
       "originallyAskedIn": "Posée à l'origine en : {language}",
       "sourceText": "Source",

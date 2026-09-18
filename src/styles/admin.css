@@ -48,6 +48,19 @@
   backdrop-filter: blur(2px);
 }
 
+/* LoadingOverlay `scoped`: covers the nearest positioned ancestor, not the
+   viewport. That ancestor also needs `isolation: isolate` — position alone
+   anchors the overlay but doesn't contain its z-index: 9999. */
+.loading-overlay--scoped {
+  position: absolute;
+}
+
+/* ServerDataTable.js's wrapper for its scoped LoadingOverlay. */
+.server-data-table-loading-wrapper {
+  position: relative;
+  isolation: isolate;
+}
+
 /* TODO (design review, low risk): needs review for small screens. */
 .loading-overlay-content {
   display: flex;

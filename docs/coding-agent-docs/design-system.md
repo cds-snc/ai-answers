@@ -135,7 +135,7 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 - **Never pass a spacing utility (`mt-*`/`mb-*`) to `StatusMessage`** — the box rule already carries `--gcds-spacing-250` margins.
 - Plain `style`/`isError` with no `variant` is only for content that fits none of the five (e.g. a compact inline indicator beside a label).
 - The 5-state system was built accessibility-led without a design refinement pass — functional but provisional.
-- A full-page loading overlay is a separate component, `src/components/admin/LoadingOverlay.js` — see status-and-error-messaging.md.
+- A loading overlay (full-page, or `scoped` to one region) is a separate component, `src/components/admin/LoadingOverlay.js` — see status-and-error-messaging.md.
 
 ## GC DS utility classes
 
