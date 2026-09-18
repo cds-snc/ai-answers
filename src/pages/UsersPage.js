@@ -13,6 +13,8 @@ import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
+import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
+import { PARTNER_GROUPS, getPartnerGroupLabel } from '../constants/partnerGroups.js';
 
 DataTable.use(DT);
 
@@ -89,6 +91,8 @@ const UsersPage = ({ lang }) => {
         editStatesRef.current[user._id] = {
           role: user.role,
           active: user.active,
+          institution: user.institution || '',
+          group: user.group || '',
           changed: false
         };
       });
@@ -130,7 +134,9 @@ const UsersPage = ({ lang }) => {
       const matchingUser = users.find(u => u._id === userId);
       editStatesRef.current[userId] = {
         role: matchingUser?.role || '',
-        active: matchingUser?.active || false
+        active: matchingUser?.active || false,
+        institution: matchingUser?.institution || '',
+        group: matchingUser?.group || ''
       };
     }
     const edit = editStatesRef.current[userId];
@@ -142,7 +148,9 @@ const UsersPage = ({ lang }) => {
     const original = userSnapshotsRef.current[userId];
     edit.changed = !original
       || normalizeRole(edit.role) !== normalizeRole(original.role)
-      || toBooleanish(edit.active) !== toBooleanish(original.active);
+      || toBooleanish(edit.active) !== toBooleanish(original.active)
+      || edit.institution !== (original.institution || '')
+      || edit.group !== (original.group || '');
 
     renderActionsCell(userId);
   };
@@ -166,7 +174,9 @@ const UsersPage = ({ lang }) => {
     try {
       const updatedUser = await UserService.update(userId, {
         active: edit.active,
-        role: edit.role
+        role: edit.role,
+        institution: edit.institution,
+        group: edit.group
       });
 
       // Update users array — this does redraw the table, but only once per
@@ -331,6 +341,40 @@ const UsersPage = ({ lang }) => {
       }
     },
     {
+      title: t('users.columns.institution'),
+      data: 'institution',
+      render: (data, type, row) => {
+        const userId = row._id;
+        const value = editStatesRef.current[userId]?.institution ?? data ?? '';
+        const label = value || t('users.institutionNone');
+        if (type === 'display') {
+          const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.institutionNone'))}</option>`;
+          const optionsHtml = PARTNER_DEPARTMENTS.map(d => `<option value="${escapeHtmlAttribute(d)}"${d === value ? ' selected' : ''}>${escapeHtmlAttribute(d)}</option>`).join('');
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.institution')} — ${row.email || userId}`);
+          return `<select data-userid="${userId}" data-field="institution" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+        }
+        return label;
+      }
+    },
+    {
+      // TODO: groups are a hardcoded PARTNER_GROUPS list; add a "manage
+      // groups" page/section here to create/edit them instead.
+      title: t('users.columns.group'),
+      data: 'group',
+      render: (data, type, row) => {
+        const userId = row._id;
+        const value = editStatesRef.current[userId]?.group ?? data ?? '';
+        const label = value ? getPartnerGroupLabel(value, lang) : t('users.groupNone');
+        if (type === 'display') {
+          const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
+          const optionsHtml = PARTNER_GROUPS.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${row.email || userId}`);
+          return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+        }
+        return label;
+      }
+    },
+    {
       title: t('users.columns.createdAt'),
       data: 'createdAt',
       render: (data) => new Date(data).toLocaleDateString()
@@ -374,7 +418,7 @@ const UsersPage = ({ lang }) => {
           paging: true,
           searching: true,
           ordering: true,
-          order: [[3, 'desc']],
+          order: [[5, 'desc']],
           // Same zones as the dashboards: filter box top-left, page info +
           // entries-per-page bottom-left, paging bottom-right.
           layout: {
@@ -414,7 +458,7 @@ const UsersPage = ({ lang }) => {
             // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
             actionCellsRef.current[data._id] = actionsCell;
-            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active };
+            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active, institution: data.institution, group: data.group };
             renderActionsCell(data._id);
           },
         }}

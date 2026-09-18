@@ -32,7 +32,7 @@ const UserService = {
     /**
      * Update a user.
      * @param {string} userId 
-     * @param {{active?: boolean, role?: string}} updates 
+     * @param {{active?: boolean, role?: string, institution?: string, group?: string}} updates 
      * @returns {Promise<Object>}
      */
     async update(userId, updates) {

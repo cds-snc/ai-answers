@@ -22,6 +22,24 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Institution the user belongs to, as a partner department abbrKey from
+  // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
+  // on the Manage user accounts page. Orthogonal to a chat's
+  // context.department - a DND reviewer can evaluate an IRCC chat.
+  institution: {
+    type: String,
+    default: '',
+    trim: true,
+    index: true
+  },
+  // Group / team within the institution, one of
+  // src/constants/partnerGroups.js ('' = none). Set the same way as
+  // institution (not collected at signup).
+  group: {
+    type: String,
+    default: '',
+    trim: true
+  },
   // Two factor authentication fields
   twoFACode: {
     type: String,
