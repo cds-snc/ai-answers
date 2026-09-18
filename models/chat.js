@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ASSIGN_NOTE_MAX_LENGTH } from '../src/constants/chatAssign.js';
 
 const ChatSchema = new mongoose.Schema({
     chatId: { type: String, required: true },
@@ -23,7 +24,7 @@ const ChatSchema = new mongoose.Schema({
     // src/constants/chatAssign.js) - that's the real enforcement, since
     // findOneAndUpdate there doesn't run Mongoose validators by default.
     // maxlength here is defense-in-depth for any other write path.
-    assignedNotes: { type: String, default: '', maxlength: 500 },
+    assignedNotes: { type: String, default: '', maxlength: ASSIGN_NOTE_MAX_LENGTH },
 }, {
     timestamps: true,
     versionKey: false,

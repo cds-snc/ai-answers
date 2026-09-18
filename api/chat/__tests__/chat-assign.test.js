@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import handler from '../chat-assign.js';
 import dbConnect from '../../db/db-connect.js';
 import { Chat } from '../../../models/chat.js';
@@ -232,6 +232,27 @@ describe('chat-assign', () => {
 });
 
 describe('chat-assign DELETE (unassign)', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('409s instead of clearing a newer assignment made after the authorization read', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const first = await makeUser();
+    const second = await makeUser();
+    const chat = await Chat.create({ chatId: `chat-unassign-race-${Date.now()}`, interactions: [], assignedTo: second._id, assignedBy: admin._id, assignedOn: new Date() });
+
+    // The authorization read sees a stale assignee (first); the chat is now
+    // assigned to second. The clear must not touch second's assignment.
+    vi.spyOn(Chat, 'findOne').mockReturnValueOnce({ lean: async () => ({ assignedTo: first._id, assignedBy: admin._id }) });
+
+    const res = await runDelete({ chatId: chat.chatId }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('assignment_changed');
+    const unchanged = await Chat.findOne({ chatId: chat.chatId }).lean();
+    expect(String(unchanged.assignedTo)).toBe(second._id.toString());
+  });
+
   it('lets the current assignee remove their own assignment', async () => {
     await dbConnect();
     const assignee = await makeUser();
