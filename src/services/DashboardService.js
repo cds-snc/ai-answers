@@ -29,10 +29,11 @@ class DashboardService {
     }
   }
 
-  static async assignChat({ chatId, assignedTo, notes }) {
+  // Assignment is per question: interactionId is the Interaction's _id.
+  static async assignQuestion({ interactionId, assignedTo, notes }) {
     const response = await AuthService.fetch(getApiUrl('chat-assign'), {
       method: 'POST',
-      body: JSON.stringify({ chatId, assignedTo, notes })
+      body: JSON.stringify({ interactionId, assignedTo, notes })
     });
     if (!response.ok) {
       // chat-assign.js answers with a stable `code` for the reasons a caller
@@ -40,7 +41,7 @@ class DashboardService {
       // status so the hook can say which one happened.
       let code;
       try { ({ code } = await response.json()); } catch { /* no body */ }
-      const error = new Error('Failed to assign chat');
+      const error = new Error('Failed to assign question');
       error.code = code;
       error.status = response.status;
       throw error;
@@ -48,10 +49,10 @@ class DashboardService {
     return response.json();
   }
 
-  static async unassignChat({ chatId }) {
+  static async unassignQuestion({ interactionId }) {
     const response = await AuthService.fetch(getApiUrl('chat-assign'), {
       method: 'DELETE',
-      body: JSON.stringify({ chatId })
+      body: JSON.stringify({ interactionId })
     });
     if (!response.ok) {
       throw new Error('Failed to remove assignment');

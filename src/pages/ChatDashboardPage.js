@@ -288,9 +288,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       visible: false,
       title: t('admin.chatDashboard.assign.selectColumn'),
       // Sorts on assignment state (null < any ObjectId ascending, per
-      // chat-dashboard.js's sortFieldMap) rather than chatId, so someone
-      // can sort this column to find the unassigned rows. The cell itself
-      // still needs the row's chatId, read via `row` below - not `value`.
+      // chat-dashboard.js's sortFieldMap), so someone can sort this column
+      // to find the unassigned rows. The cell itself needs the row's own
+      // question id (row._id, the Interaction), read via `row` below - not
+      // `value`. One control per row: assignment is per question.
       data: 'assignedTo',
       orderable: true,
       searchable: false,
@@ -303,28 +304,32 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       // stay a normal, visible element; only its text goes in an sr-only
       // span, so this column stays checkbox-only visually.
       //
-      // An already-assigned row shows the assignee as a pill (same shape as
-      // FilterPanel's removable filter pills) instead of a checkbox - it
-      // can't be picked for a bulk assign (chat-assign.js rejects that,
+      // An already-assigned question shows the assignee as a pill (same
+      // shape as FilterPanel's removable filter pills) instead of a checkbox
+      // - it can't be picked for a bulk assign (chat-assign.js rejects that,
       // 409), and the pill's × is how to remove the assignment instead.
       render: (value, type, row) => {
-        const chatId = row?.chatId;
-        if (!chatId) return '';
-        const safeChatId = escapeHtmlAttribute(chatId);
+        const questionId = row?._id;
+        if (!questionId) return '';
+        const safeQuestionId = escapeHtmlAttribute(questionId);
         // Keyed on assignedTo, not the email: the email lookup comes back
         // empty for a deleted account, and that chat still needs its pill so
         // the assignment can be removed.
         if (row?.assignedTo) {
           const safeEmail = escapeHtmlAttribute(row.assignedToEmail || t('admin.chatDashboard.assign.unknownAccount'));
           const removeLabel = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.removeAssignment'))} ${safeEmail}`;
-          return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-chat-id="${safeChatId}" aria-label="${removeLabel}">` +
+          return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-question-id="${safeQuestionId}" aria-label="${removeLabel}">` +
             `${safeEmail}<span class="filter-pill__close" aria-hidden="true">×</span>` +
             `</button>`;
         }
-        const safeId = escapeHtmlAttribute(`chat-assign-${chatId}`);
-        const labelText = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.selectChat'))} ${safeChatId}`;
+        const safeId = escapeHtmlAttribute(`question-assign-${questionId}`);
+        const labelText = escapeHtmlAttribute(
+          t('admin.chatDashboard.assign.selectQuestion')
+            .replace('{number}', () => String(row?.questionNumber || ''))
+            .replace('{chatId}', () => String(row?.chatId || ''))
+        );
         return `<div class="gc-chckbxrdio sm"><div class="checkbox">` +
-          `<input type="checkbox" class="chat-assign-checkbox" id="${safeId}" data-chat-id="${safeChatId}">` +
+          `<input type="checkbox" class="chat-assign-checkbox" id="${safeId}" data-question-id="${safeQuestionId}">` +
           `<label for="${safeId}"><span class="sr-only">${labelText}</span></label>` +
           `</div></div>`;
       }
@@ -526,7 +531,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     message={t(
                       assignBar.validationErrorCode === 'no_expert'
                         ? 'admin.chatDashboard.assign.errorNoExpert'
-                        : 'admin.chatDashboard.assign.errorNoChat'
+                        : 'admin.chatDashboard.assign.errorNoQuestion'
                     )}
                     errorCount={assignBar.validationErrorCount}
                     inputRef={assignErrorRef}
@@ -734,10 +739,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       stateRef: chatGroupStateRef,
                       columns,
                       groupedColumns: [
-                        // One checkbox/pill per chat, on its first row; the
-                        // rows below are emptied (no duplicate ids, no
-                        // control per interaction).
-                        { data: 'assignedTo', mergeEmpty: true, blankRepeats: true },
+                        // The assign column is deliberately NOT grouped:
+                        // assignment is per question, so every row keeps
+                        // its own checkbox/pill.
                         { data: 'program' },
                         { data: 'department' },
                         { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
@@ -749,19 +753,19 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         groupCallbacks.createdRow(row, data);
                         const checkbox = row.querySelector('input.chat-assign-checkbox');
                         if (checkbox) {
-                          checkbox.checked = assignBar.isChatChecked(data.chatId);
+                          checkbox.checked = assignBar.isQuestionChecked(data._id);
                           row.classList.toggle('chat-row--selected', checkbox.checked);
                           checkbox.onchange = () => {
-                            assignBar.toggleChatChecked(data.chatId, checkbox.checked);
+                            assignBar.toggleQuestionChecked(data._id, checkbox.checked);
                             row.classList.toggle('chat-row--selected', checkbox.checked);
                           };
                         }
                         const pill = row.querySelector('button.chat-assign-pill');
                         if (pill) {
-                          assignBar.forgetChat(data.chatId);
+                          assignBar.forgetQuestion(data._id);
                           pill.onclick = () => {
                             if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
-                            assignBar.unassignChat(data.chatId, () => tableApiRef.current?.ajax.reload());
+                            assignBar.unassignQuestion(data._id, () => tableApiRef.current?.ajax.reload());
                           };
                         }
                       },

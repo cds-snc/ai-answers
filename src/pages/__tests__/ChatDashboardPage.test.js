@@ -21,8 +21,8 @@ vi.mock('../../services/DashboardService.js', () => ({
       recordsFiltered: 0,
       data: []
     })),
-    assignChat: vi.fn(() => Promise.resolve({})),
-    unassignChat: vi.fn(() => Promise.resolve({}))
+    assignQuestion: vi.fn(() => Promise.resolve({})),
+    unassignQuestion: vi.fn(() => Promise.resolve({}))
   }
 }));
 
@@ -164,7 +164,7 @@ describe('ChatDashboardPage rendering', () => {
     // span inside it) clips that pseudo-element away too, making the
     // checkbox invisible. Regression coverage for that exact bug.
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
-    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123' });
+    const html = checkboxColumn.render(null, 'display', { _id: 'q-123', chatId: 'chat-123', questionNumber: 1 });
     expect(html).toContain('class="gc-chckbxrdio sm"');
     expect(html).toMatch(/<label for="[^"]+"><span class="sr-only">/);
     expect(html).not.toMatch(/<label[^>]*class="sr-only"/);
@@ -189,14 +189,14 @@ describe('ChatDashboardPage rendering', () => {
     await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
 
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
-    const html = checkboxColumn.render(null, 'display', { chatId: 'chat-123', assignedTo: 'u1', assignedToEmail: 'partner@x.ca' });
+    const html = checkboxColumn.render(null, 'display', { _id: 'q-123', chatId: 'chat-123', questionNumber: 1, assignedTo: 'u1', assignedToEmail: 'partner@x.ca' });
     expect(html).toContain('class="filter-pill filter-pill--closable chat-assign-pill"');
-    expect(html).toContain('data-chat-id="chat-123"');
+    expect(html).toContain('data-question-id="q-123"');
     expect(html).toContain('partner@x.ca');
     expect(html).not.toContain('type="checkbox"');
 
     // Assignee account deleted: no email, but still assigned - keep the pill.
-    const orphan = checkboxColumn.render(null, 'display', { chatId: 'chat-124', assignedTo: 'u2', assignedToEmail: '' });
+    const orphan = checkboxColumn.render(null, 'display', { _id: 'q-124', chatId: 'chat-124', questionNumber: 2, assignedTo: 'u2', assignedToEmail: '' });
     expect(orphan).toContain('chat-assign-pill');
     expect(orphan).toContain('admin.chatDashboard.assign.unknownAccount');
     expect(orphan).not.toContain('type="checkbox"');
@@ -226,7 +226,7 @@ describe('ChatDashboardPage rendering', () => {
     const error = await waitFor(() => getByText('admin.chatDashboard.assign.errorNoExpert'));
     expect(error).toBeTruthy();
     await waitFor(() => expect(document.activeElement).toBe(error));
-    expect(DashboardService.assignChat).not.toHaveBeenCalled();
+    expect(DashboardService.assignQuestion).not.toHaveBeenCalled();
   });
 
   it('unassign pill: confirm -> calls unassignChat -> reloads the table -> moves focus to the outcome message', async () => {
@@ -253,7 +253,7 @@ describe('ChatDashboardPage rendering', () => {
     // then run createdRow the way the library would - this is what wires
     // the pill's onclick, same delegated-handler pattern as the checkbox.
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
-    const rowData = { chatId: 'chat-123', assignedTo: 'u1', assignedToEmail: 'partner@x.ca' };
+    const rowData = { _id: 'q-123', chatId: 'chat-123', questionNumber: 1, assignedTo: 'u1', assignedToEmail: 'partner@x.ca' };
     const row = document.createElement('tr');
     const cell = document.createElement('td');
     cell.innerHTML = checkboxColumn.render(null, 'display', rowData);
@@ -266,7 +266,7 @@ describe('ChatDashboardPage rendering', () => {
     await act(async () => { fireEvent.click(pill); });
 
     expect(confirmSpy).toHaveBeenCalled();
-    await waitFor(() => expect(DashboardService.unassignChat).toHaveBeenCalledWith({ chatId: 'chat-123' }));
+    await waitFor(() => expect(DashboardService.unassignQuestion).toHaveBeenCalledWith({ interactionId: 'q-123' }));
 
     // Longer waits: this test drives a DOM row outside React, and the focus
     // move lands on the next render - slow under a parallel run.
