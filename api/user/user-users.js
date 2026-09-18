@@ -36,6 +36,17 @@ async function usersHandler(req, res) {
                     if (value === null) return res.status(400).json({ message: 'Invalid group' });
                     updateFields.group = value;
                 }
+                // Same invariant as user-me.js's self-service PATCH: an
+                // admin clearing a user's institution/group here has to
+                // clear that user's matching prefilter preference too, or
+                // it stays stuck checked for a filter with nothing left to
+                // prefilter to.
+                if (updateFields.institution === '') {
+                    updateFields['preferences.prefilterDepartment'] = false;
+                }
+                if (updateFields.group === '') {
+                    updateFields['preferences.prefilterGroup'] = false;
+                }
                 if (Object.keys(updateFields).length === 0) {
                     return res.status(400).json({ message: 'No valid fields to update' });
                 }

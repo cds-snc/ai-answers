@@ -30,8 +30,8 @@ const UserService = {
     },
 
     /**
-     * Update the signed-in user's own profile (institution, group).
-     * @param {{institution?: string, group?: string}} updates
+     * Update the signed-in user's own profile (institution, group, preferences).
+     * @param {{institution?: string, group?: string, preferences?: {prefilterDepartment: boolean}}} updates
      * @returns {Promise<Object>} the updated profile
      */
     async updateMe(updates) {
