@@ -753,6 +753,7 @@
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Institution partenaire",
       "allDepartments": "Toutes les institutions",
+      "group": "Groupe",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -1109,6 +1110,29 @@
         "completed": "Terminé",
         "pending": "En attente"
       }
+    },
+    "preferences": {
+      "heading": "Préférences de filtre du tableau de bord",
+      "prefilterDepartment": "Votre institution",
+      "prefilterGroup": "Votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "noGroup": "Vous devez choisir un groupe.",
+      "noInstitution": "Vous devez choisir une institution.",
+      "savedChange": "Préférence enregistrée : {change}",
+      "changeInstitutionOn": "institution sélectionnée",
+      "changeInstitutionOff": "institution désélectionnée",
+      "changeGroupOn": "groupe sélectionné",
+      "changeGroupOff": "groupe désélectionné",
+      "saveError": "Impossible d'enregistrer la préférence.",
+      "filteredNoticeTitle": "Fonctionnement des préférences de filtre",
+      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, de *mesures* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
+      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, de *mesures* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage* et d'*évaluation* :",
+      "filteredBothChatEvalEffect": "tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué.",
+      "filteredBothMetricsPartnerLabel": "Tableaux de bord de *mesures* et *partenaire* :",
+      "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
+      "filteredPublicLabel": "Tableau de bord *public* :",
+      "filteredPublicEffect": "non concerné.",
+      "filteredFooter": "Vous pouvez toujours modifier ou effacer ces filtres à tout moment dans chaque tableau de bord."
     }
   },
   "users": {

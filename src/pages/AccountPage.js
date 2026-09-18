@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GcdsButton, GcdsContainer, GcdsLink } from '@gcds-core/components-react';
+import { GcdsButton, GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
@@ -15,6 +15,14 @@ import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 
+// Bolds just the dashboard-type name(s) inside a "How filter preferences
+// work" label (e.g. "*Chat* and *evaluation* dashboards:") - the locale
+// string marks which word(s) with *asterisks* since that differs per
+// language (French embeds the type mid-sentence, not at the start), so a
+// fixed word-position split in JS can't do it. Odd-indexed segments are the
+// bolded names.
+const renderBoldLabel = (text) => text.split('*').map((segment, i) => (i % 2 === 1 ? <strong key={i}>{segment}</strong> : segment));
+
 // The signed-in user's own account: who they are and which institution /
 // group an admin has placed them in. Read fresh from the server on every
 // visit (the session object doesn't carry institution/group).
@@ -28,6 +36,7 @@ const AccountPage = ({ lang = 'en' }) => {
   // rather than the boolean so a second failed retry still re-fires focus.
   const [loadErrorCount, setLoadErrorCount] = useState(0);
   const loadErrorRef = useFocusOnChange(loadErrorCount);
+  const [prefStatus, setPrefStatus] = useState(null); // { text, isError }
   const [profileStatus, setProfileStatus] = useState(null); // { text, isError }
   // Institution/group are staged here and written by an explicit Save (SC
   // 3.2.2), never on the select's change event: a closed <select> fires
@@ -57,14 +66,18 @@ const AccountPage = ({ lang = 'en' }) => {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveFocusCount, setProfileSaveFocusCount] = useState(0);
   const profileStatusRef = useFocusOnChange(profileSaveFocusCount);
+  // Field-level validation for the pre-filter checkbox: it needs an
+  // institution first.
+  const prefError = useInlineFormError();
+  const groupPrefError = useInlineFormError();
   // Institution/group are one-time self-picks (api/user/user-me.js locks
   // them after the first set) - these surface the 403 as an inline error
-  // right on the field rather than
+  // right on the field, same as the pre-filter checkboxes above, rather than
   // a page-level StatusMessage.
   const institutionError = useInlineFormError();
   const groupError = useInlineFormError();
-  // refreshUser re-reads auth-me so the signed-in user reflects the change
-  // without a full reload.
+  // refreshUser re-reads auth-me so FilterPanel sees the new preference on
+  // the next dashboard visit without a full reload.
   const refreshUser = useAuth()?.refreshUser;
   const authUserId = useAuth()?.currentUser?.userId;
 
@@ -83,11 +96,30 @@ const AccountPage = ({ lang = 'en' }) => {
     return () => { didCancel = true; };
   }, []);
 
+  // One save path for every self-service field; `setStatus` picks which
+  // StatusMessage (profile vs preferences) reports the outcome, and
+  // `statusText` is the fully-built success copy - callers build it from
+  // their own template ("Account updated: ..." for the institution/group
+  // fields, "Preference saved: ..." for the two checkboxes) so each area
+  // keeps its own voice.
+  const saveProfile = async (updates, setStatus, statusText, errorKey) => {
+    setStatus(null);
+    try {
+      const updated = await UserService.updateMe(updates);
+      setProfile(updated);
+      if (refreshUser) await refreshUser();
+      setStatus({ text: statusText, isError: false });
+    } catch (error) {
+      console.error('Error saving account:', error);
+      setStatus({ text: t(errorKey), isError: true });
+    }
+  };
   // Staging only - see `draft`. A fresh edit supersedes the last outcome and
   // any lock error from a previous Save.
   const handleDraftChange = (field, value) => {
     setDraft((prev) => ({ ...prev, [field]: value }));
     setProfileStatus(null);
+    setPrefStatus(null);
     institutionError.clearError();
     groupError.clearError();
   };
@@ -110,10 +142,13 @@ const AccountPage = ({ lang = 'en' }) => {
     profileSavingRef.current = true;
     setProfileSaving(true);
     setProfileStatus(null);
+    setPrefStatus(null);
     try {
       const updated = await UserService.updateMe(updates);
       applyProfile(updated);
       if (refreshUser) await refreshUser();
+      prefError.clearError();
+      groupPrefError.clearError();
       setProfileStatusMovesFocus(true);
       setProfileStatus({ text: t('account.updated').replace('{change}', () => changes.join(', ')), isError: false });
       setProfileSaveFocusCount((n) => n + 1);
@@ -136,6 +171,42 @@ const AccountPage = ({ lang = 'en' }) => {
   // than an enabled select that fails after the fact (SC 3.3.3).
   const institutionLocked = profile?.role !== 'admin' && Boolean(profile?.institution);
   const groupLocked = profile?.role !== 'admin' && Boolean(profile?.group);
+  const handlePrefilterChange = (checked) => {
+    if (checked && !profile?.institution) {
+      // A blocked action is still a fresh action - clear a stale success/
+      // error from a previous save, or it sits next to the new inline
+      // validation error looking like it's still in effect.
+      setPrefStatus(null);
+      prefError.triggerError();
+      return;
+    }
+    prefError.clearError();
+    setProfileStatus(null);
+    const change = checked ? t('account.preferences.changeInstitutionOn') : t('account.preferences.changeInstitutionOff');
+    return saveProfile(
+      { preferences: { prefilterDepartment: checked } },
+      setPrefStatus,
+      t('account.preferences.savedChange').replace('{change}', () => change),
+      'account.preferences.saveError'
+    );
+  };
+  const handlePrefilterGroupChange = (checked) => {
+    if (checked && !profile?.group) {
+      setPrefStatus(null);
+      groupPrefError.triggerError();
+      return;
+    }
+    groupPrefError.clearError();
+    setProfileStatus(null);
+    const change = checked ? t('account.preferences.changeGroupOn') : t('account.preferences.changeGroupOff');
+    return saveProfile(
+      { preferences: { prefilterGroup: checked } },
+      setPrefStatus,
+      t('account.preferences.savedChange').replace('{change}', () => change),
+      'account.preferences.saveError'
+    );
+  };
+
   // Same Creator / Expert columns as EvalDashboardPage.js: the signed-in
   // account that asked, and the expert who evaluated (blank when not yet).
   // No lang="en" wrap - email addresses aren't prose, a screen reader's
@@ -210,6 +281,25 @@ const AccountPage = ({ lang = 'en' }) => {
   }), [assignedChatColumns]);
 
   const roleLabel = profile?.role ? t(`users.roles.${profile.role}`) : '';
+
+  // Persistent explainer for the two checkboxes above. With only one
+  // preference on, every dashboard behaves the same (a single condition,
+  // nothing to combine) - one plain-language paragraph covers it. With both
+  // on, chat/eval dashboards OR department+group (api/util/chat-filters.js)
+  // but metrics/partner dashboards AND them (same api/metrics/* pipeline -
+  // see project_metrics_and_or_mismatch memory), so that case gets three
+  // short paragraphs, one per dashboard group, instead of one that has to
+  // hold both rules at once.
+  const hasDeptPref = Boolean(profile?.preferences?.prefilterDepartment);
+  const hasGroupPref = Boolean(profile?.preferences?.prefilterGroup);
+  const showBothPrefilterNotice = hasDeptPref && hasGroupPref;
+  const prefilterMessageKey = showBothPrefilterNotice
+    ? null
+    : hasDeptPref
+      ? 'account.preferences.filteredInstitution'
+      : hasGroupPref
+        ? 'account.preferences.filteredGroup'
+        : null;
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -335,6 +425,76 @@ const AccountPage = ({ lang = 'en' }) => {
         )}
       </section>
 
+      {profile && (
+        <section className="mb-400">
+          <h2 className="mb-400">{t('account.preferences.heading')}</h2>
+          {prefError.hasError && (
+            <FeedbackInlineError
+              id="pref-prefilter-department-error"
+              message={t('account.preferences.noInstitution')}
+              errorCount={prefError.errorCount}
+              inputRef={prefError.errorRef}
+            />
+          )}
+          <div className="gc-chckbxrdio md">
+            <div className="checkbox">
+              <input
+                type="checkbox"
+                id="pref-prefilter-department"
+                checked={Boolean(profile.preferences?.prefilterDepartment)}
+                aria-describedby={prefError.hasError ? 'pref-prefilter-department-error' : undefined}
+                aria-invalid={prefError.hasError ? 'true' : undefined}
+                onChange={(e) => handlePrefilterChange(e.target.checked)}
+              />
+              <label htmlFor="pref-prefilter-department">{t('account.preferences.prefilterDepartment')}</label>
+            </div>
+          </div>
+          {groupPrefError.hasError && (
+            <FeedbackInlineError
+              id="pref-prefilter-group-error"
+              message={t('account.preferences.noGroup')}
+              errorCount={groupPrefError.errorCount}
+              inputRef={groupPrefError.errorRef}
+            />
+          )}
+          <div className="gc-chckbxrdio md">
+            <div className="checkbox">
+              <input
+                type="checkbox"
+                id="pref-prefilter-group"
+                checked={Boolean(profile.preferences?.prefilterGroup)}
+                aria-describedby={groupPrefError.hasError ? 'pref-prefilter-group-error' : undefined}
+                aria-invalid={groupPrefError.hasError ? 'true' : undefined}
+                onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
+              />
+              <label htmlFor="pref-prefilter-group">{t('account.preferences.prefilterGroup')}</label>
+            </div>
+          </div>
+          <StatusMessage variant={prefStatus?.isError ? 'error' : 'success'} message={prefStatus?.text || ''} />
+          {(prefilterMessageKey || showBothPrefilterNotice) && (
+            <GcdsNotice
+              noticeRole="info"
+              noticeTitleTag="h3"
+              noticeTitle={t('account.preferences.filteredNoticeTitle')}
+              className="mt-300 mb-0"
+            >
+              {showBothPrefilterNotice ? (
+                <>
+                  <GcdsText>{renderBoldLabel(t('account.preferences.filteredBothChatEvalLabel'))} {t('account.preferences.filteredBothChatEvalEffect')}</GcdsText>
+                  <GcdsText>{renderBoldLabel(t('account.preferences.filteredBothMetricsPartnerLabel'))} {t('account.preferences.filteredBothMetricsPartnerEffect')}</GcdsText>
+                </>
+              ) : (
+                <GcdsText>{renderBoldLabel(t(prefilterMessageKey))}</GcdsText>
+              )}
+              {/* Public dashboard never consumes this preference (PublicDashboard.js
+                  uses DashboardFilterBar, not FilterPanel) - called out the same way
+                  regardless of which preference(s) are on. */}
+              <GcdsText>{renderBoldLabel(t('account.preferences.filteredPublicLabel'))} {t('account.preferences.filteredPublicEffect')}</GcdsText>
+              <GcdsText>{t('account.preferences.filteredFooter')}</GcdsText>
+            </GcdsNotice>
+          )}
+        </section>
+      )}
       {profile && (
         <section className="mb-400">
           <h2 className="mb-400">{t('account.activityHeading')}</h2>
