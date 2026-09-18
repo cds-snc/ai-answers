@@ -883,6 +883,35 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
+      },
+      "assign": {
+        "toggleOn": "Assign question(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectQuestion": "Select question {number} of chat {chatId}",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "noInstitution": "You can only assign questions to yourself. Pick an institution or group on your account page to also assign questions to teammates.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign ({count}) to reviewer",
+        "assignChatsWithNote": "Assign ({count}) to reviewer with note",
+        "assigning": "Assigning…",
+        "errorNoExpert": "Choose a reviewer to assign to.",
+        "errorNoQuestion": "Choose at least one question in the Assign column.",
+        "assignSuccess": "Assigned {count} question(s).",
+        "assignSuccessWithNote": "Assigned {count} question(s) with a note.",
+        "assignError": "Failed to assign {count} question(s).",
+        "assignErrorAlreadyAssigned": "{count} question(s) were already assigned to someone else.",
+        "assignErrorNoteTooLong": "The note is too long.",
+        "assignErrorNotAllowed": "You can't assign questions to that reviewer.",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unknownAccount": "Unknown account",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
       }
     },
     "evalDashboard": {

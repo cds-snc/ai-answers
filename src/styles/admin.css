@@ -554,6 +554,83 @@
   background: var(--gcds-button-secondary-hover-background);
 }
 
+/* ChatDashboardPage.js bulk chat-assign toolbar: reuses .filter-panel/
+   .filter-panel-summary/.filter-panel-content as-is (same expand/collapse
+   details, chevron, and box treatment as "Filters" and EvalDashboardPage's
+   eval-search-chat-id) - no chat-assign-panel box CSS of its own. The
+   panel/border stays full width like every other .filter-panel; .text-
+   measure (global.css) is on .filter-panel-content itself (in JSX), not the
+   outer box, so only the content readably narrows - same idea as
+   BatchUpload's form, just scoped one level in.
+   One override: the shared closed-state summary (.filter-panel:not([open])
+   > .filter-panel-summary, above) is solid blue - a "primary" look that's
+   right for "Filters" but not wanted here, so this panel gets its own
+   closed-state look instead, same tokens .filter-button-outline uses
+   elsewhere in this panel (secondary/outline, not primary). */
+/* Matches .dashboard-table-container's breakout below it, not FilterPanel's
+   narrower container above - so its left edge lines up with the table/
+   search, not the filters. */
+/* gcds-spacing-300 offset baked into the panel's own position (not the
+   summary), so it stays put across open/closed instead of jumping. */
+.chat-assign-panel {
+  width: calc(90vw - var(--gcds-spacing-300));
+  margin-left: calc(50% - 45vw + var(--gcds-spacing-300));
+  margin-right: calc(50% - 45vw);
+}
+
+.chat-assign-panel > .filter-panel-content {
+  margin-left: var(--gcds-spacing-300);
+  margin-bottom: var(--gcds-spacing-300);
+}
+
+.chat-assign-panel:not([open]) > .filter-panel-summary {
+  margin-bottom: 0;
+  background: var(--gcds-button-secondary-default-background);
+  border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+.chat-assign-panel:not([open]) > .filter-panel-summary:hover {
+  background: var(--gcds-button-secondary-hover-background);
+}
+
+/* :focus:hover ties this override's own specificity (both are 3 components)
+   with the shared .filter-panel-summary:focus:hover rule (admin.css, GCDS
+   focus states) - a real collision, not a hypothetical one: clicking the
+   summary keeps focus on it while the cursor is still over it, so this
+   combination is what actually happens right after every click. Without
+   this, that shared rule's white text (--gcds-details-focus-text) wins on
+   source order, unreadable against this panel's now-light background.
+   outline/box-shadow (the actual focus indicator) are untouched - only
+   background-color/color are overridden here. */
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus,
+.chat-assign-panel:not([open]) > .filter-panel-summary:focus:hover {
+  background-color: var(--gcds-button-secondary-hover-background);
+  color: var(--gcds-button-secondary-default-text);
+}
+
+/* Left-aligned, under the expert picker - .filter-actions itself is
+   right-aligned (FilterPanel's own Apply/Clear row), not what's wanted here. */
+.chat-assign-actions {
+  justify-content: flex-start;
+  padding-top: var(--gcds-spacing-150);
+}
+
+.chat-assign-note {
+  margin-top: var(--gcds-spacing-150);
+}
+
+/* Same width as the expert <select> above it. */
+.chat-assign-note-textarea {
+  width: 100%;
+  height: 100px;
+}
+
+.chat-assign-note-count {
+  margin: var(--gcds-spacing-50) 0 0;
+  color: var(--gcds-text-secondary);
+}
+
 /* Same link look as .filter-button-secondary, flush left and sized like the
    surrounding text — for when it sits inline in a list of GcdsLinks instead
    of a button row. GcdsLink defaults to size="inherit", so matching it here
@@ -1041,6 +1118,11 @@ table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-group
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_1,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_2,
 table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr > .sorting_3 {
+  box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
+}
+/* Checked-for-assignment row: whole-row fill, same pale blue and technique
+   as the sort highlight above. */
+table.dataTable.dashboard-table.dashboard-table--grouped > tbody > tr.chat-row--selected > * {
   box-shadow: inset 0 0 0 9999px rgba(235, 242, 250, 1);
 }
 /* Same blue highlight, for plain (non-grouped) .dashboard-table instances -
