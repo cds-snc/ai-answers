@@ -2,7 +2,7 @@
 //
 // Single source of truth for the Group dropdowns (Manage user accounts page,
 // Manage your account page) and the server-side validation in
-// api/util/user-profile.js. Deliberately a short curated list for now - add
+// services/UserService.js. Deliberately a short curated list for now - add
 // entries here as partner teams come on board. The stored value is the
 // English label (the key below); keep entries stable once users are
 // assigned to them. Labels are per language because the value is shown in
