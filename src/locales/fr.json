@@ -1050,13 +1050,17 @@
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "institutionNone": "Aucune",
+    "groupNone": "Aucun",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Groupe"
     },
     "roles": {
       "admin": "Administrateur",
