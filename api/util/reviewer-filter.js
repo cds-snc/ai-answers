@@ -1,5 +1,5 @@
 /**
- * The chat-assignment membership rule, shared by chat-assign.js's assign and
+ * The chat-assignment membership rule, shared by chat-assign-interaction.js's assign and
  * unassign handlers and user-assignable.js's picker list: two users are
  * "membership-linked" when they share a non-empty institution or a
  * non-empty group. An unset field never counts as matching another unset

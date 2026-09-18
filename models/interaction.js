@@ -54,11 +54,11 @@ const InteractionSchema = new mongoose.Schema({
   // to one partner user for review. Per question, not per chat - the
   // questions in one chat can belong to different departments and go to
   // different reviewers. Single assignee at a time; assigning an already-
-  // assigned question is rejected (409 in chat-assign.js). No history kept.
+  // assigned question is rejected (409 in chat-assign-interaction.js). No history kept.
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedOn: { type: Date, default: null },
-  // Length enforced in chat-assign.js (findOneAndUpdate skips validators);
+  // Length enforced in chat-assign-interaction.js (findOneAndUpdate skips validators);
   // maxlength here is defense-in-depth for any other write path.
   assignedNotes: { type: String, default: '', maxlength: ASSIGN_NOTE_MAX_LENGTH },
   publicFeedback: {
