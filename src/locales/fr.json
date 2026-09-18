@@ -1122,6 +1122,14 @@
     "indigenousLanguageBlocking": {
       "label": "Blocage des langues autochtones du Canada"
     },
+    "downloadWebPageCache": {
+      "enabledLabel": "Mettre en cache les pages Web téléchargées",
+      "description": "Lorsqu’il est activé, les pages Web publiques sont mises en cache pendant un maximum de 12 heures. S3 supprime les fichiers du cache après un jour.",
+      "clear": "Vider le cache des pages Web",
+      "clearing": "Suppression des pages Web en cache...",
+      "clearSuccess": "{count} pages Web en cache supprimées.",
+      "clearError": "Impossible de vider le cache des pages Web."
+    },
     "health": {
       "title": "Vérifications de santé",
       "description": "Contrôlez le moniteur de santé automatisé et ses vérifications des dépendances.",
@@ -1175,7 +1183,8 @@
       "notApplicable": "Sans objet",
       "actions": {
         "settingUpdated": "Paramètre modifié",
-        "cacheRefreshed": "Cache des paramètres rafraîchi"
+        "cacheRefreshed": "Cache des paramètres rafraîchi",
+        "downloadWebPageCacheCleared": "Cache des pages Web téléchargées vidé"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
@@ -1365,6 +1374,8 @@
     "pass": "Réussite",
     "fail": "Échoué",
     "downloadSuccess": "Réussi",
+    "downloadSuccessCached": "Réussi depuis le cache",
+    "downloadSuccessDownloaded": "Réussi après téléchargement",
     "downloadPartial": "Partiel",
     "details": "Détails",
     "fallbackSourceChatId": "ID de chat source pour le repli",
@@ -1762,6 +1773,8 @@
         "totalCount": "Questions avec cet appel",
         "completedCount": "Complétés",
         "errorCount": "Erreurs",
+        "cacheHitCount": "Résultats du cache",
+        "originCount": "Téléchargements depuis la source",
         "errorPercent": "% d'erreurs",
         "median": "Médiane des complétés (ms)",
         "p95": "P95 des complétés (ms)"

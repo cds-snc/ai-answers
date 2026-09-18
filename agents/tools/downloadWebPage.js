@@ -5,7 +5,11 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { getEncoding } from "js-tiktoken";
+import { createHash } from "node:crypto";
 import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
+import { SettingsService } from "../../services/SettingsService.js";
+import storageService from "../../services/Storage.js";
+import { graphRequestContext } from "../graphs/requestContext.js";
 import {
   retryOnTransientError,
   isTransientNetworkError,
@@ -60,6 +64,48 @@ const MIN_CONTENT_CHARS = 50;
 const SETTLED_FAILURE_CODES = new Set(["ENOTFOUND", "ECONNREFUSED"]);
 
 export const REQUEST_TIMEOUT_MS = 5000;
+export const CACHE_FRESHNESS_MS = 12 * 60 * 60 * 1000;
+export const CACHE_PREFIX = "download-web-page-cache/v1/";
+
+function cacheEnabled() {
+  return SettingsService.get("downloadWebPage.cache.enabled") === "true";
+}
+
+function cacheObjectKey(url) {
+  return `${CACHE_PREFIX}${createHash("sha256").update(url).digest("hex")}.md`;
+}
+
+async function readCachedMarkdown(url) {
+  const key = cacheObjectKey(url);
+  const [markdown, metadata] = await Promise.all([
+    storageService.get(key),
+    storageService.getMetaData(key),
+  ]);
+  const fetchedAt = metadata.lastModified?.getTime();
+  if (!fetchedAt || Date.now() - fetchedAt > CACHE_FRESHNESS_MS) return null;
+  return markdown;
+}
+
+async function cacheMarkdown(url, markdown) {
+  await storageService.put(cacheObjectKey(url), markdown, { visibility: "private" });
+}
+
+export async function clearDownloadWebPageCache() {
+  const listing = await storageService.listAll(CACHE_PREFIX, { recursive: true });
+  const objects = Array.from(listing.objects || []);
+  const deleted = objects.length;
+  await storageService.deleteAll(CACHE_PREFIX);
+  return deleted;
+}
+
+function recordCacheStatus(url, cacheStatus) {
+  // The tracking handler persists this request-scoped telemetry with the Tool
+  // record. It never enters the model-visible markdown response.
+  const context = graphRequestContext.getStore();
+  if (!context) return;
+  context.downloadWebPageCacheResults ??= [];
+  context.downloadWebPageCacheResults.push({ url, cacheStatus });
+}
 
 // Deliberately below REQUEST_TIMEOUT_MS. retryOnTransientError checks this after
 // a failure to decide whether to start another attempt, so any request that
@@ -292,12 +338,33 @@ const downloadWebPageTool = tool(
     url = normalizeFetchUrl(url);
 
     let markdown;
+    let cacheStatus = "origin";
     try {
-      const result = await downloadWebPage(url);
-      markdown = result.markdown;
+      if (cacheEnabled()) {
+        try {
+          markdown = await readCachedMarkdown(url);
+          if (markdown) cacheStatus = "hit";
+        } catch (error) {
+          // The cache is an optimization. Storage failures must never prevent
+          // the answer agent from reading the public source page.
+          console.warn(`Read web page cache unavailable: ${url}`, error.message);
+        }
+      }
 
-      // Successfully received response
-      console.log("Read web page - Status:", result.res.status);
+      if (!markdown) {
+        const result = await downloadWebPage(url);
+        markdown = result.markdown;
+
+        // Successfully received response
+        console.log("Read web page - Status:", result.res.status);
+        if (cacheEnabled()) {
+          try {
+            await cacheMarkdown(url, markdown);
+          } catch (error) {
+            console.warn(`Failed to cache web page: ${url}`, error.message);
+          }
+        }
+      }
     } catch (error) {
       const req = error.request || error.response?.request;
       // Fallback to config if request object is incomplete (common in timeouts/network errors)
@@ -334,6 +401,8 @@ const downloadWebPageTool = tool(
         `from this page, and do not retry it.`
       );
     }
+
+    recordCacheStatus(url, cacheStatus);
 
     return markdown;
   },

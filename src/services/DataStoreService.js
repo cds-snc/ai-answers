@@ -125,6 +125,22 @@ class DataStoreService {
     }
   }
 
+  static async clearDownloadWebPageCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-clear-download-webpage-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clear cached web pages');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing cached web pages:', error);
+      throw error;
+    }
+  }
+
   static async getSettingsAudit({ limit = 50, skip = 0, search = '' } = {}) {
     try {
       const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });

@@ -58,7 +58,11 @@ const DownloadPanel = ({ message, t, lang = 'en', answerNumber }) => {
                     return (
                         <div key={i} style={{ marginBottom: '0.25rem' }}>
                             <span className={`label ${succeeded ? 'correct' : 'error'}`} style={{ marginRight: '0.4rem' }}>
-                                {succeeded ? t('reviewPanels.downloadSuccess') : t('reviewPanels.fail')}
+                                {succeeded
+                                    ? t(d.cacheStatus === 'hit'
+                                        ? 'reviewPanels.downloadSuccessCached'
+                                        : 'reviewPanels.downloadSuccessDownloaded')
+                                    : t('reviewPanels.fail')}
                             </span>
                             <GcdsLink href={url} target="_blank" lang={lang} className="url-break-all">
                                 {url}

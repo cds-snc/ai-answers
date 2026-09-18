@@ -116,6 +116,8 @@ const SETTING_DEFAULTS = {
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
+  // Public-page caching is opt-in. Environments without S3 cannot enable it.
+  'downloadWebPage.cache.enabled': 'false',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
   'systemHealth.checks.database.enabled': 'true',

@@ -3,13 +3,32 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
+const { storageGetMock, storageGetMetaDataMock, storagePutMock, storageListAllMock, storageDeleteAllMock } = vi.hoisted(() => ({
+  storageGetMock: vi.fn(),
+  storageGetMetaDataMock: vi.fn(),
+  storagePutMock: vi.fn(),
+  storageListAllMock: vi.fn(),
+  storageDeleteAllMock: vi.fn(),
+}));
+vi.mock('../../../services/Storage.js', () => ({
+  default: {
+    get: storageGetMock,
+    getMetaData: storageGetMetaDataMock,
+    put: storagePutMock,
+    listAll: storageListAllMock,
+    deleteAll: storageDeleteAllMock,
+  },
+}));
+
 import { getEncoding } from 'js-tiktoken';
 
 import downloadWebPageTool, {
+  clearDownloadWebPageCache,
   REQUEST_TIMEOUT_MS,
   RETRY_TIME_BUDGET_MS,
   DEFAULT_MAX_TOKENS,
 } from '../downloadWebPage.js';
+import { SettingsService } from '../../../services/SettingsService.js';
 
 const encodingForTests = getEncoding('cl100k_base');
 
@@ -58,6 +77,7 @@ const accordionPage = htmlPage(`
 describe('downloadWebPage tool', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('returns markdown for a page with readable content', async () => {
@@ -67,6 +87,27 @@ describe('downloadWebPage tool', () => {
 
     expect(output).toContain('705-424-1200');
     expect(output.trim().length).toBeGreaterThan(50);
+  });
+
+  it('returns a fresh S3 cache entry without downloading the source page', async () => {
+    vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
+    vi.spyOn(SettingsService, 'get').mockReturnValue('true');
+    storageGetMock.mockResolvedValue('# Cached page\n\nCached content '.repeat(4));
+    storageGetMetaDataMock.mockResolvedValue({ lastModified: new Date() });
+
+    const output = await invokeTool({ url: 'https://www.canada.ca/en/cached.html' });
+
+    expect(output).toContain('Cached content');
+    expect(axios.get).not.toHaveBeenCalled();
+  });
+
+  it('clears only the dedicated S3 cache prefix', async () => {
+    vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
+    storageListAllMock.mockResolvedValue({ objects: [{ key: 'download-web-page-cache/v1/a.md' }] });
+
+    await expect(clearDownloadWebPageCache()).resolves.toBe(1);
+    expect(storageListAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/', { recursive: true });
+    expect(storageDeleteAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/');
   });
 
   describe('content extraction', () => {
