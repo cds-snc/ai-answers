@@ -1227,6 +1227,14 @@
     "defaultSearchProvider": {
       "label": "Default public chat search provider"
     },
+    "searchContextCache": {
+      "enabledLabel": "Cache search results",
+      "description": "When enabled, Google and Canada.ca search results are cached for up to 12 hours.",
+      "clear": "Clear cached search results",
+      "clearing": "Clearing cached search results...",
+      "clearSuccess": "Cleared {count} cached search results.",
+      "clearError": "Failed to clear cached search results."
+    },
     "chatTransport": {
       "label": "Chat event transport",
       "options": {
@@ -1300,7 +1308,8 @@
       "actions": {
         "settingUpdated": "Setting updated",
         "cacheRefreshed": "Settings cache refreshed",
-        "downloadWebPageCacheCleared": "Downloaded web page cache cleared"
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared",
+        "searchCacheCleared": "Search cache cleared"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",

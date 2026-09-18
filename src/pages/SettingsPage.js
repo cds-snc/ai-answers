@@ -76,6 +76,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'search.default': DEFAULT_SEARCH_PROVIDER,
+  'searchContext.cache.enabled': 'false',
   'chat.transport': 'sse',
   'downloadWebPage.cache.enabled': 'false',
   'downloadWebPage.cache.durationHours': '12',
@@ -123,7 +124,7 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+    'chat.transport', 'model.default', 'search.default', 'searchContext.cache.enabled', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
   cache: ['downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
   health: [
@@ -183,6 +184,7 @@ const FIELD_META = {
   'downloadWebPage.cache.durationHours': { fieldId: 'download-web-page-cache-duration-hours', labelKey: 'settings.downloadWebPageCache.durationHoursLabel' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
   'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
+  'searchContext.cache.enabled': { fieldId: 'search-context-cache-enabled', labelKey: 'settings.searchContextCache.enabledLabel' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
   'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
@@ -251,6 +253,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
+  const [searchContextCacheEnabled, setSearchContextCacheEnabled] = useState('false');
+  const [clearingSearchCache, setClearingSearchCache] = useState(false);
   const [chatTransport, setChatTransport] = useState('sse');
   const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
   const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
@@ -428,6 +432,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
+      setSearchContextCacheEnabled(String(settings['searchContext.cache.enabled'] ?? 'false'));
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
       setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
@@ -474,6 +479,23 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
+  const clearSearchCache = async () => {
+    setClearingSearchCache(true);
+    try {
+      const { deletedCount } = await DataStoreService.clearSearchCache();
+      setSectionStatus((prev) => ({
+        ...prev,
+        general: { text: t('settings.searchContextCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+      }));
+      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+    } catch (_error) {
+      setSectionStatus((prev) => ({ ...prev, general: { text: t('settings.searchContextCache.clearError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+    } finally {
+      setClearingSearchCache(false);
+    }
+  };
+
   // fetchData contract for ServerDataTable: called with
   // DataTables' own server-side params (start/length/search), returns the
   // recordsTotal/recordsFiltered/data shape its ajax callback expects.
@@ -507,6 +529,8 @@ const SettingsPage = ({ lang = 'en' }) => {
           ? t('settings.auditHistory.actions.cacheRefreshed')
           : value === 'download_web_page.cache_cleared'
             ? t('settings.auditHistory.actions.downloadWebPageCacheCleared')
+          : value === 'search_context.cache_cleared'
+            ? t('settings.auditHistory.actions.searchCacheCleared')
           : t('settings.auditHistory.actions.settingUpdated')
       ),
     },
@@ -816,7 +840,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           <select
             id="default-search-provider"
             className="filter-select"
-            value={defaultSearchProvider}
+        value={defaultSearchProvider}
             onChange={(e) => { const v = e.target.value; setDefaultSearchProvider(v); stageChange('search.default', v); }}
             disabled={sectionSaving.general}
             aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
@@ -825,6 +849,33 @@ const SettingsPage = ({ lang = 'en' }) => {
               <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
             ))}
           </select>
+
+          {fieldErrors['searchContext.cache.enabled'] && (
+            <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-200">
+            {t('settings.searchContextCache.enabledLabel')}
+          </label>
+          <select
+            id="search-context-cache-enabled"
+            className="filter-select"
+            value={searchContextCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setSearchContextCacheEnabled(v); stageChange('searchContext.cache.enabled', v); }}
+            disabled={sectionSaving.general || clearingSearchCache}
+            aria-describedby={fieldErrors['searchContext.cache.enabled'] ? 'search-context-cache-enabled-error' : undefined}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          <p className="mb-200">{t('settings.searchContextCache.description')}</p>
+          <GcdsButton
+            type="button"
+            buttonRole="secondary"
+            disabled={sectionSaving.general || clearingSearchCache}
+            onClick={clearSearchCache}
+          >
+            {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
+          </GcdsButton>
 
             {fieldErrors['guardrail.indigenousLanguageBlocking'] && (
               <FeedbackInlineError id="indigenous-language-blocking-error" message={fieldErrors['guardrail.indigenousLanguageBlocking']} announce={false} />
