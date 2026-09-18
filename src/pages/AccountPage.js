@@ -158,7 +158,7 @@ const AccountPage = ({ lang = 'en' }) => {
     bottomEnd: 'paging',
   };
 
-  // Chats assigned to the signed-in user (api/chat/chat-assign.js), via the
+  // Questions assigned to the signed-in user (api/chat/chat-assign.js), via the
   // chat-dashboard aggregate's assignedTo filter.
   const [assignedChatsError, setAssignedChatsError] = useState(null);
   const fetchAssignedChats = useCallback(async ({ start, length, search, orderBy, orderDir }) => {
@@ -196,11 +196,9 @@ const AccountPage = ({ lang = 'en' }) => {
   ], [t, lang]);
 
   // Same keep-chat-together row grouping as Chat/Eval/AutoEval dashboards
-  // (utils/admin/chatGroupedTable.js) - a multi-turn assigned chat produces
-  // one row per interaction, and every column here is constant across a
-  // chat's rows EXCEPT Evaluated (partnerEval is scored per interaction, so
-  // a chat can genuinely be Completed on one turn and Pending on another) -
-  // that's the one column left out of groupedColumns below.
+  // (utils/admin/chatGroupedTable.js) for the chat-level columns only.
+  // Assignment is per question, so Assigned on / Assigned by / Notes (and
+  // Evaluated, scored per question) stay one value per row.
   const assignedChatsGroupStateRef = useRef(createChatGroupState());
   const assignedChatsGroupCallbacks = useMemo(() => buildChatGroupCallbacks({
     stateRef: assignedChatsGroupStateRef,
@@ -208,9 +206,6 @@ const AccountPage = ({ lang = 'en' }) => {
     groupedColumns: [
       { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
       { data: 'program' },
-      { data: 'assignedOn' },
-      { data: 'assignedByEmail' },
-      { data: 'assignedNotes' },
     ],
   }), [assignedChatColumns]);
 
