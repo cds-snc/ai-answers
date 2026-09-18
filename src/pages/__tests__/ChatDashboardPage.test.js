@@ -52,7 +52,11 @@ vi.mock('datatables.net-react', () => {
       apiRef.current = {
         ajaxReload: vi.fn(),
         columnVisible: vi.fn(),
-        headerCells: [{ setAttribute: vi.fn() }, { setAttribute: vi.fn() }]
+        headerCells: [{ setAttribute: vi.fn() }, { setAttribute: vi.fn() }],
+        // A real <tbody>: the page wires the assign checkboxes/pills by
+        // delegation on it, so tests append rows here and fire events.
+        body: document.createElement('tbody'),
+        handlers: {}
       };
       mountedInstances.push(apiRef.current);
     }
@@ -64,9 +68,9 @@ vi.mock('datatables.net-react', () => {
           ajax: { reload: apiRef.current.ajaxReload },
           column: () => ({ visible: apiRef.current.columnVisible }),
           columns: () => ({ header: () => ({ each: (fn) => headerCells.forEach(fn) }) }),
-          table: () => ({ container: () => ({ querySelector: () => null }) }),
+          table: () => ({ container: () => ({ querySelector: () => null }), body: () => apiRef.current.body }),
           search: () => '',
-          on: () => {}
+          on: (evt, fn) => { apiRef.current.handlers[evt] = fn; }
         })
       };
       props.options?.initComplete?.call(settings);
@@ -246,20 +250,24 @@ describe('ChatDashboardPage rendering', () => {
       await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
     });
     await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
-    await waitFor(() => expect(lastColumns.some((c) => c.className === 'chat-assign-checkbox-col')).toBe(true));
+    // Wait for assign mode to actually be on (jsdom fires the details'
+    // toggle event on a later task): turning it on resets the outcome
+    // message, so a pill click that races it loses its outcome.
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
 
-    // Simulate DataTables building a row for an already-assigned chat: build
-    // the real cell HTML via the column's own render (the pill), mount it,
-    // then run createdRow the way the library would - this is what wires
-    // the pill's onclick, same delegated-handler pattern as the checkbox.
+    // Simulate DataTables building a row for an already-assigned question:
+    // build the real cell HTML via the column's own render (the pill) and
+    // put the row in the table body - the page's delegated click handler on
+    // the body is what wires the pill.
     const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
     const rowData = { _id: 'q-123', chatId: 'chat-123', questionNumber: 1, assignedTo: 'u1', assignedToEmail: 'partner@x.ca' };
     const row = document.createElement('tr');
     const cell = document.createElement('td');
     cell.innerHTML = checkboxColumn.render(null, 'display', rowData);
     row.appendChild(cell);
-    document.body.appendChild(row);
-    act(() => { lastOptions.createdRow(row, rowData); });
+    const tbody = mountedInstances[mountedInstances.length - 1].body;
+    document.body.appendChild(tbody);
+    tbody.appendChild(row);
 
     const pill = row.querySelector('button.chat-assign-pill');
     expect(pill).toBeTruthy();
@@ -268,16 +276,62 @@ describe('ChatDashboardPage rendering', () => {
     expect(confirmSpy).toHaveBeenCalled();
     await waitFor(() => expect(DashboardService.unassignQuestion).toHaveBeenCalledWith({ interactionId: 'q-123' }));
 
-    // Longer waits: this test drives a DOM row outside React, and the focus
-    // move lands on the next render - slow under a parallel run.
-    const outcome = await waitFor(() => getByText('admin.chatDashboard.assign.unassigned'), { timeout: 4000 });
-    await waitFor(() => expect(document.activeElement).toBe(outcome), { timeout: 4000 });
+    // The click's act() scope ends before the unassign promise settles (the
+    // handler doesn't return it), so flush the promise chain inside act
+    // before looking for the outcome - otherwise the render lands late in
+    // a full-file run.
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    const outcome = await waitFor(() => getByText('admin.chatDashboard.assign.unassigned'));
+    await waitFor(() => expect(document.activeElement).toBe(outcome));
 
     const lastInstance = mountedInstances[mountedInstances.length - 1];
     expect(lastInstance.ajaxReload).toHaveBeenCalled();
 
-    document.body.removeChild(row);
+    document.body.removeChild(tbody);
     confirmSpy.mockRestore();
+  });
+
+  it('ticking a box counts it, and a redraw restores the tick from the selection', async () => {
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText } = render(<ChatDashboardPage lang="en" />);
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(mockGetAssignable).toHaveBeenCalledTimes(1));
+
+    const checkboxColumn = lastColumns.find((c) => c.className === 'chat-assign-checkbox-col');
+    const instance = mountedInstances[mountedInstances.length - 1];
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.innerHTML = checkboxColumn.render(null, 'display', { _id: 'q-9', chatId: 'chat-9', questionNumber: 1 });
+    row.appendChild(cell);
+    document.body.appendChild(instance.body);
+    instance.body.appendChild(row);
+    const box = row.querySelector('input.chat-assign-checkbox');
+    await act(async () => { fireEvent.click(box); });
+    expect(box.checked).toBe(true);
+    expect(row.classList.contains('chat-row--selected')).toBe(true);
+
+    // DataTables rebuilds rows on each fetch: a fresh, unticked row for the
+    // same question gets its tick back from the draw sync.
+    const row2 = document.createElement('tr');
+    const cell2 = document.createElement('td');
+    cell2.innerHTML = checkboxColumn.render(null, 'display', { _id: 'q-9', chatId: 'chat-9', questionNumber: 1 });
+    row2.appendChild(cell2);
+    instance.body.replaceChildren(row2);
+    act(() => { instance.handlers.draw(); });
+    expect(row2.querySelector('input.chat-assign-checkbox').checked).toBe(true);
+    expect(row2.classList.contains('chat-row--selected')).toBe(true);
+    document.body.removeChild(instance.body);
   });
 
   it('Clear all leaves assign mode, so the next Apply does not come back with the column hidden but the mode on', async () => {
