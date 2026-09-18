@@ -68,6 +68,11 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
             const toolCall = this.toolCalls.find(call => call.runId === runId);
             if (toolCall) {
                 toolCall.output = output.content;
+                if (toolCall.tool === 'downloadWebPage') {
+                    const context = graphRequestContext.getStore();
+                    const cacheResult = context?.downloadWebPageCacheResults?.shift();
+                    toolCall.cacheStatus = cacheResult?.cacheStatus || 'origin';
+                }
                 toolCall.endTime = Date.now();
                 toolCall.duration = toolCall.endTime - toolCall.startTime;
                 toolCall.status = 'completed';

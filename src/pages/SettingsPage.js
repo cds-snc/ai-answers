@@ -75,6 +75,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
+  'downloadWebPage.cache.enabled': 'false',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
   'systemHealth.checks.database.enabled': 'true',
@@ -119,7 +120,7 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'downloadWebPage.cache.enabled', 'site.baseUrl',
   ],
   health: [
     'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
@@ -173,6 +174,7 @@ const FIELD_META = {
   vectorServiceType: { fieldId: 'vector-service-type', labelKey: 'settings.vectorServiceTypeLabel' },
   'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
   'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
+  'downloadWebPage.cache.enabled': { fieldId: 'download-web-page-cache-enabled', labelKey: 'settings.downloadWebPageCache.enabledLabel' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
@@ -242,6 +244,8 @@ const SettingsPage = ({ lang = 'en' }) => {
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [chatTransport, setChatTransport] = useState('sse');
+  const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
+  const [clearingDownloadWebPageCache, setClearingDownloadWebPageCache] = useState(false);
 
   // Canadian Indigenous language blocking guardrail (on by default)
   const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
@@ -376,6 +380,23 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   const isSectionDirty = (section) => SECTION_KEYS[section].some((key) => key in pendingChanges);
 
+  const clearDownloadWebPageCache = async () => {
+    setClearingDownloadWebPageCache(true);
+    try {
+      const { deletedCount } = await DataStoreService.clearDownloadWebPageCache();
+      setSectionStatus((prev) => ({
+        ...prev,
+        general: { text: t('settings.downloadWebPageCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+      }));
+      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+    } catch (_error) {
+      setSectionStatus((prev) => ({ ...prev, general: { text: t('settings.downloadWebPageCache.clearError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+    } finally {
+      setClearingDownloadWebPageCache(false);
+    }
+  };
+
   // TODO(follow-up, pre-existing): this mount-time load and a field's own
   // onChange (below, e.g. setDefaultWorkflow(v) via stageChange) both call
   // setDefaultWorkflow with no sequencing between them. A slow initial GET
@@ -397,6 +418,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
+      setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
       setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
       setHealthDatabaseEnabled(String(settings['systemHealth.checks.database.enabled'] ?? 'true'));
@@ -471,6 +493,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       render: (value) => escapeHtmlAttribute(
         value === 'settings.cache_refreshed'
           ? t('settings.auditHistory.actions.cacheRefreshed')
+          : value === 'download_web_page.cache_cleared'
+            ? t('settings.auditHistory.actions.downloadWebPageCacheCleared')
           : t('settings.auditHistory.actions.settingUpdated')
       ),
     },
@@ -788,6 +812,33 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="true">{t('common.on')}</option>
             <option value="false">{t('common.off')}</option>
           </select>
+
+          {fieldErrors['downloadWebPage.cache.enabled'] && (
+            <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.enabledLabel')}
+          </label>
+          <select
+            id="download-web-page-cache-enabled"
+            className="filter-select"
+            value={downloadWebPageCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheEnabled(v); stageChange('downloadWebPage.cache.enabled', v); }}
+            disabled={sectionSaving.general || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.enabled'] ? 'download-web-page-cache-enabled-error' : undefined}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          <p className="mb-200">{t('settings.downloadWebPageCache.description')}</p>
+          <GcdsButton
+            type="button"
+            buttonRole="secondary"
+            disabled={sectionSaving.general || clearingDownloadWebPageCache}
+            onClick={clearDownloadWebPageCache}
+          >
+            {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+          </GcdsButton>
 
           <SectionSaveControls
             section="general"

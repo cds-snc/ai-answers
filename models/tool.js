@@ -7,6 +7,11 @@ const toolSchema = new mongoose.Schema({
     },
     input: mongoose.Schema.Types.Mixed,
     output: mongoose.Schema.Types.Mixed,
+    cacheStatus: {
+        type: String,
+        enum: ['hit', 'origin'],
+        default: 'origin'
+    },
     duration: Number,
     status: {
         type: String,

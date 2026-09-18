@@ -132,7 +132,7 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
               }
             },
             as: 'c',
-            in: { duration: '$$c.duration', status: '$$c.status' }
+            in: { duration: '$$c.duration', status: '$$c.status', cacheStatus: '$$c.cacheStatus' }
           }
         }
       }
@@ -172,6 +172,8 @@ function computeDownloadStats(rows) {
   const buckets = Array.from({ length: MAX_DOWNLOAD_POSITIONS }, () => ({
     totalCount: 0,
     errorCount: 0,
+    cacheHitCount: 0,
+    originCount: 0,
     completedDurations: []
   }));
 
@@ -181,6 +183,9 @@ function computeDownloadStats(rows) {
       const call = calls[i];
       const bucket = buckets[i];
       bucket.totalCount++;
+
+      if (call.cacheStatus === 'hit') bucket.cacheHitCount++;
+      else if (call.status === 'completed') bucket.originCount++;
 
       if (call.status === 'error') {
         bucket.errorCount++;
@@ -198,6 +203,8 @@ function computeDownloadStats(rows) {
         callNumber: index + 1,
         totalCount: bucket.totalCount,
         errorCount: bucket.errorCount,
+        cacheHitCount: bucket.cacheHitCount,
+        originCount: bucket.originCount,
         completedCount: sorted.length,
         median: percentile(sorted, 0.5),
         p95: percentile(sorted, 0.95)

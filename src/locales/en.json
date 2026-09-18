@@ -1122,6 +1122,14 @@
     "indigenousLanguageBlocking": {
       "label": "Canadian Indigenous language blocking"
     },
+    "downloadWebPageCache": {
+      "enabledLabel": "Cache downloaded web pages",
+      "description": "When enabled, public web pages are cached for up to 12 hours. S3 removes cache files after one day.",
+      "clear": "Clear cached web pages",
+      "clearing": "Clearing cached web pages...",
+      "clearSuccess": "Cleared {count} cached web pages.",
+      "clearError": "Failed to clear cached web pages."
+    },
     "health": {
       "title": "Health checks",
       "description": "Control the automated health monitor and its dependency checks.",
@@ -1175,7 +1183,8 @@
       "notApplicable": "Not applicable",
       "actions": {
         "settingUpdated": "Setting updated",
-        "cacheRefreshed": "Settings cache refreshed"
+        "cacheRefreshed": "Settings cache refreshed",
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
@@ -1353,6 +1362,8 @@
     "pass": "Pass",
     "fail": "Failed",
     "downloadSuccess": "Succeeded",
+    "downloadSuccessCached": "Succeeded cached",
+    "downloadSuccessDownloaded": "Succeeded downloaded",
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
@@ -1762,6 +1773,8 @@
         "totalCount": "Questions with this call",
         "completedCount": "Completed",
         "errorCount": "Errors",
+        "cacheHitCount": "Cache hits",
+        "originCount": "Origin downloads",
         "errorPercent": "Error %",
         "median": "Completed median (ms)",
         "p95": "Completed P95 (ms)"

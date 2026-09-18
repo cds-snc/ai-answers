@@ -30,10 +30,24 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage" {
   bucket = aws_s3_bucket.storage.id
 
   rule {
+    id     = "expire-download-web-page-cache-1-day"
+    status = "Enabled"
+
+    filter {
+      prefix = "download-web-page-cache/"
+    }
+
+    expiration {
+      days = 1
+    }
+  }
+
+  rule {
     id     = "expire-all-objects-90-days"
     status = "Enabled"
 
-    filter {} # Apply to all objects
+    # Applies to all storage; the cache rule above expires its prefix first.
+    filter {}
 
     expiration {
       days = 90
