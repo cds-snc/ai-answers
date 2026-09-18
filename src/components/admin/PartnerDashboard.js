@@ -298,7 +298,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           onClearFilters={handleClearFilters}
           isVisible={true}
           autoApply={true}
-          applyDisabled={loading}
           defaultUserType="all"
           defaultOpen={false}
           filterLoading={loading}

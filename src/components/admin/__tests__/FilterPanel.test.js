@@ -233,6 +233,83 @@ describe('FilterPanel', () => {
     expect(labels.some((l) => l.includes('Public'))).toBe(true);
   });
 
+  it('renders children inside the panel after "More filters" and before the action buttons, and nothing extra when none are passed', async () => {
+    const { container, unmount } = renderPanel({
+      children: <fieldset data-testid="extra"><legend>Export options</legend></fieldset>,
+    });
+    await waitFor(() => getDateRangeInput(container));
+    const content = container.querySelector('.filter-panel-content');
+    const extra = content.querySelector('[data-testid="extra"]');
+    const advanced = content.querySelector('.filter-advanced-details');
+    const actions = content.querySelector('.filter-actions');
+    expect(extra).not.toBeNull();
+    expect(advanced.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(extra.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    unmount();
+
+    const bare = renderPanel();
+    await waitFor(() => getDateRangeInput(bare.container));
+    const bareContent = bare.container.querySelector('.filter-panel-content');
+    const bareActions = bareContent.querySelector('.filter-actions');
+    expect(bareActions.previousElementSibling.classList.contains('filter-advanced-details')).toBe(true);
+  });
+
+  it('makes Apply and Clear all aria-disabled and inert while filterLoading, keeping focus in place', async () => {
+    const { container, onApplyFilters, onClearFilters } = renderPanel({ filterLoading: true });
+    await waitFor(() => getDateRangeInput(container));
+    const apply = container.querySelector('#filter-apply-button');
+    const clear = container.querySelector('.filter-button-secondary');
+    expect(apply.getAttribute('aria-disabled')).toBe('true');
+    expect(clear.getAttribute('aria-disabled')).toBe('true');
+    expect(apply.disabled).toBe(false);
+    apply.focus();
+    fireEvent.click(apply);
+    fireEvent.click(clear);
+    expect(onApplyFilters).not.toHaveBeenCalled();
+    expect(onClearFilters).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('keeps an applied pill inert while filterLoading', async () => {
+    const { container, rerender, onApplyFilters, onClearFilters } = renderPanel({ defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+    fireEvent.click(container.querySelector('#filter-apply-button'));
+    expect(onApplyFilters).toHaveBeenCalledTimes(1);
+    rerender(
+      <FilterPanel lang="en" onApplyFilters={onApplyFilters} onClearFilters={onClearFilters} isVisible={true} defaultUserType="public" filterLoading={true} />
+    );
+    // The last closable pill is the "Public" user-type pill - not the date
+    // pill, which never arms the refocus index by design.
+    const closable = container.querySelectorAll('.filter-pill--closable');
+    const pill = closable[closable.length - 1];
+    expect(pill.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(pill);
+    expect(onApplyFilters).toHaveBeenCalledTimes(1);
+
+    // The inert click must not leave a refocus-this-slot index armed: once
+    // loading ends and filters change for an unrelated reason (Apply), focus
+    // stays where it is instead of jumping onto a pill.
+    rerender(
+      <FilterPanel lang="en" onApplyFilters={onApplyFilters} onClearFilters={onClearFilters} isVisible={true} defaultUserType="public" filterLoading={false} />
+    );
+    const apply = container.querySelector('#filter-apply-button');
+    apply.focus();
+    fireEvent.click(apply);
+    expect(onApplyFilters).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('focuses the panel summary on mount only when focusSummaryOnMount is set', async () => {
+    const first = renderPanel({ focusSummaryOnMount: true });
+    await waitFor(() => getDateRangeInput(first.container));
+    expect(document.activeElement).toBe(first.container.querySelector('.filter-panel-summary'));
+    first.unmount();
+
+    const second = renderPanel();
+    await waitFor(() => getDateRangeInput(second.container));
+    expect(document.activeElement).toBe(document.body);
+  });
+
   it('shows the AND/OR eval-logic toggle and its label by default, hides both when showEvalLogic is false', async () => {
     const { container, unmount } = renderPanel();
     await waitFor(() => getDateRangeInput(container));
@@ -447,17 +524,12 @@ describe('FilterPanel', () => {
     // pressed the (now-hidden) Apply button lost focus to <body> with no
     // indication where it went.
     //
-    // Mirrors PartnerDashboard.js's real wiring (applyDisabled={loading},
-    // filterLoading={loading} - the same state) rather than jumping straight
-    // to the resolved state: PartnerDashboard's Apply button disables the
-    // instant loading flips true, and a disabled focused button is blurred
-    // to <body> by the browser well before the fetch resolves. A test that
-    // skips this intermediate render never re-creates that blur, so it can't
-    // catch a regression here - see the two rerenders below.
+    // Mirrors PartnerDashboard.js's real wiring (filterLoading={loading})
+    // rather than jumping straight to the resolved state - see the two
+    // rerenders below.
     const { container, rerender, onApplyFilters, onClearFilters } = renderPanel({
       hasAppliedFilters: false,
       filterLoading: false,
-      applyDisabled: false,
       filterResultCount: null,
     });
     await waitFor(() => getDateRangeInput(container));
@@ -469,19 +541,12 @@ describe('FilterPanel', () => {
     fireEvent.click(applyButton);
     expect(onApplyFilters).toHaveBeenCalled();
 
-    // Real browsers blur a focused element the instant it becomes disabled -
-    // that's the actual mechanism this test exists to guard against, and
-    // exactly what PartnerDashboard's applyDisabled={loading} triggers here.
-    // jsdom doesn't implement that side effect (confirmed: calling .blur()
-    // on an already-disabled element is a no-op in jsdom, unlike real
-    // browsers), so it has to be forced explicitly, while the button is
-    // still enabled, to land on the same end state a real browser would.
-    applyButton.blur();
-    expect(document.activeElement).toBe(document.body);
+    // Apply is aria-disabled while loading, never natively disabled, so
+    // focus stays on it through the fetch; the collapse is what would drop it.
+    expect(document.activeElement).toBe(applyButton);
 
-    // Simulate the loading render frame: PartnerDashboard disables Apply the
-    // instant its fetch starts. The blur above already modelled its effect;
-    // this is the render that must not depend on re-reading
+    // Simulate the loading render frame: Apply is aria-disabled while the
+    // fetch is in flight. This is the render that must not depend on re-reading
     // document.activeElement live to decide whether to restore focus later.
     // hasAppliedFilters flips true in the same batch as filterLoading here -
     // PartnerDashboard.js's handleApplyFilters calls setHasUserApplied(true)
@@ -495,12 +560,11 @@ describe('FilterPanel', () => {
         isVisible={true}
         hasAppliedFilters={true}
         filterLoading={true}
-        applyDisabled={true}
         filterResultCount={null}
       />
     );
-    expect(applyButton.disabled).toBe(true);
-    expect(document.activeElement).toBe(document.body);
+    expect(applyButton.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(applyButton);
 
     // Simulate the parent's fetch resolving with results.
     rerender(
@@ -511,7 +575,6 @@ describe('FilterPanel', () => {
         isVisible={true}
         hasAppliedFilters={true}
         filterLoading={false}
-        applyDisabled={false}
         filterResultCount={5}
       />
     );

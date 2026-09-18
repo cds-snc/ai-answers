@@ -15,7 +15,10 @@ const FilterPanel = ({
   isVisible = false,
   autoApply = false,
   applyButtonText = null,
-  applyDisabled = false,
+  // Moves focus onto the panel's <summary> when the panel first renders -
+  // for a page whose trigger unmounts itself to reveal the panel
+  // (ChatLogsDashboard's "Get logs"), so focus has somewhere to land.
+  focusSummaryOnMount = false,
   defaultUserType = 'all',
   defaultOpen = true,
   filterLoading = false,
@@ -40,9 +43,22 @@ const FilterPanel = ({
   // aiEval, keeping URL (EN/FR). Those three are each a hard pre-aggregation
   // $match, so filtering by one collapses its own breakdown chart to a
   // 100%/0% tautology (see Metrics/TechnicalMetricsDashboard.js).
-  showCategoryFilters = true
+  showCategoryFilters = true,
+  // Extra controls a dashboard needs applied together with the filters,
+  // rendered inside the panel after "More filters" and just above the
+  // Clear all/Apply buttons, so they share the panel's Apply button
+  // (ChatLogsDashboard's export view/format). Only rendered when passed;
+  // every other dashboard leaves it empty.
+  children = null
 }) => {
   const { t } = useTranslations(lang);
+  // While the consumer's fetch/export is in flight, Apply, Clear all and
+  // the pills are aria-disabled and their handlers no-op: the full-page
+  // LoadingOverlay blocks the pointer but not the keyboard, so a keyboard
+  // user could otherwise reset the panel mid-request and see results that
+  // no longer match it. aria-disabled, not native disabled - a natively
+  // disabled focused button is blurred to <body>.
+  const busy = !!filterLoading;
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -61,18 +77,18 @@ const FilterPanel = ({
   const panelSummaryRef = useRef(null);
   const pendingClearFocusRef = useRef(false);
   // Captured in handleApply itself, not re-derived later from
-  // document.activeElement: a caller like PartnerDashboard.js ties
-  // applyDisabled to the same loading state Apply triggers, so the Apply
-  // button gets disabled - and the browser blurs a disabled element to
-  // <body> immediately, well before any fetch resolves - before the
-  // auto-close effect below would otherwise get a chance to check who's
-  // focused. This is the last point guaranteed to still see the real
-  // target. Collapsing a native <details> hides everything except its
-  // <summary> - if focus was still on the Apply button (a keyboard/
-  // screen-reader user who just pressed it) that button vanishes from the
-  // accessibility tree, so this drives the same redirect-to-summary fix as
-  // pendingClearFocusRef above.
+  // document.activeElement: the last point guaranteed to still see the
+  // real target before the fetch resolves. Collapsing a native <details>
+  // hides everything except its <summary> - if focus was still on the
+  // Apply button (a keyboard/screen-reader user who just pressed it) that
+  // button vanishes from the accessibility tree, so this drives the same
+  // redirect-to-summary fix as pendingClearFocusRef above.
   const focusWasInPanelOnApplyRef = useRef(false);
+  useEffect(() => {
+    if (focusSummaryOnMount) panelSummaryRef.current?.focus();
+    // Mount only: the prop describes the first render, not later changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Removing a single pill (removeFilter, as opposed to Clear all above) -
   // buildPills() always pushes exactly one entry per category in the same
   // fixed order, so whatever's now at the same array index the clicked pill
@@ -759,6 +775,7 @@ const FilterPanel = ({
   ];
 
   const handleApply = () => {
+    if (busy) return;
     // Captured here, synchronously, before anything else runs - see
     // focusWasInPanelOnApplyRef's own comment above for why this can't be
     // deferred to the auto-close effect below. .closest('details') rather
@@ -806,6 +823,7 @@ const FilterPanel = ({
   };
 
   const handleClear = () => {
+    if (busy) return;
     const defaultDates = getDefaultDates();
     setDateRange(defaultDates);
     setDepartment('');
@@ -858,6 +876,7 @@ const FilterPanel = ({
   // Remove a single filter pill. For multi-select filters, `value` is the specific
   // value to remove; omit to reset the whole filter to default.
   const removeFilter = (key, value) => {
+    if (busy) return;
     const next = { ...appliedFilters };
     if (key === 'date') {
       // Save applied dates so cancel can restore them — pill must always match what's in effect.
@@ -1278,11 +1297,14 @@ const FilterPanel = ({
         </>
         )}
 
+        {children}
+
         <div className="filter-actions">
           <button
             type="button"
             onClick={handleClear}
             className="filter-button filter-button-secondary"
+            aria-disabled={busy || undefined}
           >
             {t('admin.filters.clearAll')}
           </button>
@@ -1291,7 +1313,7 @@ const FilterPanel = ({
             type="button"
             onClick={handleApply}
             className="filter-button filter-button-primary"
-            disabled={applyDisabled}
+            aria-disabled={busy || undefined}
           >
             {applyButtonText || t('admin.filters.apply')}
           </button>
@@ -1334,7 +1356,12 @@ const FilterPanel = ({
             <button
               type="button"
               className="filter-pill filter-pill--closable"
+              aria-disabled={busy || undefined}
               onClick={() => {
+                // Same stale-index hazard as the 'date' case below:
+                // removeFilter no-ops while busy, so arming first would
+                // leave the slot primed for the next unrelated change.
+                if (busy) return;
                 // The 'date' pill has its own separate, already-working
                 // focus mechanism (reopens the calendar - see removeFilter's
                 // 'date' branch) and returns before ever touching
@@ -1363,6 +1390,7 @@ const FilterPanel = ({
             type="button"
             className="filter-pills__clear-all"
             onClick={handleClear}
+            aria-disabled={busy || undefined}
           >
             {t('admin.filters.clearAll')}
           </button>
