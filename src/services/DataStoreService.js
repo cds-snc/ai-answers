@@ -304,17 +304,6 @@ class DataStoreService {
     return await response.json();
   }
 
-  static async getPublicEvalList() {
-    try {
-      const response = await AuthService.fetch(getApiUrl('db-public-eval-list'));
-      if (!response.ok) throw new Error('Failed to fetch public evaluation list');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching public evaluation list:', error);
-      throw error;
-    }
-  }
-
   static async getChat(chatId) {
     try {
       const response = await AuthService.fetch(getApiUrl(`db-chat?chatId=${chatId}`));

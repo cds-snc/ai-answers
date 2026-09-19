@@ -783,14 +783,6 @@
       "advancedAll": "Avancé : Tous",
       "showAdvanced": "Plus de filtres"
     },
-    "publicEval": {
-      "title": "Évaluation publique",
-      "chatId": "ID de chat",
-      "department": "Ministère",
-      "date": "Date",
-      "loading": "Chargement...",
-      "errorLoading": "Échec du chargement de la liste d'évaluation publique : {message}"
-    },
     "session": {
       "title": "Sessions",
       "filterLabel": "Filtrer les sessions",

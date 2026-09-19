@@ -10,8 +10,8 @@ DataTable.use(DT);
 
 // The stable, shared server-side DataTable wrapper — SettingsPage.js is its
 // first consumer. Every other server-side table in the app (ChatDashboardPage,
-// EvalDashboardPage, AutoEvalDashboardPage, SessionPage, UsersPage,
-// PublicEvalPage) still hand-rolls its own DataTable.use(DT)/columns/options/
+// EvalDashboardPage, AutoEvalDashboardPage, SessionPage, UsersPage) still
+// hand-rolls its own DataTable.use(DT)/columns/options/
 // ajax wiring; components/experimental/ExperimentalServerDataTable.js is a
 // second, near-identical wrapper used only by the two experimental pages.
 //

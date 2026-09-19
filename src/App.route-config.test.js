@@ -93,7 +93,6 @@ vi.mock('./pages/MetricsPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/PublicDashboardPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/PartnerDashboardPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/TechnicalMetricsPage.js', () => ({ default: mockGenericPage }));
-vi.mock('./pages/PublicEvalPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/SessionPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/ConnectivityPage.js', () => ({ default: mockGenericPage }));
 vi.mock('./pages/experimental/ExperimentalAnalysisPage.js', () => ({ default: mockGenericPage }));
