@@ -32,7 +32,7 @@ layout: {
 },
 ```
 
-`ServerDataTable` applies only `bottomEnd`, so pass the other three zones via its `layout` prop — `SettingsPage` and `PublicEvalPage` currently don't, and fall back to DataTables' default (page-length top-left, search top-right); aligning them is a pending tidy-up, not a design choice. Don't try to stack "Showing X to Y" under the search box via DataTables' numbered row slots (`top2Start`) — it never worked reliably; `bottomStart` is the one native position that does.
+`ServerDataTable` applies only `bottomEnd`, so pass the other three zones via its `layout` prop — `SettingsPage` currently doesn't, and falls back to DataTables' default (page-length top-left, search top-right); aligning them is a pending tidy-up, not a design choice. Don't try to stack "Showing X to Y" under the search box via DataTables' numbered row slots (`top2Start`) — it never worked reliably; `bottomStart` is the one native position that does.
 
 **Pagination** on every instance is styled like GC DS `gcds-pagination` (list display, ~70% size: 14px text, 2.125rem targets) by `div.dt-container div.dt-paging` in `admin.css` — no per-table CSS. Previous is omitted on the first page and Next on the last; `installPagingFocusGuard()` (installed once in `App.js`) moves keyboard focus to the current page number when the button just pressed disappears.
 
