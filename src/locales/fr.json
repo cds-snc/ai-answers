@@ -895,6 +895,8 @@
         "questionNumberAriaLabel": "Numéro de question",
         "partnerEval": "Partenaire",
         "aiEval": "IA",
+        "evalInformed": "Éclairée",
+        "evalInformedAriaLabel": "Réponse éclairée par les évaluations",
         "action": "Action",
         "creatorEmail": "Créateur",
         "expertEmail": "Expert",
