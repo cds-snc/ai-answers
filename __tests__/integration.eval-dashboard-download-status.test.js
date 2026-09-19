@@ -100,6 +100,22 @@ describe('Integration: eval-dashboard hasDownload status', () => {
         return jsonBody;
     };
 
+    it('flags evalInformed from a non-empty context.qaMatches, false otherwise', async () => {
+        const user = await User.findOne({ email: 'reviewer@example.com' });
+        const context = await Context.create({
+            pageLanguage: 'en', department: 'IRCC',
+            qaMatches: [{ chatId: 'past-chat', interactionId: 'past-interaction', similarity: 0.9, totalScore: 100, questionText: 'Q', answerText: 'A' }],
+        });
+        const answer = await Answer.create({ content: 'Test answer', answerType: 'normal', tools: [] });
+        const informed = await Interaction.create({ context: context._id, answer: answer._id, question: new mongoose.Types.ObjectId(), createdAt: new Date() });
+        await Chat.create({ chatId: 'chat-informed', user: user._id, interactions: [informed._id], createdAt: new Date(), pageLanguage: 'en' });
+
+        const body = await callHandler({});
+        const byChatId = Object.fromEntries(body.rows.map((r) => [r.chatId, r.evalInformed]));
+        expect(byChatId['chat-informed']).toBe(true);
+        expect(byChatId['chat-none']).toBe(false);
+    });
+
     it('classifies every download outcome correctly', async () => {
         const body = await callHandler({});
         const byChatId = Object.fromEntries(body.rows.map((r) => [r.chatId, r.hasDownload]));

@@ -166,6 +166,8 @@ contextNode → similarQuestions → answerNode
 
 The node calls `QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, { ... })` and writes the result onto `state.context.similarQuestions`. Failures are caught and logged as warnings — the node always returns, so a vector or DB outage degrades gracefully to "no examples" instead of failing the whole graph.
 
+The node also writes the threshold-passing matches onto `state.context.qaMatches`, which the persist node stores on the `Context` document (and the log export flattens into `context.qaMatches.N.*` columns). That stored array is the record of whether an answer was eval-informed: the Eval dashboard's "Informed" checkmark column is derived from it in `api/eval/eval-dashboard.js` (`qaMatches` non-empty), sortable. Only `GenericWithQAGraph` (production) writes `qaMatches`; `InstantAndQAGraph` injects examples but does not persist them, so its answers never show the checkmark.
+
 Per-graph tuning is shown in the graph comparison table above. Both pass `language: state.lang`, `includeQuestionFlow: true`, and `recencyDays: 365` declared explicitly at the call site (so the behaviour is visible from the graph file, not inherited silently from a service default).
 
 ### Workflow → agent
