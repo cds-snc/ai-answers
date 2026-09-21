@@ -5,7 +5,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
-import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
+import { SEARCH_PROVIDERS, SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
@@ -790,8 +790,9 @@ const SettingsPage = ({ lang = 'en' }) => {
             disabled={sectionSaving.general}
             aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
           >
-            <option value="google">{t('settings.defaultSearchProvider.options.google')}</option>
-            <option value="canadaca">{t('settings.defaultSearchProvider.options.canadaca')}</option>
+            {SEARCH_PROVIDERS.map((provider) => (
+              <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
+            ))}
           </select>
 
             {fieldErrors['guardrail.indigenousLanguageBlocking'] && (
