@@ -8,14 +8,15 @@ import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.j
 import VectorService from '../../services/VectorService.js';
 import { buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../../utils/reviewLink.js';
 import { escapeHtml } from '../../utils/htmlEscape.js';
-import StatusMessage from './StatusMessage.js';
 import FeedbackInlineError from '../chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 DataTable.use(DT);
 
 const SimilarChatsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const [chatId, setChatId] = useState('');
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,19 +55,15 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         setHasLoadedData(true);
       } else if (data.message) {
         // data.message is raw, untranslated server text — never run it
-        // through the {message} template as a plain string substitution (a
-        // FR admin would otherwise hear it announced as French). Split the
-        // translated template around the placeholder instead, so the detail
-        // can be wrapped in its own lang="en" span (mirrors
-        // DeleteChatSection.js).
-        const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-        setFetchMessage({ prefix, suffix, detail: <code lang="en">{data.message}</code> });
+        // through the {error} template as a plain string substitution (a FR
+        // admin would otherwise hear it in French). renderStatusMessage
+        // already wraps `detail` in lang="en" — don't wrap it again here.
+        setFetchMessage(buildErrorStatus('vector.fetchErrorDetail', { message: data.message }));
       } else {
-        setFetchMessage({ prefix: t('vector.fetchError'), suffix: '', detail: null });
+        setFetchMessage({ isError: true, text: t('vector.fetchError') });
       }
     } catch (error) {
-      const [prefix, suffix] = t('vector.fetchErrorDetail').split('{message}');
-      setFetchMessage({ prefix, suffix, detail: <code lang="en">{error.message || String(error)}</code> });
+      setFetchMessage(buildErrorStatus('vector.fetchErrorDetail', error));
     }
     setLoading(false);
   };
@@ -105,11 +102,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
         >
           {loading ? t('vector.loadingSimilarChats') : t('vector.getSimilarChats')}
         </GcdsButton>
-        {fetchMessage && (
-          <StatusMessage variant="error">
-            {fetchMessage.prefix}{fetchMessage.detail}{fetchMessage.suffix}
-          </StatusMessage>
-        )}
+        {renderStatusMessage(fetchMessage, 'success', 'fetch')}
       </div>
       {hasLoadedData && (
         <div className="metrics-table-container">

@@ -66,17 +66,17 @@ const formatDocdb8ScoreRange = (scoreSummary, lang, t) => {
 // capability test (unlike VectorService.getStats/reinitialize's fixed
 // strings above) — always worth keeping, but wrapped behind a translated
 // prefix rather than shown alone, same as everywhere else in this file.
-const renderDocdb8Error = (detail, t) => {
+const renderDocdb8Error = (detail, wrapErrorDetail, t) => {
   if (!detail) return t('vector.docdb8Capability.noError');
-  const [prefix, suffix] = t('vector.docdb8Capability.errorDetail').split('{error}');
-  return <>{prefix}<code lang="en">{detail}</code>{suffix}</>;
+  const wrapped = wrapErrorDetail('vector.docdb8Capability.errorDetail', { message: detail });
+  return <>{wrapped.prefix}{wrapped.detail}{wrapped.suffix}</>;
 };
 
 const VectorPage = ({ lang = 'en' }) => {
   const { language } = usePageContext();
   const activeLang = lang || language;
   const { t } = useTranslations(activeLang);
-  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
+  const { buildErrorStatus, wrapErrorDetail, renderStatusMessage } = useErrorStatus(t);
   const fmtN = (n) => formatNumber(n, activeLang);
   const [vectorStats, setVectorStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -624,7 +624,7 @@ const VectorPage = ({ lang = 'en' }) => {
                     <td>{result?.test?.metadata?.candidateReductionBeforeVectorSearch ? t('vector.docdb8Capability.yes') : t('vector.docdb8Capability.no')}</td>
                     <td>{formatDocdb8ScoreRange(result?.test?.scoreSummary, activeLang, t)}</td>
                     <td>{t('vector.docdb8Capability.durationMs').replace('{ms}', fmtN(result?.test?.durationMs))}</td>
-                    <td>{renderDocdb8Error(probeError || result?.test?.error?.message, t)}</td>
+                    <td>{renderDocdb8Error(probeError || result?.test?.error?.message, wrapErrorDetail, t)}</td>
                   </tr>
                 ))}
               </tbody>

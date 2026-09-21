@@ -842,7 +842,7 @@
       "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
-      "fetchError": "Échec du chargement des données : {message}",
+      "fetchError": "Échec du chargement des données : {error}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
       "metricsLoading": "Chargement des métriques...",
@@ -930,7 +930,7 @@
       "loading": "Suppression en cours...",
       "notFound": "Impossible de supprimer le chat : ID introuvable.",
       "success": "{chatId} supprimé avec succès.",
-      "error": "Échec de la suppression du chat : {message}"
+      "error": "Échec de la suppression du chat : {error}"
     },
     "deleteExpertEval": {
       "title": "Supprimer une évaluation d'expert",
@@ -939,7 +939,7 @@
       "loading": "Suppression en cours...",
       "notFound": "Impossible de supprimer l'évaluation : ID introuvable.",
       "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
-      "error": "Échec de la suppression de l'évaluation d'expert : {message}",
+      "error": "Échec de la suppression de l'évaluation d'expert : {error}",
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {
@@ -1922,7 +1922,7 @@
     "loadingSimilarChats": "Chargement des chats similaires...",
     "enterChatId": "Veuillez entrer un identifiant de clavardage.",
     "fetchError": "Impossible de récupérer les clavardages similaires",
-    "fetchErrorDetail": "Impossible de récupérer les clavardages similaires : {message}",
+    "fetchErrorDetail": "Impossible de récupérer les clavardages similaires : {error}",
     "columns": {
       "chatId": "ID du clavardage",
       "similarity": "Similarité",
