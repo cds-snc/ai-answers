@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.199.0](https://github.com/cds-snc/ai-answers/compare/v1.198.0...v1.199.0) (2026-09-21)
+
+
+### Features
+
+* add scoped LoadingOverlay, drop redundant DataTables processing ([268d2e5](https://github.com/cds-snc/ai-answers/commit/268d2e5378bd2cee30b9c303cdd827688507453a))
+
+
+### Bug Fixes
+
+* group chat log export options inside the filter panel ([da6be0f](https://github.com/cds-snc/ai-answers/commit/da6be0fb10be08c74fb073931e41f492759fe35a))
+* group log exports inside filter a11y ([2a513ef](https://github.com/cds-snc/ai-answers/commit/2a513efa8cdd39de5806dae7ecf24fa064f9121c))
+* name EvalPage metrics tables with sr-only captions ([41a0858](https://github.com/cds-snc/ai-answers/commit/41a08580ab935e7ee84dea34703ac6e726f01434))
+* name EvalPage metrics tables with sr-only captions ([c7aaa01](https://github.com/cds-snc/ai-answers/commit/c7aaa01eeb2773ce8a5547751b3ea777ae495ceb))
+
+
+### Miscellaneous Chores
+
+* delete test, not needed ([d540623](https://github.com/cds-snc/ai-answers/commit/d540623d273a190077111b73a789644605509c8e))
+
+
+### Code Refactoring
+
+* migrate error-status consumers onto useErrorStatus ([92dd4fb](https://github.com/cds-snc/ai-answers/commit/92dd4fbcdc9a35ace0dda6f75f366d9109a14e5d))
+
 ## [1.198.0](https://github.com/cds-snc/ai-answers/compare/v1.197.0...v1.198.0) (2026-09-18)
 
 
