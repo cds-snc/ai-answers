@@ -229,6 +229,7 @@ const EvalPage = ({ lang = 'en' }) => {
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                    <caption className="sr-only">{t('admin.evalPage.metrics.title')}</caption>
                 <thead>
                   <tr>
                     <th scope="col"><span className="sr-only">{t('reviewPanels.metric')}</span></th>
@@ -255,6 +256,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <h4>{t('admin.evalPage.metrics.noMatchReasons')}</h4>
                   {evalMetrics.noMatchByReason && Object.keys(evalMetrics.noMatchByReason).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                        <caption className="sr-only">{t('admin.evalPage.metrics.noMatchReasons')}</caption>
                     <thead>
                       <tr>
                         <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel')}</th>
@@ -279,6 +281,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <h4>{t('admin.evalPage.metrics.fallbackTypes')}</h4>
                 {evalMetrics.fallbackByType && Object.keys(evalMetrics.fallbackByType).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                        <caption className="sr-only">{t('admin.evalPage.metrics.fallbackTypes')}</caption>
                     <thead>
                       <tr>
                         <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel')}</th>
