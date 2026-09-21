@@ -4,6 +4,8 @@ import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { MAX_BATCH_ITEMS } from '../../src/config/batch.js';
+import { resolveSearchProvider } from '../../src/config/searchProviders.js';
+import { SettingsService } from '../../services/SettingsService.js';
 
 async function batchPersistHandler(req, res) {
   if (req.method !== 'POST') {
@@ -21,6 +23,7 @@ async function batchPersistHandler(req, res) {
     }
 
     await dbConnect();
+    const configuredSearchProvider = resolveSearchProvider(SettingsService.get('search.default'));
 
     // If a batchId is provided, update the existing batch (or upsert when not found).
     if (batchId) {
@@ -42,7 +45,9 @@ async function batchPersistHandler(req, res) {
         if (Object.prototype.hasOwnProperty.call(batchData, key) && batchData[key] != null) {
           // Use requireLiteralString to enforce a safe pattern and length
           try {
-            safeSet[key] = requireLiteralString(batchData[key], key);
+            safeSet[key] = key === 'searchProvider'
+              ? resolveSearchProvider(batchData[key], configuredSearchProvider)
+              : requireLiteralString(batchData[key], key);
           } catch (err) {
             return res.status(400).json({ message: `Invalid value for ${key}` });
           }
@@ -74,7 +79,11 @@ async function batchPersistHandler(req, res) {
         });
       }
       console.log(`[batch-persist] creating new batch (batchId will be set to _id) with ${batchData.items?.length || 0} items`);
-      const batch = new Batch({ ...batchData, createdBy: req.user?.userId || '' });
+      const batch = new Batch({
+        ...batchData,
+        searchProvider: resolveSearchProvider(batchData.searchProvider, configuredSearchProvider),
+        createdBy: req.user?.userId || '',
+      });
       await batch.save();
 
       // For compatibility and to avoid confusion, set the batchId field to the

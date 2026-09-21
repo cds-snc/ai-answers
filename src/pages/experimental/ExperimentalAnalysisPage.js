@@ -11,6 +11,7 @@ import ExperimentalServerDataTable from '../../components/experimental/Experimen
 import { getPath } from '../../utils/routes.js';
 import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
 // component (not a StatusMessage `progress` variant) because determinate
@@ -157,7 +158,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
-    const [selectedSearch, setSelectedSearch] = useState('google');
+    const [selectedSearch, setSelectedSearch] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -754,7 +755,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
                         {/* Analyzer selector */}
                         <div className="mb-400">
-                            <label htmlFor="analyzer-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="analyzer-select" className="filter-label display-block">
                                 {t('experimental.analysis.selectAnalyzers')}
                             </label>
                             <select
@@ -763,7 +764,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => {
                                     setSelectedAnalyzerId(e.target.value);
                                 }}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
                                 {availableAnalyzers.map(a => (
@@ -789,7 +790,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="analysis-mode-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="analysis-mode-select" className="filter-label display-block">
                                 {t('experimental.analysis.analysisMode.label')}
                             </label>
                             {hasDatasetReferenceAnswer ? (
@@ -797,7 +798,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     id="analysis-mode-select"
                                     value={analysisMode}
                                     onChange={(e) => setAnalysisMode(e.target.value)}
-                                    style={{ padding: '8px', width: '100%' }}
+                                    className="filter-select"
                                 >
                                     <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
                                     {selectedAnalyzer?.requiresReference !== true && (
@@ -810,14 +811,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="workflow-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="workflow-select" className="filter-label display-block">
                                 {t('experimental.analysis.workflowLabel')}
                             </label>
                             <select
                                 id="workflow-select"
                                 value={selectedWorkflow}
                                 onChange={(e) => setSelectedWorkflow(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 {WORKFLOWS.map(workflow => (
                                     <option key={workflow.value} value={workflow.value}>
@@ -828,14 +829,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="model-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="model-select" className="filter-label display-block">
                                 {t('batch.upload.model.label')}
                             </label>
                             <select
                                 id="model-select"
                                 value={selectedModel}
                                 onChange={(e) => setSelectedModel(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 {AVAILABLE_MODELS.map(model => (
                                     <option key={model.value} value={model.value}>
@@ -853,23 +854,25 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 id="search-provider-select"
                                 value={selectedSearch}
                                 onChange={(e) => setSelectedSearch(e.target.value)}
-                                className="filter-select settings-form-width"
+                                className="filter-select"
                             >
-                                <option value="google">{t('batch.upload.searchService.google')}</option>
-                                <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
+                                <option value="">{t('homepage.chat.options.useSystemSettings')}</option>
+                                {SEARCH_PROVIDERS.map((provider) => (
+                                    <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
+                                ))}
                             </select>
                         </div>
 
                         {/* Dataset Selection */}
                         <div className="mb-400">
-                            <label htmlFor="dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="dataset-select" className="filter-label display-block">
                                 {t('experimental.analysis.useExistingDatasetLabel')}
                             </label>
                             <select
                                 id="dataset-select"
                                 value={selectedDatasetId}
                                 onChange={(e) => setSelectedDatasetId(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
                                 {datasets.map(ds => (
@@ -886,14 +889,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="trials-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="trials-select" className="filter-label display-block">
                                 {t('experimental.analysis.trialsLabel')}
                             </label>
                             <select
                                 id="trials-select"
                                 value={trials}
                                 onChange={(e) => setTrials(parseInt(e.target.value, 10) || 1)}
-                                style={{ padding: '8px', maxWidth: '10rem' }}
+                                className="filter-select experimental-analysis-trials-select"
                             >
                                 {[1, 2, 3, 4, 6, 8].map(n => (
                                     <option key={n} value={n}>{formatNumber(n, lang)}</option>
@@ -958,14 +961,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
                 <div className="mb-300">
-                    <label htmlFor="comparison-dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-dataset-select" className="filter-label display-block">
                         {t('experimental.analysis.useExistingDatasetLabel')}
                     </label>
                     <select
                         id="comparison-dataset-select"
                         value={selectedDatasetId}
                         onChange={(e) => setSelectedDatasetId(e.target.value)}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
                         {datasets.map(ds => (
@@ -977,7 +980,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {!selectedDatasetId && <GcdsText className="mt-200">{t('experimental.analysis.datasetHelper')}</GcdsText>}
                 </div>
                 <div className="mb-300">
-                    <label htmlFor="comparison-baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-baseline-select" className="filter-label display-block">
                         {t('experimental.analysis.comparison.baseline')}
                     </label>
                     <select
@@ -987,7 +990,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             setComparisonBaselineId(e.target.value);
                             setComparisonCandidateId('');
                         }}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.comparison.selectBaseline')}</option>
                         {batches.filter(batch => batch.status === 'completed' && supportsBatchComparison(batch)).map(batch => (
@@ -996,7 +999,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </select>
                 </div>
                 <div className="mb-300">
-                    <label htmlFor="comparison-candidate-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-candidate-select" className="filter-label display-block">
                         {t('experimental.analysis.comparison.candidate')}
                     </label>
                     <select
@@ -1004,7 +1007,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         value={comparisonCandidateId}
                         onChange={(e) => setComparisonCandidateId(e.target.value)}
                         disabled={!comparisonBaselineId}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.comparison.selectCandidate')}</option>
                         {comparisonCandidates.map(batch => (

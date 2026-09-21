@@ -7,6 +7,8 @@ import ExperimentalQueueService from './ExperimentalQueueService.js';
 import ExperimentalAnalyzerRegistry from './ExperimentalAnalyzerRegistry.js';
 import * as GraphRegistry from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
+import { resolveSearchProvider } from '../../src/config/searchProviders.js';
+import { SettingsService } from '../SettingsService.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
@@ -266,11 +268,18 @@ class ExperimentalBatchService {
     }
 
     async createBatch(batchData, itemsData) {
+        const config = {
+            ...(batchData.config || {}),
+            searchProvider: resolveSearchProvider(
+                batchData.config?.searchProvider,
+                resolveSearchProvider(SettingsService.get('search.default'))
+            ),
+        };
+        batchData.config = config;
         if (batchData.type === 'comparison') {
             return this.createComparison(batchData);
         }
         let finalItems = Array.isArray(itemsData) ? itemsData : [];
-        const config = batchData.config || {};
         const selectedAnalyzerId = resolveSelectedAnalyzerId(config);
 
         if (batchData.type === 'analysis') {
@@ -690,7 +699,10 @@ class ExperimentalBatchService {
                     conversationHistory,
                     lang: batch.config.pageLanguage || 'en',
                     selectedAI: batch.config.aiProvider || 'azure',
-                    searchProvider: batch.config.searchProvider || 'google',
+                    searchProvider: resolveSearchProvider(
+                        batch.config.searchProvider,
+                        resolveSearchProvider(SettingsService.get('search.default'))
+                    ),
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
                 };
 

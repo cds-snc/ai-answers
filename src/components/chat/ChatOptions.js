@@ -6,6 +6,7 @@ import StatusMessage, { useRepeatableStatus } from '../admin/StatusMessage.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { isWellFormedHttpUrl } from '../../utils/chat/referringUrl.js';
+import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 
 // workflowSelection / modelSelection are what the dropdowns show, which is not
 // the same thing as what the chat will run: '' means "no override, follow the
@@ -196,8 +197,10 @@ const ChatOptions = ({
               onChange={handleSearchToggle}
               className="filter-select"
             >
-              <option value="google">{safeT('homepage.chat.options.searchSelection.google')}</option>
-              <option value="canadaca">{safeT('homepage.chat.options.searchSelection.canadaca')}</option>
+              <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
+              {SEARCH_PROVIDERS.map((provider) => (
+                <option key={provider.value} value={provider.value}>{safeT(provider.labelKey)}</option>
+              ))}
             </select>
           </div>
         </RoleBasedContent>

@@ -416,6 +416,10 @@
   background-repeat: no-repeat;
 }
 
+.experimental-analysis-trials-select {
+  max-width: 10rem;
+}
+
 /* !important: chat.css has a bare, unscoped `textarea:focus { ... !important }`
    rule (left over from chat-specific styling) that reaches every textarea
    site-wide, including .filter-input ones here — it sets border-color:
@@ -954,6 +958,19 @@
 
 .experimental-table-layout table.dataTable {
   table-layout: fixed;
+}
+
+/* The shared dashboard header rule keeps sortable headings on one line. The
+   experimental table has intentionally narrow numeric columns, so allow its
+   headings to wrap instead of letting adjacent labels overlap. */
+.experimental-table-container table.dataTable.dashboard-table thead > tr > th {
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.experimental-table-container table.dataTable.dashboard-table thead > tr > th .dt-column-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .experimental-dataset-name {

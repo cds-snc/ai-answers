@@ -1105,7 +1105,8 @@
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
-      "invalidEmail": "Invalid email or ; spacing"
+      "invalidEmail": "Invalid email or ; spacing",
+      "invalidSearchProvider": "Select a valid search provider."
     },
     "general": {
       "title": "General settings"
@@ -1115,6 +1116,9 @@
     },
     "defaultModel": {
       "label": "Default model family"
+    },
+    "defaultSearchProvider": {
+      "label": "Default public chat search provider"
     },
     "chatTransport": {
       "label": "Chat event transport",

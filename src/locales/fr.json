@@ -1105,7 +1105,8 @@
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
-      "invalidEmail": "Courriel ou espacement du « ; » invalide"
+      "invalidEmail": "Courriel ou espacement du « ; » invalide",
+      "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
     "general": {
       "title": "Paramètres généraux"
@@ -1115,6 +1116,9 @@
     },
     "defaultModel": {
       "label": "Famille de modèles par défaut"
+    },
+    "defaultSearchProvider": {
+      "label": "Fournisseur de recherche par défaut du clavardage public"
     },
     "chatTransport": {
       "label": "Transport des événements de clavardage",
