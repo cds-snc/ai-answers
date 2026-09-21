@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.200.0](https://github.com/cds-snc/ai-answers/compare/v1.199.0...v1.200.0) (2026-09-21)
+
+
+### Features
+
+* Eval-informed checkmark column on the Eval dashboard ([5a67682](https://github.com/cds-snc/ai-answers/commit/5a676826fdb739644e557426fd341e9df2ca149b))
+* Hard guard against any value for search and allow globally chan… ([933a604](https://github.com/cds-snc/ai-answers/commit/933a604abcddac588c146c775782a8b205e90353))
+
+
+### Bug Fixes
+
+* proper label key ([ba1bdd5](https://github.com/cds-snc/ai-answers/commit/ba1bdd51515021be8d52e6342c3190d14a423bbd))
+* small changes to look of experimental page ([4be8bc4](https://github.com/cds-snc/ai-answers/commit/4be8bc4d6176425c0b057ed93e31f2cfd83026dc))
+
+
+### Miscellaneous Chores
+
+* review sugtgestions ([c3d4aae](https://github.com/cds-snc/ai-answers/commit/c3d4aaef1a6621d531dc7aa10d2fbb8e0cd91c78))
+
 ## [1.199.0](https://github.com/cds-snc/ai-answers/compare/v1.198.0...v1.199.0) (2026-09-21)
 
 
