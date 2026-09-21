@@ -533,7 +533,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
             const analyzerId = resolveBatchAnalyzerId(baseline);
             const result = await ExperimentalBatchClientService.createBatch({
-                name: `${t('experimental.analysis.comparison.titlePrefix')} ${getRunLabel(baseline)} â†’ ${getRunLabel(candidate)}`,
+                name: `${t('experimental.analysis.comparison.titlePrefix')} ${getRunLabel(baseline)} → ${getRunLabel(candidate)}`,
                 description: `${t('experimental.analysis.comparison.baselinePrefix')} ${getRunLabel(baseline)}`,
                 type: 'comparison',
                 config: {
