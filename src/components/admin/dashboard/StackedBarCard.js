@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import ChartDataToggle from './ChartDataToggle.js';
 import { formatNumber, formatPercent } from '../../../utils/numberFormat.js';
+import { formatLabelValue } from '../../../utils/labelValue.js';
 
 // Single 100%-stacked horizontal bar in a card: one thin bar split into
 // segments, each segment's share of the total shown as a % label when there's
@@ -53,7 +54,7 @@ const StackedBarCard = ({ title, subtitle, data = [], height = 56, lang = 'en', 
               className="stacked-bar-card__tooltip-swatch"
               style={{ background: d.colour, borderColor: d.stroke || d.colour }}
             />
-            {d.name}: {formatNumber(d.value, lang)} ({fmtPct(d.value)})
+            {formatLabelValue(d.name, `${formatNumber(d.value, lang)} (${fmtPct(d.value)})`, lang)}
           </div>
         ))}
       </div>

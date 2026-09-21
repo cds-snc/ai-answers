@@ -395,7 +395,7 @@
     "metadataSeeFullValue": "View value",
     "timeline": {
       "title": "Pipeline step timeline",
-      "graph": "Graph",
+      "graph": "Graph:",
       "step": "Step",
       "start": "Start (ms)",
       "end": "End (ms)",
@@ -406,7 +406,7 @@
       "noTimeline": "No pipeline events found in these logs.",
       "downloads": "downloads",
       "generation": "generation",
-      "userPerceived": "User-perceived response time"
+      "userPerceived": "User-perceived response time:"
     }
   },
   "admin": {
@@ -626,15 +626,15 @@
       "detailsTitle": "Detailed Evaluation Process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation",
+          "title": "Initial Validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval",
+          "title": "Embedding Retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content",
+          "title": "Finding Similar Content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -643,7 +643,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Sentence-level matching",
+          "title": "Sentence-level matching:",
           "item": {
             "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
             "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
@@ -652,7 +652,7 @@
           }
         },
         "citationMatch": {
-          "title": "Citation matching",
+          "title": "Citation matching:",
           "item": {
             "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
             "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
@@ -660,7 +660,7 @@
           }
         },
         "qaFallback": {
-          "title": "QA high score fallback",
+          "title": "QA high score fallback:",
           "item": {
             "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
             "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
@@ -668,14 +668,14 @@
           }
         },
         "fallbackCompare": {
-          "title": "Fallback compare checks",
+          "title": "Fallback compare checks:",
           "item": {
             "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
             "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
           }
         },
         "creation": {
-          "title": "Evaluation creation & scoring",
+          "title": "Evaluation creation & scoring:",
           "item": {
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
@@ -685,14 +685,14 @@
           }
         },
         "noMatch": {
-          "title": "No match / rejection cases",
+          "title": "No match / rejection cases:",
           "item": {
             "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
             "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
           }
         },
         "timeline": {
-          "title": "Stage timeline & telemetry",
+          "title": "Stage timeline & telemetry:",
           "item": {
             "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
             "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
@@ -715,8 +715,8 @@
         "refresh": "Refresh metrics"
       },
       "date": {
-        "startLabel": "Start date",
-        "endLabel": "End date"
+        "startLabel": "Start date:",
+        "endLabel": "End date:"
       },
       "button": {
         "processing": "Processing...",
@@ -725,10 +725,10 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed",
-        "failed": "Failed",
-        "remaining": "Remaining",
-        "duration": "Duration",
+        "processed": "Processed:",
+        "failed": "Failed:",
+        "remaining": "Remaining:",
+        "duration": "Duration:",
         "autoProcessing": "Auto-processing active",
         "regeneratingAll": "Regenerating all evaluations"
       }
@@ -1228,7 +1228,9 @@
       "threat": "Threats",
       "manipulation": "Manipulation",
       "langEnglish": "English",
-      "langFrench": "Français"
+      "langFrench": "Français",
+      "langSuffixEn": "(EN)",
+      "langSuffixFr": "(FR)"
     },
     "metrics": {
       "storeType": "Chat metrics store (memory | DocumentDB)"
@@ -1251,7 +1253,7 @@
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
-    "error": "Error",
+    "error": "Error:",
     "page": "Page",
     "yes": "Yes",
     "no": "No",
@@ -1271,7 +1273,7 @@
     "reRun": "Re-run",
     "reRunning": "Re-running...",
     "noMatch": "No match found for this interaction.",
-    "reason": "Reason",
+    "reason": "Reason:",
     "processed": "Processed",
     "hasMatches": "Has matches",
     "fallback": "Fallback",
@@ -1312,7 +1314,7 @@
     "helpfulNo": "Helpful - no",
     "notAvailable": "N/A",
     "expertFeedbackTitle": "Expert evaluation",
-    "expertEmail": "Expert email",
+    "expertEmail": "Expert email:",
     "deleteExpertFeedback": "Delete expert evaluation",
     "publicFeedbackTitle": "Public feedback",
     "autoEvalTitle": "Automated evaluation",
@@ -1327,7 +1329,7 @@
     "none": "none",
     "sourceSentenceIndex": "Source sentence index",
     "stageTimeline": "Stage timeline",
-    "rawTimeline": "Raw timeline (JSON)",
+    "rawTimeline": "Raw timeline (JSON):",
     "noStageTimeline": "No stage timeline available.",
     "sourceText": "Source text",
     "matchedChatId": "Matched chatId",
@@ -1339,15 +1341,19 @@
     "noSentenceTraces": "No sentence match traces available.",
     "citation": "Citation",
     "totalScore": "Total score",
+    "totalScoreLabel": "Total score:",
     "suggestedCitation": "Suggested citation URL:",
     "similarityScores": "Similarity scores",
     "sentenceMatchTrace": "Sentence match trace",
     "agentUsage": "Agent usage",
     "metric": "Metric",
     "sentenceCompare": "Sentence-compare",
-    "sentenceCompareUsed": "Sentence compare used",
+    "sentenceCompareLabel": "Sentence-compare:",
+    "sentenceCompareUsed": "Sentence compare used:",
     "fallbackCompare": "Fallback-compare",
+    "fallbackCompareLabel": "Fallback-compare:",
     "fallbackCompareUsed": "Fallback compare used",
+    "fallbackCompareUsedLabel": "Fallback compare used:",
     "field": "Field",
     "value": "Value",
     "fallbackCompareChecks": "Fallback compare checks",
@@ -1407,9 +1413,9 @@
     "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
     "deptNote": "Blocked queries can't be broken down by institution — blocks happen before the institution is identified. Clear the institution filter to see blocked-query counts.",
     "colType": "Block type",
-    "colTotal": "Total",
-    "colEn": "EN",
-    "colFr": "FR",
+    "colTotal": "Total:",
+    "colEn": "EN:",
+    "colFr": "FR:",
     "totalRow": "Total blocked",
     "types": {
       "tooShort": "Too short (1–2 words)",
@@ -1806,7 +1812,7 @@
     "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
     "processing": "Processing...",
-    "remaining": "Remaining",
+    "remaining": "Remaining:",
     "autoProcessingActive": "Auto-processing active",
     "metadataBackfillTitle": "Embedding metadata backfill",
     "metadataBackfillDescription": "Populate embedding metadata in a background job that continues after you leave this page.",
@@ -1824,7 +1830,7 @@
     "metadataBackfillStopped": "Stopped",
     "metadataBackfillStoppedAnnouncement": "Embedding metadata backfill stopped.",
     "metadataBackfillStopFailed": "Failed to stop embedding metadata backfill. Check the console for details.",
-    "metadataProcessed": "Processed",
+    "metadataProcessed": "Processed:",
     "metadataResumeFromId": "Saved resume ID: {id}",
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
     "metadataBackfillCompleted": "Embedding metadata backfill complete.",
@@ -1884,10 +1890,10 @@
       "loading": "Looking up metadata...",
       "failed": "Failed to look up embedding metadata.",
       "chatSummary": {
-        "chatId": "Chat ID",
-        "pageLanguage": "Page language",
-        "interactions": "Interactions",
-        "embeddings": "Embeddings"
+        "chatId": "Chat ID:",
+        "pageLanguage": "Page language:",
+        "interactions": "Interactions:",
+        "embeddings": "Embeddings:"
       },
       "columns": {
         "row": "Row",
@@ -2017,7 +2023,7 @@
     "table": {
       "enabled": "Use this scenario for testing",
       "enabledError": "Please make a change to the scenario first.",
-      "lastUpdated": "Last updated"
+      "lastUpdated": "Last updated:"
     },
     "buttons": {
       "save": "Save",
@@ -2073,11 +2079,11 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
-    "lastRun": "Last run",
+    "lastRun": "Last run:",
     "serviceDetails": "Service details",
-    "latency": "Latency",
+    "latency": "Latency:",
     "details": "Details",
-    "error": "Error"
+    "error": "Error:"
   },
   "validation": {
     "required": "Please fill in this field.",
@@ -2149,7 +2155,7 @@
       "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
-      "requiredColumns": "Columns",
+      "requiredColumns": "Columns:",
       "columnAliasHint": "Column names are matched without regard to case, spaces, hyphens or underscores. Extra columns are kept and ignored unless they conflict with the selected dataset type.",
       "uploadDescriptions": {
         "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Do not include an answer or reference answer column.",
@@ -2199,7 +2205,7 @@
       "configuration": "Configuration",
       "selectAnalyzers": "Select analyzer",
       "analyzerDetailsTitle": "Analyzer details",
-      "analyzerPrefix": "Analyzer",
+      "analyzerPrefix": "Analyzer:",
       "workflowLabel": "Workflow",
       "analysisMode": {
         "label": "Analysis mode",
@@ -2214,6 +2220,7 @@
       },
       "comparison": {
         "title": "Compare completed batches",
+        "titlePrefix": "Compare completed batches:",
         "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
         "analyzerDetailsTitle": "Comparison analyzer details",
         "analyzers": {
@@ -2268,6 +2275,7 @@
           }
         },
         "baseline": "Baseline batch",
+        "baselinePrefix": "Baseline batch:",
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
         "selectCandidate": "-- Select a batch to compare --",
@@ -2577,7 +2585,7 @@
       "scoreAny": "any trial",
       "captureRun": "Reference batch — not scored against a reference",
       "newRun": "New analysis batch",
-      "categoryLabel": "Category",
+      "categoryLabel": "Category:",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {
         "control": "Control",

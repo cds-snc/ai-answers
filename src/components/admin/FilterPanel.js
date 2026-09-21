@@ -7,6 +7,7 @@ import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
+import { formatLabelValue } from '../../utils/labelValue.js';
 
 const FilterPanel = ({
   lang,
@@ -930,9 +931,8 @@ const FilterPanel = ({
   // Blue info pills (no ×) show the current state for always-present filters.
   // Grey closable pills (×) show when a filter differs from its default.
   // French requires a space before ':' (e.g. "Utilisateurs : Tous"); English
-  // doesn't. Centralizes that rule for every "Label: value" pill built here,
-  // rather than hardcoding ':' at each call site.
-  const formatPillLabel = (label, value) => (lang === 'fr' ? `${label} : ${value}` : `${label}: ${value}`);
+  // doesn't - formatLabelValue holds that rule for every "Label: value" pill.
+  const formatPillLabel = (label, value) => formatLabelValue(label, value, lang);
 
   const buildPills = () => {
     if (!appliedFilters) return [];

@@ -673,7 +673,7 @@ const VectorPage = ({ lang = 'en' }) => {
           <div className="mb-200">
             <p>
               {embeddingProgress.remaining !== undefined && (
-                <span> {t('vector.remaining')}: {fmtN(embeddingProgress.remaining)}</span>
+                <span> {t('vector.remaining')} {fmtN(embeddingProgress.remaining)}</span>
               )}
               {isAutoProcessingEmbeddings && (
                 <span> <strong>{t('vector.autoProcessingActive')}</strong></span>
@@ -781,9 +781,9 @@ const VectorPage = ({ lang = 'en' }) => {
         {metadataProgress && (
           <div className="mb-200">
             <p>
-              <span>{t('vector.metadataProcessed')}: {fmtN(metadataProgress.processed)}</span>
+              <span>{t('vector.metadataProcessed')} {fmtN(metadataProgress.processed)}</span>
               {typeof metadataProgress.remaining === 'number' && (
-                <span> {t('vector.remaining')}: {fmtN(metadataProgress.remaining)}</span>
+                <span> {t('vector.remaining')} {fmtN(metadataProgress.remaining)}</span>
               )}
               {metadataProgress?.lastProcessedId && (
                 <span>
@@ -939,10 +939,10 @@ const VectorPage = ({ lang = 'en' }) => {
         {metadataLookupResult?.chat && (
           <div className="mb-400">
             <p>
-              <span>{t('vector.metadataLookup.chatSummary.chatId')}: {metadataLookupResult.chat.chatId}</span>
-              <span> {t('vector.metadataLookup.chatSummary.pageLanguage')}: {metadataLookupResult.chat.pageLanguage || t('vector.metadataBatchResults.emptyValue')}</span>
-              <span> {t('vector.metadataLookup.chatSummary.interactions')}: {fmtN(metadataLookupResult.chat.interactionCount)}</span>
-              <span> {t('vector.metadataLookup.chatSummary.embeddings')}: {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
+              <span>{t('vector.metadataLookup.chatSummary.chatId')} {metadataLookupResult.chat.chatId}</span>
+              <span> {t('vector.metadataLookup.chatSummary.pageLanguage')} {metadataLookupResult.chat.pageLanguage || t('vector.metadataBatchResults.emptyValue')}</span>
+              <span> {t('vector.metadataLookup.chatSummary.interactions')} {fmtN(metadataLookupResult.chat.interactionCount)}</span>
+              <span> {t('vector.metadataLookup.chatSummary.embeddings')} {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
             </p>
             {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
                 (see the DocDB capability table above). */}

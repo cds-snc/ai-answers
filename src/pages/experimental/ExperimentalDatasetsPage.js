@@ -350,7 +350,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                 {typeInfo.description}
                             </GcdsText>
                             <GcdsText className="mb-200">
-                                <strong>{t('experimental.datasets.requiredColumns')}: </strong>
+                                <strong>{t('experimental.datasets.requiredColumns')} </strong>
                                 {typeInfo.columns}
                             </GcdsText>
                             <GcdsText className="mb-200">
