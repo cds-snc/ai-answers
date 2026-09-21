@@ -946,12 +946,13 @@
     "chatLogs": {
       "title": "Télécharger les journaux de chat",
       "getLogs": "Obtenir les journaux",
+      "exportOptions": "Options d'exportation",
       "exportView": "Vue d'exportation",
       "exportFormat": "Format",
       "export": "Exporter",
       "exporting": "Exportation en cours...",
       "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
-      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger.",
+      "exportSuccess": "Exportation terminée. Votre fichier se télécharge.",
       "exportError": "Échec de l'exportation : {error}",
       "views": {
         "default": "Par défaut",

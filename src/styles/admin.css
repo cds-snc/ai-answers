@@ -540,6 +540,19 @@
   padding-right: 2.25rem;
 }
 
+/* FilterPanel marks its buttons/pills aria-disabled (never natively
+   disabled - that blurs a focused button) while a fetch is in flight.
+   Same declarations GcdsButton uses for its own disabled state
+   (gcds-button.css), so the two kinds of button dim alike; pointer-events
+   also drops hover styling, keyboard focus is unaffected. */
+.filter-button[aria-disabled="true"],
+.filter-pills__clear-all[aria-disabled="true"],
+.filter-pill--closable[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: var(--gcds-button-shared-disabled-opacity);
+  pointer-events: none;
+}
+
 .filter-button-primary:hover:not(:disabled) {
   background: var(--gcds-button-primary-hover-background);
   border-color: var(--gcds-button-primary-hover-background);
@@ -748,23 +761,24 @@
   overflow-wrap: anywhere;
 }
 
-/* ChatLogsDashboard.js's export View/Format dropdowns. Previously
-   `className="flex items-center gap-4 flex-wrap"` on the row and
-   `className="export-control-group"` on each field - none of those
-   classes were ever defined anywhere in this project's CSS (Tailwind-style
-   names with nothing behind them), so the row had no flex/gap/wrap at all
-   and each .filter-select (which *is* real, width:100%) just stretched
-   full-width and stacked with plain block-level spacing between them -
-   read as "too much space", not a deliberate gap. */
-.export-controls-row {
-  display: flex;
-  align-items: center;
-  gap: var(--gcds-spacing-400);
-  flex-wrap: wrap;
+/* ChatLogsDashboard.js's export options: a <fieldset> passed into
+   FilterPanel as children, rendered after "More filters" and above the
+   Clear all/Export buttons. It also carries .filter-main-row for the
+   panel's 3-column grid; this only resets the browser's default fieldset
+   box so it reads as one more filter row (its legend is sr-only). */
+.export-controls {
+  margin: var(--gcds-spacing-300) 0 0;
+  border: none;
+  padding: 0;
+  min-width: 0;
 }
 
-.export-control-group {
-  max-width: 16rem;
+/* Icon + text side by side inside FilterPanel's Apply button when
+   ChatLogsDashboard.js relabels it "Export". */
+.export-button-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
 }
 
 /* Search box + entries-per-page/pagination focus styling, split out from

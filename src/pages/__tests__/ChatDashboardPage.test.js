@@ -185,8 +185,14 @@ describe('ChatDashboardPage rendering', () => {
     });
     await waitFor(() => expect(mountedInstances.length).toBe(1));
     const firstInstance = mountedInstances[0];
+    // Let the table's fetch settle: FilterPanel keeps Clear all inert while
+    // the page reports filterLoading, as a real table's ajax would have run.
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
 
     const clearButton = container.querySelector('.filter-button-secondary');
+    await waitFor(() => expect(clearButton.getAttribute('aria-disabled')).toBeNull());
     await act(async () => {
       fireEvent.click(clearButton);
     });
