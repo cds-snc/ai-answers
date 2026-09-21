@@ -230,6 +230,25 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.streamInput.searchProvider).toBe('canadaca');
   });
 
+  it('uses the configured search provider for invalid authenticated values', async () => {
+    mocks.settingsGet.mockImplementation((key) => {
+      if (key === 'chat.transport') return 'sse';
+      if (key === 'workflow.default') return 'GenericGraph';
+      if (key === 'model.default') return 'openai-gpt51';
+      if (key === 'search.default') return 'canadaca';
+      return null;
+    });
+    setupGraphStream();
+    const req = createRequest();
+    req.user = { userId: 'user-123' };
+    req.isAuthenticated = () => true;
+    req.body.input.searchProvider = 'unsupported-provider';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.searchProvider).toBe('canadaca');
+  });
+
 });
 
 describe('setNdjsonHeaders', () => {

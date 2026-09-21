@@ -1114,11 +1114,7 @@
       "label": "Default model family"
     },
     "defaultSearchProvider": {
-      "label": "Default public chat search provider",
-      "options": {
-        "google": "Google",
-        "canadaca": "Canada.ca"
-      }
+      "label": "Default public chat search provider"
     },
     "chatTransport": {
       "label": "Chat event transport",

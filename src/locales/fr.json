@@ -1114,11 +1114,7 @@
       "label": "Famille de modèles par défaut"
     },
     "defaultSearchProvider": {
-      "label": "Fournisseur de recherche par défaut du clavardage public",
-      "options": {
-        "google": "Google",
-        "canadaca": "Canada.ca"
-      }
+      "label": "Fournisseur de recherche par défaut du clavardage public"
     },
     "chatTransport": {
       "label": "Transport des événements de clavardage",

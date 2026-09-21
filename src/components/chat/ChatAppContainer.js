@@ -8,7 +8,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 import DataStoreService from '../../services/DataStoreService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS, MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../config/workflows.js';
-import { DEFAULT_SEARCH_PROVIDER } from '../../config/searchProviders.js';
+import { SEARCH_PROVIDER_VALUES } from '../../config/searchProviders.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
@@ -133,11 +133,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     () => readStoredOverride('selectedAI', MODEL_VALUES) !== null
   );
   const [selectedSearch, setSelectedSearch] = useState(() => {
-    try {
-      return localStorage.getItem(storageKey('selectedSearch')) || DEFAULT_SEARCH_PROVIDER;
-    } catch (e) {
-      return DEFAULT_SEARCH_PROVIDER;
-    }
+    return readStoredOverride('selectedSearch', SEARCH_PROVIDER_VALUES) || '';
   });
   const [workflow, setWorkflow] = useState(() => readStoredOverride('workflow', WORKFLOW_VALUES));
   const [workflowIsOverride, setWorkflowIsOverride] = useState(
@@ -409,8 +405,11 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   };
 
   const handleSearchToggle = (e) => {
-    setSelectedSearch(e.target.value);
-    console.log('Search toggled to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('selectedSearch');
+    }
+    setSelectedSearch(value);
   };
 
   // Persist selection changes to localStorage. Only the admin's own choice is
@@ -449,7 +448,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+      if (selectedSearch) {
+        localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+      }
     } catch (e) {
       // ignore storage errors
     }

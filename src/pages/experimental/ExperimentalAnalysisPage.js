@@ -11,7 +11,7 @@ import ExperimentalServerDataTable from '../../components/experimental/Experimen
 import { getPath } from '../../utils/routes.js';
 import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
-import { SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../../config/searchProviders.js';
+import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
 // component (not a StatusMessage `progress` variant) because determinate
@@ -158,7 +158,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
-    const [selectedSearch, setSelectedSearch] = useState(DEFAULT_SEARCH_PROVIDER);
+    const [selectedSearch, setSelectedSearch] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -856,10 +856,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => setSelectedSearch(e.target.value)}
                                 className="filter-select settings-form-width"
                             >
-                                {SEARCH_PROVIDER_VALUES.map((provider) => (
-                                    <option key={provider} value={provider}>
-                                        {t(`batch.upload.searchService.${provider}`)}
-                                    </option>
+                                <option value="">{t('homepage.chat.options.useSystemSettings')}</option>
+                                {SEARCH_PROVIDERS.map((provider) => (
+                                    <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
                                 ))}
                             </select>
                         </div>
