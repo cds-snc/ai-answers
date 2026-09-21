@@ -304,6 +304,20 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
       ]), searchable: false, orderable: false
     },
     {
+      // Checkmark when expert-rated examples were fed to the model for this
+      // answer (derived server-side from context.qaMatches), blank otherwise.
+      // Same icon + sr-only text + data-tooltip pattern as the Download
+      // column below. Short on-screen header like "Page"; ariaTitle carries
+      // the full name for the sort control.
+      title: t('admin.evalDashboard.columns.evalInformed'),
+      ariaTitle: t('admin.evalDashboard.columns.evalInformedAriaLabel'),
+      data: 'evalInformed', width: '50px',
+      render: v => v
+        ? `<span class="text-status--positive"><i class="fa-solid fa-check eval-tooltip" style="font-size: 1.4em;" aria-hidden="true" data-tooltip="${escapeHtmlAttribute(t('admin.evalDashboard.columns.evalInformedAriaLabel'))}"></i><span class="sr-only">${escapeHtmlAttribute(t('admin.evalDashboard.columns.evalInformedAriaLabel'))}</span></span>`
+        : '',
+      searchable: false, orderable: true
+    },
+    {
       title: t('admin.evalDashboard.columns.feedback'), data: 'feedback', width: '60px', render: v => {
         // Icon + hidden text, same tight pattern as the Download column
         // below (FA icon since GC DS has no thumbs glyph, aria-hidden, real
@@ -514,7 +528,10 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 autoWidth: false,
-                order: [[13, 'desc']],
+                // Newest first. Derived, not a literal index: inserting a
+                // column shifts the hidden Date column and a stale literal
+                // silently sorts by whatever landed in its slot.
+                order: [[columns.findIndex((c) => c.data === 'date'), 'desc']],
                 // Seeds the search box with whatever was typed into the
                 // standalone pre-table chat ID search (see the render below) -
                 // read once here, at this mount's render, since the table
@@ -582,6 +599,11 @@ const EvalDashboardPage = ({ lang = 'en' }) => {
                     const pageLanguageHeader = api.column(columns.findIndex((c) => c.data === 'pageLanguage')).header();
                     if (pageLanguageHeader) {
                       pageLanguageHeader.setAttribute('aria-label', t('admin.common.columns.pageLanguageAriaLabel'));
+                    }
+                    // "Informed" header, same short-title treatment.
+                    const evalInformedHeader = api.column(columns.findIndex((c) => c.data === 'evalInformed')).header();
+                    if (evalInformedHeader) {
+                      evalInformedHeader.setAttribute('aria-label', t('admin.evalDashboard.columns.evalInformedAriaLabel'));
                     }
                   } catch (e) { /* ignore initComplete errors */ }
                 },

@@ -31,6 +31,7 @@ A change to `FilterPanel.js` or `getChatFilterConditions` must be verified on **
 
 - **DataTables `stateSave`**: when changing column `searchable`/`orderable`, bump the page's `TABLE_STORAGE_KEY` version — stale localStorage silently applies old column filters.
 - **Eval dashboard aggregates from `Chat`, then unwinds interactions**: one row per interaction, but `user`, `chatId`, `pageLanguage` stay on the chat document.
+- **Eval dashboard "Eval-informed" column** is derived in the endpoint from the context lookup: `context.qaMatches` non-empty means expert-rated examples were injected into the answer prompt (see [using-evals-for-answers.md](../architecture/using-evals-for-answers.md#graph-node)). No separate flag is stored.
 - **Cleanup `$project` stages**: a field added via `$lookup` + `$addFields` must survive any later `$project` that needs it.
 - **Only AutoEval has per-column filters** (built in `initComplete`, sent as `columnSearch`; no global search). Chat and Eval use one global search. Adding column filters to Chat needs frontend (`initComplete` + `columnSearch`) and backend (`chat-dashboard.js`) work; the eval endpoint already handles `columnSearch`.
 - **Chat grouping is shared**: striping and keep-chat-together cells for Chat, Eval and AutoEval come from `src/utils/admin/chatGroupedTable.js` — see [tables.md](tables.md#grouped-chat-tables).
