@@ -4,13 +4,14 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
-import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 
 
 const ChatLogsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
 
   const VIEW_OPTIONS = useMemo(() => [
     { value: 'default', label: t('admin.chatLogs.views.default') },
@@ -106,12 +107,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Export error:', error);
-      // error.message is raw, untranslated exception text — same reasoning
-      // as DeleteChatSection.js's fix: split the translated template around
-      // the placeholder and wrap just the detail in lang="en" rather than
-      // running it through .replace() as a plain string substitution.
-      const [prefix, suffix] = t('admin.chatLogs.exportError').split('{error}');
-      setExportError({ prefix, suffix, detail: error.message || String(error) });
+      setExportError(buildErrorStatus('admin.chatLogs.exportError', error));
     }
     setExporting(false);
   };
@@ -126,11 +122,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         <LoadingOverlay message={<>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</>} />
       )}
 
-      {exportError && (
-        <StatusMessage variant="error">
-          {exportError.prefix}<code lang="en">{exportError.detail}</code>{exportError.suffix}
-        </StatusMessage>
-      )}
+      {renderStatusMessage(exportError, 'success', 'export')}
 
       {!showPanel && (
         <div className="bg-white shadow rounded-lg p-4">

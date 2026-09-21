@@ -842,7 +842,7 @@
       "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
       "fetchFailed": "Failed to load data. Please try again.",
-      "fetchError": "Failed to load data: {message}",
+      "fetchError": "Failed to load data: {error}",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
       "metricsLoading": "Loading metrics...",
@@ -951,7 +951,7 @@
       "loading": "Deleting...",
       "notFound": "Cannot delete chat: ID not found.",
       "success": "{chatId} deleted successfully.",
-      "error": "Failed to delete chat: {message}"
+      "error": "Failed to delete chat: {error}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
@@ -960,7 +960,7 @@
       "loading": "Deleting...",
       "notFound": "Cannot delete evaluation: ID not found.",
       "success": "Deleted {count} expert feedback record(s) for {chatId}.",
-      "error": "Failed to delete expert evaluation: {message}",
+      "error": "Failed to delete expert evaluation: {error}",
       "notEvaluated": "Not evaluated."
     }
   },
@@ -1921,7 +1921,7 @@
     "loadingSimilarChats": "Loading similar chats...",
     "enterChatId": "Please enter a chat ID.",
     "fetchError": "Failed to fetch similar chats",
-    "fetchErrorDetail": "Failed to fetch similar chats: {message}",
+    "fetchErrorDetail": "Failed to fetch similar chats: {error}",
     "columns": {
       "chatId": "Chat ID",
       "similarity": "Similarity",

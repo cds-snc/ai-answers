@@ -3,9 +3,11 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import EvaluationService from '../services/EvaluationService.js';
 import DeleteByChatIdSection from './admin/DeleteByChatIdSection.js';
 import { formatNumber } from '../utils/numberFormat.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
 
 const DeleteExpertEval = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, wrapErrorDetail } = useErrorStatus(t);
 
   const handleDelete = async (chatId) => {
     try {
@@ -27,16 +29,11 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       // point of view it's the same as "failed to delete an expert
       // evaluation" (there wasn't one). "Not evaluated" is a known,
       // translated reason (not raw exception text), so — unlike the catch
-      // block below — it doesn't need a lang="en" wrapper.
-      const [prefix, suffix] = t('admin.deleteExpertEval.error').split('{message}');
-      return { isError: true, prefix, detail: t('admin.deleteExpertEval.notEvaluated'), suffix };
+      // block below — it doesn't need a lang="en" wrapper. Goes through
+      // buildErrorStatus anyway so both branches share one prefix/suffix split.
+      const notEvaluated = buildErrorStatus('admin.deleteExpertEval.error', { message: t('admin.deleteExpertEval.notEvaluated') });
+      return { isError: true, prefix: notEvaluated.prefix, detail: notEvaluated.detail, suffix: notEvaluated.suffix };
     } catch (err) {
-      // err.message is raw, untranslated exception text — never run it
-      // through the {message} template as a plain string substitution (a FR
-      // admin would otherwise hear it announced as French). Split the
-      // translated template around the placeholder instead, so the detail
-      // can be wrapped in its own lang="en" span (mirrors DeleteChatSection.js).
-      //
       // TODO (Official Languages): this treats every failure here as
       // unbounded free text, but the 404 race case specifically (the
       // pre-check passed, then the chat was deleted before this call
@@ -49,8 +46,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       // block can tell that case apart from a genuinely unbounded failure
       // (network drop, unexpected 500). Not done: touches both layers plus
       // a test rewrite, not just this file — see PR discussion.
-      const [prefix, suffix] = t('admin.deleteExpertEval.error').split('{message}');
-      return { isError: true, prefix, detail: <code lang="en">{err.message || String(err)}</code>, suffix };
+      return wrapErrorDetail('admin.deleteExpertEval.error', err);
     }
   };
 
