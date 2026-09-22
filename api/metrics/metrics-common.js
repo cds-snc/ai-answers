@@ -81,7 +81,11 @@ export async function parseRequestFilters(req) {
     const interactionFilters = { userType, urlEn, urlFr, reviewerMatch }; // department is context-based, handled separately
     const extraFilterConditions = getChatFilterConditions(interactionFilters);
 
-    // 2b. Department filter (applied after context lookup, built inline)
+    // 2b. Department filter (applied after context lookup, built inline).
+    // Because it's built here rather than passed through
+    // getChatFilterConditions, department ANDs with the reviewer filter on
+    // these endpoints, while chat/eval OR them - see the TODO(design, parked)
+    // in api/util/chat-filters.js.
     const departmentFilter = [];
     if (department) {
         const escaped = department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
