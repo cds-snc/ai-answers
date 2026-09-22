@@ -82,6 +82,17 @@ describe('resolveReviewerMatch', () => {
     expect(result).toEqual({ userIds: [], feedbackIds: ['f9'] });
   });
 
+  // Institution and group both narrow: they land on one query object, so
+  // sending both matches only people who have that institution AND that
+  // group. Nothing sends both today - this pins the intent so a future
+  // caller doesn't inherit it by accident. See the note in reviewer-filter.js.
+  it('institution + group: narrows to people who have both, not either', async () => {
+    mockUserFind.mockReturnValue(lean([{ _id: 'u1', email: 'a@dnd.ca' }]));
+    mockFeedbackFind.mockReturnValue(lean([]));
+    await resolveReviewerMatch({ institution: 'DND-MDN', group: 'Military transitions' });
+    expect(mockUserFind.mock.calls[0][0]).toEqual({ institution: 'DND-MDN', group: 'Military transitions' });
+  });
+
   it('both: email narrows within the institution', async () => {
     mockUserFind.mockReturnValue(lean([{ _id: 'u1', email: 'a@dnd.ca' }]));
     mockFeedbackFind.mockReturnValue(lean([]));

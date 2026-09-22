@@ -232,10 +232,16 @@ describe('getChatFilterConditions - reviewerMatch (Institution / Reviewer email 
   });
 });
 
-describe('getChatFilterConditions - department + reviewerMatch combine with OR', () => {
+// department (what a chat is about) and the reviewer match (who created or
+// evaluated it) are different axes, so they OR: adding a department widens
+// the result rather than narrowing it. Group alone gives what your group
+// touched; adding a department also lets that department's chats in, which
+// is how a reviewer finds work to assign. Deliberate - see the
+// TODO(design, parked) in chat-filters.js.
+describe('getChatFilterConditions - department widens a reviewer filter (OR, not AND)', () => {
   const userIds = ['u1'];
 
-  it('ORs department and reviewerMatch together when both are set', () => {
+  it('lets a chat through on either its department or its reviewer, not both', () => {
     const conditions = getChatFilterConditions(
       { department: 'IRCC', reviewerMatch: { userIds, feedbackIds: [] } },
       { basePath: 'interactions', userField: 'user' }
@@ -255,12 +261,12 @@ describe('getChatFilterConditions - department + reviewerMatch combine with OR',
     }]);
   });
 
-  it('keeps department as its own condition when reviewerMatch is not set', () => {
+  it('department alone still narrows to that department', () => {
     const conditions = getChatFilterConditions({ department: 'IRCC' }, { basePath: 'interactions' });
     expect(conditions).toEqual([{ 'interactions.department': { $regex: 'IRCC', $options: 'i' } }]);
   });
 
-  it('keeps reviewerMatch as its own condition when department is not set', () => {
+  it('reviewer filter alone still narrows to what those people touched', () => {
     const conditions = getChatFilterConditions({ reviewerMatch: { userIds, feedbackIds: [] } }, { userField: 'user' });
     expect(conditions).toEqual([{
       $or: [
