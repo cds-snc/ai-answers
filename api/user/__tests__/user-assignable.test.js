@@ -77,6 +77,40 @@ describe('user-assignable', () => {
     expect(ids).not.toContain(stranger._id.toString());
   });
 
+  it('orders the list you, then group-mates, then institution-mates, each alphabetical, and tags each with its relation', async () => {
+    await dbConnect();
+    const tag = `${Date.now()}-${Math.random()}`;
+    const partner = await makeUser({ email: `mm-me-${tag}@example.com`, institution: `ESDC-order-${tag}`, group: `Intake-order-${tag}` });
+    // Alphabetically last, but a group-mate, so it comes before the institution-mate.
+    const groupMate = await makeUser({ email: `zz-groupmate-${tag}@example.com`, institution: `Other-order-${tag}`, group: `Intake-order-${tag}` });
+    const institutionMateB = await makeUser({ email: `bb-instmate-${tag}@example.com`, institution: `ESDC-order-${tag}` });
+    const institutionMateA = await makeUser({ email: `aa-instmate-${tag}@example.com`, institution: `ESDC-order-${tag}` });
+
+    const res = await runGet({ role: 'partner', userId: partner._id.toString() });
+
+    expect(res.payload.users.map(u => u.id)).toEqual([
+      partner._id.toString(), groupMate._id.toString(), institutionMateA._id.toString(), institutionMateB._id.toString()
+    ]);
+    expect(res.payload.users.map(u => u.relation)).toEqual(['self', 'group', 'institution', 'institution']);
+  });
+
+  it('for an admin, own institution-mates come before everyone else', async () => {
+    await dbConnect();
+    const tag = `${Date.now()}-${Math.random()}`;
+    const admin = await makeUser({ role: 'admin', institution: `Admin-inst-${tag}` });
+    const mate = await makeUser({ institution: `Admin-inst-${tag}` });
+    const stranger = await makeUser({ institution: `Unrelated-${tag}` });
+
+    const res = await runGet({ role: 'admin', userId: admin._id.toString() });
+
+    const ids = res.payload.users.map(u => u.id);
+    expect(ids[0]).toBe(admin._id.toString());
+    expect(ids.indexOf(mate._id.toString())).toBeLessThan(ids.indexOf(stranger._id.toString()));
+    const byId = Object.fromEntries(res.payload.users.map(u => [u.id, u.relation]));
+    expect(byId[mate._id.toString()]).toBe('institution');
+    expect(byId[stranger._id.toString()]).toBe('other');
+  });
+
   it('excludes inactive users from the list', async () => {
     await dbConnect();
     const partner = await makeUser({ institution: 'IRCC-inactive-test' });

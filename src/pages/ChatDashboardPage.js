@@ -20,6 +20,7 @@ import { useChatAssignBar } from '../hooks/admin/useChatAssignBar.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../constants/chatAssign.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { useAuth } from '../contexts/AuthContext.js';
 
 DataTable.use(DT);
 
@@ -74,6 +75,8 @@ function resolveAssignButtonLabel(assignBar, t) {
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
@@ -547,9 +550,33 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   aria-invalid={assignBar.validationErrorCode === 'no_expert' ? 'true' : undefined}
                 >
                   <option value="">{t('admin.chatDashboard.assign.expertPlaceholder')}</option>
-                  {assignBar.assignableUsers.map((u) => (
-                    <option key={u.id} value={u.id}>{u.email}</option>
-                  ))}
+                  {/* Grouped by the server's `relation` (UserService.listAssignable):
+                      self-assign, your group, your institution, other accounts
+                      (admins only). Native optgroups, so the headings are
+                      read out with the list. A user whose relation is
+                      missing or not one of the four lands under "Other
+                      accounts" instead of silently vanishing - admins only,
+                      so a partner's list never widens past their scope. */}
+                  {[
+                    ['self', t('admin.chatDashboard.assign.pickerSelf')],
+                    ['group', t('admin.chatDashboard.assign.pickerGroup')],
+                    ['institution', t('admin.chatDashboard.assign.pickerInstitution')],
+                    ['other', t('admin.chatDashboard.assign.pickerOthers')]
+                  ].map(([relation, label]) => {
+                    if (relation === 'other' && !isAdmin) return null;
+                    const users = assignBar.assignableUsers.filter((u) => (
+                      relation === 'other'
+                        ? !['self', 'group', 'institution'].includes(u.relation)
+                        : u.relation === relation
+                    ));
+                    return users.length ? (
+                      <optgroup key={relation} label={label}>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>{u.email}</option>
+                        ))}
+                      </optgroup>
+                    ) : null;
+                  })}
                 </select>
               </div>
 
