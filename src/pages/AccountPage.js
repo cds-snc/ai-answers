@@ -290,11 +290,6 @@ const AccountPage = ({ lang = 'en' }) => {
   // see project_metrics_and_or_mismatch memory), so that case gets three
   // short paragraphs, one per dashboard group, instead of one that has to
   // hold both rules at once.
-  // TODO(copy): the notice's page list says "download chat logs" /
-  // "téléchargement des journaux" while that page's own title
-  // (admin.chatLogs.title) is "Download chat logs" / "Télécharger les
-  // journaux de chat" - and the FR title says "chat" where the notice says
-  // "clavardage". Settle one name for the page and use it in both.
   const hasDeptPref = Boolean(profile?.preferences?.prefilterDepartment);
   const hasGroupPref = Boolean(profile?.preferences?.prefilterGroup);
   const showBothPrefilterNotice = hasDeptPref && hasGroupPref;

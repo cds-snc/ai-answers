@@ -977,7 +977,7 @@
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {
-      "title": "Télécharger les journaux de chat",
+      "title": "Télécharger les journaux de clavardage",
       "getLogs": "Obtenir les journaux",
       "exportOptions": "Options d'exportation",
       "exportView": "Vue d'exportation",
@@ -1128,9 +1128,9 @@
       "changeGroupOff": "groupe désélectionné",
       "saveError": "Impossible d'enregistrer la préférence.",
       "filteredNoticeTitle": "Fonctionnement des préférences de filtre",
-      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
-      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
-      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques* et de *téléchargement des journaux* :",
+      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
+      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques* et de *téléchargement des journaux de clavardage* :",
       "filteredBothChatEvalEffect": "tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué.",
       "filteredBothMetricsPartnerLabel": "Tableaux de bord de *mesures*, de *métriques techniques* et *partenaire* :",
       "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
