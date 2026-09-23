@@ -125,6 +125,22 @@ class DataStoreService {
     }
   }
 
+  static async clearSearchCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-clear-search-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clear search cache');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing search cache:', error);
+      throw error;
+    }
+  }
+
   static async getSettingsAudit({ limit = 50, skip = 0, search = '' } = {}) {
     try {
       const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });

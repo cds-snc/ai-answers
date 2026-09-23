@@ -1120,6 +1120,14 @@
     "defaultSearchProvider": {
       "label": "Fournisseur de recherche par défaut du clavardage public"
     },
+    "searchContextCache": {
+      "enabledLabel": "Mettre en cache les résultats de recherche",
+      "description": "Lorsqu’il est activé, les résultats Google et Canada.ca sont mis en cache pendant un maximum de 12 heures.",
+      "clear": "Vider les résultats de recherche en cache",
+      "clearing": "Suppression des résultats de recherche en cache...",
+      "clearSuccess": "{count} résultats de recherche en cache supprimés.",
+      "clearError": "Impossible de vider les résultats de recherche en cache."
+    },
     "chatTransport": {
       "label": "Transport des événements de clavardage",
       "options": {
@@ -1183,7 +1191,8 @@
       "notApplicable": "Sans objet",
       "actions": {
         "settingUpdated": "Paramètre modifié",
-        "cacheRefreshed": "Cache des paramètres rafraîchi"
+        "cacheRefreshed": "Cache des paramètres rafraîchi",
+        "searchCacheCleared": "Cache de recherche vidé"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
