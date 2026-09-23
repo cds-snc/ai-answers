@@ -57,11 +57,19 @@ describe('FilterPanel preferred department (account preference)', () => {
     expect(onApplyFilters.mock.calls[0][0]).toEqual(expect.objectContaining({ group: 'Military transitions', department: '' }));
     const pill = Array.from(container.querySelectorAll('button')).find((b) => /Military transitions/.test(b.textContent));
     expect(pill).toBeTruthy();
+    // The scope label inside the panel shows whenever the group is in
+    // effect: gone when the pill's x clears it, back after Clear restores it.
+    const scopeLabel = () => container.querySelector('.filter-panel-content .admin-view-label');
+    expect(scopeLabel()?.textContent).toMatch(/Military transitions/);
     fireEvent.click(pill);
     await waitFor(() => expect(onApplyFilters.mock.calls.at(-1)[0].group).toBe(''));
+    expect(scopeLabel()).toBeNull();
     const clearButton = Array.from(container.querySelectorAll('button')).find((b) => /clear/i.test(b.textContent));
     fireEvent.click(clearButton);
     await waitFor(() => expect(onApplyFilters.mock.calls.at(-1)[0].group).toBe('Military transitions'));
+    // Clear re-sends the group but empties the pill row until the next
+    // Apply; the label reads the live value, so it's back straight away.
+    expect(scopeLabel()?.textContent).toMatch(/Military transitions/);
   });
 
   it('ignores the institution when the preference is off or no institution is set', async () => {

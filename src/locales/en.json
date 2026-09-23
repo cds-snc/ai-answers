@@ -1116,9 +1116,9 @@
       }
     },
     "preferences": {
-      "heading": "Dashboard filter preferences",
-      "prefilterDepartment": "Your institution",
-      "prefilterGroup": "Your group (chats created or reviewed by your group's members)",
+      "heading": "Dashboard filter default preferences",
+      "prefilterDepartment": "Use your institution",
+      "prefilterGroup": "Use your group (chats created or reviewed by your group's members)",
       "noGroup": "You must pick a group.",
       "noInstitution": "You must pick an institution.",
       "savedChange": "Preference saved: {change}",
@@ -1136,7 +1136,7 @@
       "filteredBothMetricsPartnerEffect": "only chats that match both your institution and your group.",
       "filteredPublicLabel": "*Public* dashboard:",
       "filteredPublicEffect": "not affected.",
-      "filteredFooter": "You can still change or clear these filters anytime on each dashboard."
+      "filteredFooter": "You can still change these filter values anytime on each dashboard. Clear all will reset to your default preferences."
     }
   },
   "users": {

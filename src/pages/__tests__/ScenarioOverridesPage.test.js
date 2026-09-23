@@ -20,6 +20,12 @@ vi.mock('../../hooks/usePageParam.js', () => ({
   usePageContext: () => ({ language: 'en' }),
 }));
 
+// Account preference (Manage your account page): pre-select the user's own
+// institution. null = no signed-in user shape, so every other test is
+// unaffected.
+const { authState } = vi.hoisted(() => ({ authState: { currentUser: null } }));
+vi.mock('../../contexts/AuthContext.js', () => ({ useAuth: () => authState }));
+
 const { mockGetDepartmentScenario, mockSaveOverride, mockDeleteOverride, mockGetActiveOverrideSummary } = vi.hoisted(() => ({
   mockGetDepartmentScenario: vi.fn(),
   mockSaveOverride: vi.fn(),
@@ -115,6 +121,28 @@ describe('ScenarioOverridesPage', () => {
     });
 
     window.location.hash = '';
+  });
+
+  it('pre-selects the user\'s institution when the "filter to my institution" preference is on', async () => {
+    authState.currentUser = { institution: 'IRCC', preferences: { prefilterDepartment: true } };
+    mockGetDepartmentScenario.mockResolvedValue({ departmentKey: 'IRCC', defaultText: 'd', overrideText: '', enabled: false, updatedAt: null });
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    await waitFor(() => expect(mockGetDepartmentScenario).toHaveBeenCalledWith('IRCC'));
+    expect(screen.getByLabelText('scenarioOverrides.departmentSelect.label').value).toBe('IRCC');
+    authState.currentUser = null;
+  });
+
+  it('?department= beats the institution preference, and the preference is ignored when off', async () => {
+    authState.currentUser = { institution: 'IRCC', preferences: { prefilterDepartment: true } };
+    mockGetDepartmentScenario.mockResolvedValue({ departmentKey: 'AAFC-AAC', defaultText: 'd', overrideText: '', enabled: false, updatedAt: null });
+    renderWithRouter(<ScenarioOverridesPage lang="en" />, { route: '/en/scenario-overrides?department=AAFC-AAC' });
+    await waitFor(() => expect(mockGetDepartmentScenario).toHaveBeenCalledWith('AAFC-AAC'));
+    expect(mockGetDepartmentScenario).not.toHaveBeenCalledWith('IRCC');
+    cleanup();
+    authState.currentUser = { institution: 'IRCC', preferences: { prefilterDepartment: false } };
+    renderWithRouter(<ScenarioOverridesPage lang="en" />);
+    expect(screen.getByLabelText('scenarioOverrides.departmentSelect.label').value).toBe('');
+    authState.currentUser = null;
   });
 
   it('ignores an unrecognized ?department= value rather than trusting the query string outright', () => {

@@ -8,6 +8,8 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useAuth } from '../contexts/AuthContext.js';
+import { getPreferredDepartment } from '../utils/admin/accountPreferences.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import ScenarioSubmitInstructions from '../components/scenario/ScenarioSubmitInstructions.js';
 // The `diff` package is a valid dependency but some eslint configurations
@@ -147,12 +149,19 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   // and by the time the genuine data arrived the one-time guard had already
   // fired. Falls back to '' (nothing pre-selected) for an unrecognized or
   // missing value rather than trusting the query string outright.
-  const initialDepartmentFromQuery = (() => {
-    const requested = searchParams.get('department');
+  // ?department= wins; otherwise the "filter dashboards to my institution"
+  // account preference pre-selects the user's own department, same as the
+  // dashboards' FilterPanel. An institution with no scenario entry here
+  // (the two lists don't fully overlap) falls through to '' like any other
+  // unrecognized value. useAuth() is undefined outside an AuthProvider
+  // (unit tests), hence the optional chain.
+  const preferredDepartment = getPreferredDepartment(useAuth()?.currentUser);
+  const initialDepartment = (() => {
+    const requested = searchParams.get('department') || preferredDepartment;
     return requested && SUPPORTED_DEPARTMENTS.includes(requested) ? requested : '';
   })();
-  const [departmentKey, setDepartmentKey] = useState(initialDepartmentFromQuery);
-  const [loading, setLoading] = useState(Boolean(initialDepartmentFromQuery));
+  const [departmentKey, setDepartmentKey] = useState(initialDepartment);
+  const [loading, setLoading] = useState(Boolean(initialDepartment));
   const [loadError, setLoadError] = useState(null);
 
   const [defaultText, setDefaultText] = useState('');

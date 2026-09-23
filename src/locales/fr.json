@@ -1116,9 +1116,9 @@
       }
     },
     "preferences": {
-      "heading": "Préférences de filtre du tableau de bord",
-      "prefilterDepartment": "Votre institution",
-      "prefilterGroup": "Votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "heading": "Préférences de filtre par défaut du tableau de bord",
+      "prefilterDepartment": "Utiliser votre institution",
+      "prefilterGroup": "Utiliser votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
       "noGroup": "Vous devez choisir un groupe.",
       "noInstitution": "Vous devez choisir une institution.",
       "savedChange": "Préférence enregistrée : {change}",
@@ -1136,7 +1136,7 @@
       "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
       "filteredPublicLabel": "Tableau de bord *public* :",
       "filteredPublicEffect": "non concerné.",
-      "filteredFooter": "Vous pouvez toujours modifier ou effacer ces filtres à tout moment dans chaque tableau de bord."
+      "filteredFooter": "Vous pouvez toujours modifier les valeurs de ces filtres à tout moment dans chaque tableau de bord. Tout effacer les rétablit à vos préférences par défaut."
     }
   },
   "users": {

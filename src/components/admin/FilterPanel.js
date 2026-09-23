@@ -1119,6 +1119,19 @@ const FilterPanel = ({
         )}
       </summary>
       <div className="filter-panel-content">
+        {/* Group scope from the account preference, shown where someone
+            looks to change filters - the group has no control of its own
+            here. Reads the live `group` value, not appliedFilters: the
+            pill's x is the only thing that clears it, and Clear restores
+            it, so it shows whenever the scope is in effect (unlike the pill
+            row, which Clear empties until the next Apply). Same classes as
+            HomePage.js's admin-view pill (chat.css), reused rather than
+            restyled. */}
+        {group && (
+          <p className="referring-url-label admin-view-label mb-300">
+            {formatPillLabel(t('admin.filters.group'), getPartnerGroupLabel(group, lang))}
+          </p>
+        )}
         {/* Row 1: date range, partner institution, users */}
         <div className="filter-main-row">
           <div className="filter-row">
