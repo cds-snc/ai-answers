@@ -153,6 +153,22 @@ describe('AccountPage', () => {
     expect(screen.getByText('account.preferences.savedChange').closest('.status-message--success-box')).toBeTruthy();
   });
 
+  it('ignores a second checkbox click while a preference save is in flight', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: false } });
+    let releaseSave;
+    mockUpdateMe.mockReturnValue(new Promise((resolve) => { releaseSave = resolve; }));
+    mockRefreshUser.mockResolvedValue();
+    render(<AccountPage lang="en" />);
+    const checkbox = await screen.findByLabelText('account.preferences.prefilterDepartment');
+    fireEvent.click(checkbox);
+    fireEvent.click(checkbox);
+    await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledTimes(1));
+    releaseSave({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true } });
+    await waitFor(() => expect(screen.getByLabelText('account.preferences.prefilterDepartment').checked).toBe(true));
+    expect(mockUpdateMe).toHaveBeenCalledTimes(1);
+    expect(mockUpdateMe).toHaveBeenCalledWith({ preferences: { prefilterDepartment: true } });
+  });
+
   it('clears a stale success message when a later preference toggle is blocked by validation', async () => {
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: false, prefilterGroup: false } });
     mockUpdateMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true, prefilterGroup: false } });

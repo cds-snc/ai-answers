@@ -78,6 +78,12 @@ const AccountPage = ({ lang = 'en' }) => {
   const groupError = useInlineFormError();
   // refreshUser re-reads auth-me so FilterPanel sees the new preference on
   // the next dashboard visit without a full reload.
+  // TODO: a failed refresh (AuthContext.refreshUser's catch, and
+  // AuthService.getCurrentUser returning null on a non-OK response) clears
+  // the signed-in user, so a transient auth-me failure right after a
+  // successful save bounces the user to sign-in. Fix in AuthContext: keep
+  // the current user and log the failure for a refresh; leave the
+  // window-focus session check's sign-out as is. Separate PR.
   const refreshUser = useAuth()?.refreshUser;
   const authUserId = useAuth()?.currentUser?.userId;
 
@@ -102,7 +108,15 @@ const AccountPage = ({ lang = 'en' }) => {
   // their own template ("Account updated: ..." for the institution/group
   // fields, "Preference saved: ..." for the two checkboxes) so each area
   // keeps its own voice.
+  //
+  // Double-submit guard, same as handleProfileSave's profileSavingRef: the
+  // checkbox stays enabled (a disabled input drops focus to <body>) and is
+  // controlled by `profile`, so a second click before the response would
+  // send the same value again and let two responses race. Ignore it.
+  const prefSavingRef = useRef(false);
   const saveProfile = async (updates, setStatus, statusText, errorKey) => {
+    if (prefSavingRef.current) return;
+    prefSavingRef.current = true;
     setStatus(null);
     try {
       const updated = await UserService.updateMe(updates);
@@ -112,6 +126,8 @@ const AccountPage = ({ lang = 'en' }) => {
     } catch (error) {
       console.error('Error saving account:', error);
       setStatus({ text: t(errorKey), isError: true });
+    } finally {
+      prefSavingRef.current = false;
     }
   };
   // Staging only - see `draft`. A fresh edit supersedes the last outcome and
