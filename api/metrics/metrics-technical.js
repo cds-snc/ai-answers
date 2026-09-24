@@ -15,7 +15,7 @@ async function getTechnicalMetrics(req, res) {
       answerTypeFilter,
       partnerEvalFilter,
       aiEvalFilter
-    } = parseRequestFilters(req);
+    } = await parseRequestFilters(req);
 
     if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
