@@ -24,8 +24,12 @@ const userSchema = new mongoose.Schema({
   },
   // Institution the user belongs to, as a partner department abbrKey from
   // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
-  // on the Manage user accounts page. Orthogonal to a chat's
-  // context.department - a DND reviewer can evaluate an IRCC chat.
+  // (Manage user accounts page) or once by the user (Manage your account
+  // page; api/user/user-me.js locks it for partners after that). Seeds the
+  // dashboards' department filter via preferences.prefilterDepartment and
+  // scopes who a partner can assign chats to (api/chat/chat-assign-interaction.js).
+  // Orthogonal to a chat's context.department - a DND reviewer can
+  // evaluate an IRCC chat.
   institution: {
     type: String,
     default: '',
@@ -33,12 +37,23 @@ const userSchema = new mongoose.Schema({
     index: true
   },
   // Group / team within the institution, one of
-  // src/constants/partnerGroups.js ('' = none). Set the same way as
-  // institution (not collected at signup).
+  // src/constants/partnerGroups.js ('' = none). Set the same two ways as
+  // institution (not collected at signup). Drives the reviewer filter
+  // (api/util/reviewer-filter.js) via preferences.prefilterGroup and the
+  // chat-assign-interaction membership rule.
   group: {
     type: String,
     default: '',
     trim: true
+  },
+  // Self-service preferences, edited on the Account dashboard page.
+  preferences: {
+    // Open dashboards with the Partner institution filter set to the
+    // user's own institution (needs `institution` to be set).
+    prefilterDepartment: { type: Boolean, default: false },
+    // Apply the reviewer filter for the user's own group on every dashboard
+    // (chats created or evaluated by group members). Needs `group` set.
+    prefilterGroup: { type: Boolean, default: false }
   },
   // Two factor authentication fields
   twoFACode: {

@@ -95,3 +95,53 @@ describe('user-me PATCH institution/group lock', () => {
     expect(res.payload.institution).toBe('EDSC-ESDC');
   });
 });
+
+describe('user-me PATCH rejects a prefilter with no field to prefilter to', () => {
+  it('400s prefilterDepartment: true when no institution is set', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+    const res = await run('PATCH', { preferences: { prefilterDepartment: true } }, { role: 'partner', userId: partner._id.toString() });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('accepts prefilterGroup: true when the group is set in the same request', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+    const res = await run('PATCH', { group: 'Military transitions', preferences: { prefilterGroup: true } }, { role: 'partner', userId: partner._id.toString() });
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.preferences.prefilterGroup).toBe(true);
+  });
+});
+
+describe('user-me PATCH clears stale prefilter preferences', () => {
+  it('clears prefilterDepartment when an admin clears their own institution', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin', institution: 'IRCC', preferences: { prefilterDepartment: true } });
+
+    const res = await run('PATCH', { institution: '' }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.institution).toBe('');
+    expect(res.payload.preferences.prefilterDepartment).toBe(false);
+  });
+
+  it('clears prefilterGroup when an admin clears their own group', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin', group: 'Military transitions', preferences: { prefilterGroup: true } });
+
+    const res = await run('PATCH', { group: '' }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.preferences.prefilterGroup).toBe(false);
+  });
+
+  it('leaves prefilterDepartment alone when institution is set to a real value, not cleared', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin', institution: 'IRCC', preferences: { prefilterDepartment: true } });
+
+    const res = await run('PATCH', { institution: 'EDSC-ESDC' }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.preferences.prefilterDepartment).toBe(true);
+  });
+});

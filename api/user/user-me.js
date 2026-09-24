@@ -8,7 +8,7 @@ import { normalizeInstitution, normalizeGroup, normalizeMembershipProfile } from
 // object on req.user only carries userId/email/role (see config/passport.js),
 // so institution/group - which an admin can change at any time - must come
 // from here rather than from the session.
-const PROFILE_FIELDS = { email: 1, role: 1, active: 1, institution: 1, group: 1 };
+const PROFILE_FIELDS = { email: 1, role: 1, active: 1, institution: 1, group: 1, preferences: 1 };
 
 const toProfile = (user) => ({
     email: user.email,
@@ -29,7 +29,7 @@ async function meHandler(req, res) {
         }
 
         if (req.method === 'PATCH') {
-            // Self-service: institution and group. Role/active
+            // Self-service: institution, group and preferences. Role/active
             // stay admin-only via user-users.js. Same validators as the admin
             // path so both write the same values.
             //
@@ -45,7 +45,7 @@ async function meHandler(req, res) {
             if (!currentUser) return res.status(404).json({ message: 'User not found' });
             const isLockedPartner = currentUser.role !== 'admin';
 
-            const { institution, group } = req.body || {};
+            const { institution, group, preferences } = req.body || {};
             const updateFields = {};
             if (institution !== undefined) {
                 const value = normalizeInstitution(institution);
@@ -62,6 +62,36 @@ async function meHandler(req, res) {
                     return res.status(403).json({ code: 'group_locked', message: 'Ask an admin to change your group.' });
                 }
                 updateFields.group = value;
+            }
+            // A prefilter needs a field to prefilter to - the effective value
+            // after this request (a same-request institution/group wins over
+            // the stored one). Mirrors the clear branch below, which turns the
+            // preference off when the field is cleared.
+            const effective = {
+                prefilterDepartment: updateFields.institution !== undefined ? updateFields.institution : currentUser.institution,
+                prefilterGroup: updateFields.group !== undefined ? updateFields.group : currentUser.group
+            };
+            for (const key of ['prefilterDepartment', 'prefilterGroup']) {
+                if (preferences?.[key] === undefined) continue;
+                if (typeof preferences[key] !== 'boolean') {
+                    return res.status(400).json({ message: `preferences.${key} must be a boolean` });
+                }
+                if (preferences[key] === true && !effective[key]) {
+                    return res.status(400).json({ message: `preferences.${key} needs ${key === 'prefilterDepartment' ? 'an institution' : 'a group'} to be set` });
+                }
+                updateFields[`preferences.${key}`] = preferences[key];
+            }
+            // Clearing institution/group has to clear the matching
+            // prefilter preference too - otherwise the checkbox stays
+            // checked (stale server-side, not just a stale UI value) for a
+            // filter that no longer has anything to prefilter to. Runs
+            // after the loop above so it wins over a same-request
+            // preferences value, keeping the invariant unconditional.
+            if (updateFields.institution === '') {
+                updateFields['preferences.prefilterDepartment'] = false;
+            }
+            if (updateFields.group === '') {
+                updateFields['preferences.prefilterGroup'] = false;
             }
             if (Object.keys(updateFields).length === 0) {
                 return res.status(400).json({ message: 'No valid fields to update' });

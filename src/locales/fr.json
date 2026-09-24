@@ -753,6 +753,7 @@
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Institution partenaire",
       "allDepartments": "Toutes les institutions",
+      "group": "Groupe",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -976,7 +977,7 @@
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {
-      "title": "Télécharger les journaux de chat",
+      "title": "Télécharger les journaux de clavardage",
       "getLogs": "Obtenir les journaux",
       "exportOptions": "Options d'exportation",
       "exportView": "Vue d'exportation",
@@ -1113,6 +1114,29 @@
         "completed": "Terminé",
         "pending": "En attente"
       }
+    },
+    "preferences": {
+      "heading": "Préférences de filtre par défaut du tableau de bord",
+      "prefilterDepartment": "Utiliser votre institution",
+      "prefilterGroup": "Utiliser votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "noGroup": "Enregistrez d'abord votre groupe.",
+      "noInstitution": "Enregistrez d'abord votre institution.",
+      "savedChange": "Préférence enregistrée : {change}",
+      "changeInstitutionOn": "institution sélectionnée",
+      "changeInstitutionOff": "institution désélectionnée",
+      "changeGroupOn": "groupe sélectionné",
+      "changeGroupOff": "groupe désélectionné",
+      "saveError": "Impossible d'enregistrer la préférence.",
+      "filteredNoticeTitle": "Fonctionnement des préférences de filtre",
+      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
+      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques* et de *téléchargement des journaux de clavardage* :",
+      "filteredBothChatEvalEffect": "tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué.",
+      "filteredBothMetricsPartnerLabel": "Tableaux de bord de *mesures*, de *métriques techniques* et *partenaire* :",
+      "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
+      "filteredPublicLabel": "Tableau de bord *public* :",
+      "filteredPublicEffect": "non concerné.",
+      "filteredFooter": "Vous pouvez toujours modifier les valeurs de ces filtres à tout moment dans chaque tableau de bord. Tout effacer les rétablit à vos préférences par défaut."
     }
   },
   "users": {
