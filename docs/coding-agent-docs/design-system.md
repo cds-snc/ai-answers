@@ -179,4 +179,4 @@ const { isPaused, togglePause } = usePausablePolling(fetchThing, 10000, [fetchTh
 
 References: `BatchList.js`, `SessionPage.js`, `ExperimentalAnalysisPage.js`. Content that refreshes only as a side effect of a user action doesn't need this.
 
-`PauseToggleButton` is a native `<button>`, not `<GcdsButton>` (an `aria-pressed` timing bug through the shadow DOM — see its file comment; visual treatment carries a `TODO(design)`). Use the same native-button + `.filter-button-primary`/`.filter-button-outline` pattern for any other `aria-pressed` toggle.
+`PauseToggleButton` is a native `<button>`, not `<GcdsButton>` (an `aria-pressed` timing bug through the shadow DOM — see its file comment; visual treatment carries a `TODO(design)`). Use the same native-button pattern for any other `aria-pressed` or `aria-expanded` toggle — any `aria-*` value that changes on the button's own click. Small size: `.filter-button` + `.filter-button-primary`/`.filter-button-outline` (`admin.css`). Regular size, beside regular GcdsButtons: `.btn-primary`/`.btn-secondary` (`global.css`; see the upload toggle in `ExperimentalDatasetsPage.js`).

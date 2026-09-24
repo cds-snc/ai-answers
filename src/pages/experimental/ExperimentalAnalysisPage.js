@@ -182,6 +182,28 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const isMountedRef = useRef(true);
     const previousBatchStatusesRef = useRef(new Map());
 
+    // ARIA APG Tabs pattern: roving tabindex across the two tabs, moved with
+    // Arrow/Home/End and activated immediately (automatic activation - only
+    // two tabs, no async cost to switching).
+    const TAB_IDS = ['batches', 'comparison'];
+    const tabRefs = useRef({});
+    const focusTab = (tabId) => {
+        setActiveTab(tabId);
+        tabRefs.current[tabId]?.focus();
+    };
+    const handleTabKeyDown = (e) => {
+        const currentIndex = TAB_IDS.indexOf(activeTab);
+        let nextIndex = null;
+        if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % TAB_IDS.length;
+        else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + TAB_IDS.length) % TAB_IDS.length;
+        else if (e.key === 'Home') nextIndex = 0;
+        else if (e.key === 'End') nextIndex = TAB_IDS.length - 1;
+        if (nextIndex !== null) {
+            e.preventDefault();
+            focusTab(TAB_IDS[nextIndex]);
+        }
+    };
+
     // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
     // any batch/comparison is pending or processing, and there's no other
     // control on this page that halts it (the runs themselves keep going
@@ -713,9 +735,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </GcdsText>
                 )}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={getPath('experimental-datasets', lang)}>
-                        {t('experimental.datasets.backToList')}
-                    </GcdsLink>
+                    <nav aria-label={t('admin.navigation.ariaLabel')}>
+                        <GcdsLink href={getPath('experimental-datasets', lang)}>
+                            {t('experimental.datasets.backToList')}
+                        </GcdsLink>
+                    </nav>
+                    {/* TODO(a11y): this link's destination follows the dataset
+                        dropdown further down the page, so it isn't stable page
+                        navigation - it belongs beside that dataset picker (as
+                        "open suite grid for this dataset"), not in the header.
+                        Kept out of the <nav> above until it moves. */}
                     {selectedDatasetId && (
                         <GcdsLink href={`${getPath('experimental-suites', lang)}/${selectedDatasetId}`}>
                             {t('experimental.analysis.suiteView')}
@@ -724,11 +753,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </div>
             </header>
 
-            <div className="experimental-analysis-tabs" role="tablist" aria-label={t('experimental.analysis.tabs.label')}>
+            <div
+                className="experimental-analysis-tabs"
+                role="tablist"
+                aria-label={t('experimental.analysis.tabs.label')}
+                onKeyDown={handleTabKeyDown}
+            >
                 <button
                     type="button"
                     role="tab"
                     id="batches-tab"
+                    ref={(el) => { tabRefs.current.batches = el; }}
+                    tabIndex={activeTab === 'batches' ? 0 : -1}
                     aria-selected={activeTab === 'batches'}
                     aria-controls="batches-tab-panel"
                     className={`experimental-analysis-tab${activeTab === 'batches' ? ' experimental-analysis-tab--active' : ''}`}
@@ -740,6 +776,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     type="button"
                     role="tab"
                     id="comparison-tab"
+                    ref={(el) => { tabRefs.current.comparison = el; }}
+                    tabIndex={activeTab === 'comparison' ? 0 : -1}
                     aria-selected={activeTab === 'comparison'}
                     aria-controls="comparison-tab-panel"
                     className={`experimental-analysis-tab${activeTab === 'comparison' ? ' experimental-analysis-tab--active' : ''}`}
@@ -749,7 +787,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </button>
             </div>
 
-            {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
+            <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab" hidden={activeTab !== 'batches'}>
                     <section>
                         <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
@@ -954,9 +992,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
-            </div>}
+            </div>
 
-            {activeTab === 'comparison' && <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab">
+            <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab" hidden={activeTab !== 'comparison'}>
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
@@ -1055,7 +1093,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </div>
                 )}
             </section>
-            </div>}
+            </div>
 
             {/* History List */}
             {activeTab === 'batches' && <section id="batches-history" className="experimental-table-container">

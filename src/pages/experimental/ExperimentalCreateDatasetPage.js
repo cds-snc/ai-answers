@@ -109,13 +109,11 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.createDatasetTitle')}</GcdsHeading>
-            {/* TODO: assess whether this back-link should be nav-wrapped with an
-                aria-label, matching the admin "back to admin" pattern. */}
-            <div className="mb-400">
+            <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
                 <GcdsLink href={getPath('experimental-datasets', lang)}>
                     {t('experimental.datasets.backToList')}
                 </GcdsLink>
-            </div>
+            </nav>
             <GcdsText className="mb-400">
                 {method === 'instant-answer'
                     ? t('experimental.datasets.instantAnswerDescription')

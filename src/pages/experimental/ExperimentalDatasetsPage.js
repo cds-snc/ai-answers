@@ -291,9 +291,26 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             </nav>
 
             <div className="my-400">
-                <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
+                {/* TODO(design): needs design review. Native <button> (not
+                    <GcdsButton>), same rationale as PauseToggleButton.js: GcdsButton
+                    only copies aria-* attributes from its host onto its shadow-DOM
+                    button on mount and inside its own click handler. That handler
+                    runs on the inner button before React's root-delegated onClick,
+                    so it reads the host's aria-expanded before setState commits the
+                    new value, and nothing re-reads it afterwards - screen readers
+                    would hear the value one click behind. Styled via .btn-secondary
+                    (global.css) to reproduce GcdsButton's regular-size buttonRole
+                    secondary look for now; a designer hasn't signed off on this
+                    specific treatment. */}
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowUpload(!showUpload)}
+                    aria-expanded={showUpload}
+                    aria-controls="experimental-dataset-upload-panel"
+                >
                     {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
-                </GcdsButton>
+                </button>
                 <GcdsButton
                     buttonRole="secondary"
                     onClick={() => { window.location.href = getPath('experimental-create-dataset', lang); }}
@@ -302,7 +319,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                 </GcdsButton>
 
                 {showUpload && (
-                    <div className="mt-400 p-400 border rounded bg-light">
+                    <div id="experimental-dataset-upload-panel" className="mt-400 p-400 border rounded bg-light">
                         <GcdsHeading tag="h2">{t('experimental.datasets.uploadNew')}</GcdsHeading>
                         <div style={{ display: 'grid', gap: '1rem', maxWidth: '600px' }}>
                             <GcdsInput
