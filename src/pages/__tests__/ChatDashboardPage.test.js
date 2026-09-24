@@ -26,8 +26,12 @@ vi.mock('../../services/DashboardService.js', () => ({
   }
 }));
 
-const { mockGetAssignable } = vi.hoisted(() => ({ mockGetAssignable: vi.fn() }));
+const { mockGetAssignable, mockAuth } = vi.hoisted(() => ({
+  mockGetAssignable: vi.fn(),
+  mockAuth: { currentUser: { role: 'partner' } }
+}));
 vi.mock('../../services/UserService.js', () => ({ default: { getAssignable: mockGetAssignable } }));
+vi.mock('../../contexts/AuthContext.js', () => ({ useAuth: () => ({ currentUser: mockAuth.currentUser }) }));
 
 // A closer-to-real DataTables mock than a plain `() => null`: captures the
 // `options` given to the most recently rendered instance (so a test can call
@@ -97,6 +101,7 @@ vi.mock('@gcds-core/components-react', () => ({
 
 describe('ChatDashboardPage rendering', () => {
   afterEach(() => {
+    mockAuth.currentUser = { role: 'partner' };
     cleanup();
     lastColumns = null;
     lastOptions = null;
@@ -133,8 +138,72 @@ describe('ChatDashboardPage rendering', () => {
     expect(details.hidden).toBe(true);
   });
 
+  // Renders the page with the given assignable users, applies filters, feeds
+  // the table one result and opens Assign chats - the steps before the
+  // reviewer picker exists. Resolves once `waitForEmail` shows in the picker.
+  const openReviewerPicker = async (users, waitForEmail) => {
+    mockGetAssignable.mockResolvedValue({ users });
+    DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
+    const { container, getByText, queryByText } = render(<ChatDashboardPage lang="en" />);
+    const applyButton = await waitFor(() => {
+      const btn = container.querySelector('#filter-apply-button');
+      if (!btn) throw new Error('apply button not rendered yet');
+      return btn;
+    });
+    await act(async () => { fireEvent.click(applyButton); });
+    await waitFor(() => expect(lastOptions).not.toBeNull());
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: { value: '' }, order: [], draw: 1 }, vi.fn());
+    });
+    await act(async () => { fireEvent.click(getByText('admin.chatDashboard.assign.toggleOn')); });
+    await waitFor(() => expect(getByText(waitForEmail)).toBeTruthy());
+    const groups = Array.from(container.querySelectorAll('#chat-assign-expert optgroup'));
+    return { groups, queryByText };
+  };
+
+  it('groups the reviewer picker as self-assign, your group, your institution - native optgroups', async () => {
+    const { groups } = await openReviewerPicker([
+      { id: 'u1', email: 'me@x.ca', relation: 'self' },
+      { id: 'u2', email: 'mate@x.ca', relation: 'group' },
+      { id: 'u3', email: 'dept@x.ca', relation: 'institution' }
+    ], 'mate@x.ca');
+    expect(groups.map((g) => g.label)).toEqual([
+      'admin.chatDashboard.assign.pickerSelf',
+      'admin.chatDashboard.assign.pickerGroup',
+      'admin.chatDashboard.assign.pickerInstitution'
+    ]);
+    expect(groups.map((g) => g.querySelector('option').textContent)).toEqual(['me@x.ca', 'mate@x.ca', 'dept@x.ca']);
+  });
+
+  it('admin: a reviewer with a missing or unrecognised relation lands under Other accounts instead of vanishing', async () => {
+    mockAuth.currentUser = { role: 'admin' };
+    const { groups } = await openReviewerPicker([
+      { id: 'u1', email: 'me@x.ca', relation: 'self' },
+      { id: 'u2', email: 'untagged@x.ca' },
+      { id: 'u3', email: 'newkind@x.ca', relation: 'reviewer' },
+      { id: 'u4', email: 'other@x.ca', relation: 'other' }
+    ], 'untagged@x.ca');
+
+    expect(groups.map((g) => g.label)).toEqual([
+      'admin.chatDashboard.assign.pickerSelf',
+      'admin.chatDashboard.assign.pickerOthers'
+    ]);
+    expect(Array.from(groups[1].querySelectorAll('option')).map((o) => o.textContent))
+      .toEqual(['untagged@x.ca', 'newkind@x.ca', 'other@x.ca']);
+  });
+
+  it('partner: a reviewer with an unrecognised relation is not shown - the list never widens past their scope', async () => {
+    const { groups, queryByText } = await openReviewerPicker([
+      { id: 'u1', email: 'me@x.ca', relation: 'self' },
+      { id: 'u2', email: 'untagged@x.ca' }
+    ], 'me@x.ca');
+
+    expect(groups.map((g) => g.label)).toEqual(['admin.chatDashboard.assign.pickerSelf']);
+    expect(queryByText('untagged@x.ca')).toBeNull();
+  });
+
   it('assign mode shows the (always-present, hidden) checkbox column without rebuilding the table, and loads the assignable dropdown', async () => {
-    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca', relation: 'self' }] });
     // The Assign chats toggle only appears once the table actually has
     // results - simulate the real DataTables ajax callback firing with one.
     DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
@@ -207,7 +276,7 @@ describe('ChatDashboardPage rendering', () => {
   });
 
   it('shows a validation error instead of assigning, when Assign chats is clicked with nothing chosen', async () => {
-    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca', relation: 'self' }] });
     DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
     const { container, getByText } = render(<ChatDashboardPage lang="en" />);
 
@@ -292,7 +361,7 @@ describe('ChatDashboardPage rendering', () => {
   });
 
   it('ticking a box counts it, and a redraw restores the tick from the selection', async () => {
-    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca', relation: 'self' }] });
     DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
     const { container, getByText } = render(<ChatDashboardPage lang="en" />);
     const applyButton = await waitFor(() => {
@@ -365,7 +434,7 @@ describe('ChatDashboardPage rendering', () => {
   });
 
   it('moves focus into the note on Add a note, and back to Add a note on Clear note', async () => {
-    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca', relation: 'self' }] });
     DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
     const { container, getByText } = render(<ChatDashboardPage lang="en" />);
     const applyButton = await waitFor(() => {
@@ -389,7 +458,7 @@ describe('ChatDashboardPage rendering', () => {
   });
 
   it('switches the Assign chats button label once a note is typed, with no separate save step', async () => {
-    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca' }] });
+    mockGetAssignable.mockResolvedValue({ users: [{ id: 'u1', email: 'partner@x.ca', relation: 'self' }] });
     DashboardService.getChatDashboard.mockResolvedValueOnce({ recordsTotal: 1, recordsFiltered: 1, data: [] });
     const { container, getByText, queryByText } = render(<ChatDashboardPage lang="en" />);
 

@@ -97,6 +97,26 @@ const toAssignee = (user) => ({
   group: user.group || ''
 });
 
+// Picker order: you, then your group, then your institution, then (admins
+// only) everyone else - alphabetical within each block. `relation` is what
+// ChatDashboardPage.js groups the <optgroup>s by. Group outranks
+// institution because it's the narrower team; someone in both counts as
+// group.
+const RELATION_RANK = { self: 0, group: 1, institution: 2, other: 3 };
+
+function relationTo(self, selfId, user) {
+  if (user._id.toString() === String(selfId)) return 'self';
+  if (self?.group && user.group === self.group) return 'group';
+  if (self?.institution && user.institution === self.institution) return 'institution';
+  return 'other';
+}
+
+function orderAssignees(users, selfId, self) {
+  return users
+    .map((u) => ({ ...toAssignee(u), relation: relationTo(self, selfId, u) }))
+    .sort((a, b) => RELATION_RANK[a.relation] - RELATION_RANK[b.relation] || a.email.localeCompare(b.email));
+}
+
 class UserServiceClass {
   // Session user (userId/email/role from config/passport.js) only carries
   // what's in the session; institution, group and preferences are read
@@ -225,23 +245,29 @@ class UserServiceClass {
   // `reason: 'no_institution'` means a partner with neither institution nor
   // group set: the list is still at least themselves, but the frontend uses
   // the reason to explain why no one else shows up.
+  //
+  // TODO(design): whether partners may assign outside their group at all
+  // (group-only assigning) would be an admin-level team setting, not a
+  // per-user preference. If it's ever wanted, gate membershipConditions and
+  // sharesMembership on that setting - not on the account page's "use your
+  // group" checkbox, which only changes what a user sees.
   async listAssignable(requester) {
     await dbConnect();
     const baseQuery = { active: true, role: { $in: ['partner', 'admin'] } };
     const projection = { email: 1, institution: 1, group: 1 };
+    const self = await User.findById(requester.userId, { institution: 1, group: 1 }).lean();
 
     if (requester.role === 'admin') {
-      const users = await User.find(baseQuery, projection).sort({ email: 1 }).lean();
-      return { users: users.map(toAssignee) };
+      const users = await User.find(baseQuery, projection).lean();
+      return { users: orderAssignees(users, requester.userId, self) };
     }
 
-    const self = await User.findById(requester.userId, { institution: 1, group: 1 }).lean();
     const conditions = membershipConditions(self);
     const noInstitutionOrGroup = conditions.length === 0;
     conditions.push({ _id: requester.userId });
 
-    const users = await User.find({ ...baseQuery, $or: conditions }, projection).sort({ email: 1 }).lean();
-    return { users: users.map(toAssignee), ...(noInstitutionOrGroup ? { reason: 'no_institution' } : {}) };
+    const users = await User.find({ ...baseQuery, $or: conditions }, projection).lean();
+    return { users: orderAssignees(users, requester.userId, self), ...(noInstitutionOrGroup ? { reason: 'no_institution' } : {}) };
   }
 }
 
