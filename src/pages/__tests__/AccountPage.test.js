@@ -111,13 +111,14 @@ describe('AccountPage', () => {
     expect(mockUpdateMe).toHaveBeenCalledWith({ institution: 'DND-MDN', group: 'Military transitions' });
   });
 
-  it('renders a locked institution/group read-only with the admin hint, and no Save button, for a partner', async () => {
+  it('renders a locked institution/group read-only with no hint, no notice and no Save button, for a partner', async () => {
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
     render(<AccountPage lang="en" />);
     expect(await screen.findByText('DND-MDN')).toBeTruthy();
     expect(screen.getByText('Military transitions')).toBeTruthy();
-    expect(screen.getByText('account.institutionLocked')).toBeTruthy();
-    expect(screen.getByText('account.groupLocked')).toBeTruthy();
+    expect(screen.queryByText('account.institutionLocked')).toBeNull();
+    expect(screen.queryByText('account.groupLocked')).toBeNull();
+    expect(screen.queryByText('account.lockNotice')).toBeNull();
     expect(screen.queryByLabelText('account.institution')).toBeNull();
     expect(screen.queryByLabelText('account.group')).toBeNull();
     expect(screen.queryByRole('button', { name: 'users.actions.save' })).toBeNull();
@@ -126,9 +127,34 @@ describe('AccountPage', () => {
   it('keeps an unset field editable for a partner while the set one is locked', async () => {
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
     render(<AccountPage lang="en" />);
-    expect(await screen.findByText('account.institutionLocked')).toBeTruthy();
+    expect(await screen.findByText('DND-MDN')).toBeTruthy();
+    expect(screen.queryByText('account.institutionLocked')).toBeNull();
     expect(screen.getByLabelText('account.group').tagName).toBe('SELECT');
     expect(screen.getByRole('button', { name: 'users.actions.save' })).toBeTruthy();
+  });
+
+  it('shows the lock notice above Save only once a partner stages a change, and hides it when the change is undone', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const select = await screen.findByLabelText('account.group');
+    expect(screen.queryByText('account.lockNotice')).toBeNull();
+
+    fireEvent.change(select, { target: { value: 'Military transitions' } });
+    const notice = screen.getByText('account.lockNotice');
+    const save = screen.getByRole('button', { name: 'users.actions.save' });
+    expect(notice.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.change(select, { target: { value: '' } });
+    expect(screen.queryByText('account.lockNotice')).toBeNull();
+  });
+
+  it('never shows the lock notice to an admin, whose picks do not lock', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: '', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const select = await screen.findByLabelText('account.institution');
+    fireEvent.change(select, { target: { value: 'IRCC' } });
+    expect(screen.getByRole('button', { name: 'users.actions.save' }).disabled).toBe(false);
+    expect(screen.queryByText('account.lockNotice')).toBeNull();
   });
 
   it('shows the French group label in the French UI', async () => {

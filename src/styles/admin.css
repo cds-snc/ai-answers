@@ -3451,12 +3451,6 @@ details gcds-button::part(button) {
   margin: 0;
 }
 
-/* "Contact an admin to change ..." under a locked (read-only) value */
-.account-profile__hint {
-  display: block;
-  color: var(--gcds-text-secondary);
-}
-
 @media (max-width: 600px) {
   .account-profile {
     grid-template-columns: 1fr;
