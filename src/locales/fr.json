@@ -1097,7 +1097,7 @@
     "group": "Groupe",
     "institutionLocked": "Communiquez avec un administrateur pour changer votre institution.",
     "groupLocked": "Communiquez avec un administrateur pour changer votre groupe.",
-    "lockNotice": "Assurez-vous d'avoir choisi la bonne institution ou le bon groupe. Après l'enregistrement, seul un administrateur pourra la modifier.",
+    "lockNotice": "Assurez-vous d'avoir choisi la bonne institution ou le bon groupe. Après l'enregistrement, seul un administrateur pourra modifier votre choix.",
     "updated": "Compte mis à jour : {change}",
     "changeInstitutionSet": "{value}",
     "changeInstitutionCleared": "institution retirée",
