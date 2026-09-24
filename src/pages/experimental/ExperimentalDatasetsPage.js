@@ -156,11 +156,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleViewDataset = (id) => {
-        // Navigate to analysis page with pre-selected dataset
-        window.location.href = `${getPath('experimental-analysis', lang)}?datasetId=${id}`;
-    };
-
     const handleExportDataset = async (dataset) => {
         setExportingDatasetId(dataset._id);
         try {
@@ -271,15 +266,25 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         ExperimentalBatchClientService.listDatasets(1, 10, query)
     ), []);
 
-    const renderDatasetActions = (ds) => (
-        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
-            {ds.creationStatus && ds.creationStatus !== 'complete' && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleViewDataset(ds._id)} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.analyze')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => { window.location.href = `${getPath('experimental-suites', lang)}/${ds._id}`; }} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.suiteView')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || (ds.creationStatus && ds.creationStatus !== 'complete')}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
-        </div>
-    );
+    const renderDatasetActions = (ds) => {
+        const isComplete = !ds.creationStatus || ds.creationStatus === 'complete';
+        // Navigation is a real link drawn as a button. GcdsButton drops
+        // `disabled` in link mode, so an unfinished dataset gets a disabled
+        // button instead - same look, and there is nowhere to go yet.
+        const navButton = (href, label) => (isComplete
+            ? <GcdsButton size="small" buttonRole="secondary" type="link" href={href}>{label}</GcdsButton>
+            : <GcdsButton size="small" buttonRole="secondary" disabled>{label}</GcdsButton>
+        );
+        return (
+            <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
+                {!isComplete && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
+                {navButton(`${getPath('experimental-analysis', lang)}?datasetId=${ds._id}`, t('experimental.datasets.analyze'))}
+                {navButton(`${getPath('experimental-suites', lang)}/${ds._id}`, t('experimental.datasets.suiteView'))}
+                <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || !isComplete}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
+                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
+            </div>
+        );
+    };
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -294,10 +299,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
                     {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
                 </GcdsButton>
-                <GcdsButton
-                    buttonRole="secondary"
-                    onClick={() => { window.location.href = getPath('experimental-create-dataset', lang); }}
-                >
+                <GcdsButton buttonRole="secondary" type="link" href={getPath('experimental-create-dataset', lang)}>
                     {t('experimental.datasets.createButton')}
                 </GcdsButton>
 

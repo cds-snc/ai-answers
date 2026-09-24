@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { GcdsContainer, GcdsHeading, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
@@ -18,22 +18,10 @@ const LEGEND_VERDICTS = ['pass', 'mixed', 'flagged', 'error', 'missing'];
 export default function ExperimentalSuitePage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const { datasetId } = useParams();
-    const navigate = useNavigate();
 
     const { dataset, tests, runs, cells, loading, error } = useExperimentalSuiteGrid(datasetId);
 
-    // TODO(a11y): handleCellClick fires navigate() from a <td tabIndex={0}
-    // onClick/onKeyDown> in SuiteGridTable.js instead of a real link, even
-    // though the destination (run._id/test.position) is known synchronously
-    // - no async gating that would require navigate(). useRouteChangeFocus
-    // (App.js) now handles the focus/title gap this used to leave, so that
-    // part's covered - what's still missing is native link semantics: a real
-    // <a href> would give the cell a proper accessible role/name for free
-    // instead of the hand-rolled tabIndex/onKeyDown interactivity, plus
-    // things onClick can't replicate (open in new tab, copy link, etc.).
-    const handleCellClick = (run, test) => {
-        navigate(`${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`);
-    };
+    const cellHref = (run, test) => `${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`;
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -75,7 +63,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                         runs={runs}
                         cells={cells}
                         lang={lang}
-                        onCellClick={handleCellClick}
+                        cellHref={cellHref}
                     />
 
                     {runs.length > 0 && (

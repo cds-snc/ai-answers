@@ -1738,6 +1738,33 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
   color: #666;
 }
 
+/* The link inside a clickable verdict cell fills the whole cell (the cell
+   drops its own padding) and takes the verdict colour, so the grid looks
+   the same as when the <td> itself was the click target. */
+.verdict-cell__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+/* height: 100% on the link only resolves against a cell with a height of
+   its own; 1px is the table-cell trick - the cell still grows to the row. */
+td:has(> .verdict-cell__link) {
+  height: 1px;
+}
+
+/* Focus is the site-wide link treatment from gcds-utility (a:focus: blue
+   fill, white text), the same as every GcdsLink - nothing extra here. */
+.verdict-cell__link:hover {
+  text-decoration: underline;
+}
+
 /* Harmful — most severe category, kept as its own solid red-900/white
    treatment (~9.64:1), distinct from the error tier above. */
 .label.harmful {
