@@ -16,6 +16,10 @@ import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js
 import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 import { resolveDisplayContent } from '../utils/answerLanguage.js';
+import { useChatAssignBar } from '../hooks/admin/useChatAssignBar.js';
+import { ASSIGN_NOTE_MAX_LENGTH } from '../constants/chatAssign.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 DataTable.use(DT);
 
@@ -41,6 +45,33 @@ const getTimezoneOffsetMinutes = (value) => {
 
 const TABLE_STORAGE_KEY = `chatDashboard_tableState_v2_`;
 
+// One assignStatus shape covers assign, unassign, and the assignable-list
+// load failure - this just picks the right message/key for whichever
+// outcome it actually is.
+function resolveAssignStatusMessage(status, t) {
+  if (status.loadFailed) return t('admin.chatDashboard.assign.loadError');
+  if (status.unassignFailed) return t('admin.chatDashboard.assign.unassignError');
+  if (status.unassigned) return t('admin.chatDashboard.assign.unassigned');
+  if (status.isError) {
+    const byCode = {
+      already_assigned: 'admin.chatDashboard.assign.assignErrorAlreadyAssigned',
+      note_too_long: 'admin.chatDashboard.assign.assignErrorNoteTooLong',
+      not_allowed: 'admin.chatDashboard.assign.assignErrorNotAllowed',
+    };
+    return t(byCode[status.code] || 'admin.chatDashboard.assign.assignError').replace('{count}', () => status.count);
+  }
+  const key = status.hadNote ? 'admin.chatDashboard.assign.assignSuccessWithNote' : 'admin.chatDashboard.assign.assignSuccess';
+  return t(key).replace('{count}', () => status.count);
+}
+
+// The Assign button's own label is the note confirmation - no separate
+// "Save note" step (see useChatAssignBar.js's clearNote).
+function resolveAssignButtonLabel(assignBar, t) {
+  if (assignBar.assigning) return t('admin.chatDashboard.assign.assigning');
+  const key = assignBar.noteText.trim() ? 'admin.chatDashboard.assign.assignChatsWithNote' : 'admin.chatDashboard.assign.assignChats';
+  return t(key).replace('{count}', () => assignBar.selectedCount);
+}
+
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [loading, setLoading] = useState(false);
@@ -54,6 +85,23 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   // (SC 4.1.3) - shared with MetricsDashboard.js.
   const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
     useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
+  const assignBar = useChatAssignBar();
+  const assignErrorRef = useFocusOnChange(assignBar.validationErrorCount);
+  // After an assign (button disabled while it ran) or an unassign (pill
+  // destroyed by the reload), focus needs somewhere to land - see
+  // useChatAssignBar.js's outcomeFocusCount comment.
+  const outcomeRef = useFocusOnChange(assignBar.outcomeFocusCount);
+  // "Add a note" hides itself when the note opens, and "Clear note" hides
+  // the note again - both would drop focus to <body>, so hand it to the
+  // textarea on open and back to "Add a note" on close.
+  const noteTextareaRef = useRef(null);
+  const addNoteButtonRef = useRef(null);
+  const noteWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (assignBar.noteOpen) noteTextareaRef.current?.focus();
+    else if (noteWasOpenRef.current) addNoteButtonRef.current?.focus();
+    noteWasOpenRef.current = assignBar.noteOpen;
+  }, [assignBar.noteOpen]);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
@@ -166,6 +214,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
+    // New filters, new rows: a selection made on the old rows would keep
+    // counting chats that are no longer on screen.
+    assignBar.resetSelection();
     setHasAppliedFilters(true);
     setLoading(true);
     try {
@@ -177,7 +228,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [assignBar]);
 
   // Clear all is a restart, not a re-apply: unlike removing a single pill or
   // reopening the panel to change one field (both of which keep the results
@@ -205,6 +256,10 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // mounting a fresh one.
     tableApiRef.current = null;
     ajaxSeqRef.current += 1;
+    // The results section (assign box included) unmounts; leave assign
+    // mode too, or the next Apply comes back with the mode on and the
+    // column hidden.
+    assignBar.setAssignMode(false);
     setHasAppliedFilters(false);
     setRecordsTotal(0);
     setSearchTerm('');
@@ -218,9 +273,67 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     resetSearchAnnouncement();
     setError(null);
     setLoading(false);
-  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement]);
+  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement, assignBar]);
 
   const columns = useMemo(() => ([
+    // Bulk-assign checkbox column. Always defined, hidden until assign mode
+    // is on - shown/hidden through the DataTables API rather than added and
+    // removed, so toggling the mode never rebuilds the table (which would
+    // refetch the rows and drop the saved page length). Plain HTML +
+    // delegated onchange in createdRow below, like UsersPage.js's row
+    // controls - not a React-mounted cell, since checked state only needs
+    // to survive redraws via the ref, not re-render reactively.
+    {
+      name: 'assign',
+      visible: false,
+      title: t('admin.chatDashboard.assign.selectColumn'),
+      // Sorts on assignment state (null < any ObjectId ascending, per
+      // chat-dashboard.js's sortFieldMap), so someone can sort this column
+      // to find the unassigned rows. The cell itself needs the row's own
+      // question id (row._id, the Interaction), read via `row` below - not
+      // `value`. One control per row: assignment is per question.
+      data: 'assignedTo',
+      orderable: true,
+      searchable: false,
+      className: 'chat-assign-checkbox-col',
+      // GC DS checkbox styling (gc-chckbxrdio sm, see FilterPanel.js's own
+      // checkbox groups / global.css) needs a real sibling <label> - its
+      // custom box/checkmark is drawn on the label's own ::before, not the
+      // input. Putting sr-only on the <label> itself clips that pseudo-
+      // element away too, making the checkbox invisible - the label has to
+      // stay a normal, visible element; only its text goes in an sr-only
+      // span, so this column stays checkbox-only visually.
+      //
+      // An already-assigned question shows the assignee as a pill (same
+      // shape as FilterPanel's removable filter pills) instead of a checkbox
+      // - it can't be picked for a bulk assign (chat-assign-interaction.js rejects that,
+      // 409), and the pill's × is how to remove the assignment instead.
+      render: (value, type, row) => {
+        const questionId = row?._id;
+        if (!questionId) return '';
+        const safeQuestionId = escapeHtmlAttribute(questionId);
+        // Keyed on assignedTo, not the email: the email lookup comes back
+        // empty for a deleted account, and that chat still needs its pill so
+        // the assignment can be removed.
+        if (row?.assignedTo) {
+          const safeEmail = escapeHtmlAttribute(row.assignedToEmail || t('admin.chatDashboard.assign.unknownAccount'));
+          const removeLabel = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.removeAssignment'))} ${safeEmail}`;
+          return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-question-id="${safeQuestionId}" aria-label="${removeLabel}">` +
+            `${safeEmail}<span class="filter-pill__close" aria-hidden="true">×</span>` +
+            `</button>`;
+        }
+        const safeId = escapeHtmlAttribute(`question-assign-${questionId}`);
+        const labelText = escapeHtmlAttribute(
+          t('admin.chatDashboard.assign.selectQuestion')
+            .replace('{number}', () => String(row?.questionNumber || ''))
+            .replace('{chatId}', () => String(row?.chatId || ''))
+        );
+        return `<div class="gc-chckbxrdio sm"><div class="checkbox">` +
+          `<input type="checkbox" class="chat-assign-checkbox" id="${safeId}" data-question-id="${safeQuestionId}">` +
+          `<label for="${safeId}"><span class="sr-only">${labelText}</span></label>` +
+          `</div></div>`;
+      }
+    },
     {
       title: t('admin.common.columns.chatId'),
       data: 'chatId',
@@ -385,6 +498,142 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
       {hasAppliedFilters && (
         <div>
+          {/* Stays mounted (hidden, not unmounted, at zero results) and reads
+              e.target.open rather than flipping: browsers fire toggle when the
+              open attribute is added on mount, so an unmount/remount with
+              open already true would otherwise flip the mode with no click.
+              Same set-to-what-the-box-says pattern as FilterPanel's own <details>. */}
+          <details
+            className="filter-panel chat-assign-panel"
+            open={assignBar.assignMode}
+            hidden={recordsTotal === 0}
+            onToggle={(e) => {
+              const open = e.target.open;
+              if (open === assignBar.assignMode) return;
+              assignBar.setAssignMode(open);
+              // Show/hide the column in place: no rebuild, no refetch.
+              tableApiRef.current?.column('assign:name').visible(open);
+            }}
+          >
+              <summary className="filter-panel-summary">
+                {t('admin.chatDashboard.assign.toggleOn')}
+              </summary>
+              <div className="filter-panel-content text-measure">
+              {assignBar.assignableReason === 'no_institution' && (
+                <StatusMessage variant="info" message={t('admin.chatDashboard.assign.noInstitution')} />
+              )}
+
+              <div className="filter-row">
+                <label htmlFor="chat-assign-expert" className="filter-label">{t('admin.chatDashboard.assign.expertLabel')}</label>
+                {assignBar.validationErrorCode && (
+                  <FeedbackInlineError
+                    id="chat-assign-validation-error"
+                    message={t(
+                      assignBar.validationErrorCode === 'no_expert'
+                        ? 'admin.chatDashboard.assign.errorNoExpert'
+                        : 'admin.chatDashboard.assign.errorNoQuestion'
+                    )}
+                    errorCount={assignBar.validationErrorCount}
+                    inputRef={assignErrorRef}
+                  />
+                )}
+                <select
+                  id="chat-assign-expert"
+                  className="filter-select"
+                  value={assignBar.selectedAssigneeId}
+                  onChange={(e) => assignBar.setSelectedAssigneeId(e.target.value)}
+                  disabled={assignBar.assignableLoading || assignBar.assignableUsers.length === 0}
+                  aria-describedby={assignBar.validationErrorCode === 'no_expert' ? 'chat-assign-validation-error' : undefined}
+                  aria-invalid={assignBar.validationErrorCode === 'no_expert' ? 'true' : undefined}
+                >
+                  <option value="">{t('admin.chatDashboard.assign.expertPlaceholder')}</option>
+                  {assignBar.assignableUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.email}</option>
+                  ))}
+                </select>
+              </div>
+
+              {!assignBar.noteOpen && (
+                <div className="filter-actions chat-assign-actions">
+                  <button
+                    type="button"
+                    className="filter-button filter-button-primary"
+                    onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                    disabled={assignBar.assigning}
+                  >
+                    {resolveAssignButtonLabel(assignBar, t)}
+                  </button>
+                  <button
+                    type="button"
+                    className="filter-button filter-button-outline"
+                    ref={addNoteButtonRef}
+                    onClick={() => assignBar.setNoteOpen(true)}
+                  >
+                    {t('admin.chatDashboard.assign.addNote')}
+                  </button>
+                </div>
+              )}
+
+              {assignBar.noteOpen && (
+                <div className="chat-assign-note">
+                  <div className="filter-row">
+                    <label htmlFor="chat-assign-note" className="filter-label">{t('admin.chatDashboard.assign.noteLabel')}</label>
+                    <textarea
+                      id="chat-assign-note"
+                      ref={noteTextareaRef}
+                      className="filter-input chat-assign-note-textarea"
+                      value={assignBar.noteText}
+                      onChange={(e) => assignBar.setNoteText(e.target.value)}
+                      maxLength={ASSIGN_NOTE_MAX_LENGTH}
+                      aria-describedby="chat-assign-note-count"
+                    />
+                    {/* Plain visible text, not announce() - a per-keystroke
+                        live announcement would talk over typing. The
+                        textarea's own aria-describedby is enough for a
+                        screen-reader user to check the count on demand. */}
+                    <p id="chat-assign-note-count" className="font-size-text-xxs-nr chat-assign-note-count">
+                      {t('admin.chatDashboard.assign.noteCount').replace('{count}', () => assignBar.noteText.length).replace('{max}', () => ASSIGN_NOTE_MAX_LENGTH)}
+                    </p>
+                  </div>
+                  {/* No separate "Save note" - typing is enough, the Assign
+                      button's own label ("...with note") is the confirmation.
+                      Moves down here (bottom-left) while the note is open,
+                      rather than sitting in a now-empty row above. */}
+                  <div className="filter-actions chat-assign-actions">
+                    <button
+                      type="button"
+                      className="filter-button filter-button-primary"
+                      onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                      disabled={assignBar.assigning}
+                    >
+                      {resolveAssignButtonLabel(assignBar, t)}
+                    </button>
+                    <button type="button" className="filter-button filter-button-secondary" onClick={assignBar.clearNote}>
+                      {t('admin.chatDashboard.assign.noteClear')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {assignBar.assignStatus && (() => {
+                // Outcomes that took focus away (assign done, unassign done)
+                // are read by focus landing on them; the two that didn't
+                // (list load failed, unassign failed) announce normally.
+                const movesFocus = !assignBar.assignStatus.loadFailed && !assignBar.assignStatus.unassignFailed;
+                return (
+                  <StatusMessage
+                    variant={assignBar.assignStatus.isError ? 'error' : 'success'}
+                    message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
+                    ref={movesFocus ? outcomeRef : undefined}
+                    tabIndex={movesFocus ? -1 : undefined}
+                    announce={!movesFocus}
+                    announcedVia={movesFocus ? 'focus' : undefined}
+                  />
+                );
+              })()}
+              </div>
+            </details>
+
           {dataTableReady && (
             <div className="dashboard-table-container dashboard-table-container--grouped">
               {/* Sibling of the Filters h2 above, not nested under it - matches
@@ -470,6 +719,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         if (parsed && parsed.order) {
                           delete parsed.order;
                         }
+                        // Column visibility too: the Assign column is the only
+                        // one that ever toggles, and it must start hidden to
+                        // match assign mode being off on load.
+                        if (parsed && parsed.columns) {
+                          delete parsed.columns;
+                        }
                         return parsed;
                       }
                     } catch (e) {
@@ -483,6 +738,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     stateRef: chatGroupStateRef,
                     columns,
                     groupedColumns: [
+                      // The assign column is deliberately NOT grouped:
+                      // assignment is per question, so every row keeps
+                      // its own checkbox/pill.
                       { data: 'program' },
                       { data: 'department' },
                       { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
@@ -492,6 +750,40 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     const api = this.api();
                     tableApiRef.current = api;
                     wireTableAccessibility(api, { t });
+                    // Assign checkboxes/pills are wired once here, by
+                    // delegation on the table body, not per row in
+                    // createdRow: the Assign column starts hidden, and
+                    // DataTables keeps a hidden column's cells out of the
+                    // row until it is shown - so at createdRow time the
+                    // checkbox isn't in the row to find. The listeners read
+                    // the question id off the control itself.
+                    const body = api.table().body();
+                    body.addEventListener('change', (e) => {
+                      const box = e.target.closest('input.chat-assign-checkbox');
+                      if (!box) return;
+                      assignBar.toggleQuestionChecked(box.dataset.questionId, box.checked);
+                      box.closest('tr')?.classList.toggle('chat-row--selected', box.checked);
+                    });
+                    body.addEventListener('click', (e) => {
+                      const pill = e.target.closest('button.chat-assign-pill');
+                      if (!pill) return;
+                      if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
+                      assignBar.unassignQuestion(pill.dataset.questionId, () => tableApiRef.current?.ajax.reload());
+                    });
+                    // Re-apply the ticked state after every draw and when
+                    // the column is shown (rows are rebuilt on each fetch;
+                    // the selection lives in the hook's ref). A row that
+                    // came back assigned can't stay selected.
+                    const syncAssignControls = () => {
+                      body.querySelectorAll('input.chat-assign-checkbox').forEach((box) => {
+                        const checked = assignBar.isQuestionChecked(box.dataset.questionId);
+                        box.checked = checked;
+                        box.closest('tr')?.classList.toggle('chat-row--selected', checked);
+                      });
+                      body.querySelectorAll('button.chat-assign-pill').forEach((pill) => assignBar.forgetQuestion(pill.dataset.questionId));
+                    };
+                    api.on('draw', syncAssignControls);
+                    api.on('column-visibility', syncAssignControls);
                   },
                   ajax: async (dtParams, callback) => {
                     const seq = ++ajaxSeqRef.current;
@@ -520,6 +812,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
                       const query = {
                         ...normalizedFilters,
+                        // The Assign column's pills need the assignee email
+                        // whenever the column is shown, and showing it must
+                        // not refetch - so always ask for it. Trade-off: one
+                        // extra users $lookup on every page/sort/search for
+                        // everyone, chosen over a refetch (and loading
+                        // overlay) each time assign mode is toggled.
+                        includeAssignee: 'true',
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,
                         orderBy,

@@ -884,6 +884,35 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
+      },
+      "assign": {
+        "toggleOn": "Attribuer une ou des questions à un évaluateur",
+        "selectColumn": "Attribuer",
+        "selectQuestion": "Sélectionner la question {number} du clavardage {chatId}",
+        "expertLabel": "Compte de l'évaluateur",
+        "expertPlaceholder": "Choisir un compte",
+        "noInstitution": "Vous ne pouvez attribuer des questions qu'à vous-même. Choisissez une institution ou un groupe sur votre page de compte pour aussi attribuer des questions à des collègues.",
+        "addNote": "Ajouter une note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} caractères",
+        "noteClear": "Effacer la note",
+        "assignChats": "Attribuer ({count}) à un évaluateur",
+        "assignChatsWithNote": "Attribuer ({count}) à un évaluateur avec une note",
+        "assigning": "Attribution en cours…",
+        "errorNoExpert": "Choisissez un évaluateur à qui attribuer.",
+        "errorNoQuestion": "Choisissez au moins une question dans la colonne Attribuer.",
+        "assignSuccess": "{count} question(s) attribuée(s).",
+        "assignSuccessWithNote": "{count} question(s) attribuée(s) avec une note.",
+        "assignError": "Échec de l'attribution de {count} question(s).",
+        "assignErrorAlreadyAssigned": "{count} question(s) étaient déjà attribuée(s) à quelqu'un d'autre.",
+        "assignErrorNoteTooLong": "La note est trop longue.",
+        "assignErrorNotAllowed": "Vous ne pouvez pas attribuer de questions à cet évaluateur.",
+        "loadError": "Impossible de charger la liste des personnes à qui vous pouvez attribuer.",
+        "removeAssignment": "Retirer l'attribution de",
+        "unknownAccount": "Compte inconnu",
+        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution?",
+        "unassigned": "Attribution retirée.",
+        "unassignError": "Impossible de retirer l'attribution."
       }
     },
     "evalDashboard": {
