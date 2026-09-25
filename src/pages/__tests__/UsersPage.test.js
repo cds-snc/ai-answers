@@ -267,19 +267,39 @@ describe('UsersPage institution and group columns', () => {
     expect(groupSelect.options[0].value).toBe('');
     expect(groupSelect.options[0].textContent).toBe('users.groupNone');
 
+    // Military transitions belongs to DND-MDN, so moving to IRCC drops it
+    // and leaves IRCC's (empty) group list.
     fireEvent.change(institutionSelect, { target: { value: 'IRCC' } });
+    expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
+    expect(screen.getByText('users.groupNone')).toBeTruthy();
     expect(mockUpdate).not.toHaveBeenCalled();
     // renderActionsCell rebuilds this cell's DOM node (getCellRoot), so the
     // enabled button after staging is a new element — re-query for it.
     fireEvent.click(screen.getByText('users.actions.save'));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
-    expect(mockUpdate).toHaveBeenCalledWith('u1', expect.objectContaining({ institution: 'IRCC', group: 'Military transitions', role: 'partner', active: true }));
+    expect(mockUpdate).toHaveBeenCalledWith('u1', expect.objectContaining({ institution: 'IRCC', group: '', role: 'partner', active: true }));
 
-    const groupAfter = await screen.findByLabelText('users.columns.group — a@b.com');
-    fireEvent.change(groupAfter, { target: { value: '' } });
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    const groupAfter = screen.getByLabelText('users.columns.group — a@b.com');
+    expect(Array.from(groupAfter.options).map(o => o.value)).toEqual(['', 'Military transitions']);
+    fireEvent.change(groupAfter, { target: { value: 'Military transitions' } });
     expect(mockUpdate).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByText('users.actions.save'));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2));
-    expect(mockUpdate.mock.calls[1][1]).toEqual(expect.objectContaining({ institution: 'IRCC', group: '' }));
+    expect(mockUpdate.mock.calls[1][1]).toEqual(expect.objectContaining({ institution: 'DND-MDN', group: 'Military transitions' }));
+  });
+
+  it('shows None for group when a row has no institution', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: '', group: '' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    expect(await screen.findByText('users.groupNone')).toBeTruthy();
+    expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
+  });
+
+  it('keeps a stored group that doesn\'t fit the institution visible instead of showing none', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'IRCC', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    const groupSelect = await screen.findByLabelText('users.columns.group — a@b.com');
+    expect(groupSelect.value).toBe('Military transitions');
   });
 });

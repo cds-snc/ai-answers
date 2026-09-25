@@ -90,3 +90,59 @@ describe('user-users PATCH clears stale prefilter preferences', () => {
     expect(updated.preferences.prefilterDepartment).toBe(true);
   });
 });
+
+describe('user-users PATCH keeps each group inside its institution', () => {
+  it('rejects putting a user in a group that belongs to another institution', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const target = await makeUser({ institution: 'IRCC' });
+
+    const res = await runPatch(
+      { userId: target._id.toString(), institution: 'IRCC', group: 'Military transitions' },
+      { role: 'admin', userId: admin._id.toString() }
+    );
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('lets an admin put a CEO-BEC user in the QA group', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const target = await makeUser({ role: 'admin', institution: 'CEO-BEC' });
+
+    const res = await runPatch(
+      { userId: target._id.toString(), institution: 'CEO-BEC', group: 'AI Answers QA' },
+      { role: 'admin', userId: admin._id.toString() }
+    );
+
+    expect(res.statusCode).toBe(200);
+    await User.deleteOne({ _id: target._id });
+  });
+
+  it('rejects moving a user to another institution without clearing a group that no longer fits', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const target = await makeUser({ institution: 'DND-MDN', group: 'Military transitions' });
+
+    const res = await runPatch(
+      { userId: target._id.toString(), institution: 'IRCC', group: 'Military transitions' },
+      { role: 'admin', userId: admin._id.toString() }
+    );
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('still saves other fields on a user whose stored group already mismatches', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const target = await makeUser({ institution: 'IRCC', group: 'Military transitions' });
+
+    // The Manage user accounts page sends every field on each save.
+    const res = await runPatch(
+      { userId: target._id.toString(), active: false, role: 'partner', institution: 'IRCC', group: 'Military transitions' },
+      { role: 'admin', userId: admin._id.toString() }
+    );
+
+    expect(res.statusCode).toBe(200);
+  });
+});

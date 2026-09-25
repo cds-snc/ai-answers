@@ -4,7 +4,7 @@ import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
 import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
-import { PARTNER_GROUPS, getPartnerGroupLabel } from '../constants/partnerGroups.js';
+import { QA_GROUP, getPartnerGroupLabel, groupsForInstitution, groupFitsInstitution } from '../constants/partnerGroups.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import UserService from '../services/UserService.js';
@@ -69,7 +69,6 @@ const AccountPage = ({ lang = 'en' }) => {
   // Field-level validation for the pre-filter checkbox: it needs an
   // institution first.
   const prefError = useInlineFormError();
-  const groupPrefError = useInlineFormError();
   // Institution/group are one-time self-picks (api/user/user-me.js locks
   // them after the first set) - these surface the 403 as an inline error
   // right on the field, same as the pre-filter checkboxes above, rather than
@@ -133,7 +132,12 @@ const AccountPage = ({ lang = 'en' }) => {
   // Staging only - see `draft`. A fresh edit supersedes the last outcome and
   // any lock error from a previous Save.
   const handleDraftChange = (field, value) => {
-    setDraft((prev) => ({ ...prev, [field]: value }));
+    setDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      // A group only fits its own institution, so drop one that no longer does.
+      if (field === 'institution' && !groupLocked && !groupFitsInstitution(next.group, value)) next.group = '';
+      return next;
+    });
     setProfileStatus(null);
     setPrefStatus(null);
     institutionError.clearError();
@@ -164,7 +168,6 @@ const AccountPage = ({ lang = 'en' }) => {
       applyProfile(updated);
       if (refreshUser) await refreshUser();
       prefError.clearError();
-      groupPrefError.clearError();
       setProfileStatusMovesFocus(true);
       setProfileStatus({ text: t('account.updated').replace('{change}', () => changes.join(', ')), isError: false });
       setProfileSaveFocusCount((n) => n + 1);
@@ -188,6 +191,10 @@ const AccountPage = ({ lang = 'en' }) => {
   // appears above Save once a change is staged.
   const institutionLocked = profile?.role !== 'admin' && Boolean(profile?.institution);
   const groupLocked = profile?.role !== 'admin' && Boolean(profile?.group);
+  // A stored group that doesn't fit (older data) stays listed so it isn't shown as none.
+  const groupOptions = groupsForInstitution(draft.institution).filter((g) => g !== QA_GROUP || profile?.role === 'admin');
+  if (draft.group && !groupOptions.includes(draft.group)) groupOptions.push(draft.group);
+  const showGroupSelect = !groupLocked && groupOptions.length > 0;
   const handlePrefilterChange = (checked) => {
     if (checked && !profile?.institution) {
       // A blocked action is still a fresh action - clear a stale success/
@@ -208,12 +215,6 @@ const AccountPage = ({ lang = 'en' }) => {
     );
   };
   const handlePrefilterGroupChange = (checked) => {
-    if (checked && !profile?.group) {
-      setPrefStatus(null);
-      groupPrefError.triggerError();
-      return;
-    }
-    groupPrefError.clearError();
     setProfileStatus(null);
     const change = checked ? t('account.preferences.changeGroupOn') : t('account.preferences.changeGroupOff');
     return saveProfile(
@@ -383,10 +384,12 @@ const AccountPage = ({ lang = 'en' }) => {
                 </dd>
               </div>
               <div className="account-profile__row">
-                <dt>{groupLocked ? t('account.group') : <label htmlFor="account-group">{t('account.group')}</label>}</dt>
+                <dt>{showGroupSelect ? <label htmlFor="account-group">{t('account.group')}</label> : t('account.group')}</dt>
                 <dd>
                   {groupLocked ? (
                     getPartnerGroupLabel(profile.group, lang)
+                  ) : !showGroupSelect ? (
+                    t('users.groupNone')
                   ) : (
                     <>
                       {groupError.hasError && (
@@ -406,7 +409,8 @@ const AccountPage = ({ lang = 'en' }) => {
                         onChange={(e) => handleDraftChange('group', e.target.value)}
                       >
                         <option value="">{t('users.groupNone')}</option>
-                        {PARTNER_GROUPS.map((g) => <option key={g} value={g}>{getPartnerGroupLabel(g, lang)}</option>)}
+                        {/* Only the chosen institution's groups; only an admin adds people to the QA group (UserService.updateOwnProfile). */}
+                        {groupOptions.map((g) => <option key={g} value={g}>{getPartnerGroupLabel(g, lang)}</option>)}
                       </select>
                     </>
                   )}
@@ -467,27 +471,20 @@ const AccountPage = ({ lang = 'en' }) => {
               <label htmlFor="pref-prefilter-department">{t('account.preferences.prefilterDepartment')}</label>
             </div>
           </div>
-          {groupPrefError.hasError && (
-            <FeedbackInlineError
-              id="pref-prefilter-group-error"
-              message={t('account.preferences.noGroup')}
-              errorCount={groupPrefError.errorCount}
-              inputRef={groupPrefError.errorRef}
-            />
-          )}
-          <div className="gc-chckbxrdio md">
-            <div className="checkbox">
-              <input
-                type="checkbox"
-                id="pref-prefilter-group"
-                checked={Boolean(profile.preferences?.prefilterGroup)}
-                aria-describedby={groupPrefError.hasError ? 'pref-prefilter-group-error' : undefined}
-                aria-invalid={groupPrefError.hasError ? 'true' : undefined}
-                onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
-              />
-              <label htmlFor="pref-prefilter-group">{t('account.preferences.prefilterGroup')}</label>
+          {/* Only once a group is saved - there's nothing to pre-filter to before that. */}
+          {profile.group && (
+            <div className="gc-chckbxrdio md">
+              <div className="checkbox">
+                <input
+                  type="checkbox"
+                  id="pref-prefilter-group"
+                  checked={Boolean(profile.preferences?.prefilterGroup)}
+                  onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
+                />
+                <label htmlFor="pref-prefilter-group">{t('account.preferences.prefilterGroup')}</label>
+              </div>
             </div>
-          </div>
+          )}
           <StatusMessage variant={prefStatus?.isError ? 'error' : 'success'} message={prefStatus?.text || ''} />
           {(prefilterMessageKey || showBothPrefilterNotice) && (
             <GcdsNotice

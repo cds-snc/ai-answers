@@ -128,6 +128,21 @@ describe('chat-assign-interaction', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('lets a partner assign a question to someone in the QA group, whatever their institution/group', async () => {
+    await dbConnect();
+    const partner = await makeUser({ institution: 'IRCC', group: 'Intake team' });
+    const qaMember = await makeUser({ institution: 'ESDC', group: 'AI Answers QA' });
+    const question = await Interaction.create({});
+
+    const res = await runPost(
+      { interactionId: question._id.toString(), assignedTo: qaMember._id.toString() },
+      { role: 'partner', userId: partner._id.toString() }
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.assignedTo).toBe(qaMember._id.toString());
+  });
+
   it('lets an admin assign a question to another user', async () => {
     await dbConnect();
     const admin = await makeUser({ role: 'admin' });

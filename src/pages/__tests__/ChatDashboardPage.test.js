@@ -175,6 +175,20 @@ describe('ChatDashboardPage rendering', () => {
     expect(groups.map((g) => g.querySelector('option').textContent)).toEqual(['me@x.ca', 'mate@x.ca', 'dept@x.ca']);
   });
 
+  it('puts the QA group after your institution, headed by the group name', async () => {
+    const { groups } = await openReviewerPicker([
+      { id: 'u1', email: 'me@x.ca', relation: 'self' },
+      { id: 'u3', email: 'dept@x.ca', relation: 'institution' },
+      { id: 'u5', email: 'qa@x.ca', relation: 'qa' }
+    ], 'qa@x.ca');
+    expect(groups.map((g) => g.label)).toEqual([
+      'admin.chatDashboard.assign.pickerSelf',
+      'admin.chatDashboard.assign.pickerInstitution',
+      'AI Answers QA'
+    ]);
+    expect(groups[2].querySelector('option').textContent).toBe('qa@x.ca');
+  });
+
   it('admin: a reviewer with a missing or unrecognised relation lands under Other accounts instead of vanishing', async () => {
     mockAuth.currentUser = { role: 'admin' };
     const { groups } = await openReviewerPicker([

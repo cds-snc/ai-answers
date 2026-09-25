@@ -2,7 +2,7 @@ import dbConnect from '../api/db/db-connect.js';
 import { User } from '../models/user.js';
 import { requireObjectIdString } from '../api/util/db-query.js';
 import { PARTNER_DEPARTMENTS } from '../src/constants/partnerDepartments.js';
-import { PARTNER_GROUPS } from '../src/constants/partnerGroups.js';
+import { PARTNER_GROUPS, QA_GROUP, groupFitsInstitution } from '../src/constants/partnerGroups.js';
 
 // User profile and membership: the DB side of the user-me / user-users /
 // user-assignable / auth-me handlers, which keep only method, status and
@@ -60,6 +60,15 @@ export function sharesMembership(a, b) {
 }
 
 /**
+ * Who a partner may assign a question to: anyone membership-linked, plus
+ * anyone in the QA group, which is open to every partner. Unassigning stays
+ * on sharesMembership alone.
+ */
+export function canAssignTo(requester, assignee) {
+  return sharesMembership(requester, assignee) || assignee?.group === QA_GROUP;
+}
+
+/**
  * Mongo $or conditions matching anyone membership-linked to `user` (see
  * sharesMembership) - the query-side version of the same rule. Empty array
  * when `user` has neither institution nor group set.
@@ -80,6 +89,18 @@ function fail(status, message, code) {
   return err;
 }
 
+// A group must belong to the person's institution. Only checked when this
+// update changes either one, so a stored mismatch doesn't block saving
+// unrelated fields.
+function assertGroupFitsInstitution(current, updateFields) {
+  const institution = updateFields.institution ?? current.institution ?? '';
+  const group = updateFields.group ?? current.group ?? '';
+  const changed = institution !== (current.institution || '') || group !== (current.group || '');
+  if (changed && !groupFitsInstitution(group, institution)) {
+    throw fail(400, 'That group belongs to another institution.', 'group_institution_mismatch');
+  }
+}
+
 const MEMBERSHIP_FIELDS = { institution: 1, group: 1, preferences: 1 };
 const PROFILE_FIELDS = { email: 1, role: 1, active: 1, ...MEMBERSHIP_FIELDS };
 
@@ -97,17 +118,18 @@ const toAssignee = (user) => ({
   group: user.group || ''
 });
 
-// Picker order: you, then your group, then your institution, then (admins
-// only) everyone else - alphabetical within each block. `relation` is what
+// Picker order: you, then your group, then your institution, then the QA
+// group, then (admins only) everyone else - alphabetical within each block. `relation` is what
 // ChatDashboardPage.js groups the <optgroup>s by. Group outranks
 // institution because it's the narrower team; someone in both counts as
 // group.
-const RELATION_RANK = { self: 0, group: 1, institution: 2, other: 3 };
+const RELATION_RANK = { self: 0, group: 1, institution: 2, qa: 3, other: 4 };
 
 function relationTo(self, selfId, user) {
   if (user._id.toString() === String(selfId)) return 'self';
   if (self?.group && user.group === self.group) return 'group';
   if (self?.institution && user.institution === self.institution) return 'institution';
+  if (user.group === QA_GROUP) return 'qa';
   return 'other';
 }
 
@@ -166,8 +188,13 @@ class UserServiceClass {
       if (isLockedPartner && currentUser.group && value !== currentUser.group) {
         throw fail(403, 'Ask an admin to change your group.', 'group_locked');
       }
+      // Every partner can assign to QA members, so only an admin adds people to it.
+      if (isLockedPartner && value === QA_GROUP && currentUser.group !== QA_GROUP) {
+        throw fail(403, 'Ask an admin to join the QA group.', 'group_locked');
+      }
       updateFields.group = value;
     }
+    assertGroupFitsInstitution(currentUser, updateFields);
     // A prefilter needs a field to prefilter to - the effective value after
     // this request (a same-request institution/group wins over the stored
     // one). Mirrors the clear rule in applyClearedPrefilters, which turns
@@ -221,8 +248,14 @@ class UserServiceClass {
     if (Object.keys(updateFields).length === 0) throw fail(400, 'No valid fields to update');
 
     await dbConnect();
+    userId = requireObjectIdString(userId, 'user ID');
+    if (updateFields.institution !== undefined || updateFields.group !== undefined) {
+      const current = await User.findById(userId, { institution: 1, group: 1 }).lean();
+      if (!current) throw fail(404, 'User not found');
+      assertGroupFitsInstitution(current, updateFields);
+    }
     const user = await User.findByIdAndUpdate(
-      requireObjectIdString(userId, 'user ID'),
+      userId,
       updateFields,
       { new: true, select: '-password' }
     );
@@ -238,13 +271,14 @@ class UserServiceClass {
 
   // Who `requester` ({ userId, role }) may assign a question to. Not the
   // full directory (listUsers stays admin-only): a partner only sees people
-  // sharing their institution or group (same rule chat-assign-interaction.js
-  // enforces) plus themselves - self-assign is always allowed there, so the
-  // requester is always in the list. An admin sees everyone active.
+  // sharing their institution or group, plus the QA group (same rule
+  // chat-assign-interaction.js enforces via canAssignTo), plus themselves -
+  // self-assign is always allowed there, so the requester is always in the
+  // list. An admin sees everyone active.
   //
   // `reason: 'no_institution'` means a partner with neither institution nor
-  // group set: the list is still at least themselves, but the frontend uses
-  // the reason to explain why no one else shows up.
+  // group set: the list is only themselves and the QA group, and the
+  // frontend uses the reason to explain why no teammates show up.
   //
   // TODO(design): whether partners may assign outside their group at all
   // (group-only assigning) would be an admin-level team setting, not a
@@ -264,7 +298,7 @@ class UserServiceClass {
 
     const conditions = membershipConditions(self);
     const noInstitutionOrGroup = conditions.length === 0;
-    conditions.push({ _id: requester.userId });
+    conditions.push({ _id: requester.userId }, { group: QA_GROUP });
 
     const users = await User.find({ ...baseQuery, $or: conditions }, projection).lean();
     return { users: orderAssignees(users, requester.userId, self), ...(noInstitutionOrGroup ? { reason: 'no_institution' } : {}) };

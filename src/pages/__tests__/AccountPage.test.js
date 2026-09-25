@@ -68,12 +68,17 @@ describe('AccountPage', () => {
   });
 
   it('defaults the dropdowns to "not set" / "none" when unassigned', async () => {
-    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: '', group: '' });
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: '' });
     render(<AccountPage lang="en" />);
     const institution = await screen.findByLabelText('account.institution');
-    expect(institution.value).toBe('');
     expect(institution.options[0].textContent).toBe('users.institutionNone');
+    expect(screen.getByLabelText('account.group').value).toBe('');
     expect(screen.getByLabelText('account.group').options[0].textContent).toBe('users.groupNone');
+
+    fireEvent.change(institution, { target: { value: '' } });
+    expect(institution.value).toBe('');
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+    expect(screen.getByText('users.groupNone')).toBeTruthy();
   });
 
   it('stages a self-picked institution until Save, then saves it, refreshes the auth user and moves focus to the outcome', async () => {
@@ -131,6 +136,35 @@ describe('AccountPage', () => {
     expect(screen.queryByText('account.institutionLocked')).toBeNull();
     expect(screen.getByLabelText('account.group').tagName).toBe('SELECT');
     expect(screen.getByRole('button', { name: 'users.actions.save' })).toBeTruthy();
+  });
+
+  it('only lists the groups that belong to the chosen institution, or shows None', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'IRCC', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const groupValues = () => [...screen.getByLabelText('account.group').options].map((o) => o.value);
+    expect(await screen.findByText('users.groupNone')).toBeTruthy();
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('account.institution'), { target: { value: 'DND-MDN' } });
+    expect(groupValues()).toEqual(['', 'Military transitions']);
+
+    fireEvent.change(screen.getByLabelText('account.institution'), { target: { value: 'CEO-BEC' } });
+    expect(groupValues()).toEqual(['', 'AI Answers QA']);
+  });
+
+  it('clears a picked group when the institution changes to one it doesn\'t belong to', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('account.institution'), { target: { value: 'IRCC' } });
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+    expect(screen.getByText('users.groupNone')).toBeTruthy();
+  });
+
+  it('leaves the admin-only QA group out of a CEO-BEC partner\'s group choices', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@x.ca', role: 'partner', institution: 'CEO-BEC', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    expect(await screen.findByText('users.groupNone')).toBeTruthy();
+    expect(screen.queryByLabelText('account.group')).toBeNull();
   });
 
   it('shows the lock notice above Save only once a partner stages a change, and hides it when the change is undone', async () => {
@@ -196,17 +230,17 @@ describe('AccountPage', () => {
   });
 
   it('clears a stale success message when a later preference toggle is blocked by validation', async () => {
-    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: false, prefilterGroup: false } });
-    mockUpdateMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: { prefilterDepartment: true, prefilterGroup: false } });
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: 'Military transitions', preferences: { prefilterDepartment: false, prefilterGroup: false } });
+    mockUpdateMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: '', group: 'Military transitions', preferences: { prefilterDepartment: false, prefilterGroup: true } });
     mockRefreshUser.mockResolvedValue();
     render(<AccountPage lang="en" />);
-    fireEvent.click(await screen.findByLabelText('account.preferences.prefilterDepartment'));
+    fireEvent.click(await screen.findByLabelText('account.preferences.prefilterGroup'));
     await waitFor(() => expect(screen.getByText('account.preferences.savedChange').closest('.status-message--success-box')).toBeTruthy());
 
-    // Group isn't set, so this click is blocked by validation rather than
+    // Institution isn't set, so this click is blocked by validation rather than
     // saved - the prior success message must not linger next to the new error.
-    fireEvent.click(screen.getByLabelText('account.preferences.prefilterGroup'));
-    await screen.findByText('account.preferences.noGroup');
+    fireEvent.click(screen.getByLabelText('account.preferences.prefilterDepartment'));
+    await screen.findByText('account.preferences.noInstitution');
     expect(screen.queryByText('account.preferences.savedChange')).toBeNull();
   });
 
@@ -270,13 +304,14 @@ describe('AccountPage', () => {
     expect(screen.queryByText('account.preferences.filteredFooter')).toBeNull();
   });
 
-  it('saves the group pre-filter preference, and errors when no group is set', async () => {
+  it('saves the group pre-filter preference, and hides it when no group is saved', async () => {
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
     render(<AccountPage lang="en" />);
-    const checkbox = await screen.findByLabelText('account.preferences.prefilterGroup');
-    fireEvent.click(checkbox);
-    expect((await screen.findByText('account.preferences.noGroup')).id).toBe('pref-prefilter-group-error');
-    expect(mockUpdateMe).not.toHaveBeenCalled();
+    await screen.findByLabelText('account.preferences.prefilterDepartment');
+    expect(screen.queryByLabelText('account.preferences.prefilterGroup')).toBeNull();
+    // A staged but unsaved group doesn't count yet.
+    fireEvent.change(screen.getByLabelText('account.group'), { target: { value: 'Military transitions' } });
+    expect(screen.queryByLabelText('account.preferences.prefilterGroup')).toBeNull();
     cleanup();
     mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
     mockUpdateMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: 'Military transitions', preferences: { prefilterGroup: true } });

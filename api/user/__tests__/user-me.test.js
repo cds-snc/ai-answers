@@ -76,6 +76,59 @@ describe('user-me PATCH institution/group lock', () => {
     expect(res.payload.code).toBe('group_locked');
   });
 
+  it('blocks a partner from joining the QA group themselves', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+
+    const res = await run('PATCH', { group: 'AI Answers QA' }, { role: 'partner', userId: partner._id.toString() });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.payload.code).toBe('group_locked');
+    const unchanged = await User.findById(partner._id).lean();
+    expect(unchanged.group || '').toBe('');
+  });
+
+  it('lets a CEO-BEC admin put themselves in the QA group', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin', institution: 'CEO-BEC' });
+
+    const res = await run('PATCH', { group: 'AI Answers QA' }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.group).toBe('AI Answers QA');
+    await User.deleteOne({ _id: admin._id });
+  });
+
+  it('rejects a group that belongs to another institution', async () => {
+    await dbConnect();
+    const partner = await makeUser({ institution: 'IRCC' });
+
+    const res = await run('PATCH', { group: 'Military transitions' }, { role: 'partner', userId: partner._id.toString() });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.code).toBe('group_institution_mismatch');
+  });
+
+  it('rejects a group with no institution set', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+
+    const res = await run('PATCH', { group: 'Military transitions' }, { role: 'partner', userId: partner._id.toString() });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.code).toBe('group_institution_mismatch');
+  });
+
+  it('lets a partner pick their institution and its group in one save', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+
+    const res = await run('PATCH', { institution: 'DND-MDN', group: 'Military transitions' }, { role: 'partner', userId: partner._id.toString() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.group).toBe('Military transitions');
+  });
+
   it('allows re-saving the same institution value (no actual change)', async () => {
     await dbConnect();
     const partner = await makeUser({ institution: 'IRCC' });
@@ -106,7 +159,7 @@ describe('user-me PATCH rejects a prefilter with no field to prefilter to', () =
 
   it('accepts prefilterGroup: true when the group is set in the same request', async () => {
     await dbConnect();
-    const partner = await makeUser();
+    const partner = await makeUser({ institution: 'DND-MDN' });
     const res = await run('PATCH', { group: 'Military transitions', preferences: { prefilterGroup: true } }, { role: 'partner', userId: partner._id.toString() });
     expect(res.statusCode).toBe(200);
     expect(res.payload.preferences.prefilterGroup).toBe(true);
