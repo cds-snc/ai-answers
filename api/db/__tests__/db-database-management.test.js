@@ -9,9 +9,9 @@ import { ExpertFeedback } from '../../../models/expertFeedback.js';
 import { Logs } from '../../../models/logs.js';
 import { Eval } from '../../../models/eval.js';
 
-function createReq(query) {
+function createReq(query, method = 'GET') {
   return {
-    method: 'GET',
+    method,
     query,
     path: '/api/db-database-management',
     user: { role: 'admin', userId: 'admin-test' },
@@ -111,5 +111,25 @@ describe('db-database-management expert evaluation chat export', () => {
     });
     expect(expertFeedbackRes.statusCode).toBe(200);
     expect(expertFeedbackRes.payload.data.map(feedback => feedback.totalScore).sort()).toEqual([60, 75]);
+  });
+});
+
+describe('db-database-management index rebuild', () => {
+  it('rebuilds indexes on POST ?action=createIndexes', async () => {
+    await dbConnect();
+
+    const res = createRes();
+    await handler(createReq({ action: 'createIndexes' }, 'POST'), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.results.failed).toEqual([]);
+    expect(res.payload.results.success).toContain('Chat');
+  });
+
+  it('no longer accepts PUT', async () => {
+    const res = createRes();
+    await handler(createReq({}, 'PUT'), res);
+
+    expect(res.statusCode).toBe(405);
   });
 });
