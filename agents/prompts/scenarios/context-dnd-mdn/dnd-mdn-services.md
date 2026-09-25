@@ -20,7 +20,6 @@ French users. Both are stored exactly as written here.
 | Canadian Forces Health Services | Services de santé des Forces canadiennes |
 | Compensation and Benefits Instructions | Directives sur la rémunération et les avantages sociaux |
 | Dress instructions | Instructions sur la tenue |
-| Early Retirement Incentive | Incitation à la retraite anticipée |
 | Imposed Restriction | Restriction imposée |
 | Military leave | Congé militaire |
 | Military maternity and parental benefits | Prestations militaires de maternité et parentales |
@@ -32,7 +31,6 @@ French users. Both are stored exactly as written here.
 | Military release process | Processus de libération militaire |
 | Military Transition Program | Programme de transition militaire |
 | Provincial health insurance plan | Régime d'assurance maladie provincial |
-| Public Service Pension Plan | Régime de retraite de la fonction publique |
 | Queen's Regulations and Orders | Ordonnances et règlements royaux |
 | Severance pay | Indemnité de départ |
 | Standing offer | Offre à commandes |

@@ -20,7 +20,9 @@ French users. Both are stored exactly as written here.
 | Border wait times | Temps d'attente à la frontière |
 | Bringing goods into Canada | Importer des marchandises au Canada |
 | Canadian Export Reporting System (CERS) | Système canadien de déclaration des exportations (SCDE) |
+| CANPASS Program for private and corporate aircraft | Programme CANPASS pour les aéronefs privés et d'entreprise |
 | CBSA Assessment and Revenue Management (CARM) | Gestion des cotisations et des recettes de l'ASFC (GCRA) |
+| Commercial Processing (highway, air, rail, marine and postal) | Traitement commercial (routier, aérien, ferroviaire, maritime et postal) |
 | Customs tariff | Tarif des douanes |
 | Electronic data interchange (EDI) | Échange de données informatisé (EDI) |
 | eManifest | eManifeste |
@@ -28,4 +30,5 @@ French users. Both are stored exactly as written here.
 | NEXUS | NEXUS |
 | Release Prior to Payment (RPP) | Mainlevée avant paiement (MAP) |
 | Travel and identification documents | Documents de voyage et d'identification |
+| Traveller Processing | Traitement des voyageurs |
 | Trusted Trader programs | Programmes des négociants fiables |

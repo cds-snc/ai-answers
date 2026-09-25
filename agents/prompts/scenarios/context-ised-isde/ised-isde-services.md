@@ -33,19 +33,16 @@ French users. Both are stored exactly as written here.
 | English | Français |
 |---|---|
 | Business Benefits Finder | Repérage des avantages pour les entreprises |
-| Corporations Canada | Corporations Canada |
+| Federal incorporation | Constitution en société de régime fédéral |
 | Federal corporation search | Recherche de sociétés de régime fédéral |
 | Canadian Importers Database | Base de données sur les importateurs canadiens |
-| Apply for or amend a trademark | Déposer ou modifier une demande de marque de commerce |
-| Search trademarks | Effectuer une recherche sur les marques de commerce |
-| Apply for a patent | Déposer une demande de brevet |
-| Pay patent maintenance fees | Payez la taxe pour le maintien en état d'un brevet |
-| Search patents | Effectuer une recherche sur les brevets |
-| Register a copyright | Enregistrer un droit d'auteur |
-| Apply for or amend an industrial design | Déposer ou modifier une demande de dessin industriel |
+| Trademarks | Marques de commerce |
+| Patents | Brevets |
+| Intellectual property databases | Bases de données de la propriété intellectuelle | 
+| Copyright | Droit d'auteur |
+| Industrial designs | Dessins industriels |
 | Amateur radio call signs | Indicatifs d'appel de radioamateur |
 | Women Entrepreneurship Loan Fund | Fonds de prêts pour les femmes entrepreneures |
-| Women's Enterprise Initiative | Initiative pour les femmes en entreprise |
 | Atlantic Canada Opportunities Agency (ACOA) | Agence de promotion économique du Canada atlantique (APECA) |
 | Canada Economic Development for Quebec Regions (CED) | Développement économique Canada pour les régions du Québec (DEC) |
 | Canadian Northern Economic Development Agency (CanNor) | Agence canadienne de développement économique du Nord (CanNor) |
@@ -54,3 +51,20 @@ French users. Both are stored exactly as written here.
 | Measurement Canada | Mesures Canada |
 | Office of the Superintendent of Bankruptcy | Bureau du surintendant des faillites Canada |
 | Health Emergency Readiness Canada (HERC) | Préparation aux crises sanitaires Canada (PCSC) |
+| 2SLGBTQI+ Entrepreneurship Program | Programme pour l'entrepreneuriat des communautés 2ELGBTQI+ |
+| Accelerated Growth Service | Service croissance accélérée |
+| BizPaL | PerLE |
+| Black Entrepreneurship Program | Programme pour l'entrepreneuriat des communautés noires |
+| Canada Small Business Financing Program | Programme de financement des petites entreprises du Canada |
+| CanCode | CodeCan |
+| Community Futures Program | Programme de développement des collectivités |
+| Computers for Schools | Ordinateurs pour les écoles |
+| Connecting Families Initiative | Initiative Familles branchées |
+| Innovative Solutions Canada | Solutions innovatrices Canada |
+| My ISED Account | Mon compte ISDE |
+| Prime Minister's Awards | Prix du premier ministre |
+| Radio and Spectrum Licences | Délivrance de licences radio et de spectre |
+| Radio and Terminal Equipment Certification | Homologation de l'équipement radio et du matériel terminal |
+| Strategic Response Fund | Fonds de réponse stratégique |
+| Strategic Science Fund | Fonds stratégique des sciences |
+| Tourism Growth Program | Programme pour la croissance du tourisme |
