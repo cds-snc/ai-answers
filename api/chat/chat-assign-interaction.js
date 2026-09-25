@@ -94,9 +94,11 @@ async function chatAssignHandler(req, res) {
   }
 }
 
-// Same reach as assigning: the current assignee, whoever made the
-// assignment, an institution/group-mate of the current assignee, or an
-// admin. Unassigning an already-unassigned question is a no-op success, not
+// Allowed for the current assignee, whoever made the assignment, an
+// institution/group-mate of the current assignee, or an admin. Narrower
+// than assigning on purpose: the assigner's teammates can't unassign a
+// QA member.
+// Unassigning an already-unassigned question is a no-op success, not
 // an error - the pill that triggers this only exists on an assigned question, so a
 // second click landing here (a slow network, a double-click) shouldn't
 // surface as a failure.
