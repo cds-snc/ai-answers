@@ -82,10 +82,14 @@ vi.mock('../../services/experimental/ExperimentalBatchClientService.js', () => (
 vi.mock('@cdssnc/gcds-components-react', () => ({
     GcdsContainer: ({ children }) => <div>{children}</div>,
     GcdsHeading: ({ children, tag: Tag = 'h2' }) => <Tag>{children}</Tag>,
-    GcdsButton: ({ children, onClick, disabled, size }) => (
-        <button onClick={onClick} disabled={disabled} data-size={size}>
-            {children}
-        </button>
+    GcdsButton: ({ children, onClick, disabled, size, type, href }) => (
+        type === 'link'
+            ? <a href={href} data-size={size}>{children}</a>
+            : (
+                <button onClick={onClick} disabled={disabled} data-size={size}>
+                    {children}
+                </button>
+            )
     ),
     GcdsText: ({ children }) => <div>{children}</div>,
     GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
@@ -154,7 +158,7 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
-        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('link', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' }).length).toBeGreaterThan(0);
         expect(screen.getByRole('button', { name: 'experimental.analysis.exportChatLogs' })).toBeTruthy();
 
@@ -591,7 +595,11 @@ describe('ExperimentalAnalysisPage', () => {
         });
 
         expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(2);
-        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' })).toHaveLength(2);
+        const viewResultsLinks = screen.getAllByRole('link', { name: 'experimental.analysis.viewResults' });
+        expect(viewResultsLinks).toHaveLength(2);
+        viewResultsLinks.forEach((link) => {
+            expect(link.getAttribute('href')).toMatch(/\/en\/experimental\/analysis\/[^/]+$/);
+        });
         expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });

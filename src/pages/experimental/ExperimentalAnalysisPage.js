@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePauseToggle } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
+import CellRootLink from '../../components/admin/CellRootLink.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -626,17 +627,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '11%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
     ];
 
-    // TODO(a11y): both "view results" buttons below fire navigate() with a
-    // destination (comparison._id/batch._id) that's already known when the
-    // button renders - no async step gating it. useRouteChangeFocus
-    // (App.js) now handles the focus/title gap this used to leave, so
-    // that part's covered - what's still missing is native link semantics:
-    // a real <a href> instead of a <GcdsButton onClick={navigate}> would
-    // give this a proper link role plus things onClick can't replicate
-    // (open in new tab, copy link, etc.).
     const renderComparisonActions = (comparison) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${comparison._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
@@ -644,7 +637,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderBatchActions = (batch) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${batch._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
             {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}

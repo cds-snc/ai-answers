@@ -164,6 +164,8 @@ Prefer CSS shortcuts on standard HTML over GCDS React components: standard eleme
 
 **Exception: complex patterns on admin/partner-only pages.** Analytics isn't a requirement there, so a component with substantial built-in behaviour that would be error-prone to hand-roll (e.g. `gcds-file-uploader`'s drag-drop, file list, validation, ARIA) may be used directly. Simple elements (links, buttons, headings) still use CSS shortcuts.
 
+**Acts → button, navigates → link.** Navigation that should look like a button (a "View results" or "Analyze" action in a table row, for example) is a real link with the button classes: `<Link className="filter-button filter-button-primary" to={...}>` (or `filter-button-outline` for the secondary look, plus `filter-button--regular` for GcdsButton's default size). Never `<GcdsButton onClick={() => navigate(...)}>` or `onClick={() => { window.location.href = ... }}`: a button that only navigates has no link role, and loses open-in-new-tab and copy-link. Inside a DataTables cell (its own React root, where `<Link>` throws) use `CellRootLink` from `src/components/admin/CellRootLink.js`, passing the page's `navigate`. A link can't be disabled, so a navigation that isn't available yet renders a disabled button instead. References: `ExperimentalAnalysisPage.js` and `ExperimentalDatasetsPage.js` row actions.
+
 ## Auto-refreshing content: pause/resume toggle (WCAG 2.2.2)
 
 Any UI that auto-refreshes on a timer (a polling table, a live status view) needs a way to stop it (WCAG 2.2.2 Pause, Stop, Hide). Don't hand-roll `setInterval` + pause state — use the shared hook and button:
