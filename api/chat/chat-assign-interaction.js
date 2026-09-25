@@ -4,7 +4,7 @@ import { User } from '../../models/user.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../../src/constants/chatAssign.js';
-import { sharesMembership } from '../../services/UserService.js';
+import { sharesMembership, canAssignTo } from '../../services/UserService.js';
 
 // Assigns one question (an Interaction, keyed by its _id as `interactionId`)
 // to one partner/admin user for review (issue #1656). Per question, not per
@@ -54,8 +54,8 @@ async function chatAssignHandler(req, res) {
 
     if (req.user.role !== 'admin' && assignedTo !== req.user.userId) {
       const requester = await User.findById(req.user.userId, { institution: 1, group: 1 }).lean();
-      if (!sharesMembership(requester, assignee)) {
-        return res.status(403).json({ message: 'Partners can only assign questions to themselves or to someone in their own institution/group' });
+      if (!canAssignTo(requester, assignee)) {
+        return res.status(403).json({ message: 'Partners can only assign questions to themselves, someone in their own institution/group, or the QA group' });
       }
     }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeInstitution, normalizeGroup, sharesMembership, membershipConditions } from '../UserService.js';
+import { normalizeInstitution, normalizeGroup, sharesMembership, membershipConditions, canAssignTo } from '../UserService.js';
 
 describe('normalizeInstitution', () => {
   it('accepts a partner abbrKey and the empty (unassigned) value', () => {
@@ -36,5 +36,14 @@ describe('sharesMembership / membershipConditions', () => {
     expect(membershipConditions({ institution: 'IRCC', group: 'Military transitions' }))
       .toEqual([{ institution: 'IRCC' }, { group: 'Military transitions' }]);
     expect(membershipConditions({})).toEqual([]);
+  });
+});
+
+describe('canAssignTo', () => {
+  it('allows membership-linked users and anyone in the QA group, nobody else', () => {
+    expect(canAssignTo({ institution: 'IRCC' }, { institution: 'IRCC' })).toBe(true);
+    expect(canAssignTo({ institution: 'IRCC' }, { institution: 'ESDC', group: 'AI Answers QA' })).toBe(true);
+    expect(canAssignTo({}, { group: 'AI Answers QA' })).toBe(true);
+    expect(canAssignTo({ institution: 'IRCC' }, { institution: 'ESDC', group: 'Military transitions' })).toBe(false);
   });
 });

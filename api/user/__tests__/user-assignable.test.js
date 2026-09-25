@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import handler from '../user-assignable.js';
 import dbConnect from '../../db/db-connect.js';
 import { User } from '../../../models/user.js';
@@ -39,6 +39,12 @@ async function makeUser(overrides = {}) {
 }
 
 describe('user-assignable', () => {
+  // QA-group users show up in every partner's list, so clear them out or
+  // they'd leak into the other tests' exact-match expectations.
+  afterEach(async () => {
+    await User.deleteMany({ group: 'AI Answers QA' });
+  });
+
   it('returns no_institution with just the requester for a partner with neither institution nor group set', async () => {
     await dbConnect();
     const partner = await makeUser();
@@ -92,6 +98,33 @@ describe('user-assignable', () => {
       partner._id.toString(), groupMate._id.toString(), institutionMateA._id.toString(), institutionMateB._id.toString()
     ]);
     expect(res.payload.users.map(u => u.relation)).toEqual(['self', 'group', 'institution', 'institution']);
+  });
+
+  it('puts QA-group members after institution-mates, tagged qa, for any partner', async () => {
+    await dbConnect();
+    const tag = `${Date.now()}-${Math.random()}`;
+    const partner = await makeUser({ email: `mm-me-${tag}@example.com`, institution: `ESDC-qa-${tag}` });
+    const institutionMate = await makeUser({ email: `zz-instmate-${tag}@example.com`, institution: `ESDC-qa-${tag}` });
+    // Alphabetically first and in an unrelated institution, but still listed - after the institution-mate.
+    const qaMember = await makeUser({ email: `aa-qa-${tag}@example.com`, institution: `Other-qa-${tag}`, group: 'AI Answers QA' });
+
+    const res = await runGet({ role: 'partner', userId: partner._id.toString() });
+
+    expect(res.payload.users.map(u => u.id)).toEqual([
+      partner._id.toString(), institutionMate._id.toString(), qaMember._id.toString()
+    ]);
+    expect(res.payload.users.map(u => u.relation)).toEqual(['self', 'institution', 'qa']);
+  });
+
+  it('lists QA-group members even for a partner with no institution or group', async () => {
+    await dbConnect();
+    const partner = await makeUser();
+    const qaMember = await makeUser({ group: 'AI Answers QA' });
+
+    const res = await runGet({ role: 'partner', userId: partner._id.toString() });
+
+    expect(res.payload.users.map(u => u.id)).toEqual([partner._id.toString(), qaMember._id.toString()]);
+    expect(res.payload.reason).toBe('no_institution');
   });
 
   it('for an admin, own institution-mates come before everyone else', async () => {

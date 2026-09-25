@@ -68,12 +68,17 @@ describe('AccountPage', () => {
   });
 
   it('defaults the dropdowns to "not set" / "none" when unassigned', async () => {
-    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: '', group: '' });
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: '' });
     render(<AccountPage lang="en" />);
     const institution = await screen.findByLabelText('account.institution');
-    expect(institution.value).toBe('');
     expect(institution.options[0].textContent).toBe('users.institutionNone');
+    expect(screen.getByLabelText('account.group').value).toBe('');
     expect(screen.getByLabelText('account.group').options[0].textContent).toBe('users.groupNone');
+
+    fireEvent.change(institution, { target: { value: '' } });
+    expect(institution.value).toBe('');
+    expect(screen.getByText('users.pickInstitutionFirst')).toBeTruthy();
+    expect(screen.queryByText('users.noGroupsForInstitution')).toBeNull();
   });
 
   it('stages a self-picked institution until Save, then saves it, refreshes the auth user and moves focus to the outcome', async () => {
@@ -131,6 +136,36 @@ describe('AccountPage', () => {
     expect(screen.queryByText('account.institutionLocked')).toBeNull();
     expect(screen.getByLabelText('account.group').tagName).toBe('SELECT');
     expect(screen.getByRole('button', { name: 'users.actions.save' })).toBeTruthy();
+  });
+
+  it('only lists the groups that belong to the chosen institution, or says there are none', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'IRCC', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const groupValues = () => [...screen.getByLabelText('account.group').options].map((o) => o.value);
+    expect(await screen.findByText('users.noGroupsForInstitution')).toBeTruthy();
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('account.institution'), { target: { value: 'DND-MDN' } });
+    expect(groupValues()).toEqual(['', 'Military transitions']);
+    expect(screen.queryByText('users.noGroupsForInstitution')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('account.institution'), { target: { value: 'CEO-BEC' } });
+    expect(groupValues()).toEqual(['', 'AI Answers QA']);
+  });
+
+  it('clears a picked group when the institution changes to one it doesn\'t belong to', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('account.institution'), { target: { value: 'IRCC' } });
+    expect(screen.queryByLabelText('account.group')).toBeNull();
+    expect(screen.getByText('users.noGroupsForInstitution')).toBeTruthy();
+  });
+
+  it('leaves the admin-only QA group out of a CEO-BEC partner\'s group choices', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@x.ca', role: 'partner', institution: 'CEO-BEC', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    expect(await screen.findByText('users.noGroupsForInstitution')).toBeTruthy();
+    expect(screen.queryByLabelText('account.group')).toBeNull();
   });
 
   it('shows the lock notice above Save only once a partner stages a change, and hides it when the change is undone', async () => {

@@ -897,7 +897,7 @@
         "pickerGroup": "Your group",
         "pickerInstitution": "Your institution",
         "pickerOthers": "Other accounts",
-        "noInstitution": "You can only assign questions to yourself. Pick an institution or group on your account page to also assign questions to teammates.",
+        "noInstitution": "You can only assign questions to yourself and the AI Answers QA group. Pick an institution or group on your account page to also assign questions to teammates.",
         "addNote": "Add a note",
         "noteLabel": "Note",
         "noteCount": "{count} / {max} characters",
@@ -1148,6 +1148,8 @@
     "title": "Manage user accounts",
     "institutionNone": "None",
     "groupNone": "None",
+    "noGroupsForInstitution": "No groups for this institution",
+    "pickInstitutionFirst": "Pick an institution first",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",

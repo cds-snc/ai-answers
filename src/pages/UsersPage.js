@@ -14,7 +14,7 @@ import { usePageContext } from '../hooks/usePageParam.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
-import { PARTNER_GROUPS, getPartnerGroupLabel } from '../constants/partnerGroups.js';
+import { getPartnerGroupLabel, groupsForInstitution, groupFitsInstitution } from '../constants/partnerGroups.js';
 
 DataTable.use(DT);
 
@@ -275,6 +275,19 @@ const UsersPage = ({ lang }) => {
     return () => { didCancel = true; };
   }, []);
 
+  // Group cell for one row: a select with none plus the institution's own
+  // groups, or plain text when the institution has none. A stored group that
+  // doesn't fit (older data) stays listed so it isn't shown as none.
+  const groupCellHtml = (userId, email, institution, value) => {
+    const groups = groupsForInstitution(institution);
+    if (value && !groups.includes(value)) groups.push(value);
+    if (!groups.length) return escapeHtmlAttribute(t(institution ? 'users.noGroupsForInstitution' : 'users.pickInstitutionFirst'));
+    const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
+    const optionsHtml = groups.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
+    const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${email || userId}`);
+    return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+  };
+
   const columns = [
     { title: t('users.columns.email'), data: 'email' },
     {
@@ -366,10 +379,8 @@ const UsersPage = ({ lang }) => {
         const value = editStatesRef.current[userId]?.group ?? data ?? '';
         const label = value ? getPartnerGroupLabel(value, lang) : t('users.groupNone');
         if (type === 'display') {
-          const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
-          const optionsHtml = PARTNER_GROUPS.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
-          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${row.email || userId}`);
-          return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+          const institution = editStatesRef.current[userId]?.institution ?? row.institution ?? '';
+          return `<div data-group-cell>${groupCellHtml(userId, row.email, institution, value)}</div>`;
         }
         return label;
       }
@@ -442,7 +453,7 @@ const UsersPage = ({ lang }) => {
             // fires `change` on every arrow-key press, so autosaving here
             // could commit an unintended, privilege-escalating role change
             // before the user lands on the one they meant to pick.
-            row.querySelectorAll('select[data-field]').forEach(select => {
+            const bindSelect = (select) => {
               select.onchange = () => {
                 const userId = select.getAttribute('data-userid');
                 const field = select.getAttribute('data-field');
@@ -451,8 +462,22 @@ const UsersPage = ({ lang }) => {
                   value = toBooleanish(value);
                 }
                 handleFieldChange(userId, field, value);
+                // The group list depends on the institution: rebuild it, and
+                // drop a group that doesn't belong to the new institution.
+                if (field === 'institution') {
+                  if (!groupFitsInstitution(editStatesRef.current[userId].group, value)) {
+                    handleFieldChange(userId, 'group', '');
+                  }
+                  const groupCell = row.querySelector('[data-group-cell]');
+                  if (groupCell) {
+                    groupCell.innerHTML = groupCellHtml(userId, data.email, value, editStatesRef.current[userId].group);
+                    const groupSelect = groupCell.querySelector('select');
+                    if (groupSelect) bindSelect(groupSelect);
+                  }
+                }
               };
-            });
+            };
+            row.querySelectorAll('select[data-field]').forEach(bindSelect);
 
             // Render Save and Delete buttons. getCellRoot() clears any stale
             // content and unmounts a prior root as needed.

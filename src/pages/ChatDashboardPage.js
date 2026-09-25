@@ -18,6 +18,7 @@ import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
 import { resolveDisplayContent } from '../utils/answerLanguage.js';
 import { useChatAssignBar } from '../hooks/admin/useChatAssignBar.js';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../constants/chatAssign.js';
+import { QA_GROUP, getPartnerGroupLabel } from '../constants/partnerGroups.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -551,22 +552,23 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 >
                   <option value="">{t('admin.chatDashboard.assign.expertPlaceholder')}</option>
                   {/* Grouped by the server's `relation` (UserService.listAssignable):
-                      self-assign, your group, your institution, other accounts
-                      (admins only). Native optgroups, so the headings are
-                      read out with the list. A user whose relation is
-                      missing or not one of the four lands under "Other
+                      self-assign, your group, your institution, the QA group,
+                      other accounts (admins only). Native optgroups, so the
+                      headings are read out with the list. A user whose
+                      relation is missing or not one of the five lands under "Other
                       accounts" instead of silently vanishing - admins only,
                       so a partner's list never widens past their scope. */}
                   {[
                     ['self', t('admin.chatDashboard.assign.pickerSelf')],
                     ['group', t('admin.chatDashboard.assign.pickerGroup')],
                     ['institution', t('admin.chatDashboard.assign.pickerInstitution')],
+                    ['qa', getPartnerGroupLabel(QA_GROUP, lang)],
                     ['other', t('admin.chatDashboard.assign.pickerOthers')]
                   ].map(([relation, label]) => {
                     if (relation === 'other' && !isAdmin) return null;
                     const users = assignBar.assignableUsers.filter((u) => (
                       relation === 'other'
-                        ? !['self', 'group', 'institution'].includes(u.relation)
+                        ? !['self', 'group', 'institution', 'qa'].includes(u.relation)
                         : u.relation === relation
                     ));
                     return users.length ? (

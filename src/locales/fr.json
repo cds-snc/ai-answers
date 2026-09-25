@@ -897,7 +897,7 @@
         "pickerGroup": "Votre groupe",
         "pickerInstitution": "Votre institution",
         "pickerOthers": "Autres comptes",
-        "noInstitution": "Vous ne pouvez attribuer des questions qu'à vous-même. Choisissez une institution ou un groupe sur votre page de compte pour aussi attribuer des questions à des collègues.",
+        "noInstitution": "Vous ne pouvez attribuer des questions qu'à vous-même et au groupe AQ de Réponses IA. Choisissez une institution ou un groupe sur votre page de compte pour aussi attribuer des questions à des collègues.",
         "addNote": "Ajouter une note",
         "noteLabel": "Note",
         "noteCount": "{count} / {max} caractères",
@@ -1148,6 +1148,8 @@
     "title": "Gérer les comptes utilisateurs",
     "institutionNone": "Aucune",
     "groupNone": "Aucun",
+    "noGroupsForInstitution": "Aucun groupe pour cette institution",
+    "pickInstitutionFirst": "Choisissez d’abord une institution",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
