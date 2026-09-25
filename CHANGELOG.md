@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.201.0](https://github.com/cds-snc/ai-answers/compare/v1.200.0...v1.201.0) (2026-09-25)
+
+
+### Features
+
+* add and correct department service list entries ([bfbcb43](https://github.com/cds-snc/ai-answers/commit/bfbcb43a2c4e8f5864fd672b556f56dd34e7e0e1))
+* assign questions to a reviewer from the Chat dashboard (3/7) ([fd65f94](https://github.com/cds-snc/ai-answers/commit/fd65f94c70a629fa4bd2b3decccf2a6b980821f0))
+* assign reviewer per question (2b/7) ([34220f3](https://github.com/cds-snc/ai-answers/commit/34220f35eb3c87f9feacf567a7866580c0383caa))
+* chat assignment endpoints (2/7) ([12d74dd](https://github.com/cds-snc/ai-answers/commit/12d74dd8aa1287079a68a1e4e5f61557df87c886))
+* dashboard pre-filter preferences (7/7) ([fc1ec79](https://github.com/cds-snc/ai-answers/commit/fc1ec796ea3c851142b549cdf3e9db12338f62d1))
+* filter chat, eval, export and viewer endpoints by reviewer group (4/7) ([aed7b08](https://github.com/cds-snc/ai-answers/commit/aed7b08c87270f3e5b7176292306a2c1cd28ffb4))
+* institution and group on user accounts (1/7) ([eb00f2e](https://github.com/cds-snc/ai-answers/commit/eb00f2e6f53a83c65db445c28a61cbbc756714b6))
+* Manage your account page (6/7) ([6219a80](https://github.com/cds-snc/ai-answers/commit/6219a807c1e5a63b55d216a31b08bf09b4adcb3e))
+* reviewer group filter on the metrics endpoints (sweep) (5/7) ([79ff3ba](https://github.com/cds-snc/ai-answers/commit/79ff3ba225b33d855e0145bd11bc2044790693a2))
+* reviewer picker grouped by you, your group, your institution ([daca6fe](https://github.com/cds-snc/ai-answers/commit/daca6fe4a76be569fe86245b18b41acba5ec253b))
+* warn partners before saving an institution or group ([7a5f40f](https://github.com/cds-snc/ai-answers/commit/7a5f40f4961ad7ca17d17a6237fdbdf85421a267))
+* warn partners before saving an institution or group ([79c25cd](https://github.com/cds-snc/ai-answers/commit/79c25cd0fdac9238ae3c910930f516de7c3cf5c4))
+
+
+### Bug Fixes
+
+* correct French grammar in account lock notice ([48e0eca](https://github.com/cds-snc/ai-answers/commit/48e0ecaec230a18ffbcbad1088d7b471caea50ac))
+* rename the account page heading to "Your assigned questions" ([212b486](https://github.com/cds-snc/ai-answers/commit/212b4863ac649c64a279768ebecbbca257c38f09))
+
+
+### Code Refactoring
+
+* backend UserService for profile and membership (7b/7) ([78568ae](https://github.com/cds-snc/ai-answers/commit/78568ae8e604fa6ff4696f45b9958d55ab1b197b))
+
 ## [1.200.0](https://github.com/cds-snc/ai-answers/compare/v1.199.0...v1.200.0) (2026-09-21)
 
 
