@@ -10,6 +10,10 @@
 // otherwise read the English name with a French voice (SC 3.1.2).
 // Each group belongs to one institution (abbrKey): only people in that
 // institution can be in it (groupFitsInstitution).
+// TODO: groups could be shared across institutions, so cross-department
+// AI Answers work could assign to the same groups (e.g. an AI Answers IT
+// group). Not needed yet: the AI Answers QA group is for partner reviewers
+// to tag issues with specific team members.
 export const PARTNER_GROUP_LABELS = {
   'Military transitions': { en: 'Military transitions', fr: 'Transitions militaires', institution: 'DND-MDN' },
   'AI Answers QA': { en: 'AI Answers QA', fr: 'AQ de Réponses IA', institution: 'CEO-BEC' },
