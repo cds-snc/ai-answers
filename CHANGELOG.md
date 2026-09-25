@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.202.0](https://github.com/cds-snc/ai-answers/compare/v1.201.0...v1.202.0) (2026-09-25)
+
+
+### Features
+
+* add AI Answers QA group and tie groups to institutions ([36a9039](https://github.com/cds-snc/ai-answers/commit/36a9039f8a04ba0896d6a8f2e718b923f0cd538d))
+* add AI Answers QA group partners can assign to ([7418963](https://github.com/cds-snc/ai-answers/commit/74189630a2c7207a8e9a266dee59944956517bdf))
+
+
+### Bug Fixes
+
+* add scope="col" to DatabasePage static table headers ([302cb66](https://github.com/cds-snc/ai-answers/commit/302cb660f5d9afeca4ab402663d187f22f873e65))
+* show None, no checkbox when no groups to pick ([daeef6f](https://github.com/cds-snc/ai-answers/commit/daeef6fc5f075d0a9949fb3516ee8bd57aecc996))
+
+
+### Documentation
+
+* correct stale facts in architecture-quick-ref ([2b45d56](https://github.com/cds-snc/ai-answers/commit/2b45d56effd9644a4d9800f07ac33c8ad6e38813))
+* fix stale facts in testing-and-dev ([bd25dd3](https://github.com/cds-snc/ai-answers/commit/bd25dd3c2cf8700fa240ac1fea03bb658c110293))
+* noting unassign is narrower than assign for QA group ([f00c0fb](https://github.com/cds-snc/ai-answers/commit/f00c0fb01c44ff88acb84364efcd54e246887e36))
+
+
+### Miscellaneous Chores
+
+* add TODO for groups shared across institutions ([843dfd8](https://github.com/cds-snc/ai-answers/commit/843dfd82c26eebf36cf0c5774e38e9bb57bd92c6))
+* remove the retired Public evaluation page ([738ec5b](https://github.com/cds-snc/ai-answers/commit/738ec5b9dba0e246b3e239e1e868dfbf0fa20af6))
+
 ## [1.201.0](https://github.com/cds-snc/ai-answers/compare/v1.200.0...v1.201.0) (2026-09-25)
 
 
