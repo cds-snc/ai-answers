@@ -787,7 +787,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </button>
             </div>
 
+            {/* Both panel boxes stay mounted so each tab's aria-controls resolves,
+                but only the active one renders content: its progress cards and
+                status message announce through the shared announcer, and would
+                be heard from a hidden panel. */}
             <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab" hidden={activeTab !== 'batches'}>
+            {activeTab === 'batches' && <>
                     <section>
                         <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
@@ -992,9 +997,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
+            </>}
             </div>
 
             <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab" hidden={activeTab !== 'comparison'}>
+            {activeTab === 'comparison' && <>
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
@@ -1093,6 +1100,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </div>
                 )}
             </section>
+            </>}
             </div>
 
             {/* History List */}
