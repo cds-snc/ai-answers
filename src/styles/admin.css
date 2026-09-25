@@ -642,6 +642,39 @@
   border-color: var(--gcds-details-focus-background);
 }
 
+/* .filter-button on a link (navigation drawn as a button). gcds-utility's
+   visited rule outranks the role colours, so point its token at them; its
+   a:focus radius outranks .filter-button's, so restore the button's. */
+a.filter-button {
+  display: inline-block;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+a.filter-button-primary {
+  --gcds-link-visited: var(--gcds-button-primary-default-text);
+}
+
+a.filter-button-outline {
+  --gcds-link-visited: var(--gcds-button-secondary-default-text);
+}
+
+a.filter-button:focus {
+  border-radius: var(--gcds-button-border-radius);
+}
+
+/* GcdsButton's default (non-small) size. */
+.filter-button.filter-button--regular {
+  font: var(--gcds-button-font-desktop);
+  padding: var(--gcds-button-padding);
+}
+
+@media only screen and (width < 48em) {
+  .filter-button.filter-button--regular {
+    font: var(--gcds-button-font-mobile);
+  }
+}
+
 /* Hide the daterangepicker's own Apply button — the FilterPanel's Apply button
    reads from the picker instance directly, so the in-calendar Apply is redundant. */
 .daterangepicker .applyBtn {
@@ -918,10 +951,19 @@
 }
 
 /* Keep action buttons visually aligned with DataTables body text. */
-.experimental-table-actions gcds-button {
+.experimental-table-actions gcds-button,
+.experimental-table-actions .filter-button {
   --gcds-button-small-font-desktop: 400 1rem/150% "Noto Sans", sans-serif;
   --gcds-button-small-font-mobile: 400 0.875rem/140% "Noto Sans", sans-serif;
   --gcds-button-small-padding: 0.25rem 0.5rem;
+}
+
+/* A link-as-button beside GcdsButtons in a row: drop
+   .filter-button-primary's wide padding and the full-width narrow-screen
+   rule so it sizes like its neighbours. */
+.experimental-table-actions .filter-button {
+  padding: var(--gcds-button-small-padding);
+  width: var(--gcds-button-width);
 }
 
 .experimental-table-container table.dataTable th,
@@ -946,7 +988,8 @@
   gap: var(--gcds-spacing-50);
 }
 
-.experimental-table-actions--group gcds-button {
+.experimental-table-actions--group gcds-button,
+.experimental-table-actions--group .filter-button {
   flex: 0 0 auto;
 }
 

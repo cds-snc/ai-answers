@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePauseToggle } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
+import CellRootLink from '../../components/admin/CellRootLink.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
@@ -140,6 +141,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const datasetIdParam = searchParams.get('datasetId');
 
     // State
@@ -627,7 +629,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderComparisonActions = (comparison) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
-            <GcdsButton size="small" type="link" href={`${getPath('experimental-analysis', lang)}/${comparison._id}`}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${comparison._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
@@ -635,7 +637,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderBatchActions = (batch) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
-            <GcdsButton size="small" type="link" href={`${getPath('experimental-analysis', lang)}/${batch._id}`}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${batch._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
             {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
+import CellRootLink from '../../components/admin/CellRootLink.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;',
@@ -17,6 +19,7 @@ import StatusMessage from '../../components/admin/StatusMessage.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const navigate = useNavigate();
     const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
     const [datasets, setDatasets] = useState([]);
     const [datasetListResult, setDatasetListResult] = useState(null);
@@ -268,11 +271,11 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
 
     const renderDatasetActions = (ds) => {
         const isComplete = !ds.creationStatus || ds.creationStatus === 'complete';
-        // Navigation is a real link drawn as a button. GcdsButton drops
-        // `disabled` in link mode, so an unfinished dataset gets a disabled
-        // button instead - same look, and there is nowhere to go yet.
+        // Navigation is a real link drawn as a button. A link can't be
+        // disabled, so an unfinished dataset gets a disabled button instead -
+        // same look, and there is nowhere to go yet.
         const navButton = (href, label) => (isComplete
-            ? <GcdsButton size="small" buttonRole="secondary" type="link" href={href}>{label}</GcdsButton>
+            ? <CellRootLink className="filter-button filter-button-outline" navigate={navigate} href={href}>{label}</CellRootLink>
             : <GcdsButton size="small" buttonRole="secondary" disabled>{label}</GcdsButton>
         );
         return (
@@ -299,9 +302,9 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                 <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
                     {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
                 </GcdsButton>
-                <GcdsButton buttonRole="secondary" type="link" href={getPath('experimental-create-dataset', lang)}>
+                <Link className="filter-button filter-button--regular filter-button-outline" to={getPath('experimental-create-dataset', lang)}>
                     {t('experimental.datasets.createButton')}
-                </GcdsButton>
+                </Link>
 
                 {showUpload && (
                     <div className="mt-400 p-400 border rounded bg-light">

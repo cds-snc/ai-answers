@@ -2,6 +2,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import SuiteGridTable from '../SuiteGridTable.js';
 
 const tests = [
@@ -14,7 +15,7 @@ const cellHref = (run, test) => `/en/analysis/${run._id}?open=${test.position}`;
 
 describe('SuiteGridTable', () => {
     it('renders a verdict cell as a real link named by run and test', () => {
-        render(<SuiteGridTable tests={tests} runs={runs} cells={cells} cellHref={cellHref} />);
+        render(<SuiteGridTable tests={tests} runs={runs} cells={cells} cellHref={cellHref} />, { wrapper: MemoryRouter });
 
         const link = screen.getByRole('link', { name: /Run one — Passing test/ });
         expect(link.getAttribute('href')).toBe('/en/analysis/run-1?open=1');
@@ -22,7 +23,7 @@ describe('SuiteGridTable', () => {
     });
 
     it('leaves a missing cell with no link and renders no buttons', () => {
-        render(<SuiteGridTable tests={tests} runs={runs} cells={cells} cellHref={cellHref} />);
+        render(<SuiteGridTable tests={tests} runs={runs} cells={cells} cellHref={cellHref} />, { wrapper: MemoryRouter });
 
         expect(screen.getAllByRole('link')).toHaveLength(1);
         expect(screen.queryByRole('button')).toBeNull();

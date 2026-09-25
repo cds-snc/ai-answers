@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { formatNumber } from '../../utils/numberFormat.js';
@@ -166,9 +167,9 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHr
                                         title={label}
                                     >
                                         {clickable ? (
-                                            <a href={cellHref(run, test)} className="verdict-cell__link" aria-label={label}>
+                                            <Link to={cellHref(run, test)} className="verdict-cell__link" aria-label={label}>
                                                 {content}
-                                            </a>
+                                            </Link>
                                         ) : content}
                                     </td>
                                 );

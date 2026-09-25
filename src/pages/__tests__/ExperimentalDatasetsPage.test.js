@@ -4,6 +4,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ExperimentalDatasetsPage from '../experimental/ExperimentalDatasetsPage.js';
 
 const { mockListDatasets, mockExportDataset, mockProcessDataset } = vi.hoisted(() => ({
@@ -66,7 +67,7 @@ describe('ExperimentalDatasetsPage', () => {
     });
 
     it('uses the page container layout and renders the admin back link', async () => {
-        render(<ExperimentalDatasetsPage lang="en" />);
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
 
         expect(screen.getByText('experimental.datasets.title').closest('[data-layout="page"]')).toBeTruthy();
         expect(screen.getByRole('link', { name: 'common.backToAdmin' }).getAttribute('href')).toBe('/en/admin');
@@ -89,7 +90,7 @@ describe('ExperimentalDatasetsPage', () => {
             ]
         });
 
-        render(<ExperimentalDatasetsPage lang="en" />);
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
 
         const exportButton = await screen.findByRole('button', { name: 'experimental.datasets.export' });
         fireEvent.click(exportButton);
@@ -115,7 +116,7 @@ describe('ExperimentalDatasetsPage', () => {
             }]
         });
 
-        render(<ExperimentalDatasetsPage lang="en" />);
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
 
         const processingButton = await screen.findByRole('button', { name: 'experimental.datasets.processing' });
         expect(processingButton.disabled).toBe(true);
@@ -142,7 +143,7 @@ describe('ExperimentalDatasetsPage', () => {
             }]
         });
 
-        render(<ExperimentalDatasetsPage lang="en" />);
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
 
         const analyze = await screen.findByRole('link', { name: 'experimental.datasets.analyze' });
         expect(analyze.getAttribute('href')).toMatch(/experimental\/analysis\?datasetId=dataset-complete$/);
@@ -165,7 +166,7 @@ describe('ExperimentalDatasetsPage', () => {
             }]
         });
 
-        render(<ExperimentalDatasetsPage lang="en" />);
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
 
         expect(await screen.findByText('experimental.datasets.creationStatus.skippedSourceRows')).toBeTruthy();
     });
