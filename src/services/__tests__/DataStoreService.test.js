@@ -26,6 +26,29 @@ describe('DataStoreService.checkIndexStatus', () => {
   });
 });
 
+describe('DataStoreService.createIndexes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getApiUrl.mockImplementation((endpoint) => `/api/db/${endpoint}`);
+  });
+
+  it('rebuilds indexes with a POST request, not PUT', async () => {
+    const mockResult = { message: 'Database indexes created successfully', results: { success: [], failed: [] } };
+    AuthService.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResult)
+    });
+
+    const result = await DataStoreService.createIndexes();
+
+    expect(AuthService.fetch).toHaveBeenCalledWith(
+      '/api/db/db-database-management?action=createIndexes',
+      { method: 'POST' }
+    );
+    expect(result).toEqual(mockResult);
+  });
+});
+
 describe('DataStoreService.getSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();

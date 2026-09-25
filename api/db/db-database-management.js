@@ -233,8 +233,8 @@ async function buildIndexStatusResponse(connection, collections) {
 }
 
 async function databaseManagementHandler(req, res) {
-  if (!['GET', 'POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method)) {
-    res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']);
+  if (!['GET', 'POST', 'DELETE', 'PATCH'].includes(req.method)) {
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PATCH']);
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
@@ -299,6 +299,32 @@ async function databaseManagementHandler(req, res) {
         limit: Number(limit),
         lastId: docs.length ? docs[docs.length - 1]._id : null,
         data: docs
+      });
+    } else if (req.method === 'POST' && req.query.action === 'createIndexes') {
+      // POST rather than PUT: the gated production network rejects PUT with 501
+      const results = {
+        success: [],
+        failed: []
+      };
+
+      await Promise.all(Object.values(collections).map(async model => {
+        try {
+          await model.createIndexes();
+          results.success.push(model.modelName);
+          console.log(`Created indexes for ${model.modelName}`);
+        } catch (error) {
+          results.failed.push({
+            collection: model.modelName,
+            error: error.message,
+            code: error.code // Include MongoDB error code if available (e.g., 11000 for duplicate key)
+          });
+          console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
+        }
+      }));
+
+      return res.status(200).json({
+        message: 'Database indexes created successfully',
+        results
       });
     } else if (req.method === 'POST') {
       // Support chunked upload via req.body.chunkPayload
@@ -374,32 +400,6 @@ async function databaseManagementHandler(req, res) {
 
       return res.status(200).json({
         message: 'Database indexes dropped successfully',
-        results
-      });
-    } else if (req.method === 'PUT') {
-      // Create/Rebuild indexes
-      const results = {
-        success: [],
-        failed: []
-      };
-
-      await Promise.all(Object.values(collections).map(async model => {
-        try {
-          await model.createIndexes();
-          results.success.push(model.modelName);
-          console.log(`Created indexes for ${model.modelName}`);
-        } catch (error) {
-          results.failed.push({
-            collection: model.modelName,
-            error: error.message,
-            code: error.code // Include MongoDB error code if available (e.g., 11000 for duplicate key)
-          });
-          console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
-        }
-      }));
-
-      return res.status(200).json({
-        message: 'Database indexes created successfully',
         results
       });
     } else if (req.method === 'PATCH') {
