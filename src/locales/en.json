@@ -1097,6 +1097,7 @@
     "group": "Group",
     "institutionLocked": "Contact an admin to change your institution.",
     "groupLocked": "Contact an admin to change your group.",
+    "lockNotice": "Make sure you've chosen the right institution or group. After you save, only an admin can change it.",
     "updated": "Account updated: {change}",
     "changeInstitutionSet": "{value}",
     "changeInstitutionCleared": "institution removed",

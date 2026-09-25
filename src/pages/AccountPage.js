@@ -183,8 +183,9 @@ const AccountPage = ({ lang = 'en' }) => {
     }
   };
   // Partners get one self-pick per field (api/user/user-me.js); once set,
-  // show the value read-only with the "ask an admin" hint up front rather
-  // than an enabled select that fails after the fact (SC 3.3.3).
+  // show the value read-only rather than an enabled select that fails after
+  // the fact (SC 3.3.3). The lock is explained by the info message that
+  // appears above Save once a change is staged.
   const institutionLocked = profile?.role !== 'admin' && Boolean(profile?.institution);
   const groupLocked = profile?.role !== 'admin' && Boolean(profile?.group);
   const handlePrefilterChange = (checked) => {
@@ -355,10 +356,7 @@ const AccountPage = ({ lang = 'en' }) => {
                 <dt>{institutionLocked ? t('account.institution') : <label htmlFor="account-institution">{t('account.institution')}</label>}</dt>
                 <dd>
                   {institutionLocked ? (
-                    <>
-                      {profile.institution}
-                      <span className="account-profile__hint">{t('account.institutionLocked')}</span>
-                    </>
+                    profile.institution
                   ) : (
                     <>
                       {institutionError.hasError && (
@@ -388,10 +386,7 @@ const AccountPage = ({ lang = 'en' }) => {
                 <dt>{groupLocked ? t('account.group') : <label htmlFor="account-group">{t('account.group')}</label>}</dt>
                 <dd>
                   {groupLocked ? (
-                    <>
-                      {getPartnerGroupLabel(profile.group, lang)}
-                      <span className="account-profile__hint">{t('account.groupLocked')}</span>
-                    </>
+                    getPartnerGroupLabel(profile.group, lang)
                   ) : (
                     <>
                       {groupError.hasError && (
@@ -420,6 +415,13 @@ const AccountPage = ({ lang = 'en' }) => {
             </dl>
             {!(institutionLocked && groupLocked) && (
               <div className="mb-300">
+                {/* A partner's pick locks on Save, so the moment a change is
+                    staged say so - here, not as a permanent note, so admins and
+                    already-locked partners never see it. Appears on a state
+                    change, so StatusMessage announces it. */}
+                {profile.role !== 'admin' && profileDirty && (
+                  <StatusMessage variant="info" className="mb-300" message={t('account.lockNotice')} />
+                )}
                 {/* Same Save as SettingsPage/UsersPage: GcdsButton, disabled until
                     something is staged. GcdsButton renders `disabled` as
                     aria-disabled (stays focusable), so no focus is lost while
