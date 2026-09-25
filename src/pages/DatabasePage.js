@@ -593,8 +593,8 @@ const DatabasePage = ({ lang }) => {
           <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.tableColumn')}</th>
-                <th style={{ textAlign: 'right' }}>{t('admin.database.countColumn')}</th>
+                <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.tableColumn')}</th>
+                <th scope="col" style={{ textAlign: 'right' }}>{t('admin.database.countColumn')}</th>
               </tr>
             </thead>
             <tbody>
@@ -989,10 +989,10 @@ const DatabasePage = ({ lang }) => {
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.currentColumn')}</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.expectedColumn')}</th>
-                  <th style={{ textAlign: 'left' }}>{t('admin.database.statusColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.currentColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.expectedColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'left' }}>{t('admin.database.statusColumn')}</th>
                 </tr>
               </thead>
               <tbody>
