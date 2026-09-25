@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.203.0](https://github.com/cds-snc/ai-answers/compare/v1.202.0...v1.203.0) (2026-09-25)
+
+
+### Features
+
+* add a Cognito pool for the Sentinel forwarder's v2 auth ([31d3a53](https://github.com/cds-snc/ai-answers/commit/31d3a53a48d6d5254688e0b2219d0f80a19dd718))
+* add a Cognito pool for the Sentinel forwarder's v2 auth ([b6f2ccb](https://github.com/cds-snc/ai-answers/commit/b6f2ccb57d262c5c68c0e10b2d7da56a6ab92806))
+
 ## [1.202.0](https://github.com/cds-snc/ai-answers/compare/v1.201.0...v1.202.0) (2026-09-25)
 
 
