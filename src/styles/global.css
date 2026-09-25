@@ -402,6 +402,8 @@ details[open] > summary {
   cursor: pointer;
 }
 
+/* No current usages - keep it. It's the small-size pair to .btn-secondary
+   below, for a native <button> beside small GcdsButtons. */
 .btn-secondary-sm {
   padding: var(--gcds-button-small-padding);
   background: white;
@@ -409,6 +411,18 @@ details[open] > summary {
   border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
   border-radius: var(--gcds-button-border-radius);
   font: var(--gcds-button-small-font-desktop);
+  cursor: pointer;
+}
+
+/* GcdsButton buttonRole="secondary" at its regular size, for a native
+   <button> beside regular GcdsButtons. */
+.btn-secondary {
+  padding: var(--gcds-button-padding);
+  background: var(--gcds-button-secondary-default-background);
+  color: var(--gcds-button-secondary-default-text);
+  border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-font-desktop);
   cursor: pointer;
 }
 
@@ -436,10 +450,16 @@ details[open] > summary {
   background: var(--gcds-color-blue-100);
 }
 
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gcds-button-secondary-hover-background);
+}
+
 .btn-primary-sm:focus,
 .btn-primary-sm:focus:hover,
 .btn-primary:focus,
 .btn-primary:focus:hover,
+.btn-secondary:focus,
+.btn-secondary:focus:hover,
 summary:focus,
 .close-icon:focus {
   background-color: var(--gcds-details-focus-background);

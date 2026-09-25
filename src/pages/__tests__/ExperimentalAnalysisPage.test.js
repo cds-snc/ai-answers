@@ -180,6 +180,29 @@ describe('ExperimentalAnalysisPage', () => {
         );
     });
 
+    // Hidden panel stays mounted (aria-controls target) but empty, so its
+    // progress cards / status message can't announce from off-screen.
+    it('keeps both tab panels mounted but renders only the active one', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const batchesPanel = document.getElementById('batches-tab-panel');
+        const comparisonPanel = document.getElementById('comparison-tab-panel');
+        expect(batchesPanel.hidden).toBe(false);
+        expect(batchesPanel.childElementCount).toBeGreaterThan(0);
+        expect(comparisonPanel.hidden).toBe(true);
+        expect(comparisonPanel.childElementCount).toBe(0);
+
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        expect(batchesPanel.hidden).toBe(true);
+        expect(batchesPanel.childElementCount).toBe(0);
+        expect(comparisonPanel.hidden).toBe(false);
+        expect(comparisonPanel.childElementCount).toBeGreaterThan(0);
+    });
+
     it('shows the analysis mode as a select when the dataset has an answer column', async () => {
         mockListDatasets.mockResolvedValueOnce({
             data: [{
