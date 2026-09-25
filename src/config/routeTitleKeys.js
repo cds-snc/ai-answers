@@ -39,7 +39,6 @@ const ROUTE_NAME_TITLE_KEYS = {
   eval: 'admin.navigation.eval',
   'eval-dashboard': 'admin.evalDashboard.title',
   'auto-eval-dashboard': 'admin.autoEvalDashboard.title',
-  'public-eval': 'admin.publicEval.title',
   metrics: 'metrics.title',
   'public-dashboard': 'publicDashboard.title',
   'partner-dashboard': 'partnerDashboard.title',

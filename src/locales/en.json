@@ -785,14 +785,6 @@
       "advancedAll": "Advanced: All",
       "showAdvanced": "More filters"
     },
-    "publicEval": {
-      "title": "Public evaluation",
-      "chatId": "Chat ID",
-      "department": "Department",
-      "date": "Date",
-      "loading": "Loading...",
-      "errorLoading": "Failed to load public evaluation list: {message}"
-    },
     "session": {
       "title": "Sessions",
       "filterLabel": "Filter sessions",
