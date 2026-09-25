@@ -1124,7 +1124,6 @@
       "heading": "Dashboard filter default preferences",
       "prefilterDepartment": "Use your institution",
       "prefilterGroup": "Use your group (chats created or reviewed by your group's members)",
-      "noGroup": "Save your group first.",
       "noInstitution": "Save your institution first.",
       "savedChange": "Preference saved: {change}",
       "changeInstitutionOn": "selected your institution",
@@ -1148,8 +1147,6 @@
     "title": "Manage user accounts",
     "institutionNone": "None",
     "groupNone": "None",
-    "noGroupsForInstitution": "No groups for this institution",
-    "pickInstitutionFirst": "Pick an institution first",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",

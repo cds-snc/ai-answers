@@ -69,7 +69,6 @@ const AccountPage = ({ lang = 'en' }) => {
   // Field-level validation for the pre-filter checkbox: it needs an
   // institution first.
   const prefError = useInlineFormError();
-  const groupPrefError = useInlineFormError();
   // Institution/group are one-time self-picks (api/user/user-me.js locks
   // them after the first set) - these surface the 403 as an inline error
   // right on the field, same as the pre-filter checkboxes above, rather than
@@ -169,7 +168,6 @@ const AccountPage = ({ lang = 'en' }) => {
       applyProfile(updated);
       if (refreshUser) await refreshUser();
       prefError.clearError();
-      groupPrefError.clearError();
       setProfileStatusMovesFocus(true);
       setProfileStatus({ text: t('account.updated').replace('{change}', () => changes.join(', ')), isError: false });
       setProfileSaveFocusCount((n) => n + 1);
@@ -217,12 +215,6 @@ const AccountPage = ({ lang = 'en' }) => {
     );
   };
   const handlePrefilterGroupChange = (checked) => {
-    if (checked && !profile?.group) {
-      setPrefStatus(null);
-      groupPrefError.triggerError();
-      return;
-    }
-    groupPrefError.clearError();
     setProfileStatus(null);
     const change = checked ? t('account.preferences.changeGroupOn') : t('account.preferences.changeGroupOff');
     return saveProfile(
@@ -397,7 +389,7 @@ const AccountPage = ({ lang = 'en' }) => {
                   {groupLocked ? (
                     getPartnerGroupLabel(profile.group, lang)
                   ) : !showGroupSelect ? (
-                    t(draft.institution ? 'users.noGroupsForInstitution' : 'users.pickInstitutionFirst')
+                    t('users.groupNone')
                   ) : (
                     <>
                       {groupError.hasError && (
@@ -479,27 +471,20 @@ const AccountPage = ({ lang = 'en' }) => {
               <label htmlFor="pref-prefilter-department">{t('account.preferences.prefilterDepartment')}</label>
             </div>
           </div>
-          {groupPrefError.hasError && (
-            <FeedbackInlineError
-              id="pref-prefilter-group-error"
-              message={t('account.preferences.noGroup')}
-              errorCount={groupPrefError.errorCount}
-              inputRef={groupPrefError.errorRef}
-            />
-          )}
-          <div className="gc-chckbxrdio md">
-            <div className="checkbox">
-              <input
-                type="checkbox"
-                id="pref-prefilter-group"
-                checked={Boolean(profile.preferences?.prefilterGroup)}
-                aria-describedby={groupPrefError.hasError ? 'pref-prefilter-group-error' : undefined}
-                aria-invalid={groupPrefError.hasError ? 'true' : undefined}
-                onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
-              />
-              <label htmlFor="pref-prefilter-group">{t('account.preferences.prefilterGroup')}</label>
+          {/* Only once a group is saved - there's nothing to pre-filter to before that. */}
+          {profile.group && (
+            <div className="gc-chckbxrdio md">
+              <div className="checkbox">
+                <input
+                  type="checkbox"
+                  id="pref-prefilter-group"
+                  checked={Boolean(profile.preferences?.prefilterGroup)}
+                  onChange={(e) => handlePrefilterGroupChange(e.target.checked)}
+                />
+                <label htmlFor="pref-prefilter-group">{t('account.preferences.prefilterGroup')}</label>
+              </div>
             </div>
-          </div>
+          )}
           <StatusMessage variant={prefStatus?.isError ? 'error' : 'success'} message={prefStatus?.text || ''} />
           {(prefilterMessageKey || showBothPrefilterNotice) && (
             <GcdsNotice

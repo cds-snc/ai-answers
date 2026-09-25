@@ -1124,7 +1124,6 @@
       "heading": "Préférences de filtre par défaut du tableau de bord",
       "prefilterDepartment": "Utiliser votre institution",
       "prefilterGroup": "Utiliser votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
-      "noGroup": "Enregistrez d'abord votre groupe.",
       "noInstitution": "Enregistrez d'abord votre institution.",
       "savedChange": "Préférence enregistrée : {change}",
       "changeInstitutionOn": "institution sélectionnée",
@@ -1148,8 +1147,6 @@
     "title": "Gérer les comptes utilisateurs",
     "institutionNone": "Aucune",
     "groupNone": "Aucun",
-    "noGroupsForInstitution": "Aucun groupe pour cette institution",
-    "pickInstitutionFirst": "Choisissez d’abord une institution",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",

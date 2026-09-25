@@ -276,12 +276,12 @@ const UsersPage = ({ lang }) => {
   }, []);
 
   // Group cell for one row: a select with none plus the institution's own
-  // groups, or plain text when the institution has none. A stored group that
+  // groups, or plain "None" when the institution has none. A stored group that
   // doesn't fit (older data) stays listed so it isn't shown as none.
   const groupCellHtml = (userId, email, institution, value) => {
     const groups = groupsForInstitution(institution);
     if (value && !groups.includes(value)) groups.push(value);
-    if (!groups.length) return escapeHtmlAttribute(t(institution ? 'users.noGroupsForInstitution' : 'users.pickInstitutionFirst'));
+    if (!groups.length) return escapeHtmlAttribute(t('users.groupNone'));
     const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
     const optionsHtml = groups.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
     const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${email || userId}`);

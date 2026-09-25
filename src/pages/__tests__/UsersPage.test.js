@@ -271,7 +271,7 @@ describe('UsersPage institution and group columns', () => {
     // and leaves IRCC's (empty) group list.
     fireEvent.change(institutionSelect, { target: { value: 'IRCC' } });
     expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
-    expect(screen.getByText('users.noGroupsForInstitution')).toBeTruthy();
+    expect(screen.getByText('users.groupNone')).toBeTruthy();
     expect(mockUpdate).not.toHaveBeenCalled();
     // renderActionsCell rebuilds this cell's DOM node (getCellRoot), so the
     // enabled button after staging is a new element — re-query for it.
@@ -289,10 +289,10 @@ describe('UsersPage institution and group columns', () => {
     expect(mockUpdate.mock.calls[1][1]).toEqual(expect.objectContaining({ institution: 'DND-MDN', group: 'Military transitions' }));
   });
 
-  it('asks to pick an institution first when a row has none', async () => {
+  it('shows None for group when a row has no institution', async () => {
     mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: '', group: '' }]);
     renderWithRouter(<UsersPage lang="en" />);
-    expect(await screen.findByText('users.pickInstitutionFirst')).toBeTruthy();
+    expect(await screen.findByText('users.groupNone')).toBeTruthy();
     expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
   });
 
