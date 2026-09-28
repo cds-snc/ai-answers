@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.203.0](https://github.com/cds-snc/ai-answers/compare/v1.202.0...v1.203.0) (2026-09-28)
+
+
+### Features
+
+* add a Cognito pool for the Sentinel forwarder's v2 auth ([31d3a53](https://github.com/cds-snc/ai-answers/commit/31d3a53a48d6d5254688e0b2219d0f80a19dd718))
+* add a Cognito pool for the Sentinel forwarder's v2 auth ([b6f2ccb](https://github.com/cds-snc/ai-answers/commit/b6f2ccb57d262c5c68c0e10b2d7da56a6ab92806))
+
+
+### Bug Fixes
+
+* address review on database page forms ([b3cceda](https://github.com/cds-snc/ai-answers/commit/b3cceda1deaf4899ef51d2e0d2cef28e55b2c1d9))
+* database integrity checks a11y ([c1b682b](https://github.com/cds-snc/ai-answers/commit/c1b682b96600306fce03717c94da2d53de2d5a74))
+* database integrity checks a11y and text size ([d794902](https://github.com/cds-snc/ai-answers/commit/d7949021aff0249ffef759ec57a6d55aa4fc0bdd))
+* raise record counts text to 18px ([1f181dc](https://github.com/cds-snc/ai-answers/commit/1f181dc3af460c0f3452d40d1602a77e57c3c0ac))
+* rework database page export and import forms for accessibility ([e9a9bae](https://github.com/cds-snc/ai-answers/commit/e9a9bae7c49e919b94a438249db8fe2fa524d8b4))
+* rework database page export and import forms for accessibility ([384a18c](https://github.com/cds-snc/ai-answers/commit/384a18c44eba96977f5edbbdd1f7331e9d53e947))
+* sort date columns by timestamp so mixed date formats order correctly ([fb3e460](https://github.com/cds-snc/ai-answers/commit/fb3e46055b9aa52071b7ca9aa8c39d4870525230))
+* sort table date columns by actual date, not displayed text ([ed7f5cf](https://github.com/cds-snc/ai-answers/commit/ed7f5cfb058894660efe94c0b92ca2e3720b4677))
+* sort table date columns by actual date, not displayed text ([26526a6](https://github.com/cds-snc/ai-answers/commit/26526a617ca9b82ba5275ad8bfbfb7d835c29ed7))
+
 ## [1.202.0](https://github.com/cds-snc/ai-answers/compare/v1.201.0...v1.202.0) (2026-09-25)
 
 
