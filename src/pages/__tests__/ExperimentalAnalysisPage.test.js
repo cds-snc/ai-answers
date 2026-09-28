@@ -154,7 +154,7 @@ describe('ExperimentalAnalysisPage', () => {
 
         expect(screen.getByText(/Processing/, { selector: 'div' })).toBeTruthy();
         expect(screen.getByText(/Completed: 3 \| Failed: 1 \| Total: 10/)).toBeTruthy();
-        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('link', { name: 'experimental.analysis.viewResults' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' }).length).toBeGreaterThan(0);
         expect(screen.getByRole('button', { name: 'experimental.analysis.exportChatLogs' })).toBeTruthy();
 
@@ -178,6 +178,29 @@ describe('ExperimentalAnalysisPage', () => {
         expect(screen.getByRole('link', { name: 'experimental.datasets.backToList' }).getAttribute('href')).toBe(
             '/en/experimental/datasets'
         );
+    });
+
+    // Hidden panel stays mounted (aria-controls target) but empty, so its
+    // progress cards / status message can't announce from off-screen.
+    it('keeps both tab panels mounted but renders only the active one', async () => {
+        render(<ExperimentalAnalysisPage lang="en" />);
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const batchesPanel = document.getElementById('batches-tab-panel');
+        const comparisonPanel = document.getElementById('comparison-tab-panel');
+        expect(batchesPanel.hidden).toBe(false);
+        expect(batchesPanel.childElementCount).toBeGreaterThan(0);
+        expect(comparisonPanel.hidden).toBe(true);
+        expect(comparisonPanel.childElementCount).toBe(0);
+
+        fireEvent.click(screen.getByRole('tab', { name: 'experimental.analysis.tabs.comparison' }));
+        expect(batchesPanel.hidden).toBe(true);
+        expect(batchesPanel.childElementCount).toBe(0);
+        expect(comparisonPanel.hidden).toBe(false);
+        expect(comparisonPanel.childElementCount).toBeGreaterThan(0);
     });
 
     it('shows the analysis mode as a select when the dataset has an answer column', async () => {
@@ -591,7 +614,11 @@ describe('ExperimentalAnalysisPage', () => {
         });
 
         expect(screen.getAllByRole('button', { name: 'experimental.analysis.export' })).toHaveLength(2);
-        expect(screen.getAllByRole('button', { name: 'experimental.analysis.viewResults' })).toHaveLength(2);
+        const viewResultsLinks = screen.getAllByRole('link', { name: 'experimental.analysis.viewResults' });
+        expect(viewResultsLinks).toHaveLength(2);
+        viewResultsLinks.forEach((link) => {
+            expect(link.getAttribute('href')).toMatch(/\/en\/experimental\/analysis\/[^/]+$/);
+        });
         expect(screen.queryByRole('button', { name: 'experimental.analysis.resume' })).toBeNull();
     });
 });
