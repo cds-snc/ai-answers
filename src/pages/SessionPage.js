@@ -95,7 +95,7 @@ const SessionPage = ({ lang: propLang }) => {
             }
           },
           { title: t('admin.session.creditsLeft'), data: 'creditsLeft', render: (data) => creditsLeftLabel(data) },
-          { title: t('admin.session.lastSeen'), data: 'lastSeen', render: (data, type) => (type === 'sort' || type === 'type') ? data : new Date(data).toLocaleString() },
+          { title: t('admin.session.lastSeen'), data: 'lastSeen', render: (data, type) => (type === 'sort' || type === 'type') ? new Date(data).getTime() : new Date(data).toLocaleString() },
           { title: t('admin.session.requests'), data: 'requestCount' },
           { title: t('admin.session.errors'), data: 'errorCount' },
           // specific error type columns

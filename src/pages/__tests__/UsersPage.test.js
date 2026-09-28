@@ -319,8 +319,8 @@ describe('UsersPage created date column', () => {
 
     const col = lastColumns.current.find((c) => c.data === 'createdAt');
     const iso = '2026-09-03T12:00:00.000Z';
-    expect(col.render(iso, 'sort')).toBe(iso);
-    expect(col.render(iso, 'type')).toBe(iso);
+    expect(col.render(iso, 'sort')).toBe(new Date(iso).getTime());
+    expect(col.render(iso, 'type')).toBe(new Date(iso).getTime());
     expect(col.render(iso, 'display')).toBe(new Date(iso).toLocaleDateString());
   });
 });

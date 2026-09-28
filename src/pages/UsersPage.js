@@ -388,7 +388,7 @@ const UsersPage = ({ lang }) => {
     {
       title: t('users.columns.createdAt'),
       data: 'createdAt',
-      render: (data, type) => (type === 'sort' || type === 'type') ? data : new Date(data).toLocaleDateString()
+      render: (data, type) => (type === 'sort' || type === 'type') ? new Date(data).getTime() : new Date(data).toLocaleDateString()
     },
     {
       title: t('users.columns.actions'),
