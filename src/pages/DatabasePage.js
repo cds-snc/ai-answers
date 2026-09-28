@@ -596,7 +596,7 @@ const DatabasePage = ({ lang }) => {
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
         {renderStatusMessage(countsError, 'success', 'counts')}
         {tableCounts ? (
-          <dl className="canada-ca-dl-columns">
+          <dl className="canada-ca-dl-columns font-size-text-sm-nr">
             {Object.entries(tableCounts).map(([table, count]) => (
               <div key={table}>
                 <dt>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</dt>
