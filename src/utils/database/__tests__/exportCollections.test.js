@@ -3,7 +3,9 @@ import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
   getDatabaseExportCollections,
-  getDatabaseExportFilenameTag
+  getDatabaseExportFilenameTag,
+  getExportDatesUnavailableReason,
+  toExportDateBounds
 } from '../exportCollections.js';
 
 describe('database export collection helpers', () => {
@@ -38,5 +40,27 @@ describe('database export collection helpers', () => {
       'user'
     ]);
     expect(getDatabaseExportFilenameTag(EXPERT_EVAL_CHATS_EXPORT)).toBe('expert-eval-chats-');
+  });
+});
+
+describe('database export date helpers', () => {
+  it('sends the start as local midnight and the end as the last second of its day', () => {
+    expect(toExportDateBounds({ startDate: '2026-09-01', endDate: '2026-09-28' })).toEqual({
+      startDate: new Date(2026, 8, 1, 0, 0, 0, 0).toISOString(),
+      endDate: new Date(2026, 8, 28, 23, 59, 59, 0).toISOString()
+    });
+  });
+
+  it('leaves a blank date blank', () => {
+    expect(toExportDateBounds({ startDate: '', endDate: '2026-09-28' }).startDate).toBe('');
+    expect(toExportDateBounds({ startDate: '2026-09-01', endDate: '' }).endDate).toBe('');
+  });
+
+  it('says why dates do not apply to an export, or null when they do', () => {
+    const withoutDates = ['sessionstate', 'sentenceembedding'];
+    expect(getExportDatesUnavailableReason(EXPERT_EVAL_CHATS_EXPORT, withoutDates)).toBe('expertEvalChats');
+    expect(getExportDatesUnavailableReason('sessionstate', withoutDates)).toBe('noUpdatedAt');
+    expect(getExportDatesUnavailableReason('chat', withoutDates)).toBeNull();
+    expect(getExportDatesUnavailableReason('All', withoutDates)).toBeNull();
   });
 });

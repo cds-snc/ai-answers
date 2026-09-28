@@ -3,8 +3,10 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import DatabasePage from '../DatabasePage.js';
+import AuthService from '../../services/AuthService.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const mockT = (key) => key;
@@ -45,6 +47,7 @@ vi.mock('@gcds-core/components-react', () => ({
   ),
   GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
   GcdsIcon: ({ name }) => <span data-icon={name} />,
+  GcdsFieldset: ({ children, legend }) => <fieldset><legend>{legend}</legend>{children}</fieldset>,
 }));
 
 describe('DatabasePage StatusMessage roles', () => {
@@ -70,5 +73,65 @@ describe('DatabasePage StatusMessage roles', () => {
       expect(screen.getByText('admin.database.tableRecordCounts')).toBeTruthy();
     });
     expect(document.querySelector('.status-message--error-box')).toBeNull();
+  });
+});
+
+describe('DatabasePage import form', () => {
+  const postCalls = () => AuthService.fetch.mock.calls.filter(([, opts]) => opts?.method === 'POST');
+
+  const renderWithFile = async () => {
+    AuthService.fetch.mockImplementation(async (url, opts) => ({
+      ok: true,
+      json: async () => (opts?.method === 'POST'
+        ? { stats: { inserted: 1, failed: 0, skipped: 0 } }
+        : { collections: ['chat', 'question'], collectionsWithoutDates: [] }),
+    }));
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+    const content = '{"collection":"chat","doc":{}}\n';
+    const file = new File([content], 'backup.jsonl');
+    // jsdom's Blob has no .text(); the import reads each slice with it.
+    file.slice = () => ({ text: async () => content });
+    await userEvent.upload(screen.getByLabelText('admin.database.importFileLabel'), file);
+  };
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    AuthService.fetch.mockReset();
+  });
+
+  it('rejects "only the tables I choose" with nothing ticked, before confirming', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await renderWithFile();
+
+    await userEvent.click(screen.getByLabelText('admin.database.importScopeChosen'));
+    fireEvent.submit(screen.getByLabelText('admin.database.importFileLabel').closest('form'));
+
+    expect(await screen.findByText('admin.database.importTablesError')).toBeTruthy();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(postCalls()).toHaveLength(0);
+  });
+
+  it('sends nothing when the confirm popup is cancelled', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await renderWithFile();
+
+    fireEvent.submit(screen.getByLabelText('admin.database.importFileLabel').closest('form'));
+
+    expect(confirmSpy).toHaveBeenCalledWith('admin.database.importConfirm');
+    expect(postCalls()).toHaveLength(0);
+  });
+
+  it('sends only the ticked tables', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await renderWithFile();
+
+    await userEvent.click(screen.getByLabelText('admin.database.importScopeChosen'));
+    await userEvent.click(await screen.findByLabelText('admin.database.collections.question'));
+    fireEvent.submit(screen.getByLabelText('admin.database.importFileLabel').closest('form'));
+
+    await waitFor(() => expect(postCalls()).toHaveLength(1));
+    expect(JSON.parse(postCalls()[0][1].body).collection).toEqual(['question']);
   });
 });

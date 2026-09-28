@@ -3460,3 +3460,110 @@ details gcds-button::part(button) {
     margin-bottom: var(--gcds-spacing-200);
   }
 }
+
+/* Name/value pairs (a <dl> of <div><dt><dd></div> rows) flowing into as
+   many columns as fit, reading down each column. Columns are width-based,
+   so it drops to one column on phones and at high zoom (WCAG 1.4.10), and
+   DOM order - what a screen reader reads - stays top to bottom. Each
+   <div> pair stays whole inside one column. */
+.canada-ca-dl-columns {
+  columns: 16rem;
+  column-gap: var(--gcds-spacing-600);
+  margin: var(--gcds-spacing-200) 0;
+}
+
+.canada-ca-dl-columns > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gcds-spacing-200);
+  break-inside: avoid;
+  padding: var(--gcds-spacing-50) 0;
+  border-bottom: 1px solid var(--gcds-border-default);
+}
+
+.canada-ca-dl-columns dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native <input type="file"> dressed as GC DS's gcds-file-uploader, using
+   that component's own tokens (gcds-file-uploader.css). Keeps a plain
+   input so the app's FeedbackInlineError/aria-describedby error pattern
+   applies instead of the web component's built-in error handling. */
+.canada-ca-file-input {
+  font: var(--gcds-file-uploader-font-desktop);
+  color: var(--gcds-file-uploader-default-text);
+}
+
+.canada-ca-file-input::file-selector-button {
+  margin-right: var(--gcds-spacing-200);
+  padding: var(--gcds-file-uploader-button-padding);
+  background-color: var(--gcds-file-uploader-button-background);
+  border: var(--gcds-file-uploader-button-border-width) solid var(--gcds-file-uploader-button-text);
+  border-radius: var(--gcds-file-uploader-button-border-radius);
+  color: var(--gcds-file-uploader-button-text);
+  font: inherit;
+  font-weight: var(--gcds-file-uploader-button-font-weight);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+@media (hover: hover) {
+  .canada-ca-file-input:not(:focus):not(:disabled):hover::file-selector-button {
+    background-color: var(--gcds-file-uploader-hover-button-background);
+  }
+}
+
+/* Focus shows on the button, as in GC DS, replacing global.css's
+   input[type="file"]:focus outline around the whole input. */
+.canada-ca-file-input:focus {
+  outline: none;
+}
+
+.canada-ca-file-input:focus::file-selector-button {
+  background-color: var(--gcds-file-uploader-focus-button-background);
+  border-color: var(--gcds-file-uploader-focus-button-background);
+  color: var(--gcds-file-uploader-focus-button-text);
+  outline: var(--gcds-file-uploader-focus-button-outline-width) solid var(--gcds-file-uploader-focus-button-background);
+  outline-offset: var(--gcds-file-uploader-focus-button-outline-offset);
+}
+
+.canada-ca-file-input:active::file-selector-button {
+  background-color: var(--gcds-file-uploader-active-button-background);
+  border-color: var(--gcds-file-uploader-active-button-background);
+  color: var(--gcds-file-uploader-active-button-text);
+}
+
+.canada-ca-file-input:disabled::file-selector-button {
+  background-color: var(--gcds-file-uploader-disabled-background);
+  border-color: currentColor;
+  color: var(--gcds-file-uploader-disabled-text);
+  cursor: not-allowed;
+}
+
+@media only screen and (width < 48em) {
+  .canada-ca-file-input {
+    font: var(--gcds-file-uploader-font-mobile);
+  }
+}
+
+/* A gc-chckbxrdio radio/checkbox group inside a stacked admin form: drops
+   the fieldset border (global.css) and the legend's 20px top padding
+   (fieldset.gc-chckbxrdio legend:first-of-type) so it lines up with the
+   .filter-label fields around it. */
+fieldset.canada-ca-choice-fieldset {
+  border: 0;
+  margin: 0 0 var(--gcds-spacing-300);
+  padding: 0;
+}
+
+fieldset.canada-ca-choice-fieldset legend:first-of-type {
+  padding-top: 0;
+}
+
+/* A group revealed inside another (the import's "Choose tables"): space
+   above to separate it from the radio before it, none below since the
+   outer group's own bottom margin already follows. */
+fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
+  margin: var(--gcds-spacing-300) 0 0;
+}
