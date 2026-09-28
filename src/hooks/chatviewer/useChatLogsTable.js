@@ -79,7 +79,7 @@ export function useChatLogsTable({
           title: t('logging.createdAt'),
           data: 'createdAt',
           width: '12%',
-          render: (data) => new Date(data).toLocaleString(),
+          render: (data, type) => (type === 'sort' || type === 'type') ? new Date(data).getTime() : new Date(data).toLocaleString(),
         },
         {
           title: t('logging.level'),
