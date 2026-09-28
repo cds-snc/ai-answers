@@ -457,6 +457,58 @@ summary:focus,
 }
 
 
+/* Native twin of GcdsButton's secondary role, for buttons whose content
+   must reach the accessible name (e.g. an sr-only suffix). Disable with
+   aria-disabled, not disabled, so focus stays put. */
+.btn-secondary {
+  box-sizing: border-box;
+  padding: var(--gcds-button-padding);
+  background-color: var(--gcds-button-secondary-default-background);
+  color: var(--gcds-button-secondary-default-text);
+  border: var(--gcds-button-border-width) solid;
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-font-desktop);
+  text-align: center;
+  cursor: pointer;
+  /* Not `all` - pops on first paint inside <details> (see admin.css) */
+  transition: background-color .15s ease-in-out, color .15s ease-in-out,
+    border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+@media (hover: hover) {
+  .btn-secondary:hover {
+    background-color: var(--gcds-button-secondary-hover-background);
+  }
+}
+
+.btn-secondary:focus {
+  background-color: var(--gcds-button-shared-focus-background);
+  border-color: var(--gcds-button-shared-focus-background);
+  box-shadow: var(--gcds-button-shared-focus-box-shadow);
+  color: var(--gcds-button-shared-focus-text);
+  outline: var(--gcds-button-shared-focus-outline-width) solid var(--gcds-button-shared-focus-background);
+  outline-offset: var(--gcds-button-border-width);
+}
+
+.btn-secondary[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: var(--gcds-button-shared-disabled-opacity);
+}
+
+@media only screen and (width < 48em) {
+  .btn-secondary {
+    font: var(--gcds-button-font-mobile);
+  }
+}
+
+@media screen and (max-width: 30rem) {
+  .btn-secondary {
+    display: block;
+    margin: var(--gcds-button-mobile-margin);
+    width: var(--gcds-button-mobile-width);
+  }
+}
+
 /* Screen reader only class. Also used by the two site-wide live regions
    src/utils/liveAnnouncer.js appends to <body>. */
 .sr-only {

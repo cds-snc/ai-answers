@@ -567,7 +567,7 @@
       "runCheckButton": "Lancer la vérification",
       "checkFailed": "Échec de la vérification {check} : {error}.",
       "countLabel": "Nombre :",
-      "noResultsLabel": "Aucun résultat",
+      "notRunLabel": "Non exécutée",
       "breakdownMissing": "Manquant — Clavardage : {chat}, Interaction : {interaction}, Question : {question}, Réponse : {answer}",
       "breakdownSamples": "Exemples : {samples}",
       "indexCodeLabel": "Code {code}",
