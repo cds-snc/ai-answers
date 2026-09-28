@@ -10,8 +10,9 @@ import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
-const { mockGetSessionMetrics } = vi.hoisted(() => ({
+const { mockGetSessionMetrics, lastColumns } = vi.hoisted(() => ({
   mockGetSessionMetrics: vi.fn(),
+  lastColumns: { current: null },
 }));
 
 vi.mock('../../services/SessionService.js', () => ({
@@ -43,7 +44,10 @@ vi.mock('../../components/admin/PauseToggleButton.js', () => ({
 }));
 
 vi.mock('datatables.net-react', () => {
-  const MockDataTable = ({ children }) => <div>{children}</div>;
+  const MockDataTable = ({ children, columns }) => {
+    lastColumns.current = columns;
+    return <div>{children}</div>;
+  };
   MockDataTable.use = vi.fn();
   return { default: MockDataTable };
 });
@@ -82,5 +86,30 @@ describe('SessionPage StatusMessage roles', () => {
       expect(status).toBeTruthy();
       expect(status.className).toContain('status-message--loading');
     });
+  });
+});
+
+describe('SessionPage last seen column', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetSessionMetrics.mockReset();
+  });
+
+  // lastSeen arrives as an ISO string for sessions saved to the database and
+  // as epoch ms for ones still only in memory - both can share one table.
+  it('sorts saved and in-memory sessions together by time', async () => {
+    mockGetSessionMetrics.mockResolvedValue([]);
+    renderWithRouter(<SessionPage lang="en" />);
+    await waitFor(() => expect(lastColumns.current).toBeTruthy());
+
+    const col = lastColumns.current.find((c) => c.data === 'lastSeen');
+    const savedOlder = '2026-09-28T10:00:00.000Z';
+    const inMemoryNewer = Date.parse('2026-09-28T11:00:00.000Z');
+
+    expect(col.render(savedOlder, 'sort')).toBe(Date.parse(savedOlder));
+    expect(col.render(inMemoryNewer, 'sort')).toBe(inMemoryNewer);
+    expect(col.render(inMemoryNewer, 'sort')).toBeGreaterThan(col.render(savedOlder, 'sort'));
+    expect(col.render(savedOlder, 'type')).toBe(Date.parse(savedOlder));
+    expect(col.render(savedOlder, 'display')).toBe(new Date(savedOlder).toLocaleString());
   });
 });
