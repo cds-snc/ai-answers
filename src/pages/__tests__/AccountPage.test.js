@@ -160,6 +160,16 @@ describe('AccountPage', () => {
     expect(screen.getByText('users.groupNone')).toBeTruthy();
   });
 
+  it('restores the picked group when arrowing back to its institution (closed select fires change per arrow key)', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const institution = await screen.findByLabelText('account.institution');
+    fireEvent.change(institution, { target: { value: 'IRCC' } });
+    fireEvent.change(institution, { target: { value: 'DND-MDN' } });
+    expect(screen.getByLabelText('account.group').value).toBe('Military transitions');
+    expect(screen.getByRole('button', { name: 'users.actions.save' }).disabled).toBe(true);
+  });
+
   it('leaves the admin-only QA group out of a CEO-BEC partner\'s group choices', async () => {
     mockGetMe.mockResolvedValue({ email: 'a@x.ca', role: 'partner', institution: 'CEO-BEC', group: '', preferences: {} });
     render(<AccountPage lang="en" />);

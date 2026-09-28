@@ -455,6 +455,17 @@
   max-width: 20rem;
 }
 
+/* Sized to its longest option instead of filling the column, for short
+   fixed lists in a table cell (UsersPage.js). */
+.filter-select--fit {
+  width: auto;
+}
+
+/* In a table cell, match the table's 14px text. */
+table.dataTable.dashboard-table td .filter-select {
+  font-size: 0.875rem;
+}
+
 /* SettingsPage's .filter-input/.filter-select fields are width:100% of
    whatever contains them — without a cap that's the full GcdsContainer
    layout="page" width, which reads as very wide on a large monitor.
@@ -1705,6 +1716,11 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
    (two lines at 150px); AI/Partner eval widths fit the widest pill. */
 .dashboard-table td.col-chat-id {
   max-width: 150px;
+  overflow-wrap: anywhere;
+}
+/* Emails have no spaces: let a long one wrap before the table overflows
+   (UsersPage.js). */
+.dashboard-table td.col-email {
   overflow-wrap: anywhere;
 }
 /* Short coded values (e.g. Fallback's "qa-high-score") whose hyphens would

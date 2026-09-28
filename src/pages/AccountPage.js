@@ -134,8 +134,13 @@ const AccountPage = ({ lang = 'en' }) => {
   const handleDraftChange = (field, value) => {
     setDraft((prev) => {
       const next = { ...prev, [field]: value };
-      // A group only fits its own institution, so drop one that no longer does.
-      if (field === 'institution' && !groupLocked && !groupFitsInstitution(next.group, value)) next.group = '';
+      // A group only fits its own institution, so drop one that no longer
+      // does. Back on the saved institution, the saved group comes back:
+      // arrowing through a closed <select> fires change on every option.
+      if (field === 'institution' && !groupLocked) {
+        if (value === (profile?.institution || '')) next.group = profile?.group || '';
+        else if (!groupFitsInstitution(next.group, value)) next.group = '';
+      }
       return next;
     });
     setProfileStatus(null);

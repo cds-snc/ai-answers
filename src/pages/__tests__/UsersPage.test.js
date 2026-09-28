@@ -291,6 +291,15 @@ describe('UsersPage institution and group columns', () => {
     expect(mockUpdate.mock.calls[1][1]).toEqual(expect.objectContaining({ institution: 'DND-MDN', group: 'Military transitions' }));
   });
 
+  it('restores the picked group when arrowing back to its institution (closed select fires change per arrow key)', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'IRCC' } });
+    // The mock table rebuilds the row on every render, so re-query.
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    expect(screen.getByLabelText('users.columns.group — a@b.com').value).toBe('Military transitions');
+  });
+
   it('shows None for group when a row has no institution', async () => {
     mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: '', group: '' }]);
     renderWithRouter(<UsersPage lang="en" />);

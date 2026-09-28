@@ -285,13 +285,15 @@ const UsersPage = ({ lang }) => {
     const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
     const optionsHtml = groups.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
     const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${email || userId}`);
-    return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+    return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${noneOption}${optionsHtml}</select>`;
   };
 
   const columns = [
-    { title: t('users.columns.email'), data: 'email' },
+    { title: t('users.columns.email'), data: 'email', className: 'col-email' },
     {
       title: t('users.columns.role'),
+      width: '1%', // shrink to the fit-width select
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'role',
       render: (data, type, row) => {
         const userId = row._id;
@@ -318,13 +320,15 @@ const UsersPage = ({ lang }) => {
           const extraOption = !isKnownKey ? `<option value="" selected>${naLabel}</option>` : '';
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.role')} — ${row.email || userId}`);
 
-          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" style="width: 100%">${extraOption}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${extraOption}${optionsHtml}</select>`;
         }
         return label;
       }
     },
     {
       title: t('users.columns.status'),
+      width: '1%', // shrink to the fit-width select
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'active',
       render: (data, type, row) => {
         const userId = row._id;
@@ -348,13 +352,14 @@ const UsersPage = ({ lang }) => {
           const placeholder = option ? '' : `<option value="" selected>${naLabel}</option>`;
           const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.status')} — ${row.email || userId}`);
-          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" style="width: 100%">${placeholder}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${placeholder}${optionsHtml}</select>`;
         }
         return label;
       }
     },
     {
       title: t('users.columns.institution'),
+      width: '1%', // shrink to the fit-width select
       data: 'institution',
       render: (data, type, row) => {
         const userId = row._id;
@@ -364,7 +369,7 @@ const UsersPage = ({ lang }) => {
           const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.institutionNone'))}</option>`;
           const optionsHtml = PARTNER_DEPARTMENTS.map(d => `<option value="${escapeHtmlAttribute(d)}"${d === value ? ' selected' : ''}>${escapeHtmlAttribute(d)}</option>`).join('');
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.institution')} — ${row.email || userId}`);
-          return `<select data-userid="${userId}" data-field="institution" aria-label="${ariaLabel}" style="width: 100%">${noneOption}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="institution" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${noneOption}${optionsHtml}</select>`;
         }
         return label;
       }
@@ -373,6 +378,7 @@ const UsersPage = ({ lang }) => {
       // TODO: groups are a hardcoded PARTNER_GROUPS list; add a "manage
       // groups" page/section here to create/edit them instead.
       title: t('users.columns.group'),
+      width: '1%', // shrink to the fit-width select
       data: 'group',
       render: (data, type, row) => {
         const userId = row._id;
@@ -387,6 +393,8 @@ const UsersPage = ({ lang }) => {
     },
     {
       title: t('users.columns.createdAt'),
+      width: '1%', // dates are short; shrink to fit
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'createdAt',
       render: (data, type) => (type === 'sort' || type === 'type') ? new Date(data).getTime() : new Date(data).toLocaleDateString()
     },
@@ -419,7 +427,7 @@ const UsersPage = ({ lang }) => {
         nonce={statusNonce}
       />
 
-      <div className="metrics-table-container">
+      <div className="dashboard-table-container">
       <DataTable
         data={users}
         className="display dashboard-table zebra-stable-on-hover"
@@ -464,8 +472,13 @@ const UsersPage = ({ lang }) => {
                 handleFieldChange(userId, field, value);
                 // The group list depends on the institution: rebuild it, and
                 // drop a group that doesn't belong to the new institution.
+                // Back on the saved institution, the saved group comes back:
+                // arrowing through a closed <select> fires change on every option.
                 if (field === 'institution') {
-                  if (!groupFitsInstitution(editStatesRef.current[userId].group, value)) {
+                  const original = userSnapshotsRef.current[userId];
+                  if (value === (original?.institution || '')) {
+                    handleFieldChange(userId, 'group', original?.group || '');
+                  } else if (!groupFitsInstitution(editStatesRef.current[userId].group, value)) {
                     handleFieldChange(userId, 'group', '');
                   }
                   const groupCell = row.querySelector('[data-group-cell]');
