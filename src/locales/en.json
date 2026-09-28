@@ -505,7 +505,6 @@
       "endDate": "End date",
       "dateRangeLegend": "Date range (optional)",
       "dateRangeHint": "Leave blank to export all dates.",
-      "datesNotApplicableExpertEval": "Dates don't apply to this export. It includes every chat with an expert evaluation.",
       "datesNotApplicableTable": "Dates don't apply to this table. It doesn't record update dates, so the whole table is exported.",
       "limitLabel": "Limit (records per request)",
       "exporting": "Exporting...",

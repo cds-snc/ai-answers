@@ -17,7 +17,7 @@ import {
   EXPERT_EVAL_CHATS_EXPORT,
   getDatabaseExportCollections,
   getDatabaseExportFilenameTag,
-  getExportDatesUnavailableReason,
+  exportHasNoDates,
   toExportDateBounds
 } from '../utils/database/exportCollections.js';
 
@@ -144,7 +144,7 @@ const DatabasePage = ({ lang }) => {
   // is re-clicked actually fine? Don't copy VectorPage.js's
   // fetchVectorStats (clears a sibling message too) as precedent here —
   // that pattern hasn't been reviewed yet.
-  const exportDatesUnavailable = getExportDatesUnavailableReason(selectedCollection, collectionsWithoutDates);
+  const exportDatesUnavailable = exportHasNoDates(selectedCollection, collectionsWithoutDates);
 
   const handleExport = async () => {
     try {
@@ -637,16 +637,11 @@ const DatabasePage = ({ lang }) => {
             ))}
           </select>
         </div>
-        {/* Dates filter on updatedAt. Where they can't apply, an info
+        {/* Dates filter on updatedAt. For a table without it, an info
             message takes their place instead of fields that do nothing. */}
         {exportDatesUnavailable ? (
           <div className="mb-300">
-            <StatusMessage
-              variant="info"
-              message={t(exportDatesUnavailable === 'expertEvalChats'
-                ? 'admin.database.datesNotApplicableExpertEval'
-                : 'admin.database.datesNotApplicableTable')}
-            />
+            <StatusMessage variant="info" message={t('admin.database.datesNotApplicableTable')} />
           </div>
         ) : (
           <GcdsFieldset
@@ -828,32 +823,6 @@ const DatabasePage = ({ lang }) => {
           <label htmlFor="database-import-file" className="filter-label display-block">
             {t('admin.database.importFileLabel')}
           </label>
-          {/* Positioned right above the file input itself (not at the top of
-              the whole form) — it's the file the message is about, and
-              during/after import it also covers per-chunk progress and the
-              final completion result. While isImporting, this is the same
-              plain text as before (moved from an inline style into
-              .status-message--progress, same margin/color, no other design
-              change), not the StatusMessage box treatment — a per-chunk
-              tick isn't a settled outcome. Once import finishes, the
-              existing StatusMessage box (info/error) shows the completion
-              result, unchanged.
-              TODO: chunkIndex/totalChunks are already known during the
-              import loop (see handleImport) — a real determinate progress
-              bar could replace this text-only counter later. If it does,
-              it should be its own small component (bar + a text line
-              announced via useAnnounceOnChange, same shape as
-              ExperimentalAnalysisPage.js's ProgressCard), not a new
-              StatusMessage prop — see the scope note in StatusMessage.js.
-              Each chunk tick is announced through the shared announcer
-              (importProgressRef), not by this div being a live region — it's
-              conditionally rendered, so as its own role="status" the first
-              tick was inserted-with-text and never heard. */}
-          {isImporting ? (
-            <div ref={importProgressRef} className="status-message--progress">{importMessage?.text}</div>
-          ) : (
-            renderStatusMessage(importMessage, 'success', 'import')
-          )}
           {fileSelectError.hasError && (
             <FeedbackInlineError
               id="database-import-file-error"
@@ -891,7 +860,7 @@ const DatabasePage = ({ lang }) => {
                   value={option.value}
                   checked={importScope === option.value}
                   onChange={() => { setImportScope(option.value); setImportMessage(null); importTablesError.clearError(); }}
-                  disabled={isImporting}
+                  disabled={isImporting || collections.length === 0}
                 />
                 <label htmlFor={`database-import-scope-${option.value}`}>{option.label}</label>
               </div>
@@ -967,9 +936,33 @@ const DatabasePage = ({ lang }) => {
             type="submit"
             disabled={isImporting}
             buttonRole="secondary"
+            className="mb-200"
           >
             {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
           </GcdsButton>
+          {/* Right under the Import button, like the other sections' outcomes:
+              the fields between the file input and the button (up to one
+              checkbox per table) would otherwise push this out of view of
+              whoever just clicked. During import it's the per-chunk
+              progress as plain text (.status-message--progress), not a
+              StatusMessage box, since a chunk tick isn't a settled outcome;
+              once import finishes, a StatusMessage box shows the result.
+              TODO: chunkIndex/totalChunks are already known during the
+              import loop (see handleImport) — a real determinate progress
+              bar could replace this text-only counter later. If it does,
+              it should be its own small component (bar + a text line
+              announced via useAnnounceOnChange, same shape as
+              ExperimentalAnalysisPage.js's ProgressCard), not a new
+              StatusMessage prop — see the scope note in StatusMessage.js.
+              Each chunk tick is announced through the shared announcer
+              (importProgressRef), not by this div being a live region — it's
+              conditionally rendered, so as its own role="status" the first
+              tick was inserted-with-text and never heard. */}
+          {isImporting ? (
+            <div ref={importProgressRef} className="status-message--progress">{importMessage?.text}</div>
+          ) : (
+            renderStatusMessage(importMessage, 'success', 'import')
+          )}
         </form>
       </div>
 

@@ -505,7 +505,6 @@
       "endDate": "Date de fin",
       "dateRangeLegend": "Plage de dates (facultatif)",
       "dateRangeHint": "Laissez vide pour exporter toutes les dates.",
-      "datesNotApplicableExpertEval": "Les dates ne s'appliquent pas à cette exportation. Elle comprend tous les clavardages ayant une évaluation d'expert.",
       "datesNotApplicableTable": "Les dates ne s'appliquent pas à cette table. Elle n'enregistre pas les dates de mise à jour, donc toute la table est exportée.",
       "limitLabel": "Limite (enregistrements par requête)",
       "exporting": "Exportation...",

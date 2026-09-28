@@ -66,12 +66,10 @@ export function getDatabaseExportFilenameTag(selectedCollection) {
   return '';
 }
 
-// Dates filter on updatedAt, so they don't apply to the expert-eval scope
-// (the server ignores them there) or to a table with no updatedAt.
-export function getExportDatesUnavailableReason(selectedCollection, collectionsWithoutDates = []) {
-  if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) return 'expertEvalChats';
-  if (collectionsWithoutDates.includes(normalizeCollectionName(selectedCollection))) return 'noUpdatedAt';
-  return null;
+// Dates filter on updatedAt, so they don't apply to a table without it.
+// The expert-eval scope does use them: it filters its chats by updatedAt.
+export function exportHasNoDates(selectedCollection, collectionsWithoutDates = []) {
+  return collectionsWithoutDates.includes(normalizeCollectionName(selectedCollection));
 }
 
 // Same day bounds as FilterPanel: local midnight to local 23:59:59, so the

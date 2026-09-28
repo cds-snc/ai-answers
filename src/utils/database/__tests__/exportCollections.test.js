@@ -4,7 +4,7 @@ import {
   EXPERT_EVAL_CHATS_EXPORT,
   getDatabaseExportCollections,
   getDatabaseExportFilenameTag,
-  getExportDatesUnavailableReason,
+  exportHasNoDates,
   toExportDateBounds
 } from '../exportCollections.js';
 
@@ -56,11 +56,12 @@ describe('database export date helpers', () => {
     expect(toExportDateBounds({ startDate: '2026-09-01', endDate: '' }).endDate).toBe('');
   });
 
-  it('says why dates do not apply to an export, or null when they do', () => {
+  it('says dates do not apply only to a table without updatedAt', () => {
     const withoutDates = ['sessionstate', 'sentenceembedding'];
-    expect(getExportDatesUnavailableReason(EXPERT_EVAL_CHATS_EXPORT, withoutDates)).toBe('expertEvalChats');
-    expect(getExportDatesUnavailableReason('sessionstate', withoutDates)).toBe('noUpdatedAt');
-    expect(getExportDatesUnavailableReason('chat', withoutDates)).toBeNull();
-    expect(getExportDatesUnavailableReason('All', withoutDates)).toBeNull();
+    expect(exportHasNoDates('sessionstate', withoutDates)).toBe(true);
+    expect(exportHasNoDates('chat', withoutDates)).toBe(false);
+    expect(exportHasNoDates('All', withoutDates)).toBe(false);
+    // The server filters the expert-eval scope's chats by date
+    expect(exportHasNoDates(EXPERT_EVAL_CHATS_EXPORT, withoutDates)).toBe(false);
   });
 });

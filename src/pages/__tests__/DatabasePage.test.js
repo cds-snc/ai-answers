@@ -93,6 +93,8 @@ describe('DatabasePage import form', () => {
     // jsdom's Blob has no .text(); the import reads each slice with it.
     file.slice = () => ({ text: async () => content });
     await userEvent.upload(screen.getByLabelText('admin.database.importFileLabel'), file);
+    // The table choice stays disabled until the table list loads
+    await waitFor(() => expect(screen.getByLabelText('admin.database.importScopeChosen').disabled).toBe(false));
   };
 
   afterEach(() => {
@@ -121,6 +123,18 @@ describe('DatabasePage import form', () => {
 
     expect(confirmSpy).toHaveBeenCalledWith('admin.database.importConfirm');
     expect(postCalls()).toHaveLength(0);
+  });
+
+  it('disables the table choice when the table list fails to load', async () => {
+    AuthService.fetch.mockResolvedValue({ ok: false, json: async () => ({}) });
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    await waitFor(() => expect(AuthService.fetch).toHaveBeenCalled());
+    const chosen = screen.getByLabelText('admin.database.importScopeChosen');
+    expect(chosen.disabled).toBe(true);
+    // Import still runs with the default, as before
+    expect(screen.getByLabelText('admin.database.collections.all').checked).toBe(true);
   });
 
   it('sends only the ticked tables', async () => {
