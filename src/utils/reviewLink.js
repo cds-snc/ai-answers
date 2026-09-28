@@ -62,9 +62,13 @@ export const buildChatReviewHref = (chatId, lang, interactionId, adminLang) =>
 // admin's own current language (adminLang), the same reasoning already
 // applied to ContentIssueChatsCard.js's <GcdsLink>. Falls back to `lang`
 // (the route) only when no adminLang was supplied at all.
-export const buildChatReviewLinkHtml = (chatId, lang, interactionId, adminLang) => {
+//
+// `srSuffix` (optional, plain text) is appended as sr-only text, e.g.
+// ", question 3" so several links to one chat read apart.
+export const buildChatReviewLinkHtml = (chatId, lang, interactionId, adminLang, srSuffix) => {
   const safeId = escapeHtmlAttribute(chatId);
   const adminLangParam = adminLang ? `&adminLang=${escapeHtmlAttribute(adminLang)}` : '';
   const attrLang = escapeHtmlAttribute(adminLang || lang);
-  return `<gcds-link href="/${lang}?chat=${safeId}&review=1${adminLangParam}${buildInteractionHash(interactionId)}" target="_blank" lang="${attrLang}">${safeId}</gcds-link>`;
+  const srText = srSuffix ? `<span class="sr-only">${escapeHtmlAttribute(srSuffix)}</span>` : '';
+  return `<gcds-link href="/${lang}?chat=${safeId}&review=1${adminLangParam}${buildInteractionHash(interactionId)}" target="_blank" lang="${attrLang}">${safeId}${srText}</gcds-link>`;
 };
