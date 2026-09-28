@@ -582,7 +582,7 @@
       "runCheckButton": "Run check",
       "checkFailed": "Check {check} failed: {error}.",
       "countLabel": "Count:",
-      "noResultsLabel": "No results",
+      "notRunLabel": "Not run",
       "breakdownMissing": "Missing — Chat: {chat}, Interaction: {interaction}, Question: {question}, Answer: {answer}",
       "breakdownSamples": "Samples: {samples}",
       "indexCodeLabel": "Code {code}",

@@ -149,3 +149,77 @@ describe('DatabasePage import form', () => {
     expect(JSON.parse(postCalls()[0][1].body).collection).toEqual(['question']);
   });
 });
+
+describe('DatabasePage integrity checks', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetTableCounts.mockReset();
+    AuthService.fetch.mockReset();
+  });
+
+  it('shows samples through the translated label', async () => {
+    AuthService.fetch.mockImplementation(async (url) => ({
+      ok: true,
+      json: async () => (url.includes('db-integrity-checks')
+        ? { count: 2, samples: ['a', 'b'] }
+        : { collections: [] }),
+    }));
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    fireEvent.click(screen.getAllByText('admin.database.runCheckButton')[0]);
+
+    expect(await screen.findByText('admin.database.breakdownSamples')).toBeTruthy();
+    expect(screen.queryByText(/Samples:/)).toBeNull();
+  });
+
+  it('shows not run before a check runs', () => {
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    expect(screen.getAllByText('admin.database.notRunLabel')).toHaveLength(12);
+  });
+
+  it('names each run button after its check', () => {
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    expect(screen.getByRole('button', {
+      name: 'admin.database.runCheckButton – admin.database.checks.orphanCitations',
+    })).toBeTruthy();
+  });
+
+  it('keeps a running check button enabled but aria-disabled', async () => {
+    let finish;
+    AuthService.fetch.mockImplementation((url) => (url.includes('db-integrity-checks')
+      ? new Promise((resolve) => { finish = resolve; })
+      : Promise.resolve({ ok: true, json: async () => ({ collections: [] }) })));
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    const button = screen.getAllByText('admin.database.runCheckButton')[0];
+    fireEvent.click(button);
+
+    await waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('true'));
+    expect(button.disabled).toBe(false);
+    fireEvent.click(button);
+    expect(AuthService.fetch.mock.calls.filter(([url]) => url.includes('db-integrity-checks'))).toHaveLength(1);
+    finish({ ok: true, json: async () => ({ count: 0 }) });
+    await waitFor(() => expect(button.getAttribute('aria-disabled')).toBeNull());
+  });
+
+  it('announces the count when a check finishes', async () => {
+    AuthService.fetch.mockImplementation(async (url) => ({
+      ok: true,
+      json: async () => (url.includes('db-integrity-checks')
+        ? { count: 3 }
+        : { collections: [] }),
+    }));
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+
+    fireEvent.click(screen.getAllByText('admin.database.runCheckButton')[0]);
+
+    await waitForAnnouncement('admin.database.checks.orphanCitations. admin.database.countLabel 3');
+  });
+});

@@ -12,6 +12,7 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { useAnnounceOnChange } from '../hooks/useAnnounceOnChange.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -705,9 +706,10 @@ const DatabasePage = ({ lang }) => {
         <GcdsText>
           {t('admin.database.integrityDescription')}
         </GcdsText>
-        <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+        <details open className="mb-200">
           <summary style={{ cursor: 'pointer', fontWeight: '600' }}>{t('admin.database.coreChecksLabel')}</summary>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* role="list": Safari drops list semantics without bullets */}
+          <ul className="mt-200" role="list">
             {[
               { id: 'orphanCitations', labelKey: 'checks.orphanCitations' },
               { id: 'orphanTools', labelKey: 'checks.orphanTools' },
@@ -722,93 +724,97 @@ const DatabasePage = ({ lang }) => {
               { id: 'evalInvalidInteraction', labelKey: 'checks.evalInvalidInteraction' },
               { id: 'duplicateKeys', labelKey: 'checks.duplicateKeys' }
             ].map(check => (
-              <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1 }}>{t(`admin.database.${check.labelKey}`)}</div>
-                <GcdsButton
-                  onClick={async () => {
-                    try {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: true }));
-                      setChecksMessages(prev => ({ ...prev, [check.id]: null }));
-                      const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
-                        method: 'GET'
-                      });
-                      const json = await res.json();
-                      if (!res.ok) throw new Error(json.message || 'Check failed');
-                      setChecksResults(prev => ({ ...prev, [check.id]: json }));
-                    } catch (err) {
-                      setChecksMessages(prev => ({
-                        ...prev,
-                        [check.id]: buildErrorStatus(
-                          'admin.database.checkFailed',
-                          err,
-                          { check: check.id },
-                        ),
-                      }));
-                    } finally {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: false }));
-                    }
-                  }}
-                  disabled={!!checksRunning[check.id]}
-                  buttonRole="secondary"
-                >
-                  {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
-                </GcdsButton>
-                {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
-                <div style={{ minWidth: 220, textAlign: 'right' }}>
-                  {checksResults[check.id] ? (
-                    <div style={{ fontSize: 13 }}>
-                      {t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong>
-                      {checksResults[check.id].breakdown ? (
-                        <div style={{ marginTop: 6, textAlign: 'right' }}>
-                          <div style={{ fontSize: 12 }}>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
-                          {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                            <div style={{ marginTop: 6 }}>
-                              {t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                        <div style={{ marginTop: 6 }}>
-                          Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : <div style={{ fontSize: 13, color: '#666' }}>{t('admin.database.noResultsLabel')}</div>}
+              <li key={check.id} className="canada-ca-action-result-row">
+                {/* Name | buttons + message | results */}
+                <div className="font-size-text-sm-nr">{t(`admin.database.${check.labelKey}`)}</div>
+                <div>
+                  <div className="d-flex flex-wrap gap-200">
+                    {/* Native, not GcdsButton: its sr-only check name must
+                        reach the accessible name. aria-disabled keeps focus. */}
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      aria-disabled={checksRunning[check.id] ? 'true' : undefined}
+                      onClick={async () => {
+                        if (checksRunning[check.id]) return;
+                        try {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                          setChecksMessages(prev => ({ ...prev, [check.id]: null }));
+                          const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                            method: 'GET'
+                          });
+                          const json = await res.json();
+                          if (!res.ok) throw new Error(json.message || 'Check failed');
+                          setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                          announce(`${t(`admin.database.${check.labelKey}`)}. ${t('admin.database.countLabel')} ${json.count}`);
+                        } catch (err) {
+                          setChecksMessages(prev => ({
+                            ...prev,
+                            [check.id]: buildErrorStatus(
+                              'admin.database.checkFailed',
+                              err,
+                              { check: check.id },
+                            ),
+                          }));
+                        } finally {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                        }
+                      }}
+                    >
+                      {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
+                      {/* Names the check - 12 buttons otherwise share one name */}
+                      <span className="sr-only"> – {t(`admin.database.${check.labelKey}`)}</span>
+                    </button>
+                    {/* Add Remove Duplicates button only for duplicateKeys check */}
+                    {check.id === 'duplicateKeys' && (
+                      <GcdsButton
+                        onClick={async () => {
+                          if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
+                          try {
+                            setIsRemovingDuplicates(true);
+                            setRemoveDuplicatesMessage(null);
+                            const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
+                              method: 'DELETE'
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
+                            setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount), isError: false });
+                            // Refresh the check results
+                            setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
+                          } catch (err) {
+                            setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
+                          } finally {
+                            setIsRemovingDuplicates(false);
+                          }
+                        }}
+                        disabled={isRemovingDuplicates}
+                        buttonRole="danger"
+                      >
+                        {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
+                      </GcdsButton>
+                    )}
+                  </div>
+                  {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
+                  {check.id === 'duplicateKeys' && (
+                    renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
+                  )}
                 </div>
-                {/* Add Remove Duplicates button only for duplicateKeys check */}
-                {check.id === 'duplicateKeys' && (
-                  <GcdsButton
-                    onClick={async () => {
-                      if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
-                      try {
-                        setIsRemovingDuplicates(true);
-                        setRemoveDuplicatesMessage(null);
-                        const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
-                          method: 'DELETE'
-                        });
-                        const json = await res.json();
-                        if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
-                        setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount), isError: false });
-                        // Refresh the check results
-                        setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
-                      } catch (err) {
-                        setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
-                      } finally {
-                        setIsRemovingDuplicates(false);
-                      }
-                    }}
-                    disabled={isRemovingDuplicates}
-                    buttonRole="danger"
-                  >
-                    {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
-                  </GcdsButton>
-                )}
-                {check.id === 'duplicateKeys' && (
-                  renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
-                )}
-              </div>
+                <div className="font-size-text-sm-nr">
+                  {checksResults[check.id] ? (
+                    <>
+                      <div>{t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong></div>
+                      {checksResults[check.id].breakdown && (
+                        <div>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
+                      )}
+                      {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                        <div>{t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}</div>
+                      ) : null}
+                    </>
+                  ) : <span className="label pending">{t('admin.database.notRunLabel')}</span>}
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </details>
       </div >
 
@@ -985,11 +991,11 @@ const DatabasePage = ({ lang }) => {
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
               {t('admin.database.indexCreationFailed')}
             </div>
-            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+            <ul className="font-size-text-sm-nr" style={{ margin: 0, paddingLeft: 20 }}>
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span className="text-secondary font-size-text-xxs-nr" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
+                  {f.code && <span className="text-secondary" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
             </ul>
@@ -1061,7 +1067,7 @@ const DatabasePage = ({ lang }) => {
                 )}
               />
             </div>
-            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="font-size-text-sm-nr" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
@@ -1084,12 +1090,12 @@ const DatabasePage = ({ lang }) => {
                         {col.status}
                       </span>
                       {col.status === 'building' && col.building?.length > 0 && (
-                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
+                        <span style={{ marginLeft: 8 }}>
                           ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
-                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
+                        <span style={{ marginLeft: 8 }}>
                           {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}

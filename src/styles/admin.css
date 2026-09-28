@@ -1768,7 +1768,8 @@ div.dt-container div.dt-paging .dt-paging-button.next::after {
    Level column pill (debug isn't a severity tier, so it gets this same
    neutral grey rather than a colour of its own), and AccountPage.js's
    "Evaluated" column ("Pending" - not-yet-scored is the same "hasn't
-   happened yet" meaning as uploaded/debug, not a severity). */
+   happened yet" meaning as uploaded/debug, not a severity), and
+   DatabasePage.js's integrity checks' "Not run". */
 .label.normal,
 .label.uploaded,
 .label.debug,
@@ -3566,4 +3567,21 @@ fieldset.canada-ca-choice-fieldset legend:first-of-type {
    outer group's own bottom margin already follows. */
 fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
   margin: var(--gcds-spacing-300) 0 0;
+}
+
+/* Name | buttons | result, one row per action. Fixed fractions keep
+   columns aligned across rows; stacks on narrow screens (WCAG 1.4.10). */
+.canada-ca-action-result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  align-items: start;
+  padding: var(--gcds-spacing-300) 0;
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
+@media only screen and (width <= 48em) {
+  .canada-ca-action-result-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
