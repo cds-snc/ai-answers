@@ -395,7 +395,7 @@
     "metadataSeeFullValue": "Voir la valeur",
     "timeline": {
       "title": "Chronologie des étapes du pipeline",
-      "graph": "Graphe",
+      "graph": "Graphe :",
       "step": "Étape",
       "start": "Début (ms)",
       "end": "Fin (ms)",
@@ -406,7 +406,7 @@
       "noTimeline": "Aucun événement de pipeline trouvé dans ces journaux.",
       "downloads": "téléchargements",
       "generation": "génération",
-      "userPerceived": "Temps de réponse perçu par l'utilisateur"
+      "userPerceived": "Temps de réponse perçu par l'utilisateur :"
     }
   },
   "admin": {
@@ -416,6 +416,7 @@
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
       "partnerMenu": "Menu partenaire",
+      "account": "Gérer votre compte",
       "aiAnswers": "Utiliser Réponses IA avec les options d'évaluation",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -443,26 +444,26 @@
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
       "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer ?",
-      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès: {successCount}, Échec: {failCount}",
-      "createIndexesError": "Échec de la création des index: {error}",
+      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès : {successCount}, Échec : {failCount}",
+      "createIndexesError": "Échec de la création des index : {error}",
       "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer ?",
       "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
-      "dropIndexesError": "Échec de la suppression des index: {error}",
+      "dropIndexesError": "Échec de la suppression des index : {error}",
       "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
       "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",
-      "deleteSystemLogsError": "Échec de la suppression des journaux système: {error}",
+      "deleteSystemLogsError": "Échec de la suppression des journaux système : {error}",
       "deleteAllBatchesConfirm": "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?",
       "deleteAllBatchesSuccess": "Lots supprimés : {batches}, batchItems supprimés : {batchItems}",
       "deleteAllBatchesError": "Échec de la suppression des lots : {error}",
       "repairTimestampsConfirm": "Cela ajoutera des horodatages updatedAt aux enregistrements d'outils existants qui n'en ont pas. Êtes-vous sûr de vouloir continuer ?",
-      "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils: {updated}/{total}",
-      "repairTimestampsError": "Échec de la réparation des horodatages: {error}",
+      "repairTimestampsSuccess": "Horodatages des outils réparés avec succès. Outils : {updated}/{total}",
+      "repairTimestampsError": "Échec de la réparation des horodatages : {error}",
       "repairExpertFeedbackConfirm": "Cela définira le champ \"type\" sur \"expert\" pour les enregistrements de commentaires d'experts qui ont des champs de type manquants ou vides. Les enregistrements avec les types \"public\" ou \"ai\" resteront inchangés. Êtes-vous sûr de vouloir continuer ?",
-      "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour: {updated}/{total} ({alreadyCorrect} déjà corrects)",
-      "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts: {error}",
+      "repairExpertFeedbackSuccess": "Types de commentaires d'experts réparés avec succès. Mis à jour : {updated}/{total} ({alreadyCorrect} déjà corrects)",
+      "repairExpertFeedbackError": "Échec de la réparation des commentaires d'experts : {error}",
       "migratePublicFeedbackConfirm": "Cela migrera tous les commentaires publics des commentaires d'experts vers la nouvelle collection de commentaires publics. Êtes-vous sûr de vouloir continuer ?",
       "migratePublicFeedbackSuccess": "Migration terminée. {migrated} commentaires migrés.",
-      "migratePublicFeedbackError": "Échec de la migration: {error}",
+      "migratePublicFeedbackError": "Échec de la migration : {error}",
       "collections": {
         "all": "Tout",
         "allButLogs": "Tout sauf les journaux",
@@ -486,17 +487,28 @@
         "setting": "Paramètre",
         "batchitem": "Élément de lot",
         "sentenceembedding": "Incorporation de phrase",
-        "sessionstate": "État de session"
+        "sessionstate": "État de session",
+        "auditlog": "Journal d'audit",
+        "blockedquerycounter": "Compteur de questions bloquées",
+        "embeddingmetadatabackfilljob": "Tâche de remplissage des métadonnées d'incorporation",
+        "evalanalysis": "Analyse des évaluations",
+        "experimentalbatch": "Lot expérimental",
+        "experimentalbatchitem": "Élément de lot expérimental",
+        "experimentaldataset": "Ensemble de données expérimental",
+        "experimentaldatasetrow": "Ligne d'ensemble de données expérimental",
+        "servicecallerrorcounter": "Compteur d'erreurs d'appels de service"
       },
       "tableRecordCounts": "Nombre d'enregistrements par table",
-      "tableColumn": "Table",
-      "countColumn": "Nombre",
-      "tableLabel": "Table :",
-      "startDate": "Date de début :",
-      "endDate": "Date de fin :",
-      "limitLabel": "Limite :",
+      "exportTitle": "Exporter la base de données",
+      "tableLabel": "Table",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "dateRangeLegend": "Plage de dates (facultatif)",
+      "dateRangeHint": "Laissez vide pour exporter toutes les dates.",
+      "datesNotApplicableTable": "Les dates ne s'appliquent pas à cette table. Elle n'enregistre pas les dates de mise à jour, donc toute la table est exportée.",
+      "limitLabel": "Limite (enregistrements par requête)",
       "exporting": "Exportation...",
-      "exportButton": "Exporter la base de données",
+      "exportButton": "Exporter la base de données (.jsonl)",
       "exportSuccess": "Base de données exportée avec succès.",
       "exportError": "Échec de l'exportation : {error}.",
       "dropIndexesTitle": "Supprimer tous les index",
@@ -545,11 +557,15 @@
       "migratePublicFeedbackButton": "Migrer les commentaires publics",
       "migratingLabel": "Migration...",
       "importTitle": "Importer la base de données",
-      "importDescription": "Restaurer la base de données à partir d'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.",
-      "chunkSizeLabel": "Taille du bloc (Mo) :",
-      "throttleLabel": "Limitation (ms) :",
-      "tableSelectLabel": "Table (maintenir Ctrl/Cmd pour la sélection multiple) :",
-      "importFileLabel": "Fichier à importer (.jsonl) :",
+      "importDescription": "Restaurer des enregistrements à partir d'un fichier de sauvegarde. Les enregistrements qui correspondent à un enregistrement du fichier sont remplacés. Les autres restent inchangés.",
+      "chunkSizeLabel": "Taille du bloc (Mo)",
+      "throttleLabel": "Limitation (ms)",
+      "importTablesLegend": "Tables à importer",
+      "importScopeChosen": "Seulement les tables que je choisis",
+      "importChosenLegend": "Choisir les tables",
+      "importTablesError": "Choisissez au moins une table à importer.",
+      "importConfirm": "L'importation remplace les enregistrements existants qui correspondent à un enregistrement du fichier. Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?",
+      "importFileLabel": "Fichier à importer (.jsonl)",
       "importingLabel": "Importation...",
       "importButton": "Importer la base de données",
       "fileSelectError": "Veuillez sélectionner un fichier à importer.",
@@ -566,7 +582,7 @@
       "runCheckButton": "Lancer la vérification",
       "checkFailed": "Échec de la vérification {check} : {error}.",
       "countLabel": "Nombre :",
-      "noResultsLabel": "Aucun résultat",
+      "notRunLabel": "Non exécutée",
       "breakdownMissing": "Manquant — Clavardage : {chat}, Interaction : {interaction}, Question : {question}, Réponse : {answer}",
       "breakdownSamples": "Exemples : {samples}",
       "indexCodeLabel": "Code {code}",
@@ -626,15 +642,15 @@
       "detailsTitle": "Processus détaillé d'évaluation",
       "step": {
         "initialValidation": {
-          "title": "Validation initiale",
+          "title": "Validation initiale :",
           "description": "Valider que l'interaction contient une question et une réponse et vérifier si une évaluation existe déjà."
         },
         "embeddingRetrieval": {
-          "title": "Récupération des embeddings",
+          "title": "Récupération des embeddings :",
           "description": "Récupérer les embeddings vectoriels pour question+réponse, réponse seule et au niveau des phrases."
         },
         "findingSimilar": {
-          "title": "Recherche de contenu similaire",
+          "title": "Recherche de contenu similaire :",
           "description": "Rechercher des interactions avec une rétroaction experte existante et une forte similarité QA; filtrer les résultats du même chat et s'assurer que des embeddings de phrases existent pour les candidats.",
           "item": {
             "expertFeedback": "Rétroaction experte existante",
@@ -643,7 +659,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Correspondance au niveau des phrases",
+          "title": "Correspondance au niveau des phrases :",
           "item": {
             "findMostSimilar": "Pour chaque phrase de la nouvelle interaction, trouver la phrase la plus similaire dans chaque correspondance potentielle (recherche vectorielle avec seuil par phrase)",
             "threshold": "Conserver les correspondances au-dessus du seuil de similarité des phrases et privilégier les voisins de plus haute similarité",
@@ -652,7 +668,7 @@
           }
         },
         "citationMatch": {
-          "title": "Appariement de citation",
+          "title": "Appariement de citation :",
           "item": {
             "compare": "Comparer l'URL de citation source avec les interactions candidates pour trouver une correspondance exacte ou de haute confiance",
             "score": "Noter et enregistrer une correspondance de citation (score, explication, IDs d'interaction/chat appariés)",
@@ -660,7 +676,7 @@
           }
         },
         "qaFallback": {
-          "title": "Repli QA à note élevée",
+          "title": "Repli QA à note élevée :",
           "item": {
             "checkTop": "Si la correspondance au niveau des phrases échoue, vérifier les meilleures correspondances QA (top-N configurable) pour celles ayant de bonnes notes d'expert",
             "citationCheck": "Pour les candidats, effectuer un appariement de citation et éventuellement exécuter un agent de comparaison de repli pour s'assurer que la réponse candidate couvre suffisamment la source",
@@ -668,14 +684,14 @@
           }
         },
         "fallbackCompare": {
-          "title": "Vérifications de comparaison de repli",
+          "title": "Vérifications de comparaison de repli :",
           "item": {
             "agent": "Un petit agent de comparaison peut être invoqué pour vérifier qu'une candidate de repli correspond suffisamment à la réponse source; les résultats, la sortie brute et les vérifications analysées sont enregistrés",
             "record": "L'utilisation de la comparaison et ses métadonnées (fournisseur/modèle/latence/jetons) sont stockées sur l'évaluation pour la traçabilité"
           }
         },
         "creation": {
-          "title": "Création de l'évaluation et notation",
+          "title": "Création de l'évaluation et notation :",
           "item": {
             "createFeedback": "Créer un nouvel objet de rétroaction d'expert basé sur la rétroaction de l'interaction appariée ou une rétroaction de repli générée (type 'ai')",
             "computeScore": "Calculer le score total à partir des scores par phrase et du score de citation (pondérations par défaut). Si aucune note n'existe, totalScore peut être null.",
@@ -685,14 +701,14 @@
           }
         },
         "noMatch": {
-          "title": "Aucun appariement / Cas de rejet",
+          "title": "Aucun appariement / Cas de rejet :",
           "item": {
             "recordNoMatch": "Si aucune correspondance ni répli accepted, créer une évaluation de non-correspondance enregistrant les types de raisons et les causes de rejet par phrase",
             "trace": "Les évaluations de non-correspondance incluent une trace par phrase et une chronologie pour que les opérateurs puissent inspecter pourquoi les candidats ont été rejetés"
           }
         },
         "timeline": {
-          "title": "Chronologie des étapes et télémétrie",
+          "title": "Chronologie des étapes et télémétrie :",
           "item": {
             "record": "Le worker enregistre une chronologie étape par étape (étape, statut, code, message, horodatage) dans l'évaluation pour le diagnostic",
             "telemetry": "La télémétrie des agents et du VectorService (latence, jetons, modèle) est capturée lorsque cela est applicable"
@@ -715,8 +731,8 @@
         "refresh": "Actualiser les métriques"
       },
       "date": {
-        "startLabel": "Date de début",
-        "endLabel": "Date de fin"
+        "startLabel": "Date de début :",
+        "endLabel": "Date de fin :"
       },
       "button": {
         "processing": "Traitement...",
@@ -725,10 +741,10 @@
         "deleteEmpty": "Supprimer les évaluations vides"
       },
       "progress": {
-        "processed": "Traité",
-        "failed": "Échouées",
-        "remaining": "Restant",
-        "duration": "Durée",
+        "processed": "Traité :",
+        "failed": "Échouées :",
+        "remaining": "Restant :",
+        "duration": "Durée :",
         "autoProcessing": "Traitement automatique actif",
         "regeneratingAll": "Régénération de toutes les évaluations"
       }
@@ -752,6 +768,7 @@
       "urlPlaceholder": "Filtrer par URL complète ou partielle",
       "department": "Institution partenaire",
       "allDepartments": "Toutes les institutions",
+      "group": "Groupe",
       "users": "Utilisateurs",
       "allUsers": "Tous",
       "publicUsers": "Public",
@@ -782,14 +799,6 @@
       "advancedTitle": "Filtres avancés",
       "advancedAll": "Avancé : Tous",
       "showAdvanced": "Plus de filtres"
-    },
-    "publicEval": {
-      "title": "Évaluation publique",
-      "chatId": "ID de chat",
-      "department": "Ministère",
-      "date": "Date",
-      "loading": "Chargement...",
-      "errorLoading": "Échec du chargement de la liste d'évaluation publique : {message}"
     },
     "session": {
       "title": "Sessions",
@@ -827,6 +836,7 @@
       "noSearchResults": "Aucun résultat pour {term}.",
       "filtersClearedAnnouncement": "Filtres réinitialisés.",
       "resultsLoaded": "Résultats chargés.",
+      "noData": "Aucune donnée.",
       "viewChatById": "Voir le chat par ID",
       "originallyAskedIn": "Posée à l'origine en : {language}",
       "sourceText": "Source",
@@ -842,7 +852,7 @@
       "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
-      "fetchError": "Échec du chargement des données : {message}",
+      "fetchError": "Échec du chargement des données : {error}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
       "metricsLoading": "Chargement des métriques...",
@@ -883,6 +893,39 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "problème de contenu"
+      },
+      "assign": {
+        "toggleOn": "Attribuer une ou des questions à un évaluateur",
+        "selectColumn": "Attribuer",
+        "selectQuestion": "Sélectionner la question {number} du clavardage {chatId}",
+        "expertLabel": "Compte de l'évaluateur",
+        "expertPlaceholder": "Choisir un compte",
+        "pickerSelf": "S'attribuer soi-même",
+        "pickerGroup": "Votre groupe",
+        "pickerInstitution": "Votre institution",
+        "pickerOthers": "Autres comptes",
+        "noInstitution": "Vous ne pouvez attribuer des questions qu'à vous-même et au groupe AQ de Réponses IA. Choisissez une institution ou un groupe sur votre page de compte pour aussi attribuer des questions à des collègues.",
+        "addNote": "Ajouter une note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} caractères",
+        "noteClear": "Effacer la note",
+        "assignChats": "Attribuer ({count}) à un évaluateur",
+        "assignChatsWithNote": "Attribuer ({count}) à un évaluateur avec une note",
+        "assigning": "Attribution en cours…",
+        "errorNoExpert": "Choisissez un évaluateur à qui attribuer.",
+        "errorNoQuestion": "Choisissez au moins une question dans la colonne Attribuer.",
+        "assignSuccess": "{count} question(s) attribuée(s).",
+        "assignSuccessWithNote": "{count} question(s) attribuée(s) avec une note.",
+        "assignError": "Échec de l'attribution de {count} question(s).",
+        "assignErrorAlreadyAssigned": "{count} question(s) étaient déjà attribuée(s) à quelqu'un d'autre.",
+        "assignErrorNoteTooLong": "La note est trop longue.",
+        "assignErrorNotAllowed": "Vous ne pouvez pas attribuer de questions à cet évaluateur.",
+        "loadError": "Impossible de charger la liste des personnes à qui vous pouvez attribuer.",
+        "removeAssignment": "Retirer l'attribution de",
+        "unknownAccount": "Compte inconnu",
+        "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution?",
+        "unassigned": "Attribution retirée.",
+        "unassignError": "Impossible de retirer l'attribution."
       }
     },
     "evalDashboard": {
@@ -895,6 +938,8 @@
         "questionNumberAriaLabel": "Numéro de question",
         "partnerEval": "Partenaire",
         "aiEval": "IA",
+        "evalInformed": "Éclairée",
+        "evalInformedAriaLabel": "Réponse éclairée par les évaluations",
         "action": "Action",
         "creatorEmail": "Créateur",
         "expertEmail": "Expert",
@@ -930,7 +975,7 @@
       "loading": "Suppression en cours...",
       "notFound": "Impossible de supprimer le chat : ID introuvable.",
       "success": "{chatId} supprimé avec succès.",
-      "error": "Échec de la suppression du chat : {message}"
+      "error": "Échec de la suppression du chat : {error}"
     },
     "deleteExpertEval": {
       "title": "Supprimer une évaluation d'expert",
@@ -939,18 +984,19 @@
       "loading": "Suppression en cours...",
       "notFound": "Impossible de supprimer l'évaluation : ID introuvable.",
       "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
-      "error": "Échec de la suppression de l'évaluation d'expert : {message}",
+      "error": "Échec de la suppression de l'évaluation d'expert : {error}",
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {
-      "title": "Télécharger les journaux de chat",
+      "title": "Télécharger les journaux de clavardage",
       "getLogs": "Obtenir les journaux",
+      "exportOptions": "Options d'exportation",
       "exportView": "Vue d'exportation",
       "exportFormat": "Format",
       "export": "Exporter",
       "exporting": "Exportation en cours...",
       "exportingMessage": "Veuillez patienter pendant la génération de votre fichier.",
-      "exportDescription": "Sélectionnez les options d'exportation, configurez les filtres ci-dessous, puis cliquez sur Exporter pour télécharger.",
+      "exportSuccess": "Exportation terminée. Votre fichier se télécharge.",
       "exportError": "Échec de l'exportation : {error}",
       "views": {
         "default": "Par défaut",
@@ -1048,15 +1094,77 @@
       "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
     }
   },
+  "account": {
+    "title": "Gérer votre compte",
+    "profileHeading": "Détails du compte",
+    "accountName": "Nom du compte",
+    "activityHeading": "Vos questions attribuées",
+    "role": "Rôle",
+    "institution": "Institution",
+    "group": "Groupe",
+    "institutionLocked": "Communiquez avec un administrateur pour changer votre institution.",
+    "groupLocked": "Communiquez avec un administrateur pour changer votre groupe.",
+    "lockNotice": "Assurez-vous d'avoir choisi la bonne institution ou le bon groupe. Après l'enregistrement, seul un administrateur pourra modifier votre choix.",
+    "updated": "Compte mis à jour : {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution retirée",
+    "changeGroupSet": "groupe {value}",
+    "changeGroupCleared": "groupe retiré",
+    "profileSaveError": "Impossible de mettre à jour votre compte.",
+    "loadError": "Impossible de charger votre compte.",
+    "assignedChats": {
+      "heading": "Vos questions attribuées pour évaluation",
+      "filterLabel": "Filtrer les questions attribuées",
+      "loadError": "Impossible de charger vos questions attribuées.",
+      "columns": {
+        "assignedOn": "Attribué le",
+        "assignedBy": "Attribué par",
+        "partnerNotes": "Notes",
+        "evaluated": "Évalué"
+      },
+      "evalStatus": {
+        "completed": "Terminé",
+        "pending": "En attente"
+      }
+    },
+    "preferences": {
+      "heading": "Préférences de filtre par défaut du tableau de bord",
+      "prefilterDepartment": "Utiliser votre institution",
+      "prefilterGroup": "Utiliser votre groupe (clavardages créés ou évalués par les membres de votre groupe)",
+      "noInstitution": "Enregistrez d'abord votre institution.",
+      "savedChange": "Préférence enregistrée : {change}",
+      "changeInstitutionOn": "institution sélectionnée",
+      "changeInstitutionOff": "institution désélectionnée",
+      "changeGroupOn": "groupe sélectionné",
+      "changeGroupOff": "groupe désélectionné",
+      "saveError": "Impossible d'enregistrer la préférence.",
+      "filteredNoticeTitle": "Fonctionnement des préférences de filtre",
+      "filteredInstitution": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre institution par défaut.",
+      "filteredGroup": "Les tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques*, de *téléchargement des journaux de clavardage*, de *mesures*, de *métriques techniques* et *partenaire* s'ouvrent filtrés selon votre groupe par défaut. Vous ne verrez que les questions et réponses créées ou évaluées par votre groupe.",
+      "filteredBothChatEvalLabel": "Tableaux de bord de *clavardage*, d'*évaluation*, d'*évaluations automatiques* et de *téléchargement des journaux de clavardage* :",
+      "filteredBothChatEvalEffect": "tout pour votre institution, ainsi que ce que votre groupe a créé ou évalué.",
+      "filteredBothMetricsPartnerLabel": "Tableaux de bord de *mesures*, de *métriques techniques* et *partenaire* :",
+      "filteredBothMetricsPartnerEffect": "seulement les clavardages qui correspondent à la fois à votre institution et à votre groupe.",
+      "filteredPublicLabel": "Tableau de bord *public* :",
+      "filteredPublicEffect": "non concerné.",
+      "filteredFooter": "Vous pouvez toujours modifier les valeurs de ces filtres à tout moment dans chaque tableau de bord. Tout effacer les rétablit à vos préférences par défaut."
+    }
+  },
   "users": {
     "title": "Gérer les comptes utilisateurs",
+    "institutionNone": "Aucune",
+    "groupNone": "Aucun",
+    "groupClearedAnnouncement": "Groupe effacé.",
+    "groupRestoredAnnouncement": "Groupe rétabli : {group}.",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",
       "role": "Rôle",
       "status": "Statut",
       "createdAt": "Créé le",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Groupe"
     },
     "roles": {
       "admin": "Administrateur",
@@ -1102,7 +1210,8 @@
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
       "invalidEmail": "Courriel ou espacement du « ; » invalide",
-      "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24."
+      "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
+      "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
     "cache": { "title": "Cache" },
     "general": {
@@ -1113,6 +1222,9 @@
     },
     "defaultModel": {
       "label": "Famille de modèles par défaut"
+    },
+    "defaultSearchProvider": {
+      "label": "Fournisseur de recherche par défaut du clavardage public"
     },
     "chatTransport": {
       "label": "Transport des événements de clavardage",
@@ -1238,7 +1350,9 @@
       "threat": "Menaces",
       "manipulation": "Manipulation",
       "langEnglish": "English",
-      "langFrench": "Français"
+      "langFrench": "Français",
+      "langSuffixEn": "(EN)",
+      "langSuffixFr": "(FR)"
     },
     "metrics": {
       "storeType": "Magasin de métriques de discussion (mémoire | DocumentDB)"
@@ -1261,7 +1375,7 @@
     "deleting": "Suppression en cours...",
     "loading": "Chargement...",
     "processing": "Traitement...",
-    "error": "Erreur",
+    "error": "Erreur :",
     "page": "Page",
     "yes": "Oui",
     "no": "Non",
@@ -1281,7 +1395,7 @@
     "reRun": "Relancer",
     "reRunning": "Relance en cours...",
     "noMatch": "Aucune correspondance trouvée pour cette interaction.",
-    "reason": "Raison",
+    "reason": "Raison :",
     "processed": "Traité",
     "hasMatches": "Correspondances trouvées",
     "fallback": "Repli",
@@ -1321,7 +1435,7 @@
     "helpfulYes": "Utile - oui",
     "helpfulNo": "Utile - non",
     "expertFeedbackTitle": "Évaluation d'expert",
-    "expertEmail": "Courriel de l'expert",
+    "expertEmail": "Courriel de l'expert :",
     "deleteExpertFeedback": "Supprimer l'évaluation d'expert",
     "publicFeedbackTitle": "Rétroaction publique",
     "autoEvalTitle": "Évaluation automatisée",
@@ -1343,6 +1457,7 @@
     "noSentenceTraces": "Aucune trace de correspondance de phrase disponible.",
     "citation": "Citation",
     "totalScore": "Score total",
+    "totalScoreLabel": "Score total :",
     "suggestedCitation": "URL de citation suggérée :",
     "fallbackDetails": "Détails du repli",
     "fallbackType": "Type de repli",
@@ -1358,7 +1473,7 @@
     "downloadedPagesTitle": "Pages téléchargées",
     "noEvaluation": "Aucune évaluation disponible.",
     "stageTimeline": "Chronologie des étapes",
-    "rawTimeline": "Chronologie brute (JSON)",
+    "rawTimeline": "Chronologie brute (JSON) :",
     "noStageTimeline": "Aucune chronologie d'étapes disponible.",
     "matchedText": "Texte apparié",
     "matchStatus": "Statut d'appariement",
@@ -1367,9 +1482,12 @@
     "agentUsage": "Utilisation de l'agent",
     "metric": "Métrique",
     "sentenceCompare": "Comparaison de phrases",
+    "sentenceCompareLabel": "Comparaison de phrases :",
     "fallbackCompare": "Comparaison de repli",
-    "sentenceCompareUsed": "Comparaison de phrases utilisée",
+    "fallbackCompareLabel": "Comparaison de repli :",
+    "sentenceCompareUsed": "Comparaison de phrases utilisée :",
     "fallbackCompareUsed": "Comparaison de repli utilisée",
+    "fallbackCompareUsedLabel": "Comparaison de repli utilisée :",
     "field": "Champ",
     "value": "Valeur",
     "fallbackCompareChecks": "Vérifications de la comparaison de repli",
@@ -1419,9 +1537,9 @@
     "note": "Questions arrêtées par les mesures de sûreté et de sécurité avant d'atteindre l'étape de la réponse. Le texte de la question n'est jamais conservé — seul le nombre par type l'est. Données présentées pour l'ensemble des institutions (les blocages surviennent avant l'identification de l'institution).",
     "deptNote": "Les requêtes bloquées ne peuvent pas être ventilées par institution, car les blocages surviennent avant l'identification de l'institution. Retirez le filtre d'institution pour voir le nombre de requêtes bloquées.",
     "colType": "Type de blocage",
-    "colTotal": "Total",
-    "colEn": "EN",
-    "colFr": "FR",
+    "colTotal": "Total :",
+    "colEn": "EN :",
+    "colFr": "FR :",
     "totalRow": "Total bloqué",
     "types": {
       "tooShort": "Trop courte (1–2 mots)",
@@ -1820,7 +1938,7 @@
     "regenerateEmbeddings": "Régénérer les embeddings",
     "regenerating": "Régénération...",
     "processing": "Traitement...",
-    "remaining": "Restant",
+    "remaining": "Restant :",
     "autoProcessingActive": "Traitement automatique actif",
     "metadataBackfillTitle": "Remplissage des métadonnées des incorporations",
     "metadataBackfillDescription": "Remplir les métadonnées des incorporations dans une tâche en arrière-plan qui continue après votre départ de cette page.",
@@ -1838,7 +1956,7 @@
     "metadataBackfillStopped": "Arrêté",
     "metadataBackfillStoppedAnnouncement": "Remplissage des métadonnées des incorporations arrêté.",
     "metadataBackfillStopFailed": "Échec de l'arrêt du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
-    "metadataProcessed": "Traités",
+    "metadataProcessed": "Traités :",
     "metadataResumeFromId": "ID de reprise enregistré : {id}",
     "metadataBackfillFailed": "Échec du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
     "metadataBackfillCompleted": "Remplissage des métadonnées des incorporations terminé.",
@@ -1898,10 +2016,10 @@
       "loading": "Recherche des métadonnées...",
       "failed": "Échec de la recherche des métadonnées des incorporations.",
       "chatSummary": {
-        "chatId": "ID du clavardage",
-        "pageLanguage": "Langue de la page",
-        "interactions": "Interactions",
-        "embeddings": "Incorporations"
+        "chatId": "ID du clavardage :",
+        "pageLanguage": "Langue de la page :",
+        "interactions": "Interactions :",
+        "embeddings": "Incorporations :"
       },
       "columns": {
         "row": "Ligne",
@@ -1937,7 +2055,7 @@
     "loadingSimilarChats": "Chargement des chats similaires...",
     "enterChatId": "Veuillez entrer un identifiant de clavardage.",
     "fetchError": "Impossible de récupérer les clavardages similaires",
-    "fetchErrorDetail": "Impossible de récupérer les clavardages similaires : {message}",
+    "fetchErrorDetail": "Impossible de récupérer les clavardages similaires : {error}",
     "columns": {
       "chatId": "ID du clavardage",
       "similarity": "Similarité",
@@ -2031,7 +2149,7 @@
     "table": {
       "enabled": "Utiliser ce scénario pour les tests",
       "enabledError": "Veuillez d'abord apporter une modification au scénario.",
-      "lastUpdated": "Dernière mise à jour"
+      "lastUpdated": "Dernière mise à jour :"
     },
     "buttons": {
       "save": "Enregistrer",
@@ -2087,11 +2205,11 @@
     "errors": "Erreurs",
     "warnings": "Avertissements",
     "notConfigured": "Non configuré",
-    "lastRun": "Dernière exécution",
+    "lastRun": "Dernière exécution :",
     "serviceDetails": "Détails du service",
-    "latency": "Latence",
+    "latency": "Latence :",
     "details": "Détails",
-    "error": "Erreur"
+    "error": "Erreur :"
   },
   "validation": {
     "required": "Veuillez remplir ce champ.",
@@ -2163,7 +2281,7 @@
       "categoryPlaceholder": "p. ex. cra, ircc, bias, pii, red-team",
       "suiteView": "Grille de la suite",
       "runCountLabel": "Exécutions",
-      "requiredColumns": "Colonnes",
+      "requiredColumns": "Colonnes :",
       "columnAliasHint": "La correspondance des noms de colonnes ignore la casse, les espaces, les traits d’union et les traits de soulignement. Les colonnes supplémentaires sont conservées et ignorées, sauf si elles sont incompatibles avec le type d’ensemble sélectionné.",
       "uploadDescriptions": {
         "questionOnly": "Utilisez ce type lorsque vous voulez que le système génère une nouvelle réponse pendant l’analyse. N’incluez pas de colonne de réponse ou de réponse de référence.",
@@ -2213,7 +2331,7 @@
       "configuration": "Configuration",
       "selectAnalyzers": "Sélectionner un analyseur",
       "analyzerDetailsTitle": "Détails de l'analyseur",
-      "analyzerPrefix": "Analyseur",
+      "analyzerPrefix": "Analyseur :",
       "workflowLabel": "Flux de travail",
       "analysisMode": {
         "label": "Mode d’analyse",
@@ -2228,6 +2346,7 @@
       },
       "comparison": {
         "title": "Comparer les lots terminés",
+        "titlePrefix": "Comparer les lots terminés :",
         "hint": "Sélectionnez un lot de référence, puis un lot terminé utilisant le même analyseur. Les essais sont comparés selon leur index jusqu’au plus petit nombre d’essais.",
         "analyzerDetailsTitle": "Détails de l’analyseur de comparaison",
         "analyzers": {
@@ -2282,6 +2401,7 @@
           }
         },
         "baseline": "Lot de référence",
+        "baselinePrefix": "Lot de référence :",
         "candidate": "Comparer à",
         "selectBaseline": "-- Sélectionner un lot de référence --",
         "selectCandidate": "-- Sélectionner un lot à comparer --",
@@ -2591,7 +2711,7 @@
       "scoreAny": "au moins un essai",
       "captureRun": "Lot de référence — non noté par rapport à une référence",
       "newRun": "Nouveau lot d'analyse",
-      "categoryLabel": "Catégorie",
+      "categoryLabel": "Catégorie :",
       "columnsHint": "Les noms de colonnes proviennent d'une colonne facultative testName dans l'ensemble de données. Étiquetez les lignes avec une colonne caseType (control, edge, boundary) pour décrire le rôle de chaque test. Cliquez sur une cellule pour ouvrir cette réponse.",
       "caseType": {
         "control": "Contrôle",

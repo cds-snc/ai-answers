@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import UsersPage from '../UsersPage.js';
+import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
@@ -22,10 +23,11 @@ vi.mock('../../contexts/AuthContext.js', () => ({
   useAuth: () => ({ currentUser: { role: 'admin', _id: 'me' } }),
 }));
 
-const { mockGetAll, mockDelete, mockUpdate } = vi.hoisted(() => ({
+const { mockGetAll, mockDelete, mockUpdate, lastColumns } = vi.hoisted(() => ({
   mockGetAll: vi.fn(),
   mockDelete: vi.fn(),
   mockUpdate: vi.fn(),
+  lastColumns: { current: null },
 }));
 vi.mock('../../services/UserService.js', () => ({
   default: {
@@ -42,6 +44,7 @@ vi.mock('../../services/UserService.js', () => ({
 // here.
 vi.mock('datatables.net-react', () => {
   const MockDataTable = ({ data, options, columns }) => {
+    lastColumns.current = columns;
     const ref = React.useRef(null);
     React.useEffect(() => {
       if (!ref.current || !options?.createdRow || !data || !data[0]) return;
@@ -50,9 +53,9 @@ vi.mock('datatables.net-react', () => {
       // instead of accumulating duplicates.
       ref.current.innerHTML = '';
       const tr = document.createElement('tr');
-      // Render every column's display cell the way DataTables would, so the
-      // inline select change handlers attached in createdRow can be
-      // exercised; the actions cell stays last.
+      // Render every column's display cell the way DataTables would, so
+      // the inline select/input change handlers attached in createdRow
+      // can be exercised; the actions cell stays last.
       (columns || []).forEach((col) => {
         const td = document.createElement('td');
         if (col.data && typeof col.render === 'function') {
@@ -86,6 +89,7 @@ describe('UsersPage StatusMessage roles', () => {
     cleanup();
     mockGetAll.mockReset();
     mockDelete.mockReset();
+    mockUpdate.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -236,5 +240,108 @@ describe('UsersPage select changes stage instead of autosaving', () => {
     fireEvent.change(roleSelect, { target: { value: 'partner' } });
     expect(screen.getByText('users.actions.save').disabled).toBe(true);
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('UsersPage institution and group columns', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetAll.mockReset();
+    mockUpdate.mockReset();
+  });
+
+  it('renders institution and group selects per user, and stages both changes until Save', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions' }]);
+    mockUpdate.mockImplementation(async (userId, updates) => ({ _id: userId, email: 'a@b.com', role: 'partner', active: true, ...updates }));
+
+    renderWithRouter(<UsersPage lang="en" />);
+
+    const institutionSelect = await screen.findByLabelText('users.columns.institution — a@b.com');
+    expect(institutionSelect.tagName).toBe('SELECT');
+    expect(institutionSelect.value).toBe('DND-MDN');
+    // Unassigned option first, then the shared partner list
+    expect(institutionSelect.options[0].value).toBe('');
+    expect(institutionSelect.options[0].textContent).toBe('users.institutionNone');
+    expect(Array.from(institutionSelect.options).some(o => o.value === 'IRCC')).toBe(true);
+
+    const groupSelect = screen.getByLabelText('users.columns.group — a@b.com');
+    expect(groupSelect.tagName).toBe('SELECT');
+    expect(groupSelect.value).toBe('Military transitions');
+    expect(groupSelect.options[0].value).toBe('');
+    expect(groupSelect.options[0].textContent).toBe('users.groupNone');
+
+    // Military transitions belongs to DND-MDN, so moving to IRCC drops it
+    // and leaves IRCC's (empty) group list.
+    fireEvent.change(institutionSelect, { target: { value: 'IRCC' } });
+    expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
+    expect(screen.getByText('users.groupNone')).toBeTruthy();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    // renderActionsCell rebuilds this cell's DOM node (getCellRoot), so the
+    // enabled button after staging is a new element — re-query for it.
+    fireEvent.click(screen.getByText('users.actions.save'));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
+    expect(mockUpdate).toHaveBeenCalledWith('u1', expect.objectContaining({ institution: 'IRCC', group: '', role: 'partner', active: true }));
+
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    const groupAfter = screen.getByLabelText('users.columns.group — a@b.com');
+    expect(Array.from(groupAfter.options).map(o => o.value)).toEqual(['', 'Military transitions']);
+    fireEvent.change(groupAfter, { target: { value: 'Military transitions' } });
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByText('users.actions.save'));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2));
+    expect(mockUpdate.mock.calls[1][1]).toEqual(expect.objectContaining({ institution: 'DND-MDN', group: 'Military transitions' }));
+  });
+
+  it('restores the picked group when arrowing back to its institution (closed select fires change per arrow key)', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'IRCC' } });
+    // The mock table rebuilds the row on every render, so re-query.
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    expect(screen.getByLabelText('users.columns.group — a@b.com').value).toBe('Military transitions');
+  });
+
+  it('announces the group being cleared and set back, once each, while arrowing institutions', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'IRCC' } });
+    // group already empty: nothing to say
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'CRA-ARC' } });
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    await waitForAnnouncement('users.groupRestoredAnnouncement');
+    expect(getAnnouncedTexts()).toEqual(['users.groupClearedAnnouncement', 'users.groupRestoredAnnouncement']);
+  });
+
+  it('shows None for group when a row has no institution', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: '', group: '' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    expect(await screen.findByText('users.groupNone')).toBeTruthy();
+    expect(screen.queryByLabelText('users.columns.group — a@b.com')).toBeNull();
+  });
+
+  it('keeps a stored group that doesn\'t fit the institution visible instead of showing none', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'IRCC', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    const groupSelect = await screen.findByLabelText('users.columns.group — a@b.com');
+    expect(groupSelect.value).toBe('Military transitions');
+  });
+});
+
+describe('UsersPage created date column', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetAll.mockReset();
+  });
+
+  it('sorts on the raw date, not the displayed text', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'admin', active: true, createdAt: '2026-09-03T12:00:00.000Z' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    await screen.findByText('users.actions.delete');
+
+    const col = lastColumns.current.find((c) => c.data === 'createdAt');
+    const iso = '2026-09-03T12:00:00.000Z';
+    expect(col.render(iso, 'sort')).toBe(new Date(iso).getTime());
+    expect(col.render(iso, 'type')).toBe(new Date(iso).getTime());
+    expect(col.render(iso, 'display')).toBe(new Date(iso).toLocaleDateString());
   });
 });

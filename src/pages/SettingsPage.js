@@ -5,6 +5,7 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
+import { SEARCH_PROVIDERS, SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
@@ -74,6 +75,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'site.baseUrl': '',
   'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
+  'search.default': DEFAULT_SEARCH_PROVIDER,
   'chat.transport': 'sse',
   'downloadWebPage.cache.enabled': 'false',
   'downloadWebPage.cache.durationHours': '12',
@@ -121,7 +123,7 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+    'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
   cache: ['downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
   health: [
@@ -180,6 +182,7 @@ const FIELD_META = {
   'downloadWebPage.cache.enabled': { fieldId: 'download-web-page-cache-enabled', labelKey: 'settings.downloadWebPageCache.enabledLabel' },
   'downloadWebPage.cache.durationHours': { fieldId: 'download-web-page-cache-duration-hours', labelKey: 'settings.downloadWebPageCache.durationHoursLabel' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
+  'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
   'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
@@ -247,6 +250,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
+  const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
   const [chatTransport, setChatTransport] = useState('sse');
   const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
   const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
@@ -422,6 +426,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       const defaultWorkflowSetting = settings['workflow.default'];
       setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
+      setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
       setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
@@ -798,6 +803,25 @@ const SettingsPage = ({ lang = 'en' }) => {
           >
             {AVAILABLE_MODELS.map(m => (
               <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
+            ))}
+          </select>
+
+            {fieldErrors['search.default'] && (
+              <FeedbackInlineError id="default-search-provider-error" message={fieldErrors['search.default']} announce={false} />
+            )}
+          <label htmlFor="default-search-provider" className="filter-label display-block mt-200">
+            {t('settings.defaultSearchProvider.label')}
+          </label>
+          <select
+            id="default-search-provider"
+            className="filter-select"
+            value={defaultSearchProvider}
+            onChange={(e) => { const v = e.target.value; setDefaultSearchProvider(v); stageChange('search.default', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
+          >
+            {SEARCH_PROVIDERS.map((provider) => (
+              <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
             ))}
           </select>
 
@@ -1455,7 +1479,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langEnglish')}</h2>
 
             <label htmlFor="redaction.profanity.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.profanity')} (EN)
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.profanity.en"
@@ -1466,7 +1490,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.threat.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.threat')} (EN)
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.threat.en"
@@ -1477,7 +1501,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.manipulation.en" className="filter-label display-block mt-200">
-              {t('settings.redaction.manipulation')} (EN)
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixEn')}
             </label>
             <SettingsTextArea
               settingKey="redaction.manipulation.en"
@@ -1492,7 +1516,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langFrench')}</h2>
 
             <label htmlFor="redaction.profanity.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.profanity')} (FR)
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.profanity.fr"
@@ -1503,7 +1527,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.threat.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.threat')} (FR)
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.threat.fr"
@@ -1514,7 +1538,7 @@ const SettingsPage = ({ lang = 'en' }) => {
             />
 
             <label htmlFor="redaction.manipulation.fr" className="filter-label display-block mt-200">
-              {t('settings.redaction.manipulation')} (FR)
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixFr')}
             </label>
             <SettingsTextArea
               settingKey="redaction.manipulation.fr"

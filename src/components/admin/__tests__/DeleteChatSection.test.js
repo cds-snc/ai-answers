@@ -9,7 +9,7 @@ import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.deleteChat.success': '{chatId} deleted successfully.',
-  'admin.deleteChat.error': 'Failed to delete chat: {message}',
+  'admin.deleteChat.error': 'Failed to delete chat: {error}',
   'admin.deleteChat.idLabel': 'Chat ID',
   'admin.deleteChat.title': 'Delete a chat from the logs',
   'admin.deleteChat.button': 'Delete chat',

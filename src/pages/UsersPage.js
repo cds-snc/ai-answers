@@ -13,6 +13,9 @@ import { useAuth } from '../contexts/AuthContext.js';
 import { usePageContext } from '../hooks/usePageParam.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
+import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
+import { getPartnerGroupLabel, groupsForInstitution, groupFitsInstitution } from '../constants/partnerGroups.js';
+import { announce } from '../utils/liveAnnouncer.js';
 
 DataTable.use(DT);
 
@@ -89,6 +92,8 @@ const UsersPage = ({ lang }) => {
         editStatesRef.current[user._id] = {
           role: user.role,
           active: user.active,
+          institution: user.institution || '',
+          group: user.group || '',
           changed: false
         };
       });
@@ -130,7 +135,9 @@ const UsersPage = ({ lang }) => {
       const matchingUser = users.find(u => u._id === userId);
       editStatesRef.current[userId] = {
         role: matchingUser?.role || '',
-        active: matchingUser?.active || false
+        active: matchingUser?.active || false,
+        institution: matchingUser?.institution || '',
+        group: matchingUser?.group || ''
       };
     }
     const edit = editStatesRef.current[userId];
@@ -142,7 +149,9 @@ const UsersPage = ({ lang }) => {
     const original = userSnapshotsRef.current[userId];
     edit.changed = !original
       || normalizeRole(edit.role) !== normalizeRole(original.role)
-      || toBooleanish(edit.active) !== toBooleanish(original.active);
+      || toBooleanish(edit.active) !== toBooleanish(original.active)
+      || edit.institution !== (original.institution || '')
+      || edit.group !== (original.group || '');
 
     renderActionsCell(userId);
   };
@@ -166,7 +175,9 @@ const UsersPage = ({ lang }) => {
     try {
       const updatedUser = await UserService.update(userId, {
         active: edit.active,
-        role: edit.role
+        role: edit.role,
+        institution: edit.institution,
+        group: edit.group
       });
 
       // Update users array — this does redraw the table, but only once per
@@ -265,10 +276,25 @@ const UsersPage = ({ lang }) => {
     return () => { didCancel = true; };
   }, []);
 
+  // Group cell for one row: a select with none plus the institution's own
+  // groups, or plain "None" when the institution has none. A stored group that
+  // doesn't fit (older data) stays listed so it isn't shown as none.
+  const groupCellHtml = (userId, email, institution, value) => {
+    const groups = groupsForInstitution(institution);
+    if (value && !groups.includes(value)) groups.push(value);
+    if (!groups.length) return escapeHtmlAttribute(t('users.groupNone'));
+    const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.groupNone'))}</option>`;
+    const optionsHtml = groups.map(g => `<option value="${escapeHtmlAttribute(g)}"${g === value ? ' selected' : ''}>${escapeHtmlAttribute(getPartnerGroupLabel(g, lang))}</option>`).join('');
+    const ariaLabel = escapeHtmlAttribute(`${t('users.columns.group')} — ${email || userId}`);
+    return `<select data-userid="${userId}" data-field="group" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${noneOption}${optionsHtml}</select>`;
+  };
+
   const columns = [
-    { title: t('users.columns.email'), data: 'email' },
+    { title: t('users.columns.email'), data: 'email', className: 'col-email' },
     {
       title: t('users.columns.role'),
+      width: '1%', // shrink to the fit-width select
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'role',
       render: (data, type, row) => {
         const userId = row._id;
@@ -295,13 +321,15 @@ const UsersPage = ({ lang }) => {
           const extraOption = !isKnownKey ? `<option value="" selected>${naLabel}</option>` : '';
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.role')} — ${row.email || userId}`);
 
-          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" style="width: 100%">${extraOption}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="role" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${extraOption}${optionsHtml}</select>`;
         }
         return label;
       }
     },
     {
       title: t('users.columns.status'),
+      width: '1%', // shrink to the fit-width select
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'active',
       render: (data, type, row) => {
         const userId = row._id;
@@ -325,15 +353,51 @@ const UsersPage = ({ lang }) => {
           const placeholder = option ? '' : `<option value="" selected>${naLabel}</option>`;
           const optionsHtml = statusOptions.map(opt => `<option value="${opt.value}"${opt.value === value ? ' selected' : ''}>${t('users.status.' + (opt.value ? 'active' : 'inactive'))}</option>`).join('');
           const ariaLabel = escapeHtmlAttribute(`${t('users.columns.status')} — ${row.email || userId}`);
-          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" style="width: 100%">${placeholder}${optionsHtml}</select>`;
+          return `<select data-userid="${userId}" data-field="active" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${placeholder}${optionsHtml}</select>`;
+        }
+        return label;
+      }
+    },
+    {
+      title: t('users.columns.institution'),
+      width: '1%', // shrink to the fit-width select
+      data: 'institution',
+      render: (data, type, row) => {
+        const userId = row._id;
+        const value = editStatesRef.current[userId]?.institution ?? data ?? '';
+        const label = value || t('users.institutionNone');
+        if (type === 'display') {
+          const noneOption = `<option value=""${value === '' ? ' selected' : ''}>${escapeHtmlAttribute(t('users.institutionNone'))}</option>`;
+          const optionsHtml = PARTNER_DEPARTMENTS.map(d => `<option value="${escapeHtmlAttribute(d)}"${d === value ? ' selected' : ''}>${escapeHtmlAttribute(d)}</option>`).join('');
+          const ariaLabel = escapeHtmlAttribute(`${t('users.columns.institution')} — ${row.email || userId}`);
+          return `<select data-userid="${userId}" data-field="institution" aria-label="${ariaLabel}" class="filter-select filter-select--fit">${noneOption}${optionsHtml}</select>`;
+        }
+        return label;
+      }
+    },
+    {
+      // TODO: groups are a hardcoded PARTNER_GROUPS list; add a "manage
+      // groups" page/section here to create/edit them instead.
+      title: t('users.columns.group'),
+      width: '1%', // shrink to the fit-width select
+      data: 'group',
+      render: (data, type, row) => {
+        const userId = row._id;
+        const value = editStatesRef.current[userId]?.group ?? data ?? '';
+        const label = value ? getPartnerGroupLabel(value, lang) : t('users.groupNone');
+        if (type === 'display') {
+          const institution = editStatesRef.current[userId]?.institution ?? row.institution ?? '';
+          return `<div data-group-cell>${groupCellHtml(userId, row.email, institution, value)}</div>`;
         }
         return label;
       }
     },
     {
       title: t('users.columns.createdAt'),
+      width: '1%', // dates are short; shrink to fit
+      className: 'dt-left', // numeric sort value would right-align it
       data: 'createdAt',
-      render: (data) => new Date(data).toLocaleDateString()
+      render: (data, type) => (type === 'sort' || type === 'type') ? new Date(data).getTime() : new Date(data).toLocaleDateString()
     },
     {
       title: t('users.columns.actions'),
@@ -364,7 +428,7 @@ const UsersPage = ({ lang }) => {
         nonce={statusNonce}
       />
 
-      <div className="metrics-table-container">
+      <div className="dashboard-table-container">
       <DataTable
         data={users}
         className="display dashboard-table zebra-stable-on-hover"
@@ -374,7 +438,7 @@ const UsersPage = ({ lang }) => {
           paging: true,
           searching: true,
           ordering: true,
-          order: [[3, 'desc']],
+          order: [[5, 'desc']],
           // Same zones as the dashboards: filter box top-left, page info +
           // entries-per-page bottom-left, paging bottom-right.
           layout: {
@@ -398,7 +462,7 @@ const UsersPage = ({ lang }) => {
             // fires `change` on every arrow-key press, so autosaving here
             // could commit an unintended, privilege-escalating role change
             // before the user lands on the one they meant to pick.
-            row.querySelectorAll('select[data-field]').forEach(select => {
+            const bindSelect = (select) => {
               select.onchange = () => {
                 const userId = select.getAttribute('data-userid');
                 const field = select.getAttribute('data-field');
@@ -407,14 +471,41 @@ const UsersPage = ({ lang }) => {
                   value = toBooleanish(value);
                 }
                 handleFieldChange(userId, field, value);
+                // The group list depends on the institution: rebuild it, and
+                // drop a group that doesn't belong to the new institution.
+                // Back on the saved institution, the saved group comes back:
+                // arrowing through a closed <select> fires change on every option.
+                if (field === 'institution') {
+                  const original = userSnapshotsRef.current[userId];
+                  const prevGroup = editStatesRef.current[userId].group;
+                  if (value === (original?.institution || '')) {
+                    handleFieldChange(userId, 'group', original?.group || '');
+                  } else if (!groupFitsInstitution(prevGroup, value)) {
+                    handleFieldChange(userId, 'group', '');
+                  }
+                  // The group select changes out of view of the institution one, so say so.
+                  const newGroup = editStatesRef.current[userId].group;
+                  if (newGroup !== prevGroup) {
+                    announce(newGroup
+                      ? t('users.groupRestoredAnnouncement').replace('{group}', () => getPartnerGroupLabel(newGroup, lang))
+                      : t('users.groupClearedAnnouncement'));
+                  }
+                  const groupCell = row.querySelector('[data-group-cell]');
+                  if (groupCell) {
+                    groupCell.innerHTML = groupCellHtml(userId, data.email, value, editStatesRef.current[userId].group);
+                    const groupSelect = groupCell.querySelector('select');
+                    if (groupSelect) bindSelect(groupSelect);
+                  }
+                }
               };
-            });
+            };
+            row.querySelectorAll('select[data-field]').forEach(bindSelect);
 
             // Render Save and Delete buttons. getCellRoot() clears any stale
             // content and unmounts a prior root as needed.
             const actionsCell = row.querySelector('td:last-child');
             actionCellsRef.current[data._id] = actionsCell;
-            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active };
+            userSnapshotsRef.current[data._id] = { email: data.email, role: data.role, active: data.active, institution: data.institution, group: data.group };
             renderActionsCell(data._id);
           },
         }}

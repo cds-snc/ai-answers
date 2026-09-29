@@ -15,12 +15,25 @@ French users. Both are stored exactly as written here.
 
 | English | Français |
 |---|---|
-| Compensation for illness or injury | Indemnité en cas de maladie ou de blessure |
-| Income support | Soutien du revenu |
-| Medical costs | Frais médicaux |
-| Emergency funds | Fonds d'urgence |
-| Help at home | Aide à domicile |
-| Death and bereavement | Décès et deuil |
 | Prisoner of War benefits | Indemnisation de prisonnier de guerre |
 | Funding programs for organizations | Programmes de financement à l'intention d'organismes |
 | Financial management | Gestion financière |
+| Additional Pain and Suffering Compensation | Indemnité supplémentaire pour douleur et souffrance |
+| Attendance Allowance | Allocation pour soins |
+| Canadian Forces Income Support | Soutien du revenu des Forces canadiennes |
+| Career Transition Services | Services de réorientation professionnelle |
+| Clothing Allowance | Allocation vestimentaire |
+| Critical Injury Benefit | Indemnité pour blessure grave |
+| Death and bereavement programs | Programmes de décès et deuil |
+| Disability Benefits | Prestations d'invalidité |
+| Education and Training Benefit | Allocation pour études et formation |
+| Exceptional Incapacity Allowance | Allocation d'incapacité exceptionnelle |
+| Income Replacement Benefit | Prestation de remplacement du revenu |
+| My VAC Account | Mon dossier ACC |
+| Rehabilitation Program | Programme de réadaptation |
+| Remembrance | Commémoration |
+| Treatment Benefits | Avantages médicaux |
+| VAC Assistance Service | Service d'aide d'ACC |
+| Veterans Emergency Fund | Fonds d'urgence pour les vétérans |
+| Veterans Independence Program | Programme pour l'autonomie des anciens combattants |
+| War Veterans Allowance | Allocation aux anciens combattants |

@@ -12,7 +12,7 @@ const TRANSLATIONS = {
   'admin.deleteExpertEval.idLabel': 'Chat ID',
   'admin.deleteExpertEval.button': 'Delete expert evaluation',
   'admin.deleteExpertEval.loading': 'Deleting...',
-  'admin.deleteExpertEval.error': 'Failed to delete expert evaluation: {message}',
+  'admin.deleteExpertEval.error': 'Failed to delete expert evaluation: {error}',
   'admin.deleteExpertEval.notEvaluated': 'Not evaluated.',
   'admin.deleteExpertEval.success': 'Deleted {count} expert feedback record(s) for {chatId}.',
   'common.confirmDelete': 'Are you sure you want to delete this data?',

@@ -14,7 +14,7 @@ The English names anchor the classifier; the French names are used for display t
 French users. Both are stored exactly as written here.
 
 | English | Français |
-|---------------------------------------------|--------------------------------------------------------------|
+|---|---|
 | CRA Account | Compte de l'ARC |
 | My Account | Mon dossier |
 | My Business Account | Mon dossier d'entreprise |
@@ -29,13 +29,21 @@ French users. Both are stored exactly as written here.
 | Business Number (BN) | Numéro d'entreprise (NE) |
 | GST/HST | TPS/TVH |
 | Payroll | Retenues sur la paie |
-| Employer | Employeur |
 | Registered retirement savings plan (RRSP) | Régime enregistré d'épargne-retraite (REER) |
 | Registered Education Savings Plan (RESP) | Régime enregistré d'épargne-études (REEE) |
 | Registered disability savings plan | Régime enregistré d'épargne-invalidité (REEI) |
 | Tax-free savings account (TFSA) | Compte d'épargne libre d'impôt (CELI) |
 | Underused Housing Tax | Taxe sur les logements sous-utilisés |
-| Canada Disability Benefit | Prestation canadienne pour les personnes handicapées |
 | Voluntary Disclosures | Divulgations volontaires |
 | Taxpayer relief provisions | Dispositions d'allègement pour les contribuables |
 | Charities | Organismes de bienfaisance |
+| Business registration with the CRA | Inscription d'une entreprise auprès de l'ARC |
+| Child disability benefit (CDB) | Prestation pour enfants handicapés (PEH) |
+| Excise and specialty taxes | Taxes d'accise et taxes spéciales |
+| Home accessibility tax credit | Crédit d'impôt pour l'accessibilité domiciliaire |
+| International and non-resident taxes | Impôt international et des non-résidents |
+| Payments to the CRA | Paiements faits à l'ARC |
+| Savings and pension plan administration | Administration des régimes d'épargne et de pension |
+| Scams and fraud | Arnaques et fraudes |
+| Scientific Research and Experimental Development (SR&ED) tax incentives | Encouragements fiscaux pour la recherche scientifique et le développement expérimental (RS&DE) |
+| Trust income tax return | Déclaration de revenus des fiducies |

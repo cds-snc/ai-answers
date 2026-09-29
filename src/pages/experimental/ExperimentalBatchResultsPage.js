@@ -76,10 +76,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                     {batch?.name || t('experimental.results.title')}
                 </GcdsHeading>
                 {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
-                {/* TODO: assess whether the back-link here should be nav-wrapped with
-                    an aria-label, matching the admin "back to admin" pattern — it's
-                    mixed in with the "view suite" action link, not a standalone nav. */}
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                <nav aria-label={t('admin.navigation.ariaLabel')} style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
                     <GcdsLink href={`${getPath('experimental-analysis', lang)}${batch?.config?.datasetId
                         ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}${returnToComparisonTab ? '&tab=comparison' : ''}`
                         : returnToComparisonTab ? '?tab=comparison' : ''}`}>
@@ -90,7 +87,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
                             {t('experimental.analysis.suiteView')}
                         </GcdsLink>
                     )}
-                </div>
+                </nav>
             </header>
 
             {error && (

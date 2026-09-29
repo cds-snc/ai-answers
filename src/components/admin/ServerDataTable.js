@@ -1,17 +1,20 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
 import { escapeHtml } from '../../utils/htmlEscape.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import { announce } from '../../utils/liveAnnouncer.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 DataTable.use(DT);
 
 // The stable, shared server-side DataTable wrapper — SettingsPage.js is its
 // first consumer. Every other server-side table in the app (ChatDashboardPage,
-// EvalDashboardPage, AutoEvalDashboardPage, SessionPage, UsersPage,
-// PublicEvalPage) still hand-rolls its own DataTable.use(DT)/columns/options/
+// EvalDashboardPage, AutoEvalDashboardPage, SessionPage, UsersPage) still
+// hand-rolls its own DataTable.use(DT)/columns/options/
 // ajax wiring; components/experimental/ExperimentalServerDataTable.js is a
 // second, near-identical wrapper used only by the two experimental pages.
 //
@@ -29,6 +32,9 @@ DataTable.use(DT);
 // having to consider "does this break Settings/Chat dashboard/etc.?"
 const ServerDataTable = forwardRef(function ServerDataTable({
     columns,
+    // Accessible name for the table (rendered as an sr-only <caption>) -
+    // pass the section heading so AT users get a named table.
+    caption,
     fetchData,
     lang = 'en',
     actionsTitle,
@@ -43,17 +49,40 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     // text sr-only so the input still has an accessible name.
     searchLabelSrOnly,
     searchPlaceholder,
-    // sr-only <caption> naming the table for screen readers.
-    caption,
     actionsWidth,
     autoWidth = true,
     ordering = true,
     pageLength = 10,
     lengthChange = true,
     layout,
-    onError
+    onError,
+    // Overrides the LoadingOverlay text shown while a fetch is in flight
+    // (see `loading` state below) — defaults to the generic common.loading
+    // string, which is fine for a table with nothing more specific to say.
+    loadingMessage,
+    // Optional DataTables lifecycle hooks a caller can pass straight
+    // through - e.g. utils/admin/chatGroupedTable.js's row-grouping trio
+    // (AccountPage.js's assigned-chats table). Composed with this
+    // component's own createdRow (renderActions) below, never replacing
+    // it - every other caller passes none of these and sees no change.
+    createdRow: createdRowProp,
+    preDrawCallback,
+    drawCallback,
+    // Adds dashboard-table--grouped (admin.css) alongside the trio above -
+    // that's the class the chat-group-a/b striping and group-cell rules are
+    // actually scoped to, same as ChatDashboardPage/EvalDashboardPage/
+    // AutoEvalDashboardPage's own hand-rolled DataTable className.
+    grouped = false
 }, ref) {
+    const { t } = useTranslations(lang);
     const initialResultRef = useRef(initialResult);
+    // Drives the scoped LoadingOverlay below, replacing DataTables' own
+    // `processing: true` node — that node only ever toggles CSS `display`,
+    // never re-inserts itself or changes its text, so most screen readers
+    // never announce it (see dashboards.md's loading-states convention).
+    // Starts true: the ajax callback below fires on mount just like any
+    // later reload, so the first paint is a genuine loading state too.
+    const [loading, setLoading] = useState(true);
     // The live DataTables API instance, captured via initComplete (the same
     // pattern ChatDashboardPage.js already uses) rather than a ref on
     // <DataTable> itself, since datatables.net-react doesn't forward one.
@@ -80,7 +109,6 @@ const ServerDataTable = forwardRef(function ServerDataTable({
     }, [actionsTitle, actionsWidth, columns, renderActions]);
 
     const options = useMemo(() => ({
-        processing: true,
         serverSide: true,
         paging: true,
         searching: true,
@@ -103,6 +131,7 @@ const ServerDataTable = forwardRef(function ServerDataTable({
             ...(searchPlaceholder ? { searchPlaceholder } : {})
         },
         ajax: async (params, callback) => {
+            setLoading(true);
             try {
                 const sort = params.order?.[0];
                 const result = initialResultRef.current || await fetchData({
@@ -128,6 +157,13 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                     recordsFiltered,
                     data
                 });
+                setLoading(false);
+                // The overlay's "Loading…" is skippable: liveAnnouncer.js only
+                // drops it if a newer announcement lands first, so without this
+                // a fast load would still read "Loading…" after the rows appeared.
+                // Generic on purpose (dashboards.md); a page hosting several of
+                // these should own one page-level announcement instead.
+                announce(recordsFiltered === 0 ? t('admin.common.noData') : t('admin.common.resultsLoaded'), { assertive: true });
             } catch (error) {
                 // Previously: swallowed into an empty result with only a
                 // console.error — a genuine fetch failure and "this table
@@ -140,34 +176,53 @@ const ServerDataTable = forwardRef(function ServerDataTable({
                 console.error('Failed to load table data:', error);
                 onError?.(error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                setLoading(false);
             }
         },
-        createdRow: renderActions ? (row, rowData) => {
-            const actionsCell = row.querySelector('td:last-child');
-            if (!actionsCell) return;
-            if (actionsCell._serverDataTableRoot) actionsCell._serverDataTableRoot.unmount();
-            const root = createRoot(actionsCell);
-            actionsCell._serverDataTableRoot = root;
-            root.render(renderActions(rowData));
+        createdRow: (renderActions || createdRowProp) ? (row, rowData) => {
+            if (renderActions) {
+                const actionsCell = row.querySelector('td:last-child');
+                if (actionsCell) {
+                    if (actionsCell._serverDataTableRoot) actionsCell._serverDataTableRoot.unmount();
+                    const root = createRoot(actionsCell);
+                    actionsCell._serverDataTableRoot = root;
+                    root.render(renderActions(rowData));
+                }
+            }
+            createdRowProp?.(row, rowData);
         } : undefined,
+        preDrawCallback,
+        drawCallback,
         initComplete: function () {
             tableApiRef.current = this.api();
         }
-    }), [autoWidth, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
+    }), [autoWidth, createdRowProp, drawCallback, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, preDrawCallback, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
 
     return (
         // tabIndex makes this reachable by keyboard when its content overflows
         // horizontally (a wide table, or a narrow viewport) — without it, a
         // keyboard user has no way to scroll the table into view sideways.
         <div className={containerClassName} tabIndex={0}>
-            <DataTable
-                key={tableKey}
-                className="display dashboard-table zebra-stable-on-hover"
-                columns={tableColumns}
-                options={options}
-            >
-                {caption ? <caption className="sr-only">{caption}</caption> : null}
-            </DataTable>
+            {/* server-data-table-loading-wrapper: dedicated positioned
+                ancestor for the scoped LoadingOverlay below — not
+                containerClassName, since that's caller-supplied/shared
+                across other tables and pages, not something this component
+                should redefine the stacking behavior of. isolation: isolate
+                (admin.css) keeps loading-overlay--scoped's z-index confined
+                to this table instead of comparing against the page's root
+                stacking context, which position: relative alone would not
+                do. */}
+            <div className="server-data-table-loading-wrapper">
+                <DataTable
+                    key={tableKey}
+                    className={`display dashboard-table zebra-stable-on-hover${grouped ? ' dashboard-table--grouped' : ''}`}
+                    columns={tableColumns}
+                    options={options}
+                >
+                    {caption ? <caption className="sr-only">{caption}</caption> : null}
+                </DataTable>
+                {loading && <LoadingOverlay scoped message={loadingMessage || t('common.loading')} />}
+            </div>
         </div>
     );
 });

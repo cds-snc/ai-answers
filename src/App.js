@@ -26,6 +26,7 @@ import './styles/chat.css';
 // Site-wide DataTables paging focus hand-off (see the function's comment).
 installPagingFocusGuard();
 import UsersPage from './pages/UsersPage.js';
+import AccountPage from './pages/AccountPage.js';
 import EvalPage from './pages/EvalPage.js';
 import EvalDashboardPage from './pages/EvalDashboardPage.js';
 import AutoEvalDashboardPage from './pages/AutoEvalDashboardPage.js';
@@ -39,7 +40,6 @@ import MetricsPage from './pages/MetricsPage.js';
 import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
 import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
-import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
 import ExperimentalAnalysisPage from './pages/experimental/ExperimentalAnalysisPage.js';
@@ -381,6 +381,8 @@ export default function App() {
       { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
       { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
       { path: '/fr/visualiseur-de-clavardage', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },
+      { path: '/en/account', element: <AccountPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'account.title' } },
+      { path: '/fr/compte', element: <AccountPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'account.title' } },
       { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
       { path: '/fr/utilisateurs', element: <UsersPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'users.title' } },
       { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.navigation.eval' } },
@@ -389,8 +391,6 @@ export default function App() {
       { path: '/fr/tableau-de-bord-evaluation', element: <EvalDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.evalDashboard.title' } },
       { path: '/en/auto-eval-dashboard', element: <AutoEvalDashboardPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.autoEvalDashboard.title' } },
       { path: '/fr/tableau-de-bord-auto-evaluation', element: <AutoEvalDashboardPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'admin.autoEvalDashboard.title' } },
-      { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.publicEval.title' } },
-      { path: '/fr/evaluation-publique', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.publicEval.title' } },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'metrics.title' } },
       { path: '/fr/metriques', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'metrics.title' } },
       { path: '/en/public-dashboard', element: <PublicDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'publicDashboard.title' } },

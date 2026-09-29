@@ -24,8 +24,11 @@ French users. Both are stored exactly as written here.
 | Build Communities Strong Fund – Local Impact Stream | Fonds pour bâtir des collectivités fortes – volet Impacts locaux |
 | Business Benefits Finder | Repérage des avantages pour les entreprises |
 | Business Scale-up and Productivity | Croissance et productivité des entreprises |
-| Pacific Economic Development Canada (PacifiCan) | Développement économique Canada pour le Pacifique (PacifiCan) |
+| Community Economic Development and Diversification in British Columbia | Développement économique et diversification des collectivités en Colombie-Britannique |
+| Lytton Business Restart Program | Programme Lytton Business Restart |
+| Lytton Homeowner Resilient Rebuild Program | Programme Lytton Homeowner Resilient Rebuild |
 | PacifiCan and PrairiesCan funding application portal | Portail de demande de financement de PacifiCan et PrairiesCan |
 | Regional Artificial Intelligence Initiative | Initiative régionale en matière d'intelligence artificielle |
 | Regional Innovation Ecosystems | Écosystèmes d'innovation régionaux |
+| Regional Quantum Initiative | Initiative régionale Quantum |
 | Regional Tariff Response Initiative | Initiative régionale de réponse tarifaire |

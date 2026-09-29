@@ -211,7 +211,6 @@ const AutoEvalDashboardPage = ({ lang = 'en' }) => {
               columns={columns}
               className="display dashboard-table dashboard-table--grouped"
               options={{
-                processing: true,
                 serverSide: true,
                 paging: true,
                 searching: true,

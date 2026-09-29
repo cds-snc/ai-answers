@@ -213,6 +213,21 @@ describe('SettingsService.set field format validation', () => {
     expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
   });
 
+  it('rejects an unsupported default search provider', async () => {
+    const { SettingsService } = await loadSettingsService();
+
+    await expect(
+      SettingsService.set('search.default', 'unsupported-provider', {
+        actorEmail: 'admin@example.com',
+        source: 'admin',
+      })
+    ).rejects.toMatchObject({
+      i18nKey: 'settings.validation.invalidSearchProvider',
+    });
+
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
   it('accepts a semicolon-separated list of valid emails', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { 'systemHealth.alertRecipients': '' };
@@ -275,6 +290,20 @@ describe('SettingsService.setMany', () => {
       source: 'admin',
       entries: [{ settingKey: 'siteStatus', previousValue: 'available', newValue: 'unavailable' }],
     });
+  });
+
+  it('reports an unsupported default search provider in a batch', async () => {
+    const { SettingsService } = await loadSettingsService();
+
+    const { values, errors } = await SettingsService.setMany([
+      { key: 'search.default', value: 'unsupported-provider' },
+    ]);
+
+    expect(values).toEqual({});
+    expect(errors).toEqual({
+      'search.default': { i18nKey: 'settings.validation.invalidSearchProvider' },
+    });
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it('reports a write failure per key without losing the other results', async () => {

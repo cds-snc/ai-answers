@@ -72,6 +72,11 @@ const LoginPage = ({ lang = 'en' }) => {
         setShowTwoStep(true);
         return;
       }
+      // The login response carries only email/role/active; institution,
+      // group and the dashboard filter preferences come from auth-me. Re-read
+      // it before landing, as the two-step path below does, or the first
+      // dashboard opens unfiltered even with a preference on.
+      await refreshUser();
       const defaultRoute = data?.defaultRoute || '/';
       // A plain navigate(): the landing page gets the same focus-to-<main>
       // treatment as every other client-side route change

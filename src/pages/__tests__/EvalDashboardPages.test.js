@@ -80,4 +80,14 @@ describe('eval dashboard pages', () => {
       expect(within(container).getByRole('heading', { name: 'admin.autoEvalDashboard.title' })).toBeTruthy();
     });
   });
+
+  it('sorts by the Date column by default, wherever it sits in the column list', async () => {
+    lastDataTableProps = null;
+    const { default: EvalDashboardPage } = await import('../EvalDashboardPage.js');
+    render(<EvalDashboardPage lang="en" />);
+    await waitFor(() => expect(lastDataTableProps).not.toBeNull());
+    const dateIndex = lastDataTableProps.columns.findIndex((c) => c.data === 'date');
+    expect(dateIndex).toBeGreaterThan(0);
+    expect(lastDataTableProps.options.order).toEqual([[dateIndex, 'desc']]);
+  });
 });

@@ -254,7 +254,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                 {loading && <StatusMessage loading message={t('common.loading')} />}
                 {error && (
                   <StatusMessage variant="error">
-                    {t('common.error')}: <code lang="en">{error}</code>
+                    {t('common.error')} <code lang="en">{error}</code>
                   </StatusMessage>
                 )}
                 {/* Summary: citation and total score */}
@@ -294,10 +294,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                         </div>
                                     </>
                                 ) : null}
-                                <div><strong>{t('reviewPanels.totalScore')}:</strong> {totalVal !== null ? totalVal : t('reviewPanels.notAvailable')}</div>
+                                <div><strong>{t('reviewPanels.totalScoreLabel')}</strong> {totalVal !== null ? totalVal : t('reviewPanels.notAvailable')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
-                                    <div><strong>{t('reviewPanels.expertEmail')}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
+                                    <div><strong>{t('reviewPanels.expertEmail')}</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
                                 {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>

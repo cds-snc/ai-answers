@@ -200,3 +200,81 @@ describe('getChatFilterConditions - noEval handling', () => {
     });
   });
 });
+
+describe('getChatFilterConditions - reviewerMatch (Institution / Reviewer email filters)', () => {
+  const userIds = ['u1', 'u2'];
+  const feedbackIds = ['f1'];
+
+  it('matches creator or reviewer, as raw refs and as looked-up docs', () => {
+    const conditions = getChatFilterConditions({ reviewerMatch: { userIds, feedbackIds } }, { basePath: 'interactions', userField: 'user' });
+    expect(conditions).toEqual([{
+      $or: [
+        { user: { $in: userIds } },
+        { 'user._id': { $in: userIds } },
+        { 'interactions.expertFeedback': { $in: feedbackIds } },
+        { 'interactions.expertFeedback._id': { $in: feedbackIds } }
+      ]
+    }]);
+  });
+
+  it('keeps empty $in lists when nobody resolved, so the filter matches nothing', () => {
+    const [cond] = getChatFilterConditions({ reviewerMatch: { userIds: [], feedbackIds: [] } }, { userField: 'user' });
+    expect(cond.$or).toEqual([
+      { user: { $in: [] } },
+      { 'user._id': { $in: [] } },
+      { 'interactions.expertFeedback': { $in: [] } },
+      { 'interactions.expertFeedback._id': { $in: [] } }
+    ]);
+  });
+
+  it('adds no condition when reviewerMatch is null (filters not set)', () => {
+    expect(getChatFilterConditions({ reviewerMatch: null })).toEqual([]);
+  });
+});
+
+// department (what a chat is about) and the reviewer match (who created or
+// evaluated it) are different axes, so they OR: adding a department widens
+// the result rather than narrowing it. Group alone gives what your group
+// touched; adding a department also lets that department's chats in, which
+// is how a reviewer finds work to assign. Deliberate - see the
+// TODO(design, parked) in chat-filters.js.
+describe('getChatFilterConditions - department widens a reviewer filter (OR, not AND)', () => {
+  const userIds = ['u1'];
+
+  it('lets a chat through on either its department or its reviewer, not both', () => {
+    const conditions = getChatFilterConditions(
+      { department: 'IRCC', reviewerMatch: { userIds, feedbackIds: [] } },
+      { basePath: 'interactions', userField: 'user' }
+    );
+    expect(conditions).toEqual([{
+      $or: [
+        {
+          $or: [
+            { user: { $in: userIds } },
+            { 'user._id': { $in: userIds } },
+            { 'interactions.expertFeedback': { $in: [] } },
+            { 'interactions.expertFeedback._id': { $in: [] } }
+          ]
+        },
+        { 'interactions.department': { $regex: 'IRCC', $options: 'i' } }
+      ]
+    }]);
+  });
+
+  it('department alone still narrows to that department', () => {
+    const conditions = getChatFilterConditions({ department: 'IRCC' }, { basePath: 'interactions' });
+    expect(conditions).toEqual([{ 'interactions.department': { $regex: 'IRCC', $options: 'i' } }]);
+  });
+
+  it('reviewer filter alone still narrows to what those people touched', () => {
+    const conditions = getChatFilterConditions({ reviewerMatch: { userIds, feedbackIds: [] } }, { userField: 'user' });
+    expect(conditions).toEqual([{
+      $or: [
+        { user: { $in: userIds } },
+        { 'user._id': { $in: userIds } },
+        { 'interactions.expertFeedback': { $in: [] } },
+        { 'interactions.expertFeedback._id': { $in: [] } }
+      ]
+    }]);
+  });
+});

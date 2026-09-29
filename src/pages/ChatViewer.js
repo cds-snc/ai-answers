@@ -486,12 +486,12 @@ const ChatViewer = ({ lang = 'en' }) => {
                 <ul>
                   {stepTimeline.graphName && (
                     <li>
-                      <strong>{t('logging.timeline.graph')}:</strong> {stepTimeline.graphName}
+                      <strong>{t('logging.timeline.graph')}</strong> {stepTimeline.graphName}
                     </li>
                   )}
                   {stepTimeline.userPerceivedMs != null && (
                     <li>
-                      <strong>{t('logging.timeline.userPerceived')}:</strong>{' '}
+                      <strong>{t('logging.timeline.userPerceived')}</strong>{' '}
                       {stepTimeline.userPerceivedMs} ms
                     </li>
                   )}

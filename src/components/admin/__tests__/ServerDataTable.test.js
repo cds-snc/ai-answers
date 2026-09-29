@@ -3,8 +3,10 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import ServerDataTable from '../ServerDataTable.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
+import { getAnnouncedTexts } from '../../../utils/liveAnnouncer.js';
 
 // Mimics real DataTables closely enough to exercise ServerDataTable's own
 // wiring: captures the `options` it's given and, like the real
@@ -115,5 +117,108 @@ describe('ServerDataTable', () => {
     // The component always turns off the first/last paging buttons (GC DS
     // pagination has none); a caller's own slots merge on top.
     expect(lastOptions.layout).toEqual({ bottomEnd: { paging: { firstLast: false } }, topStart: 'search', topEnd: null });
+  });
+
+  // DataTables' own `processing` node only toggles CSS display and is never
+  // announced by screen readers (see dashboards.md) — ServerDataTable tracks
+  // its own `loading` state and renders a scoped LoadingOverlay instead.
+  it('does not set DataTables\' own processing flag', () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+    expect(lastOptions.processing).toBeUndefined();
+  });
+
+  it('shows a scoped LoadingOverlay before the first fetch resolves, in a wrapper of its own', () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+    const overlay = container.querySelector('.loading-overlay--scoped');
+    expect(overlay).not.toBeNull();
+    expect(overlay.closest('.server-data-table-loading-wrapper')).not.toBeNull();
+  });
+
+  it('hides the LoadingOverlay once a fetch resolves, and re-shows it on the next fetch', async () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).toBeNull();
+
+    // A later reload (e.g. via ref.reload()) goes through the same ajax
+    // function DataTables calls internally — it should show the overlay
+    // again, not just on first mount.
+    act(() => {
+      lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 2 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).not.toBeNull();
+  });
+
+  it('hides the LoadingOverlay after a failed fetch too, not just a successful one', async () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockRejectedValue(new Error('boom'))}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).toBeNull();
+  });
+
+  // The overlay's "Loading…" is skippable — liveAnnouncer.js only drops it
+  // if a newer announcement lands first. Without a completion announcement
+  // a fast load still read "Loading…" ~500ms after the rows had appeared.
+  it('announces "Results loaded." after a fetch with rows, which drops the pending "Loading…"', async () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [{ a: 1 }] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    await waitForAnnouncement('Results loaded.', 'assertive', { exact: true });
+
+    // Past liveAnnouncer.js's SKIPPABLE_GRACE_MS (500ms): a "Loading…" that
+    // had not been dropped would have been spoken by now.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(getAnnouncedTexts('polite').filter((text) => /loading/i.test(text))).toEqual([]);
+  });
+
+  it('announces "No data." after a fetch with zero rows', async () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    await waitForAnnouncement('No data.', 'assertive', { exact: true });
   });
 });

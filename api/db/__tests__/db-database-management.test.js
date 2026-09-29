@@ -113,3 +113,16 @@ describe('db-database-management expert evaluation chat export', () => {
     expect(expertFeedbackRes.payload.data.map(feedback => feedback.totalScore).sort()).toEqual([60, 75]);
   });
 });
+
+describe('db-database-management collection list', () => {
+  it('lists collections without updatedAt so the export form can hide its dates', async () => {
+    await dbConnect();
+    await import('../../../models/sessionState.js');
+
+    const res = await runGet({});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.collections).toContain('chat');
+    expect(res.payload.collectionsWithoutDates).toContain('sessionstate');
+    expect(res.payload.collectionsWithoutDates).not.toContain('chat');
+  });
+});

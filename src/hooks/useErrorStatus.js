@@ -21,11 +21,6 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 // `t` is taken once here rather than passed to each call, so callers don't
 // repeat useTranslations() plumbing through this - same shape as
 // useAuthOutcomeMessages taking its dependencies once at the top.
-// TODO(follow-up PR): migrate these hand-rolled callers of the same
-// t(key).split('{placeholder}') + <code lang="en">detail pattern onto this
-// hook: DeleteExpertEval.js, SimilarChatsDashboard.js, DeleteChatSection.js,
-// ChatLogsDashboard.js, TechnicalMetricsDashboard.js, MetricsDashboard.js,
-// ExperimentalCreateDatasetPage.js, VectorPage.js.
 export const useErrorStatus = (t) => {
   // Stable across renders (as long as t is — see useTranslations.js) so
   // callers can safely put buildErrorStatus/renderStatusMessage in their own
@@ -40,10 +35,30 @@ export const useErrorStatus = (t) => {
     // destructure silently drops everything after the second occurrence.
     // No current key repeats it; if a future one does, this needs a
     // template.replace-based split instead.
-    const [prefix, suffix] = template.split('{error}');
+    const parts = template.split('{error}');
+    // A stale {message}-style key silently drops the separator (prefix ===
+    // template, suffix === undefined) instead of erroring — loud in dev
+    // rather than thrown, since a missing placeholder shouldn't take down
+    // the whole status box.
+    if (parts.length === 1 && !import.meta.env.PROD) {
+      console.error(`useErrorStatus: locale key "${key}" has no {error} placeholder — buildErrorStatus can't split it.`);
+    }
+    const [prefix, suffix] = parts;
     const detail = error?.message || String(error);
     return { prefix, suffix, detail, isError: true };
   }, [t]);
+
+  // Same as buildErrorStatus, but `detail` is pre-wrapped in <code lang="en">
+  // — for callers that don't render through renderStatusMessage
+  // (DeleteChatSection.js, DeleteExpertEval.js, VectorPage.js's
+  // renderDocdb8Error). Never pass this to renderStatusMessage too — it
+  // wraps `detail` itself, nesting the tag twice. DeleteByChatIdSection.js's
+  // own nonce state is the reason this can't just be a StatusMessage.js
+  // consumer — see the TODO above useRepeatableStatus() there.
+  const wrapErrorDetail = useCallback((key, error, otherPlaceholders = {}) => {
+    const built = buildErrorStatus(key, error, otherPlaceholders);
+    return { ...built, detail: <code lang="en">{built.detail}</code> };
+  }, [buildErrorStatus]);
 
   // Nonce per call-site `key`, keyed by status object identity — a fresh
   // object (even with identical text) is a new outcome.
@@ -80,5 +95,5 @@ export const useErrorStatus = (t) => {
     );
   };
 
-  return { buildErrorStatus, renderStatusMessage };
+  return { buildErrorStatus, wrapErrorDetail, renderStatusMessage };
 };

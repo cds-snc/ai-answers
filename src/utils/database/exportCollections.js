@@ -65,3 +65,20 @@ export function getDatabaseExportFilenameTag(selectedCollection) {
   if (selectedCollection && selectedCollection !== 'All') return `${selectedCollection}-`;
   return '';
 }
+
+// Dates filter on updatedAt, so they don't apply to a table without it.
+// The expert-eval scope does use them: it filters its chats by updatedAt.
+export function exportHasNoDates(selectedCollection, collectionsWithoutDates = []) {
+  return collectionsWithoutDates.includes(normalizeCollectionName(selectedCollection));
+}
+
+// Same day bounds as FilterPanel: local midnight to local 23:59:59, so the
+// end date includes its own day.
+export function toExportDateBounds({ startDate, endDate }) {
+  const toLocal = (ymd, endOfDay) => {
+    if (!ymd) return '';
+    const [y, m, d] = ymd.split('-').map(Number);
+    return (endOfDay ? new Date(y, m - 1, d, 23, 59, 59, 0) : new Date(y, m - 1, d)).toISOString();
+  };
+  return { startDate: toLocal(startDate, false), endDate: toLocal(endDate, true) };
+}

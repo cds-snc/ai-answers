@@ -31,5 +31,6 @@ French users. Both are stored exactly as written here.
 | Vehicle defects and recalls | Défauts et rappels de véhicules |
 | Child car seat safety | Sécurité des sièges d'auto pour enfants |
 | Importing a vehicle | Importer un véhicule |
+| Electric Vehicle Affordability Program (EVAP) | Programme pour l'abordabilité des véhicules électriques (PAVE) |
 | Rail grade crossings | Passages à niveau |
 | Railway operating certificate | Certificat d'exploitation ferroviaire |

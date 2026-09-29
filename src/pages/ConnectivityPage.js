@@ -59,7 +59,7 @@ const ServiceCard = ({ service, t }) => {
 
             {latencyMs !== undefined && (
                 <p style={{ margin: '4px 0', fontSize: '0.875rem', color: '#888' }}>
-                    {t('connectivity.latency')}: {latencyMs}ms
+                    {t('connectivity.latency')} {latencyMs}ms
                 </p>
             )}
 
@@ -212,7 +212,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             </section>
 
             <StatusMessage variant={error ? 'error' : undefined}>
-                {error && <><strong>{t('connectivity.error')}:</strong> <code lang="en">{error}</code></>}
+                {error && <><strong>{t('connectivity.error')}</strong> <code lang="en">{error}</code></>}
             </StatusMessage>
 
             {/* TODO: these counts should go through formatNumber(n, lang) per the
@@ -273,7 +273,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     </div>
 
                     <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '16px' }}>
-                        {t('connectivity.lastRun')}: {new Date(results.timestamp).toLocaleString()}
+                        {t('connectivity.lastRun')} {new Date(results.timestamp).toLocaleString()}
                     </p>
 
                     <h2 className="mb-300">{t('connectivity.serviceDetails')}</h2>

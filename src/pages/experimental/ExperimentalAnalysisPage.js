@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePauseToggle } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
+import CellRootLink from '../../components/admin/CellRootLink.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import ExperimentalServerDataTable from '../../components/experimental/Experimen
 import { getPath } from '../../utils/routes.js';
 import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
 // component (not a StatusMessage `progress` variant) because determinate
@@ -157,7 +159,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [trials, setTrials] = useState(1);
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
-    const [selectedSearch, setSelectedSearch] = useState('google');
+    const [selectedSearch, setSelectedSearch] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -180,6 +182,28 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const pollRef = useRef(null);
     const isMountedRef = useRef(true);
     const previousBatchStatusesRef = useRef(new Map());
+
+    // ARIA APG Tabs pattern: roving tabindex across the two tabs, moved with
+    // Arrow/Home/End and activated immediately (automatic activation - only
+    // two tabs, no async cost to switching).
+    const TAB_IDS = ['batches', 'comparison'];
+    const tabRefs = useRef({});
+    const focusTab = (tabId) => {
+        setActiveTab(tabId);
+        tabRefs.current[tabId]?.focus();
+    };
+    const handleTabKeyDown = (e) => {
+        const currentIndex = TAB_IDS.indexOf(activeTab);
+        let nextIndex = null;
+        if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % TAB_IDS.length;
+        else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + TAB_IDS.length) % TAB_IDS.length;
+        else if (e.key === 'Home') nextIndex = 0;
+        else if (e.key === 'End') nextIndex = TAB_IDS.length - 1;
+        if (nextIndex !== null) {
+            e.preventDefault();
+            focusTab(TAB_IDS[nextIndex]);
+        }
+    };
 
     // WCAG 2.2.2 (Pause, Stop, Hide): this poll runs every 5s for as long as
     // any batch/comparison is pending or processing, and there's no other
@@ -395,7 +419,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             // Create Batch
         const batchData = {
             name: runName,
-            description: `${t('experimental.analysis.analyzerPrefix')}: ${selectedAnalyzerId}`,
+            description: `${t('experimental.analysis.analyzerPrefix')} ${selectedAnalyzerId}`,
             runLabel: runLabel.trim(),
             type: 'analysis',
             config: {
@@ -533,8 +557,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         try {
             const analyzerId = resolveBatchAnalyzerId(baseline);
             const result = await ExperimentalBatchClientService.createBatch({
-                name: `${t('experimental.analysis.comparison.title')}: ${getRunLabel(baseline)} â†’ ${getRunLabel(candidate)}`,
-                description: `${t('experimental.analysis.comparison.baseline')}: ${getRunLabel(baseline)}`,
+                name: `${t('experimental.analysis.comparison.titlePrefix')} ${getRunLabel(baseline)} → ${getRunLabel(candidate)}`,
+                description: `${t('experimental.analysis.comparison.baselinePrefix')} ${getRunLabel(baseline)}`,
                 type: 'comparison',
                 config: {
                     datasetId: selectedDatasetId,
@@ -625,17 +649,9 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '11%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
     ];
 
-    // TODO(a11y): both "view results" buttons below fire navigate() with a
-    // destination (comparison._id/batch._id) that's already known when the
-    // button renders - no async step gating it. useRouteChangeFocus
-    // (App.js) now handles the focus/title gap this used to leave, so
-    // that part's covered - what's still missing is native link semantics:
-    // a real <a href> instead of a <GcdsButton onClick={navigate}> would
-    // give this a proper link role plus things onClick can't replicate
-    // (open in new tab, copy link, etc.).
     const renderComparisonActions = (comparison) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${comparison._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${comparison._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
@@ -643,7 +659,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
     const renderBatchActions = (batch) => (
         <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
-            <GcdsButton size="small" onClick={() => navigate(`${getPath('experimental-analysis', lang)}/${batch._id}`)}>{t('experimental.analysis.viewResults')}</GcdsButton>
+            <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${batch._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
             {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
@@ -712,9 +728,16 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </GcdsText>
                 )}
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={getPath('experimental-datasets', lang)}>
-                        {t('experimental.datasets.backToList')}
-                    </GcdsLink>
+                    <nav aria-label={t('admin.navigation.ariaLabel')}>
+                        <GcdsLink href={getPath('experimental-datasets', lang)}>
+                            {t('experimental.datasets.backToList')}
+                        </GcdsLink>
+                    </nav>
+                    {/* TODO(a11y): this link's destination follows the dataset
+                        dropdown further down the page, so it isn't stable page
+                        navigation - it belongs beside that dataset picker (as
+                        "open suite grid for this dataset"), not in the header.
+                        Kept out of the <nav> above until it moves. */}
                     {selectedDatasetId && (
                         <GcdsLink href={`${getPath('experimental-suites', lang)}/${selectedDatasetId}`}>
                             {t('experimental.analysis.suiteView')}
@@ -723,11 +746,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </div>
             </header>
 
-            <div className="experimental-analysis-tabs" role="tablist" aria-label={t('experimental.analysis.tabs.label')}>
+            <div
+                className="experimental-analysis-tabs"
+                role="tablist"
+                aria-label={t('experimental.analysis.tabs.label')}
+                onKeyDown={handleTabKeyDown}
+            >
                 <button
                     type="button"
                     role="tab"
                     id="batches-tab"
+                    ref={(el) => { tabRefs.current.batches = el; }}
+                    tabIndex={activeTab === 'batches' ? 0 : -1}
                     aria-selected={activeTab === 'batches'}
                     aria-controls="batches-tab-panel"
                     className={`experimental-analysis-tab${activeTab === 'batches' ? ' experimental-analysis-tab--active' : ''}`}
@@ -739,6 +769,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     type="button"
                     role="tab"
                     id="comparison-tab"
+                    ref={(el) => { tabRefs.current.comparison = el; }}
+                    tabIndex={activeTab === 'comparison' ? 0 : -1}
                     aria-selected={activeTab === 'comparison'}
                     aria-controls="comparison-tab-panel"
                     className={`experimental-analysis-tab${activeTab === 'comparison' ? ' experimental-analysis-tab--active' : ''}`}
@@ -748,13 +780,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 </button>
             </div>
 
-            {activeTab === 'batches' && <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab">
+            {/* Both panel boxes stay mounted so each tab's aria-controls resolves,
+                but only the active one renders content: its progress cards and
+                status message announce through the shared announcer, and would
+                be heard from a hidden panel. */}
+            <div id="batches-tab-panel" role="tabpanel" aria-labelledby="batches-tab" hidden={activeTab !== 'batches'}>
+            {activeTab === 'batches' && <>
                     <section>
                         <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
                         {/* Analyzer selector */}
                         <div className="mb-400">
-                            <label htmlFor="analyzer-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="analyzer-select" className="filter-label display-block">
                                 {t('experimental.analysis.selectAnalyzers')}
                             </label>
                             <select
@@ -763,7 +800,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 onChange={(e) => {
                                     setSelectedAnalyzerId(e.target.value);
                                 }}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 <option value="">{t('experimental.analysis.messages.selectAnalyzer')}</option>
                                 {availableAnalyzers.map(a => (
@@ -789,7 +826,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="analysis-mode-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="analysis-mode-select" className="filter-label display-block">
                                 {t('experimental.analysis.analysisMode.label')}
                             </label>
                             {hasDatasetReferenceAnswer ? (
@@ -797,7 +834,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     id="analysis-mode-select"
                                     value={analysisMode}
                                     onChange={(e) => setAnalysisMode(e.target.value)}
-                                    style={{ padding: '8px', width: '100%' }}
+                                    className="filter-select"
                                 >
                                     <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
                                     {selectedAnalyzer?.requiresReference !== true && (
@@ -810,14 +847,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="workflow-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="workflow-select" className="filter-label display-block">
                                 {t('experimental.analysis.workflowLabel')}
                             </label>
                             <select
                                 id="workflow-select"
                                 value={selectedWorkflow}
                                 onChange={(e) => setSelectedWorkflow(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 {WORKFLOWS.map(workflow => (
                                     <option key={workflow.value} value={workflow.value}>
@@ -828,14 +865,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="model-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="model-select" className="filter-label display-block">
                                 {t('batch.upload.model.label')}
                             </label>
                             <select
                                 id="model-select"
                                 value={selectedModel}
                                 onChange={(e) => setSelectedModel(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 {AVAILABLE_MODELS.map(model => (
                                     <option key={model.value} value={model.value}>
@@ -853,23 +890,25 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 id="search-provider-select"
                                 value={selectedSearch}
                                 onChange={(e) => setSelectedSearch(e.target.value)}
-                                className="filter-select settings-form-width"
+                                className="filter-select"
                             >
-                                <option value="google">{t('batch.upload.searchService.google')}</option>
-                                <option value="canadaca">{t('batch.upload.searchService.canadaca')}</option>
+                                <option value="">{t('homepage.chat.options.useSystemSettings')}</option>
+                                {SEARCH_PROVIDERS.map((provider) => (
+                                    <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
+                                ))}
                             </select>
                         </div>
 
                         {/* Dataset Selection */}
                         <div className="mb-400">
-                            <label htmlFor="dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="dataset-select" className="filter-label display-block">
                                 {t('experimental.analysis.useExistingDatasetLabel')}
                             </label>
                             <select
                                 id="dataset-select"
                                 value={selectedDatasetId}
                                 onChange={(e) => setSelectedDatasetId(e.target.value)}
-                                style={{ padding: '8px', width: '100%' }}
+                                className="filter-select"
                             >
                                 <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
                                 {datasets.map(ds => (
@@ -886,14 +925,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         </div>
 
                         <div className="mb-400">
-                            <label htmlFor="trials-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                            <label htmlFor="trials-select" className="filter-label display-block">
                                 {t('experimental.analysis.trialsLabel')}
                             </label>
                             <select
                                 id="trials-select"
                                 value={trials}
                                 onChange={(e) => setTrials(parseInt(e.target.value, 10) || 1)}
-                                style={{ padding: '8px', maxWidth: '10rem' }}
+                                className="filter-select experimental-analysis-trials-select"
                             >
                                 {[1, 2, 3, 4, 6, 8].map(n => (
                                     <option key={n} value={n}>{formatNumber(n, lang)}</option>
@@ -951,21 +990,23 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
-            </div>}
+            </>}
+            </div>
 
-            {activeTab === 'comparison' && <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab">
+            <div id="comparison-tab-panel" role="tabpanel" aria-labelledby="comparison-tab" hidden={activeTab !== 'comparison'}>
+            {activeTab === 'comparison' && <>
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
                 <div className="mb-300">
-                    <label htmlFor="comparison-dataset-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-dataset-select" className="filter-label display-block">
                         {t('experimental.analysis.useExistingDatasetLabel')}
                     </label>
                     <select
                         id="comparison-dataset-select"
                         value={selectedDatasetId}
                         onChange={(e) => setSelectedDatasetId(e.target.value)}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
                         {datasets.map(ds => (
@@ -977,7 +1018,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     {!selectedDatasetId && <GcdsText className="mt-200">{t('experimental.analysis.datasetHelper')}</GcdsText>}
                 </div>
                 <div className="mb-300">
-                    <label htmlFor="comparison-baseline-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-baseline-select" className="filter-label display-block">
                         {t('experimental.analysis.comparison.baseline')}
                     </label>
                     <select
@@ -987,7 +1028,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             setComparisonBaselineId(e.target.value);
                             setComparisonCandidateId('');
                         }}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.comparison.selectBaseline')}</option>
                         {batches.filter(batch => batch.status === 'completed' && supportsBatchComparison(batch)).map(batch => (
@@ -996,7 +1037,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </select>
                 </div>
                 <div className="mb-300">
-                    <label htmlFor="comparison-candidate-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    <label htmlFor="comparison-candidate-select" className="filter-label display-block">
                         {t('experimental.analysis.comparison.candidate')}
                     </label>
                     <select
@@ -1004,7 +1045,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         value={comparisonCandidateId}
                         onChange={(e) => setComparisonCandidateId(e.target.value)}
                         disabled={!comparisonBaselineId}
-                        style={{ padding: '8px', width: '100%' }}
+                        className="filter-select"
                     >
                         <option value="">{t('experimental.analysis.comparison.selectCandidate')}</option>
                         {comparisonCandidates.map(batch => (
@@ -1052,7 +1093,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     </div>
                 )}
             </section>
-            </div>}
+            </>}
+            </div>
 
             {/* History List */}
             {activeTab === 'batches' && <section id="batches-history" className="experimental-table-container">

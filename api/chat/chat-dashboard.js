@@ -1,8 +1,11 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { Interaction } from '../../models/interaction.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
+import { normalizeObjectIdString } from '../util/db-query.js';
 import { frForProgram } from '../util/programActionFr.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
@@ -91,12 +94,18 @@ async function chatDashboardHandler(req, res) {
       orderDir: orderDirParam,
       draw: drawParam,
       search: searchParam,
-      timezoneOffsetMinutes: timezoneOffsetParam
+      timezoneOffsetMinutes: timezoneOffsetParam,
+      assignedTo: assignedToParam
     } = req.query;
 
     const parsedTimezoneOffset = Number.isFinite(parseInt(timezoneOffsetParam, 10)) ? parseInt(timezoneOffsetParam, 10) : undefined;
     const dateRange = getDateRange({ startDate, endDate, timezoneOffsetMinutes: parsedTimezoneOffset });
-    if (!dateRange) {
+    // The date window is the only thing bounding the scan for the dashboard,
+    // so it's required there. An assignedTo query (AccountPage.js's assigned
+    // chats table) is already bounded by the indexed assignedTo field and
+    // must not be windowed: a chat created long ago but assigned today
+    // still has to show up.
+    if (!dateRange && !assignedToParam) {
       return res.status(400).json({ error: 'startDate and endDate are required and must be valid dates' });
     }
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
@@ -130,6 +139,22 @@ async function chatDashboardHandler(req, res) {
       } catch (err) {
         return res.status(400).json({ error: 'Invalid lastId' });
       }
+    }
+
+    // AccountPage.js's "Questions assigned to you" table reuses this same
+    // aggregate with assignedTo=<own userId> rather than a parallel
+    // endpoint - see api/chat/chat-assign-interaction.js for how assignedTo is set.
+    // Assignment lives on the question (Interaction), so: look the
+    // assigned questions up first (indexed), bound the chat scan to the
+    // chats holding them, then keep only those rows after the unwind.
+    let assignedToId = null;
+    if (assignedToParam) {
+      assignedToId = normalizeObjectIdString(assignedToParam);
+      if (!assignedToId) {
+        return res.status(400).json({ error: 'Invalid assignedTo' });
+      }
+      const assigned = await Interaction.find({ assignedTo: new mongoose.Types.ObjectId(assignedToId) }, { _id: 1 }).lean();
+      initialMatch.interactions = { $in: assigned.map((i) => i._id) };
     }
 
     if (Object.keys(initialMatch).length) {
@@ -177,6 +202,10 @@ async function chatDashboardHandler(req, res) {
         preserveNullAndEmptyArrays: false
       }
     });
+
+    if (assignedToId) {
+      pipeline.push({ $match: { 'interactions.assignedTo': new mongoose.Types.ObjectId(assignedToId) } });
+    }
 
     pipeline.push({
       $addFields: {
@@ -369,7 +398,34 @@ async function chatDashboardHandler(req, res) {
     });
     pipeline.push({ $project: { creator: 0 } });
 
-    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic };
+    // Lookup assignee/assigner emails for display (chat-assign-interaction.js only
+    // stores the ObjectIds on the question) - same shape as the creator
+    // lookup just above.
+    // Each is its own join, so only run the one(s) the caller actually
+    // displays: ChatDashboardPage.js shows assignedToEmail, AccountPage.js
+    // (already scoped to one assignee) shows assignedByEmail - neither
+    // needs both.
+    const wantAssigneeEmail = req.query.includeAssignee === 'true';
+    const wantAssignerEmail = req.query.includeAssigner === 'true';
+    if (wantAssigneeEmail || wantAssignerEmail) {
+      const addFields = {};
+      const dropFields = {};
+      if (wantAssigneeEmail) {
+        pipeline.push({ $lookup: { from: 'users', localField: 'interactions.assignedTo', foreignField: '_id', as: 'assignee' } });
+        addFields.assignedToEmail = { $ifNull: [{ $arrayElemAt: ['$assignee.email', 0] }, ''] };
+        dropFields.assignee = 0;
+      }
+      if (wantAssignerEmail) {
+        pipeline.push({ $lookup: { from: 'users', localField: 'interactions.assignedBy', foreignField: '_id', as: 'assigner' } });
+        addFields.assignedByEmail = { $ifNull: [{ $arrayElemAt: ['$assigner.email', 0] }, ''] };
+        dropFields.assigner = 0;
+      }
+      pipeline.push({ $addFields: addFields });
+      pipeline.push({ $project: dropFields });
+    }
+
+    const reviewerMatch = await resolveReviewerMatch(req.query);
+    const filters = { userType, department, referringUrl, urlEn, urlFr, answerType, partnerEval, aiEval, evalLogic, reviewerMatch };
     const andFilters = getChatFilterConditions(filters);
 
     if (andFilters.length) {
@@ -403,6 +459,11 @@ async function chatDashboardHandler(req, res) {
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
+        assignedTo: { $ifNull: ['$interactions.assignedTo', null] },
+        assignedToEmail: 1,
+        assignedByEmail: 1,
+        assignedOn: '$interactions.assignedOn',
+        assignedNotes: '$interactions.assignedNotes',
         userType: {
           $cond: {
             if: { $and: [{ $ne: ['$creatorEmail', ''] }, { $ne: ['$creatorEmail', null] }] },
@@ -450,7 +511,16 @@ async function chatDashboardHandler(req, res) {
       department: 'department',
       program: 'program',
       partnerEval: 'partnerEval',
-      aiEval: 'aiEval'
+      aiEval: 'aiEval',
+      // Assign column (ChatDashboardPage.js): null sorts before any
+      // ObjectId ascending, so an ascending sort groups unassigned questions
+      // first - the use case this is for.
+      assignedTo: 'assignedTo',
+      // Assigned questions table (AccountPage.js). assignedByEmail is a plain
+      // field by the time this $sort runs - materialized earlier in the
+      // pipeline by the assignee/assigner $lookup + $addFields above.
+      assignedOn: 'assignedOn',
+      assignedByEmail: 'assignedByEmail'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
     // Default view (no column sort applied - the only way 'createdAt' is
@@ -579,7 +649,12 @@ async function chatDashboardHandler(req, res) {
       partnerEval: row.partnerEval || '',
       aiEval: row.aiEval || '',
       partnerHasContentIssue: !!row.partnerHasContentIssue,
-      userType: row.userType || 'public'
+      userType: row.userType || 'public',
+      assignedTo: row.assignedTo ? String(row.assignedTo) : '',
+      assignedToEmail: row.assignedToEmail || '',
+      assignedByEmail: row.assignedByEmail || '',
+      assignedOn: row.assignedOn ? row.assignedOn.toISOString() : null,
+      assignedNotes: row.assignedNotes || ''
     }));
 
     if (isDataTablesMode) {

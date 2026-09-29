@@ -5,6 +5,7 @@ import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
+import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/searchProviders.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 
@@ -181,9 +182,17 @@ async function handler(req, res) {
   // Falls back to the first MODEL_VALUES entry when model.default hasn't been
   // saved yet (e.g. first deploy before an admin visits Settings).
   const defaultModel = SettingsService.get('model.default') || MODEL_VALUES[0];
+  const configuredSearchProvider = resolveSearchProvider(
+    SettingsService.get('search.default')
+  );
   if (!req.user) {
     // Unauthenticated users: forced to use the system default model
     input.selectedAI = defaultModel;
+    input.searchProvider = configuredSearchProvider;
+  } else if (!SEARCH_PROVIDER_VALUES.includes(input.searchProvider)) {
+    // Authenticated callers may explicitly select a provider, but missing or
+    // invalid values follow the same system setting as public chats.
+    input.searchProvider = configuredSearchProvider;
   } else if (!input.selectedAI) {
     // Authenticated users: use default model when client didn't explicitly set one
     input.selectedAI = defaultModel;

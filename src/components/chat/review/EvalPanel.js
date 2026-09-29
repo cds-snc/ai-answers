@@ -261,7 +261,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
         {loading && <StatusMessage loading message={t('common.loading')} />}
         {error && (
           <StatusMessage variant="error">
-            {t('common.error')}: <code lang="en">{error}</code>
+            {t('common.error')} <code lang="en">{error}</code>
           </StatusMessage>
         )}
 
@@ -274,7 +274,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
             <br />
             {noMatchReason && (
               <>
-                <strong>{t('eval.reason')}:</strong> {noMatchReason}
+                <strong>{t('eval.reason')}</strong> {noMatchReason}
               </>
             )}
           </p>
@@ -326,10 +326,10 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                   <dd>
                     <ul>
                       {evalObj._modelMeta.sentenceCompareModel ? (
-                        <li>{t('reviewPanels.sentenceCompare')}: {evalObj._modelMeta.sentenceCompareModel}</li>
+                        <li>{t('reviewPanels.sentenceCompareLabel')} {evalObj._modelMeta.sentenceCompareModel}</li>
                       ) : null}
                       {evalObj._modelMeta.fallbackCompareModel ? (
-                        <li>{t('reviewPanels.fallbackCompare')}: {evalObj._modelMeta.fallbackCompareModel}</li>
+                        <li>{t('reviewPanels.fallbackCompareLabel')} {evalObj._modelMeta.fallbackCompareModel}</li>
                       ) : null}
                     </ul>
                   </dd>
@@ -404,7 +404,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               </tbody>
             </table>
             <div className="mt-100">
-              <strong>{t('reviewPanels.rawTimeline')}:</strong>
+              <strong>{t('reviewPanels.rawTimeline')}</strong>
               <pre style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
             </div>
           </div>
@@ -640,7 +640,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
             <details className="review-details">
               <summary>{t('reviewPanels.agentUsage')}</summary>
               <div>
-                <strong>{t('reviewPanels.sentenceCompareUsed')}:</strong> {evalObj.sentenceCompareUsed ? t('common.yes') : t('common.no')}
+                <strong>{t('reviewPanels.sentenceCompareUsed')}</strong> {evalObj.sentenceCompareUsed ? t('common.yes') : t('common.no')}
               </div>
               {evalObj.sentenceCompareMeta ? (
                 <table className="review-table table-slim-padding mt-100">
@@ -669,7 +669,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               ) : null}
 
               <div className="mt-200">
-                <strong>{t('reviewPanels.fallbackCompareUsed')}:</strong> {evalObj.fallbackCompareUsed ? t('common.yes') : t('common.no')}
+                <strong>{t('reviewPanels.fallbackCompareUsedLabel')}</strong> {evalObj.fallbackCompareUsed ? t('common.yes') : t('common.no')}
               </div>
               {evalObj.fallbackCompareMeta ? (
                 <table className="review-table table-slim-padding mt-100">

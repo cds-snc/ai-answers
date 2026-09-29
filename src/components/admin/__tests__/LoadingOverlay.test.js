@@ -25,4 +25,18 @@ describe('LoadingOverlay', () => {
     // Not a live region itself.
     expect(container.querySelector('[role], [aria-live]')).toBeNull();
   });
+
+  it('defaults to the full-page fixed overlay, not the scoped variant', () => {
+    const { container } = render(<LoadingOverlay message="Loading…" />);
+    const overlay = container.querySelector('.loading-overlay');
+    expect(overlay.className).not.toContain('loading-overlay--scoped');
+  });
+
+  it('adds the scoped modifier class when scoped is true, announcement unchanged', () => {
+    const { container } = render(<LoadingOverlay message="Loading…" scoped />);
+    const overlay = container.querySelector('.loading-overlay');
+    expect(overlay.className).toContain('loading-overlay--scoped');
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith('Loading…', expect.objectContaining({ assertive: false, skippable: true }));
+  });
 });

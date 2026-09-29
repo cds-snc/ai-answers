@@ -69,6 +69,42 @@ describe('useErrorStatus', () => {
       const emptyMessageStatus = buildErrorStatus('admin.database.exportError', new Error(''));
       expect(emptyMessageStatus.detail).toBe('Error');
     });
+
+    it('warns in dev when the locale key has no {error} placeholder', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { buildErrorStatus } = useErrorStatusForTest();
+
+      buildErrorStatus('settings.refreshCache.success', new Error('boom'));
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('settings.refreshCache.success'));
+      errorSpy.mockRestore();
+    });
+  });
+
+  describe('wrapErrorDetail', () => {
+    it('returns the same prefix/suffix/isError as buildErrorStatus, with detail pre-wrapped in <code lang="en">', () => {
+      const { wrapErrorDetail } = useErrorStatusForTest();
+      const wrapped = wrapErrorDetail('admin.database.exportError', new Error('disk full'));
+
+      expect(wrapped.prefix).toBe('Export failed: ');
+      expect(wrapped.suffix).toBe('.');
+      expect(wrapped.isError).toBe(true);
+      expect(React.isValidElement(wrapped.detail)).toBe(true);
+      expect(wrapped.detail.type).toBe('code');
+      expect(wrapped.detail.props.lang).toBe('en');
+      expect(wrapped.detail.props.children).toBe('disk full');
+    });
+
+    it('renders correctly for a caller that builds its own fragment instead of renderStatusMessage', () => {
+      const { wrapErrorDetail } = useErrorStatusForTest();
+      const wrapped = wrapErrorDetail('admin.database.exportError', new Error('disk full'));
+
+      const { container } = render(<>{wrapped.prefix}{wrapped.detail}{wrapped.suffix}</>);
+
+      expect(container.textContent).toBe('Export failed: disk full.');
+      const raw = container.querySelector('code[lang="en"]');
+      expect(raw.textContent).toBe('disk full');
+    });
   });
 
   describe('renderStatusMessage', () => {

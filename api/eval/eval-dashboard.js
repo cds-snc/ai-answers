@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
@@ -254,12 +255,23 @@ async function evalDashboardHandler(req, res) {
         as: 'contextDoc'
       }
     });
-    // Extract only department + program/action classification immediately
+    // Extract only department + program/action classification immediately,
+    // plus whether eval-informed answering injected any expert-rated
+    // examples: the graph persists the matched examples on the context
+    // (context.qaMatches), so a non-empty array is the flag.
     pipeline.push({
       $addFields: {
         'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] },
         'interactions.program': { $ifNull: [{ $arrayElemAt: ['$contextDoc.program', 0] }, ''] },
-        'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] }
+        'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] },
+        'interactions.evalInformed': {
+          $let: {
+            vars: { qa: { $arrayElemAt: ['$contextDoc.qaMatches', 0] } },
+            // $isArray guard: $size throws on a non-array and would fail the
+            // whole aggregation for one malformed document.
+            in: { $gt: [{ $size: { $cond: [{ $isArray: '$$qa' }, '$$qa', []] } }, 0] }
+          }
+        }
       }
     });
 
@@ -384,7 +396,9 @@ async function evalDashboardHandler(req, res) {
       andFilters.push({ 'eval.fallbackType': { $regex: `^${escaped}$`, $options: 'i' } });
     }
 
+    const reviewerMatch = await resolveReviewerMatch(req.query);
     const sharedFilters = getChatFilterConditions({
+      reviewerMatch,
       department,
       referringUrl,
       urlEn,
@@ -424,6 +438,7 @@ async function evalDashboardHandler(req, res) {
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
+        evalInformed: { $ifNull: ['$interactions.evalInformed', false] },
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
         partnerHasCitationError: { $ifNull: ['$interactions.partnerHasCitationError', false] },
         aiHasCitationError: { $ifNull: ['$interactions.aiHasCitationError', false] },
@@ -538,6 +553,7 @@ async function evalDashboardHandler(req, res) {
       pageLanguage: 'pageLanguage',
       partnerEval: 'partnerEval',
       aiEval: 'aiEval',
+      evalInformed: 'evalInformed',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType',
       creatorEmail: 'creatorEmail',
@@ -663,6 +679,7 @@ async function evalDashboardHandler(req, res) {
       hasExpertEval: !!r.hasExpertEval,
       partnerEval: r.partnerEval || '',
       aiEval: r.aiEval || '',
+      evalInformed: !!r.evalInformed,
       partnerHasContentIssue: !!r.partnerHasContentIssue,
       partnerHasCitationError: !!r.partnerHasCitationError,
       aiHasCitationError: !!r.aiHasCitationError,

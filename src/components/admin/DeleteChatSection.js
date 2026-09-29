@@ -2,9 +2,11 @@ import React from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import DataStoreService from '../../services/DataStoreService.js';
 import DeleteByChatIdSection from './DeleteByChatIdSection.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 const DeleteChatSection = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { wrapErrorDetail } = useErrorStatus(t);
 
   const handleDelete = async (chatId) => {
     try {
@@ -16,11 +18,6 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       return { isError: false, text: t('admin.deleteChat.success').replace('{chatId}', chatId) };
     } catch (error) {
       console.error('Error deleting chat:', error);
-      // error.message is raw, untranslated exception text — never run it
-      // through the {message} template as a plain string substitution (a FR
-      // admin would otherwise see it announced as French). Split the
-      // translated template around the placeholder instead, so the detail
-      // can be wrapped in its own lang="en" span.
       // TODO (for Official Languages review): the wrapped detail below is
       // still only a pronunciation fix (WCAG 3.1.2), not a translation.
       // Most of what lands here really is unbounded (network drop, an
@@ -37,8 +34,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       // unbounded remainder. Flagging for a maintainer decision on whether
       // that's worth doing — touches both layers plus a test rewrite, not
       // just this file.
-      const [prefix, suffix] = t('admin.deleteChat.error').split('{message}');
-      return { isError: true, prefix, detail: <code lang="en">{error.message || String(error)}</code>, suffix };
+      return wrapErrorDetail('admin.deleteChat.error', error);
     }
   };
 

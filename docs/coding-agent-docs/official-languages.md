@@ -182,7 +182,7 @@ Rules:
 ## French punctuation spacing
 Per the official Government of Canada style guide (*The Canadian Style*, TERMIUM Plus §17.07), Canadian French requires a space only before the colon `:` (e.g. `"Assigné à :"`) — English does not. Unlike France French, Canadian French does **not** put a space before `;`, `!`, or `?` (e.g. `"Continuer?"`, not `"Continuer ?"`). This has slipped through review before in two forms:
 - A static `fr.json` string typed without the space before `:` (e.g. `"Assigné à:"` instead of `"Assigné à :"`).
-- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`.
+- JS that hardcodes punctuation while building a label at runtime (e.g. `` `${label}: ${value}` ``) instead of putting the full punctuated phrase in the locale string. When the label is data rather than a locale string (a chart category, a filter value), join it with `formatLabelValue(label, value, lang)` from `src/utils/labelValue.js`. If code needs one literal separator shared across both languages, prefer a mark that doesn't have a French spacing rule (e.g. `" - "`) rather than `":"`.
 
 ## PR review checklist — official languages
 Every PR that touches UI components, pages, or locale files must be verified against these before merging.

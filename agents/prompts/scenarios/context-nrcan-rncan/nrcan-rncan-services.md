@@ -16,5 +16,9 @@ French users. Both are stored exactly as written here.
 | English | Français |
 |---|---|
 | Canada Greener Homes Initiative | Initiative canadienne pour des maisons plus vertes |
-| Geospatial data and tools | Données et outils géospatiaux |
+| Canadian Wildland Fire Information System | Système canadien d'information sur les feux de végétation |
+| EnerGuide | ÉnerGuide |
+| ENERGY STAR Canada | ENERGY STAR Canada |
+| Fuel Consumption Guide | Guide de consommation de carburant |
+| Geospatial data, tools and services | Données, outils et services géospatiaux |
 | Lumber, pulp and panel prices | Prix du bois d'œuvre, de la pâte et des panneaux |

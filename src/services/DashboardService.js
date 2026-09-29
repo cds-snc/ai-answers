@@ -28,6 +28,37 @@ class DashboardService {
       throw error;
     }
   }
+
+  // Assignment is per question: interactionId is the Interaction's _id.
+  static async assignQuestion({ interactionId, assignedTo, notes }) {
+    const response = await AuthService.fetch(getApiUrl('chat-assign-interaction'), {
+      method: 'POST',
+      body: JSON.stringify({ interactionId, assignedTo, notes })
+    });
+    if (!response.ok) {
+      // chat-assign-interaction.js answers with a stable `code` for the reasons a caller
+      // can act on (already_assigned, note_too_long); carry it and the
+      // status so the hook can say which one happened.
+      let code;
+      try { ({ code } = await response.json()); } catch { /* no body */ }
+      const error = new Error('Failed to assign question');
+      error.code = code;
+      error.status = response.status;
+      throw error;
+    }
+    return response.json();
+  }
+
+  static async unassignQuestion({ interactionId }) {
+    const response = await AuthService.fetch(getApiUrl('chat-assign-interaction'), {
+      method: 'DELETE',
+      body: JSON.stringify({ interactionId })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to remove assignment');
+    }
+    return response.json();
+  }
 }
 
 export default DashboardService;

@@ -8,7 +8,7 @@ import SimilarChatsDashboard from '../SimilarChatsDashboard.js';
 import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
-  'vector.fetchErrorDetail': 'Failed to fetch similar chats: {message}',
+  'vector.fetchErrorDetail': 'Failed to fetch similar chats: {error}',
 };
 const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../../hooks/useTranslations.js', () => ({
@@ -58,6 +58,10 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
 
     await waitForAnnouncement('Failed to fetch similar chats: no embeddings found', 'assertive', { exact: true });
+    // Exactly one code[lang="en"], not nested — renderStatusMessage does the
+    // wrap itself; textContent alone can't tell a single wrap from a
+    // <code lang="en"><code lang="en">...</code></code> double-wrap.
+    expect(document.querySelectorAll('.status-message--error-box code[lang="en"]').length).toBe(1);
     const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('no embeddings found');
@@ -72,6 +76,7 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.click(screen.getByText('vector.getSimilarChats'));
 
     await waitForAnnouncement('Failed to fetch', 'assertive');
+    expect(document.querySelectorAll('.status-message--error-box code[lang="en"]').length).toBe(1);
     const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
     expect(enSpan).toBeTruthy();
     expect(enSpan.textContent).toBe('Failed to fetch');

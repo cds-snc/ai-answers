@@ -7,6 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 const mockLogin = vi.fn();
 const mockNavigate = vi.fn();
+const mockRefreshUser = vi.fn();
 import LoginPage from '../LoginPage.js';
 
 vi.mock('react-router-dom', () => ({
@@ -18,7 +19,7 @@ vi.mock('react-router-dom', () => ({
 vi.mock('../../contexts/AuthContext.js', () => ({
   useAuth: () => ({
     login: mockLogin,
-    refreshUser: vi.fn(),
+    refreshUser: mockRefreshUser,
     getDefaultRouteForRole: vi.fn(() => '/en/admin'),
   }),
 }));
@@ -53,6 +54,7 @@ describe('LoginPage session expired notice', () => {
     cleanup();
     mockLogin.mockReset();
     mockNavigate.mockReset();
+    mockRefreshUser.mockReset();
   });
 
   it('shows a warning when redirected after a session check fails', () => {
@@ -101,5 +103,23 @@ describe('LoginPage session expired notice', () => {
     expect(replaceState.mock.calls[0].slice(1)).toEqual(['', '/en/signin']);
     replaceState.mockRestore();
     expect(screen.queryByText('login.sessionExpired.title')).toBeNull();
+  });
+
+  it('re-reads the full profile before landing, so dashboard preferences apply on the first visit', async () => {
+    mockLogin.mockResolvedValue({ defaultRoute: '/en/admin' });
+    let releaseRefresh;
+    mockRefreshUser.mockReturnValue(new Promise((resolve) => { releaseRefresh = resolve; }));
+    render(<LoginPage lang="en" />);
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'login.email' }), { target: { value: 'admin@example.com' } });
+    fireEvent.change(screen.getByLabelText('login.password'), { target: { value: 'correct-password' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Sign in' }).closest('form'));
+
+    await waitFor(() => expect(mockRefreshUser).toHaveBeenCalledTimes(1));
+    // The login response lacks institution/group/preferences; navigating
+    // before auth-me answers would seed FilterPanel from that stripped user.
+    expect(mockNavigate).not.toHaveBeenCalled();
+    releaseRefresh();
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/en/admin'));
   });
 });

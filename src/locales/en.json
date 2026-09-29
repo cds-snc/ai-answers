@@ -395,7 +395,7 @@
     "metadataSeeFullValue": "View value",
     "timeline": {
       "title": "Pipeline step timeline",
-      "graph": "Graph",
+      "graph": "Graph:",
       "step": "Step",
       "start": "Start (ms)",
       "end": "End (ms)",
@@ -406,7 +406,7 @@
       "noTimeline": "No pipeline events found in these logs.",
       "downloads": "downloads",
       "generation": "generation",
-      "userPerceived": "User-perceived response time"
+      "userPerceived": "User-perceived response time:"
     }
   },
   "admin": {
@@ -416,6 +416,7 @@
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
       "partnerMenu": "Partner menu",
+      "account": "Manage your account",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -486,17 +487,28 @@
         "setting": "Setting",
         "batchitem": "Batch item",
         "sentenceembedding": "Sentence embedding",
-        "sessionstate": "Session state"
+        "sessionstate": "Session state",
+        "auditlog": "Audit log",
+        "blockedquerycounter": "Blocked query counter",
+        "embeddingmetadatabackfilljob": "Embedding metadata backfill job",
+        "evalanalysis": "Evaluation analysis",
+        "experimentalbatch": "Experimental batch",
+        "experimentalbatchitem": "Experimental batch item",
+        "experimentaldataset": "Experimental dataset",
+        "experimentaldatasetrow": "Experimental dataset row",
+        "servicecallerrorcounter": "Service call error counter"
       },
       "tableRecordCounts": "Table record counts",
-      "tableColumn": "Table",
-      "countColumn": "Count",
-      "tableLabel": "Table:",
-      "startDate": "Start date:",
-      "endDate": "End date:",
-      "limitLabel": "Limit:",
+      "exportTitle": "Export database",
+      "tableLabel": "Table",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "dateRangeLegend": "Date range (optional)",
+      "dateRangeHint": "Leave blank to export all dates.",
+      "datesNotApplicableTable": "Dates don't apply to this table. It doesn't record update dates, so the whole table is exported.",
+      "limitLabel": "Limit (records per request)",
       "exporting": "Exporting...",
-      "exportButton": "Export database",
+      "exportButton": "Export database (.jsonl)",
       "exportSuccess": "Database exported successfully.",
       "exportError": "Export failed: {error}.",
       "dropIndexesTitle": "Drop all indexes",
@@ -545,11 +557,15 @@
       "migratePublicFeedbackButton": "Migrate public feedback",
       "migratingLabel": "Migrating...",
       "importTitle": "Import database",
-      "importDescription": "Restore the database from a backup file. Warning: This will replace all existing data.",
-      "chunkSizeLabel": "Chunk size (MB):",
-      "throttleLabel": "Throttle (ms):",
-      "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
-      "importFileLabel": "Import file (.jsonl):",
+      "importDescription": "Restore records from a backup file. Records that match one in the file are overwritten. Other records stay as they are.",
+      "chunkSizeLabel": "Chunk size (MB)",
+      "throttleLabel": "Throttle (ms)",
+      "importTablesLegend": "Tables to import",
+      "importScopeChosen": "Only the tables I choose",
+      "importChosenLegend": "Choose tables",
+      "importTablesError": "Choose at least one table to import.",
+      "importConfirm": "Importing overwrites existing records that match one in the file. This cannot be undone. Are you sure you want to continue?",
+      "importFileLabel": "Import file (.jsonl)",
       "importingLabel": "Importing...",
       "importButton": "Import database",
       "fileSelectError": "Please select a file to import.",
@@ -566,7 +582,7 @@
       "runCheckButton": "Run check",
       "checkFailed": "Check {check} failed: {error}.",
       "countLabel": "Count:",
-      "noResultsLabel": "No results",
+      "notRunLabel": "Not run",
       "breakdownMissing": "Missing — Chat: {chat}, Interaction: {interaction}, Question: {question}, Answer: {answer}",
       "breakdownSamples": "Samples: {samples}",
       "indexCodeLabel": "Code {code}",
@@ -626,15 +642,15 @@
       "detailsTitle": "Detailed Evaluation Process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation",
+          "title": "Initial Validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval",
+          "title": "Embedding Retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content",
+          "title": "Finding Similar Content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -643,7 +659,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Sentence-level matching",
+          "title": "Sentence-level matching:",
           "item": {
             "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
             "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
@@ -652,7 +668,7 @@
           }
         },
         "citationMatch": {
-          "title": "Citation matching",
+          "title": "Citation matching:",
           "item": {
             "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
             "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
@@ -660,7 +676,7 @@
           }
         },
         "qaFallback": {
-          "title": "QA high score fallback",
+          "title": "QA high score fallback:",
           "item": {
             "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
             "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
@@ -668,14 +684,14 @@
           }
         },
         "fallbackCompare": {
-          "title": "Fallback compare checks",
+          "title": "Fallback compare checks:",
           "item": {
             "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
             "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
           }
         },
         "creation": {
-          "title": "Evaluation creation & scoring",
+          "title": "Evaluation creation & scoring:",
           "item": {
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
@@ -685,14 +701,14 @@
           }
         },
         "noMatch": {
-          "title": "No match / rejection cases",
+          "title": "No match / rejection cases:",
           "item": {
             "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
             "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
           }
         },
         "timeline": {
-          "title": "Stage timeline & telemetry",
+          "title": "Stage timeline & telemetry:",
           "item": {
             "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
             "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
@@ -715,8 +731,8 @@
         "refresh": "Refresh metrics"
       },
       "date": {
-        "startLabel": "Start date",
-        "endLabel": "End date"
+        "startLabel": "Start date:",
+        "endLabel": "End date:"
       },
       "button": {
         "processing": "Processing...",
@@ -725,10 +741,10 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed",
-        "failed": "Failed",
-        "remaining": "Remaining",
-        "duration": "Duration",
+        "processed": "Processed:",
+        "failed": "Failed:",
+        "remaining": "Remaining:",
+        "duration": "Duration:",
         "autoProcessing": "Auto-processing active",
         "regeneratingAll": "Regenerating all evaluations"
       }
@@ -752,6 +768,7 @@
       "urlPlaceholder": "Filter by full or partial URL",
       "department": "Partner institution",
       "allDepartments": "All institutions",
+      "group": "Group",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -782,14 +799,6 @@
       "advancedTitle": "Advanced filters",
       "advancedAll": "Advanced: All",
       "showAdvanced": "More filters"
-    },
-    "publicEval": {
-      "title": "Public evaluation",
-      "chatId": "Chat ID",
-      "department": "Department",
-      "date": "Date",
-      "loading": "Loading...",
-      "errorLoading": "Failed to load public evaluation list: {message}"
     },
     "session": {
       "title": "Sessions",
@@ -827,6 +836,7 @@
       "noSearchResults": "No results for {term}.",
       "filtersClearedAnnouncement": "Filters cleared.",
       "resultsLoaded": "Results loaded.",
+      "noData": "No data.",
       "viewChatById": "View chat by ID",
       "originallyAskedIn": "Originally asked in: {language}",
       "sourceText": "Source",
@@ -842,7 +852,7 @@
       "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
       "fetchFailed": "Failed to load data. Please try again.",
-      "fetchError": "Failed to load data: {message}",
+      "fetchError": "Failed to load data: {error}",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
       "metricsLoading": "Loading metrics...",
@@ -883,6 +893,39 @@
           "incorrect": "incorrect"
         },
         "contentIssue": "content issue"
+      },
+      "assign": {
+        "toggleOn": "Assign question(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectQuestion": "Select question {number} of chat {chatId}",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "pickerSelf": "Self-assign",
+        "pickerGroup": "Your group",
+        "pickerInstitution": "Your institution",
+        "pickerOthers": "Other accounts",
+        "noInstitution": "You can only assign questions to yourself and the AI Answers QA group. Pick an institution or group on your account page to also assign questions to teammates.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign ({count}) to reviewer",
+        "assignChatsWithNote": "Assign ({count}) to reviewer with note",
+        "assigning": "Assigning…",
+        "errorNoExpert": "Choose a reviewer to assign to.",
+        "errorNoQuestion": "Choose at least one question in the Assign column.",
+        "assignSuccess": "Assigned {count} question(s).",
+        "assignSuccessWithNote": "Assigned {count} question(s) with a note.",
+        "assignError": "Failed to assign {count} question(s).",
+        "assignErrorAlreadyAssigned": "{count} question(s) were already assigned to someone else.",
+        "assignErrorNoteTooLong": "The note is too long.",
+        "assignErrorNotAllowed": "You can't assign questions to that reviewer.",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unknownAccount": "Unknown account",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
       }
     },
     "evalDashboard": {
@@ -895,6 +938,8 @@
         "questionNumberAriaLabel": "Question number",
         "partnerEval": "Partner",
         "aiEval": "AI",
+        "evalInformed": "Informed",
+        "evalInformedAriaLabel": "Eval-informed answer",
         "action": "Action",
         "creatorEmail": "Creator",
         "expertEmail": "Expert",
@@ -926,12 +971,13 @@
     "chatLogs": {
       "title": "Download chat logs",
       "getLogs": "Get logs",
+      "exportOptions": "Export options",
       "exportView": "Export view",
       "exportFormat": "Format",
       "export": "Export",
       "exporting": "Exporting...",
       "exportingMessage": "Please wait while your file is being generated.",
-      "exportDescription": "Select export options, configure filters below, then click Export to download.",
+      "exportSuccess": "Export complete. Your file is downloading.",
       "exportError": "Export failed: {error}",
       "views": {
         "default": "Default",
@@ -951,7 +997,7 @@
       "loading": "Deleting...",
       "notFound": "Cannot delete chat: ID not found.",
       "success": "{chatId} deleted successfully.",
-      "error": "Failed to delete chat: {message}"
+      "error": "Failed to delete chat: {error}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
@@ -960,7 +1006,7 @@
       "loading": "Deleting...",
       "notFound": "Cannot delete evaluation: ID not found.",
       "success": "Deleted {count} expert feedback record(s) for {chatId}.",
-      "error": "Failed to delete expert evaluation: {message}",
+      "error": "Failed to delete expert evaluation: {error}",
       "notEvaluated": "Not evaluated."
     }
   },
@@ -1048,15 +1094,77 @@
     "pendingReceived": "We've received your account request.",
     "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
   },
+  "account": {
+    "title": "Manage your account",
+    "profileHeading": "Account details",
+    "accountName": "Account name",
+    "activityHeading": "Your assigned questions",
+    "role": "Role",
+    "institution": "Institution",
+    "group": "Group",
+    "institutionLocked": "Contact an admin to change your institution.",
+    "groupLocked": "Contact an admin to change your group.",
+    "lockNotice": "Make sure you've chosen the right institution or group. After you save, only an admin can change it.",
+    "updated": "Account updated: {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution removed",
+    "changeGroupSet": "{value} group",
+    "changeGroupCleared": "group removed",
+    "profileSaveError": "Failed to update your account.",
+    "loadError": "Failed to load your account.",
+    "assignedChats": {
+      "heading": "Your assigned questions for review",
+      "filterLabel": "Filter assigned questions",
+      "loadError": "Failed to load your assigned questions.",
+      "columns": {
+        "assignedOn": "Assigned on",
+        "assignedBy": "Assigned by",
+        "partnerNotes": "Notes",
+        "evaluated": "Evaluated"
+      },
+      "evalStatus": {
+        "completed": "Completed",
+        "pending": "Pending"
+      }
+    },
+    "preferences": {
+      "heading": "Dashboard filter default preferences",
+      "prefilterDepartment": "Use your institution",
+      "prefilterGroup": "Use your group (chats created or reviewed by your group's members)",
+      "noInstitution": "Save your institution first.",
+      "savedChange": "Preference saved: {change}",
+      "changeInstitutionOn": "selected your institution",
+      "changeInstitutionOff": "unselected your institution",
+      "changeGroupOn": "selected your group",
+      "changeGroupOff": "unselected your group",
+      "saveError": "Failed to save preference.",
+      "filteredNoticeTitle": "How filter preferences work",
+      "filteredInstitution": "*Chat*, *evaluation*, *auto-evaluation*, *download chat logs*, *metrics*, *technical metrics* and *partner* dashboards open filtered to your institution by default.",
+      "filteredGroup": "*Chat*, *evaluation*, *auto-evaluation*, *download chat logs*, *metrics*, *technical metrics* and *partner* dashboards open filtered to your group by default. You'll only see questions and answers your group created or reviewed.",
+      "filteredBothChatEvalLabel": "*Chat*, *evaluation*, *auto-evaluation* and *download chat logs* dashboards:",
+      "filteredBothChatEvalEffect": "everything for your institution, plus anything your group created or reviewed.",
+      "filteredBothMetricsPartnerLabel": "*Metrics*, *technical metrics* and *partner* dashboards:",
+      "filteredBothMetricsPartnerEffect": "only chats that match both your institution and your group.",
+      "filteredPublicLabel": "*Public* dashboard:",
+      "filteredPublicEffect": "not affected.",
+      "filteredFooter": "You can still change these filter values anytime on each dashboard. Clear all will reset to your default preferences."
+    }
+  },
   "users": {
     "title": "Manage user accounts",
+    "institutionNone": "None",
+    "groupNone": "None",
+    "groupClearedAnnouncement": "Group cleared.",
+    "groupRestoredAnnouncement": "Group set back to {group}.",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created at",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Group"
     },
     "roles": {
       "admin": "Admin",
@@ -1102,7 +1210,8 @@
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
       "invalidEmail": "Invalid email or ; spacing",
-      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24."
+      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
+      "invalidSearchProvider": "Select a valid search provider."
     },
     "cache": { "title": "Cache" },
     "general": {
@@ -1113,6 +1222,9 @@
     },
     "defaultModel": {
       "label": "Default model family"
+    },
+    "defaultSearchProvider": {
+      "label": "Default public chat search provider"
     },
     "chatTransport": {
       "label": "Chat event transport",
@@ -1238,7 +1350,9 @@
       "threat": "Threats",
       "manipulation": "Manipulation",
       "langEnglish": "English",
-      "langFrench": "Français"
+      "langFrench": "Français",
+      "langSuffixEn": "(EN)",
+      "langSuffixFr": "(FR)"
     },
     "metrics": {
       "storeType": "Chat metrics store (memory | DocumentDB)"
@@ -1261,7 +1375,7 @@
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
-    "error": "Error",
+    "error": "Error:",
     "page": "Page",
     "yes": "Yes",
     "no": "No",
@@ -1281,7 +1395,7 @@
     "reRun": "Re-run",
     "reRunning": "Re-running...",
     "noMatch": "No match found for this interaction.",
-    "reason": "Reason",
+    "reason": "Reason:",
     "processed": "Processed",
     "hasMatches": "Has matches",
     "fallback": "Fallback",
@@ -1322,7 +1436,7 @@
     "helpfulNo": "Helpful - no",
     "notAvailable": "N/A",
     "expertFeedbackTitle": "Expert evaluation",
-    "expertEmail": "Expert email",
+    "expertEmail": "Expert email:",
     "deleteExpertFeedback": "Delete expert evaluation",
     "publicFeedbackTitle": "Public feedback",
     "autoEvalTitle": "Automated evaluation",
@@ -1337,7 +1451,7 @@
     "none": "none",
     "sourceSentenceIndex": "Source sentence index",
     "stageTimeline": "Stage timeline",
-    "rawTimeline": "Raw timeline (JSON)",
+    "rawTimeline": "Raw timeline (JSON):",
     "noStageTimeline": "No stage timeline available.",
     "sourceText": "Source text",
     "matchedChatId": "Matched chatId",
@@ -1349,15 +1463,19 @@
     "noSentenceTraces": "No sentence match traces available.",
     "citation": "Citation",
     "totalScore": "Total score",
+    "totalScoreLabel": "Total score:",
     "suggestedCitation": "Suggested citation URL:",
     "similarityScores": "Similarity scores",
     "sentenceMatchTrace": "Sentence match trace",
     "agentUsage": "Agent usage",
     "metric": "Metric",
     "sentenceCompare": "Sentence-compare",
-    "sentenceCompareUsed": "Sentence compare used",
+    "sentenceCompareLabel": "Sentence-compare:",
+    "sentenceCompareUsed": "Sentence compare used:",
     "fallbackCompare": "Fallback-compare",
+    "fallbackCompareLabel": "Fallback-compare:",
     "fallbackCompareUsed": "Fallback compare used",
+    "fallbackCompareUsedLabel": "Fallback compare used:",
     "field": "Field",
     "value": "Value",
     "fallbackCompareChecks": "Fallback compare checks",
@@ -1419,9 +1537,9 @@
     "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
     "deptNote": "Blocked queries can't be broken down by institution — blocks happen before the institution is identified. Clear the institution filter to see blocked-query counts.",
     "colType": "Block type",
-    "colTotal": "Total",
-    "colEn": "EN",
-    "colFr": "FR",
+    "colTotal": "Total:",
+    "colEn": "EN:",
+    "colFr": "FR:",
     "totalRow": "Total blocked",
     "types": {
       "tooShort": "Too short (1–2 words)",
@@ -1820,7 +1938,7 @@
     "regenerateEmbeddings": "Regenerate embeddings",
     "regenerating": "Regenerating...",
     "processing": "Processing...",
-    "remaining": "Remaining",
+    "remaining": "Remaining:",
     "autoProcessingActive": "Auto-processing active",
     "metadataBackfillTitle": "Embedding metadata backfill",
     "metadataBackfillDescription": "Populate embedding metadata in a background job that continues after you leave this page.",
@@ -1838,7 +1956,7 @@
     "metadataBackfillStopped": "Stopped",
     "metadataBackfillStoppedAnnouncement": "Embedding metadata backfill stopped.",
     "metadataBackfillStopFailed": "Failed to stop embedding metadata backfill. Check the console for details.",
-    "metadataProcessed": "Processed",
+    "metadataProcessed": "Processed:",
     "metadataResumeFromId": "Saved resume ID: {id}",
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
     "metadataBackfillCompleted": "Embedding metadata backfill complete.",
@@ -1898,10 +2016,10 @@
       "loading": "Looking up metadata...",
       "failed": "Failed to look up embedding metadata.",
       "chatSummary": {
-        "chatId": "Chat ID",
-        "pageLanguage": "Page language",
-        "interactions": "Interactions",
-        "embeddings": "Embeddings"
+        "chatId": "Chat ID:",
+        "pageLanguage": "Page language:",
+        "interactions": "Interactions:",
+        "embeddings": "Embeddings:"
       },
       "columns": {
         "row": "Row",
@@ -1937,7 +2055,7 @@
     "loadingSimilarChats": "Loading similar chats...",
     "enterChatId": "Please enter a chat ID.",
     "fetchError": "Failed to fetch similar chats",
-    "fetchErrorDetail": "Failed to fetch similar chats: {message}",
+    "fetchErrorDetail": "Failed to fetch similar chats: {error}",
     "columns": {
       "chatId": "Chat ID",
       "similarity": "Similarity",
@@ -2031,7 +2149,7 @@
     "table": {
       "enabled": "Use this scenario for testing",
       "enabledError": "Please make a change to the scenario first.",
-      "lastUpdated": "Last updated"
+      "lastUpdated": "Last updated:"
     },
     "buttons": {
       "save": "Save",
@@ -2087,11 +2205,11 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
-    "lastRun": "Last run",
+    "lastRun": "Last run:",
     "serviceDetails": "Service details",
-    "latency": "Latency",
+    "latency": "Latency:",
     "details": "Details",
-    "error": "Error"
+    "error": "Error:"
   },
   "validation": {
     "required": "Please fill in this field.",
@@ -2163,7 +2281,7 @@
       "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
-      "requiredColumns": "Columns",
+      "requiredColumns": "Columns:",
       "columnAliasHint": "Column names are matched without regard to case, spaces, hyphens or underscores. Extra columns are kept and ignored unless they conflict with the selected dataset type.",
       "uploadDescriptions": {
         "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Do not include an answer or reference answer column.",
@@ -2213,7 +2331,7 @@
       "configuration": "Configuration",
       "selectAnalyzers": "Select analyzer",
       "analyzerDetailsTitle": "Analyzer details",
-      "analyzerPrefix": "Analyzer",
+      "analyzerPrefix": "Analyzer:",
       "workflowLabel": "Workflow",
       "analysisMode": {
         "label": "Analysis mode",
@@ -2228,6 +2346,7 @@
       },
       "comparison": {
         "title": "Compare completed batches",
+        "titlePrefix": "Compare completed batches:",
         "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
         "analyzerDetailsTitle": "Comparison analyzer details",
         "analyzers": {
@@ -2282,6 +2401,7 @@
           }
         },
         "baseline": "Baseline batch",
+        "baselinePrefix": "Baseline batch:",
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
         "selectCandidate": "-- Select a batch to compare --",
@@ -2591,7 +2711,7 @@
       "scoreAny": "any trial",
       "captureRun": "Reference batch — not scored against a reference",
       "newRun": "New analysis batch",
-      "categoryLabel": "Category",
+      "categoryLabel": "Category:",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {
         "control": "Control",

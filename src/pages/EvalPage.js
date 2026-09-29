@@ -145,17 +145,17 @@ const EvalPage = ({ lang = 'en' }) => {
         <GcdsDetails detailsTitle={t('admin.evalPage.detailsTitle')} className="mt-400">
           <ol className="mb-200">
             <li>
-              <strong>{t('admin.evalPage.step.initialValidation.title')}:</strong>
+              <strong>{t('admin.evalPage.step.initialValidation.title')}</strong>
               {' '}
               {t('admin.evalPage.step.initialValidation.description')}
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.embeddingRetrieval.title')}:</strong>
+              <strong>{t('admin.evalPage.step.embeddingRetrieval.title')}</strong>
               {' '}
               {t('admin.evalPage.step.embeddingRetrieval.description')}
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.findingSimilar.title')}:</strong>
+              <strong>{t('admin.evalPage.step.findingSimilar.title')}</strong>
               {' '}
               {t('admin.evalPage.step.findingSimilar.description')}
               <ul>
@@ -165,7 +165,7 @@ const EvalPage = ({ lang = 'en' }) => {
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.sentenceMatching.title')}:</strong>
+              <strong>{t('admin.evalPage.step.sentenceMatching.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.sentenceMatching.item.findMostSimilar')}</li>
                 <li>{t('admin.evalPage.step.sentenceMatching.item.threshold')}</li>
@@ -174,7 +174,7 @@ const EvalPage = ({ lang = 'en' }) => {
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.citationMatch.title')}:</strong>
+              <strong>{t('admin.evalPage.step.citationMatch.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.citationMatch.item.compare')}</li>
                 <li>{t('admin.evalPage.step.citationMatch.item.score')}</li>
@@ -182,7 +182,7 @@ const EvalPage = ({ lang = 'en' }) => {
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.qaFallback.title')}:</strong>
+              <strong>{t('admin.evalPage.step.qaFallback.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.qaFallback.item.checkTop')}</li>
                 <li>{t('admin.evalPage.step.qaFallback.item.citationCheck')}</li>
@@ -190,14 +190,14 @@ const EvalPage = ({ lang = 'en' }) => {
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.fallbackCompare.title')}:</strong>
+              <strong>{t('admin.evalPage.step.fallbackCompare.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.fallbackCompare.item.agent')}</li>
                 <li>{t('admin.evalPage.step.fallbackCompare.item.record')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.creation.title')}:</strong>
+              <strong>{t('admin.evalPage.step.creation.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.creation.item.createFeedback')}</li>
                 <li>{t('admin.evalPage.step.creation.item.computeScore')}</li>
@@ -207,14 +207,14 @@ const EvalPage = ({ lang = 'en' }) => {
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.noMatch.title')}:</strong>
+              <strong>{t('admin.evalPage.step.noMatch.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.noMatch.item.recordNoMatch')}</li>
                 <li>{t('admin.evalPage.step.noMatch.item.trace')}</li>
               </ul>
             </li>
             <li>
-              <strong>{t('admin.evalPage.step.timeline.title')}:</strong>
+              <strong>{t('admin.evalPage.step.timeline.title')}</strong>
               <ul>
                 <li>{t('admin.evalPage.step.timeline.item.record')}</li>
                 <li>{t('admin.evalPage.step.timeline.item.telemetry')}</li>
@@ -229,6 +229,7 @@ const EvalPage = ({ lang = 'en' }) => {
           {evalMetrics ? (
             <div>
               <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                    <caption className="sr-only">{t('admin.evalPage.metrics.title')}</caption>
                 <thead>
                   <tr>
                     <th scope="col"><span className="sr-only">{t('reviewPanels.metric')}</span></th>
@@ -255,6 +256,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <h4>{t('admin.evalPage.metrics.noMatchReasons')}</h4>
                   {evalMetrics.noMatchByReason && Object.keys(evalMetrics.noMatchByReason).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                        <caption className="sr-only">{t('admin.evalPage.metrics.noMatchReasons')}</caption>
                     <thead>
                       <tr>
                         <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.reasonLabel')}</th>
@@ -279,6 +281,7 @@ const EvalPage = ({ lang = 'en' }) => {
                 <h4>{t('admin.evalPage.metrics.fallbackTypes')}</h4>
                 {evalMetrics.fallbackByType && Object.keys(evalMetrics.fallbackByType).length > 0 ? (
                   <table className="table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                        <caption className="sr-only">{t('admin.evalPage.metrics.fallbackTypes')}</caption>
                     <thead>
                       <tr>
                         <th scope="col" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>{t('admin.evalPage.metrics.fallbackLabel')}</th>
@@ -311,7 +314,7 @@ const EvalPage = ({ lang = 'en' }) => {
         </div>
         <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
           <label>
-            {t('admin.evalPage.date.startLabel')}:
+            {t('admin.evalPage.date.startLabel')}
             <input
               type="date"
               value={startTime}
@@ -320,7 +323,7 @@ const EvalPage = ({ lang = 'en' }) => {
             />
           </label>
           <label>
-            {t('admin.evalPage.date.endLabel')}:
+            {t('admin.evalPage.date.endLabel')}
             <input
               type="date"
               value={endTime}
@@ -358,16 +361,16 @@ const EvalPage = ({ lang = 'en' }) => {
           <StatusMessage tag="div" className="mb-200">
             <p>
               {evalProgress.processed !== undefined && (
-                <span> • {t('admin.evalPage.progress.processed')}: {evalProgress.processed}</span>
+                <span> • {t('admin.evalPage.progress.processed')} {evalProgress.processed}</span>
               )}
               {evalProgress.failed !== undefined && (
-                <span> • {t('admin.evalPage.progress.failed')}: {evalProgress.failed}</span>
+                <span> • {t('admin.evalPage.progress.failed')} {evalProgress.failed}</span>
               )}
               {evalProgress.remaining !== undefined && (
-                <span> • {t('admin.evalPage.progress.remaining')}: {evalProgress.remaining}</span>
+                <span> • {t('admin.evalPage.progress.remaining')} {evalProgress.remaining}</span>
               )}
               {evalProgress.duration !== undefined && (
-                <span> • {t('admin.evalPage.progress.duration')}: {evalProgress.duration}s</span>
+                <span> • {t('admin.evalPage.progress.duration')} {evalProgress.duration}s</span>
               )}
               {isAutoProcessingEvals && !isRegeneratingAll && (
                 <span> • <strong>{t('admin.evalPage.progress.autoProcessing')}</strong></span>

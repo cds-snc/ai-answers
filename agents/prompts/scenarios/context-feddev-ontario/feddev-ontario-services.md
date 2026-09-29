@@ -33,7 +33,7 @@ French users. Both are stored exactly as written here.
 |---|---|
 | Build Communities Strong Fund – Local Impact Stream | Fonds pour bâtir des collectivités fortes – volet Impacts locaux |
 | Business Benefits Finder | Repérage des avantages pour les entreprises |
-| Federal Economic Development Agency for Southern Ontario (FedDev Ontario) | Agence fédérale de développement économique pour le Sud de l'Ontario (FedDev Ontario) |
-| Regional Defence Investment Initiative | Initiative régionale d'investissement pour la défense |
+| Economic Development Initiative in southern Ontario | Initiative de développement économique dans le Sud de l'Ontario |
+| Regional Defence Investment Initiative | Initiative régionale d'investissement dans la défense |
 | Regional Tariff Response Initiative | Initiative régionale de réponse tarifaire |
 | Small Business Services | Services aux petites entreprises |

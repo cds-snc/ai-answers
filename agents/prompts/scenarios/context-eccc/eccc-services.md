@@ -22,6 +22,9 @@ French users. Both are stored exactly as written here.
 | Climate change funding programs | Programmes de financement pour les changements climatiques |
 | 2030 Nature Strategy | Stratégie 2030 pour la nature |
 | Convention on Biological Diversity | Convention sur la diversité biologique |
+| Convention on International Trade in Endangered Species (CITES) | Convention sur le commerce international des espèces menacées d'extinction (CITES) |
 | Wildlife rehabilitation | Réhabilitation de la faune |
 | Environmental and wildlife enforcement | Application des lois environnementales et sur la faune |
+| Hydrological Services | Services hydrologiques |
+| Migratory Game Bird Hunting Permits | Permis de chasse aux oiseaux migrateurs considérés comme gibier |
 | Water quality information | Information sur la qualité de l'eau |
