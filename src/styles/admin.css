@@ -379,6 +379,13 @@
   margin-bottom: 2px;
 }
 
+/* Thin rule between an immediate action and the form below it — the
+   browser-default <hr> renders as a thick inset double line. */
+.section-divider {
+  border: none;
+  border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
 .filter-field {
   position: relative;
 }

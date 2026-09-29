@@ -26,6 +26,8 @@ const t = (key) => {
     'homepage.chat.options.searchSelection.canadaca': 'Canada.ca',
     'homepage.chat.options.searchSelection.google': 'Google',
     'homepage.chat.options.useSystemSettings': 'Use system settings',
+    'homepage.chat.options.saveLabel': 'Save options',
+    'homepage.chat.options.savedAnnouncement': 'Options saved.',
     'homepage.chat.options.referringUrl.label': 'Referring Canada.ca URL (optional)',
     'homepage.chat.options.referringUrl.error': 'Enter a full URL, starting with https:// or http://',
     'homepage.chat.options.referringUrl.emptyError': 'Please include a URL',
@@ -76,14 +78,17 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(screen.queryByText('Options')).toBeNull();
   });
 
-  it('allows admins and partners to select the search provider', () => {
+  it('does not apply a search provider change until Save is clicked', () => {
     mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
-    const { handleSearchToggle, selectedSearchValues } = renderOptions();
+    const handleSearchToggle = vi.fn();
+    renderOptions({ handleSearchToggle });
 
     fireEvent.change(screen.getByLabelText('Search:'), { target: { value: 'canadaca' } });
+    expect(handleSearchToggle).not.toHaveBeenCalled();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Save options' }));
     expect(handleSearchToggle).toHaveBeenCalledTimes(1);
-    expect(selectedSearchValues).toEqual(['canadaca']);
+    expect(handleSearchToggle.mock.calls[0][0].target.value).toBe('canadaca');
   });
 
   it('does not apply on typing alone — only once Apply is clicked', () => {
@@ -253,23 +258,91 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(screen.queryByText('Referring URL removed')).toBeNull();
   });
 
-  it('Workflow and Model apply live on change, with no draft/Apply step', () => {
+  // Stateful parent, like ChatAppContainer: a saved change flows back in as
+  // the new props, so dirty-checking is tested against real saved values.
+  const Harness = ({ onSave }) => {
+    const [workflowSelection, setWorkflow] = React.useState('');
+    const [modelSelection, setModel] = React.useState('');
+    const [selectedSearch, setSearch] = React.useState('google');
+    const wrap = (set) => (e) => { onSave(e.target.value); set(e.target.value); };
+    return (
+      <ChatOptions
+        safeT={t}
+        workflowSelection={workflowSelection}
+        handleWorkflowChange={wrap(setWorkflow)}
+        modelSelection={modelSelection}
+        handleAIToggle={wrap(setModel)}
+        selectedSearch={selectedSearch}
+        handleSearchToggle={wrap(setSearch)}
+        referringUrl=""
+        handleReferringUrlChange={vi.fn()}
+      />
+    );
+  };
+  const saveButton = () => screen.getByRole('button', { name: 'Save options' });
+
+  it('applies Workflow and Model only on Save, and only the fields that changed', () => {
     mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
-    // The select is controlled by the (unchanged, since these mocks don't
-    // update any state) workflowSelection/modelSelection props, so its DOM
-    // value snaps back after React re-renders — capture the value at the
-    // moment of the change event instead of reading the target afterward.
-    let capturedWorkflow, capturedModel;
-    const handleWorkflowChange = vi.fn((e) => { capturedWorkflow = e.target.value; });
-    const handleAIToggle = vi.fn((e) => { capturedModel = e.target.value; });
-    renderOptions({ handleWorkflowChange, handleAIToggle });
+    const onSave = vi.fn();
+    render(<Harness onSave={onSave} />);
 
     fireEvent.change(screen.getByLabelText('Workflow:'), { target: { value: 'GenericGraph' } });
     fireEvent.change(screen.getByLabelText('Model family:'), { target: { value: 'azure' } });
+    expect(onSave).not.toHaveBeenCalled();
 
-    expect(handleWorkflowChange).toHaveBeenCalledTimes(1);
-    expect(capturedWorkflow).toBe('GenericGraph');
-    expect(handleAIToggle).toHaveBeenCalledTimes(1);
-    expect(capturedModel).toBe('azure');
+    fireEvent.click(saveButton());
+    expect(onSave.mock.calls.map(([v]) => v).sort()).toEqual(['GenericGraph', 'azure']);
+  });
+
+  it('enables Save only while a selection differs from what is saved', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+    render(<Harness onSave={vi.fn()} />);
+    const model = screen.getByLabelText('Model family:');
+
+    expect(saveButton().disabled).toBe(true);
+    fireEvent.change(model, { target: { value: 'azure' } });
+    expect(saveButton().disabled).toBe(false);
+    // Switching back to the saved value is not a change.
+    fireEvent.change(model, { target: { value: '' } });
+    expect(saveButton().disabled).toBe(true);
+
+    fireEvent.change(model, { target: { value: 'azure' } });
+    fireEvent.click(saveButton());
+    expect(saveButton().disabled).toBe(true);
+    // azure is now the saved value; going back to it after a detour is clean.
+    fireEvent.change(model, { target: { value: '' } });
+    expect(saveButton().disabled).toBe(false);
+    fireEvent.change(model, { target: { value: 'azure' } });
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it('confirms a save beside the button, and drops it on the next change', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+    render(<Harness onSave={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Workflow:'), { target: { value: 'GenericGraph' } });
+    fireEvent.click(saveButton());
+    const saved = 'Options saved.';
+    expect(screen.getByText(saved)).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Workflow:'), { target: { value: '' } });
+    expect(screen.queryByText(saved)).toBeNull();
+  });
+
+  it('puts Save and a divider between the admin options and the referring URL', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+    const { container } = renderOptions();
+    const hr = container.querySelector('hr');
+
+    expect(saveButton().compareDocumentPosition(hr) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(hr.compareDocumentPosition(urlInput()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows partners no Save button or divider (they only have the referring URL)', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'partner' } });
+    const { container } = renderOptions();
+
+    expect(screen.queryByRole('button', { name: 'Save options' })).toBeNull();
+    expect(container.querySelector('hr')).toBeNull();
   });
 });
