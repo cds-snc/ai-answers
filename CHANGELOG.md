@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.204.0](https://github.com/cds-snc/ai-answers/compare/v1.203.0...v1.204.0) (2026-09-29)
+
+
+### Features
+
+* question number column in assigned chats table ([25c7099](https://github.com/cds-snc/ai-answers/commit/25c70992818b9fc794e01a90d385a2a812a3d4d3))
+
+
+### Bug Fixes
+
+* announce group cleared or restored when institution changes ([9e5fb65](https://github.com/cds-snc/ai-answers/commit/9e5fb6515660de35efbc7bffa6c07a1a565559b1))
+* keep saved group when arrowing institution; tidy users table ([285c9ab](https://github.com/cds-snc/ai-answers/commit/285c9abdfacaaa23c22242e156459ef3eaf731f3))
+* per-question links in assigned chats table ([888615f](https://github.com/cds-snc/ai-answers/commit/888615fa298a2af12cda36abfe36f55af99df2f5))
+* real links and ARIA fixes on experimental pages ([1efff15](https://github.com/cds-snc/ai-answers/commit/1efff155e1bf9aa83772cfc39f8562ea3e9110ef))
+* rebuild indexes via POST, gated network rejects PUT ([c9c8055](https://github.com/cds-snc/ai-answers/commit/c9c80556384658b15ea3047e766060aea482b4cf))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump ip-address from 10.3.1 to 10.5.1 ([c1dc4c2](https://github.com/cds-snc/ai-answers/commit/c1dc4c2d0c4d94c29480e86247ce5e3626c2cb29))
+* **deps:** bump ip-address from 10.3.1 to 10.5.1 ([68d95c3](https://github.com/cds-snc/ai-answers/commit/68d95c3d9b9d4e7112bbdec88c7b678da2b4330d))
+* **deps:** bump undici from 7.29.0 to 7.30.0 ([9148880](https://github.com/cds-snc/ai-answers/commit/91488800dc3fdff8076579014dea87e29a78aa52))
+* **deps:** bump undici from 7.29.0 to 7.30.0 ([8fcd729](https://github.com/cds-snc/ai-answers/commit/8fcd729f45a5a8c84bcf211397b7b8e11e6c4878))
+
 ## [1.203.0](https://github.com/cds-snc/ai-answers/compare/v1.202.0...v1.203.0) (2026-09-28)
 
 
