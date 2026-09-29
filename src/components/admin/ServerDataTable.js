@@ -194,7 +194,13 @@ const ServerDataTable = forwardRef(function ServerDataTable({
         preDrawCallback,
         drawCallback,
         initComplete: function () {
-            tableApiRef.current = this.api();
+            const api = this.api();
+            tableApiRef.current = api;
+            // A column can pair a short visible header ("#") with a
+            // spelled-out name for screen readers.
+            tableColumns.forEach((column, index) => {
+                if (column.headerAriaLabel) api.column(index).header()?.setAttribute('aria-label', column.headerAriaLabel);
+            });
         }
     }), [autoWidth, createdRowProp, drawCallback, emptyTableText, fetchData, lang, layout, lengthChange, onError, order, ordering, pageLength, preDrawCallback, renderActions, searchLabelSrOnly, searchPlaceholder, tableColumns]);
 

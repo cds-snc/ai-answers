@@ -286,6 +286,16 @@ const AccountPage = ({ lang = 'en' }) => {
         row.questionNumber ? t('account.assignedChats.chatIdQuestion').replace('{number}', () => String(row.questionNumber)) : '',
       ) : ''),
     },
+    {
+      // Short "#" header like the Eval dashboard; screen readers get the
+      // spelled-out name.
+      title: t('admin.evalDashboard.columns.questionNumber'),
+      headerAriaLabel: t('admin.evalDashboard.columns.questionNumberAriaLabel'),
+      data: 'questionNumber',
+      render: (value) => (value != null ? String(value) : ''),
+      width: '40px',
+      orderable: false,
+    },
     { title: t('admin.common.columns.program'), data: 'program', render: (value) => escapeHtmlAttribute(value || '') },
     { title: t('account.assignedChats.columns.evaluated'), data: 'partnerEval', render: renderEvalStatus },
     { title: t('account.assignedChats.columns.assignedOn'), data: 'assignedOn', render: (value) => value ? escapeHtmlAttribute(new Date(value).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')) : '' },

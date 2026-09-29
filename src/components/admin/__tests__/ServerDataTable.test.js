@@ -18,6 +18,7 @@ import { getAnnouncedTexts } from '../../../utils/liveAnnouncer.js';
 let lastOptions = null;
 let fireInitComplete = true;
 const mockAjaxReload = vi.fn();
+let mockHeaders = [];
 
 vi.mock('datatables.net-react', () => {
   const MockDataTable = (props) => {
@@ -26,7 +27,7 @@ vi.mock('datatables.net-react', () => {
       // Real DataTables calls initComplete with `this` bound to its
       // internal settings object, which exposes the actual API via a
       // `.api()` method — not the API object itself.
-      const settings = { api: () => ({ ajax: { reload: mockAjaxReload } }) };
+      const settings = { api: () => ({ ajax: { reload: mockAjaxReload }, column: (i) => ({ header: () => mockHeaders[i] }) }) };
       props.options?.initComplete?.call(settings);
     }
     return React.createElement('div', { 'data-testid': 'mock-data-table' });
@@ -43,6 +44,20 @@ describe('ServerDataTable', () => {
     lastOptions = null;
     fireInitComplete = true;
     mockAjaxReload.mockClear();
+    mockHeaders = [];
+  });
+
+  it('gives a column header its headerAriaLabel', () => {
+    mockHeaders = [document.createElement('th'), document.createElement('th')];
+    render(
+      React.createElement(ServerDataTable, {
+        columns: [{ data: 'name', title: 'Name' }, { data: 'n', title: '#', headerAriaLabel: 'Question number' }],
+        fetchData: vi.fn(),
+        tableKey: 'test-table',
+      })
+    );
+    expect(mockHeaders[0].hasAttribute('aria-label')).toBe(false);
+    expect(mockHeaders[1].getAttribute('aria-label')).toBe('Question number');
   });
 
   it('reload() calls the underlying DataTables API without resetting paging', () => {

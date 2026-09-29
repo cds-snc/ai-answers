@@ -351,6 +351,18 @@ describe('AccountPage', () => {
     expect(second.querySelector('gcds-link .sr-only').textContent).toBe('account.assignedChats.chatIdQuestion');
   });
 
+  it('shows a question number column right after Chat ID, named for screen readers', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    await screen.findByText('a@dnd.ca');
+    const { columns } = tablePropsByCaption['account.assignedChats.heading'];
+    const index = columns.findIndex((c) => c.data === 'questionNumber');
+    expect(columns[index - 1].data).toBe('chatId');
+    expect(columns[index].title).toBe('admin.evalDashboard.columns.questionNumber');
+    expect(columns[index].headerAriaLabel).toBe('admin.evalDashboard.columns.questionNumberAriaLabel');
+    expect(columns[index].render(3)).toBe('3');
+  });
+
   it('moves focus to the load error and hides profile/activity content', async () => {
     mockGetMe.mockRejectedValue(new Error('nope'));
     render(<AccountPage lang="en" />);
