@@ -3576,6 +3576,12 @@ details gcds-button::part(button) {
   font-variant-numeric: tabular-nums;
 }
 
+/* Short lists: one column, capped so the label stays near its number. */
+.canada-ca-dl-columns--single {
+  columns: auto;
+  max-width: 65ch;
+}
+
 /* Native <input type="file"> dressed as GC DS's gcds-file-uploader, using
    that component's own tokens (gcds-file-uploader.css). Keeps a plain
    input so the app's FeedbackInlineError/aria-describedby error pattern
