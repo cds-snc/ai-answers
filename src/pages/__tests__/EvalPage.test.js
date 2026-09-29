@@ -32,6 +32,7 @@ vi.mock('../../services/EvaluationService.js', () => ({ default: svc }));
 vi.mock('@gcds-core/components-react', () => ({
   GcdsContainer: ({ children }) => <div>{children}</div>,
   GcdsText: ({ children }) => <p>{children}</p>,
+  GcdsHeading: ({ children, tag: Tag = 'h2' }) => <Tag>{children}</Tag>,
   GcdsButton: ({ children, onClick, disabled }) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
@@ -104,6 +105,26 @@ describe('EvalPage', () => {
     expect(window.confirm).toHaveBeenCalledWith('eval.deleteEvalsConfirm');
     expect(window.alert).not.toHaveBeenCalled();
     await waitFor(() => expect(svc.getEvalMetrics).toHaveBeenCalledTimes(2));
+  });
+
+  it('disables the actions and shows "Deleting..." while a delete runs', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    let finishDelete;
+    svc.deleteEvals.mockReturnValue(new Promise((resolve) => { finishDelete = resolve; }));
+
+    render(<EvalPage lang="en" />);
+    fireEvent.click(screen.getByText('admin.evalPage.button.deleteAll'));
+
+    const deletingButton = await screen.findByText('common.deleting');
+    expect(deletingButton.disabled).toBe(true);
+    expect(screen.getByText('admin.evalPage.button.deleteEmpty').disabled).toBe(true);
+    expect(screen.getByText('admin.evalPage.button.generate').disabled).toBe(true);
+
+    fireEvent.click(screen.getByText('admin.evalPage.button.deleteEmpty'));
+    expect(svc.deleteEvals).toHaveBeenCalledTimes(1);
+
+    finishDelete({ deleted: 7, expertFeedbackDeleted: 2 });
+    await waitFor(() => expect(screen.getByText('admin.evalPage.button.deleteAll').disabled).toBe(false));
   });
 
   it('says so when there is nothing to delete', async () => {

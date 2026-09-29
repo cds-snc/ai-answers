@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink, GcdsFieldset } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink, GcdsFieldset, GcdsHeading } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import EvaluationService from '../services/EvaluationService.js';
@@ -15,6 +15,9 @@ const EvalPage = ({ lang = 'en' }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateProgress, setGenerateProgress] = useState(null);
+  // Which delete is running ('all' | 'empty'), so only its button says "Deleting...".
+  const [deleting, setDeleting] = useState(null);
+  const isBusy = isGenerating || deleting !== null;
   // Outcome of the last generate/delete run, shown under the buttons.
   const [actionMessage, setActionMessage] = useState(null);
   const [startTime, setStartTime] = useState('');
@@ -57,7 +60,7 @@ const EvalPage = ({ lang = 'en' }) => {
   // The server works in ~30s batches; keep asking until nothing is left,
   // adding up each batch's counts for the final message.
   const handleGenerateEvals = async () => {
-    if (isGenerating) return;
+    if (isBusy) return;
     setIsGenerating(true);
     setActionMessage(null);
     setGenerateProgress(null);
@@ -91,9 +94,11 @@ const EvalPage = ({ lang = 'en' }) => {
   };
 
   const handleDeleteEvals = async (onlyEmpty) => {
+    if (isBusy) return;
     const confirmText = onlyEmpty ? t('eval.deleteEmptyEvalsConfirm') : t('eval.deleteEvalsConfirm');
     if (!window.confirm(confirmText)) return;
     setActionMessage(null);
+    setDeleting(onlyEmpty ? 'empty' : 'all');
     try {
       const result = await EvaluationService.deleteEvals({ ...dateRange(), onlyEmpty });
       if (!result.deleted) {
@@ -115,6 +120,8 @@ const EvalPage = ({ lang = 'en' }) => {
       setActionMessage(onlyEmpty
         ? buildErrorStatus('eval.deleteEmptyEvalsFailed', error)
         : buildErrorStatus('eval.deleteEvalsFailed', error));
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -135,7 +142,7 @@ const EvalPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page">
-      <h1 className="mb-400">{t('admin.navigation.eval')}</h1>
+      <GcdsHeading tag="h1" marginBottom="400">{t('admin.navigation.eval')}</GcdsHeading>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -144,7 +151,7 @@ const EvalPage = ({ lang = 'en' }) => {
       </nav>
 
       <div className="mb-400">
-        <h2>{t('admin.evalPage.similarityTitle')}</h2>
+        <GcdsHeading tag="h2">{t('admin.evalPage.similarityTitle')}</GcdsHeading>
         <GcdsText>
           {t('admin.evalPage.similarityDescription')}
         </GcdsText>
@@ -231,7 +238,7 @@ const EvalPage = ({ lang = 'en' }) => {
       </div>
 
       <div className="mb-400">
-        <h2>{t('admin.evalPage.metrics.title')}</h2>
+        <GcdsHeading tag="h2">{t('admin.evalPage.metrics.title')}</GcdsHeading>
         {stats ? (
           <>
             {renderCounts([
@@ -242,7 +249,7 @@ const EvalPage = ({ lang = 'en' }) => {
               ['hasMatches', t('admin.evalPage.metrics.hasMatches'), stats.hasMatches],
             ])}
 
-            <h3>{t('admin.evalPage.metrics.noMatchReasons')}</h3>
+            <GcdsHeading tag="h3">{t('admin.evalPage.metrics.noMatchReasons')}</GcdsHeading>
             {noMatchEntries.length > 0 ? (
               renderCounts(noMatchEntries.map(([reason, count]) => [
                 reason, t(`eval.noMatchReasonTypes.${reason}`, reason), count,
@@ -251,7 +258,7 @@ const EvalPage = ({ lang = 'en' }) => {
               <GcdsText>{t('admin.evalPage.metrics.noMatchNone')}</GcdsText>
             )}
 
-            <h3>{t('admin.evalPage.metrics.fallbackTypes')}</h3>
+            <GcdsHeading tag="h3">{t('admin.evalPage.metrics.fallbackTypes')}</GcdsHeading>
             {fallbackEntries.length > 0 ? (
               // Raw internal code (e.g. 'qa-high-score'), not translated yet.
               renderCounts(fallbackEntries.map(([type, count]) => [
@@ -276,7 +283,7 @@ const EvalPage = ({ lang = 'en' }) => {
       </div>
 
       <div className="mb-400 filter-fields-full-size">
-        <h2>{t('admin.evalPage.actionsTitle')}</h2>
+        <GcdsHeading tag="h2">{t('admin.evalPage.actionsTitle')}</GcdsHeading>
         {/* Changing the range clears the last outcome - it described the
             previous range. */}
         <GcdsFieldset
@@ -312,18 +319,18 @@ const EvalPage = ({ lang = 'en' }) => {
         </GcdsFieldset>
         {/* One button per row */}
         <div className="mb-200">
-          <GcdsButton onClick={handleGenerateEvals} disabled={isGenerating}>
+          <GcdsButton onClick={handleGenerateEvals} disabled={isBusy}>
             {isGenerating ? t('admin.evalPage.button.processing') : t('admin.evalPage.button.generate')}
           </GcdsButton>
         </div>
         <div className="mb-200">
-          <GcdsButton onClick={() => handleDeleteEvals(false)} disabled={isGenerating} buttonRole="danger">
-            {t('admin.evalPage.button.deleteAll')}
+          <GcdsButton onClick={() => handleDeleteEvals(false)} disabled={isBusy} buttonRole="danger">
+            {deleting === 'all' ? t('common.deleting') : t('admin.evalPage.button.deleteAll')}
           </GcdsButton>
         </div>
         <div className="mb-200">
-          <GcdsButton onClick={() => handleDeleteEvals(true)} disabled={isGenerating} buttonRole="danger">
-            {t('admin.evalPage.button.deleteEmpty')}
+          <GcdsButton onClick={() => handleDeleteEvals(true)} disabled={isBusy} buttonRole="danger">
+            {deleting === 'empty' ? t('common.deleting') : t('admin.evalPage.button.deleteEmpty')}
           </GcdsButton>
         </div>
         {isGenerating && (
