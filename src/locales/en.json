@@ -1101,8 +1101,10 @@
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
-      "invalidEmail": "Invalid email or ; spacing"
+      "invalidEmail": "Invalid email or ; spacing",
+      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24."
     },
+    "cache": { "title": "Cache" },
     "general": {
       "title": "General settings"
     },
@@ -1124,7 +1126,8 @@
     },
     "downloadWebPageCache": {
       "enabledLabel": "Cache downloaded web pages",
-      "description": "When enabled, public web pages are cached for up to 12 hours. S3 removes cache files after one day.",
+      "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
+      "durationHoursLabel": "Web page cache duration (hours)",
       "clear": "Clear cached web pages",
       "clearing": "Clearing cached web pages...",
       "clearSuccess": "Cleared {count} cached web pages.",

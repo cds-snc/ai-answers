@@ -76,6 +76,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'chat.transport': 'sse',
   'downloadWebPage.cache.enabled': 'false',
+  'downloadWebPage.cache.durationHours': '12',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
   'systemHealth.checks.database.enabled': 'true',
@@ -120,8 +121,9 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'downloadWebPage.cache.enabled', 'site.baseUrl',
+    'chat.transport', 'model.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
+  cache: ['downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
   health: [
     'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
     'systemHealth.checks.llm.enabled', 'systemHealth.autoDisableOnError', 'systemHealth.errorTemplateId',
@@ -155,6 +157,7 @@ const KEY_TO_SECTION = Object.fromEntries(
 // duplicating the title strings each SectionSaveControls already carries.
 const SECTION_TITLE_KEYS = {
   general: 'settings.general.title',
+  cache: 'settings.cache.title',
   health: 'settings.health.title',
   twoFA: 'settings.twoFA.title',
   session: 'settings.session.title',
@@ -175,6 +178,7 @@ const FIELD_META = {
   'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
   'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
   'downloadWebPage.cache.enabled': { fieldId: 'download-web-page-cache-enabled', labelKey: 'settings.downloadWebPageCache.enabledLabel' },
+  'downloadWebPage.cache.durationHours': { fieldId: 'download-web-page-cache-duration-hours', labelKey: 'settings.downloadWebPageCache.durationHoursLabel' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
@@ -245,6 +249,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [chatTransport, setChatTransport] = useState('sse');
   const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
+  const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
   const [clearingDownloadWebPageCache, setClearingDownloadWebPageCache] = useState(false);
 
   // Canadian Indigenous language blocking guardrail (on by default)
@@ -313,7 +318,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   // load-time transform here too.
   const originalValuesRef = useRef({});
   const [sectionSaving, setSectionSaving] = useState({
-    general: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
+    general: false, cache: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
   });
   // { [section]: { text, isError } } — one save-outcome message per section,
   // replacing a single page-wide status shared by every field.
@@ -386,12 +391,12 @@ const SettingsPage = ({ lang = 'en' }) => {
       const { deletedCount } = await DataStoreService.clearDownloadWebPageCache();
       setSectionStatus((prev) => ({
         ...prev,
-        general: { text: t('settings.downloadWebPageCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+        cache: { text: t('settings.downloadWebPageCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
       }));
-      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
     } catch (_error) {
-      setSectionStatus((prev) => ({ ...prev, general: { text: t('settings.downloadWebPageCache.clearError'), isError: true } }));
-      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+      setSectionStatus((prev) => ({ ...prev, cache: { text: t('settings.downloadWebPageCache.clearError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
     } finally {
       setClearingDownloadWebPageCache(false);
     }
@@ -419,6 +424,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
+      setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
       setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
       setHealthDatabaseEnabled(String(settings['systemHealth.checks.database.enabled'] ?? 'true'));
@@ -813,33 +819,6 @@ const SettingsPage = ({ lang = 'en' }) => {
             <option value="false">{t('common.off')}</option>
           </select>
 
-          {fieldErrors['downloadWebPage.cache.enabled'] && (
-            <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
-          )}
-          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-200">
-            {t('settings.downloadWebPageCache.enabledLabel')}
-          </label>
-          <select
-            id="download-web-page-cache-enabled"
-            className="filter-select"
-            value={downloadWebPageCacheEnabled}
-            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheEnabled(v); stageChange('downloadWebPage.cache.enabled', v); }}
-            disabled={sectionSaving.general || clearingDownloadWebPageCache}
-            aria-describedby={fieldErrors['downloadWebPage.cache.enabled'] ? 'download-web-page-cache-enabled-error' : undefined}
-          >
-            <option value="false">{t('common.off')}</option>
-            <option value="true">{t('common.on')}</option>
-          </select>
-          <p className="mb-200">{t('settings.downloadWebPageCache.description')}</p>
-          <GcdsButton
-            type="button"
-            buttonRole="secondary"
-            disabled={sectionSaving.general || clearingDownloadWebPageCache}
-            onClick={clearDownloadWebPageCache}
-          >
-            {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
-          </GcdsButton>
-
           <SectionSaveControls
             section="general"
             titleKey="settings.general.title"
@@ -851,6 +830,56 @@ const SettingsPage = ({ lang = 'en' }) => {
             fieldErrors={fieldErrors}
             errorAttempt={sectionErrorAttempt.general || 0}
             saveNonce={sectionSaveNonce.general || 0}
+          />
+        </div>
+      </details>
+
+      <details>
+        <summary>{t('settings.cache.title')}</summary>
+        <div className="settings-form-width">
+          {fieldErrors['downloadWebPage.cache.enabled'] && (
+            <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.enabledLabel')}
+          </label>
+          <select
+            id="download-web-page-cache-enabled"
+            className="filter-select"
+            value={downloadWebPageCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheEnabled(v); stageChange('downloadWebPage.cache.enabled', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.enabled'] ? 'download-web-page-cache-enabled-error' : undefined}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          <p className="mb-200">{t('settings.downloadWebPageCache.description')}</p>
+          {fieldErrors['downloadWebPage.cache.durationHours'] && (
+            <FeedbackInlineError id="download-web-page-cache-duration-hours-error" message={fieldErrors['downloadWebPage.cache.durationHours']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-duration-hours" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.durationHoursLabel')}
+          </label>
+          <input
+            id="download-web-page-cache-duration-hours"
+            className="filter-input"
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={downloadWebPageCacheDurationHours}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheDurationHours(v); stageChange('downloadWebPage.cache.durationHours', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.durationHours'] ? 'download-web-page-cache-duration-hours-error' : undefined}
+          />
+          <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
+            {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+          </GcdsButton>
+          <SectionSaveControls
+            section="cache" titleKey="settings.cache.title" dirty={isSectionDirty('cache')}
+            saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
+            fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
           />
         </div>
       </details>

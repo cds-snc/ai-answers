@@ -64,7 +64,14 @@ const MIN_CONTENT_CHARS = 50;
 const SETTLED_FAILURE_CODES = new Set(["ENOTFOUND", "ECONNREFUSED"]);
 
 export const REQUEST_TIMEOUT_MS = 5000;
-export const CACHE_FRESHNESS_MS = 12 * 60 * 60 * 1000;
+export const DEFAULT_CACHE_DURATION_HOURS = 12;
+export function getCacheFreshnessMs() {
+  const configuredHours = Number(SettingsService.get("downloadWebPage.cache.durationHours"));
+  const durationHours = Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+    ? configuredHours
+    : DEFAULT_CACHE_DURATION_HOURS;
+  return durationHours * 60 * 60 * 1000;
+}
 export const CACHE_PREFIX = "download-web-page-cache/v1/";
 
 function cacheEnabled() {
@@ -82,7 +89,7 @@ async function readCachedMarkdown(url) {
     storageService.getMetaData(key),
   ]);
   const fetchedAt = metadata.lastModified?.getTime();
-  if (!fetchedAt || Date.now() - fetchedAt > CACHE_FRESHNESS_MS) return null;
+  if (!fetchedAt || Date.now() - fetchedAt > getCacheFreshnessMs()) return null;
   return markdown;
 }
 

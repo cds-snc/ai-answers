@@ -1101,8 +1101,10 @@
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
-      "invalidEmail": "Courriel ou espacement du « ; » invalide"
+      "invalidEmail": "Courriel ou espacement du « ; » invalide",
+      "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24."
     },
+    "cache": { "title": "Cache" },
     "general": {
       "title": "Paramètres généraux"
     },
@@ -1124,7 +1126,8 @@
     },
     "downloadWebPageCache": {
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
-      "description": "Lorsqu’il est activé, les pages Web publiques sont mises en cache pendant un maximum de 12 heures. S3 supprime les fichiers du cache après un jour.",
+      "description": "Lorsqu’il est activé, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
+      "durationHoursLabel": "Durée du cache des pages Web (heures)",
       "clear": "Vider le cache des pages Web",
       "clearing": "Suppression des pages Web en cache...",
       "clearSuccess": "{count} pages Web en cache supprimées.",
