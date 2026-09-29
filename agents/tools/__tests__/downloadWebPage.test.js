@@ -16,12 +16,14 @@ const {
   advanceCacheGenerationMock,
   setCacheEnabledMock,
   withCacheLockMock,
+  tryWithCacheLockMock,
 } = vi.hoisted(() => ({
   cacheEnabledMock: vi.fn(),
   cacheGenerationMock: vi.fn(),
   advanceCacheGenerationMock: vi.fn(),
   setCacheEnabledMock: vi.fn(),
   withCacheLockMock: vi.fn(),
+  tryWithCacheLockMock: vi.fn(),
 }));
 vi.mock('../../../services/Storage.js', () => ({
   getStorageObjectWithMetadata: storageGetWithMetadataMock,
@@ -38,6 +40,7 @@ vi.mock('../../../services/DownloadWebPageCacheCoordinator.js', () => ({
   isDownloadWebPageCacheEnabled: cacheEnabledMock,
   setDownloadWebPageCacheEnabled: setCacheEnabledMock,
   withDownloadWebPageCacheLock: withCacheLockMock,
+  tryWithDownloadWebPageCacheLock: tryWithCacheLockMock,
 }));
 
 import { getEncoding } from 'js-tiktoken';
@@ -101,6 +104,7 @@ describe('downloadWebPage tool', () => {
     cacheGenerationMock.mockResolvedValue('generation-1');
     advanceCacheGenerationMock.mockResolvedValue('generation-2');
     withCacheLockMock.mockImplementation((callback) => callback());
+    tryWithCacheLockMock.mockImplementation((callback) => callback());
   });
 
   it('returns markdown for a page with readable content', async () => {
@@ -135,6 +139,32 @@ describe('downloadWebPage tool', () => {
     expect(setCacheEnabledMock).toHaveBeenNthCalledWith(1, false);
     expect(advanceCacheGenerationMock).toHaveBeenCalledTimes(1);
     expect(setCacheEnabledMock).toHaveBeenNthCalledWith(2, false);
+  });
+
+  it('returns the downloaded page when a cache clear holds the write lock', async () => {
+    cacheEnabledMock.mockResolvedValue(true);
+    storageGetWithMetadataMock.mockRejectedValue({ name: 'NoSuchKey' });
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+    tryWithCacheLockMock.mockResolvedValue(false);
+
+    const output = await invokeTool({ url: 'https://www.canada.ca/en/real-page.html' });
+
+    expect(output).toContain('705-424-1200');
+    expect(tryWithCacheLockMock).toHaveBeenCalledTimes(1);
+    expect(withCacheLockMock).not.toHaveBeenCalled();
+    expect(storagePutMock).not.toHaveBeenCalled();
+  });
+
+  it('stores a downloaded cache miss when the write lock is available', async () => {
+    cacheEnabledMock.mockResolvedValue(true);
+    storageGetWithMetadataMock.mockRejectedValue({ name: 'NoSuchKey' });
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+    const output = await invokeTool({ url: 'https://www.canada.ca/en/real-page.html' });
+
+    expect(output).toContain('705-424-1200');
+    expect(storagePutMock).toHaveBeenCalledOnce();
+    expect(tryWithCacheLockMock).toHaveBeenCalledOnce();
   });
 
   describe('content extraction', () => {
