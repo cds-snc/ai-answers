@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import AccountPage from '../AccountPage.js';
+import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: (key) => key }),
@@ -168,6 +170,17 @@ describe('AccountPage', () => {
     fireEvent.change(institution, { target: { value: 'DND-MDN' } });
     expect(screen.getByLabelText('account.group').value).toBe('Military transitions');
     expect(screen.getByRole('button', { name: 'users.actions.save' }).disabled).toBe(true);
+  });
+
+  it('announces the group being cleared and set back, once each, while arrowing institutions', async () => {
+    mockGetMe.mockResolvedValue({ email: 'b@x.ca', role: 'admin', institution: 'DND-MDN', group: 'Military transitions', preferences: {} });
+    render(<AccountPage lang="en" />);
+    const institution = await screen.findByLabelText('account.institution');
+    fireEvent.change(institution, { target: { value: 'IRCC' } });
+    fireEvent.change(institution, { target: { value: 'CRA-ARC' } }); // group already empty: nothing to say
+    fireEvent.change(institution, { target: { value: 'DND-MDN' } });
+    await waitForAnnouncement('users.groupRestoredAnnouncement');
+    expect(getAnnouncedTexts()).toEqual(['users.groupClearedAnnouncement', 'users.groupRestoredAnnouncement']);
   });
 
   it('leaves the admin-only QA group out of a CEO-BEC partner\'s group choices', async () => {

@@ -1139,6 +1139,8 @@
     "title": "Gérer les comptes utilisateurs",
     "institutionNone": "Aucune",
     "groupNone": "Aucun",
+    "groupClearedAnnouncement": "Groupe effacé.",
+    "groupRestoredAnnouncement": "Groupe rétabli : {group}.",
     "filterLabel": "Filtrer les utilisateurs",
     "columns": {
       "email": "Courriel",

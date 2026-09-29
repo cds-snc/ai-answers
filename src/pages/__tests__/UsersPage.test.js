@@ -6,6 +6,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import UsersPage from '../UsersPage.js';
+import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
@@ -298,6 +299,17 @@ describe('UsersPage institution and group columns', () => {
     // The mock table rebuilds the row on every render, so re-query.
     fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
     expect(screen.getByLabelText('users.columns.group — a@b.com').value).toBe('Military transitions');
+  });
+
+  it('announces the group being cleared and set back, once each, while arrowing institutions', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'partner', active: true, institution: 'DND-MDN', group: 'Military transitions' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('users.columns.institution — a@b.com'), { target: { value: 'IRCC' } });
+    // group already empty: nothing to say
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'CRA-ARC' } });
+    fireEvent.change(screen.getByLabelText('users.columns.institution — a@b.com'), { target: { value: 'DND-MDN' } });
+    await waitForAnnouncement('users.groupRestoredAnnouncement');
+    expect(getAnnouncedTexts()).toEqual(['users.groupClearedAnnouncement', 'users.groupRestoredAnnouncement']);
   });
 
   it('shows None for group when a row has no institution', async () => {

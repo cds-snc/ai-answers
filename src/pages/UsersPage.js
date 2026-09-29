@@ -15,6 +15,7 @@ import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
 import { getPartnerGroupLabel, groupsForInstitution, groupFitsInstitution } from '../constants/partnerGroups.js';
+import { announce } from '../utils/liveAnnouncer.js';
 
 DataTable.use(DT);
 
@@ -476,10 +477,18 @@ const UsersPage = ({ lang }) => {
                 // arrowing through a closed <select> fires change on every option.
                 if (field === 'institution') {
                   const original = userSnapshotsRef.current[userId];
+                  const prevGroup = editStatesRef.current[userId].group;
                   if (value === (original?.institution || '')) {
                     handleFieldChange(userId, 'group', original?.group || '');
-                  } else if (!groupFitsInstitution(editStatesRef.current[userId].group, value)) {
+                  } else if (!groupFitsInstitution(prevGroup, value)) {
                     handleFieldChange(userId, 'group', '');
+                  }
+                  // The group select changes out of view of the institution one, so say so.
+                  const newGroup = editStatesRef.current[userId].group;
+                  if (newGroup !== prevGroup) {
+                    announce(newGroup
+                      ? t('users.groupRestoredAnnouncement').replace('{group}', () => getPartnerGroupLabel(newGroup, lang))
+                      : t('users.groupClearedAnnouncement'));
                   }
                   const groupCell = row.querySelector('[data-group-cell]');
                   if (groupCell) {
