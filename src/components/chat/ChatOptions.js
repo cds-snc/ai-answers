@@ -7,6 +7,10 @@ import FeedbackInlineError from './FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { isWellFormedHttpUrl } from '../../utils/chat/referringUrl.js';
 import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
+import { announce as announceLive } from '../../utils/liveAnnouncer.js';
+
+// Same delay as SettingsPage's unsaved-changes warning.
+const UNSAVED_WARNING_ANNOUNCE_DELAY_MS = 4000;
 
 // workflowSelection / modelSelection are what the dropdowns show, which is not
 // the same thing as what the chat will run: '' means "no override, follow the
@@ -45,6 +49,16 @@ const ChatOptions = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedOptions.workflow, savedOptions.model, savedOptions.search]);
   const optionsDirty = Object.keys(savedOptions).some((key) => draftOptions[key] !== savedOptions[key]);
+  // Shown above the panel while anything is unsaved, open or closed — the
+  // chat keeps running on the saved options until Save.
+  const unsavedWarning = optionsDirty ? safeT('homepage.chat.options.unsavedWarning') : undefined;
+  // Announced only if still unsaved a few seconds later, so it doesn't talk
+  // over the dropdown just changed (as on SettingsPage).
+  useEffect(() => {
+    if (!unsavedWarning) return undefined;
+    const timer = setTimeout(() => announceLive(unsavedWarning), UNSAVED_WARNING_ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [unsavedWarning]);
   const { message: optionsSavedMessage, nonce: optionsSavedNonce, announce: announceOptionsSaved, clear: clearOptionsSaved } = useRepeatableStatus();
   const referringUrlError = useInlineFormError();
   // useInlineFormError only tracks *that* there's an error, not *which* one -
@@ -159,6 +173,15 @@ const ChatOptions = ({
   return (
     // Make the entire details panel visible to admin and partner; inside, restrict some controls to admin only
     <RoleBasedContent roles={["admin", "partner"]}>
+      <RoleBasedContent roles={['admin']}>
+        <StatusMessage
+          variant={unsavedWarning ? 'warning' : undefined}
+          message={unsavedWarning}
+          announce={false}
+          announcedVia="live-announcer-polite"
+          className="mt-400"
+        />
+      </RoleBasedContent>
       {/* Native <details>/<summary> — global.css already styles every one
           site-wide (border, arrow marker, GC DS-token focus ring), same
           pattern as SettingsPage.js's own sections, no extra classes needed

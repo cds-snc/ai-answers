@@ -130,6 +130,7 @@
         "useSystemSettings": "Use system settings",
         "saveLabel": "Save options",
         "savedAnnouncement": "Options saved.",
+        "unsavedWarning": "Unsaved options. Select Save options to apply them.",
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)",
           "error": "Enter a full URL, starting with https:// or http://",

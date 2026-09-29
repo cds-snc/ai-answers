@@ -3,7 +3,8 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getAnnouncedTexts } from '../../../utils/liveAnnouncer.js';
 import ChatOptions from '../ChatOptions.js';
 
 const { mockUseAuth } = vi.hoisted(() => ({ mockUseAuth: vi.fn() }));
@@ -28,6 +29,7 @@ const t = (key) => {
     'homepage.chat.options.useSystemSettings': 'Use system settings',
     'homepage.chat.options.saveLabel': 'Save options',
     'homepage.chat.options.savedAnnouncement': 'Options saved.',
+    'homepage.chat.options.unsavedWarning': 'Unsaved options. Select Save options to apply them.',
     'homepage.chat.options.referringUrl.label': 'Referring Canada.ca URL (optional)',
     'homepage.chat.options.referringUrl.error': 'Enter a full URL, starting with https:// or http://',
     'homepage.chat.options.referringUrl.emptyError': 'Please include a URL',
@@ -335,6 +337,64 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
 
     expect(saveButton().compareDocumentPosition(hr) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(hr.compareDocumentPosition(urlInput()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  const unsaved = 'Unsaved options. Select Save options to apply them.';
+
+  it('warns above the panel while any option is unsaved, open or closed', () => {
+    mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+    const { container } = render(<Harness onSave={vi.fn()} />);
+    const details = container.querySelector('details');
+    const model = screen.getByLabelText('Model family:');
+
+    expect(screen.queryByText(unsaved)).toBeNull();
+    details.open = true;
+    fireEvent.change(model, { target: { value: 'azure' } });
+    const warning = screen.getByText(unsaved);
+    expect(warning.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    details.open = false;
+    expect(screen.getByText(unsaved)).toBeTruthy();
+
+    // Back to the saved value is not unsaved.
+    fireEvent.change(model, { target: { value: '' } });
+    expect(screen.queryByText(unsaved)).toBeNull();
+
+    fireEvent.change(model, { target: { value: 'azure' } });
+    fireEvent.click(saveButton());
+    expect(screen.queryByText(unsaved)).toBeNull();
+  });
+
+  it('announces the unsaved warning only if still unsaved after a delay', () => {
+    vi.useFakeTimers();
+    try {
+      mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+      render(<Harness onSave={vi.fn()} />);
+
+      fireEvent.change(screen.getByLabelText('Model family:'), { target: { value: 'azure' } });
+      act(() => { vi.advanceTimersByTime(3000); });
+      expect(getAnnouncedTexts('polite')).not.toContain(unsaved);
+
+      act(() => { vi.advanceTimersByTime(3000); });
+      expect(getAnnouncedTexts('polite')).toContain(unsaved);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not announce the unsaved warning if saved before the delay', () => {
+    vi.useFakeTimers();
+    try {
+      mockUseAuth.mockReturnValue({ currentUser: { role: 'admin' } });
+      render(<Harness onSave={vi.fn()} />);
+
+      fireEvent.change(screen.getByLabelText('Model family:'), { target: { value: 'azure' } });
+      fireEvent.click(saveButton());
+      act(() => { vi.advanceTimersByTime(6000); });
+      expect(getAnnouncedTexts('polite')).not.toContain(unsaved);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows partners no Save button or divider (they only have the referring URL)', () => {
