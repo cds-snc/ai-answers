@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
-const { storageGetMock, storageGetMetaDataMock, storagePutMock, storageDeleteAllMock } = vi.hoisted(() => ({
+const { storageGetMock, storageGetMetaDataMock, storageGetWithMetadataMock, storagePutMock, storageDeleteAllMock } = vi.hoisted(() => ({
   storageGetMock: vi.fn(),
   storageGetMetaDataMock: vi.fn(),
+  storageGetWithMetadataMock: vi.fn(),
   storagePutMock: vi.fn(),
   storageDeleteAllMock: vi.fn(),
 }));
@@ -23,6 +24,7 @@ const {
   withCacheLockMock: vi.fn(),
 }));
 vi.mock('../../../services/Storage.js', () => ({
+  getStorageObjectWithMetadata: storageGetWithMetadataMock,
   default: {
     get: storageGetMock,
     getMetaData: storageGetMetaDataMock,
@@ -113,13 +115,18 @@ describe('downloadWebPage tool', () => {
   it('returns a fresh S3 cache entry without downloading the source page', async () => {
     vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
     cacheEnabledMock.mockResolvedValue(true);
-    storageGetMock.mockResolvedValue('# Cached page\n\nCached content '.repeat(4));
-    storageGetMetaDataMock.mockResolvedValue({ lastModified: new Date() });
+    storageGetWithMetadataMock.mockResolvedValue({
+      content: '# Cached page\n\nCached content '.repeat(4),
+      lastModified: new Date(),
+    });
 
     const output = await invokeTool({ url: 'https://www.canada.ca/en/cached.html' });
 
     expect(output).toContain('Cached content');
     expect(axios.get).not.toHaveBeenCalled();
+    expect(storageGetWithMetadataMock).toHaveBeenCalledTimes(1);
+    expect(storageGetMock).not.toHaveBeenCalled();
+    expect(storageGetMetaDataMock).not.toHaveBeenCalled();
   });
 
   it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {

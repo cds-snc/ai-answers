@@ -8,7 +8,7 @@ import { getEncoding } from "js-tiktoken";
 import { createHash } from "node:crypto";
 import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
 import { SettingsService } from "../../services/SettingsService.js";
-import storageService from "../../services/Storage.js";
+import storageService, { getStorageObjectWithMetadata } from "../../services/Storage.js";
 import {
   advanceDownloadWebPageCacheGeneration,
   getDownloadWebPageCacheGeneration,
@@ -87,11 +87,8 @@ function cacheObjectKey(url, generation) {
 
 async function readCachedMarkdown(url, generation) {
   const key = cacheObjectKey(url, generation);
-  const [markdown, metadata] = await Promise.all([
-    storageService.get(key),
-    storageService.getMetaData(key),
-  ]);
-  const fetchedAt = metadata.lastModified?.getTime();
+  const { content: markdown, lastModified } = await getStorageObjectWithMetadata(key);
+  const fetchedAt = lastModified?.getTime();
   if (!fetchedAt || Date.now() - fetchedAt > getCacheFreshnessMs()) return null;
   return markdown;
 }
