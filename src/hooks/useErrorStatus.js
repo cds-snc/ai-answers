@@ -69,6 +69,9 @@ export const useErrorStatus = (t) => {
   // confirmation, not a mutation ('info') - a real semantic difference
   // between the two existing callers, not just inconsistency to paper over.
   //
+  // A status with `announce: false` is shown but not read out — e.g. a
+  // result the page loads on its own, which nobody just asked for.
+  //
   // `key` distinguishes sibling boxes on the same hook instance (DatabasePage.js
   // has ~13). No useCallback — this plain Set must be fresh every render so
   // the collision check below can catch two calls sharing a key.
@@ -85,7 +88,7 @@ export const useErrorStatus = (t) => {
     if (!unchanged) nonceRef.current.set(key, { status, nonce });
 
     return (
-      <StatusMessage variant={status ? (status.isError ? 'error' : successVariant) : undefined} nonce={nonce}>
+      <StatusMessage variant={status ? (status.isError ? 'error' : successVariant) : undefined} nonce={nonce} announce={status?.announce !== false}>
         {status && (
           status.detail !== undefined
             ? <>{status.prefix}<code lang="en">{status.detail}</code>{status.suffix}</>

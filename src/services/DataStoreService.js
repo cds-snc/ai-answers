@@ -227,6 +227,22 @@ class DataStoreService {
     }
   }
 
+  // The last "Rebuild all indexes" run, or null if none since the server started
+  static async getIndexRebuildStatus() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=indexRebuildStatus'));
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to check index rebuild');
+      }
+      const { rebuild } = await response.json();
+      return rebuild;
+    } catch (error) {
+      console.error('Error checking index rebuild:', error);
+      throw error;
+    }
+  }
+
   static async checkIndexStatus() {
     try {
       const response = await AuthService.fetch(getApiUrl('db-database-management?action=indexStatus'));

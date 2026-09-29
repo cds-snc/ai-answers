@@ -33,7 +33,7 @@ describe('DataStoreService.createIndexes', () => {
   });
 
   it('rebuilds indexes with a POST request, not PUT', async () => {
-    const mockResult = { message: 'Database indexes created successfully', results: { success: [], failed: [] } };
+    const mockResult = { alreadyRunning: false, rebuild: { running: true, success: [], failed: [] } };
     AuthService.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResult)
@@ -46,6 +46,26 @@ describe('DataStoreService.createIndexes', () => {
       { method: 'POST' }
     );
     expect(result).toEqual(mockResult);
+  });
+});
+
+describe('DataStoreService.getIndexRebuildStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getApiUrl.mockImplementation((endpoint) => `/api/db/${endpoint}`);
+  });
+
+  it('fetches the last rebuild with a GET request', async () => {
+    const rebuild = { running: false, success: ['Chat'], failed: [] };
+    AuthService.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ rebuild })
+    });
+
+    const result = await DataStoreService.getIndexRebuildStatus();
+
+    expect(AuthService.fetch).toHaveBeenCalledWith('/api/db/db-database-management?action=indexRebuildStatus');
+    expect(result).toEqual(rebuild);
   });
 });
 

@@ -2191,6 +2191,47 @@ td:has(> .verdict-cell__link) {
   margin-right: var(--gcds-icon-margin-50);
 }
 
+/* A list that belongs to the StatusMessage box above it (DatabasePage's
+   index rebuild failures / collections still building). Own box, outside
+   the StatusMessage, so it isn't announced — same colours, square corners
+   so it reads as related but not the message itself. Fills to the
+   StatusMessage box's max width, so the two line up once the message
+   wraps. The negative top margin collapses with the box's margin-bottom
+   to leave a small gap. */
+.status-details-box {
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-top: calc(var(--gcds-spacing-100) - var(--gcds-spacing-250));
+  margin-bottom: var(--gcds-spacing-250);
+  font-size: var(--gcds-font-sizes-text-small);
+  max-width: 65ch;
+  overflow-wrap: anywhere;
+}
+
+.status-details-box p {
+  margin: 0 0 var(--gcds-spacing-100);
+}
+
+.status-details-box ul {
+  margin: 0;
+  padding-left: var(--gcds-spacing-250);
+}
+
+.status-details-box li:last-child {
+  margin-bottom: 0;
+}
+
+.status-details-box--error {
+  background: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-500);
+  color: var(--gcds-color-red-700);
+}
+
+.status-details-box--info {
+  background: var(--gcds-color-blue-100);
+  border: 1px solid var(--gcds-color-blue-500);
+  color: var(--gcds-color-blue-700);
+}
+
 /* DatabasePage.js's import-progress counter (the plain-text line shown
    while a chunked import is running). Extracted from its previous inline
    style — same margin/color, no design change — so it's a class to build
