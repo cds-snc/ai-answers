@@ -636,21 +636,21 @@
       "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
-        "expertEvaluations": "Expert Evaluations in System:",
-        "nonEmptyEvaluations": "Non-Empty Evaluations in System:"
+        "expertEvaluations": "Expert evaluations in system",
+        "nonEmptyEvaluations": "Non-empty evaluations in system"
       },
-      "detailsTitle": "Detailed Evaluation Process",
+      "detailsTitle": "Detailed evaluation process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation:",
+          "title": "Initial validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval:",
+          "title": "Embedding retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content:",
+          "title": "Finding similar content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -721,18 +721,19 @@
         "processed": "Processed evaluations",
         "hasMatches": "Evaluations with matches",
         "noMatchReasons": "No-match reasons",
-        "reasonLabel": "Reason",
-        "countLabel": "Count",
-        "unknown": "unknown",
         "noMatchNone": "No no-match reason data available.",
         "fallbackTypes": "Fallback types",
-        "fallbackLabel": "Fallback",
         "fallbackNone": "No fallback usage data available.",
-        "refresh": "Refresh metrics"
+        "refresh": "Refresh metrics",
+        "refreshing": "Refreshing metrics...",
+        "refreshed": "Metrics refreshed."
       },
+      "actionsTitle": "Generate or delete evaluations",
       "date": {
-        "startLabel": "Start date:",
-        "endLabel": "End date:"
+        "legend": "Date range (optional)",
+        "hint": "Leave blank to use all dates.",
+        "startLabel": "Start date",
+        "endLabel": "End date"
       },
       "button": {
         "processing": "Processing...",
@@ -741,12 +742,8 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed:",
-        "failed": "Failed:",
-        "remaining": "Remaining:",
-        "duration": "Duration:",
-        "autoProcessing": "Auto-processing active",
-        "regeneratingAll": "Regenerating all evaluations"
+        "starting": "Generating evaluations...",
+        "summary": "Generating evaluations: {processed} successful, {failed} failed, {remaining} left."
       }
     },
     "filters": {
@@ -1411,14 +1408,16 @@
     "totalScore": "Score",
     "referringUrl": "Referring URL",
     "interactionUpdatedAt": "Date of chat",
-    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
-    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "allEvalsGenerated": "Evaluations generated: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Generating evaluations failed: {error}",
     "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEvalsFailed": "Deleting evaluations failed: {error}",
+    "deleteEvalsNone": "No evaluations to delete.",
     "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "deleteEmptyEvalsFailed": "Deleting empty evaluations failed: {error}",
+    "deleteEmptyEvalsNone": "No empty evaluations to delete.",
     "noMatchReasonTypes": {
       "no_embeddings": "No embeddings found",
       "no_qa_match": "No similar embeddings found",

@@ -636,8 +636,8 @@
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
       "similarityDescription": "Cette approche évalue automatiquement les nouvelles interactions en trouvant des interactions évaluées par des experts similaires et en transférant les notes et explications. Si la correspondance au niveau des phrases échoue, le système utilisera un repli basé sur une correspondance question+réponse très similaire avec une note élevée.",
       "label": {
-        "expertEvaluations": "Évaluations d'experts dans le système :",
-        "nonEmptyEvaluations": "Évaluations non vides dans le système :"
+        "expertEvaluations": "Évaluations d'experts dans le système",
+        "nonEmptyEvaluations": "Évaluations non vides dans le système"
       },
       "detailsTitle": "Processus détaillé d'évaluation",
       "step": {
@@ -701,7 +701,7 @@
           }
         },
         "noMatch": {
-          "title": "Aucun appariement / Cas de rejet :",
+          "title": "Aucun appariement / cas de rejet :",
           "item": {
             "recordNoMatch": "Si aucune correspondance ni répli accepted, créer une évaluation de non-correspondance enregistrant les types de raisons et les causes de rejet par phrase",
             "trace": "Les évaluations de non-correspondance incluent une trace par phrase et une chronologie pour que les opérateurs puissent inspecter pourquoi les candidats ont été rejetés"
@@ -721,18 +721,19 @@
         "processed": "Évaluations traitées",
         "hasMatches": "Évaluations avec correspondances",
         "noMatchReasons": "Raisons de non-correspondance",
-        "reasonLabel": "Raison",
-        "countLabel": "Nombre",
-        "unknown": "inconnu",
         "noMatchNone": "Aucune donnée de raison de non-correspondance disponible.",
         "fallbackTypes": "Types de repli",
-        "fallbackLabel": "Repli",
         "fallbackNone": "Aucune donnée d'utilisation de repli disponible.",
-        "refresh": "Actualiser les métriques"
+        "refresh": "Actualiser les métriques",
+        "refreshing": "Actualisation des métriques...",
+        "refreshed": "Métriques actualisées."
       },
+      "actionsTitle": "Générer ou supprimer des évaluations",
       "date": {
-        "startLabel": "Date de début :",
-        "endLabel": "Date de fin :"
+        "legend": "Plage de dates (facultatif)",
+        "hint": "Laissez vide pour utiliser toutes les dates.",
+        "startLabel": "Date de début",
+        "endLabel": "Date de fin"
       },
       "button": {
         "processing": "Traitement...",
@@ -741,12 +742,8 @@
         "deleteEmpty": "Supprimer les évaluations vides"
       },
       "progress": {
-        "processed": "Traité :",
-        "failed": "Échouées :",
-        "remaining": "Restant :",
-        "duration": "Durée :",
-        "autoProcessing": "Traitement automatique actif",
-        "regeneratingAll": "Régénération de toutes les évaluations"
+        "starting": "Génération des évaluations...",
+        "summary": "Génération des évaluations : {processed} réussies, {failed} échouées, {remaining} restantes."
       }
     },
     "filters": {
@@ -1411,14 +1408,16 @@
     "totalScore": "Score",
     "referringUrl": "URL de référence",
     "interactionUpdatedAt": "Date du chat",
-    "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
-    "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
+    "allEvalsGenerated": "Évaluations générées : {processed} réussies, {failed} échouées.",
+    "generateEvalsFailed": "Échec de la génération des évaluations : {error}",
     "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
-    "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEvalsFailed": "Échec de la suppression des évaluations : {error}",
+    "deleteEvalsNone": "Aucune évaluation à supprimer.",
     "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
-    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails.",
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides : {error}",
+    "deleteEmptyEvalsNone": "Aucune évaluation vide à supprimer.",
     "noMatchReasonTypes": {
       "no_embeddings": "Aucune intégration trouvée",
       "no_qa_match": "Aucune intégration similaire trouvée",
