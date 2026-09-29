@@ -447,7 +447,7 @@
       "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès : {successCount}, Échec : {failCount}",
       "createIndexesError": "Échec de la création des index : {error}",
       "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer ?",
-      "dropIndexesSuccess": "Indexes supprimés avec succès pour {count} collections",
+      "dropIndexesSuccess": "Index supprimés avec succès pour {count} collections",
       "dropIndexesError": "Échec de la suppression des index : {error}",
       "deleteSystemLogsConfirm": "Êtes-vous sûr de vouloir supprimer tous les journaux avec chatId = \"system\" ? Cette action est irréversible.",
       "deleteSystemLogsSuccess": "Supprimé {count} journaux système.",

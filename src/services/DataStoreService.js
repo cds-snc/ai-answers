@@ -213,8 +213,8 @@ class DataStoreService {
 
   static async createIndexes() {
     try {
-      const response = await AuthService.fetch(getApiUrl('db-database-management'), {
-        method: 'PUT'
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=createIndexes'), {
+        method: 'POST'
       });
       if (!response.ok) {
         const error = await response.json();
