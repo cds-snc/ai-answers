@@ -259,7 +259,9 @@ async function databaseManagementHandler(req, res) {
       if (!collection || collection === 'All') {
         // Return list of available collections
         return res.status(200).json({
-          collections: Object.keys(collections)
+          collections: Object.keys(collections),
+          // No updatedAt means the export's date filter can't apply
+          collectionsWithoutDates: Object.keys(collections).filter(name => !collections[name].schema?.paths?.updatedAt)
         });
       }
       const model = collections[collection.toLowerCase()];

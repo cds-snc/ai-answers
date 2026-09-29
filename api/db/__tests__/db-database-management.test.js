@@ -133,3 +133,16 @@ describe('db-database-management index rebuild', () => {
     expect(res.statusCode).toBe(405);
   });
 });
+
+describe('db-database-management collection list', () => {
+  it('lists collections without updatedAt so the export form can hide its dates', async () => {
+    await dbConnect();
+    await import('../../../models/sessionState.js');
+
+    const res = await runGet({});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.collections).toContain('chat');
+    expect(res.payload.collectionsWithoutDates).toContain('sessionstate');
+    expect(res.payload.collectionsWithoutDates).not.toContain('chat');
+  });
+});

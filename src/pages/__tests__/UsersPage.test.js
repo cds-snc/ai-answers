@@ -22,10 +22,11 @@ vi.mock('../../contexts/AuthContext.js', () => ({
   useAuth: () => ({ currentUser: { role: 'admin', _id: 'me' } }),
 }));
 
-const { mockGetAll, mockDelete, mockUpdate } = vi.hoisted(() => ({
+const { mockGetAll, mockDelete, mockUpdate, lastColumns } = vi.hoisted(() => ({
   mockGetAll: vi.fn(),
   mockDelete: vi.fn(),
   mockUpdate: vi.fn(),
+  lastColumns: { current: null },
 }));
 vi.mock('../../services/UserService.js', () => ({
   default: {
@@ -42,6 +43,7 @@ vi.mock('../../services/UserService.js', () => ({
 // here.
 vi.mock('datatables.net-react', () => {
   const MockDataTable = ({ data, options, columns }) => {
+    lastColumns.current = columns;
     const ref = React.useRef(null);
     React.useEffect(() => {
       if (!ref.current || !options?.createdRow || !data || !data[0]) return;
@@ -301,5 +303,24 @@ describe('UsersPage institution and group columns', () => {
     renderWithRouter(<UsersPage lang="en" />);
     const groupSelect = await screen.findByLabelText('users.columns.group — a@b.com');
     expect(groupSelect.value).toBe('Military transitions');
+  });
+});
+
+describe('UsersPage created date column', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetAll.mockReset();
+  });
+
+  it('sorts on the raw date, not the displayed text', async () => {
+    mockGetAll.mockResolvedValue([{ _id: 'u1', email: 'a@b.com', role: 'admin', active: true, createdAt: '2026-09-03T12:00:00.000Z' }]);
+    renderWithRouter(<UsersPage lang="en" />);
+    await screen.findByText('users.actions.delete');
+
+    const col = lastColumns.current.find((c) => c.data === 'createdAt');
+    const iso = '2026-09-03T12:00:00.000Z';
+    expect(col.render(iso, 'sort')).toBe(new Date(iso).getTime());
+    expect(col.render(iso, 'type')).toBe(new Date(iso).getTime());
+    expect(col.render(iso, 'display')).toBe(new Date(iso).toLocaleDateString());
   });
 });

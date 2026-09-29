@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink, GcdsIcon, GcdsFieldset } from '@gcds-core/components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
@@ -12,11 +12,14 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { useAnnounceOnChange } from '../hooks/useAnnounceOnChange.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
   getDatabaseExportCollections,
-  getDatabaseExportFilenameTag
+  getDatabaseExportFilenameTag,
+  exportHasNoDates,
+  toExportDateBounds
 } from '../utils/database/exportCollections.js';
 
 const DatabasePage = ({ lang }) => {
@@ -31,6 +34,7 @@ const DatabasePage = ({ lang }) => {
 
   const [isExporting, setIsExporting] = useState(false);
   const [collections, setCollections] = useState([]);
+  const [collectionsWithoutDates, setCollectionsWithoutDates] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
   const importProgressRef = useRef(null);
@@ -38,7 +42,9 @@ const DatabasePage = ({ lang }) => {
   // one — fast chunks would otherwise queue up behind the announcer's
   // minimum gap and delay the final outcome behind stale "chunk N of M"s.
   useAnnounceOnChange(importProgressRef, { skippable: true });
-  const [importSelectedCollections, setImportSelectedCollections] = useState(['All']);
+  // 'All' | 'AllButLogs' | 'Chosen' (only the tables in importChosenTables)
+  const [importScope, setImportScope] = useState('All');
+  const [importChosenTables, setImportChosenTables] = useState([]);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
@@ -83,6 +89,8 @@ const DatabasePage = ({ lang }) => {
   // identical failures (e.g. clicking Import twice with no file selected)
   // still re-announce to screen readers — see the hook's own comment.
   const fileSelectError = useInlineFormError();
+  // "Only the tables I choose" with nothing ticked — same field-tied pattern.
+  const importTablesError = useInlineFormError();
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
@@ -109,8 +117,9 @@ const DatabasePage = ({ lang }) => {
           method: 'GET'
         });
         if (collectionsRes.ok) {
-          const { collections } = await collectionsRes.json();
+          const { collections, collectionsWithoutDates } = await collectionsRes.json();
           if (isMounted && Array.isArray(collections)) setCollections(collections);
+          if (isMounted && Array.isArray(collectionsWithoutDates)) setCollectionsWithoutDates(collectionsWithoutDates);
         }
       } catch (e) {
         // ignore
@@ -136,6 +145,8 @@ const DatabasePage = ({ lang }) => {
   // is re-clicked actually fine? Don't copy VectorPage.js's
   // fetchVectorStats (clears a sibling message too) as precedent here —
   // that pattern hasn't been reviewed yet.
+  const exportDatesUnavailable = exportHasNoDates(selectedCollection, collectionsWithoutDates);
+
   const handleExport = async () => {
     try {
       setIsExporting(true);
@@ -154,6 +165,7 @@ const DatabasePage = ({ lang }) => {
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
       const initialChunkSize = Number(exportLimit) || 10000;
+      const dateBounds = exportDatesUnavailable ? {} : toExportDateBounds({ startDate, endDate });
       const minChunkSize = 1;
 
       for (let i = 0; i < collectionsToExport.length; i++) {
@@ -170,8 +182,8 @@ const DatabasePage = ({ lang }) => {
               // Add date range and always use updatedAt
               let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&limit=${chunkSize}`);
               if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
-              if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
-              if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+              if (dateBounds.startDate) url += `&startDate=${encodeURIComponent(dateBounds.startDate)}`;
+              if (dateBounds.endDate) url += `&endDate=${encodeURIComponent(dateBounds.endDate)}`;
               if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) url += '&exportScope=expertEvalChats';
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
@@ -226,23 +238,23 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
-  // TODO (important, design): every other mutating action on this page
-  // (Drop Indexes, Delete System Logs, Delete All Batches, the three
-  // Repair* actions, Migrate Public Feedback, Create Indexes, Remove
-  // Duplicates) is gated behind a window.confirm() popup — the one thing
-  // that can't be scrolled past or missed. Import is the one action that
-  // actually replaces/overwrites existing data (via upsert) and has no
-  // confirmation at all before it starts. A StatusMessage-level warning
-  // wouldn't be enough here — this needs the same impossible-to-miss popup
-  // pattern as the delete actions, not just better-placed inline text.
   const handleImport = async (event) => {
     event.preventDefault();
+    // One error at a time: each moves focus onto itself.
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
       fileSelectError.triggerError();
       return;
     }
     fileSelectError.clearError();
+    if (importScope === 'Chosen' && importChosenTables.length === 0) {
+      importTablesError.triggerError();
+      return;
+    }
+    importTablesError.clearError();
+    // Import upserts over existing records, so it gets the same popup as
+    // every other destructive action on this page.
+    if (!window.confirm(t('admin.database.importConfirm'))) return;
 
     setIsImporting(true);
     setImportMessage({ text: t('admin.database.importStarting'), isError: false });
@@ -261,12 +273,7 @@ const DatabasePage = ({ lang }) => {
       // helper: sleep and send with retries (exponential backoff)
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       // build collection payload for POST: 'All' | 'AllButLogs' | [list]
-      const buildCollectionPayload = () => {
-        const sel = Array.isArray(importSelectedCollections) ? importSelectedCollections : [importSelectedCollections];
-        if (sel.includes('All')) return 'All';
-        if (sel.includes('AllButLogs') && sel.length === 1) return 'AllButLogs';
-        return sel.filter(s => s !== 'All' && s !== 'AllButLogs');
-      };
+      const buildCollectionPayload = () => (importScope === 'Chosen' ? importChosenTables : importScope);
       const sendChunkWithRetry = async (bodyObj, attemptLimit = 5) => {
         let delay = 500; // start 500ms
         let lastErr = null;
@@ -590,40 +597,36 @@ const DatabasePage = ({ lang }) => {
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
         {renderStatusMessage(countsError, 'success', 'counts')}
         {tableCounts ? (
-          <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.tableColumn')}</th>
-                <th scope="col" style={{ textAlign: 'right' }}>{t('admin.database.countColumn')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(tableCounts).map(([table, count]) => (
-                <tr key={table}>
-                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
-                  <td style={{ textAlign: 'right' }}>{formatNumber(count, lang)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <dl className="canada-ca-dl-columns font-size-text-sm-nr">
+            {Object.entries(tableCounts).map(([table, count]) => (
+              <div key={table}>
+                <dt>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</dt>
+                <dd>{formatNumber(count, lang)}</dd>
+              </div>
+            ))}
+          </dl>
         ) : (
           !countsError && <div>{t('common.loading')}</div>
         )}
       </div>
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <label>
-          {t('admin.database.tableLabel')}&nbsp;
-          {/* Every export field clears exportMessage on change — a stale
-              "Export failed"/"Export succeeded" from the last run shouldn't
-              keep showing once the admin has started changing what they're
-              about to export next. Same idea as SettingsPage.js's
-              stageChange clearing a section's stale save-outcome message on
-              edit; inline here rather than a shared helper/lookup table
-              since it's only 4 fields, not ~30 across 6 sections. */}
+      <div className="mb-400 filter-fields-full-size">
+        <GcdsHeading tag="h2">{t('admin.database.exportTitle')}</GcdsHeading>
+        {/* Every export field clears exportMessage on change — a stale
+            "Export failed"/"Export succeeded" from the last run shouldn't
+            keep showing once the admin has started changing what they're
+            about to export next. Same idea as SettingsPage.js's
+            stageChange clearing a section's stale save-outcome message on
+            edit; inline here rather than a shared helper/lookup table
+            since it's only 4 fields, not ~30 across 6 sections. */}
+        <div className="mb-300">
+          <label htmlFor="database-export-table" className="filter-label display-block">
+            {t('admin.database.tableLabel')}
+          </label>
           <select
+            id="database-export-table"
+            className="filter-select filter-select--narrow"
             value={selectedCollection}
             onChange={e => { setSelectedCollection(e.target.value); setExportMessage(null); }}
-            style={{ minWidth: 120 }}
             disabled={isExporting || collections.length === 0}
           >
             <option value="All">{t('admin.database.collections.all')}</option>
@@ -634,25 +637,66 @@ const DatabasePage = ({ lang }) => {
               <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}
           </select>
-        </label>
-        <label>{t('admin.database.startDate')}&nbsp;
-          <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setExportMessage(null); }} />
-        </label>
-        <label>{t('admin.database.endDate')}&nbsp;
-          <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setExportMessage(null); }} />
-        </label>
-        <label>{t('admin.database.limitLabel')}&nbsp;
+        </div>
+        {/* Dates filter on updatedAt. For a table without it, an info
+            message takes their place instead of fields that do nothing. */}
+        {exportDatesUnavailable ? (
+          <div className="mb-300">
+            <StatusMessage variant="info" message={t('admin.database.datesNotApplicableTable')} />
+          </div>
+        ) : (
+          <GcdsFieldset
+            className="mb-300"
+            legend={t('admin.database.dateRangeLegend')}
+            legendSize="h6"
+            hint={t('admin.database.dateRangeHint')}
+          >
+            <div className="mb-300">
+              <label htmlFor="database-export-start-date" className="filter-label display-block">
+                {t('admin.database.startDate')}
+              </label>
+              <input
+                id="database-export-start-date"
+                type="date"
+                className="filter-input filter-input--narrow"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setExportMessage(null); }}
+              />
+            </div>
+            <div>
+              <label htmlFor="database-export-end-date" className="filter-label display-block">
+                {t('admin.database.endDate')}
+              </label>
+              <input
+                id="database-export-end-date"
+                type="date"
+                className="filter-input filter-input--narrow"
+                value={endDate}
+                onChange={e => { setEndDate(e.target.value); setExportMessage(null); }}
+              />
+            </div>
+          </GcdsFieldset>
+        )}
+        <div className="mb-300">
+          <label htmlFor="database-export-limit" className="filter-label display-block">
+            {t('admin.database.limitLabel')}
+          </label>
           <input
+            id="database-export-limit"
             type="number"
             min="1"
+            className="filter-input filter-input--narrow"
             value={exportLimit}
             onChange={e => { setExportLimit(e.target.value); setExportMessage(null); }}
-            style={{ width: 100 }}
             disabled={isExporting}
           />
-        </label>
-        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
-          {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
+        </div>
+        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0} className="mb-200">
+          {/* Decorative icon; the text is the whole accessible name. */}
+          <span className="export-button-label">
+            <GcdsIcon name="download" />
+            {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
+          </span>
         </GcdsButton>
         {renderStatusMessage(exportMessage, 'success', 'export')}
       </div>
@@ -662,9 +706,10 @@ const DatabasePage = ({ lang }) => {
         <GcdsText>
           {t('admin.database.integrityDescription')}
         </GcdsText>
-        <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+        <details open className="mb-200">
           <summary style={{ cursor: 'pointer', fontWeight: '600' }}>{t('admin.database.coreChecksLabel')}</summary>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* role="list": Safari drops list semantics without bullets */}
+          <ul className="mt-200" role="list">
             {[
               { id: 'orphanCitations', labelKey: 'checks.orphanCitations' },
               { id: 'orphanTools', labelKey: 'checks.orphanTools' },
@@ -679,93 +724,97 @@ const DatabasePage = ({ lang }) => {
               { id: 'evalInvalidInteraction', labelKey: 'checks.evalInvalidInteraction' },
               { id: 'duplicateKeys', labelKey: 'checks.duplicateKeys' }
             ].map(check => (
-              <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1 }}>{t(`admin.database.${check.labelKey}`)}</div>
-                <GcdsButton
-                  onClick={async () => {
-                    try {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: true }));
-                      setChecksMessages(prev => ({ ...prev, [check.id]: null }));
-                      const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
-                        method: 'GET'
-                      });
-                      const json = await res.json();
-                      if (!res.ok) throw new Error(json.message || 'Check failed');
-                      setChecksResults(prev => ({ ...prev, [check.id]: json }));
-                    } catch (err) {
-                      setChecksMessages(prev => ({
-                        ...prev,
-                        [check.id]: buildErrorStatus(
-                          'admin.database.checkFailed',
-                          err,
-                          { check: check.id },
-                        ),
-                      }));
-                    } finally {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: false }));
-                    }
-                  }}
-                  disabled={!!checksRunning[check.id]}
-                  buttonRole="secondary"
-                >
-                  {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
-                </GcdsButton>
-                {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
-                <div style={{ minWidth: 220, textAlign: 'right' }}>
-                  {checksResults[check.id] ? (
-                    <div style={{ fontSize: 13 }}>
-                      {t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong>
-                      {checksResults[check.id].breakdown ? (
-                        <div style={{ marginTop: 6, textAlign: 'right' }}>
-                          <div style={{ fontSize: 12 }}>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
-                          {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                            <div style={{ marginTop: 6 }}>
-                              {t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                        <div style={{ marginTop: 6 }}>
-                          Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : <div style={{ fontSize: 13, color: '#666' }}>{t('admin.database.noResultsLabel')}</div>}
+              <li key={check.id} className="canada-ca-action-result-row">
+                {/* Name | buttons + message | results */}
+                <div className="font-size-text-sm-nr">{t(`admin.database.${check.labelKey}`)}</div>
+                <div>
+                  <div className="d-flex flex-wrap gap-200">
+                    {/* Native, not GcdsButton: its sr-only check name must
+                        reach the accessible name. aria-disabled keeps focus. */}
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      aria-disabled={checksRunning[check.id] ? 'true' : undefined}
+                      onClick={async () => {
+                        if (checksRunning[check.id]) return;
+                        try {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                          setChecksMessages(prev => ({ ...prev, [check.id]: null }));
+                          const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                            method: 'GET'
+                          });
+                          const json = await res.json();
+                          if (!res.ok) throw new Error(json.message || 'Check failed');
+                          setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                          announce(`${t(`admin.database.${check.labelKey}`)}. ${t('admin.database.countLabel')} ${json.count}`);
+                        } catch (err) {
+                          setChecksMessages(prev => ({
+                            ...prev,
+                            [check.id]: buildErrorStatus(
+                              'admin.database.checkFailed',
+                              err,
+                              { check: check.id },
+                            ),
+                          }));
+                        } finally {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                        }
+                      }}
+                    >
+                      {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
+                      {/* Names the check - 12 buttons otherwise share one name */}
+                      <span className="sr-only"> – {t(`admin.database.${check.labelKey}`)}</span>
+                    </button>
+                    {/* Add Remove Duplicates button only for duplicateKeys check */}
+                    {check.id === 'duplicateKeys' && (
+                      <GcdsButton
+                        onClick={async () => {
+                          if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
+                          try {
+                            setIsRemovingDuplicates(true);
+                            setRemoveDuplicatesMessage(null);
+                            const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
+                              method: 'DELETE'
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
+                            setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount), isError: false });
+                            // Refresh the check results
+                            setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
+                          } catch (err) {
+                            setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
+                          } finally {
+                            setIsRemovingDuplicates(false);
+                          }
+                        }}
+                        disabled={isRemovingDuplicates}
+                        buttonRole="danger"
+                      >
+                        {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
+                      </GcdsButton>
+                    )}
+                  </div>
+                  {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
+                  {check.id === 'duplicateKeys' && (
+                    renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
+                  )}
                 </div>
-                {/* Add Remove Duplicates button only for duplicateKeys check */}
-                {check.id === 'duplicateKeys' && (
-                  <GcdsButton
-                    onClick={async () => {
-                      if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
-                      try {
-                        setIsRemovingDuplicates(true);
-                        setRemoveDuplicatesMessage(null);
-                        const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
-                          method: 'DELETE'
-                        });
-                        const json = await res.json();
-                        if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
-                        setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount), isError: false });
-                        // Refresh the check results
-                        setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
-                      } catch (err) {
-                        setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
-                      } finally {
-                        setIsRemovingDuplicates(false);
-                      }
-                    }}
-                    disabled={isRemovingDuplicates}
-                    buttonRole="danger"
-                  >
-                    {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
-                  </GcdsButton>
-                )}
-                {check.id === 'duplicateKeys' && (
-                  renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
-                )}
-              </div>
+                <div className="font-size-text-sm-nr">
+                  {checksResults[check.id] ? (
+                    <>
+                      <div>{t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong></div>
+                      {checksResults[check.id].breakdown && (
+                        <div>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
+                      )}
+                      {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                        <div>{t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}</div>
+                      ) : null}
+                    </>
+                  ) : <span className="label pending">{t('admin.database.notRunLabel')}</span>}
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </details>
       </div >
 
@@ -774,71 +823,136 @@ const DatabasePage = ({ lang }) => {
         <GcdsText>
           {t('admin.database.importDescription')}
         </GcdsText>
-        <form onSubmit={handleImport} className="mb-200">
-          <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-            {/* Every import field (plus the file input below) clears
-                importMessage on change — same reasoning as the export
-                section above. */}
-            <label>
-              {t('admin.database.chunkSizeLabel')}&nbsp;
-              <input
-                type="number"
-                min="0.0625"
-                step="0.0625"
-                value={importChunkMB}
-                onChange={e => { setImportChunkMB(e.target.value); setImportMessage(null); }}
-                style={{ width: 100 }}
-                disabled={isImporting}
-              />
-            </label>
-            <label>
-              {t('admin.database.throttleLabel')}&nbsp;
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={importThrottleMs}
-                onChange={e => { setImportThrottleMs(e.target.value); setImportMessage(null); }}
-                style={{ width: 100 }}
-                disabled={isImporting}
-              />
-            </label>
-            <label>
-              {t('admin.database.tableSelectLabel')}&nbsp;
-              <select
-                value={importSelectedCollections}
-                onChange={e => {
-                  const options = Array.from(e.target.options);
-                  const vals = options.filter(o => o.selected).map(o => o.value);
-                  // If nothing selected, default to All
-                  setImportSelectedCollections(vals.length ? vals : ['All']);
-                  setImportMessage(null);
-                }}
-                style={{ minWidth: 200, minHeight: 100 }}
-                multiple
-                disabled={isImporting || collections.length === 0}
-              >
-                <option value="All">{t('admin.database.collections.all')}</option>
-                <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
-                {collections.map((col) => (
-                  <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label htmlFor="database-import-file" className="mb-200 display-block">
+        <form onSubmit={handleImport} className="mb-200 filter-fields-full-size">
+          {/* Every import field clears importMessage on change — same
+              reasoning as the export section above. */}
+          <label htmlFor="database-import-file" className="filter-label display-block">
             {t('admin.database.importFileLabel')}
           </label>
-          {/* Positioned right above the file input itself (not at the top of
-              the whole form) — it's the file the message is about, and
-              during/after import it also covers per-chunk progress and the
-              final completion result. While isImporting, this is the same
-              plain text as before (moved from an inline style into
-              .status-message--progress, same margin/color, no other design
-              change), not the StatusMessage box treatment — a per-chunk
-              tick isn't a settled outcome. Once import finishes, the
-              existing StatusMessage box (info/error) shows the completion
-              result, unchanged.
+          {fileSelectError.hasError && (
+            <FeedbackInlineError
+              id="database-import-file-error"
+              message={t('admin.database.fileSelectError')}
+              errorCount={fileSelectError.errorCount}
+              inputRef={fileSelectError.errorRef}
+            />
+          )}
+          {/* Native file input dressed as GC DS's file uploader
+              (.canada-ca-file-input), keeping the app's own field-tied
+              FeedbackInlineError rather than GcdsFileUploader's. */}
+          <input
+            id="database-import-file"
+            type="file"
+            accept=".jsonl"
+            ref={fileInputRef}
+            onChange={() => { setImportMessage(null); fileSelectError.clearError(); }}
+            className="canada-ca-file-input mb-300"
+            aria-describedby={fileSelectError.hasError ? 'database-import-file-error' : undefined}
+            disabled={isImporting}
+          />
+
+          <fieldset className="gc-chckbxrdio md canada-ca-choice-fieldset">
+            <legend className="filter-label">{t('admin.database.importTablesLegend')}</legend>
+            {[
+              { value: 'All', label: t('admin.database.collections.all') },
+              { value: 'AllButLogs', label: t('admin.database.collections.allButLogs') },
+              { value: 'Chosen', label: t('admin.database.importScopeChosen') }
+            ].map(option => (
+              <div className="radio" key={option.value}>
+                <input
+                  type="radio"
+                  id={`database-import-scope-${option.value}`}
+                  name="database-import-scope"
+                  value={option.value}
+                  checked={importScope === option.value}
+                  onChange={() => { setImportScope(option.value); setImportMessage(null); importTablesError.clearError(); }}
+                  disabled={isImporting || collections.length === 0}
+                />
+                <label htmlFor={`database-import-scope-${option.value}`}>{option.label}</label>
+              </div>
+            ))}
+            {/* Revealed right under the radio that asks for it. */}
+            {importScope === 'Chosen' && (
+              <fieldset
+                className={`gc-chckbxrdio md canada-ca-choice-fieldset${importTablesError.hasError ? ' has-error' : ''}`}
+                aria-describedby={importTablesError.hasError ? 'database-import-tables-error' : undefined}
+              >
+                <legend className="filter-label">{t('admin.database.importChosenLegend')}</legend>
+                {importTablesError.hasError && (
+                  <FeedbackInlineError
+                    id="database-import-tables-error"
+                    message={t('admin.database.importTablesError')}
+                    errorCount={importTablesError.errorCount}
+                    inputRef={importTablesError.errorRef}
+                  />
+                )}
+                {collections.map(col => (
+                  <div className="checkbox" key={col}>
+                    <input
+                      type="checkbox"
+                      id={`database-import-table-${col}`}
+                      value={col}
+                      checked={importChosenTables.includes(col)}
+                      onChange={e => {
+                        setImportChosenTables(prev => (e.target.checked ? [...prev, col] : prev.filter(c => c !== col)));
+                        setImportMessage(null);
+                        importTablesError.clearError();
+                      }}
+                      disabled={isImporting}
+                    />
+                    <label htmlFor={`database-import-table-${col}`}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</label>
+                  </div>
+                ))}
+              </fieldset>
+            )}
+          </fieldset>
+
+          <div className="mb-300">
+            <label htmlFor="database-import-chunk-size" className="filter-label display-block">
+              {t('admin.database.chunkSizeLabel')}
+            </label>
+            <input
+              id="database-import-chunk-size"
+              type="number"
+              min="0.0625"
+              step="0.0625"
+              className="filter-input filter-input--narrow"
+              value={importChunkMB}
+              onChange={e => { setImportChunkMB(e.target.value); setImportMessage(null); }}
+              disabled={isImporting}
+            />
+          </div>
+          <div className="mb-300">
+            <label htmlFor="database-import-throttle" className="filter-label display-block">
+              {t('admin.database.throttleLabel')}
+            </label>
+            <input
+              id="database-import-throttle"
+              type="number"
+              min="0"
+              step="50"
+              className="filter-input filter-input--narrow"
+              value={importThrottleMs}
+              onChange={e => { setImportThrottleMs(e.target.value); setImportMessage(null); }}
+              disabled={isImporting}
+            />
+          </div>
+
+          <GcdsButton
+            type="submit"
+            disabled={isImporting}
+            buttonRole="secondary"
+            className="mb-200"
+          >
+            {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
+          </GcdsButton>
+          {/* Right under the Import button, like the other sections' outcomes:
+              the fields between the file input and the button (up to one
+              checkbox per table) would otherwise push this out of view of
+              whoever just clicked. During import it's the per-chunk
+              progress as plain text (.status-message--progress), not a
+              StatusMessage box, since a chunk tick isn't a settled outcome;
+              once import finishes, a StatusMessage box shows the result.
               TODO: chunkIndex/totalChunks are already known during the
               import loop (see handleImport) — a real determinate progress
               bar could replace this text-only counter later. If it does,
@@ -855,39 +969,6 @@ const DatabasePage = ({ lang }) => {
           ) : (
             renderStatusMessage(importMessage, 'success', 'import')
           )}
-          {/* TODO: this is a raw <input type="file">, so the field-tied error
-              below is FeedbackInlineError + aria-describedby (matching
-              SettingsPage.js's pattern) rather than a real uploader
-              component's own built-in error handling. BatchUpload.js's
-              GcdsFileUploader + useAnnouncedError/announceFileError pattern
-              additionally gets focus-management on repeat errors — adopt
-              that if this input is ever upgraded to a real uploader
-              component instead of patching the raw input further. */}
-          {fileSelectError.hasError && (
-            <FeedbackInlineError
-              id="database-import-file-error"
-              message={t('admin.database.fileSelectError')}
-              errorCount={fileSelectError.errorCount}
-              inputRef={fileSelectError.errorRef}
-            />
-          )}
-          <input
-            id="database-import-file"
-            type="file"
-            accept=".jsonl"
-            ref={fileInputRef}
-            onChange={() => { setImportMessage(null); fileSelectError.clearError(); }}
-            className="mb-200"
-            aria-describedby={fileSelectError.hasError ? 'database-import-file-error' : undefined}
-            style={{ display: 'block' }}
-          />
-          <GcdsButton
-            type="submit"
-            disabled={isImporting}
-            buttonRole="secondary"
-          >
-            {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
-          </GcdsButton>
         </form>
       </div>
 
@@ -910,11 +991,11 @@ const DatabasePage = ({ lang }) => {
             <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
               {t('admin.database.indexCreationFailed')}
             </div>
-            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+            <ul className="font-size-text-sm-nr" style={{ margin: 0, paddingLeft: 20 }}>
               {creationDetails.failed.map((f, i) => (
                 <li key={i} style={{ marginBottom: 4 }}>
                   <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span className="text-secondary font-size-text-xxs-nr" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
+                  {f.code && <span className="text-secondary" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
                 </li>
               ))}
             </ul>
@@ -986,7 +1067,7 @@ const DatabasePage = ({ lang }) => {
                 )}
               />
             </div>
-            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="font-size-text-sm-nr" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
@@ -1009,12 +1090,12 @@ const DatabasePage = ({ lang }) => {
                         {col.status}
                       </span>
                       {col.status === 'building' && col.building?.length > 0 && (
-                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
+                        <span style={{ marginLeft: 8 }}>
                           ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
-                        <span className="font-size-text-xxs-nr" style={{ marginLeft: 8 }}>
+                        <span style={{ marginLeft: 8 }}>
                           {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}
