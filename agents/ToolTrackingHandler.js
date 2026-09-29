@@ -78,6 +78,7 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                 toolCall.status = 'completed';
                 ServerLoggingService.debug(`Tool execution completed: ${toolCall.tool}`, this.chatId, {
                     duration: toolCall.duration,
+                    ...(toolCall.tool === 'downloadWebPage' ? { cacheStatus: toolCall.cacheStatus } : {}),
                     output: typeof output === 'object' ? JSON.stringify(output) : output
                 });
 
