@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
+import CellRootLink from '../../components/admin/CellRootLink.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;',
@@ -17,6 +19,7 @@ import StatusMessage from '../../components/admin/StatusMessage.js';
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const navigate = useNavigate();
     const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
     const [datasets, setDatasets] = useState([]);
     const [datasetListResult, setDatasetListResult] = useState(null);
@@ -156,11 +159,6 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleViewDataset = (id) => {
-        // Navigate to analysis page with pre-selected dataset
-        window.location.href = `${getPath('experimental-analysis', lang)}?datasetId=${id}`;
-    };
-
     const handleExportDataset = async (dataset) => {
         setExportingDatasetId(dataset._id);
         try {
@@ -271,15 +269,25 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         ExperimentalBatchClientService.listDatasets(1, 10, query)
     ), []);
 
-    const renderDatasetActions = (ds) => (
-        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
-            {ds.creationStatus && ds.creationStatus !== 'complete' && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleViewDataset(ds._id)} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.analyze')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => { window.location.href = `${getPath('experimental-suites', lang)}/${ds._id}`; }} disabled={ds.creationStatus && ds.creationStatus !== 'complete'}>{t('experimental.datasets.suiteView')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || (ds.creationStatus && ds.creationStatus !== 'complete')}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
-        </div>
-    );
+    const renderDatasetActions = (ds) => {
+        const isComplete = !ds.creationStatus || ds.creationStatus === 'complete';
+        // Navigation is a real link drawn as a button. A link can't be
+        // disabled, so an unfinished dataset gets a disabled button instead -
+        // same look, and there is nowhere to go yet.
+        const navButton = (href, label) => (isComplete
+            ? <CellRootLink className="filter-button filter-button-outline" navigate={navigate} href={href}>{label}</CellRootLink>
+            : <GcdsButton size="small" buttonRole="secondary" disabled>{label}</GcdsButton>
+        );
+        return (
+            <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
+                {!isComplete && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
+                {navButton(`${getPath('experimental-analysis', lang)}?datasetId=${ds._id}`, t('experimental.datasets.analyze'))}
+                {navButton(`${getPath('experimental-suites', lang)}/${ds._id}`, t('experimental.datasets.suiteView'))}
+                <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || !isComplete}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
+                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
+            </div>
+        );
+    };
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -291,18 +299,33 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             </nav>
 
             <div className="my-400">
-                <GcdsButton onClick={() => setShowUpload(!showUpload)} buttonRole="secondary">
-                    {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
-                </GcdsButton>
-                <GcdsButton
-                    buttonRole="secondary"
-                    onClick={() => { window.location.href = getPath('experimental-create-dataset', lang); }}
+                {/* TODO(design): needs design review. Native <button> (not
+                    <GcdsButton>), same rationale as PauseToggleButton.js: GcdsButton
+                    only copies aria-* attributes from its host onto its shadow-DOM
+                    button on mount and inside its own click handler. That handler
+                    runs on the inner button before React's root-delegated onClick,
+                    so it reads the host's aria-expanded before setState commits the
+                    new value, and nothing re-reads it afterwards - screen readers
+                    would hear the value one click behind. Styled with the same
+                    .filter-button classes as "Create dataset" beside it, to
+                    reproduce GcdsButton's regular-size buttonRole secondary look
+                    for now; a designer hasn't signed off on this specific
+                    treatment. */}
+                <button
+                    type="button"
+                    className="filter-button filter-button--regular filter-button-outline"
+                    onClick={() => setShowUpload(!showUpload)}
+                    aria-expanded={showUpload}
+                    aria-controls="experimental-dataset-upload-panel"
                 >
+                    {showUpload ? t('experimental.datasets.hideUpload') : t('experimental.datasets.uploadButton')}
+                </button>
+                <Link className="filter-button filter-button--regular filter-button-outline" to={getPath('experimental-create-dataset', lang)}>
                     {t('experimental.datasets.createButton')}
-                </GcdsButton>
+                </Link>
 
                 {showUpload && (
-                    <div className="mt-400 p-400 border rounded bg-light">
+                    <div id="experimental-dataset-upload-panel" className="mt-400 p-400 border rounded bg-light">
                         <GcdsHeading tag="h2">{t('experimental.datasets.uploadNew')}</GcdsHeading>
                         <div style={{ display: 'grid', gap: '1rem', maxWidth: '600px' }}>
                             <GcdsInput
