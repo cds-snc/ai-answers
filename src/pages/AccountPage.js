@@ -285,7 +285,26 @@ const AccountPage = ({ lang = 'en' }) => {
       title: t('admin.common.columns.chatId'),
       data: 'chatId',
       orderable: false,
-      render: (value, type, row) => (value ? buildChatReviewLinkHtml(value, chatLangFromPageLanguage(row.pageLanguage), row.interactionId, lang) : ''),
+      className: 'chat-id-cell',
+      // Each row is its own assigned question, so every row keeps its own
+      // link; the sr-only question number tells a chat's links apart.
+      render: (value, type, row) => (value ? buildChatReviewLinkHtml(
+        value,
+        chatLangFromPageLanguage(row.pageLanguage),
+        row.interactionId,
+        lang,
+        row.questionNumber ? t('account.assignedChats.chatIdQuestion').replace('{number}', () => String(row.questionNumber)) : '',
+      ) : ''),
+    },
+    {
+      // Short "#" header like the Eval dashboard; screen readers get the
+      // spelled-out name.
+      title: t('admin.evalDashboard.columns.questionNumber'),
+      headerAriaLabel: t('admin.evalDashboard.columns.questionNumberAriaLabel'),
+      data: 'questionNumber',
+      render: (value) => (value != null ? String(value) : ''),
+      width: '40px',
+      orderable: false,
     },
     { title: t('admin.common.columns.program'), data: 'program', render: (value) => escapeHtmlAttribute(value || '') },
     { title: t('account.assignedChats.columns.evaluated'), data: 'partnerEval', render: renderEvalStatus },
@@ -296,14 +315,14 @@ const AccountPage = ({ lang = 'en' }) => {
 
   // Same keep-chat-together row grouping as Chat/Eval/AutoEval dashboards
   // (utils/admin/chatGroupedTable.js) for the chat-level columns only.
-  // Assignment is per question, so Assigned on / Assigned by / Notes (and
-  // Evaluated, scored per question) stay one value per row.
+  // Assignment is per question, so Chat ID (a link to that question),
+  // Assigned on / Assigned by / Notes (and Evaluated, scored per question)
+  // stay one value per row.
   const assignedChatsGroupStateRef = useRef(createChatGroupState());
   const assignedChatsGroupCallbacks = useMemo(() => buildChatGroupCallbacks({
     stateRef: assignedChatsGroupStateRef,
     columns: assignedChatColumns,
     groupedColumns: [
-      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
       { data: 'program' },
     ],
   }), [assignedChatColumns]);

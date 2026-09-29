@@ -1116,6 +1116,7 @@
       "heading": "Your assigned questions for review",
       "filterLabel": "Filter assigned questions",
       "loadError": "Failed to load your assigned questions.",
+      "chatIdQuestion": ", question {number}",
       "columns": {
         "assignedOn": "Assigned on",
         "assignedBy": "Assigned by",
