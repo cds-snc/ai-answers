@@ -7,7 +7,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import AccountPage from '../AccountPage.js';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
-  useTranslations: () => ({ t: (key) => key }),
+  // Keys echo back, except templates whose placeholder a test checks.
+  useTranslations: () => ({ t: (key) => (key === 'account.assignedChats.chatIdQuestion' ? ', question {number}' : key) }),
 }));
 
 const { mockGetMe, mockUpdateMe, mockRefreshUser } = vi.hoisted(() => ({ mockGetMe: vi.fn(), mockUpdateMe: vi.fn(), mockRefreshUser: vi.fn() }));
@@ -348,7 +349,8 @@ describe('AccountPage', () => {
     const [first, second] = cellsByCol[chatIdCol];
     expect(first.querySelector('gcds-link').getAttribute('href')).toContain('interactionIdi1');
     expect(second.querySelector('gcds-link').getAttribute('href')).toContain('interactionIdi3');
-    expect(second.querySelector('gcds-link .sr-only').textContent).toBe('account.assignedChats.chatIdQuestion');
+    expect(first.querySelector('gcds-link .sr-only').textContent).toBe(', question 1');
+    expect(second.querySelector('gcds-link .sr-only').textContent).toBe(', question 3');
   });
 
   it('shows a question number column right after Chat ID, named for screen readers', async () => {
