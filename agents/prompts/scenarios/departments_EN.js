@@ -375,11 +375,6 @@ export const departments_EN = [
     "abbrKey": "CWM"
   },
   {
-    "name": "CBC/Radio-Canada",
-    "url": "https://www.cbc.radio-canada.ca/en/",
-    "abbrKey": "CBC-Radio-Canada"
-  },
-  {
     "name": "Civilian Review and Complaints Commission for the RCMP",
     "url": "https://www.crcc-ccetp.gc.ca/en",
     "abbrKey": "CRCC-CCETP"

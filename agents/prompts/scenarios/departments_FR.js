@@ -220,11 +220,6 @@ export const departments_FR = [
     "abbrKey": "OAG-BVG"
   },
   {
-    "name": "Radio Canada",
-    "url": "https://ici.radio-canada.ca/",
-    "abbrKey": "CBC-Radio-Canada"
-  },
-  {
     "name": "Centre canadien d'hygiène et de sécurité au travail",
     "url": "https://www.cchst.ca/",
     "abbrKey": "CCOHS-CCHST"
