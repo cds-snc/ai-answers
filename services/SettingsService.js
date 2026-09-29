@@ -68,6 +68,12 @@ const isPlausibleEmail = (value) => {
 // than build detection for that, the message itself names both likely
 // causes (settings.validation.invalidEmail: "Invalid email or ; spacing").
 const FIELD_VALIDATORS = {
+  'searchContext.cache.durationHours': (value) => {
+    const hours = Number(value);
+    return Number.isInteger(hours) && hours >= 1 && hours <= 24
+      ? null
+      : { i18nKey: 'settings.validation.searchContextCacheDurationHours' };
+  },
   'downloadWebPage.cache.durationHours': (value) => {
     const hours = Number(value);
     return Number.isInteger(hours) && hours >= 1 && hours <= 24
@@ -129,6 +135,7 @@ const SETTING_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'search.default': DEFAULT_SEARCH_PROVIDER,
   'searchContext.cache.enabled': 'false',
+  'searchContext.cache.durationHours': '12',
   'chat.transport': 'sse',
   // Public-page caching is opt-in. Environments without S3 cannot enable it.
   'downloadWebPage.cache.enabled': 'false',

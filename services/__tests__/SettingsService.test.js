@@ -228,6 +228,14 @@ describe('SettingsService.set field format validation', () => {
     expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
   });
 
+  it('rejects an invalid search cache duration', async () => {
+    const { SettingsService } = await loadSettingsService();
+
+    await expect(SettingsService.set('searchContext.cache.durationHours', '25'))
+      .rejects.toMatchObject({ i18nKey: 'settings.validation.searchContextCacheDurationHours' });
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
   it('accepts a semicolon-separated list of valid emails', async () => {
     const { SettingsService } = await loadSettingsService();
     SettingsService.cache = { 'systemHealth.alertRecipients': '' };

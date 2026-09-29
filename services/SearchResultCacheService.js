@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import storageService from './Storage.js';
+import { SettingsService } from './SettingsService.js';
 
 export const SEARCH_CACHE_PREFIX = 'search-context-cache/v1/';
-export const SEARCH_CACHE_FRESHNESS_MS = 12 * 60 * 60 * 1000;
+const DEFAULT_CACHE_DURATION_HOURS = 12;
 
 function cacheKey({ provider, query, lang }) {
   const input = JSON.stringify({ provider, query, lang });
@@ -16,7 +17,11 @@ export async function readSearchResultCache(input) {
     storageService.getMetaData(key),
   ]);
   const fetchedAt = metadata.lastModified?.getTime();
-  if (!fetchedAt || Date.now() - fetchedAt > SEARCH_CACHE_FRESHNESS_MS) return null;
+  const configuredHours = Number(SettingsService.get('searchContext.cache.durationHours'));
+  const durationHours = Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+    ? configuredHours
+    : DEFAULT_CACHE_DURATION_HOURS;
+  if (!fetchedAt || Date.now() - fetchedAt > durationHours * 60 * 60 * 1000) return null;
   return JSON.parse(serialized);
 }
 

@@ -1212,6 +1212,7 @@
     "validation": {
       "invalidEmail": "Courriel ou espacement du « ; » invalide",
       "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
+      "searchContextCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
     "cache": { "title": "Cache" },
@@ -1229,7 +1230,8 @@
     },
     "searchContextCache": {
       "enabledLabel": "Mettre en cache les résultats de recherche",
-      "description": "Lorsqu’il est activé, les résultats Google et Canada.ca sont mis en cache pendant un maximum de 12 heures.",
+      "description": "Lorsque cette option est activée, les résultats Google et Canada.ca sont mis en cache pendant la durée indiquée ci-dessous.",
+      "durationHoursLabel": "Durée du cache des résultats de recherche (heures)",
       "clear": "Vider les résultats de recherche en cache",
       "clearing": "Suppression des résultats de recherche en cache...",
       "clearSuccess": "{count} résultats de recherche en cache supprimés.",
@@ -1505,6 +1507,10 @@
     "pass": "Réussite",
     "fail": "Échoué",
     "downloadSuccess": "Réussi",
+    "searchResultsTitle": "Résultats de recherche",
+    "searchQuery": "Requête de recherche :",
+    "searchResultsCached": "Servi depuis le cache",
+    "searchResultsDownloaded": "Extrait du moteur de recherche",
     "downloadSuccessCached": "Réussi depuis le cache",
     "downloadSuccessDownloaded": "Réussi après téléchargement",
     "downloadPartial": "Partiel",
@@ -1912,7 +1918,7 @@
       },
       "searchCalls": {
         "title": "Appels de recherche",
-        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
+        "note": "Résultats du cache, erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
         "provider": {
           "title": "Fournisseur",
           "canadaca": "Recherche Canada.ca (Coveo)",

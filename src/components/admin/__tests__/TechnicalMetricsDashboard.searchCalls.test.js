@@ -50,8 +50,8 @@ const baseHook = {
     responseTime: {},
     downloadWebPage: [],
     searchCalls: {
-      canadaca: { errors: 2, retries: 5 },
-      google: { errors: 1, retries: 0 },
+      canadaca: { errors: 2, retries: 5, cacheHits: 9 },
+      google: { errors: 1, retries: 0, cacheHits: 3 },
     },
     aiServiceCalls: {
       context: { errors: 3 },
@@ -90,8 +90,8 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
     );
     expect(searchTable).toBeTruthy();
     expect(searchTable.data).toEqual([
-      expect.objectContaining({ provider: 'Canada.ca search (Coveo)', errorCount: '2', retryCount: '5' }),
-      expect.objectContaining({ provider: 'Google', errorCount: '1', retryCount: '0' }),
+      expect.objectContaining({ provider: 'Canada.ca search (Coveo)', errorCount: '2', retryCount: '5', cacheHitCount: '9' }),
+      expect.objectContaining({ provider: 'Google', errorCount: '1', retryCount: '0', cacheHitCount: '3' }),
     ]);
     // No retry-rate column: a single question's search can retry more than
     // once, so "retries / totalQuestions" can exceed 100% and would mislead.
@@ -110,8 +110,8 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
       call.data?.some((row) => row.provider === 'Google')
     );
     expect(searchTable.data).toEqual([
-      expect.objectContaining({ errorCount: '0', retryCount: '0' }),
-      expect.objectContaining({ errorCount: '0', retryCount: '0' }),
+      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitCount: '0' }),
+      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitCount: '0' }),
     ]);
   });
 

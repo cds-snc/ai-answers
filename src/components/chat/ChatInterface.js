@@ -6,6 +6,7 @@ import ChatOptions from "./ChatOptions.js";
 import ExpertFeedbackPanel from "./review/ExpertFeedbackPanel.js";
 import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
 import DownloadPanel from "./review/DownloadPanel.js";
+import SearchResultsPanel from "./review/SearchResultsPanel.js";
 import UsedChatsPanel from "./review/UsedChatsPanel.js";
 import EvalPanel from "./review/EvalPanel.js";
 import aiStarsGray from '../../assets/ai-stars-333-90.png';
@@ -882,6 +883,7 @@ const ChatInterface = ({
                               answerNumber={reviewAnswerNumber}
                             />
                             <DownloadPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
+                            <SearchResultsPanel message={message} t={adminT} answerNumber={reviewAnswerNumber} />
                             {/* lang stays the CURRENT chat's own language here, not adminLang -
                                 it routes buildChatReviewHref to a DIFFERENT matched chat, which
                                 has no known pageLanguage of its own available to this panel

@@ -77,6 +77,7 @@ const SETTINGS_LOAD_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'search.default': DEFAULT_SEARCH_PROVIDER,
   'searchContext.cache.enabled': 'false',
+  'searchContext.cache.durationHours': '12',
   'chat.transport': 'sse',
   'downloadWebPage.cache.enabled': 'false',
   'downloadWebPage.cache.durationHours': '12',
@@ -124,9 +125,9 @@ const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 const SECTION_KEYS = {
   general: [
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
-    'chat.transport', 'model.default', 'search.default', 'searchContext.cache.enabled', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+    'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
-  cache: ['downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
+  cache: ['searchContext.cache.enabled', 'searchContext.cache.durationHours', 'downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
   health: [
     'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
     'systemHealth.checks.llm.enabled', 'systemHealth.autoDisableOnError', 'systemHealth.errorTemplateId',
@@ -185,6 +186,7 @@ const FIELD_META = {
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
   'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
   'searchContext.cache.enabled': { fieldId: 'search-context-cache-enabled', labelKey: 'settings.searchContextCache.enabledLabel' },
+  'searchContext.cache.durationHours': { fieldId: 'search-context-cache-duration-hours', labelKey: 'settings.searchContextCache.durationHoursLabel' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
   'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
   'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
@@ -254,6 +256,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
   const [searchContextCacheEnabled, setSearchContextCacheEnabled] = useState('false');
+  const [searchContextCacheDurationHours, setSearchContextCacheDurationHours] = useState('12');
   const [clearingSearchCache, setClearingSearchCache] = useState(false);
   const [chatTransport, setChatTransport] = useState('sse');
   const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
@@ -433,6 +436,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
       setSearchContextCacheEnabled(String(settings['searchContext.cache.enabled'] ?? 'false'));
+      setSearchContextCacheDurationHours(String(settings['searchContext.cache.durationHours'] ?? '12'));
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
       setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
       setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
@@ -913,6 +917,46 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.cache.title')}</summary>
         <div className="settings-form-width">
+          {fieldErrors['searchContext.cache.enabled'] && (
+            <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-200">
+            {t('settings.searchContextCache.enabledLabel')}
+          </label>
+          <select
+            id="search-context-cache-enabled"
+            className="filter-select"
+            value={searchContextCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setSearchContextCacheEnabled(v); stageChange('searchContext.cache.enabled', v); }}
+            disabled={sectionSaving.cache || clearingSearchCache}
+            aria-describedby={fieldErrors['searchContext.cache.enabled'] ? 'search-context-cache-enabled-error' : undefined}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          <p className="mb-200">{t('settings.searchContextCache.description')}</p>
+          {fieldErrors['searchContext.cache.durationHours'] && (
+            <FeedbackInlineError id="search-context-cache-duration-hours-error" message={fieldErrors['searchContext.cache.durationHours']} announce={false} />
+          )}
+          <label htmlFor="search-context-cache-duration-hours" className="filter-label display-block mt-200">
+            {t('settings.searchContextCache.durationHoursLabel')}
+          </label>
+          <input
+            id="search-context-cache-duration-hours"
+            className="filter-input"
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={searchContextCacheDurationHours}
+            onChange={(e) => { const v = e.target.value; setSearchContextCacheDurationHours(v); stageChange('searchContext.cache.durationHours', v); }}
+            onBlur={() => defaultEmptyNumberOnBlur(searchContextCacheDurationHours, setSearchContextCacheDurationHours, 'searchContext.cache.durationHours')}
+            disabled={sectionSaving.cache || clearingSearchCache}
+            aria-describedby={fieldErrors['searchContext.cache.durationHours'] ? 'search-context-cache-duration-hours-error' : undefined}
+          />
+          <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
+            {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
+          </GcdsButton>
           {fieldErrors['downloadWebPage.cache.enabled'] && (
             <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
           )}

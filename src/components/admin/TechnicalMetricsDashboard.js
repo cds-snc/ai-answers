@@ -277,7 +277,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               <div>
                 <DataTable
                   data={['canadaca', 'google'].map((provider) => {
-                    const row = data.searchCalls?.[provider] || { errors: 0, retries: 0 };
+                    const row = data.searchCalls?.[provider] || { errors: 0, retries: 0, cacheHits: 0 };
                     return {
                       provider: t(`technicalMetrics.dashboard.searchCalls.provider.${provider}`),
                       errorCount: fmtNum(row.errors),
@@ -285,6 +285,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                       // Raw count, not a rate: one question's search can
                       // retry more than once, so a % here could exceed 100%.
                       retryCount: fmtNum(row.retries),
+                      cacheHitCount: fmtNum(row.cacheHits),
                     };
                   })}
                   columns={[
@@ -292,6 +293,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('technicalMetrics.dashboard.tools.errorCount'), data: 'errorCount' },
                     { title: t('technicalMetrics.dashboard.tools.errorPercent'), data: 'errorPercent' },
                     { title: t('technicalMetrics.dashboard.searchCalls.retryCount'), data: 'retryCount' },
+                    { title: t('technicalMetrics.dashboard.tools.cacheHitCount'), data: 'cacheHitCount' },
                   ]}
                   options={{
                     paging: false,

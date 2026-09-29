@@ -22,9 +22,10 @@ vi.mock('../ServerLoggingService.js', () => ({
     },
 }));
 
-const { recordErrorMock, recordRetryMock } = vi.hoisted(() => ({
+const { recordErrorMock, recordRetryMock, recordCacheHitMock } = vi.hoisted(() => ({
     recordErrorMock: vi.fn(),
     recordRetryMock: vi.fn(),
+    recordCacheHitMock: vi.fn(),
 }));
 const { settingsGetMock, readCacheMock, writeCacheMock } = vi.hoisted(() => ({
     settingsGetMock: vi.fn(),
@@ -32,7 +33,7 @@ const { settingsGetMock, readCacheMock, writeCacheMock } = vi.hoisted(() => ({
     writeCacheMock: vi.fn(),
 }));
 vi.mock('../ServiceCallMetricsService.js', () => ({
-    default: { recordError: recordErrorMock, recordRetry: recordRetryMock },
+    default: { recordError: recordErrorMock, recordRetry: recordRetryMock, recordCacheHit: recordCacheHitMock },
 }));
 vi.mock('../SettingsService.js', () => ({
     SettingsService: { get: settingsGetMock },
@@ -111,6 +112,8 @@ describe('SearchContextService', () => {
         expect(googleContextSearch).not.toHaveBeenCalled();
         expect(readCacheMock).toHaveBeenCalledWith({ provider: 'google', query: 'Rewritten Query', lang: 'en' });
         expect(writeCacheMock).not.toHaveBeenCalled();
+        expect(result.cacheStatus).toBe('hit');
+        expect(recordCacheHitMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
     });
 
     it('caches successful Google and Canada.ca searches under separate provider keys', async () => {

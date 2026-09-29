@@ -17,8 +17,9 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
         try {
             const cached = await readSearchResultCache(cacheInput);
             if (cached !== null) {
-                ServerLoggingService.debug('Search cache hit.', chatId, cacheInput);
-                return cached;
+                ServerLoggingService.debug('Search cache hit.', chatId, { ...cacheInput, cacheStatus: 'hit' });
+                ServiceCallMetricsService.recordCacheHit({ service: 'search', type: provider });
+                return { ...cached, cacheStatus: 'hit' };
             }
         } catch (error) {
             ServerLoggingService.warn('Search cache read failed; using provider.', chatId, {
@@ -47,7 +48,14 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
         }
         if (!result?.failed && SettingsService.get('searchContext.cache.enabled') === 'true') {
             try {
-                await writeSearchResultCache(cacheInput, result);
+                // Caching is an optimization. Do not make a chat wait for a
+                // storage write after the provider already returned results.
+                void writeSearchResultCache(cacheInput, result).catch((error) => {
+                    ServerLoggingService.warn('Search cache write failed.', chatId, {
+                        ...cacheInput,
+                        error: error.message,
+                    });
+                });
             } catch (error) {
                 ServerLoggingService.warn('Search cache write failed.', chatId, {
                     ...cacheInput,
@@ -55,7 +63,7 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
                 });
             }
         }
-        return result;
+        return { ...result, cacheStatus: 'downloaded' };
     } catch (error) {
         ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         throw error;
