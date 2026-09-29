@@ -1033,7 +1033,7 @@ const DatabasePage = ({ lang }) => {
           <GcdsButton
             type="submit"
             disabled={isImporting}
-            buttonRole="secondary"
+            buttonRole="primary"
             className="mb-200"
           >
             {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
