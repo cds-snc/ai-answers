@@ -387,8 +387,7 @@
   margin: var(--gcds-hint-margin);
 }
 
-/* Thin rule between a form's Save and an immediate action below it — the
-   browser-default <hr> renders as a thick inset double line. */
+/* Thin divider; the browser-default <hr> is a thick inset double line. */
 .section-divider {
   border: none;
   border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);

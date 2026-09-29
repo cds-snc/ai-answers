@@ -128,6 +128,9 @@
           "label": "Famille de modèles :"
         },
         "useSystemSettings": "Utiliser les paramètres système",
+        "saveLabel": "Enregistrer les options",
+        "savedAnnouncement": "Options enregistrées.",
+        "unsavedWarning": "Options non enregistrées. Sélectionnez Enregistrer les options pour les appliquer.",
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)",
           "error": "Entrez une URL complète, commençant par https:// ou http://",
