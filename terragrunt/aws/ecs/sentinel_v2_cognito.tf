@@ -11,8 +11,7 @@
 # Identity pools carry no resource policy, so the forwarder can only use a pool
 # in its own account: staging and production each get one from this file.
 #
-# Nothing uses the pool yet. The forwarder stays on v1 until a follow-up change
-# passes the pool's id to the ecs module as sentinel_cognito_identity_pool_id.
+# The forwarder reads this pool's id from the ecs module block in ecs.tf.
 
 resource "aws_cognito_identity_pool" "sentinel_forwarder_v2" {
   identity_pool_name               = "sentinel-forwarder-v2-federation"
