@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.205.0](https://github.com/cds-snc/ai-answers/compare/v1.204.0...v1.205.0) (2026-09-29)
+
+
+### Features
+
+* add webpage download cache ([d49a36b](https://github.com/cds-snc/ai-answers/commit/d49a36b46743872d5a6fcd4c70a1bf8451b20cd9))
+* expire search caches after one day ([c23f6df](https://github.com/cds-snc/ai-answers/commit/c23f6df4e821f062381bf57147857f141028b44d))
+* expire search caches after one day ([8033c2e](https://github.com/cds-snc/ai-answers/commit/8033c2e926b6271a4d91793466db7d5da52e6aa8))
+
+
+### Bug Fixes
+
+* cache hits and logging ([0df1e35](https://github.com/cds-snc/ai-answers/commit/0df1e355bde2ecb8dbe13e87022d58da027a4b1b))
+* create lock for cache deletion if cache is very large ([0fb3367](https://github.com/cds-snc/ai-answers/commit/0fb3367b1e2624e1b885bffe81d84675a8cada17))
+* don't worr about cache count just delete everything ([842f0bb](https://github.com/cds-snc/ai-answers/commit/842f0bbc432e8e1e9a0237d6e4a82fd6c2316851))
+* labels ([5e49451](https://github.com/cds-snc/ai-answers/commit/5e49451a5c51082d03fab9d7421b5f95421e29bc))
+* remove block when cache is being cleared ([ea7103e](https://github.com/cds-snc/ai-answers/commit/ea7103e40802184c4b066ffc09b908120b920d0f))
+* remove block when cache is being cleared ([f24c72e](https://github.com/cds-snc/ai-answers/commit/f24c72e9ee0e10e80ff8022ec85401e9f5a967f0))
+* remove cbc from searchable domains ([dafdfe3](https://github.com/cds-snc/ai-answers/commit/dafdfe39f6567bc57b2fc5954ab6ace9c4d076e5))
+* single s3 bucket call ([a969308](https://github.com/cds-snc/ai-answers/commit/a96930862c9026a105337888cef250ecb50790e8))
+
+
+### Miscellaneous Chores
+
+* add status of cache to logs ([0134a10](https://github.com/cds-snc/ai-answers/commit/0134a10cf1e37a3c7bd1b00ba9958677bd073d5b))
+
 ## [1.204.0](https://github.com/cds-snc/ai-answers/compare/v1.203.0...v1.204.0) (2026-09-29)
 
 
