@@ -379,6 +379,21 @@
   margin-bottom: 2px;
 }
 
+/* GC DS hint pattern (label, hint, field) for plain HTML fields: gcds-hint's
+   own tokens. A plain <p> because a native field's aria-describedby can't
+   reach into <gcds-hint>'s shadow DOM. */
+.field-hint {
+  color: var(--gcds-hint-text);
+  margin: var(--gcds-hint-margin);
+}
+
+/* Thin rule between a form's Save and an immediate action below it — the
+   browser-default <hr> renders as a thick inset double line. */
+.section-divider {
+  border: none;
+  border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
 .filter-field {
   position: relative;
 }

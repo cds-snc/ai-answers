@@ -1203,7 +1203,6 @@
     "fieldError": {
       "unexpected": "Unexpected error: {error}"
     },
-    "save": "Save",
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
@@ -1211,9 +1210,10 @@
       "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
-    "cache": { "title": "Cache" },
+    "cache": { "title": "Downloaded web pages cache", "saveLabel": "Save web page cache settings" },
     "general": {
-      "title": "General settings"
+      "title": "General settings",
+      "saveLabel": "Save general settings"
     },
     "defaultWorkflow": {
       "label": "Generic workflow"
@@ -1238,6 +1238,7 @@
       "enabledLabel": "Cache downloaded web pages",
       "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
       "durationHoursLabel": "Web page cache duration (hours)",
+      "clearConfirm": "Clear all cached web pages? They will be downloaded again the next time they're needed.",
       "clear": "Clear cached web pages",
       "clearing": "Clearing cached web pages...",
       "clearSuccess": "Cached web pages cleared.",
@@ -1245,6 +1246,7 @@
     },
     "health": {
       "title": "Health checks",
+      "saveLabel": "Save health checks",
       "description": "Control the automated health monitor and its dependency checks.",
       "enabledLabel": "Enable health monitoring",
       "databaseEnabledLabel": "Check database health",
@@ -1303,6 +1305,7 @@
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
+      "saveLabel": "Save two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
@@ -1311,6 +1314,7 @@
     },
     "session": {
       "title": "Session settings",
+      "saveLabel": "Save session settings",
       "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
@@ -1332,6 +1336,7 @@
     },
     "rateLimiting": {
       "title": "Rate limiting",
+      "saveLabel": "Save rate limiting",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
@@ -1343,6 +1348,7 @@
     },
     "redaction": {
       "title": "Redaction settings",
+      "saveLabel": "Save redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
