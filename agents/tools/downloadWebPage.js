@@ -14,6 +14,7 @@ import {
   getDownloadWebPageCacheGeneration,
   isDownloadWebPageCacheEnabled,
   setDownloadWebPageCacheEnabled,
+  tryWithDownloadWebPageCacheLock,
   withDownloadWebPageCacheLock,
 } from "../../services/DownloadWebPageCacheCoordinator.js";
 import { graphRequestContext } from "../graphs/requestContext.js";
@@ -102,7 +103,7 @@ function isMissingCacheObject(error) {
 }
 
 async function cacheMarkdown(url, markdown, generation) {
-  return withDownloadWebPageCacheLock(async () => {
+  return tryWithDownloadWebPageCacheLock(async () => {
     const [enabled, currentGeneration] = await Promise.all([
       isDownloadWebPageCacheEnabled(),
       getDownloadWebPageCacheGeneration(),

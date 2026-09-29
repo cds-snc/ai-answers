@@ -14,6 +14,7 @@ const LOCK_RETRY_INTERVAL_MS = 100;
 let redisClientPromise;
 let localGeneration = randomUUID();
 let localLockTail = Promise.resolve();
+let localLockPending = 0;
 
 async function getRedisClient() {
   if (!process.env.REDIS_URL) {
@@ -36,21 +37,25 @@ async function getRedisClient() {
   return redisClientPromise;
 }
 
-async function withLocalLock(callback) {
+async function withLocalLock(callback, waitForLock) {
+  if (!waitForLock && localLockPending > 0) return false;
   const previous = localLockTail;
   let release;
+  localLockPending += 1;
   localLockTail = new Promise((resolve) => { release = resolve; });
   await previous;
   try {
     return await callback();
   } finally {
+    localLockPending -= 1;
     release();
   }
 }
 
-async function withRedisLock(client, callback) {
+async function withRedisLock(client, callback, waitForLock) {
   const token = randomUUID();
   while (await client.set(LOCK_KEY, token, { NX: true, PX: LOCK_TTL_MS }) !== 'OK') {
+    if (!waitForLock) return false;
     await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_INTERVAL_MS));
   }
 
@@ -80,9 +85,19 @@ async function withRedisLock(client, callback) {
   }
 }
 
-export async function withDownloadWebPageCacheLock(callback) {
+async function runWithDownloadWebPageCacheLock(callback, waitForLock) {
   const client = await getRedisClient();
-  return client ? withRedisLock(client, callback) : withLocalLock(callback);
+  return client ? withRedisLock(client, callback, waitForLock) : withLocalLock(callback, waitForLock);
+}
+
+export function withDownloadWebPageCacheLock(callback) {
+  return runWithDownloadWebPageCacheLock(callback, true);
+}
+
+// Cache writes are optional. A clear can hold the lock for the whole S3 delete,
+// so skip a write if the lock is busy instead of delaying the fetched page.
+export function tryWithDownloadWebPageCacheLock(callback) {
+  return runWithDownloadWebPageCacheLock(callback, false);
 }
 
 export async function getDownloadWebPageCacheGeneration() {

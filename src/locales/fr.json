@@ -1239,7 +1239,7 @@
     },
     "downloadWebPageCache": {
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
-      "description": "Lorsqu’il est activé, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
+      "description": "Lorsque cette option est activée, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
       "durationHoursLabel": "Durée du cache des pages Web (heures)",
       "clear": "Vider le cache des pages Web",
       "clearing": "Suppression des pages Web en cache...",
@@ -1895,7 +1895,7 @@
         "totalCount": "Questions avec cet appel",
         "completedCount": "Complétés",
         "errorCount": "Erreurs",
-        "cacheHitCount": "Résultats du cache",
+        "cacheHitCount": "Pages servies depuis le cache",
         "originCount": "Téléchargements depuis la source",
         "errorPercent": "% d'erreurs",
         "median": "Médiane des complétés (ms)",
