@@ -13,6 +13,7 @@ import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { useAuth } from '../contexts/AuthContext.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
 
 // Bolds just the dashboard-type name(s) inside a "How filter preferences
@@ -132,12 +133,21 @@ const AccountPage = ({ lang = 'en' }) => {
   // Staging only - see `draft`. A fresh edit supersedes the last outcome and
   // any lock error from a previous Save.
   const handleDraftChange = (field, value) => {
-    setDraft((prev) => {
-      const next = { ...prev, [field]: value };
-      // A group only fits its own institution, so drop one that no longer does.
-      if (field === 'institution' && !groupLocked && !groupFitsInstitution(next.group, value)) next.group = '';
-      return next;
-    });
+    const next = { ...draft, [field]: value };
+    // A group only fits its own institution, so drop one that no longer
+    // does. Back on the saved institution, the saved group comes back:
+    // arrowing through a closed <select> fires change on every option.
+    if (field === 'institution' && !groupLocked) {
+      if (value === (profile?.institution || '')) next.group = profile?.group || '';
+      else if (!groupFitsInstitution(next.group, value)) next.group = '';
+      // The group select changes out of view of the institution one, so say so.
+      if (next.group !== draft.group) {
+        announce(next.group
+          ? t('users.groupRestoredAnnouncement').replace('{group}', () => getPartnerGroupLabel(next.group, lang))
+          : t('users.groupClearedAnnouncement'));
+      }
+    }
+    setDraft(next);
     setProfileStatus(null);
     setPrefStatus(null);
     institutionError.clearError();

@@ -1154,6 +1154,8 @@
     "title": "Manage user accounts",
     "institutionNone": "None",
     "groupNone": "None",
+    "groupClearedAnnouncement": "Group cleared.",
+    "groupRestoredAnnouncement": "Group set back to {group}.",
     "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
