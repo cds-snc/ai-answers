@@ -7,6 +7,11 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import { formatNumber } from '../utils/numberFormat.js';
 import { announce } from '../utils/liveAnnouncer.js';
 
+// Reasons with a label under eval.noMatchReasonTypes; anything else is shown as "Unknown" + its raw code.
+const NO_MATCH_REASONS = new Set([
+  'no_embeddings', 'no_qa_match', 'forced_fallback_no_match', 'no_sentence_match', 'no_citation_match', 'unknown',
+]);
+
 const EvalPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
@@ -252,7 +257,11 @@ const EvalPage = ({ lang = 'en' }) => {
             <GcdsHeading tag="h3">{t('admin.evalPage.metrics.noMatchReasons')}</GcdsHeading>
             {noMatchEntries.length > 0 ? (
               renderCounts(noMatchEntries.map(([reason, count]) => [
-                reason, t(`eval.noMatchReasonTypes.${reason}`, reason), count,
+                reason,
+                NO_MATCH_REASONS.has(reason)
+                  ? t(`eval.noMatchReasonTypes.${reason}`)
+                  : <>{t('eval.noMatchReasonTypes.unknown')} (<code lang="en">{reason}</code>)</>,
+                count,
               ]))
             ) : (
               <GcdsText>{t('admin.evalPage.metrics.noMatchNone')}</GcdsText>

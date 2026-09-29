@@ -66,6 +66,15 @@ describe('EvalPage', () => {
     expect(document.querySelector('table')).toBeNull();
   });
 
+  it('labels a no-match reason with no locale entry as unknown, keeping its code', async () => {
+    svc.getEvalMetrics.mockResolvedValue({ ...metrics, noMatchByReason: { none: 2 } });
+    render(<EvalPage lang="en" />);
+    const code = await screen.findByText('none');
+    expect(code.tagName).toBe('CODE');
+    expect(code.closest('dt').textContent).toBe('eval.noMatchReasonTypes.unknown (none)');
+    expect(screen.queryByText('eval.noMatchReasonTypes.none')).toBeNull();
+  });
+
   it('keeps generating until nothing is left and reports the totals of every batch', async () => {
     svc.generateEvals
       .mockResolvedValueOnce({ remaining: 5, processed: 2, failed: 1, lastProcessedId: 'a' })
