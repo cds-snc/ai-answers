@@ -12,8 +12,9 @@ const serviceCallErrorCounterSchema = new mongoose.Schema({
   service: { type: String, required: true },
   // Which call within that service: 'google' | 'canadaca' (search); 'context' | 'answer' (ai)
   type: { type: String, required: true },
-  // 'error' = the call ultimately failed after all retries; 'retry' = one retry attempt
-  event: { type: String, required: true, enum: ['error', 'retry'] },
+  // 'error' = the call ultimately failed after all retries; 'retry' = one retry
+  // attempt; 'cacheHit' = a result was served without an outbound search.
+  event: { type: String, required: true, enum: ['error', 'retry', 'cacheHit'] },
   count: { type: Number, required: true, default: 0 },
 }, {
   timestamps: true,
@@ -23,7 +24,9 @@ const serviceCallErrorCounterSchema = new mongoose.Schema({
 
 serviceCallErrorCounterSchema.index({ date: 1, service: 1, type: 1, event: 1 }, { unique: true });
 
-export const ServiceCallErrorCounter = mongoose.models.ServiceCallErrorCounter
+// Keep the persisted Mongoose model name for the existing collection, while
+// using a code identifier that reflects all recorded service-call events.
+export const ServiceCallMetricCounter = mongoose.models.ServiceCallErrorCounter
   || mongoose.model('ServiceCallErrorCounter', serviceCallErrorCounterSchema);
 
-export default ServiceCallErrorCounter;
+export default ServiceCallMetricCounter;

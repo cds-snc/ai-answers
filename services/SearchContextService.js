@@ -5,10 +5,29 @@ import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
+import { SettingsService } from './SettingsService.js';
+import { readSearchResultCache, writeSearchResultCache } from './SearchResultCacheService.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
     const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
+    const cacheInput = { provider, query, lang };
+
+    if (SettingsService.get('searchContext.cache.enabled') === 'true') {
+        try {
+            const cached = await readSearchResultCache(cacheInput);
+            if (cached !== null) {
+                ServerLoggingService.debug('Search cache hit.', chatId, { ...cacheInput, cacheStatus: 'hit' });
+                ServiceCallMetricsService.recordCacheHit({ service: 'search', type: provider });
+                return { ...cached, cacheStatus: 'hit' };
+            }
+        } catch (error) {
+            ServerLoggingService.warn('Search cache read failed; using provider.', chatId, {
+                ...cacheInput,
+                error: error.message,
+            });
+        }
+    }
 
     // Retry lives inside each search tool, not here: only the tool can tell a
     // dropped socket or a 5xx from a 404 or a bad API key, and a wrapper at this
@@ -27,7 +46,24 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
         if (result?.failed) {
             ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         }
-        return result;
+        if (!result?.failed && SettingsService.get('searchContext.cache.enabled') === 'true') {
+            try {
+                // Caching is an optimization. Do not make a chat wait for a
+                // storage write after the provider already returned results.
+                void writeSearchResultCache(cacheInput, result).catch((error) => {
+                    ServerLoggingService.warn('Search cache write failed.', chatId, {
+                        ...cacheInput,
+                        error: error.message,
+                    });
+                });
+            } catch (error) {
+                ServerLoggingService.warn('Search cache write failed.', chatId, {
+                    ...cacheInput,
+                    error: error.message,
+                });
+            }
+        }
+        return { ...result, cacheStatus: 'downloaded' };
     } catch (error) {
         ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         throw error;

@@ -133,6 +133,17 @@ describe('downloadWebPage tool', () => {
     expect(storageGetMetaDataMock).not.toHaveBeenCalled();
   });
 
+  it('returns downloaded content without waiting for a cache write', async () => {
+    cacheEnabledMock.mockResolvedValue(true);
+    storageGetWithMetadataMock.mockRejectedValue({ name: 'NoSuchKey' });
+    storagePutMock.mockReturnValue(new Promise(() => {}));
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+    await expect(invokeTool({ url: 'https://www.canada.ca/en/fresh.html' }))
+      .resolves.toContain('705-424-1200');
+    await vi.waitFor(() => expect(storagePutMock).toHaveBeenCalledOnce());
+  });
+
   it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {
     await expect(clearDownloadWebPageCache()).resolves.toBeUndefined();
     expect(storageDeleteAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/');
