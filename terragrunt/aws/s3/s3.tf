@@ -43,10 +43,23 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage" {
   }
 
   rule {
+    id     = "expire-search-context-cache-1-day"
+    status = "Enabled"
+
+    filter {
+      prefix = "search-context-cache/"
+    }
+
+    expiration {
+      days = 1
+    }
+  }
+
+  rule {
     id     = "expire-all-objects-90-days"
     status = "Enabled"
 
-    # Applies to all storage; the cache rule above expires its prefix first.
+    # Applies to all storage; cache rules above expire their prefixes first.
     filter {}
 
     expiration {
