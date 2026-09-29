@@ -116,11 +116,15 @@ let lastDataTableProps = null;
 const auditTableReloadMock = vi.fn();
 
 vi.mock('datatables.net-react', () => {
-  const MockDataTable = React.forwardRef((props, ref) => {
+  const MockDataTable = (props) => {
     lastDataTableProps = props;
-    React.useImperativeHandle(ref, () => ({ reload: auditTableReloadMock }));
+    React.useEffect(() => {
+      props.options?.initComplete?.call({
+        api: () => ({ ajax: { reload: auditTableReloadMock } }),
+      });
+    }, [props.options]);
     return React.createElement('div', { 'data-testid': 'audit-data-table' });
-  });
+  };
   MockDataTable.use = vi.fn();
   return { default: MockDataTable };
 });

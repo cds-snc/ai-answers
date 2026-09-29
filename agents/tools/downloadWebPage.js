@@ -9,6 +9,13 @@ import { createHash } from "node:crypto";
 import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
 import { SettingsService } from "../../services/SettingsService.js";
 import storageService from "../../services/Storage.js";
+import {
+  advanceDownloadWebPageCacheGeneration,
+  getDownloadWebPageCacheGeneration,
+  isDownloadWebPageCacheEnabled,
+  setDownloadWebPageCacheEnabled,
+  withDownloadWebPageCacheLock,
+} from "../../services/DownloadWebPageCacheCoordinator.js";
 import { graphRequestContext } from "../graphs/requestContext.js";
 import {
   retryOnTransientError,
@@ -74,16 +81,12 @@ export function getCacheFreshnessMs() {
 }
 export const CACHE_PREFIX = "download-web-page-cache/v1/";
 
-function cacheEnabled() {
-  return SettingsService.get("downloadWebPage.cache.enabled") === "true";
+function cacheObjectKey(url, generation) {
+  return `${CACHE_PREFIX}${generation}/${createHash("sha256").update(url).digest("hex")}.md`;
 }
 
-function cacheObjectKey(url) {
-  return `${CACHE_PREFIX}${createHash("sha256").update(url).digest("hex")}.md`;
-}
-
-async function readCachedMarkdown(url) {
-  const key = cacheObjectKey(url);
+async function readCachedMarkdown(url, generation) {
+  const key = cacheObjectKey(url, generation);
   const [markdown, metadata] = await Promise.all([
     storageService.get(key),
     storageService.getMetaData(key),
@@ -93,12 +96,32 @@ async function readCachedMarkdown(url) {
   return markdown;
 }
 
-async function cacheMarkdown(url, markdown) {
-  await storageService.put(cacheObjectKey(url), markdown, { visibility: "private" });
+async function cacheMarkdown(url, markdown, generation) {
+  await withDownloadWebPageCacheLock(async () => {
+    const [enabled, currentGeneration] = await Promise.all([
+      isDownloadWebPageCacheEnabled(),
+      getDownloadWebPageCacheGeneration(),
+    ]);
+    // A request that began before a clear must not repopulate the cache after
+    // the clear has advanced its generation.
+    if (!enabled || generation !== currentGeneration) return;
+    await storageService.put(cacheObjectKey(url, generation), markdown, { visibility: "private" });
+  });
 }
 
 export async function clearDownloadWebPageCache() {
-  await storageService.deleteAll(CACHE_PREFIX);
+  await withDownloadWebPageCacheLock(async () => {
+    const wasEnabled = await isDownloadWebPageCacheEnabled();
+    let disabled = false;
+    try {
+      await setDownloadWebPageCacheEnabled(false);
+      disabled = true;
+      await advanceDownloadWebPageCacheGeneration();
+      await storageService.deleteAll(CACHE_PREFIX);
+    } finally {
+      if (disabled) await setDownloadWebPageCacheEnabled(wasEnabled);
+    }
+  });
 }
 
 function recordCacheStatus(url, cacheStatus) {
@@ -342,16 +365,19 @@ const downloadWebPageTool = tool(
 
     let markdown;
     let cacheStatus = "origin";
+    let cacheGeneration;
     try {
-      if (cacheEnabled()) {
-        try {
-          markdown = await readCachedMarkdown(url);
+      try {
+        if (await isDownloadWebPageCacheEnabled()) {
+          cacheGeneration = await getDownloadWebPageCacheGeneration();
+          markdown = await readCachedMarkdown(url, cacheGeneration);
           if (markdown) cacheStatus = "hit";
-        } catch (error) {
-          // The cache is an optimization. Storage failures must never prevent
-          // the answer agent from reading the public source page.
-          console.warn(`Read web page cache unavailable: ${url}`, error.message);
         }
+      } catch (error) {
+        // The cache is an optimization. Coordination or storage failures must
+        // never prevent the answer agent from reading the public source page.
+        cacheGeneration = undefined;
+        console.warn(`Read web page cache unavailable: ${url}`, error.message);
       }
 
       if (!markdown) {
@@ -360,9 +386,9 @@ const downloadWebPageTool = tool(
 
         // Successfully received response
         console.log("Read web page - Status:", result.res.status);
-        if (cacheEnabled()) {
+        if (cacheGeneration) {
           try {
-            await cacheMarkdown(url, markdown);
+            await cacheMarkdown(url, markdown, cacheGeneration);
           } catch (error) {
             console.warn(`Failed to cache web page: ${url}`, error.message);
           }

@@ -9,6 +9,19 @@ const { storageGetMock, storageGetMetaDataMock, storagePutMock, storageDeleteAll
   storagePutMock: vi.fn(),
   storageDeleteAllMock: vi.fn(),
 }));
+const {
+  cacheEnabledMock,
+  cacheGenerationMock,
+  advanceCacheGenerationMock,
+  setCacheEnabledMock,
+  withCacheLockMock,
+} = vi.hoisted(() => ({
+  cacheEnabledMock: vi.fn(),
+  cacheGenerationMock: vi.fn(),
+  advanceCacheGenerationMock: vi.fn(),
+  setCacheEnabledMock: vi.fn(),
+  withCacheLockMock: vi.fn(),
+}));
 vi.mock('../../../services/Storage.js', () => ({
   default: {
     get: storageGetMock,
@@ -16,6 +29,13 @@ vi.mock('../../../services/Storage.js', () => ({
     put: storagePutMock,
     deleteAll: storageDeleteAllMock,
   },
+}));
+vi.mock('../../../services/DownloadWebPageCacheCoordinator.js', () => ({
+  advanceDownloadWebPageCacheGeneration: advanceCacheGenerationMock,
+  getDownloadWebPageCacheGeneration: cacheGenerationMock,
+  isDownloadWebPageCacheEnabled: cacheEnabledMock,
+  setDownloadWebPageCacheEnabled: setCacheEnabledMock,
+  withDownloadWebPageCacheLock: withCacheLockMock,
 }));
 
 import { getEncoding } from 'js-tiktoken';
@@ -26,7 +46,6 @@ import downloadWebPageTool, {
   RETRY_TIME_BUDGET_MS,
   DEFAULT_MAX_TOKENS,
 } from '../downloadWebPage.js';
-import { SettingsService } from '../../../services/SettingsService.js';
 
 const encodingForTests = getEncoding('cl100k_base');
 
@@ -76,6 +95,10 @@ describe('downloadWebPage tool', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.unstubAllEnvs();
+    cacheEnabledMock.mockResolvedValue(false);
+    cacheGenerationMock.mockResolvedValue('generation-1');
+    advanceCacheGenerationMock.mockResolvedValue('generation-2');
+    withCacheLockMock.mockImplementation((callback) => callback());
   });
 
   it('returns markdown for a page with readable content', async () => {
@@ -89,7 +112,7 @@ describe('downloadWebPage tool', () => {
 
   it('returns a fresh S3 cache entry without downloading the source page', async () => {
     vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
-    vi.spyOn(SettingsService, 'get').mockReturnValue('true');
+    cacheEnabledMock.mockResolvedValue(true);
     storageGetMock.mockResolvedValue('# Cached page\n\nCached content '.repeat(4));
     storageGetMetaDataMock.mockResolvedValue({ lastModified: new Date() });
 
@@ -102,6 +125,9 @@ describe('downloadWebPage tool', () => {
   it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {
     await expect(clearDownloadWebPageCache()).resolves.toBeUndefined();
     expect(storageDeleteAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/');
+    expect(setCacheEnabledMock).toHaveBeenNthCalledWith(1, false);
+    expect(advanceCacheGenerationMock).toHaveBeenCalledTimes(1);
+    expect(setCacheEnabledMock).toHaveBeenNthCalledWith(2, false);
   });
 
   describe('content extraction', () => {
