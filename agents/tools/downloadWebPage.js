@@ -89,20 +89,29 @@ async function readCachedMarkdown(url, generation) {
   const key = cacheObjectKey(url, generation);
   const { content: markdown, lastModified } = await getStorageObjectWithMetadata(key);
   const fetchedAt = lastModified?.getTime();
-  if (!fetchedAt || Date.now() - fetchedAt > getCacheFreshnessMs()) return null;
-  return markdown;
+  if (!fetchedAt || Date.now() - fetchedAt > getCacheFreshnessMs()) {
+    return { markdown: null, lookupStatus: 'expired' };
+  }
+  return { markdown, lookupStatus: 'hit' };
+}
+
+function isMissingCacheObject(error) {
+  return error?.name === 'NoSuchKey' || error?.name === 'NotFound' ||
+    error?.code === 'NoSuchKey' || error?.code === 'NotFound' ||
+    error?.$metadata?.httpStatusCode === 404 || error?.statusCode === 404;
 }
 
 async function cacheMarkdown(url, markdown, generation) {
-  await withDownloadWebPageCacheLock(async () => {
+  return withDownloadWebPageCacheLock(async () => {
     const [enabled, currentGeneration] = await Promise.all([
       isDownloadWebPageCacheEnabled(),
       getDownloadWebPageCacheGeneration(),
     ]);
     // A request that began before a clear must not repopulate the cache after
     // the clear has advanced its generation.
-    if (!enabled || generation !== currentGeneration) return;
+    if (!enabled || generation !== currentGeneration) return false;
     await storageService.put(cacheObjectKey(url, generation), markdown, { visibility: "private" });
+    return true;
   });
 }
 
@@ -121,13 +130,13 @@ export async function clearDownloadWebPageCache() {
   });
 }
 
-function recordCacheStatus(url, cacheStatus) {
+function recordCacheStatus(url, cacheStatus, cacheDetails) {
   // The tracking handler persists this request-scoped telemetry with the Tool
   // record. It never enters the model-visible markdown response.
   const context = graphRequestContext.getStore();
   if (!context) return;
   context.downloadWebPageCacheResults ??= [];
-  context.downloadWebPageCacheResults.push({ url, cacheStatus });
+  context.downloadWebPageCacheResults.push({ url, cacheStatus, ...cacheDetails });
 }
 
 // Deliberately below REQUEST_TIMEOUT_MS. retryOnTransientError checks this after
@@ -363,18 +372,30 @@ const downloadWebPageTool = tool(
     let markdown;
     let cacheStatus = "origin";
     let cacheGeneration;
+    let cacheLookupStatus = 'disabled';
+    let cacheWriteStatus = 'not-attempted';
+    let cacheError;
     try {
       try {
         if (await isDownloadWebPageCacheEnabled()) {
           cacheGeneration = await getDownloadWebPageCacheGeneration();
-          markdown = await readCachedMarkdown(url, cacheGeneration);
+          cacheLookupStatus = 'miss';
+          const cached = await readCachedMarkdown(url, cacheGeneration);
+          markdown = cached.markdown;
+          cacheLookupStatus = cached.lookupStatus;
           if (markdown) cacheStatus = "hit";
         }
       } catch (error) {
         // The cache is an optimization. Coordination or storage failures must
         // never prevent the answer agent from reading the public source page.
-        cacheGeneration = undefined;
-        console.warn(`Read web page cache unavailable: ${url}`, error.message);
+        if (isMissingCacheObject(error)) {
+          cacheLookupStatus = 'miss';
+        } else {
+          cacheGeneration = undefined;
+          cacheLookupStatus = 'unavailable';
+          cacheError = error.message;
+          console.warn(`Read web page cache unavailable: ${url}`, error.message);
+        }
       }
 
       if (!markdown) {
@@ -385,8 +406,11 @@ const downloadWebPageTool = tool(
         console.log("Read web page - Status:", result.res.status);
         if (cacheGeneration) {
           try {
-            await cacheMarkdown(url, markdown, cacheGeneration);
+            const stored = await cacheMarkdown(url, markdown, cacheGeneration);
+            cacheWriteStatus = stored ? 'stored' : 'skipped';
           } catch (error) {
+            cacheWriteStatus = 'failed';
+            cacheError = error.message;
             console.warn(`Failed to cache web page: ${url}`, error.message);
           }
         }
@@ -428,7 +452,11 @@ const downloadWebPageTool = tool(
       );
     }
 
-    recordCacheStatus(url, cacheStatus);
+    recordCacheStatus(url, cacheStatus, {
+      lookupStatus: cacheLookupStatus,
+      writeStatus: cacheWriteStatus,
+      error: cacheError,
+    });
 
     return markdown;
   },

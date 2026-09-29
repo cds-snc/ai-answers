@@ -72,6 +72,13 @@ class ToolTrackingHandler extends ConsoleCallbackHandler {
                     const context = graphRequestContext.getStore();
                     const cacheResult = context?.downloadWebPageCacheResults?.shift();
                     toolCall.cacheStatus = cacheResult?.cacheStatus || 'origin';
+                    ServerLoggingService.debug('Web page cache lookup: downloadWebPage', this.chatId, {
+                        url: cacheResult?.url,
+                        cacheStatus: toolCall.cacheStatus,
+                        lookupStatus: cacheResult?.lookupStatus || 'unknown',
+                        writeStatus: cacheResult?.writeStatus || 'unknown',
+                        error: cacheResult?.error,
+                    });
                 }
                 toolCall.endTime = Date.now();
                 toolCall.duration = toolCall.endTime - toolCall.startTime;
