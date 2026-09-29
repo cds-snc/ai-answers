@@ -108,6 +108,7 @@ export const InteractionPersistenceService = {
             tool: toolData.tool,
             input: toolData.input,
             output: toolData.output,
+            cacheStatus: toolData.cacheStatus,
             startTime: toolData.startTime,
             endTime: toolData.endTime,
             duration: toolData.duration,

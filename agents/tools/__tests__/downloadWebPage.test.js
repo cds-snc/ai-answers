@@ -3,9 +3,47 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
+const { storageGetMock, storageGetMetaDataMock, storageGetWithMetadataMock, storagePutMock, storageDeleteAllMock } = vi.hoisted(() => ({
+  storageGetMock: vi.fn(),
+  storageGetMetaDataMock: vi.fn(),
+  storageGetWithMetadataMock: vi.fn(),
+  storagePutMock: vi.fn(),
+  storageDeleteAllMock: vi.fn(),
+}));
+const {
+  cacheEnabledMock,
+  cacheGenerationMock,
+  advanceCacheGenerationMock,
+  setCacheEnabledMock,
+  withCacheLockMock,
+} = vi.hoisted(() => ({
+  cacheEnabledMock: vi.fn(),
+  cacheGenerationMock: vi.fn(),
+  advanceCacheGenerationMock: vi.fn(),
+  setCacheEnabledMock: vi.fn(),
+  withCacheLockMock: vi.fn(),
+}));
+vi.mock('../../../services/Storage.js', () => ({
+  getStorageObjectWithMetadata: storageGetWithMetadataMock,
+  default: {
+    get: storageGetMock,
+    getMetaData: storageGetMetaDataMock,
+    put: storagePutMock,
+    deleteAll: storageDeleteAllMock,
+  },
+}));
+vi.mock('../../../services/DownloadWebPageCacheCoordinator.js', () => ({
+  advanceDownloadWebPageCacheGeneration: advanceCacheGenerationMock,
+  getDownloadWebPageCacheGeneration: cacheGenerationMock,
+  isDownloadWebPageCacheEnabled: cacheEnabledMock,
+  setDownloadWebPageCacheEnabled: setCacheEnabledMock,
+  withDownloadWebPageCacheLock: withCacheLockMock,
+}));
+
 import { getEncoding } from 'js-tiktoken';
 
 import downloadWebPageTool, {
+  clearDownloadWebPageCache,
   REQUEST_TIMEOUT_MS,
   RETRY_TIME_BUDGET_MS,
   DEFAULT_MAX_TOKENS,
@@ -58,6 +96,11 @@ const accordionPage = htmlPage(`
 describe('downloadWebPage tool', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.unstubAllEnvs();
+    cacheEnabledMock.mockResolvedValue(false);
+    cacheGenerationMock.mockResolvedValue('generation-1');
+    advanceCacheGenerationMock.mockResolvedValue('generation-2');
+    withCacheLockMock.mockImplementation((callback) => callback());
   });
 
   it('returns markdown for a page with readable content', async () => {
@@ -67,6 +110,31 @@ describe('downloadWebPage tool', () => {
 
     expect(output).toContain('705-424-1200');
     expect(output.trim().length).toBeGreaterThan(50);
+  });
+
+  it('returns a fresh S3 cache entry without downloading the source page', async () => {
+    vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
+    cacheEnabledMock.mockResolvedValue(true);
+    storageGetWithMetadataMock.mockResolvedValue({
+      content: '# Cached page\n\nCached content '.repeat(4),
+      lastModified: new Date(),
+    });
+
+    const output = await invokeTool({ url: 'https://www.canada.ca/en/cached.html' });
+
+    expect(output).toContain('Cached content');
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(storageGetWithMetadataMock).toHaveBeenCalledTimes(1);
+    expect(storageGetMock).not.toHaveBeenCalled();
+    expect(storageGetMetaDataMock).not.toHaveBeenCalled();
+  });
+
+  it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {
+    await expect(clearDownloadWebPageCache()).resolves.toBeUndefined();
+    expect(storageDeleteAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/');
+    expect(setCacheEnabledMock).toHaveBeenNthCalledWith(1, false);
+    expect(advanceCacheGenerationMock).toHaveBeenCalledTimes(1);
+    expect(setCacheEnabledMock).toHaveBeenNthCalledWith(2, false);
   });
 
   describe('content extraction', () => {

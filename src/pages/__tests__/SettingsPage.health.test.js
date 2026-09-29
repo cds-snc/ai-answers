@@ -12,6 +12,7 @@ const {
   mockSetSetting,
   mockSetSettings,
   mockRefreshSettingsCache,
+  mockClearDownloadWebPageCache,
   mockGetSettingsAudit,
 } = vi.hoisted(() => {
   const healthSettings = {
@@ -76,6 +77,7 @@ const {
       errors: {},
     })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
+    mockClearDownloadWebPageCache: vi.fn(async () => ({ success: true })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });
@@ -87,6 +89,7 @@ vi.mock('../../services/DataStoreService.js', () => ({
     setSetting: mockSetSetting,
     setSettings: mockSetSettings,
     refreshSettingsCache: mockRefreshSettingsCache,
+    clearDownloadWebPageCache: mockClearDownloadWebPageCache,
     getSettingsAudit: mockGetSettingsAudit,
   },
 }));
@@ -110,10 +113,16 @@ vi.mock('@gcds-core/components-react', () => ({
 // passes to the mock lets a test inspect the columns/options config and
 // manually drive `options.ajax` the same way the real library would.
 let lastDataTableProps = null;
+const auditTableReloadMock = vi.fn();
 
 vi.mock('datatables.net-react', () => {
   const MockDataTable = (props) => {
     lastDataTableProps = props;
+    React.useEffect(() => {
+      props.options?.initComplete?.call({
+        api: () => ({ ajax: { reload: auditTableReloadMock } }),
+      });
+    }, [props.options]);
     return React.createElement('div', { 'data-testid': 'audit-data-table' });
   };
   MockDataTable.use = vi.fn();
@@ -169,7 +178,9 @@ describe('SettingsPage audit history', () => {
     mockSetSetting.mockClear();
     mockSetSettings.mockClear();
     mockRefreshSettingsCache.mockClear();
+    mockClearDownloadWebPageCache.mockClear();
     mockGetSettingsAudit.mockClear();
+    auditTableReloadMock.mockClear();
     lastDataTableProps = null;
   });
 
@@ -191,6 +202,21 @@ describe('SettingsPage audit history', () => {
     // Nothing persists until the section's Save button is clicked — this is
     // the whole point of moving off auto-save-on-change.
     expect(mockSetSettings).not.toHaveBeenCalled();
+  });
+
+  it('reloads audit history after clearing the downloaded web page cache', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'settings.downloadWebPageCache.clear' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'settings.downloadWebPageCache.clear' }));
+
+    await waitFor(() => {
+      expect(mockClearDownloadWebPageCache).toHaveBeenCalledTimes(1);
+      expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('enables the health Save button only while a change is pending, and disables it again once saved', async () => {

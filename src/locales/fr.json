@@ -1211,8 +1211,10 @@
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
       "invalidEmail": "Courriel ou espacement du « ; » invalide",
+      "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
+    "cache": { "title": "Cache" },
     "general": {
       "title": "Paramètres généraux"
     },
@@ -1234,6 +1236,15 @@
     },
     "indigenousLanguageBlocking": {
       "label": "Blocage des langues autochtones du Canada"
+    },
+    "downloadWebPageCache": {
+      "enabledLabel": "Mettre en cache les pages Web téléchargées",
+      "description": "Lorsqu’il est activé, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
+      "durationHoursLabel": "Durée du cache des pages Web (heures)",
+      "clear": "Vider le cache des pages Web",
+      "clearing": "Suppression des pages Web en cache...",
+      "clearSuccess": "Pages Web en cache supprimées.",
+      "clearError": "Impossible de vider le cache des pages Web."
     },
     "health": {
       "title": "Vérifications de santé",
@@ -1288,7 +1299,8 @@
       "notApplicable": "Sans objet",
       "actions": {
         "settingUpdated": "Paramètre modifié",
-        "cacheRefreshed": "Cache des paramètres rafraîchi"
+        "cacheRefreshed": "Cache des paramètres rafraîchi",
+        "downloadWebPageCacheCleared": "Cache des pages Web téléchargées vidé"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
@@ -1484,6 +1496,8 @@
     "pass": "Réussite",
     "fail": "Échoué",
     "downloadSuccess": "Réussi",
+    "downloadSuccessCached": "Réussi depuis le cache",
+    "downloadSuccessDownloaded": "Réussi après téléchargement",
     "downloadPartial": "Partiel",
     "details": "Détails",
     "fallbackSourceChatId": "ID de chat source pour le repli",
@@ -1881,6 +1895,8 @@
         "totalCount": "Questions avec cet appel",
         "completedCount": "Complétés",
         "errorCount": "Erreurs",
+        "cacheHitCount": "Résultats du cache",
+        "originCount": "Téléchargements depuis la source",
         "errorPercent": "% d'erreurs",
         "median": "Médiane des complétés (ms)",
         "p95": "P95 des complétés (ms)"

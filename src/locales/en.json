@@ -1211,8 +1211,10 @@
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
       "invalidEmail": "Invalid email or ; spacing",
+      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
+    "cache": { "title": "Cache" },
     "general": {
       "title": "General settings"
     },
@@ -1234,6 +1236,15 @@
     },
     "indigenousLanguageBlocking": {
       "label": "Canadian Indigenous language blocking"
+    },
+    "downloadWebPageCache": {
+      "enabledLabel": "Cache downloaded web pages",
+      "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
+      "durationHoursLabel": "Web page cache duration (hours)",
+      "clear": "Clear cached web pages",
+      "clearing": "Clearing cached web pages...",
+      "clearSuccess": "Cached web pages cleared.",
+      "clearError": "Failed to clear cached web pages."
     },
     "health": {
       "title": "Health checks",
@@ -1288,7 +1299,8 @@
       "notApplicable": "Not applicable",
       "actions": {
         "settingUpdated": "Setting updated",
-        "cacheRefreshed": "Settings cache refreshed"
+        "cacheRefreshed": "Settings cache refreshed",
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
@@ -1472,6 +1484,8 @@
     "pass": "Pass",
     "fail": "Failed",
     "downloadSuccess": "Succeeded",
+    "downloadSuccessCached": "Succeeded cached",
+    "downloadSuccessDownloaded": "Succeeded downloaded",
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
@@ -1881,6 +1895,8 @@
         "totalCount": "Questions with this call",
         "completedCount": "Completed",
         "errorCount": "Errors",
+        "cacheHitCount": "Cache hits",
+        "originCount": "Origin downloads",
         "errorPercent": "Error %",
         "median": "Completed median (ms)",
         "p95": "Completed P95 (ms)"
