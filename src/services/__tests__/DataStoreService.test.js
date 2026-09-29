@@ -83,6 +83,20 @@ describe('DataStoreService.getSettings', () => {
     });
   });
 
+  it('uses the default for a setting the server returns as null (never saved)', async () => {
+    AuthService.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ values: { 'downloadWebPage.cache.durationHours': null } })
+    });
+
+    const result = await DataStoreService.getSettings(
+      ['downloadWebPage.cache.durationHours'],
+      { 'downloadWebPage.cache.durationHours': '12' }
+    );
+
+    expect(result).toEqual({ 'downloadWebPage.cache.durationHours': '12' });
+  });
+
   it('falls back to individual setting reads when the bulk endpoint is unavailable', async () => {
     AuthService.fetch
       .mockResolvedValueOnce({

@@ -23,8 +23,7 @@ const ChatOptions = ({
   referringUrl,
   handleReferringUrlChange
 }) => {
-  // Workflow/Model/Search are drafts until Save (same model as SettingsPage:
-  // Save enabled only while a draft differs from what's saved).
+  // Workflow/Model/Search are drafts until Save (as on SettingsPage).
   // Referring URL has its own explicit Apply: it's the one field here that
   // needs validation (a plain type="url" input never gets native browser
   // validation — that only fires on submit, and this wasn't a submit-driven
@@ -34,9 +33,7 @@ const ChatOptions = ({
   // DatabasePage's Import) applies here too, no special-casing needed.
   const [draftUrl, setDraftUrl] = useState(referringUrl || '');
 
-  // Saved = what the chat will run with, normalized the same way the selects
-  // display it. Drafts follow saved whenever it changes (a Save landing, or
-  // the stored override loading in).
+  // Drafts reset to saved whenever saved changes (a Save, or stored overrides loading).
   const savedOptions = {
     workflow: WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : '',
     model: MODEL_VALUES.includes(modelSelection) ? modelSelection : '',

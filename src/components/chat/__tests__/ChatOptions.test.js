@@ -258,8 +258,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     expect(screen.queryByText('Referring URL removed')).toBeNull();
   });
 
-  // Stateful parent, like ChatAppContainer: a saved change flows back in as
-  // the new props, so dirty-checking is tested against real saved values.
+  // Stateful parent, like ChatAppContainer, so saves flow back in as props.
   const Harness = ({ onSave }) => {
     const [workflowSelection, setWorkflow] = React.useState('');
     const [modelSelection, setModel] = React.useState('');
@@ -309,7 +308,7 @@ describe('ChatOptions — referring URL explicit apply flow', () => {
     fireEvent.change(model, { target: { value: 'azure' } });
     fireEvent.click(saveButton());
     expect(saveButton().disabled).toBe(true);
-    // azure is now the saved value; going back to it after a detour is clean.
+    // azure is now saved.
     fireEvent.change(model, { target: { value: '' } });
     expect(saveButton().disabled).toBe(false);
     fireEvent.change(model, { target: { value: 'azure' } });
