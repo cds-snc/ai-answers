@@ -3,11 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('axios');
 import axios from 'axios';
 
-const { storageGetMock, storageGetMetaDataMock, storagePutMock, storageListAllMock, storageDeleteAllMock } = vi.hoisted(() => ({
+const { storageGetMock, storageGetMetaDataMock, storagePutMock, storageDeleteAllMock } = vi.hoisted(() => ({
   storageGetMock: vi.fn(),
   storageGetMetaDataMock: vi.fn(),
   storagePutMock: vi.fn(),
-  storageListAllMock: vi.fn(),
   storageDeleteAllMock: vi.fn(),
 }));
 vi.mock('../../../services/Storage.js', () => ({
@@ -15,7 +14,6 @@ vi.mock('../../../services/Storage.js', () => ({
     get: storageGetMock,
     getMetaData: storageGetMetaDataMock,
     put: storagePutMock,
-    listAll: storageListAllMock,
     deleteAll: storageDeleteAllMock,
   },
 }));
@@ -101,12 +99,8 @@ describe('downloadWebPage tool', () => {
     expect(axios.get).not.toHaveBeenCalled();
   });
 
-  it('clears only the dedicated S3 cache prefix', async () => {
-    vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
-    storageListAllMock.mockResolvedValue({ objects: [{ key: 'download-web-page-cache/v1/a.md' }] });
-
-    await expect(clearDownloadWebPageCache()).resolves.toBe(1);
-    expect(storageListAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/', { recursive: true });
+  it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {
+    await expect(clearDownloadWebPageCache()).resolves.toBeUndefined();
     expect(storageDeleteAllMock).toHaveBeenCalledWith('download-web-page-cache/v1/');
   });
 

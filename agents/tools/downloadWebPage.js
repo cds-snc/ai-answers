@@ -98,11 +98,7 @@ async function cacheMarkdown(url, markdown) {
 }
 
 export async function clearDownloadWebPageCache() {
-  const listing = await storageService.listAll(CACHE_PREFIX, { recursive: true });
-  const objects = Array.from(listing.objects || []);
-  const deleted = objects.length;
   await storageService.deleteAll(CACHE_PREFIX);
-  return deleted;
 }
 
 function recordCacheStatus(url, cacheStatus) {

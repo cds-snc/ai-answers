@@ -1242,7 +1242,7 @@
       "durationHoursLabel": "Durée du cache des pages Web (heures)",
       "clear": "Vider le cache des pages Web",
       "clearing": "Suppression des pages Web en cache...",
-      "clearSuccess": "{count} pages Web en cache supprimées.",
+      "clearSuccess": "Pages Web en cache supprimées.",
       "clearError": "Impossible de vider le cache des pages Web."
     },
     "health": {

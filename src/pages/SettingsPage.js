@@ -392,12 +392,13 @@ const SettingsPage = ({ lang = 'en' }) => {
   const clearDownloadWebPageCache = async () => {
     setClearingDownloadWebPageCache(true);
     try {
-      const { deletedCount } = await DataStoreService.clearDownloadWebPageCache();
+      await DataStoreService.clearDownloadWebPageCache();
       setSectionStatus((prev) => ({
         ...prev,
-        cache: { text: t('settings.downloadWebPageCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+        cache: { text: t('settings.downloadWebPageCache.clearSuccess'), isError: false }
       }));
       setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
+      auditTableRef.current?.reload();
     } catch (_error) {
       setSectionStatus((prev) => ({ ...prev, cache: { text: t('settings.downloadWebPageCache.clearError'), isError: true } }));
       setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));

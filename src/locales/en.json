@@ -1242,7 +1242,7 @@
       "durationHoursLabel": "Web page cache duration (hours)",
       "clear": "Clear cached web pages",
       "clearing": "Clearing cached web pages...",
-      "clearSuccess": "Cleared {count} cached web pages.",
+      "clearSuccess": "Cached web pages cleared.",
       "clearError": "Failed to clear cached web pages."
     },
     "health": {

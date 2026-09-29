@@ -8,7 +8,7 @@ async function clearDownloadWebPageCacheHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const deletedCount = await clearDownloadWebPageCache();
+  await clearDownloadWebPageCache();
   await SettingsAuditService.recordAuditSafely(
     () => SettingsAuditService.recordAction({
       actorUserId: req.user?.userId,
@@ -18,7 +18,7 @@ async function clearDownloadWebPageCacheHandler(req, res) {
     }),
     'Failed to record download web page cache clear audit entry'
   );
-  return res.status(200).json({ deletedCount });
+  return res.status(200).json({ success: true });
 }
 
 export default function handler(req, res) {
