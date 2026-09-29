@@ -25,7 +25,9 @@ class DataStoreService {
       const values = data.values || {};
 
       return keys.reduce((acc, key) => {
-        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined) {
+        // null = never saved (SettingsService.get) — use the default, same as
+        // the per-key fallback below.
+        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined && values[key] !== null) {
           acc[key] = values[key];
         } else if (Object.prototype.hasOwnProperty.call(defaults, key)) {
           acc[key] = defaults[key];

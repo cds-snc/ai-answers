@@ -1203,7 +1203,6 @@
     "fieldError": {
       "unexpected": "Erreur inattendue : {error}"
     },
-    "save": "Enregistrer",
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
@@ -1211,9 +1210,10 @@
       "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
-    "cache": { "title": "Cache" },
+    "cache": { "title": "Cache des pages Web téléchargées", "saveLabel": "Enregistrer les paramètres du cache des pages Web" },
     "general": {
-      "title": "Paramètres généraux"
+      "title": "Paramètres généraux",
+      "saveLabel": "Enregistrer les paramètres généraux"
     },
     "defaultWorkflow": {
       "label": "Flux générique"
@@ -1238,6 +1238,7 @@
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
       "description": "Lorsque cette option est activée, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
       "durationHoursLabel": "Durée du cache des pages Web (heures)",
+      "clearConfirm": "Vider toutes les pages Web en cache? Elles seront téléchargées de nouveau la prochaine fois qu'elles seront nécessaires.",
       "clear": "Vider le cache des pages Web",
       "clearing": "Suppression des pages Web en cache...",
       "clearSuccess": "Pages Web en cache supprimées.",
@@ -1245,6 +1246,7 @@
     },
     "health": {
       "title": "Vérifications de santé",
+      "saveLabel": "Enregistrer les vérifications de santé",
       "description": "Contrôlez le moniteur de santé automatisé et ses vérifications des dépendances.",
       "enabledLabel": "Activer la surveillance de santé",
       "databaseEnabledLabel": "Vérifier la santé de la base de données",
@@ -1303,6 +1305,7 @@
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
+      "saveLabel": "Enregistrer l'authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
       "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
     },
@@ -1311,6 +1314,7 @@
     },
     "session": {
       "title": "Paramètres de session",
+      "saveLabel": "Enregistrer les paramètres de session",
       "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
@@ -1332,6 +1336,7 @@
     },
     "rateLimiting": {
       "title": "Limitation du débit",
+      "saveLabel": "Enregistrer la limitation du débit",
       "persistence": {
         "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
@@ -1343,6 +1348,7 @@
     },
     "redaction": {
       "title": "Paramètres de rédaction",
+      "saveLabel": "Enregistrer les paramètres de rédaction",
       "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
       "profanity": "Gros mots",
       "threat": "Menaces",
