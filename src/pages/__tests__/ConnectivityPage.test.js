@@ -382,6 +382,34 @@ describe('ConnectivityPage failure simulation re-runs the test when results are 
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('dims the results with a scoped overlay while a re-run replaces them', async () => {
+    const { container } = render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+
+    let finishFirst;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve; }));
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    // First run: no results to cover yet.
+    expect(container.querySelector('.loading-overlay')).toBeNull();
+    finishFirst(okResponse());
+    await screen.findByRole('heading', { level: 2, name: 'connectivity.summaryHeading' });
+    await waitFor(() => expect(screen.getByText('connectivity.runTests')).toBeTruthy());
+
+    let finishRerun;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => { finishRerun = resolve; }));
+    fireEvent.click(onButton('database'));
+    const overlay = await waitFor(() => {
+      const el = container.querySelector('.connectivity-results > .loading-overlay--scoped');
+      expect(el).not.toBeNull();
+      return el;
+    });
+    expect(overlay.textContent).toBe('connectivity.testing');
+
+    finishRerun(okResponse());
+    await waitFor(() => expect(container.querySelector('.loading-overlay')).toBeNull());
+  });
+
   it('re-runs when the first run finishes while a toggle is still saving', async () => {
     render(<ConnectivityPage lang="en" />);
     await whenLoaded();

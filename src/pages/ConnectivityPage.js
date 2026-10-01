@@ -3,6 +3,7 @@ import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { formatNumber } from '../utils/numberFormat.js';
 
@@ -308,7 +309,10 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 up establishing a shared "guard the response shape" pattern
                 worth reusing here too. */}
             {results && (
-                <>
+                // Positioned, isolated anchor for the scoped overlay that dims
+                // these results while a re-run replaces them.
+                <div className="connectivity-results">
+                    {loading && <LoadingOverlay scoped message={t('connectivity.testing')} />}
                     <h2 className="mb-300">{t('connectivity.summaryHeading')}</h2>
                     <dl style={{
                         display: 'grid',
@@ -359,7 +363,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     {results.services.map((service, index) => (
                         <ServiceCard key={index} service={service} t={t} lang={lang} />
                     ))}
-                </>
+                </div>
             )}
         </GcdsContainer>
     );
