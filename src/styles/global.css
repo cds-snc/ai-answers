@@ -477,6 +477,100 @@ summary:focus,
   border-radius: var(--gcds-border-radius-md);
 }
 
+/* Holds every label a control can show in one grid cell; only the current
+   one is visible, so the control keeps the width of the longest. */
+.canada-ca-stable-label {
+  display: inline-grid;
+}
+
+.canada-ca-stable-label > * {
+  grid-area: 1 / 1;
+}
+
+.canada-ca-stable-label > [aria-hidden="true"] {
+  visibility: hidden;
+}
+
+/* Stacked GcdsButtons sharing the width of the widest. Full width on
+   phones, same as GcdsButton on its own. */
+.canada-ca-button-stack {
+  display: grid;
+  justify-content: start;
+  row-gap: var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.canada-ca-button-stack > gcds-button {
+  --gcds-button-width: 100%;
+  --gcds-button-mobile-margin: 0;
+}
+
+@media screen and (max-width: 30rem) {
+  .canada-ca-button-stack {
+    justify-content: stretch;
+  }
+}
+
+/* Connected row of GcdsButtons for one set of controls: only the outer
+   corners are rounded and neighbours share one border. Stacks on phones,
+   where GcdsButton goes full width.
+
+   TOKEN SUGGESTION for GC DS: there's no button group component, so this
+   overrides --gcds-button-border-radius per button. A gcds-button-group (or
+   a per-corner radius token) would make this pattern first-class. */
+.canada-ca-button-group {
+  /* Equal-width columns, all as wide as the widest button. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.canada-ca-button-group > gcds-button {
+  --gcds-button-border-radius: 0;
+  --gcds-button-mobile-margin: 0;
+  --gcds-button-width: 100%;
+}
+
+.canada-ca-button-group > gcds-button:first-child {
+  --gcds-button-border-radius: var(--gcds-border-radius-md) 0 0 var(--gcds-border-radius-md);
+}
+
+.canada-ca-button-group > gcds-button:last-child {
+  --gcds-button-border-radius: 0 var(--gcds-border-radius-md) var(--gcds-border-radius-md) 0;
+}
+
+.canada-ca-button-group > gcds-button + gcds-button {
+  margin-left: calc(-1 * var(--gcds-button-border-width));
+}
+
+/* Keep the focus ring above the overlapping neighbour. */
+.canada-ca-button-group > gcds-button:focus-within {
+  position: relative;
+  z-index: 1;
+}
+
+/* Same breakpoint as GcdsButton's own full-width switch. */
+@media screen and (max-width: 30rem) {
+  .canada-ca-button-group {
+    display: grid;
+    grid-auto-flow: row;
+  }
+
+  .canada-ca-button-group > gcds-button:first-child {
+    --gcds-button-border-radius: var(--gcds-border-radius-md) var(--gcds-border-radius-md) 0 0;
+  }
+
+  .canada-ca-button-group > gcds-button:last-child {
+    --gcds-button-border-radius: 0 0 var(--gcds-border-radius-md) var(--gcds-border-radius-md);
+  }
+
+  .canada-ca-button-group > gcds-button + gcds-button {
+    margin-left: 0;
+    margin-top: calc(-1 * var(--gcds-button-border-width));
+  }
+}
+
 
 /* Native twin of GcdsButton's secondary role, for buttons whose content
    must reach the accessible name (e.g. an sr-only suffix). Disable with

@@ -67,6 +67,10 @@ const ChatIdLookupField = ({
         />
       )}
       <div className="chat-id-lookup-field">
+        {/* TODO: `disabled` while searching drops focus to <body> when the
+            search was started with Enter in this field. Use readOnly while
+            busy instead (stays focusable, announced "read only"; GC DS's
+            gcds-input has the same readonly option). Affects every caller. */}
         <input
           type="text"
           id={fieldId}

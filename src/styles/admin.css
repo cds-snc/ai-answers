@@ -3474,16 +3474,6 @@ table.dataTable.table-fixed-layout > thead > tr > th {
 table.dataTable > tbody > tr > th[scope="row"] {
   text-align: left;
 }
-/* .table-key-value - a two-column label/value table shrinks to its
-   content instead of DataTables' width: 100%, so the value sits beside its
-   label rather than at the far edge of the page. */
-table.dataTable.table-key-value {
-  width: auto;
-  margin: 0;
-}
-table.dataTable.table-key-value > tbody > tr > td {
-  padding-left: var(--gcds-spacing-300);
-}
 
 /* BatchList.js's visible "paused" design element - sits under the pause
    button, above the table (in normal flow, not absolutely positioned over
@@ -3629,6 +3619,12 @@ details gcds-button::part(button) {
 .canada-ca-dl-columns dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* Field hint under a plain <label>, using gcds-hint's own tokens. */
+.canada-ca-field-hint {
+  color: var(--gcds-hint-text);
+  margin: var(--gcds-hint-margin);
 }
 
 /* Short lists: one column, capped so the label stays near its number. */
