@@ -83,7 +83,7 @@ describe('ChatViewer chatId partial-match search', () => {
 
   it.each([
     ['cannot be checked', () => mockGetChat.mockRejectedValue(new Error('Network down')), 'admin.common.fetchFailed'],
-    ['is not found', () => mockGetChat.mockResolvedValue({ chat: null }), 'admin.common.chatNotFound'],
+    ['is no longer found', () => mockGetChat.mockResolvedValue({ chat: null }), 'admin.common.chatNoLongerFound'],
   ])('moves focus to the outcome message when the picked chat %s', async (_label, mockOutcome, messageKey) => {
     mockSearchChats.mockResolvedValue({ chatIds: [CHAT_A, CHAT_B], truncated: false });
     mockOutcome();
@@ -98,6 +98,8 @@ describe('ChatViewer chatId partial-match search', () => {
     await waitFor(() => expect(document.activeElement?.textContent).toContain(messageKey));
     // Focus reads it - announcing too would read it twice.
     expect(document.activeElement.getAttribute('data-announced-via')).toBe('focus');
+    // The search just found it, so a failed pick is an error either way.
+    expect(document.activeElement.classList.contains('status-message--error-box')).toBe(true);
     expect(mockGetLogs).not.toHaveBeenCalled();
   });
 
