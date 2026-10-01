@@ -2202,8 +2202,12 @@
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
-      "enable": "Simulate failure",
-      "disable": "Clear simulation",
+      "on": "On",
+      "off": "Off",
+      "loadFailed": "Couldn't load the failure simulation settings. Reload the page to try again.",
+      "saveFailed": "Couldn't save the {service} setting. Try again.",
+      "announceOn": "Simulating a failure: {service}.",
+      "announceOff": "{service} is operating normally.",
       "labels": {
         "database": "Database",
         "search": "Search",
@@ -2214,9 +2218,13 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
+    "statusError": "Error",
+    "statusWarning": "Warning",
     "lastRun": "Last run:",
+    "summaryHeading": "Connectivity summary",
     "serviceDetails": "Service details",
     "latency": "Latency:",
+    "millisecondsUnit": "ms",
     "details": "Details",
     "error": "Error:"
   },

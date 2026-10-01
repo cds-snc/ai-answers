@@ -58,12 +58,18 @@ class DataStoreService {
       return defaultValue;
     }
   }
+  // Throws on failure, for callers that must not mistake a failed load for
+  // the default.
+  static async getSettingStrict(key, defaultValue = null) {
+    const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
+    if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
+    const data = await response.json();
+    return data.value !== undefined ? data.value : defaultValue;
+  }
+
   static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
-      if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
-      const data = await response.json();
-      return data.value !== undefined ? data.value : defaultValue;
+      return await this.getSettingStrict(key, defaultValue);
     } catch (error) {
       console.error(`Error getting setting '${key}':`, error);
       return defaultValue;
