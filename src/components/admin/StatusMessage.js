@@ -280,6 +280,13 @@ export default StatusMessage;
 // carry focus-move state — that's a separate counter (useFocusOnChange), see
 // UsersPage.js's saveFocusCount.
 //
+// `quiet` (`announce(text, { quiet: true })`) shows the message without
+// reading it out — pass `announce={!status.quiet}` to StatusMessage. For a
+// result the page finds on its own, which nobody just asked for
+// (VectorPage.js's last backfill job on page load). Same switch as
+// useErrorStatus.js's `announce: false`, copied rather than shared until
+// the helpers merge (TODO below).
+//
 // Other nonce fixes: SettingsPage.js/DatabasePage.js via useErrorStatus.js's
 // own tracking; useChatIdLookup.js via a nonce bolted onto its own setStatus
 // (its status shape is a multi-caller union, doesn't fit this hook's).
@@ -291,11 +298,13 @@ export default StatusMessage;
 // wrapErrorDetail's <code lang="en"> output, not just message) all collapse
 // onto this hook. Touches ~20 call sites — own PR.
 export function useRepeatableStatus() {
-  const [status, setStatusState] = useState(null); // { message, isError } | null
+  const [status, setStatusState] = useState(null); // { message, isError, variant, quiet } | null
   const [nonce, setNonce] = useState(0);
 
-  const announce = useCallback((text, { isError } = {}) => {
-    setStatusState({ message: text, isError });
+  // `variant` overrides the error/success pick, for outcomes that are
+  // neither (e.g. 'info': nothing to do).
+  const announce = useCallback((text, { isError, variant, quiet = false } = {}) => {
+    setStatusState({ message: text, isError, variant, quiet });
     setNonce((n) => n + 1);
   }, []);
 
@@ -303,5 +312,5 @@ export function useRepeatableStatus() {
     setStatusState(null);
   }, []);
 
-  return { message: status?.message ?? null, isError: status?.isError, nonce, announce, clear };
+  return { message: status?.message ?? null, isError: status?.isError, variant: status?.variant, quiet: status?.quiet ?? false, nonce, announce, clear };
 }
