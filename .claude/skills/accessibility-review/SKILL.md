@@ -12,13 +12,13 @@ GC public-facing service: the bar is **WCAG 2.1 AA** in EN and FR, not "best pra
 Infer from the request; ask if "everything" is ambiguous (diff vs. whole app).
 
 - **Diff review (default)** — `git diff` vs. base branch, UI code only (`src/pages/`, `src/components/`, `src/hooks/`, CSS). Non-UI-only diff → say so and skip. Issues in code the diff *adds/changes* are blocking. Issues in code it merely *touches* (pre-existing defect) → `// TODO(a11y):` note with the SC, not a blocker, unless the fix is trivial. Label which is which.
-- **Targeted review** — user names a page/component/route. Read it in full, then recursively follow its imports into every shared component/hook/util it renders or calls (`FilterPanel.js`, `StatusMessage.js`, DataTables helpers…) and apply the full checklist there too. A bug in a shared file → grep its other consumers and list them (they inherit it).
+- **Targeted review** — user names a page/component/route. Read it in full, then recursively follow its imports into every shared component/hook/util it renders or calls (`FilterPanel.js`, `StatusMessage.js`, DataTables helpers…) and apply the full checklist there too. A bug in a shared file → grep its other consumers and list them (they inherit it). Read `docs/coding-agent-docs/status-and-error-messaging.md` first.
 - **Full app audit** — "audit everything", "whole app", explicit `full`, or a named-area shortcut. Covers every in-scope route, not just changes.
 - **Audit re-verification / update** — "update the audit", "is this still accurate", "re-check against main". Must re-examine application code, not just the audit doc's bookkeeping.
 
 ### Full app audit
 
-Large — confirm scope first if unclear (public only, or admin/partner too?).
+Large — confirm scope first if unclear (public only, or admin/partner too?). Read `docs/coding-agent-docs/status-and-error-messaging.md` first.
 
 **Named-area shortcuts** (check against `roles`/`RoleProtectedRoute` in `src/App.js`):
 
@@ -32,7 +32,7 @@ Otherwise:
 
 1. Enumerate: `ROUTE_SLUGS` in `src/utils/routes.js` → page component in `src/pages/`. Include admin/partner routes unless told otherwise.
 2. Group pages by shared components; review each shared component once and list every page it affects.
-3. Won't fit one context: delegate groups of ~3–6 pages to parallel background `Explore`/`general-purpose` agents, each given Sections 1–8 and the finding format below. Audit-only, no fixes.
+3. Won't fit one context: delegate groups of ~3–6 pages to parallel background `Explore`/`general-purpose` agents, each given Sections 1–8, status-and-error-messaging.md and the finding format below. Audit-only, no fixes.
 4. Aggregate, dedupe shared-component repeats, sort most-severe-first.
 5. Offer (don't assume) an Artifact report grouped by page/component with severity, SC, fix.
 6. **Propagate confirmed anti-patterns.** Once a finding is verified, grep the whole in-scope surface (ideally the repo; note out-of-scope hits) for the same code shape before moving on. History: redundant `tabIndex="0"` on `<GcdsDetails>` (dead extra tab stop) was caught in one page and missed in two identical ones because files were reviewed independently.
@@ -44,9 +44,9 @@ Two **separate** requests — don't bundle; ask if ambiguous ("update the audit"
 - A past "updated" pass re-verified logged findings against PR diffs but never re-scanned already-audited files for new code — a feature added one day after the first pass sat unflagged through the second.
 - A long-standing autosave-per-keystroke went unflagged for months because no checklist version asked the SC 3.2.2 question — a category blind spot, catchable only by B.
 
-**Request A — revalidate the work in progress.** Cheap. For every logged finding (open or fixed) and tracked file/pattern, re-verify against current `main`: still accurate, still open, actually fixed, or moved? Cannot surface anything the original audit never saw. Triggers: "update the audit", "is this still accurate", "re-check the findings against main".
+**Request A — revalidate the work in progress.** Cheap. For every logged finding (open or fixed) and tracked file/pattern, re-verify against current `main`: still accurate, still open, actually fixed, or moved? Cannot surface anything the original audit never saw. Triggers: "update the audit", "is this still accurate", "re-check the findings against main". Read `docs/coding-agent-docs/status-and-error-messaging.md` if any finding is about a message, announcement or focus move.
 
-**Request B — recheck against changes since the audit started.** Cost ≈ fresh full audit; confirm first. Re-run Sections 1–8 over the audit's full declared scope, targeting drift (new code in covered files) and category blind spots (not diff-scopable). Triggers: "recheck against changes since it started", "full drift check", "re-audit for anything new".
+**Request B — recheck against changes since the audit started.** Cost ≈ fresh full audit; confirm first. Re-run Sections 1–8 over the audit's full declared scope, targeting drift (new code in covered files) and category blind spots (not diff-scopable). Triggers: "recheck against changes since it started", "full drift check", "re-audit for anything new". Read `docs/coding-agent-docs/status-and-error-messaging.md` first.
 
 Rules:
 
@@ -69,18 +69,23 @@ File by file; skip categories that plainly don't apply.
 ### 2. Keyboard
 - Everything clickable is keyboard-operable (Tab/Shift+Tab, Enter/Space, Esc for dismissible UI, arrows for radio/tab/listbox groups).
 - Tab order = reading order; no `tabindex` > 0.
-- No traps; modals/dropdowns release focus on close.
+- No traps; modals/dropdowns return focus to their trigger on close (or the next sensible control if the trigger is gone).
 - Custom widgets follow the ARIA APG keyboard model, not just click handlers.
 
 ### 3. Focus management
 Follow the established pattern (`fix: error message focus management`, `fix: feedback form error focus` commits); don't reinvent.
 - Validation error → focus to error summary/first invalid field.
 - Dynamic change (route, modal, async swap) → focus lands somewhere sensible, never silently on `<body>`.
+- **Trigger gone or disabled, outcome is a message → focus the message.** Not the field, not the next control. The message gets `tabIndex={-1}`, `.focus-target`, and `announce={false}` (or it's read twice); a box shared with other outcomes turns `announce` off only for the focused one. See status-and-error-messaging.md's "Moving focus to a `StatusMessage`".
 - **`<a href>`/`GcdsLink` ≠ `navigate()`.** Real links get browser focus reset + title announcement for free; `navigate()` is `pushState` and gets neither. Grep `useNavigate`/`navigate(` — every call site needs its own or a centrally-wired focus story. Key effects on `location.key`, not `pathname`: a query-string-only transition (`?chat=...`) never fires a pathname-keyed effect.
 - **Each page needs its own `document.title` (SC 2.4.2).** A shared generic title (or only some pages setting one) is a real finding — identical tabs/bookmarks are the sighted symptom. Reuse the page's `<h1>` locale key, don't add a duplicate string.
 - For every dismiss/clear/toggle/remove control — **including effects that auto-close/collapse/unmount on a prop/state change (no click to trace from)** — check whether the state it changes feeds the control's *own* render condition (`{x && <Control/>}`, ternary, `display:none`). If so, that handler/effect must redirect focus explicitly. Check each control independently: "Clear all", a pill's own remove, a search-clear pill can each have this bug in the same component.
 - Focus visible: no `outline: none` without a contrast-passing replacement (GC DS `var(--gcds-focus-border)` already does; flag overrides).
 - **Focus-restore that survives re-render doesn't survive removal.** Pattern: click → arm ref with item id → redraw consumes it and refocuses. Works for edit/reorder/status change; structurally fails when success *removes* the item (delete, dismiss-that-deletes) — nothing redraws that id. Find the success path, confirm the item is gone from the next render, and require a separate explicit target (e.g. an always-mounted nearby control). Real case: a delete's `finally` re-fetch was checked for Process/Cancel but never for delete's own success path.
+- **A focus target that only renders for some outcomes leaves the rest with nowhere to go.** Pattern: a pick/submit removes its own control, then focus moves to something that only some outcomes render (`{result && <p ref={focusRef}>}`, a table found by `querySelector`). Any outcome that doesn't render it drops focus to `<body>`, even though a focus move exists. Trace every outcome of every focus redirect — success, error, info (not found, no results), empty, cancelled — and give each one a target. An outcome with no result to show focuses its message ("Trigger gone or disabled" above). A focus move added as a fix counts too. Real case: the chat ID pick-list on VectorPage/SimilarChatsDashboard/ChatViewer.
+- **Native `disabled` on the focused control drops focus.** A plain `<button>`/`<input>` disabled while busy loses focus to `<body>` (GcdsButton doesn't — it reflects to `aria-disabled`). Prefer `readOnly`/`aria-disabled`, or focus the outcome message ("Trigger gone or disabled" above). Real case: `ChatIdLookupField.js`'s input, disabled while searching after Enter.
+- **Late async result steals focus.** A focus move after an `await` must check the user hasn't moved on (typed a new ID, started another action) — see `ChatViewer.js`'s `chatIdRef` guard.
+- **Replaced ≠ updated.** A focused node that remounts (changed `key`, component declared inside a render body, DataTables redraw) loses focus though it looks identical. Check the focused element survives the re-render, not just that its content does.
 - **Restore by "first interactive element" can pick the wrong one.** `querySelector('button, [tabindex]')` fallbacks misfocus whenever the clicked item isn't reliably first (row actions vary by status: Cancel-then-Delete vs Delete-alone → failed Delete lands on Cancel). Not an SC 2.4.3 failure, but a reportable imprecision. Tell: mechanism tracks *that* something was clicked, not *which*.
 - **Cross-root focus race.** A `.focus()` from an async handler in one React root can run before a separate `createRoot`/`root.render()` (e.g. DataTables cell renders) commits, and that root's self-focusing element (a "Processing…" placeholder with focus-on-mount) steals it back. Looks correct in code, fails live. Microtasks don't fix it; needs a macrotask (`setTimeout`) after the other root's commit. Flag sync/microtask redirects that compete with a separately-rooted self-focuser as `Needs validation:` minimum, real finding if the trace confirms the ordering isn't guaranteed.
 
@@ -118,11 +123,11 @@ Follow the established pattern (`fix: error message focus management`, `fix: fee
 
 ## How to review
 
-1. `git diff main...HEAD` for changed UI files.
+1. `git diff main...HEAD` for changed UI files. If any of them renders a status/error message, loading state or announcement, or moves focus, read `docs/coding-agent-docs/status-and-error-messaging.md` before going on — otherwise skip it.
 2. Read each changed file in full — a11y bugs are about what's *missing*. When a finding rests on a derived value ("reduces to zero", "list becomes empty", "never true"), trace the actual derivation; a wrong mechanism skews severity/trigger even when the bug is real.
 3. Where feasible, drive it: tab through, check the accessibility tree, skim axe/console if the dev server is up. Say if you only did a static review.
 4. Most-severe first: keyboard trap / unreachable control > missing label / broken focus management > missing ARIA reference > contrast / colour-only > semantic nit.
-5. **Focus/live-region fixes: does the diff's test name an independently-correct target?** A test asserting `activeElement` matches the same `querySelector('button, [tabindex]')` the implementation uses passes on the *wrong* target too. Call out as a coverage gap, separate from whether the behaviour is correct.
+5. **Focus/live-region fixes: does the diff's test name an independently-correct target?** A test asserting `activeElement` matches the same `querySelector('button, [tabindex]')` the implementation uses passes on the *wrong* target too. Call out as a coverage gap, separate from whether the behaviour is correct. A focus move with no test of its failure path is a coverage gap too.
 6. **Confirmed-in-conversation ≠ confirmed-on-disk.** When re-verifying any finding (yours or handed off), grep the current file for the specific line the fix should have introduced before reporting it done.
 
 Per finding: file/line, what's wrong, WCAG 2.1 AA SC, concrete fix.
