@@ -739,7 +739,7 @@ const VectorPage = ({ lang = 'en' }) => {
               </tbody>
             </table>
             </div>
-            <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400" tabIndex="0">
+            <GcdsDetails detailsTitle={t('vector.docdb8Capability.rawResults')} className="mb-400">
               <pre>{JSON.stringify(docdb8CapabilityResults, null, 2)}</pre>
             </GcdsDetails>
           </div>
@@ -1068,56 +1068,80 @@ const VectorPage = ({ lang = 'en' }) => {
         />
         {metadataLookupResult?.chat && (
           <div className="mb-400">
-            <p id="metadata-lookup-result" ref={metadataLookupResultRef} tabIndex={-1} className="focus-target">
-              <span>{t('vector.metadataLookup.chatSummary.chatId')} {metadataLookupResult.chat.chatId}</span>
-              <span> {t('vector.metadataLookup.chatSummary.pageLanguage')} {metadataLookupResult.chat.pageLanguage || t('vector.metadataBatchResults.emptyValue')}</span>
-              <span> {t('vector.metadataLookup.chatSummary.interactions')} {fmtN(metadataLookupResult.chat.interactionCount)}</span>
-              <span> {t('vector.metadataLookup.chatSummary.embeddings')} {fmtN(metadataLookupResult.chat.embeddingCount)}</span>
-            </p>
-            {/* Same static-table treatment as ChatViewer.js's pipeline step timeline
-                (see the DocDB capability table above). */}
-            <div className="table-scroll dt-container" tabIndex={0}>
-            <table className="dataTable table-slim-padding">
+            <dl id="metadata-lookup-result" ref={metadataLookupResultRef} tabIndex={-1} className="canada-ca-dl-columns canada-ca-dl-columns--single font-size-text-sm-nr metadata-lookup-summary focus-target">
+              {[
+                ['chatId', metadataLookupResult.chat.chatId],
+                ['interactions', fmtN(metadataLookupResult.chat.interactionCount)],
+                ['embeddings', fmtN(metadataLookupResult.chat.embeddingCount)],
+              ].map(([key, value]) => (
+                <div key={key}>
+                  <dt>{t(`vector.metadataLookup.chatSummary.${key}`)}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {/* One row per interaction: each field the lookup compares
+                (attached vs. embedding metadata) is one cell - the value
+                alone when they agree, "attached -> metadata" marked as a
+                mismatch when they don't. Same static-table treatment as the
+                tables above. */}
+            <div className="table-scroll dt-container metadata-lookup-scroll" tabIndex={0}>
+            <table className="dataTable row-border table-slim-padding">
               <caption className="sr-only">{t('vector.metadataLookup.title')}</caption>
               <thead>
                 <tr>
                   <th scope="col">{t('vector.metadataLookup.columns.row')}</th>
                   <th scope="col">{t('vector.metadataLookup.columns.status')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.interactionObjectId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.interactionDisplayId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.embeddingId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.embeddingInteractionId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.attachedExpertFeedbackId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.metadataExpertFeedbackId')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.attachedScore')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.metadataScore')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.chatPageLanguage')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.metadataPageLanguage')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.displayId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.ids')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.expertFeedbackId')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.score')}</th>
+                  <th scope="col">{t('vector.metadataLookup.columns.pageLanguage')}</th>
                   <th scope="col">{t('vector.metadataLookup.columns.interactionLanguage')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.metadataInteractionLanguage')}</th>
-                  <th scope="col">{t('vector.metadataLookup.columns.neverStale')}</th>
                 </tr>
               </thead>
               <tbody>
-                {(metadataLookupResult.rows || []).map((row) => (
-                  <tr key={`${row.interactionObjectId || 'interaction'}-${row.embeddingId || 'missing'}`}>
-                    <td>{fmtN(row.rowNumber)}</td>
-                    <td>{t(`vector.metadataLookup.statuses.${row.metadataStatus || 'unknown'}`)}</td>
-                    <td>{row.interactionObjectId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.interactionDisplayId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.embeddingId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.embeddingInteractionId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.attachedExpertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.metadataExpertFeedbackId || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{typeof row.attachedExpertFeedbackTotalScore === 'number' ? fmtN(row.attachedExpertFeedbackTotalScore) : t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{typeof row.metadataExpertFeedbackTotalScore === 'number' ? fmtN(row.metadataExpertFeedbackTotalScore) : t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.chatPageLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.metadataPageLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.interactionLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.metadataInteractionLanguage || t('vector.metadataBatchResults.emptyValue')}</td>
-                    <td>{row.metadataExpertFeedbackNeverStale ? t('vector.docdb8Capability.yes') : t('vector.docdb8Capability.no')}</td>
-                  </tr>
-                ))}
+                {(metadataLookupResult.rows || []).map((row) => {
+                  const empty = t('vector.metadataBatchResults.emptyValue');
+                  const fmtScore = (v) => (typeof v === 'number' ? fmtN(v) : null);
+                  // No embedding means no metadata to compare; the status says so.
+                  const compare = (attached, metadata) => {
+                    const left = attached ?? null;
+                    const right = metadata ?? null;
+                    if (!row.embeddingId || left === right) return left ?? empty;
+                    return (
+                      <span className="metadata-mismatch">
+                        <span aria-hidden="true">! </span>
+                        <span className="sr-only">{t('vector.metadataLookup.mismatch')} </span>
+                        {left ?? empty}
+                        <span aria-hidden="true"> → </span>
+                        <span className="sr-only"> {t('vector.metadataLookup.mismatchTo')} </span>
+                        {right ?? empty}
+                      </span>
+                    );
+                  };
+                  return (
+                    <tr key={`${row.interactionObjectId || 'interaction'}-${row.embeddingId || 'missing'}`}>
+                      <td>{row.rowNumber}</td>
+                      <td>
+                        {t(`vector.metadataLookup.statuses.${row.metadataStatus || 'unknown'}`)}
+                        {row.metadataExpertFeedbackNeverStale && (
+                          <> <span className="label normal">{t('vector.metadataLookup.columns.neverStale')}</span></>
+                        )}
+                      </td>
+                      <td>{row.interactionDisplayId || t('vector.metadataLookup.missingDisplayId')}</td>
+                      <td>
+                        <span className="metadata-lookup-id-label">{t('vector.metadataLookup.ids.interactionObject')}</span> <code>{row.interactionObjectId || empty}</code>
+                        <br />
+                        <span className="metadata-lookup-id-label">{t('vector.metadataLookup.ids.embedding')}</span> <code>{row.embeddingId || empty}</code>
+                      </td>
+                      <td>{compare(row.attachedExpertFeedbackId, row.metadataExpertFeedbackId)}</td>
+                      <td>{compare(fmtScore(row.attachedExpertFeedbackTotalScore), fmtScore(row.metadataExpertFeedbackTotalScore))}</td>
+                      <td>{compare(row.chatPageLanguage, row.metadataPageLanguage)}</td>
+                      <td>{compare(row.interactionLanguage, row.metadataInteractionLanguage)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             </div>
