@@ -2202,8 +2202,12 @@
     "simulation": {
       "title": "Simulation de panne",
       "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
-      "enable": "Simuler l'échec",
-      "disable": "Effacer la simulation",
+      "on": "Activé",
+      "off": "Désactivé",
+      "loadFailed": "Impossible de charger les réglages de simulation de panne. Rechargez la page pour réessayer.",
+      "saveFailed": "Impossible d'enregistrer le réglage pour {service}. Réessayez.",
+      "announceOn": "Panne simulée : {service}.",
+      "announceOff": "{service} fonctionne normalement.",
       "labels": {
         "database": "Base de données",
         "search": "Recherche",
@@ -2214,9 +2218,13 @@
     "errors": "Erreurs",
     "warnings": "Avertissements",
     "notConfigured": "Non configuré",
+    "statusError": "Erreur",
+    "statusWarning": "Avertissement",
     "lastRun": "Dernière exécution :",
+    "summaryHeading": "Résumé de la connectivité",
     "serviceDetails": "Détails du service",
     "latency": "Latence :",
+    "millisecondsUnit": "ms",
     "details": "Détails",
     "error": "Erreur :"
   },

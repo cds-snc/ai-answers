@@ -49,6 +49,30 @@ describe('DataStoreService.createIndexes', () => {
   });
 });
 
+describe('DataStoreService.getSettingStrict / getSetting', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getApiUrl.mockImplementation((endpoint) => `/api/setting/${endpoint}`);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('getSettingStrict throws when the request fails', async () => {
+    AuthService.fetch.mockResolvedValueOnce({ ok: false });
+    await expect(DataStoreService.getSettingStrict('a.key', 'false')).rejects.toThrow('a.key');
+  });
+
+  it('getSetting still falls back to the default when the request fails', async () => {
+    AuthService.fetch.mockResolvedValueOnce({ ok: false });
+    await expect(DataStoreService.getSetting('a.key', 'false')).resolves.toBe('false');
+  });
+
+  it('both return the saved value', async () => {
+    AuthService.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ value: 'true' }) });
+    await expect(DataStoreService.getSettingStrict('a.key', 'false')).resolves.toBe('true');
+    await expect(DataStoreService.getSetting('a.key', 'false')).resolves.toBe('true');
+  });
+});
+
 describe('DataStoreService.getSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
