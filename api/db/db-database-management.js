@@ -232,6 +232,55 @@ async function buildIndexStatusResponse(connection, collections) {
   };
 }
 
+// Last "Rebuild all indexes" run. In memory only: lost on restart, but each
+// failure is also logged with [IndexBuildError].
+let lastIndexRebuild = null;
+
+// "Existing index build in progress on the same collection"
+const DOCDB_INDEX_BUILD_IN_PROGRESS = 40333;
+
+// Starts the rebuild without waiting for it — a full rebuild on production
+// can outlast the request timeout. The page polls indexRebuildStatus.
+function startIndexRebuild(collections) {
+  const rebuild = {
+    running: true,
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    success: [],
+    failed: [],
+    stillBuilding: []
+  };
+  lastIndexRebuild = rebuild;
+
+  Promise.all(Object.values(collections).map(async model => {
+    try {
+      await model.createIndexes();
+      rebuild.success.push(model.modelName);
+      console.log(`Created indexes for ${model.modelName}`);
+    } catch (error) {
+      // DocumentDB builds one index per collection at a time. Another build
+      // (Mongoose's own on startup, or an earlier rebuild) is still going and
+      // finishes on its own, so this isn't a failure.
+      if (error.code === DOCDB_INDEX_BUILD_IN_PROGRESS) {
+        rebuild.stillBuilding.push({ collection: model.modelName, error: error.message, code: error.code });
+        console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
+        return;
+      }
+      rebuild.failed.push({
+        collection: model.modelName,
+        error: error.message,
+        code: error.code // Include MongoDB error code if available (e.g., 11000 for duplicate key)
+      });
+      console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
+    }
+  })).finally(() => {
+    rebuild.running = false;
+    rebuild.finishedAt = new Date().toISOString();
+  });
+
+  return rebuild;
+}
+
 async function databaseManagementHandler(req, res) {
   if (!['GET', 'POST', 'DELETE', 'PATCH'].includes(req.method)) {
     res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'PATCH']);
@@ -254,6 +303,9 @@ async function databaseManagementHandler(req, res) {
       console.log(`Exporting collection: ${collection}, limit: ${limit}, startDate: ${startDate}, endDate: ${endDate}, lastId: ${lastId}, exportScope: ${exportScope}`);
       if (action === 'indexStatus') {
         return res.status(200).json(await buildIndexStatusResponse(connection, collections));
+      }
+      if (action === 'indexRebuildStatus') {
+        return res.status(200).json({ rebuild: lastIndexRebuild });
       }
       const dateField = 'updatedAt';
       if (!collection || collection === 'All') {
@@ -304,30 +356,10 @@ async function databaseManagementHandler(req, res) {
       });
     } else if (req.method === 'POST' && req.query.action === 'createIndexes') {
       // POST rather than PUT: the gated production network rejects PUT with 501
-      const results = {
-        success: [],
-        failed: []
-      };
-
-      await Promise.all(Object.values(collections).map(async model => {
-        try {
-          await model.createIndexes();
-          results.success.push(model.modelName);
-          console.log(`Created indexes for ${model.modelName}`);
-        } catch (error) {
-          results.failed.push({
-            collection: model.modelName,
-            error: error.message,
-            code: error.code // Include MongoDB error code if available (e.g., 11000 for duplicate key)
-          });
-          console.error(`[IndexBuildError] Failed to create indexes for ${model.modelName}:`, error);
-        }
-      }));
-
-      return res.status(200).json({
-        message: 'Database indexes created successfully',
-        results
-      });
+      if (lastIndexRebuild?.running) {
+        return res.status(202).json({ alreadyRunning: true, rebuild: lastIndexRebuild });
+      }
+      return res.status(202).json({ alreadyRunning: false, rebuild: startIndexRebuild(collections) });
     } else if (req.method === 'POST') {
       // Support chunked upload via req.body.chunkPayload
       const { chunkIndex, totalChunks, fileName, chunkPayload, collection: requestedCollection } = req.body;

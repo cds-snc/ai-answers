@@ -21,11 +21,13 @@ import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 // full story, including why the old `persistent`/`nonce`-as-key workaround
 // didn't work either.
 //
-// `announce={false}` is for the one case where the caller moves focus onto
-// this message (ScenarioOverridesPage's save outcome, ResetCompletePage's
-// invalid link, LoginPage's session-expired notice): focus landing on it
-// already reads it, so a live announcement on top is a double read. Pick
-// one, never both.
+// `announce={false}` is for two cases:
+// - The caller moves focus onto this message (ScenarioOverridesPage's save
+//   outcome, ResetCompletePage's invalid link, LoginPage's session-expired
+//   notice): focus landing on it already reads it, so a live announcement
+//   on top is a double read. Pick one, never both.
+// - The page shows it on its own, not in answer to anything the user just
+//   did (DatabasePage's last index rebuild result on page load).
 //
 // `assertive`: interrupt instead of queueing, for a non-error outcome the
 // user is actively waiting on (a dashboard's "no data" completion). Errors
