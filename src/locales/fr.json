@@ -2198,7 +2198,7 @@
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
-    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s).",
+    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s), {notConfigured} non configuré(s).",
     "simulation": {
       "title": "Simulation de panne",
       "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
