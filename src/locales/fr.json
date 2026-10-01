@@ -848,7 +848,7 @@
       "chatIdMatchesFound": "{count} clavardages correspondants trouvés. Sélectionnez-en un pour continuer.",
       "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
-      "chatNoLongerFound": "Ce chat est désormais introuvable.",
+      "chatNoLongerFound": "Ce clavardage est désormais introuvable.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "fetchError": "Échec du chargement des données : {error}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
