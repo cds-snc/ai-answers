@@ -511,6 +511,27 @@ summary:focus,
   outline-offset: var(--gcds-button-border-width);
 }
 
+/* Toggle on: GcdsButton primary's colours. */
+.btn-secondary[aria-pressed="true"] {
+  background-color: var(--gcds-button-primary-default-background);
+  border-color: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+}
+
+@media (hover: hover) {
+  .btn-secondary[aria-pressed="true"]:hover {
+    background-color: var(--gcds-button-primary-hover-background);
+    border-color: var(--gcds-button-primary-hover-background);
+  }
+}
+
+/* Focus wins over on and hover, as on GcdsButton primary. */
+.btn-secondary[aria-pressed="true"]:focus {
+  background-color: var(--gcds-button-shared-focus-background);
+  border-color: var(--gcds-button-shared-focus-background);
+  color: var(--gcds-button-shared-focus-text);
+}
+
 .btn-secondary[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: var(--gcds-button-shared-disabled-opacity);
@@ -527,6 +548,93 @@ summary:focus,
     display: block;
     margin: var(--gcds-button-mobile-margin);
     width: var(--gcds-button-mobile-width);
+  }
+}
+
+/* Compact name | toggle rows. Each row's cells share the outer grid's
+   columns (subgrid), so the names line up and the toggles line up. */
+.canada-ca-toggle-rows {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  align-items: center;
+}
+
+.canada-ca-toggle-rows > * {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+/* Joined pair (or row) of native .btn-secondary toggles, one pressed at a
+   time: only the outer corners are rounded, neighbours share one border,
+   and every button is as wide as the widest. Stacks on phones.
+
+   TODO: fold into .canada-ca-button-group (fix/vector-page-forms-a11y, the
+   same layout for GcdsButton children) once that branch merges: one class,
+   shared layout, per-child corner rules for gcds-button and .btn-secondary. */
+.canada-ca-toggle-group {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.canada-ca-toggle-group > .btn-secondary {
+  border-radius: 0;
+}
+
+.canada-ca-toggle-group > .btn-secondary:first-child {
+  border-radius: var(--gcds-button-border-radius) 0 0 var(--gcds-button-border-radius);
+}
+
+.canada-ca-toggle-group > .btn-secondary:last-child {
+  border-radius: 0 var(--gcds-button-border-radius) var(--gcds-button-border-radius) 0;
+}
+
+.canada-ca-toggle-group > .btn-secondary + .btn-secondary {
+  margin-left: calc(-1 * var(--gcds-button-border-width));
+}
+
+/* Small size, same as the filter buttons (GC DS small button). */
+.canada-ca-toggle-group--sm > .btn-secondary {
+  padding: var(--gcds-button-small-padding);
+  font: var(--gcds-button-small-font-desktop);
+}
+
+@media only screen and (width < 48em) {
+  .canada-ca-toggle-group--sm > .btn-secondary {
+    font: var(--gcds-button-small-font-mobile);
+  }
+}
+
+/* Keep the focus ring above the overlapping neighbour. */
+.canada-ca-toggle-group > .btn-secondary:focus {
+  position: relative;
+  z-index: 1;
+}
+
+@media screen and (max-width: 30rem) {
+  .canada-ca-toggle-group {
+    display: grid;
+    grid-auto-flow: row;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary {
+    margin: 0;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary:first-child {
+    border-radius: var(--gcds-button-border-radius) var(--gcds-button-border-radius) 0 0;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary:last-child {
+    border-radius: 0 0 var(--gcds-button-border-radius) var(--gcds-button-border-radius);
+  }
+
+  .canada-ca-toggle-group > .btn-secondary + .btn-secondary {
+    margin-left: 0;
+    margin-top: calc(-1 * var(--gcds-button-border-width));
   }
 }
 

@@ -77,6 +77,8 @@ const SETTINGS_LOAD_DEFAULTS = {
   'model.default': 'openai-gpt51',
   'search.default': DEFAULT_SEARCH_PROVIDER,
   'chat.transport': 'sse',
+  'downloadWebPage.cache.enabled': 'false',
+  'downloadWebPage.cache.durationHours': '12',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
   'systemHealth.checks.database.enabled': 'true',
@@ -123,6 +125,7 @@ const SECTION_KEYS = {
     'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
     'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
   ],
+  cache: ['downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
   health: [
     'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
     'systemHealth.checks.llm.enabled', 'systemHealth.autoDisableOnError', 'systemHealth.errorTemplateId',
@@ -156,6 +159,7 @@ const KEY_TO_SECTION = Object.fromEntries(
 // duplicating the title strings each SectionSaveControls already carries.
 const SECTION_TITLE_KEYS = {
   general: 'settings.general.title',
+  cache: 'settings.cache.title',
   health: 'settings.health.title',
   twoFA: 'settings.twoFA.title',
   session: 'settings.session.title',
@@ -175,6 +179,8 @@ const FIELD_META = {
   vectorServiceType: { fieldId: 'vector-service-type', labelKey: 'settings.vectorServiceTypeLabel' },
   'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
   'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
+  'downloadWebPage.cache.enabled': { fieldId: 'download-web-page-cache-enabled', labelKey: 'settings.downloadWebPageCache.enabledLabel' },
+  'downloadWebPage.cache.durationHours': { fieldId: 'download-web-page-cache-duration-hours', labelKey: 'settings.downloadWebPageCache.durationHoursLabel' },
   'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
   'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
   'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
@@ -216,9 +222,9 @@ const FIELD_META = {
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   // Shared with DatabasePage.js's own ~13 uses of the same shape - see
-  // useErrorStatus.js. This page's only use (the settings-cache refresh
-  // below) renders success as 'info' (a neutral confirmation, not a
-  // completed mutation), not the 'success' default.
+  // useErrorStatus.js. The settings-cache refresh below renders success as
+  // 'info' (a neutral confirmation, not a completed mutation); the web page
+  // cache clear and audit history load use the 'success' default.
   const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const [status, setStatus] = useState('available');
   const [deploymentMode, setDeploymentMode] = useState('CDS');
@@ -246,6 +252,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
   const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
   const [chatTransport, setChatTransport] = useState('sse');
+  const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
+  const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
+  const [clearingDownloadWebPageCache, setClearingDownloadWebPageCache] = useState(false);
+  const [clearDownloadWebPageCacheStatus, setClearDownloadWebPageCacheStatus] = useState(null); // { text, isError }
 
   // Canadian Indigenous language blocking guardrail (on by default)
   const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
@@ -313,7 +323,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   // load-time transform here too.
   const originalValuesRef = useRef({});
   const [sectionSaving, setSectionSaving] = useState({
-    general: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
+    general: false, cache: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
   });
   // { [section]: { text, isError } } — one save-outcome message per section,
   // replacing a single page-wide status shared by every field.
@@ -380,6 +390,21 @@ const SettingsPage = ({ lang = 'en' }) => {
 
   const isSectionDirty = (section) => SECTION_KEYS[section].some((key) => key in pendingChanges);
 
+  const clearDownloadWebPageCache = async () => {
+    if (!window.confirm(t('settings.downloadWebPageCache.clearConfirm'))) return;
+    setClearingDownloadWebPageCache(true);
+    setClearDownloadWebPageCacheStatus(null);
+    try {
+      await DataStoreService.clearDownloadWebPageCache();
+      setClearDownloadWebPageCacheStatus({ text: t('settings.downloadWebPageCache.clearSuccess'), isError: false });
+      auditTableRef.current?.reload();
+    } catch (_error) {
+      setClearDownloadWebPageCacheStatus({ text: t('settings.downloadWebPageCache.clearError'), isError: true });
+    } finally {
+      setClearingDownloadWebPageCache(false);
+    }
+  };
+
   // TODO(follow-up, pre-existing): this mount-time load and a field's own
   // onChange (below, e.g. setDefaultWorkflow(v) via stageChange) both call
   // setDefaultWorkflow with no sequencing between them. A slow initial GET
@@ -402,6 +427,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
       setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
       setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
+      setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
+      setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
       setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
       setHealthDatabaseEnabled(String(settings['systemHealth.checks.database.enabled'] ?? 'true'));
@@ -476,6 +503,8 @@ const SettingsPage = ({ lang = 'en' }) => {
       render: (value) => escapeHtmlAttribute(
         value === 'settings.cache_refreshed'
           ? t('settings.auditHistory.actions.cacheRefreshed')
+          : value === 'download_web_page.cache_cleared'
+            ? t('settings.auditHistory.actions.downloadWebPageCacheCleared')
           : t('settings.auditHistory.actions.settingUpdated')
       ),
     },
@@ -815,7 +844,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
           <SectionSaveControls
             section="general"
-            titleKey="settings.general.title"
+            saveLabel={t('settings.general.saveLabel')}
             dirty={isSectionDirty('general')}
             saving={sectionSaving.general}
             status={sectionStatus.general}
@@ -825,6 +854,66 @@ const SettingsPage = ({ lang = 'en' }) => {
             errorAttempt={sectionErrorAttempt.general || 0}
             saveNonce={sectionSaveNonce.general || 0}
           />
+        </div>
+      </details>
+
+      <details>
+        <summary>{t('settings.cache.title')}</summary>
+        <div className="settings-form-width">
+          {/* TODO(a11y): SC 1.3.1 — field errors render above the label on
+              every field on this page; GC DS order is label, hint, error,
+              field. Move them page-wide in a separate PR. */}
+          {fieldErrors['downloadWebPage.cache.enabled'] && (
+            <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.enabledLabel')}
+          </label>
+          <p id="download-web-page-cache-description" className="field-hint">{t('settings.downloadWebPageCache.description')}</p>
+          <select
+            id="download-web-page-cache-enabled"
+            className="filter-select"
+            value={downloadWebPageCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheEnabled(v); stageChange('downloadWebPage.cache.enabled', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.enabled']
+              ? 'download-web-page-cache-description download-web-page-cache-enabled-error'
+              : 'download-web-page-cache-description'}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          {fieldErrors['downloadWebPage.cache.durationHours'] && (
+            <FeedbackInlineError id="download-web-page-cache-duration-hours-error" message={fieldErrors['downloadWebPage.cache.durationHours']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-duration-hours" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.durationHoursLabel')}
+          </label>
+          <input
+            id="download-web-page-cache-duration-hours"
+            className="filter-input"
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={downloadWebPageCacheDurationHours}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheDurationHours(v); stageChange('downloadWebPage.cache.durationHours', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.durationHours'] ? 'download-web-page-cache-duration-hours-error' : undefined}
+          />
+          <SectionSaveControls
+            section="cache" saveLabel={t('settings.cache.saveLabel')} dirty={isSectionDirty('cache')}
+            saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
+            fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
+          />
+          <hr className="section-divider mb-400" />
+          {/* Acts immediately, separate from the form's Save. */}
+          <div className="mb-400">
+            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
+              {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+            </GcdsButton>
+            {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
+          </div>
         </div>
       </details>
 
@@ -1051,7 +1140,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <SectionSaveControls
           section="health"
-          titleKey="settings.health.title"
+          saveLabel={t('settings.health.saveLabel')}
           dirty={isSectionDirty('health')}
           saving={sectionSaving.health}
           status={sectionStatus.health}
@@ -1119,7 +1208,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <SectionSaveControls
           section="twoFA"
-          titleKey="settings.twoFA.title"
+          saveLabel={t('settings.twoFA.saveLabel')}
           dirty={isSectionDirty('twoFA')}
           saving={sectionSaving.twoFA}
           status={sectionStatus.twoFA}
@@ -1249,7 +1338,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <SectionSaveControls
           section="session"
-          titleKey="settings.session.title"
+          saveLabel={t('settings.session.saveLabel')}
           dirty={isSectionDirty('session')}
           saving={sectionSaving.session}
           status={sectionStatus.session}
@@ -1377,7 +1466,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <SectionSaveControls
           section="rateLimiting"
-          titleKey="settings.rateLimiting.title"
+          saveLabel={t('settings.rateLimiting.saveLabel')}
           dirty={isSectionDirty('rateLimiting')}
           saving={sectionSaving.rateLimiting}
           status={sectionStatus.rateLimiting}
@@ -1392,7 +1481,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.redaction.title')}</summary>
         <div>
-        <p>{t('settings.redaction.description')}</p>
+        <p id="redaction-description">{t('settings.redaction.description')}</p>
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
@@ -1406,6 +1495,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.profanity.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.profanity.en']}
             />
 
@@ -1417,6 +1507,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.threat.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.threat.en']}
             />
 
@@ -1428,6 +1519,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.manipulation.en']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.manipulation.en']}
             />
           </div>
@@ -1443,6 +1535,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.profanity.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.profanity.fr']}
             />
 
@@ -1454,6 +1547,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.threat.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.threat.fr']}
             />
 
@@ -1465,6 +1559,7 @@ const SettingsPage = ({ lang = 'en' }) => {
               value={redactionValues['redaction.manipulation.fr']}
               onChange={handleRedactionChange}
               disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
               error={fieldErrors['redaction.manipulation.fr']}
             />
           </div>
@@ -1472,7 +1567,7 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <SectionSaveControls
           section="redaction"
-          titleKey="settings.redaction.title"
+          saveLabel={t('settings.redaction.saveLabel')}
           dirty={isSectionDirty('redaction')}
           saving={sectionSaving.redaction}
           status={sectionStatus.redaction}
@@ -1528,12 +1623,13 @@ const SettingsPage = ({ lang = 'en' }) => {
 // remounting it — declaring it inside the parent's render body would give it
 // a new function identity every render, forcing a full unmount/remount of
 // every Save button on every keystroke.
-// This is always the last element inside its <details>, so its own
+// It's the last element inside its <details> (except the cache section,
+// whose Clear button follows it with its own mb-400), so its own
 // bottom margin is what keeps it off the border when the section is open —
 // fixing the gap here (rather than on <details> itself) avoids double
 // spacing wherever a section's last child is something like a <p> that
 // already carries its own margin-bottom.
-const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave, t, fieldErrors, errorAttempt, saveNonce }) => {
+const SectionSaveControls = ({ section, saveLabel, dirty, saving, status, onSave, t, fieldErrors, errorAttempt, saveNonce }) => {
   // Every field in this section that came back with a per-field error on the
   // last save — feeds both the jump-link list below and, via errorAttempt,
   // when to re-focus/re-announce it (a second failed attempt with the exact
@@ -1559,7 +1655,7 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
         onClick={() => onSave(section)}
         disabled={!dirty || saving}
       >
-        {saving ? t('settings.saving') : `${t('settings.save')} ${t(titleKey)}`}
+        {saving ? t('settings.saving') : saveLabel}
       </GcdsButton>
       <StatusMessage
         variant={status ? (status.isError ? 'error' : 'success') : undefined}
@@ -1574,7 +1670,7 @@ const SectionSaveControls = ({ section, titleKey, dirty, saving, status, onSave,
 // anymore, staging into the parent's pendingChanges happens on every change
 // (not on blur: clicking the section's Save button before a field blurs must
 // not drop the just-typed text).
-const SettingsTextArea = ({ settingKey, value, onChange, disabled, error }) => (
+const SettingsTextArea = ({ settingKey, value, onChange, disabled, describedBy, error }) => (
   <>
     {error && (
       <FeedbackInlineError id={`${settingKey}-error`} message={error} announce={false} />
@@ -1584,7 +1680,7 @@ const SettingsTextArea = ({ settingKey, value, onChange, disabled, error }) => (
       value={value}
       onChange={(e) => onChange(settingKey, e.target.value)}
       disabled={disabled}
-      aria-describedby={error ? `${settingKey}-error` : undefined}
+      aria-describedby={error ? `${describedBy} ${settingKey}-error` : describedBy}
       className="filter-input"
       rows={5}
     />

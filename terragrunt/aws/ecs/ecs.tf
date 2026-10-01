@@ -68,7 +68,7 @@ locals {
 }
 
 module "ai_answers" {
-  source = "github.com/cds-snc/terraform-modules//ecs?ref=v11.4.3"
+  source = "github.com/cds-snc/terraform-modules//ecs?ref=v12.1.2"
 
   # Cluster and service
   cluster_name = "${var.product_name}-cluster"
@@ -130,11 +130,26 @@ module "ai_answers" {
   security_group_ids  = [aws_security_group.ecs_tasks.id]
   subnet_ids          = var.vpc_private_subnet_ids
 
-  # Forward logs to Sentinel
+  # Forward logs to Sentinel over the Logs Ingestion API. The forwarder's IAM
+  # role is the only credential: it federates through the Cognito pool in
+  # sentinel_v2_cognito.tf to reach the Azure identity that may write to the
+  # data collection rule. customer_id/shared_key stay as the rollback.
   sentinel_forwarder           = true
-  sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:269"
+  sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:270"
   sentinel_customer_id         = var.sentinel_customer_id
   sentinel_shared_key          = var.sentinel_shared_key
+
+  sentinel_dce_endpoint = "https://dce-sentinel-forwarder-v2-153n.canadacentral-1.ingest.monitor.azure.com"
+  sentinel_dcr_config = {
+    AWSCloudWatchLog = {
+      dcrImmutableId = "dcr-6eccfc9e7ef34cd293566d5073d551f6"
+      streamName     = "Custom-AWSCloudWatchLog_v2_Input"
+    }
+  }
+  sentinel_azure_client_id                 = "9fd2a8dc-1698-4291-a71f-19ddc3cef71f"
+  sentinel_azure_tenant_id                 = "221ca1d3-b3f2-4346-8abc-88f802495c7d"
+  sentinel_cognito_identity_pool_id        = aws_cognito_identity_pool.sentinel_forwarder_v2.id
+  sentinel_cognito_developer_provider_name = aws_cognito_identity_pool.sentinel_forwarder_v2.developer_provider_name
 
   billing_tag_value = var.billing_code
 

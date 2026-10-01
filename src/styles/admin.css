@@ -379,6 +379,20 @@
   margin-bottom: 2px;
 }
 
+/* GC DS hint pattern (label, hint, field) for plain HTML fields: gcds-hint's
+   own tokens. A plain <p> because a native field's aria-describedby can't
+   reach into <gcds-hint>'s shadow DOM. */
+.field-hint {
+  color: var(--gcds-hint-text);
+  margin: var(--gcds-hint-margin);
+}
+
+/* Thin divider; the browser-default <hr> is a thick inset double line. */
+.section-divider {
+  border: none;
+  border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+}
+
 .filter-field {
   position: relative;
 }
@@ -3615,6 +3629,12 @@ details gcds-button::part(button) {
 .canada-ca-dl-columns dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* Short lists: one column, capped so the label stays near its number. */
+.canada-ca-dl-columns--single {
+  columns: auto;
+  max-width: 65ch;
 }
 
 /* Native <input type="file"> dressed as GC DS's gcds-file-uploader, using

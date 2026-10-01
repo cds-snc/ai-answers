@@ -25,7 +25,9 @@ class DataStoreService {
       const values = data.values || {};
 
       return keys.reduce((acc, key) => {
-        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined) {
+        // null = never saved (SettingsService.get) — use the default, same as
+        // the per-key fallback below.
+        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined && values[key] !== null) {
           acc[key] = values[key];
         } else if (Object.prototype.hasOwnProperty.call(defaults, key)) {
           acc[key] = defaults[key];
@@ -56,12 +58,18 @@ class DataStoreService {
       return defaultValue;
     }
   }
+  // Throws on failure, for callers that must not mistake a failed load for
+  // the default.
+  static async getSettingStrict(key, defaultValue = null) {
+    const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
+    if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
+    const data = await response.json();
+    return data.value !== undefined ? data.value : defaultValue;
+  }
+
   static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
-      if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
-      const data = await response.json();
-      return data.value !== undefined ? data.value : defaultValue;
+      return await this.getSettingStrict(key, defaultValue);
     } catch (error) {
       console.error(`Error getting setting '${key}':`, error);
       return defaultValue;
@@ -121,6 +129,22 @@ class DataStoreService {
       return await response.json();
     } catch (error) {
       console.error('Error refreshing settings cache:', error);
+      throw error;
+    }
+  }
+
+  static async clearDownloadWebPageCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-clear-download-webpage-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clear cached web pages');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing cached web pages:', error);
       throw error;
     }
   }

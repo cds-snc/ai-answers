@@ -56,6 +56,8 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 
 **Note:** `systemPrompt.js` no longer requires manual updates—it uses dynamic imports to automatically load scenarios based on the department name.
 
+**Note:** If you *do* change `departments_EN.js` / `departments_FR.js` (a new department, a changed URL, or a removed one), the live search engine's site list needs a manual update too — see [Updating the search engine site list](#updating-the-search-engine-site-list-when-the-department-lists-change). Adding a partner for an existing `abbrKey` does not change that list.
+
 ---
 
 ## How It Works
@@ -249,6 +251,7 @@ Single-department files use the same mechanism but stay in the department folder
 - [ ] Update "Current Departments" table in this document (alphabetically)
 - [ ] Check the shared instruction files — does this department field questions on a shared topic? If so, paste the pointer block into its scenario file (a new RDA, for example, needs the `TRADE & TARIFFS FILE` block). This doesn't follow from `PARTNER_DEPARTMENTS` or the alias map.
 - [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
+- [ ] Only if `departments_EN.js` / `departments_FR.js` changed: update the search engine site list ([steps](#updating-the-search-engine-site-list-when-the-department-lists-change))
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
 - [ ] Test scenario override for department
@@ -298,3 +301,24 @@ If the partner is part of a shared-scenario group (see [Shared scenarios](#share
 - [ ] Confirm no dangling references: `grep -rn "context-{slug}\|{UPPER_KEY}_SCENARIOS" --include="*.js" --include="*.md" .`
 - [ ] Leave `departments_EN.js`, `departments_FR.js`, and `contextSystemPrompt.js` routing intact
 - [ ] Note: any per-department scenario overrides stored in the database (keyed by `departmentKey`) become orphaned but harmless
+
+---
+
+## Updating the search engine site list when the department lists change
+
+The answer pipeline's web search runs on a Google Programmable Search Engine (`GOOGLE_SEARCH_ENGINE_ID`). Its scope is the **site list configured in the Google console**, not anything in this repo. Editing `departments_EN.js` / `departments_FR.js` does **not** update it, and nothing in the code syncs the two.
+
+Do this whenever a department entry is **added, removed, or has its URL changed** in `departments_EN.js` / `departments_FR.js` (including removing an institution from Government of Canada scope entirely, which is different from removing a partner):
+
+1. Generate the current list from the department files:
+   ```bash
+   node scripts/extract_domains.js
+   ```
+   This writes `scripts/domains_for_programmable_search.csv`. It is not committed — don't add it to the PR.
+2. Open the site list in the Programmable Search Engine console and compare it with the CSV.
+3. Add domains that are in the CSV but not in the engine; remove domains that are in the engine but no longer in the CSV.
+4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}`, and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
+
+A removed department's domain stays searchable until step 3 is done. A new department's domain is never searched until it is added.
+
+A partner add that only uses an existing `abbrKey` doesn't change the department files, so this step doesn't apply.

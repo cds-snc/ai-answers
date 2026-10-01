@@ -128,6 +128,9 @@
           "label": "Model family:"
         },
         "useSystemSettings": "Use system settings",
+        "saveLabel": "Save options",
+        "savedAnnouncement": "Options saved.",
+        "unsavedWarning": "Unsaved options. Select Save options to apply them.",
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)",
           "error": "Enter a full URL, starting with https:// or http://",
@@ -644,21 +647,21 @@
       "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
-        "expertEvaluations": "Expert Evaluations in System:",
-        "nonEmptyEvaluations": "Non-Empty Evaluations in System:"
+        "expertEvaluations": "Expert evaluations in system",
+        "nonEmptyEvaluations": "Non-empty evaluations in system"
       },
-      "detailsTitle": "Detailed Evaluation Process",
+      "detailsTitle": "Detailed evaluation process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation:",
+          "title": "Initial validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval:",
+          "title": "Embedding retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content:",
+          "title": "Finding similar content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -729,18 +732,19 @@
         "processed": "Processed evaluations",
         "hasMatches": "Evaluations with matches",
         "noMatchReasons": "No-match reasons",
-        "reasonLabel": "Reason",
-        "countLabel": "Count",
-        "unknown": "unknown",
         "noMatchNone": "No no-match reason data available.",
         "fallbackTypes": "Fallback types",
-        "fallbackLabel": "Fallback",
         "fallbackNone": "No fallback usage data available.",
-        "refresh": "Refresh metrics"
+        "refresh": "Refresh metrics",
+        "refreshing": "Refreshing metrics...",
+        "refreshed": "Metrics refreshed."
       },
+      "actionsTitle": "Generate or delete evaluations",
       "date": {
-        "startLabel": "Start date:",
-        "endLabel": "End date:"
+        "legend": "Date range (optional)",
+        "hint": "Leave blank to use all dates.",
+        "startLabel": "Start date",
+        "endLabel": "End date"
       },
       "button": {
         "processing": "Processing...",
@@ -749,12 +753,8 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed:",
-        "failed": "Failed:",
-        "remaining": "Remaining:",
-        "duration": "Duration:",
-        "autoProcessing": "Auto-processing active",
-        "regeneratingAll": "Regenerating all evaluations"
+        "starting": "Generating evaluations...",
+        "summary": "Generating evaluations: {processed} successful, {failed} failed, {remaining} left."
       }
     },
     "filters": {
@@ -1124,6 +1124,7 @@
       "heading": "Your assigned questions for review",
       "filterLabel": "Filter assigned questions",
       "loadError": "Failed to load your assigned questions.",
+      "chatIdQuestion": ", question {number}",
       "columns": {
         "assignedOn": "Assigned on",
         "assignedBy": "Assigned by",
@@ -1213,15 +1214,17 @@
     "fieldError": {
       "unexpected": "Unexpected error: {error}"
     },
-    "save": "Save",
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
       "invalidEmail": "Invalid email or ; spacing",
+      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
+    "cache": { "title": "Downloaded web pages cache", "saveLabel": "Save web page cache settings" },
     "general": {
-      "title": "General settings"
+      "title": "General settings",
+      "saveLabel": "Save general settings"
     },
     "defaultWorkflow": {
       "label": "Generic workflow"
@@ -1242,8 +1245,19 @@
     "indigenousLanguageBlocking": {
       "label": "Canadian Indigenous language blocking"
     },
+    "downloadWebPageCache": {
+      "enabledLabel": "Cache downloaded web pages",
+      "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
+      "durationHoursLabel": "Web page cache duration (hours)",
+      "clearConfirm": "Clear all cached web pages? They will be downloaded again the next time they're needed.",
+      "clear": "Clear cached web pages",
+      "clearing": "Clearing cached web pages...",
+      "clearSuccess": "Cached web pages cleared.",
+      "clearError": "Failed to clear cached web pages."
+    },
     "health": {
       "title": "Health checks",
+      "saveLabel": "Save health checks",
       "description": "Control the automated health monitor and its dependency checks.",
       "enabledLabel": "Enable health monitoring",
       "databaseEnabledLabel": "Check database health",
@@ -1295,12 +1309,14 @@
       "notApplicable": "Not applicable",
       "actions": {
         "settingUpdated": "Setting updated",
-        "cacheRefreshed": "Settings cache refreshed"
+        "cacheRefreshed": "Settings cache refreshed",
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
+      "saveLabel": "Save two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
@@ -1309,6 +1325,7 @@
     },
     "session": {
       "title": "Session settings",
+      "saveLabel": "Save session settings",
       "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
@@ -1330,6 +1347,7 @@
     },
     "rateLimiting": {
       "title": "Rate limiting",
+      "saveLabel": "Save rate limiting",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
@@ -1341,6 +1359,7 @@
     },
     "redaction": {
       "title": "Redaction settings",
+      "saveLabel": "Save redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
@@ -1406,14 +1425,16 @@
     "totalScore": "Score",
     "referringUrl": "Referring URL",
     "interactionUpdatedAt": "Date of chat",
-    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
-    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "allEvalsGenerated": "Evaluations generated: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Generating evaluations failed: {error}",
     "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEvalsFailed": "Deleting evaluations failed: {error}",
+    "deleteEvalsNone": "No evaluations to delete.",
     "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "deleteEmptyEvalsFailed": "Deleting empty evaluations failed: {error}",
+    "deleteEmptyEvalsNone": "No empty evaluations to delete.",
     "noMatchReasonTypes": {
       "no_embeddings": "No embeddings found",
       "no_qa_match": "No similar embeddings found",
@@ -1479,6 +1500,8 @@
     "pass": "Pass",
     "fail": "Failed",
     "downloadSuccess": "Succeeded",
+    "downloadSuccessCached": "Succeeded (cached)",
+    "downloadSuccessDownloaded": "Succeeded (downloaded)",
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
@@ -1888,6 +1911,8 @@
         "totalCount": "Questions with this call",
         "completedCount": "Completed",
         "errorCount": "Errors",
+        "cacheHitCount": "Pages served from cache",
+        "originCount": "Origin downloads",
         "errorPercent": "Error %",
         "median": "Completed median (ms)",
         "p95": "Completed P95 (ms)"
@@ -2185,8 +2210,12 @@
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
-      "enable": "Simulate failure",
-      "disable": "Clear simulation",
+      "on": "On",
+      "off": "Off",
+      "loadFailed": "Couldn't load the failure simulation settings. Reload the page to try again.",
+      "saveFailed": "Couldn't save the {service} setting. Try again.",
+      "announceOn": "Simulating a failure: {service}.",
+      "announceOff": "{service} is operating normally.",
       "labels": {
         "database": "Database",
         "search": "Search",
@@ -2197,9 +2226,13 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
+    "statusError": "Error",
+    "statusWarning": "Warning",
     "lastRun": "Last run:",
+    "summaryHeading": "Connectivity summary",
     "serviceDetails": "Service details",
     "latency": "Latency:",
+    "millisecondsUnit": "ms",
     "details": "Details",
     "error": "Error:"
   },

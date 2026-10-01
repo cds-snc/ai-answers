@@ -89,6 +89,8 @@ describe('Backend MetricsService.getTechnicalMetrics', () => {
         callNumber: 1,
         totalCount: 3,
         errorCount: 1,
+        cacheHitCount: 0,
+        originCount: 2,
         completedCount: 2,
         median: 40,
         p95: 40
@@ -97,6 +99,8 @@ describe('Backend MetricsService.getTechnicalMetrics', () => {
         callNumber: 2,
         totalCount: 3,
         errorCount: 1,
+        cacheHitCount: 0,
+        originCount: 2,
         completedCount: 2,
         median: 120,
         p95: 120

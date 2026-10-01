@@ -1,7 +1,7 @@
 import { Disk } from 'flydrive';
 import { S3Driver } from 'flydrive/drivers/s3';
 import { FSDriver } from 'flydrive/drivers/fs';
-import { S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import path from 'node:path';
 
@@ -15,11 +15,12 @@ const bucketName = process.env.S3_BUCKET_NAME;
 const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ca-central-1';
 
 let storageService;
+let s3Client;
 
 if (isS3) {
     // Lambda/Production: Use S3 with IAM role credentials
     // S3Client automatically uses IAM role credentials in Lambda
-    const s3Client = new S3Client({ region });
+    s3Client = new S3Client({ region });
 
     storageService = new Disk(new S3Driver({
         client: s3Client,
@@ -38,3 +39,26 @@ if (isS3) {
 }
 
 export default storageService;
+
+// A cache lookup needs both the contents and S3's LastModified header. A
+// GetObject response carries both, so avoid issuing a separate HeadObject.
+// Local filesystem mode retains the existing Disk abstraction; this path is
+// only a developer fallback, while the shared production cache is S3-backed.
+export async function getStorageObjectWithMetadata(key) {
+    if (isS3) {
+        const response = await s3Client.send(new GetObjectCommand({
+            Bucket: bucketName,
+            Key: key,
+        }));
+        return {
+            content: await response.Body.transformToString(),
+            lastModified: response.LastModified,
+        };
+    }
+
+    const [content, metadata] = await Promise.all([
+        storageService.get(key),
+        storageService.getMetaData(key),
+    ]);
+    return { content, lastModified: metadata.lastModified };
+}

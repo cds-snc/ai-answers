@@ -9,7 +9,8 @@ import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
-  useTranslations: () => ({ t: (key) => key }),
+  // Keys echo back, except templates whose placeholder a test checks.
+  useTranslations: () => ({ t: (key) => (key === 'account.assignedChats.chatIdQuestion' ? ', question {number}' : key) }),
 }));
 
 const { mockGetMe, mockUpdateMe, mockRefreshUser } = vi.hoisted(() => ({ mockGetMe: vi.fn(), mockUpdateMe: vi.fn(), mockRefreshUser: vi.fn() }));
@@ -24,8 +25,11 @@ vi.mock('datatables.net-react', () => {
   return { default: MockDataTable };
 });
 vi.mock('datatables.net-dt', () => ({ default: () => null }));
+const { tablePropsByCaption } = vi.hoisted(() => ({ tablePropsByCaption: {} }));
 vi.mock('../../components/admin/ServerDataTable.js', () => ({
-  default: ({ columns, fetchData }) => {
+  default: (props) => {
+    const { columns, fetchData } = props;
+    tablePropsByCaption[props.caption] = props;
     React.useEffect(() => { fetchData({ start: 0, length: 10, search: '', orderBy: 'createdAt', orderDir: 'desc' }); }, [fetchData]);
     return <table data-testid="mock-server-table"><thead><tr>{columns.map((c) => <th key={c.data}>{c.title}</th>)}</tr></thead></table>;
   },
@@ -342,6 +346,46 @@ describe('AccountPage', () => {
     render(<AccountPage lang="en" />);
     fireEvent.click(await screen.findByLabelText('account.preferences.prefilterGroup'));
     await waitFor(() => expect(mockUpdateMe).toHaveBeenCalledWith({ preferences: { prefilterGroup: true } }));
+  });
+
+  it('keeps a Chat ID link on every assigned row, each naming its question for screen readers', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    await screen.findByText('a@dnd.ca');
+    const { columns, drawCallback } = tablePropsByCaption['account.assignedChats.heading'];
+    const rows = [
+      { chatId: 'abc123', interactionId: 'i1', questionNumber: 1, program: 'Pensions', pageLanguage: 'en' },
+      { chatId: 'abc123', interactionId: 'i3', questionNumber: 3, program: 'Pensions', pageLanguage: 'en' },
+    ];
+    const chatIdCol = columns.findIndex((c) => c.data === 'chatId');
+    // One <td> per row per column, rendered the way DataTables would.
+    const cellsByCol = columns.map((c) => rows.map((r) => {
+      const td = document.createElement('td');
+      td.innerHTML = c.render ? c.render(r[c.data], 'display', r) : String(r[c.data] ?? '');
+      return td;
+    }));
+    const api = {
+      rows: () => ({ data: () => ({ toArray: () => rows }) }),
+      column: (i) => ({ nodes: () => ({ toArray: () => cellsByCol[i] }) }),
+    };
+    drawCallback.call({ api: () => api });
+    const [first, second] = cellsByCol[chatIdCol];
+    expect(first.querySelector('gcds-link').getAttribute('href')).toContain('interactionIdi1');
+    expect(second.querySelector('gcds-link').getAttribute('href')).toContain('interactionIdi3');
+    expect(first.querySelector('gcds-link .sr-only').textContent).toBe(', question 1');
+    expect(second.querySelector('gcds-link .sr-only').textContent).toBe(', question 3');
+  });
+
+  it('shows a question number column right after Chat ID, named for screen readers', async () => {
+    mockGetMe.mockResolvedValue({ email: 'a@dnd.ca', role: 'partner', institution: 'DND-MDN', group: '', preferences: {} });
+    render(<AccountPage lang="en" />);
+    await screen.findByText('a@dnd.ca');
+    const { columns } = tablePropsByCaption['account.assignedChats.heading'];
+    const index = columns.findIndex((c) => c.data === 'questionNumber');
+    expect(columns[index - 1].data).toBe('chatId');
+    expect(columns[index].title).toBe('admin.evalDashboard.columns.questionNumber');
+    expect(columns[index].headerAriaLabel).toBe('admin.evalDashboard.columns.questionNumberAriaLabel');
+    expect(columns[index].render(3)).toBe('3');
   });
 
   it('moves focus to the load error and hides profile/activity content', async () => {

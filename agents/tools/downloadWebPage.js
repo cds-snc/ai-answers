@@ -5,7 +5,19 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { getEncoding } from "js-tiktoken";
+import { createHash } from "node:crypto";
 import { normalizeFetchUrl } from "../../api/util/normalizeFetchUrl.js";
+import { SettingsService } from "../../services/SettingsService.js";
+import storageService, { getStorageObjectWithMetadata } from "../../services/Storage.js";
+import {
+  advanceDownloadWebPageCacheGeneration,
+  getDownloadWebPageCacheGeneration,
+  isDownloadWebPageCacheEnabled,
+  setDownloadWebPageCacheEnabled,
+  tryWithDownloadWebPageCacheLock,
+  withDownloadWebPageCacheLock,
+} from "../../services/DownloadWebPageCacheCoordinator.js";
+import { graphRequestContext } from "../graphs/requestContext.js";
 import {
   retryOnTransientError,
   isTransientNetworkError,
@@ -60,6 +72,73 @@ const MIN_CONTENT_CHARS = 50;
 const SETTLED_FAILURE_CODES = new Set(["ENOTFOUND", "ECONNREFUSED"]);
 
 export const REQUEST_TIMEOUT_MS = 5000;
+export const DEFAULT_CACHE_DURATION_HOURS = 12;
+export function getCacheFreshnessMs() {
+  const configuredHours = Number(SettingsService.get("downloadWebPage.cache.durationHours"));
+  const durationHours = Number.isInteger(configuredHours) && configuredHours >= 1 && configuredHours <= 24
+    ? configuredHours
+    : DEFAULT_CACHE_DURATION_HOURS;
+  return durationHours * 60 * 60 * 1000;
+}
+export const CACHE_PREFIX = "download-web-page-cache/v1/";
+
+function cacheObjectKey(url, generation) {
+  return `${CACHE_PREFIX}${generation}/${createHash("sha256").update(url).digest("hex")}.md`;
+}
+
+async function readCachedMarkdown(url, generation) {
+  const key = cacheObjectKey(url, generation);
+  const { content: markdown, lastModified } = await getStorageObjectWithMetadata(key);
+  const fetchedAt = lastModified?.getTime();
+  if (!fetchedAt || Date.now() - fetchedAt > getCacheFreshnessMs()) {
+    return { markdown: null, lookupStatus: 'expired' };
+  }
+  return { markdown, lookupStatus: 'hit' };
+}
+
+function isMissingCacheObject(error) {
+  return error?.name === 'NoSuchKey' || error?.name === 'NotFound' ||
+    error?.code === 'NoSuchKey' || error?.code === 'NotFound' ||
+    error?.$metadata?.httpStatusCode === 404 || error?.statusCode === 404;
+}
+
+async function cacheMarkdown(url, markdown, generation) {
+  return tryWithDownloadWebPageCacheLock(async () => {
+    const [enabled, currentGeneration] = await Promise.all([
+      isDownloadWebPageCacheEnabled(),
+      getDownloadWebPageCacheGeneration(),
+    ]);
+    // A request that began before a clear must not repopulate the cache after
+    // the clear has advanced its generation.
+    if (!enabled || generation !== currentGeneration) return false;
+    await storageService.put(cacheObjectKey(url, generation), markdown, { visibility: "private" });
+    return true;
+  });
+}
+
+export async function clearDownloadWebPageCache() {
+  await withDownloadWebPageCacheLock(async () => {
+    const wasEnabled = await isDownloadWebPageCacheEnabled();
+    let disabled = false;
+    try {
+      await setDownloadWebPageCacheEnabled(false);
+      disabled = true;
+      await advanceDownloadWebPageCacheGeneration();
+      await storageService.deleteAll(CACHE_PREFIX);
+    } finally {
+      if (disabled) await setDownloadWebPageCacheEnabled(wasEnabled);
+    }
+  });
+}
+
+function recordCacheStatus(url, cacheStatus, cacheDetails) {
+  // The tracking handler persists this request-scoped telemetry with the Tool
+  // record. It never enters the model-visible markdown response.
+  const context = graphRequestContext.getStore();
+  if (!context) return;
+  context.downloadWebPageCacheResults ??= [];
+  context.downloadWebPageCacheResults.push({ url, cacheStatus, ...cacheDetails });
+}
 
 // Deliberately below REQUEST_TIMEOUT_MS. retryOnTransientError checks this after
 // a failure to decide whether to start another attempt, so any request that
@@ -292,12 +371,51 @@ const downloadWebPageTool = tool(
     url = normalizeFetchUrl(url);
 
     let markdown;
+    let cacheStatus = "origin";
+    let cacheGeneration;
+    let cacheLookupStatus = 'disabled';
+    let cacheWriteStatus = 'not-attempted';
+    let cacheError;
     try {
-      const result = await downloadWebPage(url);
-      markdown = result.markdown;
+      try {
+        if (await isDownloadWebPageCacheEnabled()) {
+          cacheGeneration = await getDownloadWebPageCacheGeneration();
+          cacheLookupStatus = 'miss';
+          const cached = await readCachedMarkdown(url, cacheGeneration);
+          markdown = cached.markdown;
+          cacheLookupStatus = cached.lookupStatus;
+          if (markdown) cacheStatus = "hit";
+        }
+      } catch (error) {
+        // The cache is an optimization. Coordination or storage failures must
+        // never prevent the answer agent from reading the public source page.
+        if (isMissingCacheObject(error)) {
+          cacheLookupStatus = 'miss';
+        } else {
+          cacheGeneration = undefined;
+          cacheLookupStatus = 'unavailable';
+          cacheError = error.message;
+          console.warn(`Read web page cache unavailable: ${url}`, error.message);
+        }
+      }
 
-      // Successfully received response
-      console.log("Read web page - Status:", result.res.status);
+      if (!markdown) {
+        const result = await downloadWebPage(url);
+        markdown = result.markdown;
+
+        // Successfully received response
+        console.log("Read web page - Status:", result.res.status);
+        if (cacheGeneration) {
+          try {
+            const stored = await cacheMarkdown(url, markdown, cacheGeneration);
+            cacheWriteStatus = stored ? 'stored' : 'skipped';
+          } catch (error) {
+            cacheWriteStatus = 'failed';
+            cacheError = error.message;
+            console.warn(`Failed to cache web page: ${url}`, error.message);
+          }
+        }
+      }
     } catch (error) {
       const req = error.request || error.response?.request;
       // Fallback to config if request object is incomplete (common in timeouts/network errors)
@@ -334,6 +452,12 @@ const downloadWebPageTool = tool(
         `from this page, and do not retry it.`
       );
     }
+
+    recordCacheStatus(url, cacheStatus, {
+      lookupStatus: cacheLookupStatus,
+      writeStatus: cacheWriteStatus,
+      error: cacheError,
+    });
 
     return markdown;
   },

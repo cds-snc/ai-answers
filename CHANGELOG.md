@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.205.0](https://github.com/cds-snc/ai-answers/compare/v1.204.0...v1.205.0) (2026-09-29)
+
+
+### Features
+
+* add webpage download cache ([d49a36b](https://github.com/cds-snc/ai-answers/commit/d49a36b46743872d5a6fcd4c70a1bf8451b20cd9))
+* expire search caches after one day ([c23f6df](https://github.com/cds-snc/ai-answers/commit/c23f6df4e821f062381bf57147857f141028b44d))
+* expire search caches after one day ([8033c2e](https://github.com/cds-snc/ai-answers/commit/8033c2e926b6271a4d91793466db7d5da52e6aa8))
+
+
+### Bug Fixes
+
+* cache hits and logging ([0df1e35](https://github.com/cds-snc/ai-answers/commit/0df1e355bde2ecb8dbe13e87022d58da027a4b1b))
+* create lock for cache deletion if cache is very large ([0fb3367](https://github.com/cds-snc/ai-answers/commit/0fb3367b1e2624e1b885bffe81d84675a8cada17))
+* don't worr about cache count just delete everything ([842f0bb](https://github.com/cds-snc/ai-answers/commit/842f0bbc432e8e1e9a0237d6e4a82fd6c2316851))
+* labels ([5e49451](https://github.com/cds-snc/ai-answers/commit/5e49451a5c51082d03fab9d7421b5f95421e29bc))
+* remove block when cache is being cleared ([ea7103e](https://github.com/cds-snc/ai-answers/commit/ea7103e40802184c4b066ffc09b908120b920d0f))
+* remove block when cache is being cleared ([f24c72e](https://github.com/cds-snc/ai-answers/commit/f24c72e9ee0e10e80ff8022ec85401e9f5a967f0))
+* remove cbc from searchable domains ([dafdfe3](https://github.com/cds-snc/ai-answers/commit/dafdfe39f6567bc57b2fc5954ab6ace9c4d076e5))
+* single s3 bucket call ([a969308](https://github.com/cds-snc/ai-answers/commit/a96930862c9026a105337888cef250ecb50790e8))
+
+
+### Miscellaneous Chores
+
+* add status of cache to logs ([0134a10](https://github.com/cds-snc/ai-answers/commit/0134a10cf1e37a3c7bd1b00ba9958677bd073d5b))
+
+## [1.204.0](https://github.com/cds-snc/ai-answers/compare/v1.203.0...v1.204.0) (2026-09-29)
+
+
+### Features
+
+* question number column in assigned chats table ([25c7099](https://github.com/cds-snc/ai-answers/commit/25c70992818b9fc794e01a90d385a2a812a3d4d3))
+
+
+### Bug Fixes
+
+* announce group cleared or restored when institution changes ([9e5fb65](https://github.com/cds-snc/ai-answers/commit/9e5fb6515660de35efbc7bffa6c07a1a565559b1))
+* keep saved group when arrowing institution; tidy users table ([285c9ab](https://github.com/cds-snc/ai-answers/commit/285c9abdfacaaa23c22242e156459ef3eaf731f3))
+* per-question links in assigned chats table ([888615f](https://github.com/cds-snc/ai-answers/commit/888615fa298a2af12cda36abfe36f55af99df2f5))
+* real links and ARIA fixes on experimental pages ([1efff15](https://github.com/cds-snc/ai-answers/commit/1efff155e1bf9aa83772cfc39f8562ea3e9110ef))
+* rebuild indexes via POST, gated network rejects PUT ([c9c8055](https://github.com/cds-snc/ai-answers/commit/c9c80556384658b15ea3047e766060aea482b4cf))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump ip-address from 10.3.1 to 10.5.1 ([c1dc4c2](https://github.com/cds-snc/ai-answers/commit/c1dc4c2d0c4d94c29480e86247ce5e3626c2cb29))
+* **deps:** bump ip-address from 10.3.1 to 10.5.1 ([68d95c3](https://github.com/cds-snc/ai-answers/commit/68d95c3d9b9d4e7112bbdec88c7b678da2b4330d))
+* **deps:** bump undici from 7.29.0 to 7.30.0 ([9148880](https://github.com/cds-snc/ai-answers/commit/91488800dc3fdff8076579014dea87e29a78aa52))
+* **deps:** bump undici from 7.29.0 to 7.30.0 ([8fcd729](https://github.com/cds-snc/ai-answers/commit/8fcd729f45a5a8c84bcf211397b7b8e11e6c4878))
+
 ## [1.203.0](https://github.com/cds-snc/ai-answers/compare/v1.202.0...v1.203.0) (2026-09-28)
 
 
