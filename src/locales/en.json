@@ -851,6 +851,7 @@
       "chatIdMatchesFound": "{count} matching chats found. Select one to continue.",
       "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
+      "chatNoLongerFound": "This chat can no longer be found.",
       "fetchFailed": "Failed to load data. Please try again.",
       "fetchError": "Failed to load data: {error}",
       "searchResultsAnnouncement": "{count} results found.",
