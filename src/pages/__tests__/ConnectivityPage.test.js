@@ -33,9 +33,12 @@ vi.mock('../../services/DataStoreService.js', () => ({
   },
 }));
 
+// Keys by default; a test can give one key a real template to check what's
+// filled in.
+const mockTemplates = {};
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({
-    t: (key) => key,
+    t: (key) => mockTemplates[key] ?? key,
   }),
 }));
 
@@ -160,6 +163,27 @@ describe('ConnectivityPage StatusMessage roles', () => {
     await waitForAnnouncement('connectivity.testComplete');
     expect(document.querySelector('.status-message--error-box')).toBeNull();
   });
+
+  it('announces all four summary counts, including not configured', async () => {
+    mockTemplates['connectivity.testComplete'] = 'done {connected}/{errors}/{warnings}/{notConfigured}';
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        summary: { connected: 2, errors: 1, warnings: 0, notConfigured: 1 },
+        timestamp: new Date().toISOString(),
+        services: [],
+      }),
+    });
+
+    try {
+      render(<ConnectivityPage lang="en" />);
+      fireEvent.click(await screen.findByText('connectivity.runTests'));
+      await waitForAnnouncement('done 2/1/0/1');
+    } finally {
+      delete mockTemplates['connectivity.testComplete'];
+    }
+  });
 });
 
 describe('ConnectivityPage failure simulation: a compact On/Off row per service', () => {
@@ -276,5 +300,162 @@ describe('ConnectivityPage failure simulation: a compact On/Off row per service'
 
     await waitForAnnouncement('connectivity.simulation.saveFailed', 'assertive');
     expect(pressed('database')).toEqual(['false', 'true']);
+  });
+});
+
+describe('ConnectivityPage failure simulation re-runs the test when results are showing', () => {
+  const originalFetch = global.fetch;
+  let settings;
+  const okResponse = () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      summary: { connected: 3, errors: 0, warnings: 0, notConfigured: 0 },
+      timestamp: new Date().toISOString(),
+      services: [],
+    }),
+  });
+
+  beforeEach(() => {
+    settings = {
+      'connectivity.simulation.database': 'false',
+      'connectivity.simulation.search': 'false',
+      'connectivity.simulation.llm': 'false',
+    };
+    mockGetSettingStrict.mockImplementation(async (key, defaultValue = null) => settings[key] ?? defaultValue);
+    mockSetSetting.mockImplementation(async (key, value) => { settings[key] = value; return {}; });
+    global.fetch = vi.fn().mockResolvedValue(okResponse());
+  });
+
+  afterEach(() => {
+    cleanup();
+    global.fetch = originalFetch;
+    mockGetSettingStrict.mockReset();
+    mockSetSetting.mockReset();
+  });
+
+  const onButton = (service) => within(
+    screen.getByRole('group', { name: `connectivity.simulation.labels.${service}` })
+  ).getByRole('button', { name: 'connectivity.simulation.on' });
+  const whenLoaded = () => waitFor(() => expect(onButton('database').getAttribute('aria-disabled')).toBeNull());
+  const runOnce = async () => {
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+    await screen.findByRole('heading', { level: 2, name: 'connectivity.summaryHeading' });
+    await waitFor(() => expect(screen.getByText('connectivity.runTests')).toBeTruthy());
+  };
+
+  it('re-runs the test after a toggle saves, keeping focus on the toggle', async () => {
+    render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+    await runOnce();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    const toggle = onButton('database');
+    toggle.focus();
+    fireEvent.click(toggle);
+
+    await waitForAnnouncement('connectivity.simulation.announceOn');
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    await waitForAnnouncement('connectivity.testComplete');
+    expect(document.activeElement).toBe(onButton('database'));
+  });
+
+  it('only saves when no results are showing yet', async () => {
+    render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+
+    fireEvent.click(onButton('database'));
+
+    await waitForAnnouncement('connectivity.simulation.announceOn');
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not re-run when the save fails', async () => {
+    render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+    await runOnce();
+    mockSetSetting.mockRejectedValue(new Error('save boom'));
+
+    fireEvent.click(onButton('database'));
+
+    await waitForAnnouncement('connectivity.simulation.saveFailed', 'assertive');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('dims the results with a scoped overlay while a re-run replaces them', async () => {
+    const { container } = render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+
+    let finishFirst;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve; }));
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    // First run: no results to cover yet.
+    expect(container.querySelector('.loading-overlay')).toBeNull();
+    finishFirst(okResponse());
+    await screen.findByRole('heading', { level: 2, name: 'connectivity.summaryHeading' });
+    await waitFor(() => expect(screen.getByText('connectivity.runTests')).toBeTruthy());
+
+    let finishRerun;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => { finishRerun = resolve; }));
+    fireEvent.click(onButton('database'));
+    const overlay = await waitFor(() => {
+      const el = container.querySelector('.connectivity-results > .loading-overlay--scoped');
+      expect(el).not.toBeNull();
+      return el;
+    });
+    expect(overlay.textContent).toBe('connectivity.testing');
+
+    finishRerun(okResponse());
+    await waitFor(() => expect(container.querySelector('.loading-overlay')).toBeNull());
+  });
+
+  it('re-runs when the first run finishes while a toggle is still saving', async () => {
+    render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+
+    let finishRun;
+    global.fetch.mockImplementationOnce(() => new Promise((resolve) => { finishRun = resolve; }));
+    let finishSave;
+    mockSetSetting.mockImplementationOnce((key, value) => new Promise((resolve) => {
+      finishSave = () => { settings[key] = value; resolve({}); };
+    }));
+
+    // No results yet: start a run, then change a toggle while it runs.
+    fireEvent.click(screen.getByText('connectivity.runTests'));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    fireEvent.click(onButton('database'));
+    await waitFor(() => expect(mockSetSetting).toHaveBeenCalled());
+
+    // The run finishes first, then the save.
+    finishRun(okResponse());
+    await screen.findByRole('heading', { level: 2, name: 'connectivity.summaryHeading' });
+    finishSave();
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+  });
+
+  it('runs once more after the current run when toggles change during it', async () => {
+    render(<ConnectivityPage lang="en" />);
+    await whenLoaded();
+    await runOnce();
+
+    const pending = [];
+    global.fetch.mockImplementation(() => new Promise((resolve) => { pending.push(resolve); }));
+
+    fireEvent.click(onButton('database'));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    fireEvent.click(onButton('search'));
+    await waitFor(() => expect(mockSetSetting).toHaveBeenCalledWith('connectivity.simulation.search', 'true'));
+    fireEvent.click(onButton('llm'));
+    await waitFor(() => expect(mockSetSetting).toHaveBeenCalledWith('connectivity.simulation.llm', 'true'));
+    // Two changes during the run - still only one more run queued.
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    pending[0](okResponse());
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(3));
+    pending[1](okResponse());
+    await waitForAnnouncement('connectivity.testComplete');
+    expect(global.fetch).toHaveBeenCalledTimes(3);
   });
 });

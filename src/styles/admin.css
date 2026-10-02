@@ -61,6 +61,19 @@
   isolation: isolate;
 }
 
+/* ConnectivityPage.js's results, for its scoped LoadingOverlay. The results
+   run long, so the box sits at the top, near the controls that start a run,
+   not centred below the fold. */
+.connectivity-results {
+  position: relative;
+  isolation: isolate;
+}
+
+.connectivity-results .loading-overlay {
+  align-items: flex-start;
+  padding-top: var(--gcds-spacing-400);
+}
+
 /* TODO (design review, low risk): needs review for small screens. */
 .loading-overlay-content {
   display: flex;

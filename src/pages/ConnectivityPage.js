@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { GcdsContainer, GcdsButton, GcdsText } from '@gcds-core/components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import DataStoreService from '../services/DataStoreService.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { formatNumber } from '../utils/numberFormat.js';
 
@@ -133,6 +134,58 @@ const ConnectivityPage = ({ lang = 'en' }) => {
         };
     }, []);
 
+    // A run already in flight queues one more run instead of overlapping,
+    // however many toggles change during it - its results may predate them.
+    const runInFlightRef = useRef(false);
+    const rerunPendingRef = useRef(false);
+    // Read after a toggle's save, not from the click-time render: a run can
+    // finish while the save is still in progress.
+    const hasResultsRef = useRef(false);
+
+    const runTests = useCallback(async () => {
+        if (runInFlightRef.current) {
+            rerunPendingRef.current = true;
+            return;
+        }
+        runInFlightRef.current = true;
+        setLoading(true);
+
+        try {
+            do {
+                rerunPendingRef.current = false;
+                setError(null);
+                try {
+                    const response = await fetch('/api/util/util-connectivity', {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    setResults(data);
+                    hasResultsRef.current = true;
+                    announce(
+                        t('connectivity.testComplete')
+                            .replace('{connected}', data.summary.connected)
+                            .replace('{errors}', data.summary.errors)
+                            .replace('{warnings}', data.summary.warnings)
+                            .replace('{notConfigured}', data.summary.notConfigured)
+                    );
+                } catch (err) {
+                    setError(err.message);
+                }
+            } while (rerunPendingRef.current);
+        } finally {
+            runInFlightRef.current = false;
+            setLoading(false);
+        }
+    }, [t]);
+
     const toggleSimulation = useCallback(async (service) => {
         const setting = SIMULATION_SETTINGS.find((entry) => entry.service === service);
         if (!setting) return;
@@ -147,44 +200,15 @@ const ConnectivityPage = ({ lang = 'en' }) => {
             // aria-pressed changing after an async save isn't reliably read out.
             announce(t(nextValue ? 'connectivity.simulation.announceOn' : 'connectivity.simulation.announceOff')
                 .replace('{service}', t(`connectivity.simulation.labels.${service}`)));
+            // Results on screen (or on their way) no longer match the settings.
+            if (hasResultsRef.current || runInFlightRef.current) runTests();
         } catch (err) {
             console.error(`Error saving ${service} failure simulation:`, err);
             setSimulationSaveFailed(service);
         } finally {
             setSavingSimulation((current) => ({ ...current, [service]: false }));
         }
-    }, [simulatedFailures, t]);
-
-    const runTests = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch('/api/util/util-connectivity', {
-                method: 'GET',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            setResults(data);
-            announce(
-                t('connectivity.testComplete')
-                    .replace('{connected}', data.summary.connected)
-                    .replace('{errors}', data.summary.errors)
-                    .replace('{warnings}', data.summary.warnings)
-            );
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    }, [t]);
+    }, [simulatedFailures, runTests, t]);
 
     return (
         <GcdsContainer layout="page" className="mb-600">
@@ -285,7 +309,10 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                 up establishing a shared "guard the response shape" pattern
                 worth reusing here too. */}
             {results && (
-                <>
+                // Positioned, isolated anchor for the scoped overlay that dims
+                // these results while a re-run replaces them.
+                <div className="connectivity-results">
+                    {loading && <LoadingOverlay scoped message={t('connectivity.testing')} />}
                     <h2 className="mb-300">{t('connectivity.summaryHeading')}</h2>
                     <dl style={{
                         display: 'grid',
@@ -336,7 +363,7 @@ const ConnectivityPage = ({ lang = 'en' }) => {
                     {results.services.map((service, index) => (
                         <ServiceCard key={index} service={service} t={t} lang={lang} />
                     ))}
-                </>
+                </div>
             )}
         </GcdsContainer>
     );

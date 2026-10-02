@@ -2219,7 +2219,7 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
-    "testComplete": "Connectivity test complete: {connected} connected, {errors} errors, {warnings} warnings.",
+    "testComplete": "Connectivity test complete: {connected} connected, {errors} error(s), {warnings} warning(s), {notConfigured} not configured.",
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
