@@ -17,6 +17,26 @@ const SEARCH_REQUEST_TIMEOUT_MS = 30000;
 // contextSearch below, since it changes when a slow-but-successful search
 // becomes a failure.
 const RETRY_TIME_BUDGET_MS = 10000;
+const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
+
+function splitCoveoQuery(query) {
+    const restrictions = [];
+    let keywords = query.replace(/\binurl:([A-Za-z0-9][A-Za-z0-9._-]*)/gi, (_directive, segment) => {
+        restrictions.push(`@uri=${segment}`);
+        return '';
+    });
+    keywords = keywords.replace(/\bsite:([^\s]+)/gi, (directive, value) => {
+        const hostname = value.toLowerCase().replace(/\.$/, '');
+        if (!HOSTNAME_PATTERN.test(hostname)) return directive;
+        restrictions.push(`@hostname=="${hostname}"`);
+        return '';
+    }).replace(/\s+/g, ' ').trim();
+
+    return {
+        keywords,
+        advancedQuery: restrictions.join(' AND '),
+    };
+}
 
 /**
  * Extracts search results from the Coveo Search API response.
@@ -70,7 +90,19 @@ function getSourceOrganization(raw = {}) {
  * its body stream die.
  */
 async function fetchSearchResults(query, lang) {
-    const language = lang && lang.toLowerCase().startsWith('fr') ? 'French' : 'English';
+    const isFrench = lang && lang.toLowerCase().startsWith('fr');
+    const language = isFrench ? 'French' : 'English';
+    const { keywords, advancedQuery } = splitCoveoQuery(query);
+    const languageFilter = `@language=${language}`;
+    const filters = [languageFilter, advancedQuery].filter(Boolean);
+    const requestBody = {
+        q: keywords,
+        aq: filters.join(' AND '),
+        locale: isFrench ? 'fr-CA' : 'en-CA',
+        originLevel3: isFrench
+            ? 'https://www.canada.ca/fr/sr/srb.html'
+            : 'https://www.canada.ca/en/sr/srb.html',
+    };
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
@@ -80,11 +112,7 @@ async function fetchSearchResults(query, lang) {
             "Accept": "application/json",
             "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
-        body: JSON.stringify({
-            q: `@language=${language} ${query}`,
-            locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
-            forwardLanguageToCoveoIndex: true,
-        }),
+        body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -101,7 +129,11 @@ async function fetchSearchResults(query, lang) {
         error.status = response.status;
         throw error;
     }
-    return await response.json();
+    const results = await response.json();
+    const returnedResults = Array.isArray(results?.results) ? results.results : [];
+    const artRecommendedResults = returnedResults.filter((result) => result.isRecommendation === true);
+    console.log('Coveo ART used:', artRecommendedResults.length > 0);
+    return results;
 }
 
 /**

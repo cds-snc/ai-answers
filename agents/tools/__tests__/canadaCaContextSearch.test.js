@@ -10,15 +10,19 @@ describe('canadaCaContextSearch retry', () => {
     const okResponse = () => ({
         ok: true,
         status: 200,
-        json: async () => ({ results: [{
-            clickUri: 'https://x',
+        json: async () => ({
+            executionReport: { children: [{ name: 'MockPipelineStep' }] },
+            results: [{
+            clickUri: 'https://sac-isc.gc.ca/ised',
             title: 'T',
             excerpt: 'E',
+            isRecommendation: true,
             raw: {
                 sysauthor: ['Example organization', '', 'Second organization'],
                 department: 'Example department',
             },
-        }] }),
+            }],
+        }),
     });
 
     const errorResponse = (status) => ({
@@ -91,10 +95,12 @@ describe('canadaCaContextSearch retry', () => {
             }),
         });
         expect(JSON.parse(request.body)).toEqual({
-            q: '@language=English q',
+            q: 'q',
+            aq: '@language=English',
             locale: 'en-CA',
-            forwardLanguageToCoveoIndex: true,
+            originLevel3: 'https://www.canada.ca/en/sr/srb.html',
         });
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', true);
     });
 
     it('adds the French language qualifier for French searches', async () => {
@@ -104,9 +110,34 @@ describe('canadaCaContextSearch retry', () => {
 
         const [, request] = fetchMock.mock.calls[0];
         expect(JSON.parse(request.body)).toEqual({
-            q: '@language=French terme de recherche',
+            q: 'terme de recherche',
+            aq: '@language=French',
             locale: 'fr-CA',
-            forwardLanguageToCoveoIndex: true,
+            originLevel3: 'https://www.canada.ca/fr/sr/srb.html',
+        });
+    });
+
+    it('moves generated inurl restrictions from q into Coveo advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('permit application inurl:ised', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'permit application',
+            aq: '@language=English AND @uri=ised',
+        });
+    });
+
+    it('moves generated site restrictions into Coveo hostname advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('forms site:sac-isc.gc.ca', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'forms',
+            aq: '@language=English AND @hostname=="sac-isc.gc.ca"',
         });
     });
 
@@ -123,6 +154,7 @@ describe('canadaCaContextSearch retry', () => {
         expect(result.results).toContain('Link: No link available');
         expect(result.results).toContain('Summary: No summary available');
         expect(result.results).not.toContain('undefined');
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', false);
     });
 
     // Guards the `error.status = response.status` line: fetch reports the status
