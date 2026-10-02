@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.206.0](https://github.com/cds-snc/ai-answers/compare/v1.205.0...v1.206.0) (2026-10-02)
+
+
+### Features
+
+* move the Sentinel forwarder to the Logs Ingestion API ([#1883](https://github.com/cds-snc/ai-answers/issues/1883)) ([72ab2b6](https://github.com/cds-snc/ai-answers/commit/72ab2b6804353618329dc0c4984ebea7c54feb97))
+
+
+### Bug Fixes
+
+* add announcedVia to focus rule ([24119a0](https://github.com/cds-snc/ai-answers/commit/24119a0df7d8336a0517cb276f600299d4dba5ed))
+* compact the vector page metadata lookup table ([65b69b7](https://github.com/cds-snc/ai-answers/commit/65b69b71cf3c0af5e3c0aff547f97e732937e592))
+* compact the vector page metadata lookup table ([1c685b2](https://github.com/cds-snc/ai-answers/commit/1c685b2229b3e7ff553404c3abc2807509e425a9))
+* connectivity page failure toggles and a11y fixes ([ce88413](https://github.com/cds-snc/ai-answers/commit/ce8841310464f75397358fb7847f2831215386df))
+* connectivity page failure toggles and a11y fixes ([76e62b2](https://github.com/cds-snc/ai-answers/commit/76e62b2431f6ae31e29e2390810cf68d33ec02c7))
+* dim connectivity results while a re-run replaces them ([d190e23](https://github.com/cds-snc/ai-answers/commit/d190e23debb41fe80083f3c2adb1b44143fd7a40))
+* eval admin page outcomes, date fields and metrics a11y ([71ae47b](https://github.com/cds-snc/ai-answers/commit/71ae47bb6709fa66760f6217b314346d57c2927a))
+* focus the outcome message when a picked chat fails, cover more focus-loss in a11y skill ([631b8f7](https://github.com/cds-snc/ai-answers/commit/631b8f79a985454eb9b66cbedc3a1dcc360506f5))
+* keep focus on pick chat fails, cover more focus-loss in a11y skill ([3464e6e](https://github.com/cds-snc/ai-answers/commit/3464e6e4650b76369a928e26b92627d503d64cc4))
+* re-run the connectivity test when a failure toggle changes ([194549d](https://github.com/cds-snc/ai-answers/commit/194549d2032937051544835155a01fcfe3194e0c))
+* re-run the connectivity test when a failure toggle changes ([2989744](https://github.com/cds-snc/ai-answers/commit/2989744473e45d5cfe31d19bbdad0910224431bb))
+* rebuild indexes in background, announce result and failures ([f796b50](https://github.com/cds-snc/ai-answers/commit/f796b50eb09bc68881041bff602a8c57c4a4a9e1))
+* rebuild indexes in background, announce result and failures a11y ([e3d16e4](https://github.com/cds-snc/ai-answers/commit/e3d16e40aa6a910f6c528b42e7ff0b717b20dfdd))
+* save button for chat evaluation options ([f268619](https://github.com/cds-snc/ai-answers/commit/f2686193681b82e516ea59bd6fdc409877b78484))
+* save button for chat evaluation options ([6b5142e](https://github.com/cds-snc/ai-answers/commit/6b5142eb89136539919f057604c3730f1075a4ed))
+* separate web page cache clear from section save ([cf2c05a](https://github.com/cds-snc/ai-answers/commit/cf2c05aa9e669abf2b86db1bf993a7e9f23c507c))
+* separate web page cache clear from section save ([524ff9c](https://github.com/cds-snc/ai-answers/commit/524ff9c4fd4795da3ed8ed81b0dfe54cffa35ab9))
+* show a picked chat that's suddenly gone as an error ([f204bf4](https://github.com/cds-snc/ai-answers/commit/f204bf486ee41ef47c81a166ddef47c48cd6ba23))
+* vector page field styling, lists and chat ID lookups a11y ([aa3b304](https://github.com/cds-snc/ai-answers/commit/aa3b304d64e04fa96817b4720e3c408cc265a5ac))
+* vector page field styling, lists, controls and chat ID lookups a11y ([d20fedb](https://github.com/cds-snc/ai-answers/commit/d20fedbe68eda587c17e835904b4457ad8f890a7))
+* warn while chat options have unsaved choices ([c17a160](https://github.com/cds-snc/ai-answers/commit/c17a160e4a25d486727a5e5262fcc00b36e1a8c0))
+
+
+### Documentation
+
+* note StatusMessage announce={false} for page-load results ([4b3ce61](https://github.com/cds-snc/ai-answers/commit/4b3ce619c43e24e19db0f03b49208f754c8b0174))
+
+
+### Styles
+
+* import database as a primary button ([f90de5f](https://github.com/cds-snc/ai-answers/commit/f90de5f7248ffe7d0b6affdda4aff2c1b51b9081))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.18.1 to 1.20.0 ([4bc2076](https://github.com/cds-snc/ai-answers/commit/4bc20769be9ba79aabc6e8a3557db880549bc150))
+* **deps:** bump axios from 1.18.1 to 1.20.0 ([cef11b5](https://github.com/cds-snc/ai-answers/commit/cef11b53d7e726335368aa64ec7f16d0a0d8753b))
+* **deps:** bump ip-address from 10.5.1 to 10.7.1 ([826518a](https://github.com/cds-snc/ai-answers/commit/826518a6d5d7dc98da83fedd3ab35146ba347cf7))
+* **deps:** bump ip-address from 10.5.1 to 10.7.1 ([4ba64f4](https://github.com/cds-snc/ai-answers/commit/4ba64f448d339fc772752ca9a8c8633a5c6cbf8d))
+* **deps:** bump moment from 2.30.1 to 2.31.0 ([5e8538e](https://github.com/cds-snc/ai-answers/commit/5e8538e2a3d95f37c3da6d68de08dba3c154ef70))
+* **deps:** bump moment from 2.30.1 to 2.31.0 ([79b314c](https://github.com/cds-snc/ai-answers/commit/79b314cf9dc08f7c5dfd4df4ac51c0411f2556b5))
+* **deps:** bump piscina from 5.2.0 to 5.3.2 ([5d8f8c7](https://github.com/cds-snc/ai-answers/commit/5d8f8c7cf6e4720d7fe4fcf7e174fc14b79cdb5a))
+* **deps:** bump piscina from 5.2.0 to 5.3.2 ([9fc3b9e](https://github.com/cds-snc/ai-answers/commit/9fc3b9e92626076f61dae50cf4ea7833801473d8))
+
 ## [1.205.0](https://github.com/cds-snc/ai-answers/compare/v1.204.0...v1.205.0) (2026-09-29)
 
 
