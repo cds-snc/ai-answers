@@ -3467,6 +3467,24 @@ table.table-slim-padding > tbody > tr > th,
 table.table-slim-padding > tbody > tr > td {
   padding: 4px 10px;
 }
+
+.dt-container.metadata-lookup-scroll {
+  font-size: var(--gcds-font-sizes-text-small-mobile);
+}
+/* VectorPage.js metadata lookup: a mismatch is marked with text ("! a → b")
+   as well as colour. */
+.metadata-mismatch {
+  color: var(--gcds-danger-text);
+  font-weight: var(--gcds-font-weights-bold);
+}
+.metadata-lookup-id-label {
+  color: var(--gcds-text-secondary);
+  font-weight: 700;
+}
+/* Doubled class to beat .canada-ca-dl-columns--single's 65ch, defined later. */
+.canada-ca-dl-columns.metadata-lookup-summary {
+  max-width: 50ch;
+}
 /* .table-fixed-layout - opt-in for a table whose rows arrive one at a
    time (VectorPage.js's DocDB capability probes): with auto layout every
    new row re-measures every column and the whole table shifts. Pair with a

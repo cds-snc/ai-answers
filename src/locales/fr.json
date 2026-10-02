@@ -2045,27 +2045,27 @@
       "lookup": "Rechercher les métadonnées",
       "loading": "Recherche des métadonnées...",
       "failed": "Échec de la recherche des métadonnées des incorporations.",
+      "mismatch": "Non-concordance : attaché",
+      "mismatchTo": "mais les métadonnées contiennent",
+      "missingDisplayId": "(ID manquant)",
+      "ids": {
+        "interactionObject": "Objet d’interaction",
+        "embedding": "Incorporation"
+      },
       "chatSummary": {
-        "chatId": "ID du clavardage :",
-        "pageLanguage": "Langue de la page :",
-        "interactions": "Interactions :",
-        "embeddings": "Incorporations :"
+        "chatId": "ID du clavardage",
+        "interactions": "Interactions",
+        "embeddings": "Incorporations"
       },
       "columns": {
         "row": "Ligne",
+        "displayId": "ID d’affichage",
+        "ids": "ID",
+        "expertFeedbackId": "ID de rétroaction d’expert",
+        "score": "Score",
+        "pageLanguage": "Langue de la page",
         "status": "État",
-        "interactionObjectId": "ID objet de l’interaction",
-        "interactionDisplayId": "ID affiché de l’interaction",
-        "embeddingId": "ID de l’incorporation",
-        "embeddingInteractionId": "ID d’interaction de l’incorporation",
-        "attachedExpertFeedbackId": "ID de rétroaction experte attachée",
-        "metadataExpertFeedbackId": "ID de rétroaction experte des métadonnées",
-        "attachedScore": "Score attaché",
-        "metadataScore": "Score des métadonnées",
-        "chatPageLanguage": "Langue de la page du clavardage",
-        "metadataPageLanguage": "Langue de page des métadonnées",
         "interactionLanguage": "Langue de l’interaction",
-        "metadataInteractionLanguage": "Langue d’interaction des métadonnées",
         "neverStale": "Jamais obsolète"
       },
       "statuses": {

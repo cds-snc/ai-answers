@@ -69,7 +69,7 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, onClick, disabled, buttonRole }) => (
     <button onClick={onClick} disabled={disabled} data-role={buttonRole}>{children}</button>
   ),
-  GcdsDetails: ({ children }) => <details>{children}</details>,
+  GcdsDetails: ({ children, tabIndex }) => <details tabIndex={tabIndex}>{children}</details>,
   GcdsIcon: ({ name }) => <span data-icon={name} />,
 }));
 
@@ -829,5 +829,156 @@ describe('VectorPage metadata lookup partial chat ID search', () => {
     // A typed search, not a pick - announced, not focused.
     expect(message.closest('[data-announced-via]').getAttribute('data-announced-via')).toBe('live-announcer-polite');
     expect(mockLookupMetadata).not.toHaveBeenCalled();
+  });
+});
+
+describe('VectorPage metadata lookup table — one row per embedding, mismatches marked', () => {
+  const CHAT_ID = '3f2b8c1e-5a4d-4e6f-9a1b-2c3d4e5f6a7b';
+  const baseRow = {
+    rowNumber: 1,
+    interactionDisplayId: '7',
+    interactionObjectId: 'int-1',
+    embeddingId: 'emb-1',
+    embeddingInteractionId: 'int-1',
+    attachedExpertFeedbackId: 'ef-1',
+    metadataExpertFeedbackId: 'ef-1',
+    attachedExpertFeedbackTotalScore: 90,
+    metadataExpertFeedbackTotalScore: 90,
+    chatPageLanguage: 'en',
+    metadataPageLanguage: 'en',
+    interactionLanguage: 'fr',
+    metadataInteractionLanguage: 'fr',
+    metadataStatus: 'metadataMatches',
+    metadataExpertFeedbackNeverStale: false,
+  };
+
+  afterEach(() => {
+    cleanup();
+    resetMocks();
+    mockGetChat.mockReset();
+    mockLookupMetadata.mockReset();
+  });
+
+  const lookUp = async (rows) => {
+    mockGetChat.mockResolvedValue({ chat: { chatId: CHAT_ID } });
+    mockLookupMetadata.mockResolvedValue({
+      chat: { chatId: CHAT_ID, pageLanguage: 'en', interactionCount: rows.length, embeddingCount: rows.length },
+      rows,
+    });
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.change(await screen.findByLabelText('vector.chatIdLabel'), { target: { value: CHAT_ID } });
+    fireEvent.click(screen.getByText('vector.metadataLookup.lookup'));
+    const table = await screen.findByRole('table', { name: 'vector.metadataLookup.title' });
+    return table;
+  };
+  const cells = (table) => [...table.querySelectorAll('tbody tr:first-child td')];
+
+  it('has eight columns, one row per embedding', async () => {
+    const table = await lookUp([baseRow, { ...baseRow, rowNumber: 2, interactionDisplayId: '8', interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2' }]);
+    const headers = [...table.querySelectorAll('thead th')].map((th) => th.textContent);
+    expect(headers).toEqual([
+      'vector.metadataLookup.columns.row',
+      'vector.metadataLookup.columns.status',
+      'vector.metadataLookup.columns.displayId',
+      'vector.metadataLookup.columns.ids',
+      'vector.metadataLookup.columns.expertFeedbackId',
+      'vector.metadataLookup.columns.score',
+      'vector.metadataLookup.columns.pageLanguage',
+      'vector.metadataLookup.columns.interactionLanguage',
+    ]);
+    expect(table.querySelectorAll('tbody tr')).toHaveLength(2);
+  });
+
+  it('shows a value once when the attached value and the metadata agree', async () => {
+    const table = await lookUp([baseRow]);
+    const [, , , , feedback, score, pageLang, interactionLang] = cells(table);
+    expect(feedback.textContent).toBe('ef-1');
+    expect(score.textContent).toBe('90');
+    expect(pageLang.textContent).toBe('en');
+    expect(interactionLang.textContent).toBe('fr');
+    expect(table.querySelector('.metadata-mismatch')).toBeNull();
+  });
+
+  it('marks a mismatch with words for screen readers, not colour alone', async () => {
+    const table = await lookUp([{ ...baseRow, metadataExpertFeedbackTotalScore: 75 }]);
+    const score = cells(table)[5];
+    const mark = score.querySelector('.metadata-mismatch');
+    expect(mark).toBeTruthy();
+    // Read as "Mismatch: attached 90 but metadata has 75"; the "!" and arrow are visual only.
+    const spoken = [...mark.childNodes]
+      .filter((n) => !(n.getAttribute && n.getAttribute('aria-hidden') === 'true'))
+      .map((n) => n.textContent.trim())
+      .filter(Boolean);
+    expect(spoken).toEqual(['vector.metadataLookup.mismatch', '90', 'vector.metadataLookup.mismatchTo', '75']);
+    expect(mark.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
+  });
+
+  it('shows saved values plainly when the interaction has no embedding', async () => {
+    const table = await lookUp([{
+      ...baseRow,
+      embeddingId: null,
+      embeddingInteractionId: null,
+      metadataExpertFeedbackId: null,
+      metadataExpertFeedbackTotalScore: null,
+      metadataPageLanguage: null,
+      metadataInteractionLanguage: null,
+      metadataStatus: 'missingEmbedding',
+    }]);
+    const [, , , , feedback, score, pageLang, interactionLang] = cells(table);
+    expect(table.querySelector('.metadata-mismatch')).toBeNull();
+    expect([feedback, score, pageLang, interactionLang].map((c) => c.textContent)).toEqual(['ef-1', '90', 'en', 'fr']);
+  });
+
+  it('shows the never-stale pill in the status cell only when set', async () => {
+    const table = await lookUp([
+      { ...baseRow, metadataExpertFeedbackNeverStale: true },
+      { ...baseRow, rowNumber: 2, interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2' },
+    ]);
+    const [first, second] = [...table.querySelectorAll('tbody tr')].map((tr) => tr.querySelectorAll('td')[1]);
+    expect(first.querySelector('.label')?.textContent).toBe('vector.metadataLookup.columns.neverStale');
+    expect(second.querySelector('.label')).toBeNull();
+  });
+
+  it('shows the row number first and says when the display ID is missing', async () => {
+    const table = await lookUp([{ ...baseRow, rowNumber: 3, interactionDisplayId: null }]);
+    expect(cells(table)[0].textContent).toBe('3');
+    expect(cells(table)[2].textContent).toBe('vector.metadataLookup.missingDisplayId');
+  });
+
+  it('draws lines between rows', async () => {
+    const table = await lookUp([baseRow]);
+    expect(table.classList.contains('row-border')).toBe(true);
+  });
+
+  it('lists the chat summary as label/value pairs, without the page language', async () => {
+    await lookUp([baseRow]);
+    const summary = document.getElementById('metadata-lookup-result');
+    expect(summary.tagName).toBe('DL');
+    expect([...summary.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual([
+      'vector.metadataLookup.chatSummary.chatId',
+      'vector.metadataLookup.chatSummary.interactions',
+      'vector.metadataLookup.chatSummary.embeddings',
+    ]);
+    expect([...summary.querySelectorAll('dd')].map((dd) => dd.textContent)).toEqual([CHAT_ID, '1', '1']);
+  });
+});
+
+describe('VectorPage DocDB raw results disclosure', () => {
+  afterEach(() => {
+    cleanup();
+    resetMocks();
+  });
+
+  it('adds no extra tab stop before the disclosure\'s own toggle', async () => {
+    mockRunDocdb8CapabilityTest.mockResolvedValue({ test: { supported: true, resultCount: 3, durationMs: 12 } });
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.docdb8Capability.run'));
+    await screen.findByText('vector.docdb8Capability.probes.annAllThenFeedbackPostFilter', { selector: 'td' }).catch(() => null);
+    const details = await waitFor(() => {
+      const d = document.querySelector('details');
+      expect(d).toBeTruthy();
+      return d;
+    });
+    expect(details.hasAttribute('tabindex')).toBe(false);
   });
 });
