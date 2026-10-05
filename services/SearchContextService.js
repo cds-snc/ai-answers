@@ -7,20 +7,25 @@ import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
 import { SettingsService } from './SettingsService.js';
 import { readSearchResultCache, writeSearchResultCache } from './SearchResultCacheService.js';
+import { getSearchResultCacheGeneration } from './CacheCoordinator.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
     const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
     const cacheInput = { provider, query, lang };
 
-    if (SettingsService.get('searchContext.cache.enabled') === 'true') {
+    const cacheEnabled = SettingsService.get('searchContext.cache.enabled') === 'true';
+    let cacheGeneration;
+    if (cacheEnabled) {
         try {
-            const cached = await readSearchResultCache(cacheInput);
+            cacheGeneration = await getSearchResultCacheGeneration();
+            const cached = await readSearchResultCache(cacheInput, cacheGeneration);
             if (cached !== null) {
                 ServerLoggingService.debug('Search cache hit.', chatId, { ...cacheInput, cacheStatus: 'hit' });
                 ServiceCallMetricsService.recordCacheHit({ service: 'search', type: provider });
                 return { ...cached, cacheStatus: 'hit' };
             }
+            ServiceCallMetricsService.recordCacheMiss({ service: 'search', type: provider });
         } catch (error) {
             ServerLoggingService.warn('Search cache read failed; using provider.', chatId, {
                 ...cacheInput,
@@ -35,6 +40,7 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
     // return the same permanent error. The tools call back here on each attempt
     // so the retry metric still gets recorded.
     try {
+        ServiceCallMetricsService.recordProviderCall({ service: 'search', type: provider });
         const result = await searchFunction(query, lang, {
             // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
             onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
@@ -46,16 +52,20 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
         if (result?.failed) {
             ServiceCallMetricsService.recordError({ service: 'search', type: provider });
         }
-        if (!result?.failed && SettingsService.get('searchContext.cache.enabled') === 'true') {
+        if (!result?.failed && cacheGeneration) {
             try {
-                // Caching is an optimization. Do not make a chat wait for a
-                // storage write after the provider already returned results.
-                void writeSearchResultCache(cacheInput, result).catch((error) => {
-                    ServerLoggingService.warn('Search cache write failed.', chatId, {
-                        ...cacheInput,
-                        error: error.message,
+                const cacheWrite = writeSearchResultCache(cacheInput, result, cacheGeneration);
+                // Vercel runs in Lambda, which can freeze unfinished work after responding.
+                if (SettingsService.get('deploymentMode') === 'Vercel') {
+                    await cacheWrite;
+                } else {
+                    void cacheWrite.catch((error) => {
+                        ServerLoggingService.warn('Search cache write failed.', chatId, {
+                            ...cacheInput,
+                            error: error.message,
+                        });
                     });
-                });
+                }
             } catch (error) {
                 ServerLoggingService.warn('Search cache write failed.', chatId, {
                     ...cacheInput,
