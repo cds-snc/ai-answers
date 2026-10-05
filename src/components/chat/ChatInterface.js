@@ -883,7 +883,7 @@ const ChatInterface = ({
                               answerNumber={reviewAnswerNumber}
                             />
                             <DownloadPanel message={message} t={adminT} lang={effectiveAdminLang} answerNumber={reviewAnswerNumber} />
-                            <SearchResultsPanel message={message} t={adminT} answerNumber={reviewAnswerNumber} />
+                            <SearchResultsPanel message={message} t={adminT} lang={effectiveAdminLang} chatLang={lang} answerNumber={reviewAnswerNumber} />
                             {/* lang stays the CURRENT chat's own language here, not adminLang -
                                 it routes buildChatReviewHref to a DIFFERENT matched chat, which
                                 has no known pageLanguage of its own available to this panel

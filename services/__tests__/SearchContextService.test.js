@@ -93,11 +93,16 @@ describe('SearchContextService', () => {
         // I will update mock to return object.
     });
 
-    it('detects french language from translationData', async () => {
+    it.each([
+        ['en', 'fra', 'fr'],
+        ['fr', 'eng', 'fr'],
+        ['en', 'spa', 'en'],
+    ])('searches in %s page / %s question language as %s', async (pageLanguage, originalLanguage, expectedLang) => {
         const result = await SearchContextService.search({
-            translationData: { originalLanguage: 'fr' }
+            pageLanguage,
+            translationData: { originalLanguage }
         });
-        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'fr', expect.objectContaining({ onRetry: expect.any(Function) }));
+        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', expectedLang, expect.objectContaining({ onRetry: expect.any(Function) }));
     });
 
     it('uses google search if requested', async () => {

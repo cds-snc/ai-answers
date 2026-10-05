@@ -8,6 +8,7 @@ import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.
 import { SettingsService } from './SettingsService.js';
 import { readSearchResultCache, writeSearchResultCache } from './SearchResultCacheService.js';
 import { getSearchResultCacheGeneration } from './CacheCoordinator.js';
+import { getSearchLanguage } from '../src/utils/searchLanguage.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
@@ -92,9 +93,7 @@ export const SearchContextService = {
     async search({ chatId = 'system', searchService = 'canadaca', agentType = 'openai-gpt51', referringUrl = '', translationData = null, pageLanguage = '' }) {
         ServerLoggingService.info('Received request to search.', chatId, { searchService, referringUrl });
 
-        const pageLang = (pageLanguage || '').toLowerCase();
-        const originalLang = (translationData && translationData.originalLanguage) ? String(translationData.originalLanguage).toLowerCase() : '';
-        const lang = (pageLang.includes('fr') || originalLang.includes('fr')) ? 'fr' : 'en';
+        const lang = getSearchLanguage(pageLanguage || '', translationData?.originalLanguage || '');
 
         const orchestratorRequest = { translationData, referringUrl, pageLanguage: lang };
         const rewriteResult = await AgentOrchestratorService.invokeWithStrategy({
