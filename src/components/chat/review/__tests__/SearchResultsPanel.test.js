@@ -37,4 +37,9 @@ describe('SearchResultsPanel', () => {
     const { container } = render(<SearchResultsPanel t={t} message={{ interaction: { context: {} } }} />);
     expect(container.innerHTML).toBe('');
   });
+
+  it('does not label an unknown cache status as downloaded', () => {
+    render(<SearchResultsPanel t={t} message={{ interaction: { context: { searchResults: 'Title: A' } } }} />);
+    expect(screen.queryByText('Fetched from search')).toBeNull();
+  });
 });

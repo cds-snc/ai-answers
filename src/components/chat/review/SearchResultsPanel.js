@@ -15,11 +15,13 @@ const SearchResultsPanel = ({ message, t, answerNumber }) => {
         <p>
           <strong>{t('reviewPanels.searchQuery')}</strong> {context.searchQuery || t('reviewPanels.notAvailable')}
         </p>
-        <p>
-          <span className={`label ${fromCache ? 'correct' : 'partial'}`}>
-            {fromCache ? t('reviewPanels.searchResultsCached') : t('reviewPanels.searchResultsDownloaded')}
-          </span>
-        </p>
+        {(fromCache || context.searchCacheStatus === 'downloaded') && (
+          <p>
+            <span className={`label ${fromCache ? 'correct' : 'partial'}`}>
+              {fromCache ? t('reviewPanels.searchResultsCached') : t('reviewPanels.searchResultsDownloaded')}
+            </span>
+          </p>
+        )}
         <pre className="url-break-all">{context.searchResults}</pre>
       </div>
     </details>
