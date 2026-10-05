@@ -1,6 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
 import { NON_NORMAL_ANSWER_TYPES } from '../util/answerTypes.js';
 import { getAllProgramNameMap } from '../data/programSeedsLoader.js';
@@ -189,4 +189,4 @@ async function getProgramMetrics(req, res) {
     }
 }
 
-export default withProtection(getProgramMetrics);
+export default withProtection(getProgramMetrics, authMiddleware, partnerOrAdminMiddleware);
