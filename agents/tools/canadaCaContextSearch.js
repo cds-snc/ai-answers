@@ -44,7 +44,7 @@ function splitCoveoQuery(query) {
  * @param {number} numResults - The number of top results to extract.
  * @returns {string} - The formatted top search results with summary, link, and link text.
  */
-function extractSearchResults(results, numResults = 3) {
+function extractSearchResults(results, numResults = 5) {
     if (!results?.results || results.results.length === 0) {
         console.info("No search results found");
         return "No results found.";

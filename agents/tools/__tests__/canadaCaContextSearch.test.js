@@ -185,6 +185,24 @@ describe('canadaCaContextSearch retry', () => {
         expect(console.log).toHaveBeenCalledWith('Coveo ART used:', false);
     });
 
+    it('keeps all 5 results returned by Coveo', async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ results: Array.from({ length: 5 }, (_, index) => ({
+                title: `Result ${index + 1}`,
+                clickUri: `https://example.ca/${index + 1}`,
+                excerpt: 'Summary',
+                raw: {},
+            })) }),
+        });
+
+        const result = await contextSearch('q', 'en');
+
+        expect((result.results.match(/^Title: /gm) || [])).toHaveLength(5);
+        expect(result.results).toContain('Title: Result 5');
+    });
+
     // Guards the `error.status = response.status` line: fetch reports the status
     // on the response, so without it a 503 arrives as a bare Error and is
     // misread as permanent.
