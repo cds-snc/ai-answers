@@ -96,9 +96,23 @@ describe('canadaCaContextSearch retry', () => {
         });
         expect(JSON.parse(request.body)).toEqual({
             q: 'q',
-            aq: '@language=English',
-            locale: 'en-CA',
-            originLevel3: 'https://www.canada.ca/en/sr/srb.html',
+            cq: '',
+            locale: 'en',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/en/sr/srb.html',
+                searchPageRelativeUrl: '/en/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 10,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/en/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/en/sr/srb.html',
+                },
+            },
         });
         expect(console.log).toHaveBeenCalledWith('Coveo ART used:', true);
     });
@@ -111,9 +125,23 @@ describe('canadaCaContextSearch retry', () => {
         const [, request] = fetchMock.mock.calls[0];
         expect(JSON.parse(request.body)).toEqual({
             q: 'terme de recherche',
-            aq: '@language=French',
-            locale: 'fr-CA',
-            originLevel3: 'https://www.canada.ca/fr/sr/srb.html',
+            cq: '',
+            locale: 'fr',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/fr/sr/srb.html',
+                searchPageRelativeUrl: '/fr/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 10,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/fr/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/fr/sr/srb.html',
+                },
+            },
         });
     });
 
@@ -125,7 +153,7 @@ describe('canadaCaContextSearch retry', () => {
         const [, request] = fetchMock.mock.calls[0];
         expect(JSON.parse(request.body)).toMatchObject({
             q: 'permit application',
-            aq: '@language=English AND @uri=ised',
+            cq: '@uri=ised',
         });
     });
 
@@ -137,7 +165,7 @@ describe('canadaCaContextSearch retry', () => {
         const [, request] = fetchMock.mock.calls[0];
         expect(JSON.parse(request.body)).toMatchObject({
             q: 'forms',
-            aq: '@language=English AND @hostname=="sac-isc.gc.ca"',
+            cq: '@hostname=="sac-isc.gc.ca"',
         });
     });
 

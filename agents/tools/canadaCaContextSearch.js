@@ -91,18 +91,29 @@ function getSourceOrganization(raw = {}) {
  */
 async function fetchSearchResults(query, lang) {
     const isFrench = lang && lang.toLowerCase().startsWith('fr');
-    const language = isFrench ? 'French' : 'English';
     const { keywords, advancedQuery } = splitCoveoQuery(query);
-    const languageFilter = `@language=${language}`;
-    const filters = [languageFilter, advancedQuery].filter(Boolean);
+    const searchPageUrl = isFrench
+        ? 'https://www.canada.ca/fr/sr/srb.html'
+        : 'https://www.canada.ca/en/sr/srb.html';
+    const searchPageRelativeUrl = isFrench ? '/fr/sr/srb.html' : '/en/sr/srb.html';
     const requestBody = {
         q: keywords,
-        aq: filters.join(' AND '),
-        locale: isFrench ? 'fr-CA' : 'en-CA',
-        originLevel3: isFrench
-            ? 'https://www.canada.ca/fr/sr/srb.html'
-            : 'https://www.canada.ca/en/sr/srb.html',
+        cq: advancedQuery,
+        locale: isFrench ? 'fr' : 'en',
+        context: { searchPageUrl, searchPageRelativeUrl },
+        pipeline: 'Canada public websites - Generic',
+        enableQuerySyntax: false,
+        searchHub: 'canada-gouv-public-websites',
+        numberOfResults: 5,
+        firstResult: 0,
+        mlParameters: {
+            filters: {
+                c_context_searchpageurl: searchPageUrl,
+                c_context_searchpagerelativeurl: searchPageRelativeUrl,
+            },
+        },
     };
+    console.log('Coveo request body:', JSON.stringify(requestBody));
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
