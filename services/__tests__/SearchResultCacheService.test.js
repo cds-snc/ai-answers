@@ -108,9 +108,21 @@ describe('SearchResultCacheService', () => {
     await expect(clearSearchResultCache()).rejects.toThrow('Storage unavailable');
   });
 
-  it('treats a missing storage object as a cache miss', async () => {
-    getStorageObjectWithMetadata.mockRejectedValue({ name: 'NoSuchKey' });
+  it.each([
+    { name: 'NoSuchKey' },
+    { code: 'ENOENT' },
+    { code: 'E_CANNOT_READ_FILE', cause: { code: 'ENOENT' } },
+    { code: 'E_CANNOT_GET_METADATA', cause: { code: 'ENOENT' } },
+  ])('treats a missing storage object as a cache miss (%j)', async (error) => {
+    getStorageObjectWithMetadata.mockRejectedValue(error);
     await expect(readSearchResultCache({ provider: 'google', query: 'benefits', lang: 'en' }, 'generation-1'))
       .resolves.toBeNull();
+  });
+
+  it('propagates filesystem errors other than missing files', async () => {
+    const error = new Error('Cannot read cache', { cause: { code: 'EACCES' } });
+    getStorageObjectWithMetadata.mockRejectedValue(error);
+    await expect(readSearchResultCache({ provider: 'google', query: 'benefits', lang: 'en' }, 'generation-1'))
+      .rejects.toBe(error);
   });
 });

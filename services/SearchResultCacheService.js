@@ -19,6 +19,7 @@ function cacheKey({ provider, query, lang }, generation) {
 function isMissingCacheObject(error) {
   return error?.name === 'NoSuchKey' || error?.name === 'NotFound' ||
     error?.code === 'NoSuchKey' || error?.code === 'NotFound' ||
+    error?.code === 'ENOENT' || error?.cause?.code === 'ENOENT' ||
     error?.$metadata?.httpStatusCode === 404 || error?.statusCode === 404;
 }
 

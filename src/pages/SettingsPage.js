@@ -492,6 +492,7 @@ const SettingsPage = ({ lang = 'en' }) => {
         cache: { text: t('settings.searchContextCache.clearSuccess'), isError: false }
       }));
       setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
+      auditTableRef.current?.reload();
     } catch (_error) {
       setSectionStatus((prev) => ({ ...prev, cache: { text: t('settings.searchContextCache.clearError'), isError: true } }));
       setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));

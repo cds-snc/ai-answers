@@ -197,6 +197,7 @@ describe('SettingsPage audit history', () => {
     mockSetSettings.mockClear();
     mockRefreshSettingsCache.mockClear();
     mockClearDownloadWebPageCache.mockClear();
+    mockClearSearchCache.mockClear();
     mockGetSettingsAudit.mockClear();
     auditTableReloadMock.mockClear();
     lastDataTableProps = null;
@@ -233,6 +234,21 @@ describe('SettingsPage audit history', () => {
 
     await waitFor(() => {
       expect(mockClearDownloadWebPageCache).toHaveBeenCalledTimes(1);
+      expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('reloads audit history after clearing the search cache', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'settings.searchContextCache.clear' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'settings.searchContextCache.clear' }));
+
+    await waitFor(() => {
+      expect(mockClearSearchCache).toHaveBeenCalledTimes(1);
       expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
     });
   });
