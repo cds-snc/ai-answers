@@ -150,7 +150,6 @@ const AboutPage = ({ lang = 'en' }) => {
     overview: lang === 'fr' ? 'aperu' : 'overview',
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
-    systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
     blogPosts: lang === 'fr' ? 'billets-de-blogue-portant-sur-rponses-ia' : 'ai-answers-blog-posts',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
@@ -220,24 +219,6 @@ const AboutPage = ({ lang = 'en' }) => {
           }}
         >
           {sections[sectionKeys.blogPosts].content}
-        </ReactMarkdown>
-      </section>
-    )}
-
-    {/* System Card Documentation Section */}
-    {sections[sectionKeys.systemCard] && (
-      <section className="mb-400">
-        <h2 className="mb-300">{sections[sectionKeys.systemCard].heading}</h2>
-        <ReactMarkdown
-          components={{
-            p: ({ children }) => <p className="mb-300">{children}</p>,
-            a: ({ href, children }) => <a href={href}>{children}</a>,
-            h3: ({ children }) => <h3 className="mb-200">{children}</h3>,
-            ul: ({ children }) => <ul className="mb-400">{children}</ul>,
-            li: ({ children }) => <li>{children}</li>,
-          }}
-        >
-          {sections[sectionKeys.systemCard].content}
         </ReactMarkdown>
       </section>
     )}

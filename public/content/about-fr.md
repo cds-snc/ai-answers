@@ -24,8 +24,8 @@ Le service est conforme aux Règles pour l’accessibilité des contenus Web (WC
 
 ## Confidentialité et conditions d'utilisation de l'IA
 
-### Stockage des données
-Afin de protéger vos renseignements personnels, les questions contenant des renseignements personnels (comme un numéro de téléphone ou une adresse courriel) sont bloquées. Les renseignements de nature délicate sont remplacés par les caractères « XXX », puis il vous est demandé de reformuler votre question. Ces questions, ainsi que les autres questions bloquées (par exemple, celles qui contiennent des propos offensants ou qui sont rédigées dans une langue ou un code non reconnu), ne sont ni transmises à notre service d’IA ni conservées. Tous les autres éléments, tels que les questions, les réponses et vos commentaires, sont conservés afin d’améliorer le rendement du système.
+### Confidentialité
+Afin de protéger vos renseignements personnels, les questions contenant des renseignements personnels (comme un numéro de téléphone ou une adresse courriel) sont bloquées. Les renseignements de nature délicate sont remplacés par les caractères « XXX », puis il vous est demandé de reformuler votre question. Ces questions, ainsi que les autres questions bloquées (par exemple, celles qui contiennent des propos offensants ou qui sont rédigées dans une langue ou un code non reconnu), ne sont ni transmises à notre service d’IA ni conservées. Tous les autres éléments, tels que les questions, les réponses et vos commentaires, sont conservés afin d’améliorer le rendement du système. Ce service ne reçoit ni ne conserve votre adresse IP ni votre emplacement.
 
 ### Avertissement
 Utilisez toujours le lien de référence vers le site Web du gouvernement du Canada fourni dans la réponse afin d’en vérifier le contenu. Les réponses générées par ce système d’IA ne constituent pas des conseils professionnels, juridiques ou médicaux.
@@ -43,17 +43,6 @@ Votre utilisation de ce système, ainsi que de toute information qu’il génèr
 ## Billets de blogue portant sur Réponses IA
 - [Réponses IA&nbsp;: Essais à l’échelle de l’organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 - [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
-
-## Documentation de la fiche système
-
-Pour en savoir plus sur le fonctionnement de Réponses IA, les mesures de sécurité en place, les méthodes d’évaluation utilisées et son architecture technique, consultez notre [Fiche système complète](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md).
-
-### Sections clés&nbsp;:
-- [État actuel](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#état-actuel)
-- [Objectif et portée du système](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#objectif-et-portée-du-système)
-- [Architecture technique](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#architecture-technique)
-- [Performance et évaluation](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#performance-et-évaluation)
-- [Principes d'IA responsable et gouvernance](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#principes-dia-responsable-et-gouvernance)
 
 ## Contactez-nous
 
