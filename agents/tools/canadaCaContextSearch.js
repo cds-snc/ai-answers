@@ -17,6 +17,26 @@ const SEARCH_REQUEST_TIMEOUT_MS = 30000;
 // contextSearch below, since it changes when a slow-but-successful search
 // becomes a failure.
 const RETRY_TIME_BUDGET_MS = 10000;
+const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
+
+function splitCoveoQuery(query) {
+    const restrictions = [];
+    let keywords = query.replace(/\binurl:([A-Za-z0-9][A-Za-z0-9._-]*)/gi, (_directive, segment) => {
+        restrictions.push(`@uri=${segment}`);
+        return '';
+    });
+    keywords = keywords.replace(/\bsite:([^\s]+)/gi, (directive, value) => {
+        const hostname = value.toLowerCase().replace(/\.$/, '');
+        if (!HOSTNAME_PATTERN.test(hostname)) return directive;
+        restrictions.push(`@hostname=="${hostname}"`);
+        return '';
+    }).replace(/\s+/g, ' ').trim();
+
+    return {
+        keywords,
+        advancedQuery: restrictions.join(' AND '),
+    };
+}
 
 /**
  * Extracts search results from the Coveo Search API response.
@@ -24,7 +44,7 @@ const RETRY_TIME_BUDGET_MS = 10000;
  * @param {number} numResults - The number of top results to extract.
  * @returns {string} - The formatted top search results with summary, link, and link text.
  */
-function extractSearchResults(results, numResults = 3) {
+function extractSearchResults(results, numResults = 5) {
     if (!results?.results || results.results.length === 0) {
         console.info("No search results found");
         return "No results found.";
@@ -70,7 +90,29 @@ function getSourceOrganization(raw = {}) {
  * its body stream die.
  */
 async function fetchSearchResults(query, lang) {
-    const language = lang && lang.toLowerCase().startsWith('fr') ? 'French' : 'English';
+    const isFrench = lang && lang.toLowerCase().startsWith('fr');
+    const { keywords, advancedQuery } = splitCoveoQuery(query);
+    const searchPageUrl = isFrench
+        ? 'https://www.canada.ca/fr/sr/srb.html'
+        : 'https://www.canada.ca/en/sr/srb.html';
+    const searchPageRelativeUrl = isFrench ? '/fr/sr/srb.html' : '/en/sr/srb.html';
+    const requestBody = {
+        q: keywords,
+        cq: advancedQuery,
+        locale: isFrench ? 'fr' : 'en',
+        context: { searchPageUrl, searchPageRelativeUrl },
+        pipeline: 'Canada public websites - Generic',
+        enableQuerySyntax: false,
+        searchHub: 'canada-gouv-public-websites',
+        numberOfResults: 5,
+        firstResult: 0,
+        mlParameters: {
+            filters: {
+                c_context_searchpageurl: searchPageUrl,
+                c_context_searchpagerelativeurl: searchPageRelativeUrl,
+            },
+        },
+    };
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
@@ -80,11 +122,7 @@ async function fetchSearchResults(query, lang) {
             "Accept": "application/json",
             "User-Agent": process.env.USER_AGENT || "ai-answers"
         },
-        body: JSON.stringify({
-            q: `@language=${language} ${query}`,
-            locale: lang && lang.toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA',
-            forwardLanguageToCoveoIndex: true,
-        }),
+        body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -101,7 +139,11 @@ async function fetchSearchResults(query, lang) {
         error.status = response.status;
         throw error;
     }
-    return await response.json();
+    const results = await response.json();
+    const returnedResults = Array.isArray(results?.results) ? results.results : [];
+    const artRecommendedResults = returnedResults.filter((result) => result.isRecommendation === true);
+    console.log('Coveo ART used:', artRecommendedResults.length > 0);
+    return results;
 }
 
 /**
