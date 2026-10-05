@@ -105,7 +105,7 @@ describe('canadaCaContextSearch retry', () => {
             pipeline: 'Canada public websites - Generic',
             enableQuerySyntax: false,
             searchHub: 'canada-gouv-public-websites',
-            numberOfResults: 10,
+            numberOfResults: 5,
             firstResult: 0,
             mlParameters: {
                 filters: {
@@ -134,7 +134,7 @@ describe('canadaCaContextSearch retry', () => {
             pipeline: 'Canada public websites - Generic',
             enableQuerySyntax: false,
             searchHub: 'canada-gouv-public-websites',
-            numberOfResults: 10,
+            numberOfResults: 5,
             firstResult: 0,
             mlParameters: {
                 filters: {
