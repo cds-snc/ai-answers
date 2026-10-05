@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-09-10
+**Generated:** 2026-10-05
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -50,6 +50,7 @@ DO redact (these are definitely PI that associate a private person's identity wi
 - Identifying numbers for a person or business: eg. account/reference/tracking/visa/passport/business/gst/BN/ID/unformatted SIN numbers — redact the number value, not the document word alone (V404228553, ACC456789Z, AB123456, 464349455, 12571823R001)
 - Street addresses, postal codes, and ZIP codes (12345, 12345-6789, K1A 0A9)
 - Telephone numbers in international or North American format
+- A person's date of birth in any format or language, including after a "born on"/"DOB"/"née le" cue (1985-03-14, 14/03/1985, March 14, 1985) — redact the full date
 
 Do NOT redact (these names and numbers do not identify a specific person's private information):
 - Building names with person names (e.g., "James Michael Flaherty Building")
@@ -62,6 +63,7 @@ Do NOT redact (these names and numbers do not identify a specific person's priva
 - Question numbers in front of question (e.g. "006. How apply for EI?")
 - Credential or document types mentioned without an actual value (verification code, SIN, account number, password, passport, visa, permit, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN", "They took my passport")
 - References to a business, company, or trade name when no actual name is given — the concept is named but no identifying name value is present (e.g., "Is my business name available?", "Where do I check if my proposed business name is already in use?", "How do I register a company name?")
+- Dates that do not identify a person: historical dates, application/event/deadline dates, ages ("turning 65 next year"), minimum-age questions ("Can I get OAS at 60?")
 - Names of people asked in historical/archival contexts (census, geneology, military records, newspapers, theses/dissertations, author, Government webarchive)
 
 Examples:
@@ -73,6 +75,8 @@ REDACT: "I used code 679553 as my personal access code." → "I used code XXX as
 REDACT: "Mon numéro de suivi pour PPS est le 0-27149474" → "Mon numéro de suivi pour PPS est le XXX"
 REDACT: "Contactez moi a +33 1 23 45 67 89" → "Contactez moi a XXX"
 REDACT: "My SIN is 464349455" → "My SIN is XXX"
+REDACT: "Mon fils est né le 14/03/2015, quel formulaire pour son passeport?" → "Mon fils est né le XXX, quel formulaire pour son passeport?"
+DO NOT: "J'aurai 65 ans l'an prochain, quand puis-je demander la SV?" → <pii>null</pii>
 DO NOT: "James Michael Flaherty Building in Ottawa?" → <pii>null</pii>
 DO NOT: "Alexander First Nation Cows and Plows" → <pii>null</pii>
 DO NOT: "Peguis nation, eligible for treaty annuity payments?" → <pii>null</pii>
@@ -321,7 +325,7 @@ Page Language: en
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
 
-**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 221 entries. Each entry is one line:
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 220 entries. Each entry is one line:
 `Bilingual Abbr Key | Organization Name | URL`
 - Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
 - URL: The corresponding URL (must match the selected organization)
@@ -476,7 +480,7 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of September 2026):**
+**Partner Departments with Custom Scenario Files (as of October 2026):**
 - [`context-aafc-aac/`](../../agents/prompts/scenarios/context-aafc-aac/) - AAFC-AAC
 - [`context-bac-lac/`](../../agents/prompts/scenarios/context-bac-lac/) - Library and Archives Canada (BAC-LAC)
 - [`context-cbsa-asfc/`](../../agents/prompts/scenarios/context-cbsa-asfc/) - CBSA-ASFC
@@ -648,7 +652,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Thursday, September 10, 2026.
+Today is Sunday, October 4, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
