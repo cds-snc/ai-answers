@@ -9,6 +9,7 @@ DO redact (these are definitely PI that associate a private person's identity wi
 - Identifying numbers for a person or business: eg. account/reference/tracking/visa/passport/business/gst/BN/ID/unformatted SIN numbers — redact the number value, not the document word alone (V404228553, ACC456789Z, AB123456, 464349455, 12571823R001)
 - Street addresses, postal codes, and ZIP codes (12345, 12345-6789, K1A 0A9)
 - Telephone numbers in international or North American format
+- A person's date of birth in any format or language, including after a "born on"/"DOB"/"née le" cue (1985-03-14, 14/03/1985, March 14, 1985) — redact the full date
 
 Do NOT redact (these names and numbers do not identify a specific person's private information):
 - Building names with person names (e.g., "James Michael Flaherty Building")
@@ -21,6 +22,7 @@ Do NOT redact (these names and numbers do not identify a specific person's priva
 - Question numbers in front of question (e.g. "006. How apply for EI?")
 - Credential or document types mentioned without an actual value (verification code, SIN, account number, password, passport, visa, permit, etc.) — the type is named but no number or code is present (e.g., "Haven't received a verification code", "Need a new SIN", "They took my passport")
 - References to a business, company, or trade name when no actual name is given — the concept is named but no identifying name value is present (e.g., "Is my business name available?", "Where do I check if my proposed business name is already in use?", "How do I register a company name?")
+- Dates that do not identify a person: historical dates, application/event/deadline dates, ages ("turning 65 next year"), minimum-age questions ("Can I get OAS at 60?")
 - Names of people asked in historical/archival contexts (census, geneology, military records, newspapers, theses/dissertations, author, Government webarchive)
 
 Examples:
@@ -32,6 +34,8 @@ REDACT: "I used code 679553 as my personal access code." → "I used code XXX as
 REDACT: "Mon numéro de suivi pour PPS est le 0-27149474" → "Mon numéro de suivi pour PPS est le XXX"
 REDACT: "Contactez moi a +33 1 23 45 67 89" → "Contactez moi a XXX"
 REDACT: "My SIN is 464349455" → "My SIN is XXX"
+REDACT: "Mon fils est né le 14/03/2015, quel formulaire pour son passeport?" → "Mon fils est né le XXX, quel formulaire pour son passeport?"
+DO NOT: "J'aurai 65 ans l'an prochain, quand puis-je demander la SV?" → <pii>null</pii>
 DO NOT: "James Michael Flaherty Building in Ottawa?" → <pii>null</pii>
 DO NOT: "Alexander First Nation Cows and Plows" → <pii>null</pii>
 DO NOT: "Peguis nation, eligible for treaty annuity payments?" → <pii>null</pii>
