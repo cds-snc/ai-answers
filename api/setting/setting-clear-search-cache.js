@@ -8,7 +8,12 @@ async function clearSearchCacheHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const deletedCount = await clearSearchResultCache();
+  try {
+    await clearSearchResultCache();
+  } catch (error) {
+    console.error('Failed to clear search cache:', error);
+    return res.status(500).json({ success: false });
+  }
   await SettingsAuditService.recordAuditSafely(
     () => SettingsAuditService.recordAction({
       actorUserId: req.user?.userId,
@@ -18,7 +23,7 @@ async function clearSearchCacheHandler(req, res) {
     }),
     'Failed to record search cache clear audit entry'
   );
-  return res.status(200).json({ deletedCount });
+  return res.status(200).json({ success: true });
 }
 
 export default function handler(req, res) {

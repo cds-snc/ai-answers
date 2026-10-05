@@ -486,10 +486,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const clearSearchCache = async () => {
     setClearingSearchCache(true);
     try {
-      const { deletedCount } = await DataStoreService.clearSearchCache();
+      await DataStoreService.clearSearchCache();
       setSectionStatus((prev) => ({
         ...prev,
-        cache: { text: t('settings.searchContextCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+        cache: { text: t('settings.searchContextCache.clearSuccess'), isError: false }
       }));
       setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
     } catch (_error) {

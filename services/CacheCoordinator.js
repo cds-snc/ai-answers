@@ -10,6 +10,7 @@ const GENERATION_KEY = 'download-web-page-cache:generation';
 const LOCK_TTL_MS = 60_000;
 const LOCK_RENEW_INTERVAL_MS = 20_000;
 const LOCK_RETRY_INTERVAL_MS = 100;
+const REDIS_TIMEOUT_MS = 1000;
 
 let redisClientPromise;
 const localGenerations = new Map();
@@ -25,8 +26,23 @@ async function getRedisClient() {
   }
   if (!redisClientPromise) {
     redisClientPromise = (async () => {
-      const client = createClient({ url: process.env.REDIS_URL });
-      client.on('error', (error) => console.error('Cache coordinator Redis error:', error));
+      // Caching is optional: fail promptly rather than reconnecting or queuing
+      // commands indefinitely while an answer waits for its cache lookup.
+      const client = createClient({
+        url: process.env.REDIS_URL,
+        disableOfflineQueue: true,
+        // Keep healthy idle connections alive; an unanswered ping still times out.
+        pingInterval: REDIS_TIMEOUT_MS / 2,
+        socket: {
+          connectTimeout: REDIS_TIMEOUT_MS,
+          socketTimeout: REDIS_TIMEOUT_MS,
+          reconnectStrategy: false,
+        },
+      });
+      client.on('error', (error) => {
+        if (!client.isOpen) redisClientPromise = undefined;
+        console.error('Cache coordinator Redis error:', error);
+      });
       await client.connect();
       return client;
     })().catch((error) => {

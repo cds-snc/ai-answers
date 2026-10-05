@@ -3,6 +3,7 @@ import { SearchContextService } from '../SearchContextService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { contextSearch as canadaContextSearch } from '../../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../../agents/tools/googleContextSearch.js';
+import { getSearchResultCacheGeneration } from '../CacheCoordinator.js';
 
 // Mock dependencies
 vi.mock('../../agents/AgentOrchestratorService.js', () => ({
@@ -19,6 +20,7 @@ vi.mock('../ServerLoggingService.js', () => ({
         info: vi.fn(),
         debug: vi.fn(),
         error: vi.fn(),
+        warn: vi.fn(),
     },
 }));
 
@@ -167,6 +169,19 @@ describe('SearchContextService', () => {
         await SearchContextService.search({ searchService: 'google' });
 
         expect(writeCacheMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the provider when Redis is unavailable', async () => {
+        settingsGetMock.mockReturnValue('true');
+        getSearchResultCacheGeneration.mockRejectedValueOnce(new Error('Redis connection timeout'));
+        googleContextSearch.mockResolvedValue({ results: 'Title: A\nTitle: B', provider: 'google' });
+
+        await expect(SearchContextService.search({ searchService: 'google' }))
+            .resolves.toMatchObject({ results: 'Title: A\nTitle: B', cacheStatus: 'downloaded' });
+        expect(googleContextSearch).toHaveBeenCalledOnce();
+        expect(readCacheMock).not.toHaveBeenCalled();
+        expect(writeCacheMock).not.toHaveBeenCalled();
+        expect(recordErrorMock).not.toHaveBeenCalled();
     });
 });
 

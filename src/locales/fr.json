@@ -1234,7 +1234,7 @@
       "durationHoursLabel": "Durée du cache des résultats de recherche (heures)",
       "clear": "Vider les résultats de recherche en cache",
       "clearing": "Suppression des résultats de recherche en cache...",
-      "clearSuccess": "{count} résultats de recherche en cache supprimés.",
+      "clearSuccess": "Résultats de recherche en cache supprimés.",
       "clearError": "Impossible de vider les résultats de recherche en cache."
     },
     "chatTransport": {

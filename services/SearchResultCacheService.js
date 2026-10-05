@@ -50,8 +50,6 @@ export async function writeSearchResultCache(input, result, generation) {
 export async function clearSearchResultCache() {
   return withSearchResultCacheLock(async () => {
     await advanceSearchResultCacheGeneration();
-    const listing = await storageService.listAll(SEARCH_CACHE_PREFIX, { recursive: true });
     await storageService.deleteAll(SEARCH_CACHE_PREFIX);
-    return Array.from(listing.objects || []).length;
   });
 }

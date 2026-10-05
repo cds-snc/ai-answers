@@ -79,7 +79,7 @@ const {
     })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
     mockClearDownloadWebPageCache: vi.fn(async () => ({ success: true })),
-    mockClearSearchCache: vi.fn(async () => ({ deletedCount: 2 })),
+    mockClearSearchCache: vi.fn(async () => ({ success: true })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });

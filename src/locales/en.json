@@ -1234,7 +1234,7 @@
       "durationHoursLabel": "Search results cache duration (hours)",
       "clear": "Clear cached search results",
       "clearing": "Clearing cached search results...",
-      "clearSuccess": "Cleared {count} cached search results.",
+      "clearSuccess": "Cached search results cleared.",
       "clearError": "Failed to clear cached search results."
     },
     "chatTransport": {

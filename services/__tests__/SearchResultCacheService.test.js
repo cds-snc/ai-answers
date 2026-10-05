@@ -95,13 +95,17 @@ describe('SearchResultCacheService', () => {
     expect(storageService.put).toHaveBeenNthCalledWith(1, firstKey, '{"results":"Title: A"}', { visibility: 'private' });
   });
 
-  it('clears only search-result cache objects and returns the deleted count', async () => {
-    storageService.listAll.mockResolvedValue({ objects: [{ key: 'one' }, { key: 'two' }] });
-
-    await expect(clearSearchResultCache()).resolves.toBe(2);
-    expect(storageService.listAll).toHaveBeenCalledWith(SEARCH_CACHE_PREFIX, { recursive: true });
+  it('clears only search-result cache objects without listing or counting them', async () => {
+    await expect(clearSearchResultCache()).resolves.toBeUndefined();
+    expect(storageService.listAll).not.toHaveBeenCalled();
     expect(storageService.deleteAll).toHaveBeenCalledWith(SEARCH_CACHE_PREFIX);
     expect(advanceCacheGenerationMock).toHaveBeenCalledOnce();
+  });
+
+  it('rejects when cache deletion fails', async () => {
+    storageService.deleteAll.mockRejectedValueOnce(new Error('Storage unavailable'));
+
+    await expect(clearSearchResultCache()).rejects.toThrow('Storage unavailable');
   });
 
   it('treats a missing storage object as a cache miss', async () => {
