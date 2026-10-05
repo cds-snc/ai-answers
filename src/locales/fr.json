@@ -1918,13 +1918,14 @@
       },
       "searchCalls": {
         "title": "Appels de recherche",
-        "note": "Résultats du cache, erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
+        "note": "Taux de réussite du cache, erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé par rapport à toutes les demandes de recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
         "provider": {
           "title": "Fournisseur",
           "canadaca": "Recherche Canada.ca (Coveo)",
           "google": "Google"
         },
-        "retryCount": "Nouvelles tentatives"
+        "retryCount": "Nouvelles tentatives",
+        "cacheHitPercent": "Taux de réussite du cache"
       },
       "aiServiceCalls": {
         "title": "Erreurs d'appels au service IA",

@@ -1918,13 +1918,14 @@
       },
       "searchCalls": {
         "title": "Search calls",
-        "note": "Cache hits, errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against total questions, since not every question triggers a search. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
+        "note": "Cache hit rates, errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against all search requests. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
         "provider": {
           "title": "Provider",
           "canadaca": "Canada.ca search (Coveo)",
           "google": "Google"
         },
-        "retryCount": "Retries"
+        "retryCount": "Retries",
+        "cacheHitPercent": "Cache hit rate"
       },
       "aiServiceCalls": {
         "title": "AI service call errors",
