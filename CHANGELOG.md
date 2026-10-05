@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.206.1](https://github.com/cds-snc/ai-answers/compare/v1.206.0...v1.206.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* close security hole by allowlisting public settings ([ad32cc9](https://github.com/cds-snc/ai-answers/commit/ad32cc9df9437889d5f29909e7e39644be092599))
+* close security hole by allowlisting public settings ([e111c25](https://github.com/cds-snc/ai-answers/commit/e111c253bf61ffe88667ab2abda002efd0146089))
+* close security hole by protecting metrics and requiring middleware ([0e8d7ed](https://github.com/cds-snc/ai-answers/commit/0e8d7ed643f7d159801c16a5c890db022a10fd64))
+* close security hole by protecting metrics and requiring middleware ([0c189d8](https://github.com/cds-snc/ai-answers/commit/0c189d8330e44578d36ed3c1cc62e38c87007be2))
+* remove system card links ([6ab3f5d](https://github.com/cds-snc/ai-answers/commit/6ab3f5dec6709b3b64ac380804abe2c11cf596f5))
+* remove system card links ([ecbcf77](https://github.com/cds-snc/ai-answers/commit/ecbcf773126f0bf64979c981baaa9dbdfd8c8c4b))
+
 ## [1.206.0](https://github.com/cds-snc/ai-answers/compare/v1.205.0...v1.206.0) (2026-10-05)
 
 
