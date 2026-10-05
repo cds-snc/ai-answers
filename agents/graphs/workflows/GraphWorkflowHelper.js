@@ -150,7 +150,7 @@ export class GraphWorkflowHelper {
       ...parsed,
       systemPrompt: contextPayload.systemPrompt || '',
       searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
-      searchCacheStatus: searchResult.cacheStatus || 'downloaded',
+      searchCacheStatus: searchResult.cacheStatus,
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(translationData),

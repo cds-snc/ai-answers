@@ -489,12 +489,12 @@ const SettingsPage = ({ lang = 'en' }) => {
       const { deletedCount } = await DataStoreService.clearSearchCache();
       setSectionStatus((prev) => ({
         ...prev,
-        general: { text: t('settings.searchContextCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
+        cache: { text: t('settings.searchContextCache.clearSuccess').replace('{count}', String(deletedCount)), isError: false }
       }));
-      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
     } catch (_error) {
-      setSectionStatus((prev) => ({ ...prev, general: { text: t('settings.searchContextCache.clearError'), isError: true } }));
-      setSectionSaveNonce((prev) => ({ ...prev, general: (prev.general || 0) + 1 }));
+      setSectionStatus((prev) => ({ ...prev, cache: { text: t('settings.searchContextCache.clearError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
     } finally {
       setClearingSearchCache(false);
     }
@@ -844,7 +844,7 @@ const SettingsPage = ({ lang = 'en' }) => {
           <select
             id="default-search-provider"
             className="filter-select"
-        value={defaultSearchProvider}
+            value={defaultSearchProvider}
             onChange={(e) => { const v = e.target.value; setDefaultSearchProvider(v); stageChange('search.default', v); }}
             disabled={sectionSaving.general}
             aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
@@ -853,33 +853,6 @@ const SettingsPage = ({ lang = 'en' }) => {
               <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
             ))}
           </select>
-
-          {fieldErrors['searchContext.cache.enabled'] && (
-            <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
-          )}
-          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-200">
-            {t('settings.searchContextCache.enabledLabel')}
-          </label>
-          <select
-            id="search-context-cache-enabled"
-            className="filter-select"
-            value={searchContextCacheEnabled}
-            onChange={(e) => { const v = e.target.value; setSearchContextCacheEnabled(v); stageChange('searchContext.cache.enabled', v); }}
-            disabled={sectionSaving.general || clearingSearchCache}
-            aria-describedby={fieldErrors['searchContext.cache.enabled'] ? 'search-context-cache-enabled-error' : undefined}
-          >
-            <option value="false">{t('common.off')}</option>
-            <option value="true">{t('common.on')}</option>
-          </select>
-          <p className="mb-200">{t('settings.searchContextCache.description')}</p>
-          <GcdsButton
-            type="button"
-            buttonRole="secondary"
-            disabled={sectionSaving.general || clearingSearchCache}
-            onClick={clearSearchCache}
-          >
-            {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
-          </GcdsButton>
 
             {fieldErrors['guardrail.indigenousLanguageBlocking'] && (
               <FeedbackInlineError id="indigenous-language-blocking-error" message={fieldErrors['guardrail.indigenousLanguageBlocking']} announce={false} />
