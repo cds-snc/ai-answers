@@ -113,7 +113,6 @@ async function fetchSearchResults(query, lang) {
             },
         },
     };
-    console.log('Coveo request body:', JSON.stringify(requestBody));
     const response = await fetch(process.env.CANADA_CA_SEARCH_URI, {
         method: "POST",
         signal: AbortSignal.timeout(SEARCH_REQUEST_TIMEOUT_MS),
