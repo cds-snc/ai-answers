@@ -33,7 +33,7 @@ describe('DataStoreService.createIndexes', () => {
   });
 
   it('rebuilds indexes with a POST request, not PUT', async () => {
-    const mockResult = { message: 'Database indexes created successfully', results: { success: [], failed: [] } };
+    const mockResult = { alreadyRunning: false, rebuild: { running: true, success: [], failed: [] } };
     AuthService.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResult)
@@ -46,6 +46,50 @@ describe('DataStoreService.createIndexes', () => {
       { method: 'POST' }
     );
     expect(result).toEqual(mockResult);
+  });
+});
+
+describe('DataStoreService.getIndexRebuildStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getApiUrl.mockImplementation((endpoint) => `/api/db/${endpoint}`);
+  });
+
+  it('fetches the last rebuild with a GET request', async () => {
+    const rebuild = { running: false, success: ['Chat'], failed: [] };
+    AuthService.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ rebuild })
+    });
+
+    const result = await DataStoreService.getIndexRebuildStatus();
+
+    expect(AuthService.fetch).toHaveBeenCalledWith('/api/db/db-database-management?action=indexRebuildStatus');
+    expect(result).toEqual(rebuild);
+  });
+});
+
+describe('DataStoreService.getSettingStrict / getSetting', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getApiUrl.mockImplementation((endpoint) => `/api/setting/${endpoint}`);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('getSettingStrict throws when the request fails', async () => {
+    AuthService.fetch.mockResolvedValueOnce({ ok: false });
+    await expect(DataStoreService.getSettingStrict('a.key', 'false')).rejects.toThrow('a.key');
+  });
+
+  it('getSetting still falls back to the default when the request fails', async () => {
+    AuthService.fetch.mockResolvedValueOnce({ ok: false });
+    await expect(DataStoreService.getSetting('a.key', 'false')).resolves.toBe('false');
+  });
+
+  it('both return the saved value', async () => {
+    AuthService.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ value: 'true' }) });
+    await expect(DataStoreService.getSettingStrict('a.key', 'false')).resolves.toBe('true');
+    await expect(DataStoreService.getSetting('a.key', 'false')).resolves.toBe('true');
   });
 });
 
@@ -81,6 +125,20 @@ describe('DataStoreService.getSettings', () => {
       'redaction.profanity.en': 'bad word',
       'missing.setting': 'fallback',
     });
+  });
+
+  it('uses the default for a setting the server returns as null (never saved)', async () => {
+    AuthService.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ values: { 'downloadWebPage.cache.durationHours': null } })
+    });
+
+    const result = await DataStoreService.getSettings(
+      ['downloadWebPage.cache.durationHours'],
+      { 'downloadWebPage.cache.durationHours': '12' }
+    );
+
+    expect(result).toEqual({ 'downloadWebPage.cache.durationHours': '12' });
   });
 
   it('falls back to individual setting reads when the bulk endpoint is unavailable', async () => {

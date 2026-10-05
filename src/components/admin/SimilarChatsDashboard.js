@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import React, { useEffect, useRef, useState } from 'react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
@@ -8,45 +7,56 @@ import { setColumnHeaderScope } from '../../utils/admin/dataTableAccessibility.j
 import VectorService from '../../services/VectorService.js';
 import { buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../../utils/reviewLink.js';
 import { escapeHtml } from '../../utils/htmlEscape.js';
-import FeedbackInlineError from '../chat/FeedbackInlineError.js';
-import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import ChatIdLookupField from './ChatIdLookupField.js';
+import StatusMessage from './StatusMessage.js';
+import { buildChatIdMatchesLabels } from './ChatIdMatchList.js';
+import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 DataTable.use(DT);
 
-const SimilarChatsDashboard = ({ lang = 'en' }) => {
+// describedById: the page's own section heading, so this field's plain
+// "Chat ID" name gets its section as context (see ChatIdLookupField.js).
+const SimilarChatsDashboard = ({ lang = 'en', describedById }) => {
   const { t } = useTranslations(lang);
   const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
-  const [chatId, setChatId] = useState('');
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
-  // Field-tied validation ("enter a chat ID"), not a page-level outcome —
-  // FeedbackInlineError + aria-describedby, matching VectorPage.js's
-  // metadata lookup pattern (see AGENTS.md's "StatusMessage vs. form-field
-  // errors"). useInlineFormError (not plain useState) so errorCount
-  // increments on every triggerError(), forcing FeedbackInlineError's
-  // key={errorCount} to mount a fresh node and re-announce even a repeat
-  // identical failure — see AGENTS.md's FeedbackInlineError reuse note.
-  const {
-    hasError: hasChatIdError,
-    errorCount: chatIdErrorCount,
-    errorRef: chatIdErrorRef,
-    triggerError: triggerChatIdError,
-    clearError: clearChatIdError,
-  } = useInlineFormError();
+  // Partial or full chat ID, same search as the admin home page's View
+  // chat by ID: validation, "not found" and the several-matches pick list.
+  const lookupChat = useChatIdLookup({ lang });
   // Was window.alert() for both branches below — never caught by the
   // earlier StatusMessage migration pass since it was never StatusMessage
   // to begin with.
   const [fetchMessage, setFetchMessage] = useState(null);
-
-  const fetchSimilarChats = async () => {
-    if (!chatId) {
-      triggerChatIdError();
+  // Picking a match removes the pick-list, and the button with it - move
+  // focus to the results table instead of letting it drop to <body>.
+  // DataTables owns the <table>, so it's found and made focusable here. A
+  // failed pick has no table: focus its outcome message (the
+  // trigger-loses-focus case in status-and-error-messaging.md), the field
+  // only if there's neither. fromPick: the same boxes show typed-search
+  // outcomes, which still announce normally.
+  const [pickFocusCount, setPickFocusCount] = useState(0);
+  const [fromPick, setFromPick] = useState(false);
+  const tableContainerRef = useRef(null);
+  const fetchMessageRef = useRef(null);
+  const lookupStatusRef = useRef(null);
+  useEffect(() => {
+    if (!pickFocusCount) return;
+    const table = tableContainerRef.current?.querySelector('table');
+    if (!table) {
+      (fetchMessageRef.current
+        || lookupStatusRef.current
+        || document.getElementById('similar-chats-chat-id'))?.focus();
       return;
     }
-    clearChatIdError();
-    setFetchMessage(null);
+    table.setAttribute('tabindex', '-1');
+    table.classList.add('focus-target');
+    table.focus();
+  }, [pickFocusCount]);
+
+  const fetchSimilarChats = async (chatId) => {
     setLoading(true);
     try {
       const data = await VectorService.getSimilarChats(chatId);
@@ -68,44 +78,78 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
     setLoading(false);
   };
 
+  // searchChats/selectMatch leave loading on for a confirmed chat (see
+  // useChatIdLookup.js); fetching similar chats is that next step.
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFromPick(false);
+    setFetchMessage(null);
+    // Same as the metadata lookup: a new search clears the last chat's
+    // results, so they can't sit under this search's "No chat found".
+    setChats([]);
+    setHasLoadedData(false);
+    const chat = await lookupChat.searchChats(lookupChat.chatId);
+    if (!chat) return;
+    lookupChat.setLoading(false);
+    fetchSimilarChats(chat.chatId);
+  };
+
+  const handleSelectMatch = async (matchId) => {
+    setFromPick(true);
+    const chat = await lookupChat.selectMatch(matchId);
+    if (chat) {
+      lookupChat.setLoading(false);
+      await fetchSimilarChats(chat.chatId);
+    }
+    setPickFocusCount((n) => n + 1);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-4">
-        <label htmlFor="similar-chats-chat-id" className="sr-only">
-          {t('vector.chatIdPlaceholder')}
-        </label>
-        {hasChatIdError && (
-          <FeedbackInlineError
-            id="similar-chats-chat-id-error"
-            message={t('vector.enterChatId')}
-            errorCount={chatIdErrorCount}
-            inputRef={chatIdErrorRef}
-          />
-        )}
-        <input
-          id="similar-chats-chat-id"
-          type="text"
-          value={chatId}
+    <div>
+      {/* Same field as the admin home page's chat ID lookup. */}
+      <form className="mb-200" onSubmit={handleSubmit}>
+        <ChatIdLookupField
+          fieldId="similar-chats-chat-id"
+          label={t('vector.chatIdLabel')}
+          placeholder={t('admin.common.chatIdSearchPlaceholder')}
+          value={lookupChat.chatId}
           onChange={e => {
-            setChatId(e.target.value);
-            clearChatIdError();
+            lookupChat.handleInputChange(e);
             setFetchMessage(null);
           }}
-          placeholder={t('vector.chatIdPlaceholder')}
-          aria-describedby={hasChatIdError ? 'similar-chats-chat-id-error' : undefined}
-          className="input input-bordered mr-2"
+          disabled={lookupChat.loading || loading}
+          hasError={lookupChat.hasError}
+          errorMessage={lookupChat.inlineErrorMessage}
+          errorCount={lookupChat.errorCount}
+          errorRef={lookupChat.errorRef}
+          buttonLabel={lookupChat.loading || loading ? t('vector.loadingSimilarChats') : t('vector.getSimilarChats')}
+          describedById={describedById}
+          matches={lookupChat.matches}
+          {...buildChatIdMatchesLabels(t, lookupChat.matches, lookupChat.matchesTruncated)}
+          onSelectMatch={handleSelectMatch}
         />
-        <GcdsButton
-          onClick={fetchSimilarChats}
-          disabled={loading}
-          className="me-400 hydrated"
-        >
-          {loading ? t('vector.loadingSimilarChats') : t('vector.getSimilarChats')}
-        </GcdsButton>
-        {renderStatusMessage(fetchMessage, 'success', 'fetch')}
-      </div>
+      </form>
+      {/* "No chat found" (info) or a failed search (error), from the shared search. */}
+      {/* Focused, not announced, after a failed pick - see fromPick. */}
+      <StatusMessage
+        ref={lookupStatusRef}
+        tabIndex={-1}
+        className="focus-target"
+        announce={!(fromPick && lookupChat.status)}
+        announcedVia={fromPick && lookupChat.status ? 'focus' : undefined}
+        variant={lookupChat.status?.variant}
+        message={lookupChat.status?.text}
+        nonce={lookupChat.statusNonce}
+      />
+      {renderStatusMessage(fetchMessage, 'success', 'fetch', {
+        ref: fetchMessageRef,
+        tabIndex: -1,
+        className: 'focus-target',
+        announce: !(fromPick && fetchMessage),
+        announcedVia: fromPick && fetchMessage ? 'focus' : undefined,
+      })}
       {hasLoadedData && (
-        <div className="metrics-table-container">
+        <div className="metrics-table-container" ref={tableContainerRef}>
           <DataTable
             data={chats}
             className="display dashboard-table zebra-stable-on-hover"

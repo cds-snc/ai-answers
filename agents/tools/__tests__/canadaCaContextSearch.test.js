@@ -10,15 +10,19 @@ describe('canadaCaContextSearch retry', () => {
     const okResponse = () => ({
         ok: true,
         status: 200,
-        json: async () => ({ results: [{
-            clickUri: 'https://x',
+        json: async () => ({
+            executionReport: { children: [{ name: 'MockPipelineStep' }] },
+            results: [{
+            clickUri: 'https://sac-isc.gc.ca/ised',
             title: 'T',
             excerpt: 'E',
+            isRecommendation: true,
             raw: {
                 sysauthor: ['Example organization', '', 'Second organization'],
                 department: 'Example department',
             },
-        }] }),
+            }],
+        }),
     });
 
     const errorResponse = (status) => ({
@@ -91,10 +95,26 @@ describe('canadaCaContextSearch retry', () => {
             }),
         });
         expect(JSON.parse(request.body)).toEqual({
-            q: '@language=English q',
-            locale: 'en-CA',
-            forwardLanguageToCoveoIndex: true,
+            q: 'q',
+            cq: '',
+            locale: 'en',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/en/sr/srb.html',
+                searchPageRelativeUrl: '/en/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 5,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/en/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/en/sr/srb.html',
+                },
+            },
         });
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', true);
     });
 
     it('adds the French language qualifier for French searches', async () => {
@@ -104,9 +124,48 @@ describe('canadaCaContextSearch retry', () => {
 
         const [, request] = fetchMock.mock.calls[0];
         expect(JSON.parse(request.body)).toEqual({
-            q: '@language=French terme de recherche',
-            locale: 'fr-CA',
-            forwardLanguageToCoveoIndex: true,
+            q: 'terme de recherche',
+            cq: '',
+            locale: 'fr',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/fr/sr/srb.html',
+                searchPageRelativeUrl: '/fr/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 5,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/fr/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/fr/sr/srb.html',
+                },
+            },
+        });
+    });
+
+    it('moves generated inurl restrictions from q into Coveo advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('permit application inurl:ised', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'permit application',
+            cq: '@uri=ised',
+        });
+    });
+
+    it('moves generated site restrictions into Coveo hostname advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('forms site:sac-isc.gc.ca', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'forms',
+            cq: '@hostname=="sac-isc.gc.ca"',
         });
     });
 
@@ -123,6 +182,25 @@ describe('canadaCaContextSearch retry', () => {
         expect(result.results).toContain('Link: No link available');
         expect(result.results).toContain('Summary: No summary available');
         expect(result.results).not.toContain('undefined');
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', false);
+    });
+
+    it('keeps all 5 results returned by Coveo', async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ results: Array.from({ length: 5 }, (_, index) => ({
+                title: `Result ${index + 1}`,
+                clickUri: `https://example.ca/${index + 1}`,
+                excerpt: 'Summary',
+                raw: {},
+            })) }),
+        });
+
+        const result = await contextSearch('q', 'en');
+
+        expect((result.results.match(/^Title: /gm) || [])).toHaveLength(5);
+        expect(result.results).toContain('Title: Result 5');
     });
 
     // Guards the `error.status = response.status` line: fetch reports the status

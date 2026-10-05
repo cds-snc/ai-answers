@@ -95,7 +95,9 @@ export function useChatIdLookup({
   // populated data. Low priority — admin/partner-only, low-volume — but a
   // lightweight existence check (unpopulated findOne) would cut the waste
   // for the other two callers.
-  const checkChatExists = async (rawValue) => {
+  // notFoundStatus: selectMatch's chat was just found by the search, so
+  // "not found" there means it's gone since - an error, worded as such.
+  const checkChatExists = async (rawValue, notFoundStatus = null) => {
     const trimmed = (rawValue || '').trim();
     if (!trimmed) {
       setInlineErrorMessage(t('admin.common.chatIdRequired'));
@@ -124,7 +126,7 @@ export function useChatIdLookup({
       // and an outage gets its own distinct message instead of both
       // reading as "this data doesn't exist."
       if (!data?.chat) {
-        setStatus({ variant: 'info', text: t(notFoundMessageKey) });
+        setStatus(notFoundStatus ?? { variant: 'info', text: t(notFoundMessageKey) });
         setLoading(false);
         return null;
       }
@@ -209,7 +211,7 @@ export function useChatIdLookup({
     setMatches(null);
     setMatchesTruncated(false);
     setChatId(selectedChatId);
-    return checkChatExists(selectedChatId);
+    return checkChatExists(selectedChatId, { variant: 'error', text: t('admin.common.chatNoLongerFound') });
   };
 
   return {

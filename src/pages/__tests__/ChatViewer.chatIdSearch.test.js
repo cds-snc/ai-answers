@@ -81,6 +81,43 @@ describe('ChatViewer chatId partial-match search', () => {
     });
   });
 
+  it.each([
+    ['cannot be checked', () => mockGetChat.mockRejectedValue(new Error('Network down')), 'admin.common.fetchFailed'],
+    ['is no longer found', () => mockGetChat.mockResolvedValue({ chat: null }), 'admin.common.chatNoLongerFound'],
+  ])('moves focus to the outcome message when the picked chat %s', async (_label, mockOutcome, messageKey) => {
+    mockSearchChats.mockResolvedValue({ chatIds: [CHAT_A, CHAT_B], truncated: false });
+    mockOutcome();
+
+    render(<ChatViewer lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: '1234' } });
+    fireEvent.click(screen.getByText('admin.common.chatIdSearchButton'));
+    fireEvent.click(await screen.findByText(CHAT_B));
+
+    await screen.findByText(messageKey);
+    await waitFor(() => expect(document.activeElement?.textContent).toContain(messageKey));
+    // Focus reads it - announcing too would read it twice.
+    expect(document.activeElement.getAttribute('data-announced-via')).toBe('focus');
+    // The search just found it, so a failed pick is an error either way.
+    expect(document.activeElement.classList.contains('status-message--error-box')).toBe(true);
+    expect(mockGetLogs).not.toHaveBeenCalled();
+  });
+
+  it('still announces a search that finds nothing, without moving focus', async () => {
+    mockSearchChats.mockResolvedValue({ chatIds: [], truncated: false });
+
+    render(<ChatViewer lang="en" />);
+
+    fireEvent.change(screen.getByLabelText('logging.enterChatId'), { target: { value: '1234' } });
+    const searchButton = screen.getByText('admin.common.chatIdSearchButton');
+    searchButton.focus();
+    fireEvent.click(searchButton);
+
+    const message = await screen.findByText('admin.common.chatNotFound');
+    expect(message.closest('[data-announced-via]').getAttribute('data-announced-via')).toBe('live-announcer-polite');
+    expect(document.activeElement).toBe(searchButton);
+  });
+
   it('resolves a partial fragment matching exactly one chat directly, loading its logs with no pick-list', async () => {
     mockSearchChats.mockResolvedValue({ chatIds: [CHAT_A], truncated: false });
     mockGetChat.mockResolvedValue({ chat: { chatId: CHAT_A } });

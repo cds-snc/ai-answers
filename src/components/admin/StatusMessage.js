@@ -21,11 +21,13 @@ import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 // full story, including why the old `persistent`/`nonce`-as-key workaround
 // didn't work either.
 //
-// `announce={false}` is for the one case where the caller moves focus onto
-// this message (ScenarioOverridesPage's save outcome, ResetCompletePage's
-// invalid link, LoginPage's session-expired notice): focus landing on it
-// already reads it, so a live announcement on top is a double read. Pick
-// one, never both.
+// `announce={false}` is for two cases:
+// - The caller moves focus onto this message (ScenarioOverridesPage's save
+//   outcome, ResetCompletePage's invalid link, LoginPage's session-expired
+//   notice): focus landing on it already reads it, so a live announcement
+//   on top is a double read. Pick one, never both.
+// - The page shows it on its own, not in answer to anything the user just
+//   did (DatabasePage's last index rebuild result on page load).
 //
 // `assertive`: interrupt instead of queueing, for a non-error outcome the
 // user is actively waiting on (a dashboard's "no data" completion). Errors
@@ -278,6 +280,13 @@ export default StatusMessage;
 // carry focus-move state — that's a separate counter (useFocusOnChange), see
 // UsersPage.js's saveFocusCount.
 //
+// `quiet` (`announce(text, { quiet: true })`) shows the message without
+// reading it out — pass `announce={!status.quiet}` to StatusMessage. For a
+// result the page finds on its own, which nobody just asked for
+// (VectorPage.js's last backfill job on page load). Same switch as
+// useErrorStatus.js's `announce: false`, copied rather than shared until
+// the helpers merge (TODO below).
+//
 // Other nonce fixes: SettingsPage.js/DatabasePage.js via useErrorStatus.js's
 // own tracking; useChatIdLookup.js via a nonce bolted onto its own setStatus
 // (its status shape is a multi-caller union, doesn't fit this hook's).
@@ -289,11 +298,13 @@ export default StatusMessage;
 // wrapErrorDetail's <code lang="en"> output, not just message) all collapse
 // onto this hook. Touches ~20 call sites — own PR.
 export function useRepeatableStatus() {
-  const [status, setStatusState] = useState(null); // { message, isError } | null
+  const [status, setStatusState] = useState(null); // { message, isError, variant, quiet } | null
   const [nonce, setNonce] = useState(0);
 
-  const announce = useCallback((text, { isError } = {}) => {
-    setStatusState({ message: text, isError });
+  // `variant` overrides the error/success pick, for outcomes that are
+  // neither (e.g. 'info': nothing to do).
+  const announce = useCallback((text, { isError, variant, quiet = false } = {}) => {
+    setStatusState({ message: text, isError, variant, quiet });
     setNonce((n) => n + 1);
   }, []);
 
@@ -301,5 +312,5 @@ export function useRepeatableStatus() {
     setStatusState(null);
   }, []);
 
-  return { message: status?.message ?? null, isError: status?.isError, nonce, announce, clear };
+  return { message: status?.message ?? null, isError: status?.isError, variant: status?.variant, quiet: status?.quiet ?? false, nonce, announce, clear };
 }

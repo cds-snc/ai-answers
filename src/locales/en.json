@@ -128,6 +128,9 @@
           "label": "Model family:"
         },
         "useSystemSettings": "Use system settings",
+        "saveLabel": "Save options",
+        "savedAnnouncement": "Options saved.",
+        "unsavedWarning": "Unsaved options. Select Save options to apply them.",
         "referringUrl": {
           "label": "Referring Canada.ca URL (optional)",
           "error": "Enter a full URL, starting with https:// or http://",
@@ -444,8 +447,16 @@
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild all indexes",
       "createIndexesConfirm": "This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?",
-      "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
       "createIndexesError": "Create indexes failed: {error}",
+      "createIndexesStarted": "Index rebuild started. Select \"Check index status\" to follow its progress.",
+      "createIndexesAlreadyRunning": "An index rebuild is already running. Select \"Check index status\" to follow its progress.",
+      "createIndexesFinished": "Index rebuild finished ({time}).",
+      "createIndexesFailed": "Index rebuild failed for {failCount} of {total} collections ({time}).",
+      "createIndexesCounts": "Success: {successCount}, Failed: {failCount}.",
+      "createIndexesStillBuilding": "Indexes for {count} collections are still being built. Select \"Check index status\" later to confirm they're complete.",
+      "indexStillBuilding": "Indexes are still being built for the following collections:",
+      "createIndexesLost": "The index rebuild stopped before it finished. Select \"Rebuild all indexes\" to try again.",
+      "indexRebuildStatusError": "Index rebuild check failed: {error}",
       "dropIndexesConfirm": "This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?",
       "dropIndexesSuccess": "Indexes dropped successfully for {count} collections",
       "dropIndexesError": "Drop indexes failed: {error}",
@@ -636,21 +647,21 @@
       "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
-        "expertEvaluations": "Expert Evaluations in System:",
-        "nonEmptyEvaluations": "Non-Empty Evaluations in System:"
+        "expertEvaluations": "Expert evaluations in system",
+        "nonEmptyEvaluations": "Non-empty evaluations in system"
       },
-      "detailsTitle": "Detailed Evaluation Process",
+      "detailsTitle": "Detailed evaluation process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation:",
+          "title": "Initial validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval:",
+          "title": "Embedding retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content:",
+          "title": "Finding similar content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -721,18 +732,19 @@
         "processed": "Processed evaluations",
         "hasMatches": "Evaluations with matches",
         "noMatchReasons": "No-match reasons",
-        "reasonLabel": "Reason",
-        "countLabel": "Count",
-        "unknown": "unknown",
         "noMatchNone": "No no-match reason data available.",
         "fallbackTypes": "Fallback types",
-        "fallbackLabel": "Fallback",
         "fallbackNone": "No fallback usage data available.",
-        "refresh": "Refresh metrics"
+        "refresh": "Refresh metrics",
+        "refreshing": "Refreshing metrics...",
+        "refreshed": "Metrics refreshed."
       },
+      "actionsTitle": "Generate or delete evaluations",
       "date": {
-        "startLabel": "Start date:",
-        "endLabel": "End date:"
+        "legend": "Date range (optional)",
+        "hint": "Leave blank to use all dates.",
+        "startLabel": "Start date",
+        "endLabel": "End date"
       },
       "button": {
         "processing": "Processing...",
@@ -741,12 +753,8 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed:",
-        "failed": "Failed:",
-        "remaining": "Remaining:",
-        "duration": "Duration:",
-        "autoProcessing": "Auto-processing active",
-        "regeneratingAll": "Regenerating all evaluations"
+        "starting": "Generating evaluations...",
+        "summary": "Generating evaluations: {processed} successful, {failed} failed, {remaining} left."
       }
     },
     "filters": {
@@ -851,6 +859,7 @@
       "chatIdMatchesFound": "{count} matching chats found. Select one to continue.",
       "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
       "chatNotFound": "No chat found with that ID.",
+      "chatNoLongerFound": "This chat can no longer be found.",
       "fetchFailed": "Failed to load data. Please try again.",
       "fetchError": "Failed to load data: {error}",
       "searchResultsAnnouncement": "{count} results found.",
@@ -1206,7 +1215,6 @@
     "fieldError": {
       "unexpected": "Unexpected error: {error}"
     },
-    "save": "Save",
     "saving": "Saving...",
     "unsavedChangesIn": "Unsaved changes in {sections}",
     "validation": {
@@ -1215,9 +1223,10 @@
       "searchContextCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
-    "cache": { "title": "Cache" },
+    "cache": { "title": "Downloaded web pages cache", "saveLabel": "Save web page cache settings" },
     "general": {
-      "title": "General settings"
+      "title": "General settings",
+      "saveLabel": "Save general settings"
     },
     "defaultWorkflow": {
       "label": "Generic workflow"
@@ -1251,6 +1260,7 @@
       "enabledLabel": "Cache downloaded web pages",
       "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
       "durationHoursLabel": "Web page cache duration (hours)",
+      "clearConfirm": "Clear all cached web pages? They will be downloaded again the next time they're needed.",
       "clear": "Clear cached web pages",
       "clearing": "Clearing cached web pages...",
       "clearSuccess": "Cached web pages cleared.",
@@ -1258,6 +1268,7 @@
     },
     "health": {
       "title": "Health checks",
+      "saveLabel": "Save health checks",
       "description": "Control the automated health monitor and its dependency checks.",
       "enabledLabel": "Enable health monitoring",
       "databaseEnabledLabel": "Check database health",
@@ -1317,6 +1328,7 @@
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
+      "saveLabel": "Save two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
@@ -1325,6 +1337,7 @@
     },
     "session": {
       "title": "Session settings",
+      "saveLabel": "Save session settings",
       "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
@@ -1346,6 +1359,7 @@
     },
     "rateLimiting": {
       "title": "Rate limiting",
+      "saveLabel": "Save rate limiting",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
@@ -1357,6 +1371,7 @@
     },
     "redaction": {
       "title": "Redaction settings",
+      "saveLabel": "Save redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
@@ -1422,14 +1437,16 @@
     "totalScore": "Score",
     "referringUrl": "Referring URL",
     "interactionUpdatedAt": "Date of chat",
-    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
-    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "allEvalsGenerated": "Evaluations generated: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Generating evaluations failed: {error}",
     "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEvalsFailed": "Deleting evaluations failed: {error}",
+    "deleteEvalsNone": "No evaluations to delete.",
     "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "deleteEmptyEvalsFailed": "Deleting empty evaluations failed: {error}",
+    "deleteEmptyEvalsNone": "No empty evaluations to delete.",
     "noMatchReasonTypes": {
       "no_embeddings": "No embeddings found",
       "no_qa_match": "No similar embeddings found",
@@ -1943,7 +1960,8 @@
     "indexManagement": "Vector index management",
     "manageDescription": "Manage vector indexes and view vector database statistics.",
     "reinitializeIndex": "Reinitialize index",
-    "loading": "Loading...",
+    "reinitializingIndex": "Reinitializing...",
+    "fetchingStats": "Fetching...",
     "fetchStats": "Fetch vector stats",
     "statsLoaded": "Vector stats loaded.",
     "statsLoadError": "Failed to load vector stats: {error}",
@@ -1953,28 +1971,41 @@
     "embeddingProviderLabel": "Embedding provider",
     "generateEmbeddings": "Generate embeddings",
     "regenerateEmbeddings": "Regenerate embeddings",
+    "embeddingScope": {
+      "legend": "Embeddings to generate",
+      "missing": "Only missing embeddings",
+      "all": "All embeddings, replacing the existing ones"
+    },
     "regenerating": "Regenerating...",
     "processing": "Processing...",
-    "remaining": "Remaining:",
+    "remaining": "Remaining",
     "autoProcessingActive": "Auto-processing active",
     "metadataBackfillTitle": "Embedding metadata backfill",
     "metadataBackfillDescription": "Populate embedding metadata in a background job that continues after you leave this page.",
     "metadataDelayLabel": "Delay between records in seconds",
-    "metadataDelayHelp": "The backend processes one record at a time. Use 0 to 300 seconds to reduce load on the database.",
+    "metadataDelayHelp": "The backend processes one record at a time. Use 0 to 300 seconds to reduce load on the database. The delay applies when you start, restart or resume a backfill.",
     "metadataDelayInvalid": "Delay must be between 0 and 300 seconds.",
-    "startMetadataBackfill": "Start metadata backfill",
-    "backfillEmptyMetadata": "Backfill empty metadata",
     "clearMetadata": "Clear metadata",
+    "clearingMetadata": "Clearing...",
+    "clearMetadataConfirm": "This removes the stored metadata from every embedding. Past expert-scored answers can't be reused until you run a backfill again. Do you want to continue?",
     "metadataClearSuccess": "Embedding metadata was cleared.",
+    "metadataClearNothing": "No metadata to clear.",
     "metadataClearFailed": "Failed to clear embedding metadata.",
-    "resumeMetadataBackfill": "Resume metadata backfill",
-    "restartMetadataBackfill": "Restart metadata backfill",
-    "stopMetadataBackfill": "Stop metadata backfill",
+    "backfillControls": {
+      "label": "Metadata backfill controls",
+      "start": "Start",
+      "restart": "Restart",
+      "resume": "Resume",
+      "stop": "Stop",
+      "running": "Running...",
+      "stopping": "Stopping..."
+    },
     "metadataBackfillStopped": "Stopped",
     "metadataBackfillStoppedAnnouncement": "Embedding metadata backfill stopped.",
     "metadataBackfillStopFailed": "Failed to stop embedding metadata backfill. Check the console for details.",
-    "metadataProcessed": "Processed:",
-    "metadataResumeFromId": "Saved resume ID: {id}",
+    "metadataProcessed": "Processed",
+    "metadataResumeFromId": "Saved resume ID",
+    "progressStatus": "Status",
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
     "metadataBackfillCompleted": "Embedding metadata backfill complete.",
     "metadataBatchResultsTitle": "Last batch metadata diagnostics",
@@ -2027,32 +2058,30 @@
     "metadataLookup": {
       "title": "Embedding metadata lookup",
       "description": "Look up the current embedding metadata for each interaction in a chat.",
-      "chatIdLabel": "Chat ID",
-      "chatIdRequired": "Please enter a chat ID.",
       "lookup": "Look up metadata",
       "loading": "Looking up metadata...",
       "failed": "Failed to look up embedding metadata.",
+      "mismatch": "Mismatch: attached",
+      "mismatchTo": "but metadata has",
+      "missingDisplayId": "(Missing ID)",
+      "ids": {
+        "interactionObject": "Interaction object",
+        "embedding": "Embedding"
+      },
       "chatSummary": {
-        "chatId": "Chat ID:",
-        "pageLanguage": "Page language:",
-        "interactions": "Interactions:",
-        "embeddings": "Embeddings:"
+        "chatId": "Chat ID",
+        "interactions": "Interactions",
+        "embeddings": "Embeddings"
       },
       "columns": {
         "row": "Row",
+        "displayId": "Display ID",
+        "ids": "IDs",
+        "expertFeedbackId": "Expert feedback ID",
+        "score": "Score",
+        "pageLanguage": "Page language",
         "status": "Status",
-        "interactionObjectId": "Interaction object ID",
-        "interactionDisplayId": "Interaction display ID",
-        "embeddingId": "Embedding ID",
-        "embeddingInteractionId": "Embedding interaction ID",
-        "attachedExpertFeedbackId": "Attached expert feedback ID",
-        "metadataExpertFeedbackId": "Metadata expert feedback ID",
-        "attachedScore": "Attached score",
-        "metadataScore": "Metadata score",
-        "chatPageLanguage": "Chat page language",
-        "metadataPageLanguage": "Metadata page language",
         "interactionLanguage": "Interaction language",
-        "metadataInteractionLanguage": "Metadata interaction language",
         "neverStale": "Never stale"
       },
       "statuses": {
@@ -2067,10 +2096,9 @@
     "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
     "similarChatsFilterLabel": "Filter similar chats",
-    "chatIdPlaceholder": "Enter Chat ID",
+    "chatIdLabel": "Chat ID",
     "getSimilarChats": "Get similar chats",
     "loadingSimilarChats": "Loading similar chats...",
-    "enterChatId": "Please enter a chat ID.",
     "fetchError": "Failed to fetch similar chats",
     "fetchErrorDetail": "Failed to fetch similar chats: {error}",
     "columns": {
@@ -2091,7 +2119,8 @@
     "docdb8Capability": {
       "title": "DocumentDB 8 vector search capability test",
       "description": "Run aggregation probes against DocumentDB 8 to see whether filters can reduce the candidate set before vector search.",
-      "singleProbeDescription": "Each button runs one probe once and stores only that result.",
+      "singleProbeDescription": "Runs the chosen probe once and keeps only its latest result.",
+      "probeLabel": "Capability test",
       "run": "Run capability test",
       "running": "Running capability test...",
       "pass": "Pass",
@@ -2125,11 +2154,11 @@
         "error": "Error"
       },
       "probes": {
-        "annAllThenFeedbackPostFilter": "Run ANN post-filter",
-        "exactAfterFeedbackLookupMatch": "Run lookup pre-filter",
-        "exactAfterDenormalizedMatch": "Run denormalized pre-filter",
-        "annFeedbackOnlyCollection": "Run feedback collection",
-        "nodeBruteforceFeedbackSubset": "Run brute-force baseline"
+        "annAllThenFeedbackPostFilter": "ANN post-filter",
+        "exactAfterFeedbackLookupMatch": "Lookup pre-filter",
+        "exactAfterDenormalizedMatch": "Denormalized pre-filter",
+        "annFeedbackOnlyCollection": "Feedback collection",
+        "nodeBruteforceFeedbackSubset": "Brute-force baseline"
       },
       "capabilities": {
         "vectorSearchBasicSupport": "$vectorSearch basic support",
@@ -2206,12 +2235,16 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
-    "testComplete": "Connectivity test complete: {connected} connected, {errors} errors, {warnings} warnings.",
+    "testComplete": "Connectivity test complete: {connected} connected, {errors} error(s), {warnings} warning(s), {notConfigured} not configured.",
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
-      "enable": "Simulate failure",
-      "disable": "Clear simulation",
+      "on": "On",
+      "off": "Off",
+      "loadFailed": "Couldn't load the failure simulation settings. Reload the page to try again.",
+      "saveFailed": "Couldn't save the {service} setting. Try again.",
+      "announceOn": "Simulating a failure: {service}.",
+      "announceOff": "{service} is operating normally.",
       "labels": {
         "database": "Database",
         "search": "Search",
@@ -2222,9 +2255,13 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
+    "statusError": "Error",
+    "statusWarning": "Warning",
     "lastRun": "Last run:",
+    "summaryHeading": "Connectivity summary",
     "serviceDetails": "Service details",
     "latency": "Latency:",
+    "millisecondsUnit": "ms",
     "details": "Details",
     "error": "Error:"
   },

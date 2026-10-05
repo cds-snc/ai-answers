@@ -8,6 +8,7 @@ import { useChatLogs } from '../hooks/chatviewer/useChatLogs.js';
 import { useChatTimeline } from '../hooks/chatviewer/useChatTimeline.js';
 import { useChatLogsTable } from '../hooks/chatviewer/useChatLogsTable.js';
 import { useChatIdLookup } from '../hooks/admin/useChatIdLookup.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
@@ -97,6 +98,13 @@ const ChatViewer = ({ lang = 'en' }) => {
   const [confirmedChatLang, setConfirmedChatLang] = useState(null);
   const tableRef = useRef(null);
   const chatIdInputRef = useRef(null);
+  // A failed pick removes the pick-list, and the button with it - focus its
+  // outcome message instead (the trigger-loses-focus case in
+  // status-and-error-messaging.md). statusFromPick: the message box is
+  // shared with search/refresh outcomes, which still announce normally.
+  const [failedPickCount, setFailedPickCount] = useState(0);
+  const [statusFromPick, setStatusFromPick] = useState(false);
+  const pickStatusRef = useFocusOnChange(failedPickCount);
   const idPanelSummaryRef = useRef(null);
   // Lets an in-flight refresh recognize that the user has since switched to
   // a different chatId, so its result doesn't overwrite the announcement or
@@ -306,6 +314,7 @@ const ChatViewer = ({ lang = 'en' }) => {
       return;
     }
 
+    setStatusFromPick(false);
     const typedChatId = chatId;
 
     // A fragment resolving to exactly one match updates chatId to that full
@@ -317,8 +326,12 @@ const ChatViewer = ({ lang = 'en' }) => {
   };
 
   const handleSelectMatch = async (selectedChatId) => {
+    setStatusFromPick(true);
     const chat = await selectMatch(selectedChatId);
     await resolveConfirmedChat(chat, selectedChatId);
+    // Same staleness guard as resolveConfirmedChat - don't pull focus if
+    // the user has moved on to another chat.
+    if (!chat && chatIdRef.current === selectedChatId) setFailedPickCount((n) => n + 1);
   };
 
   return (
@@ -474,6 +487,11 @@ const ChatViewer = ({ lang = 'en' }) => {
               nonce of its own), but is harmless either way here since the
               two are mutually exclusive. */}
           <StatusMessage
+            ref={pickStatusRef}
+            tabIndex={-1}
+            className="focus-target"
+            announce={!(chatIdStatus && statusFromPick)}
+            announcedVia={chatIdStatus && statusFromPick ? 'focus' : undefined}
             variant={chatIdStatus ? chatIdStatus.variant : (refreshAnnouncement ? 'error' : undefined)}
             message={chatIdStatus ? chatIdStatus.text : refreshAnnouncement}
             nonce={refreshAnnouncementNonce}

@@ -128,6 +128,9 @@
           "label": "Famille de modèles :"
         },
         "useSystemSettings": "Utiliser les paramètres système",
+        "saveLabel": "Enregistrer les options",
+        "savedAnnouncement": "Options enregistrées.",
+        "unsavedWarning": "Options non enregistrées. Sélectionnez Enregistrer les options pour les appliquer.",
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)",
           "error": "Entrez une URL complète, commençant par https:// ou http://",
@@ -444,8 +447,16 @@
       "createIndexesDescription": "Assurez-vous que tous les index définis existent dans la base de données. Cela est utile si les index ont été supprimés ou si de nouveaux schémas ont été déployés.",
       "createIndexesButton": "Reconstruire tous les index",
       "createIndexesConfirm": "Cela garantira que tous les index Mongoose existent dans la base de données. Êtes-vous sûr de vouloir continuer ?",
-      "createIndexesSuccess": "Index créés/reconstruits avec succès. Succès : {successCount}, Échec : {failCount}",
       "createIndexesError": "Échec de la création des index : {error}",
+      "createIndexesStarted": "Reconstruction des index lancée. Sélectionnez « Vérifier l'état des index » pour suivre sa progression.",
+      "createIndexesAlreadyRunning": "Une reconstruction des index est déjà en cours. Sélectionnez « Vérifier l'état des index » pour suivre sa progression.",
+      "createIndexesFinished": "Reconstruction des index terminée ({time}).",
+      "createIndexesFailed": "La reconstruction des index a échoué pour {failCount} des {total} collections ({time}).",
+      "createIndexesCounts": "Succès : {successCount}, Échec : {failCount}.",
+      "createIndexesStillBuilding": "Les index de {count} collections sont encore en cours de construction. Sélectionnez « Vérifier l'état des index » plus tard pour confirmer qu'ils sont complets.",
+      "indexStillBuilding": "Les index sont encore en cours de construction pour les collections suivantes :",
+      "createIndexesLost": "La reconstruction des index s'est arrêtée avant la fin. Sélectionnez « Reconstruire tous les index » pour réessayer.",
+      "indexRebuildStatusError": "Échec de la vérification de la reconstruction des index : {error}",
       "dropIndexesConfirm": "Cette action supprimera tous les index de la base de données. Les opérations de base de données peuvent être plus lentes jusqu'à ce que les index soient reconstruits automatiquement. Êtes-vous sûr de vouloir continuer ?",
       "dropIndexesSuccess": "Index supprimés avec succès pour {count} collections",
       "dropIndexesError": "Échec de la suppression des index : {error}",
@@ -636,8 +647,8 @@
       "similarityTitle": "Transfert de rétroaction d'experts basé sur la similarité",
       "similarityDescription": "Cette approche évalue automatiquement les nouvelles interactions en trouvant des interactions évaluées par des experts similaires et en transférant les notes et explications. Si la correspondance au niveau des phrases échoue, le système utilisera un repli basé sur une correspondance question+réponse très similaire avec une note élevée.",
       "label": {
-        "expertEvaluations": "Évaluations d'experts dans le système :",
-        "nonEmptyEvaluations": "Évaluations non vides dans le système :"
+        "expertEvaluations": "Évaluations d'experts dans le système",
+        "nonEmptyEvaluations": "Évaluations non vides dans le système"
       },
       "detailsTitle": "Processus détaillé d'évaluation",
       "step": {
@@ -701,7 +712,7 @@
           }
         },
         "noMatch": {
-          "title": "Aucun appariement / Cas de rejet :",
+          "title": "Aucun appariement / cas de rejet :",
           "item": {
             "recordNoMatch": "Si aucune correspondance ni répli accepted, créer une évaluation de non-correspondance enregistrant les types de raisons et les causes de rejet par phrase",
             "trace": "Les évaluations de non-correspondance incluent une trace par phrase et une chronologie pour que les opérateurs puissent inspecter pourquoi les candidats ont été rejetés"
@@ -721,18 +732,19 @@
         "processed": "Évaluations traitées",
         "hasMatches": "Évaluations avec correspondances",
         "noMatchReasons": "Raisons de non-correspondance",
-        "reasonLabel": "Raison",
-        "countLabel": "Nombre",
-        "unknown": "inconnu",
         "noMatchNone": "Aucune donnée de raison de non-correspondance disponible.",
         "fallbackTypes": "Types de repli",
-        "fallbackLabel": "Repli",
         "fallbackNone": "Aucune donnée d'utilisation de repli disponible.",
-        "refresh": "Actualiser les métriques"
+        "refresh": "Actualiser les métriques",
+        "refreshing": "Actualisation des métriques...",
+        "refreshed": "Métriques actualisées."
       },
+      "actionsTitle": "Générer ou supprimer des évaluations",
       "date": {
-        "startLabel": "Date de début :",
-        "endLabel": "Date de fin :"
+        "legend": "Plage de dates (facultatif)",
+        "hint": "Laissez vide pour utiliser toutes les dates.",
+        "startLabel": "Date de début",
+        "endLabel": "Date de fin"
       },
       "button": {
         "processing": "Traitement...",
@@ -741,12 +753,8 @@
         "deleteEmpty": "Supprimer les évaluations vides"
       },
       "progress": {
-        "processed": "Traité :",
-        "failed": "Échouées :",
-        "remaining": "Restant :",
-        "duration": "Durée :",
-        "autoProcessing": "Traitement automatique actif",
-        "regeneratingAll": "Régénération de toutes les évaluations"
+        "starting": "Génération des évaluations...",
+        "summary": "Génération des évaluations : {processed} réussies, {failed} échouées, {remaining} restantes."
       }
     },
     "filters": {
@@ -851,6 +859,7 @@
       "chatIdMatchesFound": "{count} clavardages correspondants trouvés. Sélectionnez-en un pour continuer.",
       "chatIdMatchesMoreFound": "Plus de {count} résultats. Sélectionnez-en un ou précisez l'ID.",
       "chatNotFound": "Aucun chat trouvé avec cet ID.",
+      "chatNoLongerFound": "Ce clavardage est désormais introuvable.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "fetchError": "Échec du chargement des données : {error}",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
@@ -1206,7 +1215,6 @@
     "fieldError": {
       "unexpected": "Erreur inattendue : {error}"
     },
-    "save": "Enregistrer",
     "saving": "Enregistrement...",
     "unsavedChangesIn": "Modifications non enregistrées dans {sections}",
     "validation": {
@@ -1215,9 +1223,10 @@
       "searchContextCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
-    "cache": { "title": "Cache" },
+    "cache": { "title": "Cache des pages Web téléchargées", "saveLabel": "Enregistrer les paramètres du cache des pages Web" },
     "general": {
-      "title": "Paramètres généraux"
+      "title": "Paramètres généraux",
+      "saveLabel": "Enregistrer les paramètres généraux"
     },
     "defaultWorkflow": {
       "label": "Flux générique"
@@ -1251,6 +1260,7 @@
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
       "description": "Lorsque cette option est activée, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
       "durationHoursLabel": "Durée du cache des pages Web (heures)",
+      "clearConfirm": "Vider toutes les pages Web en cache? Elles seront téléchargées de nouveau la prochaine fois qu'elles seront nécessaires.",
       "clear": "Vider le cache des pages Web",
       "clearing": "Suppression des pages Web en cache...",
       "clearSuccess": "Pages Web en cache supprimées.",
@@ -1258,6 +1268,7 @@
     },
     "health": {
       "title": "Vérifications de santé",
+      "saveLabel": "Enregistrer les vérifications de santé",
       "description": "Contrôlez le moniteur de santé automatisé et ses vérifications des dépendances.",
       "enabledLabel": "Activer la surveillance de santé",
       "databaseEnabledLabel": "Vérifier la santé de la base de données",
@@ -1317,6 +1328,7 @@
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
     "twoFA": {
       "title": "Authentification à deux facteurs",
+      "saveLabel": "Enregistrer l'authentification à deux facteurs",
       "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
       "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
     },
@@ -1325,6 +1337,7 @@
     },
     "session": {
       "title": "Paramètres de session",
+      "saveLabel": "Enregistrer les paramètres de session",
       "managementEnabled": "Activer la gestion de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "authTtlMinutes": "Durée de vie de la session authentifiée (minutes — ex. 60 = 1 heure)",
@@ -1346,6 +1359,7 @@
     },
     "rateLimiting": {
       "title": "Limitation du débit",
+      "saveLabel": "Enregistrer la limitation du débit",
       "persistence": {
         "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
@@ -1357,6 +1371,7 @@
     },
     "redaction": {
       "title": "Paramètres de rédaction",
+      "saveLabel": "Enregistrer les paramètres de rédaction",
       "description": "Gérer les gros mots, les menaces et les phrases de manipulation. Entrez les mots séparés par des virgules.",
       "profanity": "Gros mots",
       "threat": "Menaces",
@@ -1422,14 +1437,16 @@
     "totalScore": "Score",
     "referringUrl": "URL de référence",
     "interactionUpdatedAt": "Date du chat",
-    "allEvalsGenerated": "Toutes les évaluations ont été générées ! Totaux finaux : {processed} réussies, {failed} échouées.",
-    "generateEvalsFailed": "Échec de la génération des évaluations. Vérifiez la console pour plus de détails.",
+    "allEvalsGenerated": "Évaluations générées : {processed} réussies, {failed} échouées.",
+    "generateEvalsFailed": "Échec de la génération des évaluations : {error}",
     "deleteEvalsConfirm": "Cela supprimera toutes les évaluations (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEvalsSuccess": "{deleted} évaluations et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
-    "deleteEvalsFailed": "Échec de la suppression des évaluations. Vérifiez la console pour plus de détails.",
+    "deleteEvalsFailed": "Échec de la suppression des évaluations : {error}",
+    "deleteEvalsNone": "Aucune évaluation à supprimer.",
     "deleteEmptyEvalsConfirm": "Cela supprimera uniquement les évaluations VIDES (et les commentaires d'experts associés) dans la plage de dates sélectionnée. Cette opération est irréversible. Êtes-vous sûr de vouloir continuer ?",
     "deleteEmptyEvalsSuccess": "{deleted} évaluations vides et {expertFeedbackDeleted} enregistrements de commentaires d'experts supprimés.",
-    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides. Vérifiez la console pour plus de détails.",
+    "deleteEmptyEvalsFailed": "Échec de la suppression des évaluations vides : {error}",
+    "deleteEmptyEvalsNone": "Aucune évaluation vide à supprimer.",
     "noMatchReasonTypes": {
       "no_embeddings": "Aucune intégration trouvée",
       "no_qa_match": "Aucune intégration similaire trouvée",
@@ -1942,39 +1959,53 @@
     "title": "Administration des vecteurs",
     "indexManagement": "Gestion des index de vecteurs",
     "manageDescription": "Gérez les index de vecteurs et consultez les statistiques de la base de données de vecteurs.",
-    "loading": "Chargement...",
+    "fetchingStats": "Récupération...",
     "fetchStats": "Afficher les statistiques des vecteurs",
     "statsLoaded": "Statistiques des vecteurs chargées.",
     "statsLoadError": "Échec du chargement des statistiques des vecteurs : {error}",
     "reinitializeIndex": "Réinitialiser l'index",
+    "reinitializingIndex": "Réinitialisation...",
     "createIndex": "Créer un index de vecteurs",
     "embeddingManagement": "Gestion des embeddings",
     "embeddingDescription": "Traitez les interactions pour générer des embeddings.",
     "embeddingProviderLabel": "Fournisseur d'embeddings",
     "generateEmbeddings": "Générer les embeddings",
     "regenerateEmbeddings": "Régénérer les embeddings",
+    "embeddingScope": {
+      "legend": "Embeddings à générer",
+      "missing": "Seulement les embeddings manquants",
+      "all": "Tous les embeddings, en remplaçant ceux qui existent"
+    },
     "regenerating": "Régénération...",
     "processing": "Traitement...",
-    "remaining": "Restant :",
+    "remaining": "Restant",
     "autoProcessingActive": "Traitement automatique actif",
     "metadataBackfillTitle": "Remplissage des métadonnées des incorporations",
     "metadataBackfillDescription": "Remplir les métadonnées des incorporations dans une tâche en arrière-plan qui continue après votre départ de cette page.",
     "metadataDelayLabel": "Délai entre les enregistrements en secondes",
-    "metadataDelayHelp": "Le serveur traite un enregistrement à la fois. Utilisez un délai de 0 à 300 secondes pour réduire la charge sur la base de données.",
+    "metadataDelayHelp": "Le serveur traite un enregistrement à la fois. Utilisez un délai de 0 à 300 secondes pour réduire la charge sur la base de données. Le délai s'applique lorsque vous démarrez, redémarrez ou reprenez un remplissage.",
     "metadataDelayInvalid": "Le délai doit être compris entre 0 et 300 secondes.",
-    "startMetadataBackfill": "Démarrer le remplissage des métadonnées",
-    "backfillEmptyMetadata": "Remplir les métadonnées manquantes",
     "clearMetadata": "Effacer les métadonnées",
+    "clearingMetadata": "Effacement...",
+    "clearMetadataConfirm": "Cette action supprime les métadonnées stockées de toutes les incorporations. Les réponses déjà évaluées par des experts ne pourront pas être réutilisées tant que vous n'aurez pas relancé un remplissage. Voulez-vous continuer ?",
     "metadataClearSuccess": "Les métadonnées des incorporations ont été effacées.",
+    "metadataClearNothing": "Aucune métadonnée à effacer.",
     "metadataClearFailed": "Impossible d’effacer les métadonnées des incorporations.",
-    "resumeMetadataBackfill": "Reprendre le remplissage des métadonnées",
-    "restartMetadataBackfill": "Redémarrer le remplissage des métadonnées",
-    "stopMetadataBackfill": "Arrêter le remplissage des métadonnées",
+    "backfillControls": {
+      "label": "Commandes du remplissage des métadonnées",
+      "start": "Démarrer",
+      "restart": "Redémarrer",
+      "resume": "Reprendre",
+      "stop": "Arrêter",
+      "running": "En cours...",
+      "stopping": "Arrêt en cours..."
+    },
     "metadataBackfillStopped": "Arrêté",
     "metadataBackfillStoppedAnnouncement": "Remplissage des métadonnées des incorporations arrêté.",
     "metadataBackfillStopFailed": "Échec de l'arrêt du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
-    "metadataProcessed": "Traités :",
-    "metadataResumeFromId": "ID de reprise enregistré : {id}",
+    "metadataProcessed": "Traités",
+    "metadataResumeFromId": "ID de reprise enregistré",
+    "progressStatus": "État",
     "metadataBackfillFailed": "Échec du remplissage des métadonnées des incorporations. Consultez la console pour les détails.",
     "metadataBackfillCompleted": "Remplissage des métadonnées des incorporations terminé.",
     "metadataBatchResultsTitle": "Diagnostic des métadonnées du dernier lot",
@@ -2027,32 +2058,30 @@
     "metadataLookup": {
       "title": "Recherche des métadonnées des incorporations",
       "description": "Consulter les métadonnées actuelles des incorporations pour chaque interaction d’un clavardage.",
-      "chatIdLabel": "ID du clavardage",
-      "chatIdRequired": "Veuillez entrer un ID de clavardage.",
       "lookup": "Rechercher les métadonnées",
       "loading": "Recherche des métadonnées...",
       "failed": "Échec de la recherche des métadonnées des incorporations.",
+      "mismatch": "Non-concordance : attaché",
+      "mismatchTo": "mais les métadonnées contiennent",
+      "missingDisplayId": "(ID manquant)",
+      "ids": {
+        "interactionObject": "Objet d’interaction",
+        "embedding": "Incorporation"
+      },
       "chatSummary": {
-        "chatId": "ID du clavardage :",
-        "pageLanguage": "Langue de la page :",
-        "interactions": "Interactions :",
-        "embeddings": "Incorporations :"
+        "chatId": "ID du clavardage",
+        "interactions": "Interactions",
+        "embeddings": "Incorporations"
       },
       "columns": {
         "row": "Ligne",
+        "displayId": "ID d’affichage",
+        "ids": "ID",
+        "expertFeedbackId": "ID de rétroaction d’expert",
+        "score": "Score",
+        "pageLanguage": "Langue de la page",
         "status": "État",
-        "interactionObjectId": "ID objet de l’interaction",
-        "interactionDisplayId": "ID affiché de l’interaction",
-        "embeddingId": "ID de l’incorporation",
-        "embeddingInteractionId": "ID d’interaction de l’incorporation",
-        "attachedExpertFeedbackId": "ID de rétroaction experte attachée",
-        "metadataExpertFeedbackId": "ID de rétroaction experte des métadonnées",
-        "attachedScore": "Score attaché",
-        "metadataScore": "Score des métadonnées",
-        "chatPageLanguage": "Langue de la page du clavardage",
-        "metadataPageLanguage": "Langue de page des métadonnées",
         "interactionLanguage": "Langue de l’interaction",
-        "metadataInteractionLanguage": "Langue d’interaction des métadonnées",
         "neverStale": "Jamais obsolète"
       },
       "statuses": {
@@ -2067,10 +2096,9 @@
     "similarChats": "Trouver des chats similaires",
     "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
     "similarChatsFilterLabel": "Filtrer les chats similaires",
-    "chatIdPlaceholder": "Entrez l'ID du chat",
+    "chatIdLabel": "ID du clavardage",
     "getSimilarChats": "Obtenir les chats similaires",
     "loadingSimilarChats": "Chargement des chats similaires...",
-    "enterChatId": "Veuillez entrer un identifiant de clavardage.",
     "fetchError": "Impossible de récupérer les clavardages similaires",
     "fetchErrorDetail": "Impossible de récupérer les clavardages similaires : {error}",
     "columns": {
@@ -2136,13 +2164,14 @@
         "denormalizedPreFilter": "Dénormaliser les champs de rétroaction dans les embeddings, puis utiliser $match avant $vectorSearch.",
         "dedicatedFeedbackCollection": "Utiliser une collection et un index distincts pour les embeddings avec rétroaction afin d'éviter de rechercher les enregistrements sans rétroaction."
       },
-      "singleProbeDescription": "Chaque bouton exécute un seul test une fois et conserve seulement ce résultat.",
+      "singleProbeDescription": "Exécute le test choisi une fois et conserve seulement son dernier résultat.",
+      "probeLabel": "Test de capacité",
       "probes": {
-        "annAllThenFeedbackPostFilter": "Exécuter le post-filtrage ANN",
-        "exactAfterFeedbackLookupMatch": "Exécuter le préfiltre avec recherche des rétroactions",
-        "exactAfterDenormalizedMatch": "Exécuter le préfiltre dénormalisé",
-        "annFeedbackOnlyCollection": "Exécuter la collection de rétroactions",
-        "nodeBruteforceFeedbackSubset": "Exécuter la ligne de base en force brute"
+        "annAllThenFeedbackPostFilter": "Post-filtrage ANN",
+        "exactAfterFeedbackLookupMatch": "Préfiltre avec recherche des rétroactions",
+        "exactAfterDenormalizedMatch": "Préfiltre dénormalisé",
+        "annFeedbackOnlyCollection": "Collection de rétroactions",
+        "nodeBruteforceFeedbackSubset": "Ligne de base en force brute"
       }
     }
   },
@@ -2206,12 +2235,16 @@
     "description": "Tester la connectivité à tous les services externes et fournisseurs d'IA utilisés par Réponses IA.",
     "runTests": "Exécuter les tests de connectivité",
     "testing": "Test des connexions...",
-    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s).",
+    "testComplete": "Test de connectivité terminé : {connected} connecté(s), {errors} erreur(s), {warnings} avertissement(s), {notConfigured} non configuré(s).",
     "simulation": {
       "title": "Simulation de panne",
       "description": "Activez un mode de panne simulée pour tester le moniteur de santé.",
-      "enable": "Simuler l'échec",
-      "disable": "Effacer la simulation",
+      "on": "Activé",
+      "off": "Désactivé",
+      "loadFailed": "Impossible de charger les réglages de simulation de panne. Rechargez la page pour réessayer.",
+      "saveFailed": "Impossible d'enregistrer le réglage pour {service}. Réessayez.",
+      "announceOn": "Panne simulée : {service}.",
+      "announceOff": "{service} fonctionne normalement.",
       "labels": {
         "database": "Base de données",
         "search": "Recherche",
@@ -2222,9 +2255,13 @@
     "errors": "Erreurs",
     "warnings": "Avertissements",
     "notConfigured": "Non configuré",
+    "statusError": "Erreur",
+    "statusWarning": "Avertissement",
     "lastRun": "Dernière exécution :",
+    "summaryHeading": "Résumé de la connectivité",
     "serviceDetails": "Détails du service",
     "latency": "Latence :",
+    "millisecondsUnit": "ms",
     "details": "Détails",
     "error": "Erreur :"
   },

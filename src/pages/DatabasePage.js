@@ -7,6 +7,7 @@ import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
+import { formatLocaleDate } from '../utils/formatLocaleDate.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
@@ -21,6 +22,9 @@ import {
   exportHasNoDates,
   toExportDateBounds
 } from '../utils/database/exportCollections.js';
+
+// How often the page asks whether a running index rebuild has finished
+const INDEX_REBUILD_POLL_MS = 5000;
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
@@ -96,7 +100,16 @@ const DatabasePage = ({ lang }) => {
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
   const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
   const [indexStatus, setIndexStatus] = useState(null);
-  const [creationDetails, setCreationDetails] = useState(null);
+  // Last "Rebuild all indexes" run from the server — it rebuilds in the
+  // background, so the page polls this while it's running.
+  const [indexRebuild, setIndexRebuild] = useState(null);
+  // Second box, only when a rebuild both failed and left collections still
+  // building — so each box's colour matches its own list.
+  const [stillBuildingMessage, setStillBuildingMessage] = useState(null);
+  // Only a rebuild started by a click on this visit is announced. One the
+  // page finds on load is shown quietly — rebuilding is a small part of
+  // this page, and nobody just asked for it.
+  const announceRebuildRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,6 +141,84 @@ const DatabasePage = ({ lang }) => {
     fetchCountsAndCollections();
     return () => { isMounted = false; };
   }, []);
+
+  // Finished rebuild: success; info when some collections are still
+  // building (not a failure); or error, plus a separate info box when some
+  // are also still building. Each list sits in its own box below.
+  // Dated, since the page also shows one from an earlier visit.
+  const showRebuildResult = (rebuild, announce) => {
+    const time = formatLocaleDate(rebuild.finishedAt, lang, null, { dateStyle: 'long', timeStyle: 'short' });
+    const total = rebuild.success.length + rebuild.failed.length + rebuild.stillBuilding.length;
+    const stillBuilding = rebuild.stillBuilding.length > 0
+      ? t('admin.database.createIndexesStillBuilding').replace('{count}', rebuild.stillBuilding.length)
+      : '';
+    const counts = t('admin.database.createIndexesCounts')
+      .replace('{successCount}', rebuild.success.length)
+      .replace('{failCount}', rebuild.failed.length);
+    if (rebuild.failed.length > 0) {
+      setCreateIndexesMessage({
+        text: [
+          t('admin.database.createIndexesFailed')
+            .replace('{failCount}', rebuild.failed.length)
+            .replace('{total}', total)
+            .replace('{time}', time),
+          counts
+        ].join(' '),
+        isError: true,
+        announce
+      });
+      setStillBuildingMessage(stillBuilding ? { text: stillBuilding, announce } : null);
+      return;
+    }
+    setCreateIndexesMessage({
+      text: [t('admin.database.createIndexesFinished').replace('{time}', time), counts, stillBuilding].filter(Boolean).join(' '),
+      variant: stillBuilding ? 'info' : 'success',
+      announce
+    });
+    setStillBuildingMessage(null);
+  };
+
+  // Show the last rebuild's result, and pick up one still running
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLastRebuild() {
+      try {
+        const rebuild = await DataStoreService.getIndexRebuildStatus();
+        if (!isMounted || !rebuild) return;
+        setIndexRebuild(rebuild);
+        if (rebuild.running) {
+          setCreateIndexesMessage({ text: t('admin.database.createIndexesAlreadyRunning'), variant: 'info', announce: false });
+        } else {
+          showRebuildResult(rebuild, false);
+        }
+      } catch (e) {
+        // ignore — the page works without it
+      }
+    }
+    fetchLastRebuild();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!indexRebuild?.running) return undefined;
+    const timer = setTimeout(async () => {
+      try {
+        const rebuild = await DataStoreService.getIndexRebuildStatus();
+        const announce = announceRebuildRef.current;
+        setIndexRebuild(rebuild);
+        if (!rebuild) {
+          // Server restarted mid-rebuild, so its record is gone
+          setCreateIndexesMessage({ text: t('admin.database.createIndexesLost'), variant: 'warning', announce });
+        } else if (!rebuild.running) {
+          showRebuildResult(rebuild, announce);
+        }
+      } catch (error) {
+        setIndexRebuild(null);
+        setCreateIndexesMessage({ ...buildErrorStatus('admin.database.indexRebuildStatusError', error), announce: announceRebuildRef.current });
+      }
+    }, INDEX_REBUILD_POLL_MS);
+    return () => clearTimeout(timer);
+  }, [indexRebuild]);
 
   // TODO (pending review — open question, not yet a confirmed gap):
   // SettingsPage.js's real convention (stageChange) is narrower than it
@@ -563,16 +654,17 @@ const DatabasePage = ({ lang }) => {
     try {
       setIsCreatingIndexes(true);
       setCreateIndexesMessage(null);
+      announceRebuildRef.current = true;
 
-      const result = await DataStoreService.createIndexes();
+      const { alreadyRunning, rebuild } = await DataStoreService.createIndexes();
 
-      const successCount = result.results.success ? result.results.success.length : 0;
-      const failCount = result.results.failed ? result.results.failed.length : 0;
-
-      setCreationDetails(result.results);
-      setCreateIndexesMessage({ text: t('admin.database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount), isError: false });
+      setIndexRebuild(rebuild);
+      setCreateIndexesMessage({
+        text: t(alreadyRunning ? 'admin.database.createIndexesAlreadyRunning' : 'admin.database.createIndexesStarted'),
+        variant: 'info'
+      });
     } catch (error) {
-      setCreationDetails(null);
+      setIndexRebuild(null);
       setCreateIndexesMessage(buildErrorStatus('admin.database.createIndexesError', error));
       console.error('Create indexes error:', error);
     } finally {
@@ -941,7 +1033,7 @@ const DatabasePage = ({ lang }) => {
           <GcdsButton
             type="submit"
             disabled={isImporting}
-            buttonRole="secondary"
+            buttonRole="primary"
             className="mb-200"
           >
             {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
@@ -985,17 +1077,33 @@ const DatabasePage = ({ lang }) => {
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
-        {renderStatusMessage(createIndexesMessage, 'success', 'createIndexes')}
-        {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
-          <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
-            <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
-              {t('admin.database.indexCreationFailed')}
-            </div>
-            <ul className="font-size-text-sm-nr" style={{ margin: 0, paddingLeft: 20 }}>
-              {creationDetails.failed.map((f, i) => (
-                <li key={i} style={{ marginBottom: 4 }}>
-                  <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span className="text-secondary" style={{ marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
+        {renderStatusMessage(createIndexesMessage, createIndexesMessage?.variant, 'createIndexes')}
+        {/* Lists sit in their own box, outside the StatusMessage, so only
+            the message line is announced. */}
+        {indexRebuild && !indexRebuild.running && indexRebuild.failed.length > 0 && (
+          <div className="status-details-box status-details-box--error">
+            <p>{t('admin.database.indexCreationFailed')}</p>
+            <ul className="list-disc canada-ca-list-spcd-1">
+              {indexRebuild.failed.map((f) => (
+                <li key={f.collection}>
+                  <strong>{f.collection}</strong>: <code lang="en">{f.error}</code>
+                  {f.code != null && ` (${t('admin.database.indexCodeLabel').replace('{code}', f.code)})`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {indexRebuild && !indexRebuild.running && indexRebuild.failed.length > 0 && (
+          renderStatusMessage(stillBuildingMessage, 'info', 'createIndexesStillBuilding')
+        )}
+        {indexRebuild && !indexRebuild.running && indexRebuild.stillBuilding.length > 0 && (
+          <div className="status-details-box status-details-box--info">
+            <p>{t('admin.database.indexStillBuilding')}</p>
+            <ul className="list-disc canada-ca-list-spcd-1">
+              {indexRebuild.stillBuilding.map((s) => (
+                <li key={s.collection}>
+                  <strong>{s.collection}</strong>: <code lang="en">{s.error}</code>
+                  {s.code != null && ` (${t('admin.database.indexCodeLabel').replace('{code}', s.code)})`}
                 </li>
               ))}
             </ul>

@@ -7,6 +7,10 @@ import FeedbackInlineError from './FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { isWellFormedHttpUrl } from '../../utils/chat/referringUrl.js';
 import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
+import { announce as announceLive } from '../../utils/liveAnnouncer.js';
+
+// Same delay as SettingsPage's unsaved-changes warning.
+const UNSAVED_WARNING_ANNOUNCE_DELAY_MS = 4000;
 
 // workflowSelection / modelSelection are what the dropdowns show, which is not
 // the same thing as what the chat will run: '' means "no override, follow the
@@ -23,9 +27,8 @@ const ChatOptions = ({
   referringUrl,
   handleReferringUrlChange
 }) => {
-  // Workflow/Model apply live on change (like BatchUpload's GcdsSelects) —
-  // the selected option is its own confirmation, no ambiguity to resolve.
-  // Referring URL is explicit-submit instead: it's the one field here that
+  // Workflow/Model/Search are drafts until Save (as on SettingsPage).
+  // Referring URL has its own explicit Apply: it's the one field here that
   // needs validation (a plain type="url" input never gets native browser
   // validation — that only fires on submit, and this wasn't a submit-driven
   // form before), and an explicit Apply makes that a normal submit failure
@@ -33,6 +36,30 @@ const ChatOptions = ({
   // focus-the-error-on-failure pattern (matching Settings' Save,
   // DatabasePage's Import) applies here too, no special-casing needed.
   const [draftUrl, setDraftUrl] = useState(referringUrl || '');
+
+  // Drafts reset to saved whenever saved changes (a Save, or stored overrides loading).
+  const savedOptions = {
+    workflow: WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : '',
+    model: MODEL_VALUES.includes(modelSelection) ? modelSelection : '',
+    search: selectedSearch || '',
+  };
+  const [draftOptions, setDraftOptions] = useState(savedOptions);
+  useEffect(() => {
+    setDraftOptions(savedOptions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedOptions.workflow, savedOptions.model, savedOptions.search]);
+  const optionsDirty = Object.keys(savedOptions).some((key) => draftOptions[key] !== savedOptions[key]);
+  // Shown above the panel while anything is unsaved, open or closed — the
+  // chat keeps running on the saved options until Save.
+  const unsavedWarning = optionsDirty ? safeT('homepage.chat.options.unsavedWarning') : undefined;
+  // Announced only if still unsaved a few seconds later, so it doesn't talk
+  // over the dropdown just changed (as on SettingsPage).
+  useEffect(() => {
+    if (!unsavedWarning) return undefined;
+    const timer = setTimeout(() => announceLive(unsavedWarning), UNSAVED_WARNING_ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [unsavedWarning]);
+  const { message: optionsSavedMessage, nonce: optionsSavedNonce, announce: announceOptionsSaved, clear: clearOptionsSaved } = useRepeatableStatus();
   const referringUrlError = useInlineFormError();
   // useInlineFormError only tracks *that* there's an error, not *which* one -
   // three different failures now share this one inline-error region (a
@@ -69,6 +96,20 @@ const ChatOptions = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [referringUrl]);
+
+  const handleOptionDraftChange = (key) => (e) => {
+    const value = e.target.value;
+    setDraftOptions((prev) => ({ ...prev, [key]: value }));
+    clearOptionsSaved();
+  };
+
+  const handleSaveOptions = () => {
+    const handlers = { workflow: handleWorkflowChange, model: handleAIToggle, search: handleSearchToggle };
+    Object.keys(handlers)
+      .filter((key) => draftOptions[key] !== savedOptions[key])
+      .forEach((key) => handlers[key]({ target: { value: draftOptions[key] } }));
+    announceOptionsSaved(safeT('homepage.chat.options.savedAnnouncement'));
+  };
 
   const handleUrlDraftChange = (e) => {
     setDraftUrl(e.target.value);
@@ -132,6 +173,15 @@ const ChatOptions = ({
   return (
     // Make the entire details panel visible to admin and partner; inside, restrict some controls to admin only
     <RoleBasedContent roles={["admin", "partner"]}>
+      <RoleBasedContent roles={['admin']}>
+        <StatusMessage
+          variant={unsavedWarning ? 'warning' : undefined}
+          message={unsavedWarning}
+          announce={false}
+          announcedVia="live-announcer-polite"
+          className="mt-400"
+        />
+      </RoleBasedContent>
       {/* Native <details>/<summary> — global.css already styles every one
           site-wide (border, arrow marker, GC DS-token focus ring), same
           pattern as SettingsPage.js's own sections, no extra classes needed
@@ -140,9 +190,8 @@ const ChatOptions = ({
           16px default — shared class, not new CSS (admin.css). */}
       <details className="filter-fields-full-size mt-400 mb-200">
         <summary>{safeT('homepage.chat.options.title')}</summary>
-        {/* Admin-only controls. Live-apply, GC DS-token styled (.filter-select/
-            .filter-label, matching SettingsPage): no draft, no Apply, the
-            selected option is the only feedback needed. */}
+        {/* Admin-only controls. Drafts until Save, GC DS-token styled
+            (.filter-select/.filter-label, matching SettingsPage). */}
         <RoleBasedContent roles={['admin']}>
           <div className="mrgn-bttm-10 settings-form-width">
             <label htmlFor="workflow" className="filter-label display-block">{safeT('homepage.chat.options.workflow.label')}</label>
@@ -159,8 +208,8 @@ const ChatOptions = ({
               // "prefer central fixes for shared semantics", a shared helper
               // in src/config/workflows.js (e.g. `resolveWorkflow(value)` /
               // `resolveModel(value)`) would keep it from drifting.
-              value={WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : ''}
-              onChange={handleWorkflowChange}
+              value={draftOptions.workflow}
+              onChange={handleOptionDraftChange('workflow')}
               className="filter-select"
             >
               <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
@@ -175,8 +224,8 @@ const ChatOptions = ({
             <select
               id="model"
               name="model"
-              value={MODEL_VALUES.includes(modelSelection) ? modelSelection : ''}
-              onChange={handleAIToggle}
+              value={draftOptions.model}
+              onChange={handleOptionDraftChange('model')}
               className="filter-select"
             >
               <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
@@ -193,8 +242,8 @@ const ChatOptions = ({
             <select
               id="search-provider"
               name="searchProvider"
-              value={selectedSearch}
-              onChange={handleSearchToggle}
+              value={draftOptions.search}
+              onChange={handleOptionDraftChange('search')}
               className="filter-select"
             >
               <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
@@ -203,6 +252,14 @@ const ChatOptions = ({
               ))}
             </select>
           </div>
+
+          <div className="mt-200 mb-400">
+            <GcdsButton type="button" onClick={handleSaveOptions} disabled={!optionsDirty}>
+              {safeT('homepage.chat.options.saveLabel')}
+            </GcdsButton>
+            <StatusMessage variant="success" message={optionsSavedMessage} nonce={optionsSavedNonce} />
+          </div>
+          <hr className="section-divider mb-400" />
         </RoleBasedContent>
 
         {/* Referring URL visible to both admin and partner. No

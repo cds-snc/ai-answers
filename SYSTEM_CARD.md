@@ -82,7 +82,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### AI model details
 - **Current production models**: Azure OpenAI GPT-5.1 family (cutover March 18,2026 from GPT 4.1); evaluation agents use GPT-4.1-mini
-- **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step or service to the appropriate model within that family — supporting steps (PII redaction, translation, query rewrite) use the mini variant (e.g. GPT-5-mini) for cost and speed, while context generation and answer generation use the full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
+- **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step or service to the appropriate model — supporting steps (translation, query rewrite) use GPT-4.1-mini for cost and speed, while context generation and answer generation use the selected family's full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
 - **Temperature**: 0 (deterministic responses), reasoning low
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed
 - **Model independence**: System designed to work with different AI providers, tested with GPT & Claude, plans in place to deploy more models, including Cohere, via AWS Bedrock
@@ -192,7 +192,7 @@ never become examples, so the system never learns from its own judgements.
 **Mitigation strategies:**
 - **2-stage PI detection and blocking**: 
   - **Stage 1**: Pattern-based detection blocks known PI formats (SIN, emails, phone numbers, addresses)
-  - **Stage 2**: AI model (located in Canada) acts as PI Agent to flag personal information that slipped through pattern stage, especially names and personal identifiers
+  - **Stage 2**: AI model (located in Canada) acts as PI Agent to flag personal information that slipped through pattern stage, especially names, personal identifiers and dates of birth
   - Government form numbers, product serial numbers, and names in historical, political and address contexts are explicitly preserved (e.g. Louis Riel day, James Flaherty building, PM Carney)
 - **User notification**: Users are warned when PI is detected that their question won't be logged or sent to the AI service, must ask the question differently to continue
 - **Data minimization**: Only questions not flagged as containing PI are sent to the AI service and stored
@@ -381,7 +381,7 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
   - **URL**: https://ai-answers.alpha.canada.ca
   - **Infrastructure**: AWS ECS with auto-scaling
   - **Database**: AWS DocumentDB with automated backups
-  - **AI services**: Azure OpenAI GPT 4.0, 5.1 family of models - plans to add Cohere and Anthropic
+  - **AI services**: Azure OpenAI GPT5.1 family of models with GPT4o for PI and 4.1-mini for evaluation - plans to add Cohere
   - **Monitoring**: CloudWatch metrics and logging
   - **Platform**: Institutions can add prompt scenarios to meet specific needs
 

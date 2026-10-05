@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import SettingsPage from '../SettingsPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const {
   mockGetSettings,
@@ -224,6 +225,7 @@ describe('SettingsPage audit history', () => {
   });
 
   it('reloads audit history after clearing the downloaded web page cache', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(React.createElement(SettingsPage, { lang: 'en' }));
 
     await waitFor(() => {
@@ -236,6 +238,60 @@ describe('SettingsPage audit history', () => {
       expect(mockClearDownloadWebPageCache).toHaveBeenCalledTimes(1);
       expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
     });
+    expect(confirmSpy).toHaveBeenCalledWith('settings.downloadWebPageCache.clearConfirm');
+    confirmSpy.mockRestore();
+  });
+
+  it('does not clear the web page cache when the confirm is cancelled', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'settings.downloadWebPageCache.clear' }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(mockClearDownloadWebPageCache).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it('shows the web page cache clear outcome under the Clear button, after the cache fields and Save button', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const clearButton = await screen.findByRole('button', { name: 'settings.downloadWebPageCache.clear' });
+    const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
+    const toggle = screen.getByLabelText('settings.downloadWebPageCache.enabledLabel');
+    expect(clearButton.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(clearButton.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+
+    fireEvent.click(clearButton);
+
+    const message = await screen.findByText('settings.downloadWebPageCache.clearSuccess');
+    expect(clearButton.parentElement.contains(message)).toBe(true);
+    expect(saveButton.parentElement.contains(message)).toBe(false);
+    await waitForAnnouncement('settings.downloadWebPageCache.clearSuccess');
+    confirmSpy.mockRestore();
+  });
+
+  it('shows the web page cache hint between the toggle label and the toggle, linked to it', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const toggle = await screen.findByLabelText('settings.downloadWebPageCache.enabledLabel');
+    const label = document.querySelector('label[for="download-web-page-cache-enabled"]');
+    const hint = screen.getByText('settings.downloadWebPageCache.description');
+    expect(label.nextElementSibling).toBe(hint);
+    expect(hint.nextElementSibling).toBe(toggle);
+    expect(toggle.getAttribute('aria-describedby').split(' ')).toContain(hint.id);
+  });
+
+  it('links the redaction help text to every redaction field', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+    await screen.findByText('settings.redaction.description');
+
+    for (const id of ['profanity', 'threat', 'manipulation'].flatMap((f) => [`redaction.${f}.en`, `redaction.${f}.fr`])) {
+      const describedBy = document.getElementById(id).getAttribute('aria-describedby').split(' ');
+      expect(describedBy.map((ref) => document.getElementById(ref)?.textContent))
+        .toContain('settings.redaction.description');
+    }
   });
 
   it('reloads audit history after clearing the search cache', async () => {
@@ -260,7 +316,7 @@ describe('SettingsPage audit history', () => {
       expect(screen.getByText('settings.health.title')).toBeTruthy();
     });
 
-    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
     expect(saveButton.hasAttribute('disabled')).toBe(true);
 
     fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
@@ -287,7 +343,7 @@ describe('SettingsPage audit history', () => {
 
     const field = screen.getByLabelText('settings.health.enabledLabel');
     fireEvent.change(field, { target: { value: 'true' } });
-    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
 
     await waitFor(() => {
       expect(screen.getByText('settings.saveSuccessIn')).toBeTruthy();
@@ -306,7 +362,7 @@ describe('SettingsPage audit history', () => {
       expect(screen.getByText('settings.health.title')).toBeTruthy();
     });
 
-    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
     const field = screen.getByLabelText('settings.health.enabledLabel');
 
     // Loaded value is 'false' (see healthSettings above).
@@ -424,7 +480,7 @@ describe('SettingsPage field errors', () => {
 
     const field = screen.getByLabelText('settings.health.enabledLabel');
     fireEvent.change(field, { target: { value: 'true' } });
-    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
 
     await waitFor(() => {
       expect(screen.getByText('Not a valid value')).toBeTruthy();
@@ -436,7 +492,7 @@ describe('SettingsPage field errors', () => {
 
     // A field that failed stays dirty so the admin can fix and retry — a
     // partial failure must not silently discard the edit.
-    const saveButton = screen.getByRole('button', { name: 'settings.save settings.health.title' });
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
     expect(saveButton.hasAttribute('disabled')).toBe(false);
   });
 
@@ -462,7 +518,7 @@ describe('SettingsPage field errors', () => {
     fireEvent.change(screen.getByLabelText('settings.health.alertRecipients'), {
       target: { value: 'not-an-email' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
 
     // The mocked t() is an identity function, so the resolved text is the
     // translation key itself — proving the i18nKey was actually passed
@@ -486,7 +542,7 @@ describe('SettingsPage field errors', () => {
 
     const field = screen.getByLabelText('settings.health.enabledLabel');
     fireEvent.change(field, { target: { value: 'true' } });
-    fireEvent.click(screen.getByRole('button', { name: 'settings.save settings.health.title' }));
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
 
     await waitFor(() => {
       expect(screen.getByText('Not a valid value')).toBeTruthy();

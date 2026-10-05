@@ -61,6 +61,19 @@
   isolation: isolate;
 }
 
+/* ConnectivityPage.js's results, for its scoped LoadingOverlay. The results
+   run long, so the box sits at the top, near the controls that start a run,
+   not centred below the fold. */
+.connectivity-results {
+  position: relative;
+  isolation: isolate;
+}
+
+.connectivity-results .loading-overlay {
+  align-items: flex-start;
+  padding-top: var(--gcds-spacing-400);
+}
+
 /* TODO (design review, low risk): needs review for small screens. */
 .loading-overlay-content {
   display: flex;
@@ -377,6 +390,20 @@
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
   margin-bottom: 2px;
+}
+
+/* GC DS hint pattern (label, hint, field) for plain HTML fields: gcds-hint's
+   own tokens. A plain <p> because a native field's aria-describedby can't
+   reach into <gcds-hint>'s shadow DOM. */
+.field-hint {
+  color: var(--gcds-hint-text);
+  margin: var(--gcds-hint-margin);
+}
+
+/* Thin divider; the browser-default <hr> is a thick inset double line. */
+.section-divider {
+  border: none;
+  border-top: var(--gcds-border-width-sm) solid var(--gcds-border-default);
 }
 
 .filter-field {
@@ -2191,6 +2218,47 @@ td:has(> .verdict-cell__link) {
   margin-right: var(--gcds-icon-margin-50);
 }
 
+/* A list that belongs to the StatusMessage box above it (DatabasePage's
+   index rebuild failures / collections still building). Own box, outside
+   the StatusMessage, so it isn't announced — same colours, square corners
+   so it reads as related but not the message itself. Fills to the
+   StatusMessage box's max width, so the two line up once the message
+   wraps. The negative top margin collapses with the box's margin-bottom
+   to leave a small gap. */
+.status-details-box {
+  padding: var(--gcds-spacing-150) var(--gcds-spacing-200);
+  margin-top: calc(var(--gcds-spacing-100) - var(--gcds-spacing-250));
+  margin-bottom: var(--gcds-spacing-250);
+  font-size: var(--gcds-font-sizes-text-small);
+  max-width: 65ch;
+  overflow-wrap: anywhere;
+}
+
+.status-details-box p {
+  margin: 0 0 var(--gcds-spacing-100);
+}
+
+.status-details-box ul {
+  margin: 0;
+  padding-left: var(--gcds-spacing-250);
+}
+
+.status-details-box li:last-child {
+  margin-bottom: 0;
+}
+
+.status-details-box--error {
+  background: var(--gcds-color-red-100);
+  border: 1px solid var(--gcds-color-red-500);
+  color: var(--gcds-color-red-700);
+}
+
+.status-details-box--info {
+  background: var(--gcds-color-blue-100);
+  border: 1px solid var(--gcds-color-blue-500);
+  color: var(--gcds-color-blue-700);
+}
+
 /* DatabasePage.js's import-progress counter (the plain-text line shown
    while a chunked import is running). Extracted from its previous inline
    style — same margin/color, no design change — so it's a class to build
@@ -3399,6 +3467,24 @@ table.table-slim-padding > tbody > tr > th,
 table.table-slim-padding > tbody > tr > td {
   padding: 4px 10px;
 }
+
+.dt-container.metadata-lookup-scroll {
+  font-size: var(--gcds-font-sizes-text-small-mobile);
+}
+/* VectorPage.js metadata lookup: a mismatch is marked with text ("! a → b")
+   as well as colour. */
+.metadata-mismatch {
+  color: var(--gcds-danger-text);
+  font-weight: var(--gcds-font-weights-bold);
+}
+.metadata-lookup-id-label {
+  color: var(--gcds-text-secondary);
+  font-weight: 700;
+}
+/* Doubled class to beat .canada-ca-dl-columns--single's 65ch, defined later. */
+.canada-ca-dl-columns.metadata-lookup-summary {
+  max-width: 50ch;
+}
 /* .table-fixed-layout - opt-in for a table whose rows arrive one at a
    time (VectorPage.js's DocDB capability probes): with auto layout every
    new row re-measures every column and the whole table shifts. Pair with a
@@ -3418,16 +3504,6 @@ table.dataTable.table-fixed-layout > thead > tr > th {
    cell next to it. */
 table.dataTable > tbody > tr > th[scope="row"] {
   text-align: left;
-}
-/* .table-key-value - a two-column label/value table shrinks to its
-   content instead of DataTables' width: 100%, so the value sits beside its
-   label rather than at the far edge of the page. */
-table.dataTable.table-key-value {
-  width: auto;
-  margin: 0;
-}
-table.dataTable.table-key-value > tbody > tr > td {
-  padding-left: var(--gcds-spacing-300);
 }
 
 /* BatchList.js's visible "paused" design element - sits under the pause
@@ -3574,6 +3650,18 @@ details gcds-button::part(button) {
 .canada-ca-dl-columns dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* Field hint under a plain <label>, using gcds-hint's own tokens. */
+.canada-ca-field-hint {
+  color: var(--gcds-hint-text);
+  margin: var(--gcds-hint-margin);
+}
+
+/* Short lists: one column, capped so the label stays near its number. */
+.canada-ca-dl-columns--single {
+  columns: auto;
+  max-width: 65ch;
 }
 
 /* Native <input type="file"> dressed as GC DS's gcds-file-uploader, using
