@@ -44,6 +44,7 @@ vi.mock('../../../services/DownloadWebPageCacheCoordinator.js', () => ({
 }));
 
 import { getEncoding } from 'js-tiktoken';
+import { SettingsService } from '../../../services/SettingsService.js';
 
 import downloadWebPageTool, {
   clearDownloadWebPageCache,
@@ -133,7 +134,7 @@ describe('downloadWebPage tool', () => {
     expect(storageGetMetaDataMock).not.toHaveBeenCalled();
   });
 
-  it('returns downloaded content without waiting for a cache write', async () => {
+  it('returns downloaded content without waiting for the cache write in CDS mode', async () => {
     cacheEnabledMock.mockResolvedValue(true);
     storageGetWithMetadataMock.mockRejectedValue({ name: 'NoSuchKey' });
     storagePutMock.mockReturnValue(new Promise(() => {}));
@@ -142,6 +143,25 @@ describe('downloadWebPage tool', () => {
     await expect(invokeTool({ url: 'https://www.canada.ca/en/fresh.html' }))
       .resolves.toContain('705-424-1200');
     await vi.waitFor(() => expect(storagePutMock).toHaveBeenCalledOnce());
+  });
+
+  it('waits for the cache write in Vercel mode so Lambda can finish it', async () => {
+    vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
+    SettingsService.cache['deploymentMode'] = 'Vercel';
+    cacheEnabledMock.mockResolvedValue(true);
+    storageGetWithMetadataMock.mockRejectedValue({ name: 'NoSuchKey' });
+    let finishWrite;
+    storagePutMock.mockReturnValue(new Promise((resolve) => { finishWrite = resolve; }));
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+    let downloadFinished = false;
+    const download = invokeTool({ url: 'https://www.canada.ca/en/fresh.html' })
+      .then((output) => { downloadFinished = true; return output; });
+    await vi.waitFor(() => expect(storagePutMock).toHaveBeenCalledOnce());
+    expect(downloadFinished).toBe(false);
+    finishWrite();
+    await expect(download).resolves.toContain('705-424-1200');
+    expect(downloadFinished).toBe(true);
   });
 
   it('clears only the dedicated cache prefix without reporting an incomplete object count', async () => {

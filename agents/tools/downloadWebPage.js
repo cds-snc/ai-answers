@@ -406,13 +406,22 @@ const downloadWebPageTool = tool(
         // Successfully received response
         console.log("Read web page - Status:", result.res.status);
         if (cacheGeneration) {
-          // The generation check and non-blocking lock protect a clear from a
-          // stale write. Run that guarded write in the background: cached data
-          // is an optimization and must not delay the answer.
-          cacheWriteStatus = 'scheduled';
-          void cacheMarkdown(url, markdown, cacheGeneration).catch((error) => {
-            console.warn(`Failed to cache web page: ${url}`, error.message);
-          });
+          // Match SearchContextService: await only in Lambda-backed Vercel mode.
+          if (SettingsService.get('deploymentMode') === 'Vercel') {
+            try {
+              const stored = await cacheMarkdown(url, markdown, cacheGeneration);
+              cacheWriteStatus = stored ? 'stored' : 'skipped';
+            } catch (error) {
+              cacheWriteStatus = 'failed';
+              cacheError = error.message;
+              console.warn(`Failed to cache web page: ${url}`, error.message);
+            }
+          } else {
+            cacheWriteStatus = 'scheduled';
+            void cacheMarkdown(url, markdown, cacheGeneration).catch((error) => {
+              console.warn(`Failed to cache web page: ${url}`, error.message);
+            });
+          }
         }
       }
     } catch (error) {

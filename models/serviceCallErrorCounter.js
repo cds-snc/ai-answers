@@ -13,8 +13,8 @@ const serviceCallErrorCounterSchema = new mongoose.Schema({
   // Which call within that service: 'google' | 'canadaca' (search); 'context' | 'answer' (ai)
   type: { type: String, required: true },
   // 'error' = the call ultimately failed after all retries; 'retry' = one retry
-  // attempt; 'cacheHit' = a result was served without an outbound search.
-  event: { type: String, required: true, enum: ['error', 'retry', 'cacheHit'] },
+  // attempt; cache lookup outcomes and outbound calls supply rate denominators.
+  event: { type: String, required: true, enum: ['error', 'retry', 'cacheHit', 'cacheMiss', 'providerCall'] },
   count: { type: Number, required: true, default: 0 },
 }, {
   timestamps: true,
@@ -29,4 +29,5 @@ serviceCallErrorCounterSchema.index({ date: 1, service: 1, type: 1, event: 1 }, 
 export const ServiceCallMetricCounter = mongoose.models.ServiceCallErrorCounter
   || mongoose.model('ServiceCallErrorCounter', serviceCallErrorCounterSchema);
 
+export const ServiceCallErrorCounter = ServiceCallMetricCounter;
 export default ServiceCallMetricCounter;
