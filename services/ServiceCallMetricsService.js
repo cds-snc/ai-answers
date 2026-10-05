@@ -49,6 +49,14 @@ class ServiceCallMetricsService {
     return this._record({ service, type, event: 'cacheHit' });
   }
 
+  static async recordCacheMiss({ service, type }) {
+    return this._record({ service, type, event: 'cacheMiss' });
+  }
+
+  static async recordProviderCall({ service, type }) {
+    return this._record({ service, type, event: 'providerCall' });
+  }
+
   // Aggregates error/retry counts within [start, end] (Date objects), grouped
   // by service and type. Returns e.g.:
   //   { search: { google: { errors, retries }, canadaca: { errors, retries } },
@@ -72,11 +80,13 @@ class ServiceCallMetricsService {
       for (const row of rows) {
         const { service, type, event } = row?._id || {};
         if (!result[service]) continue;
-        if (!result[service][type]) result[service][type] = { errors: 0, retries: 0, cacheHits: 0 };
+        if (!result[service][type]) result[service][type] = { errors: 0, retries: 0, cacheHits: 0, cacheMisses: 0, providerCalls: 0 };
         const count = row?.count || 0;
         if (event === 'error') result[service][type].errors += count;
         else if (event === 'retry') result[service][type].retries += count;
         else if (event === 'cacheHit') result[service][type].cacheHits += count;
+        else if (event === 'cacheMiss') result[service][type].cacheMisses += count;
+        else if (event === 'providerCall') result[service][type].providerCalls += count;
       }
 
       return result;

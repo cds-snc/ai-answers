@@ -50,8 +50,8 @@ const baseHook = {
     responseTime: {},
     downloadWebPage: [],
     searchCalls: {
-      canadaca: { errors: 2, retries: 5, cacheHits: 9 },
-      google: { errors: 1, retries: 0, cacheHits: 3 },
+      canadaca: { errors: 2, retries: 5, cacheHits: 9, cacheMisses: 1, providerCalls: 4 },
+      google: { errors: 1, retries: 0, cacheHits: 3, cacheMisses: 3, providerCalls: 2 },
     },
     aiServiceCalls: {
       context: { errors: 3 },
@@ -90,8 +90,8 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
     );
     expect(searchTable).toBeTruthy();
     expect(searchTable.data).toEqual([
-      expect.objectContaining({ provider: 'Canada.ca search (Coveo)', errorCount: '2', retryCount: '5', cacheHitCount: '9' }),
-      expect.objectContaining({ provider: 'Google', errorCount: '1', retryCount: '0', cacheHitCount: '3' }),
+      expect.objectContaining({ provider: 'Canada.ca search (Coveo)', errorCount: '2', errorPercent: '15%', retryCount: '5', cacheHitPercent: '90%' }),
+      expect.objectContaining({ provider: 'Google', errorCount: '1', errorPercent: '20%', retryCount: '0', cacheHitPercent: '50%' }),
     ]);
     // No retry-rate column: a single question's search can retry more than
     // once, so "retries / totalQuestions" can exceed 100% and would mislead.
@@ -110,8 +110,8 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
       call.data?.some((row) => row.provider === 'Google')
     );
     expect(searchTable.data).toEqual([
-      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitCount: '0' }),
-      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitCount: '0' }),
+      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitPercent: '0%' }),
+      expect.objectContaining({ errorCount: '0', retryCount: '0', cacheHitPercent: '0%' }),
     ]);
   });
 
@@ -155,7 +155,7 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
     expect(alerts.some((a) => a.textContent.includes('technical fetch failed'))).toBe(true);
   });
 
-  it('surfaces a usage-fetch error on the search-calls and AI-calls sections too, since their rates depend on usage data', () => {
+  it('shows usage-fetch errors only on sections that depend on usage data', () => {
     mockUseTechnicalMetrics.mockReturnValue({
       ...baseHook,
       errorState: { technical: null, usage: 'usage fetch failed', blocked: null },
@@ -163,7 +163,14 @@ describe('TechnicalMetricsDashboard search calls + AI service errors', () => {
 
     render(<TechnicalMetricsDashboard lang="en" />);
 
-    const alerts = Array.from(document.querySelectorAll('.status-message--error-box'));
-    expect(alerts.some((a) => a.textContent.includes('usage fetch failed'))).toBe(true);
+    const sections = Array.from(document.querySelectorAll('h2')).map((heading) => ({
+      title: heading.textContent,
+      error: heading.parentElement.querySelector('.status-message--error-box')?.textContent,
+    }));
+    const searchCalls = sections.find((section) => section.title === 'technicalMetrics.dashboard.searchCalls.title');
+    const aiCalls = sections.find((section) => section.title === 'technicalMetrics.dashboard.aiServiceCalls.title');
+
+    expect(searchCalls.error).toBeUndefined();
+    expect(aiCalls.error).toContain('usage fetch failed');
   });
 });

@@ -13,6 +13,7 @@ const {
   mockSetSettings,
   mockRefreshSettingsCache,
   mockClearDownloadWebPageCache,
+  mockClearSearchCache,
   mockGetSettingsAudit,
 } = vi.hoisted(() => {
   const healthSettings = {
@@ -78,6 +79,7 @@ const {
     })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
     mockClearDownloadWebPageCache: vi.fn(async () => ({ success: true })),
+    mockClearSearchCache: vi.fn(async () => ({ deletedCount: 2 })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });
@@ -90,6 +92,7 @@ vi.mock('../../services/DataStoreService.js', () => ({
     setSettings: mockSetSettings,
     refreshSettingsCache: mockRefreshSettingsCache,
     clearDownloadWebPageCache: mockClearDownloadWebPageCache,
+    clearSearchCache: mockClearSearchCache,
     getSettingsAudit: mockGetSettingsAudit,
   },
 }));
@@ -167,6 +170,21 @@ describe('SettingsPage health section', () => {
       expect(mockGetSettings.mock.calls[0][0]).toContain('systemHealth.enabled');
       expect(mockGetSettings.mock.calls[0][0]).toContain('session.rateLimitPersistence');
       expect(mockGetSettings.mock.calls[0][0]).toContain('redaction.profanity.en');
+    });
+  });
+
+  it('renders one search-cache control in the Cache section and reports its clear result there', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('settings.searchContextCache.enabledLabel')).toBeTruthy();
+    });
+
+    expect(screen.getAllByLabelText('settings.searchContextCache.enabledLabel')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'settings.searchContextCache.clear' }));
+    await waitFor(() => {
+      expect(mockClearSearchCache).toHaveBeenCalledOnce();
+      expect(screen.getByText('settings.searchContextCache.clearSuccess')).toBeTruthy();
     });
   });
 });
