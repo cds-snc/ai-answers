@@ -34,7 +34,7 @@ vi.mock('../../../services/Storage.js', () => ({
     deleteAll: storageDeleteAllMock,
   },
 }));
-vi.mock('../../../services/DownloadWebPageCacheCoordinator.js', () => ({
+vi.mock('../../../services/CacheCoordinator.js', () => ({
   advanceDownloadWebPageCacheGeneration: advanceCacheGenerationMock,
   getDownloadWebPageCacheGeneration: cacheGenerationMock,
   isDownloadWebPageCacheEnabled: cacheEnabledMock,

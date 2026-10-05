@@ -16,7 +16,7 @@ import {
   setDownloadWebPageCacheEnabled,
   tryWithDownloadWebPageCacheLock,
   withDownloadWebPageCacheLock,
-} from "../../services/DownloadWebPageCacheCoordinator.js";
+} from "../../services/CacheCoordinator.js";
 import { graphRequestContext } from "../graphs/requestContext.js";
 import {
   retryOnTransientError,
