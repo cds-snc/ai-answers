@@ -82,7 +82,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 
 ### Détails des modèles IA
 - **Modèles de production actuels** : Famille Azure OpenAI GPT-5.1 (bascule le 18 mars 2026 depuis GPT 4.1) ; les agents d'évaluation utilisent GPT-4.1-mini
-- **Routage par famille de modèles** : Le choix d'une famille de modèles (p. ex. GPT-5.1) n'utilise pas un seul modèle pour chaque étape. Le système achemine automatiquement chaque étape du pipeline ou service vers le modèle approprié au sein de cette famille — les étapes de support (rédaction des renseignements personnels, traduction, réécriture de requête) utilisent la variante mini (p. ex. GPT-5-mini) pour le coût et la rapidité, tandis que la génération de contexte et la génération de réponse utilisent le modèle complet (p. ex. GPT-5.1). Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
+- **Routage par famille de modèles** : Le choix d'une famille de modèles (p. ex. GPT-5.1) n'utilise pas un seul modèle pour chaque étape. Le système achemine automatiquement chaque étape du pipeline ou service vers le modèle approprié — les étapes de support (traduction, réécriture de requête) utilisent GPT-4.1-mini pour le coût et la rapidité, tandis que la génération de contexte et la génération de réponse utilisent le modèle complet de la famille choisie (p. ex. GPT-5.1). Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
 - **Température** : 0 (réponses déterministes), raisonnement faible
 - **Ingénierie de contexte** : Des agents séparés dans LangGraph effectuent les étapes du pipeline, l'agent de contexte sélectionne l'invite de département et les fichiers de contexte à tirer au besoin
 - **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs d'IA, testé avec GPT et Claude, des plans sont en place pour déployer davantage de modèles, dont Cohere, via AWS Bedrock
@@ -196,7 +196,7 @@ n'apprend donc jamais de ses propres jugements.
 **Stratégies d'atténuation :**
 - **Détection et blocage des renseignements personnels à 2 étapes** :
   - **Étape 1** : La détection basée sur motifs bloque les formats de renseignements personnels connus (NAS, courriels, numéros de téléphone, adresses)
-  - **Étape 2** : Un modèle d'IA (situé au Canada) agit comme agent des renseignements personnels pour signaler les renseignements personnels qui ont échappé à l'étape des motifs, surtout les noms et les identifiants personnels
+  - **Étape 2** : Un modèle d'IA (situé au Canada) agit comme agent des renseignements personnels pour signaler les renseignements personnels qui ont échappé à l'étape des motifs, surtout les noms, les identifiants personnels et les dates de naissance
   - Les numéros de formulaires gouvernementaux, les numéros de série de produits et les noms dans des contextes historiques, politiques et d'adresses sont explicitement préservés (p. ex. jour de Louis Riel, édifice James Flaherty, PM Carney)
 - **Notification utilisateur** : Les utilisateurs sont avertis lorsque des renseignements personnels sont détectés que leur question ne sera pas journalisée ni envoyée au service d'IA ; ils doivent poser la question différemment pour continuer
 - **Minimisation des données** : Seules les questions non signalées comme contenant des renseignements personnels sont envoyées au service d'IA et stockées
@@ -385,7 +385,7 @@ Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sél
   - **URL** : https://reponses-ia.alpha.canada.ca
   - **Infrastructure** : AWS ECS avec mise à l'échelle automatique
   - **Base de données** : AWS DocumentDB avec sauvegardes automatisées
-  - **Services IA** : Famille de modèles Azure OpenAI GPT 4.0, 5.1 - plans d'ajouter Cohere et Anthropic
+  - **Services IA** : Famille de modèles Azure OpenAI GPT5.1 avec GPT4o pour les renseignements personnels et 4.1-mini pour l'évaluation - plans d'ajouter Cohere
   - **Surveillance** : Métriques et journalisation CloudWatch
   - **Plateforme** : Les institutions peuvent ajouter des scénarios d'invite pour répondre à des besoins spécifiques
 
