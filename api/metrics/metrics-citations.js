@@ -1,6 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 import { normalizeReferralUrl } from '../util/normalizeReferralUrl.js';
 
@@ -127,4 +127,4 @@ async function getCitationMetrics(req, res) {
   }
 }
 
-export default withProtection(getCitationMetrics);
+export default withProtection(getCitationMetrics, authMiddleware, partnerOrAdminMiddleware);

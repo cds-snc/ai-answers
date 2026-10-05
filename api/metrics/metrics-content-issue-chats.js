@@ -1,6 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { parseRequestFilters, executeWithRetry, buildFlaggedChatsBasePipeline } from './metrics-common.js';
 
 // How many chats to list. This is a manual-review list (not a chart), so a
@@ -104,4 +104,4 @@ async function getContentIssueChatsMetrics(req, res) {
 // surfaces chatId/interactionId for content-issue-flagged chats — validate
 // whether that should require auth before deciding whether/how to fix it,
 // as part of the wider api/metrics/ review, not just this file in isolation.
-export default withProtection(getContentIssueChatsMetrics);
+export default withProtection(getContentIssueChatsMetrics, authMiddleware, partnerOrAdminMiddleware);
