@@ -887,12 +887,12 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.cache.title')}</summary>
         <div className="settings-form-width">
-          <fieldset>
-            <legend>{t('settings.searchContextCache.title')}</legend>
+          <fieldset className="canada-ca-choice-fieldset">
+            <legend className="heading-size-h3 mt-400 mb-100">{t('settings.searchContextCache.title')}</legend>
           {fieldErrors['searchContext.cache.enabled'] && (
             <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
           )}
-          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-200">
+          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-100">
             {t('settings.searchContextCache.enabledLabel')}
           </label>
           <p id="search-context-cache-description" className="field-hint">{t('settings.searchContextCache.description')}</p>
@@ -932,12 +932,12 @@ const SettingsPage = ({ lang = 'en' }) => {
           {/* TODO(a11y): SC 1.3.1 — field errors render above the label on
               every field on this page; GC DS order is label, hint, error,
               field. Move them page-wide in a separate PR. */}
-          <fieldset>
-            <legend>{t('settings.downloadWebPageCache.title')}</legend>
+          <fieldset className="canada-ca-choice-fieldset">
+            <legend className="heading-size-h3 mt-400 mb-100">{t('settings.downloadWebPageCache.title')}</legend>
           {fieldErrors['downloadWebPage.cache.enabled'] && (
             <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
           )}
-          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-200">
+          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-100">
             {t('settings.downloadWebPageCache.enabledLabel')}
           </label>
           <p id="download-web-page-cache-description" className="field-hint">{t('settings.downloadWebPageCache.description')}</p>
@@ -981,13 +981,15 @@ const SettingsPage = ({ lang = 'en' }) => {
           <hr className="section-divider mb-400" />
           {/* These actions take effect immediately, separately from Save. */}
           <div className="mb-400">
-            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
-              {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
-            </GcdsButton>
+            <div className="canada-ca-button-stack">
+              <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
+                {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
+              </GcdsButton>
+              <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
+                {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+              </GcdsButton>
+            </div>
             {renderStatusMessage(clearSearchCacheStatus, 'success', 'searchCacheClear')}
-            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
-              {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
-            </GcdsButton>
             {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
           </div>
         </div>

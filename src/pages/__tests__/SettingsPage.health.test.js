@@ -263,7 +263,7 @@ describe('SettingsPage audit history', () => {
     fireEvent.click(clearButton);
 
     const message = await screen.findByText('settings.downloadWebPageCache.clearSuccess');
-    expect(clearButton.parentElement.contains(message)).toBe(true);
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
     expect(saveButton.parentElement.contains(message)).toBe(false);
     await waitForAnnouncement('settings.downloadWebPageCache.clearSuccess');
     confirmSpy.mockRestore();
@@ -310,7 +310,7 @@ describe('SettingsPage audit history', () => {
     const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
     expect(saveButton.compareDocumentPosition(clearButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const message = await screen.findByText('settings.searchContextCache.clearSuccess');
-    expect(clearButton.parentElement.contains(message)).toBe(true);
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
     expect(saveButton.parentElement.contains(message)).toBe(false);
     await waitForAnnouncement('settings.searchContextCache.clearSuccess');
     confirmSpy.mockRestore();
