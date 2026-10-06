@@ -408,7 +408,7 @@ async function evalDashboardHandler(req, res) {
       partnerEval,
       aiEval,
       evalLogic
-    }, { basePath: 'interactions', userField: 'user', citationErrorStacking: true });
+    }, { basePath: 'interactions', userField: 'user' });
     if (sharedFilters.length) {
       andFilters.push(...sharedFilters);
     }

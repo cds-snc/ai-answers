@@ -10,7 +10,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -315,7 +315,9 @@ async function chatLogsHandler(req, res) {
         $addFields: {
           'interactions.partnerEval': getPartnerEvalAggregationExpression(),
           'interactions.aiEval': getAiEvalAggregationExpression(),
-          'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression()
+          'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression(),
+          'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression(),
+          'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$interactions.autoEval.expertFeedback')
         }
       });
 

@@ -94,17 +94,40 @@ describe('getChatFilterConditions - noEval handling', () => {
       expect(conditions).toHaveLength(1);
       const cond = conditions[0];
       expect(cond.$or).toBeDefined();
-      expect(cond.$or).toHaveLength(2);
+      expect(cond.$or).toHaveLength(3);
       expect(cond.$or[0].$or).toEqual([
         { 'interactions.aiEval': null },
         { 'interactions.aiEval': '' }
       ]);
-      expect(cond.$or[1]).toEqual({ 'interactions.aiEval': { $in: ['correct', 'hasCitationError'] } });
+      expect(cond.$or[1]).toEqual({ 'interactions.aiHasCitationError': true });
+      expect(cond.$or[2]).toEqual({ 'interactions.aiEval': 'correct' });
     });
 
     it('returns no conditions when aiEval is "all"', () => {
       const conditions = getChatFilterConditions({ aiEval: 'all' }, { basePath });
       expect(conditions).toHaveLength(0);
+    });
+  });
+
+  describe('hasCitationError (separate flag, not the category bucket)', () => {
+    it('matches the citation flag on partnerEval', () => {
+      const conditions = getChatFilterConditions({ partnerEval: 'hasCitationError' }, { basePath });
+      expect(conditions).toEqual([{ 'interactions.partnerHasCitationError': true }]);
+    });
+
+    it('matches the citation flag on aiEval', () => {
+      const conditions = getChatFilterConditions({ aiEval: 'hasCitationError' }, { basePath });
+      expect(conditions).toEqual([{ 'interactions.aiHasCitationError': true }]);
+    });
+
+    it('ORs with a score category when both are selected', () => {
+      const conditions = getChatFilterConditions({ partnerEval: 'hasCitationError,hasError' }, { basePath });
+      expect(conditions).toEqual([{
+        $or: [
+          { 'interactions.partnerHasCitationError': true },
+          { 'interactions.partnerEval': 'hasError' }
+        ]
+      }]);
     });
   });
 

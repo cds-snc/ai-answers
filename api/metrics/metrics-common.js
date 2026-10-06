@@ -53,6 +53,31 @@ const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
 const HOURS_IN_DAY = 24;
 const DEFAULT_DAYS = 7;
 
+// Eval filter for the metrics pipelines, matched against a 'category' field
+// (the bucket) and a 'hasCitationError' field (getHasCitationErrorAggregationExpression).
+// "Citation issue" matches the flag, so it catches every answer with a
+// citation problem, not just the hasCitationError bucket - same as
+// getChatFilterConditions. Pipelines compute both fields before matching.
+export function buildMetricsEvalFilter(rawValue) {
+    if (!rawValue || rawValue === 'all') return null;
+    const categories = rawValue.split(',').map(c => c.trim()).filter(Boolean);
+    const otherCategories = categories.filter(c => c !== 'hasCitationError');
+    const branches = [];
+    if (categories.includes('hasCitationError')) branches.push({ hasCitationError: true });
+    if (otherCategories.length === 1) branches.push({ category: otherCategories[0] });
+    else if (otherCategories.length > 1) branches.push({ category: { $in: otherCategories } });
+    if (branches.length === 0) return null;
+    return branches.length === 1 ? branches[0] : { $or: branches };
+}
+
+// For pipelines where 'category' already holds the other eval's value:
+// renames the fields to e.g. aiCategory / aiHasCitationError.
+export function remapEvalFilter(filter, prefix) {
+    if (filter.$or) return { $or: filter.$or.map(branch => remapEvalFilter(branch, prefix)) };
+    const fields = { category: `${prefix}Category`, hasCitationError: `${prefix}HasCitationError` };
+    return Object.fromEntries(Object.entries(filter).map(([key, value]) => [fields[key] || key, value]));
+}
+
 export async function parseRequestFilters(req) {
     const { startDate, endDate, timezoneOffsetMinutes } = req.query;
 
@@ -105,27 +130,8 @@ export async function parseRequestFilters(req) {
         }
     }
 
-    // partnerEval (category)
-    let partnerEvalFilter = null;
-    if (partnerEval && partnerEval !== 'all') {
-        const categories = partnerEval.split(',').map(c => c.trim()).filter(Boolean);
-        if (categories.length === 1) {
-            partnerEvalFilter = { category: categories[0] };
-        } else if (categories.length > 1) {
-            partnerEvalFilter = { category: { $in: categories } };
-        }
-    }
-
-    // aiEval (category)
-    let aiEvalFilter = null;
-    if (aiEval && aiEval !== 'all') {
-        const categories = aiEval.split(',').map(c => c.trim()).filter(Boolean);
-        if (categories.length === 1) {
-            aiEvalFilter = { category: categories[0] };
-        } else if (categories.length > 1) {
-            aiEvalFilter = { category: { $in: categories } };
-        }
-    }
+    const partnerEvalFilter = buildMetricsEvalFilter(partnerEval);
+    const aiEvalFilter = buildMetricsEvalFilter(aiEval);
 
     return {
         dateFilter,
