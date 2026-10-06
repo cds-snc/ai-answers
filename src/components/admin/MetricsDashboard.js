@@ -518,8 +518,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     buildCountPctRow(t('metrics.dashboard.expertScored.harmful'), metrics.expertScored.harmful, metrics.expertScored.total),
                     buildCountPctRow(t('metrics.dashboard.expertScored.hasContentIssue'), metrics.expertScored.hasContentIssue, metrics.expertScored.total),
                     buildCountPctRow(t('metrics.dashboard.expertScored.correct'), metrics.expertScored.correct, metrics.expertScored.total),
-                    buildCountPctRow(t('metrics.dashboard.expertScored.needsImprovement'), metrics.expertScored.needsImprovement, metrics.expertScored.total),
-                    buildCountPctRow(t('metrics.dashboard.expertScored.hasCitationError'), metrics.expertScored.hasCitationError, metrics.expertScored.total)
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.needsImprovement'), metrics.expertScored.needsImprovement, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.expertScored.hasCitationError, metrics.expertScored.total)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{
@@ -549,8 +549,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     { ...buildCountPctRow(t('metrics.dashboard.aiScored.total'), metrics.aiScored.total, metrics.aiScored.total.total), percentage: 100 },
                     buildCountPctRow(t('metrics.dashboard.aiScored.hasError'), metrics.aiScored.hasError, metrics.aiScored.total),
                     buildCountPctRow(t('metrics.dashboard.aiScored.correct'), metrics.aiScored.correct, metrics.aiScored.total),
-                    buildCountPctRow(t('metrics.dashboard.aiScored.needsImprovement'), metrics.aiScored.needsImprovement, metrics.aiScored.total),
-                    buildCountPctRow(t('metrics.dashboard.aiScored.hasCitationError'), metrics.aiScored.hasCitationError, metrics.aiScored.total)
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.needsImprovement'), metrics.aiScored.needsImprovement, metrics.aiScored.total),
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.aiScored.hasCitationError, metrics.aiScored.total)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{
