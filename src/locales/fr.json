@@ -1223,7 +1223,7 @@
       "searchContextCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
-    "cache": { "title": "Cache des pages Web téléchargées", "saveLabel": "Enregistrer les paramètres du cache des pages Web" },
+    "cache": { "title": "Cache", "saveLabel": "Enregistrer les paramètres du cache" },
     "general": {
       "title": "Paramètres généraux",
       "saveLabel": "Enregistrer les paramètres généraux"

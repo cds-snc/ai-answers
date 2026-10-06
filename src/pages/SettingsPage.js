@@ -970,12 +970,6 @@ const SettingsPage = ({ lang = 'en' }) => {
             disabled={sectionSaving.cache || clearingDownloadWebPageCache}
             aria-describedby={fieldErrors['downloadWebPage.cache.durationHours'] ? 'download-web-page-cache-duration-hours-error' : undefined}
           />
-          <SectionSaveControls
-            section="cache" saveLabel={t('settings.cache.saveLabel')} dirty={isSectionDirty('cache')}
-            saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
-            fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
-          />
-          <hr className="section-divider mb-400" />
           {/* Acts immediately, separate from the form's Save. */}
           <div className="mb-400">
             <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
@@ -983,6 +977,12 @@ const SettingsPage = ({ lang = 'en' }) => {
             </GcdsButton>
             {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
           </div>
+          <hr className="section-divider mb-400" />
+          <SectionSaveControls
+            section="cache" saveLabel={t('settings.cache.saveLabel')} dirty={isSectionDirty('cache')}
+            saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
+            fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
+          />
         </div>
       </details>
 

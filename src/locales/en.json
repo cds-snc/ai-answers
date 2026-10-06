@@ -1223,7 +1223,7 @@
       "searchContextCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
-    "cache": { "title": "Downloaded web pages cache", "saveLabel": "Save web page cache settings" },
+    "cache": { "title": "Cache", "saveLabel": "Save cache settings" },
     "general": {
       "title": "General settings",
       "saveLabel": "Save general settings"
