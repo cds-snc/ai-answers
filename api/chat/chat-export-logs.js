@@ -7,7 +7,7 @@ import {
     authMiddleware,
     withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { requireObjectIdString, requireString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
@@ -692,7 +692,9 @@ export async function chatExportHandler(req, res) {
                 $addFields: {
                     'interactions.partnerEval': getPartnerEvalAggregationExpression(),
                     'interactions.aiEval': getAiEvalAggregationExpression(),
-                    'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression()
+                    'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression(),
+                    'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression(),
+                    'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$interactions.autoEval.expertFeedback')
                 }
             });
 

@@ -5,7 +5,8 @@ import { EvalAnalysis } from '../models/evalAnalysis.js';
 import {
     getChatFilterConditions,
     getPartnerEvalAggregationExpression,
-    getAiEvalAggregationExpression
+    getAiEvalAggregationExpression,
+    getHasCitationErrorAggregationExpression
 } from '../api/util/chat-filters.js';
 import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification, combinedLabelFrom } from './evalAnalysisStats.js';
 import { frForProgram, frForAction } from '../api/util/programActionFr.js';
@@ -78,14 +79,24 @@ async function buildPipeline(filters = {}, { countOnly = false } = {}) {
     // Category fields are only computed when the corresponding filter is set —
     // they exist purely so getChatFilterConditions has something to match.
     if (filters.partnerEval && filters.partnerEval !== 'all') {
-        pipeline.push({ $addFields: { 'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackDoc') } });
+        pipeline.push({
+            $addFields: {
+                'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackDoc'),
+                'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression('$expertFeedbackDoc')
+            }
+        });
     }
     if (filters.aiEval && filters.aiEval !== 'all') {
         pipeline.push({ $lookup: { from: 'evals', localField: 'interactions.autoEval', foreignField: '_id', as: 'autoEvalDocs' } });
         pipeline.push({ $addFields: { autoEvalExpertId: { $arrayElemAt: ['$autoEvalDocs.expertFeedback', 0] } } });
         pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'autoEvalExpertId', foreignField: '_id', as: 'autoEvalFeedbackDocs' } });
         pipeline.push({ $addFields: { autoEvalFeedbackDoc: { $arrayElemAt: ['$autoEvalFeedbackDocs', 0] } } });
-        pipeline.push({ $addFields: { 'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackDoc') } });
+        pipeline.push({
+            $addFields: {
+                'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackDoc'),
+                'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$autoEvalFeedbackDoc')
+            }
+        });
     }
 
     const reviewerMatch = await resolveReviewerMatch(filters);

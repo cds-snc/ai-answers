@@ -4,7 +4,7 @@ import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
 import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getChatFilterConditions, getFeedbackDataProjection } from '../util/chat-filters.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
 import { frForProgram } from '../util/programActionFr.js';
 
@@ -378,7 +378,9 @@ async function chatDashboardHandler(req, res) {
       $addFields: {
         'interactions.partnerEval': getPartnerEvalAggregationExpression('$interactions.expertFeedbackData'),
         'interactions.aiEval': getAiEvalAggregationExpression('$interactions.autoEvalFeedbackData'),
-        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$interactions.expertFeedbackData')
+        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$interactions.expertFeedbackData'),
+        'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression('$interactions.expertFeedbackData'),
+        'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$interactions.autoEvalFeedbackData')
       }
     });
 

@@ -231,18 +231,13 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
 }
 
 // Citation correctness is an independent axis from the sentence-score
-// category (harmful/hasError/needsImprovement/correct) - an answer's
-// citation can be wrong regardless of how its sentences scored, and vice
-// versa. getPartnerEvalAggregationExpression/getAiEvalAggregationExpression
-// above fold it into their single priority-ordered value instead (shared
-// by ~10 metrics/export/analysis consumers - see their own call sites) -
-// this is a deliberately SEPARATE, non-shared boolean, used only where a
-// caller wants citation to stack as its own flag alongside the base
-// category rather than be hidden by it (currently just EvalDashboardPage.js's
-// Partner/AI Eval pills, via getPartnerEvalAggregationExpressionWithoutCitation
-// / getAiEvalAggregationExpressionWithoutCitation below). Do not wire this
-// into the shared expressions above without confirming the metrics/export/
-// analysis consumers are meant to change too.
+// category - an answer's citation can be wrong regardless of how its
+// sentences scored. getPartnerEvalAggregationExpression/
+// getAiEvalAggregationExpression above count it as a bucket only when every
+// sentence is correct; this flag catches every citation problem. Every
+// "Citation issue" filter matches this flag (getChatFilterConditions, the
+// metrics filters in api/metrics/metrics-common.js), and the Eval dashboard
+// shows it as its own pill.
 export function getHasCitationErrorAggregationExpression(feedbackPath = '$interactions.expertFeedback') {
   return {
     $cond: {
@@ -576,14 +571,7 @@ export function isReferredPublicUrl(referringUrl) {
 }
 
 export function getChatFilterConditions(filters, options = {}) {
-  // citationErrorStacking: opt-in only - EvalDashboardPage.js's Partner/AI
-  // Eval pipeline is the only caller that passes this today. Every other
-  // caller (Chat Dashboard, Partner/Metrics dashboards, exports, eval
-  // analysis) keeps matching hasCitationError as a literal value of the
-  // base partnerEval/aiEval field, same as before - see the long comment
-  // on getHasCitationErrorAggregationExpression in this file for why this
-  // isn't the default.
-  const { basePath = 'interactions', userField = 'user', skipUserCondition = false, citationErrorStacking = false } = options;
+  const { basePath = 'interactions', userField = 'user', skipUserCondition = false } = options;
   const prefix = basePath ? `${basePath}.` : '';
   const withPath = (field) => `${prefix}${field}`;
   const conditions = [];
@@ -697,26 +685,22 @@ export function getChatFilterConditions(filters, options = {}) {
   }
 
   // partnerEval/aiEval - support multi-select via comma-separated values.
-  // Builds the same shape as the previous inline blocks; extracted so both
-  // fields can be combined via evalLogic below instead of always being
-  // pushed as separate (implicitly ANDed) top-level conditions. Each
-  // selected pseudo-category (noEval; hasContentIssue, partnerEval only;
-  // hasCitationError too, but only when citationErrorStacking is on)
-  // becomes its own OR-branch alongside the real category match, since a
-  // row can match on score category and/or either tag independently of
-  // the others - hasContentIssue (and, opt-in only, hasCitationError) are
-  // their own boolean fields, not values the base partnerEval/aiEval field
-  // itself takes, so they're pulled out of evalCategories and matched
-  // against those fields instead. Without the option, hasCitationError
-  // stays in evalCategories and matches the base field's literal value,
-  // same as every caller before citation stacking existed.
+  // Extracted so both fields can be combined via evalLogic below instead of
+  // always being pushed as separate (implicitly ANDed) top-level conditions.
+  // Each selected pseudo-category (noEval; hasContentIssue, partnerEval
+  // only; hasCitationError) becomes its own OR-branch alongside the real
+  // category match. hasContentIssue and hasCitationError are their own
+  // boolean fields (partner/aiHasCitationError), not values of the base
+  // partnerEval/aiEval field, so "Citation issue" catches every answer with
+  // a citation problem, not just the hasCitationError bucket. Callers must
+  // compute those fields before matching.
   const buildEvalCondition = (rawValue, field) => {
     if (!rawValue || rawValue === 'all') return null;
     const categories = rawValue.split(',').map(c => c.trim()).filter(Boolean);
     const hasNoEval = categories.includes('noEval');
     const hasContentIssue = field === 'partnerEval' && categories.includes('hasContentIssue');
-    const hasCitationError = citationErrorStacking && categories.includes('hasCitationError');
-    const evalCategories = categories.filter(c => c !== 'noEval' && c !== 'hasContentIssue' && !(hasCitationError && c === 'hasCitationError'));
+    const hasCitationError = categories.includes('hasCitationError');
+    const evalCategories = categories.filter(c => c !== 'noEval' && c !== 'hasContentIssue' && c !== 'hasCitationError');
 
     const branches = [];
     if (hasNoEval) {

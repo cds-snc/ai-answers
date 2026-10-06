@@ -1,8 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
+import { parseRequestFilters, executeWithRetry, remapEvalFilter } from './metrics-common.js';
 
 function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
@@ -47,6 +47,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         {
             $addFields: {
                 category: getPartnerEvalAggregationExpression('$expertFeedback'),
+                hasCitationError: getHasCitationErrorAggregationExpression('$expertFeedback'),
                 hasContentIssue: {
                     $cond: [{
                         $or: [
@@ -81,6 +82,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 pageLanguage: 1,
                 department: 1,
                 category: 1,
+                hasCitationError: 1,
                 hasContentIssue: 1,
                 hasErrorSignal: 1,
                 // Keep IDs for potential cross-filter lookups
@@ -137,19 +139,16 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
             },
             {
                 $addFields: {
-                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    aiHasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             }
         );
         // Remap filter key from 'category' to 'aiCategory'
-        const remappedFilter = {};
-        for (const key in aiEvalFilter) {
-            if (key === 'category') remappedFilter['aiCategory'] = aiEvalFilter[key];
-            else remappedFilter[key] = aiEvalFilter[key];
-        }
+        const remappedFilter = remapEvalFilter(aiEvalFilter, 'ai');
         stages.push(
             { $match: remappedFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0 } }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0, aiHasCitationError: 0 } }
         );
     }
 

@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter = []) {
@@ -123,11 +123,12 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
+                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
                 }
             },
             { $match: partnerEvalFilter },
-            { $project: { ef_filter: 0, category: 0 } } // Cleanup temporary fields
+            { $project: { ef_filter: 0, category: 0, hasCitationError: 0 } } // Cleanup temporary fields
         );
     }
 
@@ -152,11 +153,12 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             },
             { $match: aiEvalFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } } // Cleanup
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0, hasCitationError: 0 } } // Cleanup
         );
     }
 

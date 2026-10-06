@@ -5,7 +5,8 @@ import {
 } from '../api/metrics/metrics-common.js';
 import {
   getPartnerEvalAggregationExpression,
-  getAiEvalAggregationExpression
+  getAiEvalAggregationExpression,
+  getHasCitationErrorAggregationExpression
 } from '../api/util/chat-filters.js';
 import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 
@@ -55,11 +56,12 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
       },
       {
         $addFields: {
-          category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
+          category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] }),
+          hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
         }
       },
       { $match: partnerEvalFilter },
-      { $project: { ef_filter: 0, category: 0 } }
+      { $project: { ef_filter: 0, category: 0, hasCitationError: 0 } }
     );
   }
 
@@ -83,11 +85,12 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
       },
       {
         $addFields: {
-          category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+          category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+          hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
         }
       },
       { $match: aiEvalFilter },
-      { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } }
+      { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0, hasCitationError: 0 } }
     );
   }
 
