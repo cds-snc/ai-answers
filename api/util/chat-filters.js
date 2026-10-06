@@ -9,6 +9,9 @@
 // consolidate later - see api/util/db-query.js's escapeRegex.
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// TODO: categorizeExpertFeedback and categorizeAiEval are unused - nothing
+// imports them; deriveExpertFeedbackCategory below is the live JS
+// categorizer. Candidates for deletion.
 export function categorizeExpertFeedback(expertFeedback) {
   if (!expertFeedback) return null;
 
@@ -65,9 +68,9 @@ export function categorizeExpertFeedback(expertFeedback) {
   }
 
   if (highestCategory === 'harmful') return 'harmful';
-  if (hasCitationError) return 'hasCitationError';
   if (highestCategory === 'hasError') return 'hasError';
   if (highestCategory === 'needsImprovement') return 'needsImprovement';
+  if (hasCitationError) return 'hasCitationError';
   return 'correct';
 }
 
@@ -122,8 +125,8 @@ export function getFeedbackDataProjection(docsField, { includeContentIssue = fal
 }
 
 // JS mirror of getPartnerEvalAggregationExpression below — the exact same
-// score signals and priority (harmful > hasCitationError > hasError >
-// needsImprovement > correct), for consumers that categorize in Node instead
+// score signals and priority (harmful > hasError > needsImprovement >
+// hasCitationError > correct), for consumers that categorize in Node instead
 // of in the pipeline (e.g. the partner eval analysis). If the expression
 // changes, change this too — they live side by side for that reason.
 // (categorizeExpertFeedback above is the older categorizer with different
@@ -140,9 +143,9 @@ export function deriveExpertFeedbackCategory(ef) {
 
   const hasHarmful = [1, 2, 3, 4].some((n) => ef[`sentence${n}Harmful`] === true);
   if (hasHarmful) return 'harmful';
-  if ([0, 20].includes(ef.citationScore)) return 'hasCitationError';
   if (sentenceScores.some((s) => s === 0) || ef.totalScore === 0) return 'hasError';
   if (sentenceScores.some((s) => s === 80) || ef.totalScore === 80) return 'needsImprovement';
+  if ([0, 20].includes(ef.citationScore)) return 'hasCitationError';
   if (ef.totalScore === 100) return 'correct';
   return null;
 }
@@ -207,9 +210,9 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
                     $switch: {
                       branches: [
                         { case: { $eq: ["$$hasHarmful", true] }, then: 'harmful' },
-                        { case: { $eq: ["$$hasCitationError", true] }, then: 'hasCitationError' },
                         { case: { $eq: ["$$hasError", true] }, then: 'hasError' },
                         { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
+                        { case: { $eq: ["$$hasCitationError", true] }, then: 'hasCitationError' },
                         { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
                       ],
                       default: null
@@ -235,7 +238,7 @@ export function getPartnerEvalAggregationExpression(feedbackPath = '$interaction
 // by ~10 metrics/export/analysis consumers - see their own call sites) -
 // this is a deliberately SEPARATE, non-shared boolean, used only where a
 // caller wants citation to stack as its own flag alongside the base
-// category rather than mask it (currently just EvalDashboardPage.js's
+// category rather than be hidden by it (currently just EvalDashboardPage.js's
 // Partner/AI Eval pills, via getPartnerEvalAggregationExpressionWithoutCitation
 // / getAiEvalAggregationExpressionWithoutCitation below). Do not wire this
 // into the shared expressions above without confirming the metrics/export/
@@ -347,9 +350,9 @@ export function getAiEvalAggregationExpression(feedbackPath = '$interactions.aut
                     $switch: {
                       branches: [
                         { case: { $eq: ["$$hasHarmful", true] }, then: 'harmful' },
-                        { case: { $eq: ["$$hasCitationError", true] }, then: 'hasCitationError' },
                         { case: { $eq: ["$$hasError", true] }, then: 'hasError' },
                         { case: { $eq: ["$$hasNeedsImprovement", true] }, then: 'needsImprovement' },
+                        { case: { $eq: ["$$hasCitationError", true] }, then: 'hasCitationError' },
                         { case: { $eq: ["$$hasPerfectTotalScore", true] }, then: 'correct' }
                       ],
                       default: null

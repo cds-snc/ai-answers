@@ -59,9 +59,9 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 },
                 // Raw "answer error" signal (a sentence/total scored 0). Used to
                 // attribute content issues to error vs needs-improvement: harmful
-                // and citation-with-error answers are categorized away from
-                // 'hasError', but their underlying selection was Error, so they
-                // belong in the Error bucket. Content issues can only be flagged
+                // answers are categorized away from 'hasError', but their
+                // underlying selection was Error, so they belong in the Error
+                // bucket. Content issues can only be flagged
                 // after selecting needs improvement or error, so "not an error
                 // signal" implies needs improvement.
                 hasErrorSignal: {
@@ -153,22 +153,10 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         );
     }
 
-    // TODO: correct/needsImprovement/hasError/hasCitationError/harmful below
-    // count '$category', which is a single priority-ordered value (harmful >
-    // hasCitationError > hasError > needsImprovement > correct) - an
-    // evaluation with BOTH a sentence error and a citation issue is counted
-    // only under hasCitationError, never hasError, so "Has answer error"
-    // can undercount the true number of evaluations with a sentence error.
-    // EvalDashboardPage.js's Partner/AI Eval pills had the identical
-    // masking problem and got a dedicated (non-shared) fix - see
-    // getHasCitationErrorAggregationExpression / *WithoutCitation in
-    // api/util/chat-filters.js. Whether these summary counts should also
-    // become non-exclusive (an eval counted in both hasError AND
-    // hasCitationError when it has both) is an open product question, not
-    // yet decided - same "confirm with the team" status as that pills work.
-    // Note hasContentIssueError below already avoids this exact trap by
-    // counting the raw $hasErrorSignal instead of $category - that's the
-    // precedent a fix here would likely follow.
+    // correct/needsImprovement/hasError/hasCitationError/harmful below
+    // count '$category', a single priority-ordered value (harmful > hasError
+    // > needsImprovement > hasCitationError > correct): a citation issue only
+    // counts when every sentence is correct.
     stages.push({
         $group: {
             _id: null,
