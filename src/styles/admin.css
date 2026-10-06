@@ -3762,3 +3762,19 @@ fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Expert scored's flags table: a subset of the table above, so it's set in
+   with a bar down its left side rather than looking like a second, equal
+   table. */
+.metrics-flags {
+  margin-left: var(--gcds-spacing-400);
+  padding-left: var(--gcds-spacing-200);
+  border-left: 4px solid var(--gcds-color-grayscale-300);
+}
+
+.metrics-flags__caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: var(--gcds-spacing-75);
+}

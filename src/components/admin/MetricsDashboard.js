@@ -514,12 +514,10 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     // percentage: 100 override — see the comment on Table 1's
                     // "Total questions" row further up.
                     { ...buildCountPctRow(t('metrics.dashboard.expertScored.total'), metrics.expertScored.total, metrics.expertScored.total.total), percentage: 100 },
-                    buildCountPctRow(t('metrics.dashboard.expertScored.hasError'), metrics.expertScored.hasError, metrics.expertScored.total),
-                    buildCountPctRow(t('metrics.dashboard.expertScored.harmful'), metrics.expertScored.harmful, metrics.expertScored.total),
-                    buildCountPctRow(t('metrics.dashboard.expertScored.hasContentIssue'), metrics.expertScored.hasContentIssue, metrics.expertScored.total),
                     buildCountPctRow(t('metrics.dashboard.expertScored.correct'), metrics.expertScored.correct, metrics.expertScored.total),
                     buildCountPctRow(t('metrics.dashboard.qualityBar.needsImprovement'), metrics.expertScored.needsImprovement, metrics.expertScored.total),
-                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.expertScored.hasCitationError, metrics.expertScored.total)
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.expertScored.hasCitationError, metrics.expertScored.total),
+                    buildCountPctRow(t('metrics.dashboard.expertScored.hasError'), metrics.expertScored.hasError, metrics.expertScored.total)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{
@@ -536,6 +534,32 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   <caption className="sr-only">{t('metrics.dashboard.expertScored.title')}</caption>
                 </DataTable>
               </div>
+              {/* Flags, not categories: every flagged evaluation is already
+                  counted in one of the rows above (harmful always under
+                  "Has answer error"), so they get their own inset table, set
+                  in under the main one, instead of rows that look like they
+                  add to the total. */}
+              <div className="metrics-flags mt-300">
+                <DataTable
+                  data={[
+                    buildCountPctRow(t('admin.filters.evalHarmful'), metrics.expertScored.harmful, metrics.expertScored.total),
+                    buildCountPctRow(t('admin.filters.evalHasContentIssue'), metrics.expertScored.hasContentIssue, metrics.expertScored.total)
+                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct, 'metrics.dashboard.markedAs')}
+                  options={{
+                    paging: false,
+                    searching: false,
+                    initComplete: function () { setColumnHeaderScope(this.api()); },
+                    ordering: false,
+                    info: false,
+                    stripe: true,
+                    className: 'display zebra-stable-on-hover',
+                    language: dataTableLanguage(lang)
+                  }}
+                >
+                  <caption className="metrics-flags__caption">{t('metrics.dashboard.expertScored.flaggedTitle')}</caption>
+                </DataTable>
+              </div>
             </SectionWrapper>
 
             {/* AI Scored Section */}
@@ -547,10 +571,10 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                     // percentage: 100 override — see the comment on Table 1's
                     // "Total questions" row further up.
                     { ...buildCountPctRow(t('metrics.dashboard.aiScored.total'), metrics.aiScored.total, metrics.aiScored.total.total), percentage: 100 },
-                    buildCountPctRow(t('metrics.dashboard.aiScored.hasError'), metrics.aiScored.hasError, metrics.aiScored.total),
                     buildCountPctRow(t('metrics.dashboard.aiScored.correct'), metrics.aiScored.correct, metrics.aiScored.total),
                     buildCountPctRow(t('metrics.dashboard.qualityBar.needsImprovement'), metrics.aiScored.needsImprovement, metrics.aiScored.total),
-                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.aiScored.hasCitationError, metrics.aiScored.total)
+                    buildCountPctRow(t('metrics.dashboard.qualityBar.hasCitationError'), metrics.aiScored.hasCitationError, metrics.aiScored.total),
+                    buildCountPctRow(t('metrics.dashboard.aiScored.hasError'), metrics.aiScored.hasError, metrics.aiScored.total)
                   ]}
                   columns={getCountPctColumns(t, fmtN, fmtPct)}
                   options={{

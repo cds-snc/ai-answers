@@ -1815,6 +1815,7 @@
         "notGc": "Réponses hors du mandat du GC"
       },
       "metric": "Métrique",
+      "markedAs": "Marquée comme",
       "count": "Nombre",
       "percentage": "%",
       "enCount": "Nombre EN",
@@ -1828,8 +1829,7 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur de réponse",
-        "harmful": "Codé comme nuisible",
-        "hasContentIssue": "Problème de contenu signalé"
+        "flaggedTitle": "Signalées (déjà comptées ci-dessus)"
       },
       "aiScored": {
         "title": "Évaluations IA",

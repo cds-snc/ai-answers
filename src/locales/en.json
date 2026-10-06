@@ -1815,6 +1815,7 @@
         "notGc": "Not in GC scope answers"
       },
       "metric": "Metric",
+      "markedAs": "Marked as",
       "count": "Count",
       "percentage": "%",
       "enCount": "EN count",
@@ -1828,8 +1829,7 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has answer error",
-        "harmful": "Coded as harmful",
-        "hasContentIssue": "Content issue flagged"
+        "flaggedTitle": "Flagged (already counted above)"
       },
       "aiScored": {
         "title": "AI evaluations",
