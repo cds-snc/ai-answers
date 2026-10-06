@@ -1220,9 +1220,10 @@
     "validation": {
       "invalidEmail": "Courriel ou espacement du « ; » invalide",
       "downloadWebPageCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
+      "searchContextCacheDurationHours": "Saisissez un nombre entier de 1 à 24.",
       "invalidSearchProvider": "Sélectionnez un fournisseur de recherche valide."
     },
-    "cache": { "title": "Cache des pages Web téléchargées", "saveLabel": "Enregistrer les paramètres du cache des pages Web" },
+    "cache": { "title": "Cache", "saveLabel": "Enregistrer les paramètres du cache" },
     "general": {
       "title": "Paramètres généraux",
       "saveLabel": "Enregistrer les paramètres généraux"
@@ -1236,6 +1237,17 @@
     "defaultSearchProvider": {
       "label": "Fournisseur de recherche par défaut du clavardage public"
     },
+    "searchContextCache": {
+      "title": "Cache des résultats de recherche",
+      "enabledLabel": "Mettre en cache les résultats de recherche",
+      "description": "Lorsque cette option est activée, les résultats Google et Canada.ca sont mis en cache pendant la durée indiquée ci-dessous.",
+      "durationHoursLabel": "Durée du cache des résultats de recherche (heures)",
+      "clearConfirm": "Vider tous les résultats de recherche en cache ?",
+      "clear": "Vider les résultats de recherche en cache",
+      "clearing": "Suppression des résultats de recherche en cache...",
+      "clearSuccess": "Résultats de recherche en cache supprimés.",
+      "clearError": "Impossible de vider les résultats de recherche en cache."
+    },
     "chatTransport": {
       "label": "Transport des événements de clavardage",
       "options": {
@@ -1247,6 +1259,7 @@
       "label": "Blocage des langues autochtones du Canada"
     },
     "downloadWebPageCache": {
+      "title": "Cache des pages Web téléchargées",
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
       "description": "Lorsque cette option est activée, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
       "durationHoursLabel": "Durée du cache des pages Web (heures)",
@@ -1311,7 +1324,8 @@
       "actions": {
         "settingUpdated": "Paramètre modifié",
         "cacheRefreshed": "Cache des paramètres rafraîchi",
-        "downloadWebPageCacheCleared": "Cache des pages Web téléchargées vidé"
+        "downloadWebPageCacheCleared": "Cache des pages Web téléchargées vidé",
+        "searchCacheCleared": "Cache de recherche vidé"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",
@@ -1513,6 +1527,10 @@
     "pass": "Réussite",
     "fail": "Échoué",
     "downloadSuccess": "Réussi",
+    "searchResultsTitle": "Résultats de recherche",
+    "searchQuery": "Requête de recherche :",
+    "searchResultsCached": "Servi depuis le cache",
+    "searchResultsDownloaded": "Extrait du moteur de recherche",
     "downloadSuccessCached": "Réussi depuis le cache",
     "downloadSuccessDownloaded": "Réussi après téléchargement",
     "downloadPartial": "Partiel",
@@ -1920,13 +1938,14 @@
       },
       "searchCalls": {
         "title": "Appels de recherche",
-        "note": "Erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé sur le total des questions, puisque chaque question ne déclenche pas une recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
+        "note": "Taux de réussite du cache, erreurs et nouvelles tentatives par fournisseur de recherche (Canada.ca/Coveo ou Google). Le % d'erreurs est calculé par rapport à toutes les demandes de recherche. Un appel échoué est relancé automatiquement; les erreurs sont les appels ayant échoué après toutes les tentatives. Les nouvelles tentatives sont un nombre, pas un taux : une recherche peut être relancée plus d'une fois.",
         "provider": {
           "title": "Fournisseur",
           "canadaca": "Recherche Canada.ca (Coveo)",
           "google": "Google"
         },
-        "retryCount": "Nouvelles tentatives"
+        "retryCount": "Nouvelles tentatives",
+        "cacheHitPercent": "Taux de réussite du cache"
       },
       "aiServiceCalls": {
         "title": "Erreurs d'appels au service IA",

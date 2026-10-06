@@ -3725,10 +3725,10 @@ details gcds-button::part(button) {
   }
 }
 
-/* A gc-chckbxrdio radio/checkbox group inside a stacked admin form: drops
-   the fieldset border (global.css) and the legend's 20px top padding
-   (fieldset.gc-chckbxrdio legend:first-of-type) so it lines up with the
-   .filter-label fields around it. */
+/* A fieldset inside a stacked admin form (a gc-chckbxrdio radio/checkbox
+   group, or a group of fields): drops the fieldset border (global.css) and
+   the legend's 20px top padding (fieldset.gc-chckbxrdio legend:first-of-type)
+   so it lines up with the .filter-label fields around it. */
 fieldset.canada-ca-choice-fieldset {
   border: 0;
   margin: 0 0 var(--gcds-spacing-300);

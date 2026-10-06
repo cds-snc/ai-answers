@@ -10,23 +10,39 @@ const GENERATION_KEY = 'download-web-page-cache:generation';
 const LOCK_TTL_MS = 60_000;
 const LOCK_RENEW_INTERVAL_MS = 20_000;
 const LOCK_RETRY_INTERVAL_MS = 100;
+const REDIS_TIMEOUT_MS = 1000;
 
 let redisClientPromise;
-let localGeneration = randomUUID();
+const localGenerations = new Map();
 let localLockTail = Promise.resolve();
 let localLockPending = 0;
 
 async function getRedisClient() {
   if (!process.env.REDIS_URL) {
     if (process.env.S3_BUCKET_NAME) {
-      throw new Error('REDIS_URL is required to coordinate the shared web page cache');
+      throw new Error('REDIS_URL is required to coordinate shared storage caches');
     }
     return null;
   }
   if (!redisClientPromise) {
     redisClientPromise = (async () => {
-      const client = createClient({ url: process.env.REDIS_URL });
-      client.on('error', (error) => console.error('Web page cache Redis error:', error));
+      // Caching is optional: fail promptly rather than reconnecting or queuing
+      // commands indefinitely while an answer waits for its cache lookup.
+      const client = createClient({
+        url: process.env.REDIS_URL,
+        disableOfflineQueue: true,
+        // Keep healthy idle connections alive; an unanswered ping still times out.
+        pingInterval: REDIS_TIMEOUT_MS / 2,
+        socket: {
+          connectTimeout: REDIS_TIMEOUT_MS,
+          socketTimeout: REDIS_TIMEOUT_MS,
+          reconnectStrategy: false,
+        },
+      });
+      client.on('error', (error) => {
+        if (!client.isOpen) redisClientPromise = undefined;
+        console.error('Cache coordinator Redis error:', error);
+      });
       await client.connect();
       return client;
     })().catch((error) => {
@@ -52,9 +68,9 @@ async function withLocalLock(callback, waitForLock) {
   }
 }
 
-async function withRedisLock(client, callback, waitForLock) {
+async function withRedisLock(client, lockKey, callback, waitForLock) {
   const token = randomUUID();
-  while (await client.set(LOCK_KEY, token, { NX: true, PX: LOCK_TTL_MS }) !== 'OK') {
+  while (await client.set(lockKey, token, { NX: true, PX: LOCK_TTL_MS }) !== 'OK') {
     if (!waitForLock) return false;
     await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_INTERVAL_MS));
   }
@@ -64,7 +80,7 @@ async function withRedisLock(client, callback, waitForLock) {
     try {
       const result = await client.eval(
         "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('pexpire', KEYS[1], ARGV[2]) else return 0 end",
-        { keys: [LOCK_KEY], arguments: [token, String(LOCK_TTL_MS)] }
+        { keys: [lockKey], arguments: [token, String(LOCK_TTL_MS)] }
       );
       if (result !== 1) lockLost = true;
     } catch (_error) {
@@ -80,44 +96,71 @@ async function withRedisLock(client, callback, waitForLock) {
     clearInterval(renewTimer);
     await client.eval(
       "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-      { keys: [LOCK_KEY], arguments: [token] }
+      { keys: [lockKey], arguments: [token] }
     );
   }
 }
 
-async function runWithDownloadWebPageCacheLock(callback, waitForLock) {
+async function runWithCacheLock(lockKey, callback, waitForLock) {
   const client = await getRedisClient();
-  return client ? withRedisLock(client, callback, waitForLock) : withLocalLock(callback, waitForLock);
+  return client ? withRedisLock(client, lockKey, callback, waitForLock) : withLocalLock(callback, waitForLock);
 }
 
 export function withDownloadWebPageCacheLock(callback) {
-  return runWithDownloadWebPageCacheLock(callback, true);
+  return runWithCacheLock(LOCK_KEY, callback, true);
 }
 
 // Cache writes are optional. A clear can hold the lock for the whole S3 delete,
 // so skip a write if the lock is busy instead of delaying the fetched page.
 export function tryWithDownloadWebPageCacheLock(callback) {
-  return runWithDownloadWebPageCacheLock(callback, false);
+  return runWithCacheLock(LOCK_KEY, callback, false);
 }
 
-export async function getDownloadWebPageCacheGeneration() {
-  const client = await getRedisClient();
-  if (!client) return localGeneration;
+export function withSearchResultCacheLock(callback) {
+  return runWithCacheLock('search-result-cache:lock', callback, true);
+}
 
-  let generation = await client.get(GENERATION_KEY);
+export function tryWithSearchResultCacheLock(callback) {
+  return runWithCacheLock('search-result-cache:lock', callback, false);
+}
+
+async function getCacheGeneration(generationKey) {
+  const client = await getRedisClient();
+  if (!client) {
+    if (!localGenerations.has(generationKey)) localGenerations.set(generationKey, randomUUID());
+    return localGenerations.get(generationKey);
+  }
+
+  let generation = await client.get(generationKey);
   if (generation) return generation;
   const initialGeneration = randomUUID();
-  await client.set(GENERATION_KEY, initialGeneration, { NX: true });
-  generation = await client.get(GENERATION_KEY);
+  await client.set(generationKey, initialGeneration, { NX: true });
+  generation = await client.get(generationKey);
   return generation;
 }
 
-export async function advanceDownloadWebPageCacheGeneration() {
+async function advanceCacheGeneration(generationKey) {
   const generation = randomUUID();
   const client = await getRedisClient();
-  if (client) await client.set(GENERATION_KEY, generation);
-  else localGeneration = generation;
+  if (client) await client.set(generationKey, generation);
+  else localGenerations.set(generationKey, generation);
   return generation;
+}
+
+export function getDownloadWebPageCacheGeneration() {
+  return getCacheGeneration(GENERATION_KEY);
+}
+
+export function advanceDownloadWebPageCacheGeneration() {
+  return advanceCacheGeneration(GENERATION_KEY);
+}
+
+export function getSearchResultCacheGeneration() {
+  return getCacheGeneration('search-result-cache:generation');
+}
+
+export function advanceSearchResultCacheGeneration() {
+  return advanceCacheGeneration('search-result-cache:generation');
 }
 
 export async function isDownloadWebPageCacheEnabled() {

@@ -11,7 +11,7 @@ vi.mock('../../api/db/db-connect.js', () => ({
 
 vi.mock('../../models/serviceCallErrorCounter.js', () => ({
   __esModule: true,
-  ServiceCallErrorCounter: {
+  ServiceCallMetricCounter: {
     updateOne: (...args) => updateOneMock(...args),
     aggregate: (...args) => aggregateMock(...args),
   },
@@ -56,6 +56,20 @@ describe('ServiceCallMetricsService.recordError / recordRetry', () => {
     expect(filter.event).toBe('retry');
   });
 
+  it('records cache hits under event "cacheHit"', async () => {
+    await ServiceCallMetricsService.recordCacheHit({ service: 'search', type: 'google' });
+
+    const [filter] = updateOneMock.mock.calls[0];
+    expect(filter.event).toBe('cacheHit');
+  });
+
+  it('records cache misses and outbound provider calls for rate denominators', async () => {
+    await ServiceCallMetricsService.recordCacheMiss({ service: 'search', type: 'google' });
+    await ServiceCallMetricsService.recordProviderCall({ service: 'search', type: 'google' });
+
+    expect(updateOneMock.mock.calls.map(([filter]) => filter.event)).toEqual(['cacheMiss', 'providerCall']);
+  });
+
   it('is a no-op when service or type is missing', async () => {
     await ServiceCallMetricsService.recordError({ service: '', type: 'google' });
     await ServiceCallMetricsService.recordRetry({ service: 'search', type: '' });
@@ -71,10 +85,13 @@ describe('ServiceCallMetricsService.recordError / recordRetry', () => {
 });
 
 describe('ServiceCallMetricsService.getMetrics', () => {
-  it('groups error/retry counts by service and type', async () => {
+  it('groups error, retry and cache-hit counts by service and type', async () => {
     aggregateMock.mockResolvedValueOnce([
       { _id: { service: 'search', type: 'google', event: 'error' }, count: 3 },
       { _id: { service: 'search', type: 'google', event: 'retry' }, count: 5 },
+      { _id: { service: 'search', type: 'google', event: 'cacheHit' }, count: 7 },
+      { _id: { service: 'search', type: 'google', event: 'cacheMiss' }, count: 3 },
+      { _id: { service: 'search', type: 'google', event: 'providerCall' }, count: 5 },
       { _id: { service: 'search', type: 'canadaca', event: 'error' }, count: 1 },
       { _id: { service: 'ai', type: 'context', event: 'error' }, count: 2 },
       { _id: { service: 'ai', type: 'answer', event: 'retry' }, count: 4 },
@@ -85,10 +102,10 @@ describe('ServiceCallMetricsService.getMetrics', () => {
       end: new Date('2026-01-07T23:59:59.999Z'),
     });
 
-    expect(result.search.google).toEqual({ errors: 3, retries: 5 });
-    expect(result.search.canadaca).toEqual({ errors: 1, retries: 0 });
-    expect(result.ai.context).toEqual({ errors: 2, retries: 0 });
-    expect(result.ai.answer).toEqual({ errors: 0, retries: 4 });
+    expect(result.search.google).toEqual({ errors: 3, retries: 5, cacheHits: 7, cacheMisses: 3, providerCalls: 5 });
+    expect(result.search.canadaca).toEqual({ errors: 1, retries: 0, cacheHits: 0, cacheMisses: 0, providerCalls: 0 });
+    expect(result.ai.context).toEqual({ errors: 2, retries: 0, cacheHits: 0, cacheMisses: 0, providerCalls: 0 });
+    expect(result.ai.answer).toEqual({ errors: 0, retries: 4, cacheHits: 0, cacheMisses: 0, providerCalls: 0 });
   });
 
   it('returns empty buckets when there is no data', async () => {

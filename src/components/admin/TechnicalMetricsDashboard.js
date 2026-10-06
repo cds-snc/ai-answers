@@ -89,7 +89,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
   );
   const responseTimeStatus = useSectionErrorStatus(errorState.technical);
   const toolsStatus = useSectionErrorStatus(errorState.technical);
-  const searchCallsStatus = useSectionErrorStatus(errorState.technical || errorState.usage);
+  const searchCallsStatus = useSectionErrorStatus(errorState.technical);
   const aiServiceCallsStatus = useSectionErrorStatus(errorState.technical || errorState.usage);
   const tokensStatus = useSectionErrorStatus(errorState.usage);
 
@@ -259,14 +259,10 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                 tables use — a hard failure aborts the graph before an
                 interaction is persisted, so they're recorded independently
                 (see ServiceCallMetricsService). Fixed rows (known providers/
-                call types) so a healthy "0 errors" period is visible too.
-                Error-rate columns divide by data.totalQuestions (the 'usage'
-                fetch, not 'technical'), so both gate on
-                loadingState.technical || loadingState.usage — same idiom as
-                MetricsDashboard.js's "Accuracy summary" table — to avoid a
-                misleading rate mid-fetch and to surface a 'usage' failure. */}
+                call types) make a healthy "0 errors" period visible. These
+                rates use the same technical counter data, not usage totals. */}
             <SectionWrapper
-              isLoading={loadingState.technical || loadingState.usage}
+              isLoading={loadingState.technical}
               status={searchCallsStatus}
               title={t('technicalMetrics.dashboard.searchCalls.title')}
               note={t('technicalMetrics.dashboard.searchCalls.note')}
@@ -277,14 +273,17 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
               <div>
                 <DataTable
                   data={['canadaca', 'google'].map((provider) => {
-                    const row = data.searchCalls?.[provider] || { errors: 0, retries: 0 };
+                    const row = data.searchCalls?.[provider] || { errors: 0, retries: 0, cacheHits: 0, cacheMisses: 0, providerCalls: 0 };
+                    const cacheLookups = row.cacheHits + row.cacheMisses;
+                    const totalSearchRequests = row.providerCalls + row.cacheHits;
                     return {
                       provider: t(`technicalMetrics.dashboard.searchCalls.provider.${provider}`),
                       errorCount: fmtNum(row.errors),
-                      errorPercent: fmtPct(row.errors, data.totalQuestions),
+                      errorPercent: fmtPct(row.errors, totalSearchRequests),
                       // Raw count, not a rate: one question's search can
                       // retry more than once, so a % here could exceed 100%.
                       retryCount: fmtNum(row.retries),
+                      cacheHitPercent: fmtPct(row.cacheHits, cacheLookups),
                     };
                   })}
                   columns={[
@@ -292,6 +291,7 @@ const TechnicalMetricsDashboard = ({ lang = 'en' }) => {
                     { title: t('technicalMetrics.dashboard.tools.errorCount'), data: 'errorCount' },
                     { title: t('technicalMetrics.dashboard.tools.errorPercent'), data: 'errorPercent' },
                     { title: t('technicalMetrics.dashboard.searchCalls.retryCount'), data: 'retryCount' },
+                    { title: t('technicalMetrics.dashboard.searchCalls.cacheHitPercent'), data: 'cacheHitPercent' },
                   ]}
                   options={{
                     paging: false,

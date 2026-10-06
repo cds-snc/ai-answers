@@ -14,6 +14,7 @@ const {
   mockSetSettings,
   mockRefreshSettingsCache,
   mockClearDownloadWebPageCache,
+  mockClearSearchCache,
   mockGetSettingsAudit,
 } = vi.hoisted(() => {
   const healthSettings = {
@@ -79,6 +80,7 @@ const {
     })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
     mockClearDownloadWebPageCache: vi.fn(async () => ({ success: true })),
+    mockClearSearchCache: vi.fn(async () => ({ success: true })),
     mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });
@@ -91,6 +93,7 @@ vi.mock('../../services/DataStoreService.js', () => ({
     setSettings: mockSetSettings,
     refreshSettingsCache: mockRefreshSettingsCache,
     clearDownloadWebPageCache: mockClearDownloadWebPageCache,
+    clearSearchCache: mockClearSearchCache,
     getSettingsAudit: mockGetSettingsAudit,
   },
 }));
@@ -170,6 +173,18 @@ describe('SettingsPage health section', () => {
       expect(mockGetSettings.mock.calls[0][0]).toContain('redaction.profanity.en');
     });
   });
+
+  it('renders one search-cache control in the Cache section and groups its fields', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('settings.searchContextCache.enabledLabel')).toBeTruthy();
+    });
+
+    expect(screen.getAllByLabelText('settings.searchContextCache.enabledLabel')).toHaveLength(1);
+    expect(screen.getByText('settings.searchContextCache.title').closest('fieldset')).toBeTruthy();
+    expect(screen.getByText('settings.downloadWebPageCache.title').closest('fieldset')).toBeTruthy();
+  });
 });
 
 describe('SettingsPage audit history', () => {
@@ -180,6 +195,7 @@ describe('SettingsPage audit history', () => {
     mockSetSettings.mockClear();
     mockRefreshSettingsCache.mockClear();
     mockClearDownloadWebPageCache.mockClear();
+    mockClearSearchCache.mockClear();
     mockGetSettingsAudit.mockClear();
     auditTableReloadMock.mockClear();
     lastDataTableProps = null;
@@ -234,20 +250,20 @@ describe('SettingsPage audit history', () => {
     confirmSpy.mockRestore();
   });
 
-  it('shows the web page cache clear outcome under the Clear button, after the cache fields and Save button', async () => {
+  it('shows the web page cache clear outcome under Clear, after Save and the cache fields', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(React.createElement(SettingsPage, { lang: 'en' }));
 
     const clearButton = await screen.findByRole('button', { name: 'settings.downloadWebPageCache.clear' });
     const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
     const toggle = screen.getByLabelText('settings.downloadWebPageCache.enabledLabel');
-    expect(clearButton.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
-    expect(clearButton.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(toggle.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(saveButton.compareDocumentPosition(clearButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     fireEvent.click(clearButton);
 
     const message = await screen.findByText('settings.downloadWebPageCache.clearSuccess');
-    expect(clearButton.parentElement.contains(message)).toBe(true);
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
     expect(saveButton.parentElement.contains(message)).toBe(false);
     await waitForAnnouncement('settings.downloadWebPageCache.clearSuccess');
     confirmSpy.mockRestore();
@@ -273,6 +289,42 @@ describe('SettingsPage audit history', () => {
       expect(describedBy.map((ref) => document.getElementById(ref)?.textContent))
         .toContain('settings.redaction.description');
     }
+  });
+
+  it('confirms before clearing the search cache and shows its outcome beside Clear', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'settings.searchContextCache.clear' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'settings.searchContextCache.clear' }));
+
+    await waitFor(() => {
+      expect(mockClearSearchCache).toHaveBeenCalledTimes(1);
+      expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
+    });
+    expect(confirmSpy).toHaveBeenCalledWith('settings.searchContextCache.clearConfirm');
+    const clearButton = screen.getByRole('button', { name: 'settings.searchContextCache.clear' });
+    const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
+    expect(saveButton.compareDocumentPosition(clearButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const message = await screen.findByText('settings.searchContextCache.clearSuccess');
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
+    expect(saveButton.parentElement.contains(message)).toBe(false);
+    await waitForAnnouncement('settings.searchContextCache.clearSuccess');
+    confirmSpy.mockRestore();
+  });
+
+  it('links the search cache hint between the toggle label and the toggle', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const toggle = await screen.findByLabelText('settings.searchContextCache.enabledLabel');
+    const label = document.querySelector('label[for="search-context-cache-enabled"]');
+    const hint = screen.getByText('settings.searchContextCache.description');
+    expect(label.nextElementSibling).toBe(hint);
+    expect(hint.nextElementSibling).toBe(toggle);
+    expect(toggle.getAttribute('aria-describedby').split(' ')).toContain(hint.id);
   });
 
   it('enables the health Save button only while a change is pending, and disables it again once saved', async () => {

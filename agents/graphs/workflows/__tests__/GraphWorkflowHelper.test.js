@@ -76,6 +76,19 @@ describe('GraphWorkflowHelper', () => {
             expect(context).toHaveProperty('searchQuery', 'test query');
         });
 
+        it('persists the search cache origin in the context', async () => {
+            SearchContextService.search.mockResolvedValue({ results: 'some results', query: 'test query', cacheStatus: 'hit' });
+            invokeContextAgent.mockResolvedValue({ message: '', model: 'gpt-4' });
+
+            const context = await helper.deriveContext({
+                selectedAI: 'openai', translationData: {}, lang: 'en', department: '',
+                referringUrl: '', searchProvider: 'google', conversationHistory: [],
+                chatId: 'test-chat-id', userMessage: 'test question',
+            });
+
+            expect(context.searchCacheStatus).toBe('hit');
+        });
+
         it('should forward referringUrl to the context agent', async () => {
             SearchContextService.search.mockResolvedValue({
                 results: 'some results',

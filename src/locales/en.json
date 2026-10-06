@@ -1220,9 +1220,10 @@
     "validation": {
       "invalidEmail": "Invalid email or ; spacing",
       "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
+      "searchContextCacheDurationHours": "Enter a whole number from 1 to 24.",
       "invalidSearchProvider": "Select a valid search provider."
     },
-    "cache": { "title": "Downloaded web pages cache", "saveLabel": "Save web page cache settings" },
+    "cache": { "title": "Cache", "saveLabel": "Save cache settings" },
     "general": {
       "title": "General settings",
       "saveLabel": "Save general settings"
@@ -1236,6 +1237,17 @@
     "defaultSearchProvider": {
       "label": "Default public chat search provider"
     },
+    "searchContextCache": {
+      "title": "Search results cache",
+      "enabledLabel": "Cache search results",
+      "description": "When enabled, Google and Canada.ca search results are cached for the duration set below.",
+      "durationHoursLabel": "Search results cache duration (hours)",
+      "clearConfirm": "Clear all cached search results?",
+      "clear": "Clear cached search results",
+      "clearing": "Clearing cached search results...",
+      "clearSuccess": "Cached search results cleared.",
+      "clearError": "Failed to clear cached search results."
+    },
     "chatTransport": {
       "label": "Chat event transport",
       "options": {
@@ -1247,6 +1259,7 @@
       "label": "Canadian Indigenous language blocking"
     },
     "downloadWebPageCache": {
+      "title": "Downloaded web pages cache",
       "enabledLabel": "Cache downloaded web pages",
       "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
       "durationHoursLabel": "Web page cache duration (hours)",
@@ -1311,7 +1324,8 @@
       "actions": {
         "settingUpdated": "Setting updated",
         "cacheRefreshed": "Settings cache refreshed",
-        "downloadWebPageCacheCleared": "Downloaded web page cache cleared"
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared",
+        "searchCacheCleared": "Search cache cleared"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
@@ -1503,6 +1517,10 @@
     "downloadSuccess": "Succeeded",
     "downloadSuccessCached": "Succeeded (cached)",
     "downloadSuccessDownloaded": "Succeeded (downloaded)",
+    "searchResultsTitle": "Search results",
+    "searchQuery": "Search query:",
+    "searchResultsCached": "Served from cache",
+    "searchResultsDownloaded": "Fetched from search",
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
@@ -1920,13 +1938,14 @@
       },
       "searchCalls": {
         "title": "Search calls",
-        "note": "Errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against total questions, since not every question triggers a search. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
+        "note": "Cache hit rates, errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against all search requests. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
         "provider": {
           "title": "Provider",
           "canadaca": "Canada.ca search (Coveo)",
           "google": "Google"
         },
-        "retryCount": "Retries"
+        "retryCount": "Retries",
+        "cacheHitPercent": "Cache hit rate"
       },
       "aiServiceCalls": {
         "title": "AI service call errors",

@@ -3,6 +3,7 @@ import { SearchContextService } from '../SearchContextService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { contextSearch as canadaContextSearch } from '../../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../../agents/tools/googleContextSearch.js';
+import { getSearchResultCacheGeneration } from '../CacheCoordinator.js';
 
 // Mock dependencies
 vi.mock('../../agents/AgentOrchestratorService.js', () => ({
@@ -19,15 +20,34 @@ vi.mock('../ServerLoggingService.js', () => ({
         info: vi.fn(),
         debug: vi.fn(),
         error: vi.fn(),
+        warn: vi.fn(),
     },
 }));
 
-const { recordErrorMock, recordRetryMock } = vi.hoisted(() => ({
+const { recordErrorMock, recordRetryMock, recordCacheHitMock, recordCacheMissMock, recordProviderCallMock } = vi.hoisted(() => ({
     recordErrorMock: vi.fn(),
     recordRetryMock: vi.fn(),
+    recordCacheHitMock: vi.fn(),
+    recordCacheMissMock: vi.fn(),
+    recordProviderCallMock: vi.fn(),
+}));
+const { settingsGetMock, readCacheMock, writeCacheMock } = vi.hoisted(() => ({
+    settingsGetMock: vi.fn(),
+    readCacheMock: vi.fn(),
+    writeCacheMock: vi.fn(),
 }));
 vi.mock('../ServiceCallMetricsService.js', () => ({
-    default: { recordError: recordErrorMock, recordRetry: recordRetryMock },
+    default: { recordError: recordErrorMock, recordRetry: recordRetryMock, recordCacheHit: recordCacheHitMock, recordCacheMiss: recordCacheMissMock, recordProviderCall: recordProviderCallMock },
+}));
+vi.mock('../SettingsService.js', () => ({
+    SettingsService: { get: settingsGetMock },
+}));
+vi.mock('../SearchResultCacheService.js', () => ({
+    readSearchResultCache: readCacheMock,
+    writeSearchResultCache: writeCacheMock,
+}));
+vi.mock('../CacheCoordinator.js', () => ({
+    getSearchResultCacheGeneration: vi.fn().mockResolvedValue('generation-1'),
 }));
 
 // Mock strategies and factory to avoid import errors if they have side effects or complex deps
@@ -40,6 +60,9 @@ describe('SearchContextService', () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({ query: 'Rewritten Query' });
         canadaContextSearch.mockResolvedValue(['Canada Result']);
         googleContextSearch.mockResolvedValue(['Google Result']);
+        settingsGetMock.mockReturnValue('false');
+        readCacheMock.mockResolvedValue(null);
+        writeCacheMock.mockResolvedValue(undefined);
     });
 
     it('uses canadaContextSearch by default', async () => {
@@ -70,11 +93,16 @@ describe('SearchContextService', () => {
         // I will update mock to return object.
     });
 
-    it('detects french language from translationData', async () => {
+    it.each([
+        ['en', 'fra', 'fr'],
+        ['fr', 'eng', 'fr'],
+        ['en', 'spa', 'en'],
+    ])('searches in %s page / %s question language as %s', async (pageLanguage, originalLanguage, expectedLang) => {
         const result = await SearchContextService.search({
-            translationData: { originalLanguage: 'fr' }
+            pageLanguage,
+            translationData: { originalLanguage }
         });
-        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', 'fr', expect.objectContaining({ onRetry: expect.any(Function) }));
+        expect(canadaContextSearch).toHaveBeenCalledWith('Rewritten Query', expectedLang, expect.objectContaining({ onRetry: expect.any(Function) }));
     });
 
     it('uses google search if requested', async () => {
@@ -83,6 +111,82 @@ describe('SearchContextService', () => {
         });
         expect(googleContextSearch).toHaveBeenCalledWith('Rewritten Query', 'en', expect.objectContaining({ onRetry: expect.any(Function) }));
         expect(canadaContextSearch).not.toHaveBeenCalled();
+    });
+
+    it('returns an exact cached result without calling the selected provider', async () => {
+        settingsGetMock.mockReturnValue('true');
+        const cached = { results: 'Title: Cached A\nTitle: Cached B', provider: 'google' };
+        readCacheMock.mockResolvedValue(cached);
+
+        const result = await SearchContextService.search({ searchService: 'google' });
+
+        expect(result.results).toBe('Title: Cached A\nTitle: Cached B');
+        expect(googleContextSearch).not.toHaveBeenCalled();
+        expect(readCacheMock).toHaveBeenCalledWith({ provider: 'google', query: 'Rewritten Query', lang: 'en' }, 'generation-1');
+        expect(writeCacheMock).not.toHaveBeenCalled();
+        expect(result.cacheStatus).toBe('hit');
+        expect(recordCacheHitMock).toHaveBeenCalledWith({ service: 'search', type: 'google' });
+    });
+
+    it('caches successful Google and Canada.ca searches under separate provider keys', async () => {
+        settingsGetMock.mockReturnValue('true');
+        googleContextSearch.mockResolvedValue({ results: 'Title: Google A\nTitle: Google B', provider: 'google' });
+
+        await SearchContextService.search({ searchService: 'google' });
+
+        expect(writeCacheMock).toHaveBeenCalledWith(
+            { provider: 'google', query: 'Rewritten Query', lang: 'en' },
+            { results: 'Title: Google A\nTitle: Google B', provider: 'google' },
+            'generation-1',
+        );
+    });
+
+    it('returns provider results without waiting for cache writes in CDS mode', async () => {
+        settingsGetMock.mockReturnValue('true');
+        let finishWrite;
+        writeCacheMock.mockReturnValue(new Promise((resolve) => { finishWrite = resolve; }));
+        googleContextSearch.mockResolvedValue({ results: 'Title: A\nTitle: B', provider: 'google' });
+
+        const result = await SearchContextService.search({ searchService: 'google' });
+        expect(result).toMatchObject({ results: 'Title: A\nTitle: B' });
+        finishWrite();
+    });
+
+    it('waits for cache writes in Vercel mode so Lambda can finish the write', async () => {
+        settingsGetMock.mockImplementation((key) => key === 'searchContext.cache.enabled' ? 'true' : 'Vercel');
+        let finishWrite;
+        writeCacheMock.mockReturnValue(new Promise((resolve) => { finishWrite = resolve; }));
+        googleContextSearch.mockResolvedValue({ results: 'Title: A\nTitle: B', provider: 'google' });
+
+        let searchFinished = false;
+        const search = SearchContextService.search({ searchService: 'google' }).then(() => { searchFinished = true; });
+        await vi.waitFor(() => expect(writeCacheMock).toHaveBeenCalledOnce());
+        expect(searchFinished).toBe(false);
+        finishWrite();
+        await search;
+        expect(searchFinished).toBe(true);
+    });
+
+    it('does not cache a failed provider response', async () => {
+        settingsGetMock.mockReturnValue('true');
+        googleContextSearch.mockResolvedValue({ failed: true, results: 'Search failed', provider: 'google' });
+
+        await SearchContextService.search({ searchService: 'google' });
+
+        expect(writeCacheMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the provider when Redis is unavailable', async () => {
+        settingsGetMock.mockReturnValue('true');
+        getSearchResultCacheGeneration.mockRejectedValueOnce(new Error('Redis connection timeout'));
+        googleContextSearch.mockResolvedValue({ results: 'Title: A\nTitle: B', provider: 'google' });
+
+        await expect(SearchContextService.search({ searchService: 'google' }))
+            .resolves.toMatchObject({ results: 'Title: A\nTitle: B', cacheStatus: 'downloaded' });
+        expect(googleContextSearch).toHaveBeenCalledOnce();
+        expect(readCacheMock).not.toHaveBeenCalled();
+        expect(writeCacheMock).not.toHaveBeenCalled();
+        expect(recordErrorMock).not.toHaveBeenCalled();
     });
 });
 

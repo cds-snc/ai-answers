@@ -16,7 +16,7 @@ import {
   setDownloadWebPageCacheEnabled,
   tryWithDownloadWebPageCacheLock,
   withDownloadWebPageCacheLock,
-} from "../../services/DownloadWebPageCacheCoordinator.js";
+} from "../../services/CacheCoordinator.js";
 import { graphRequestContext } from "../graphs/requestContext.js";
 import {
   retryOnTransientError,
@@ -406,13 +406,21 @@ const downloadWebPageTool = tool(
         // Successfully received response
         console.log("Read web page - Status:", result.res.status);
         if (cacheGeneration) {
-          try {
-            const stored = await cacheMarkdown(url, markdown, cacheGeneration);
-            cacheWriteStatus = stored ? 'stored' : 'skipped';
-          } catch (error) {
-            cacheWriteStatus = 'failed';
-            cacheError = error.message;
-            console.warn(`Failed to cache web page: ${url}`, error.message);
+          // Match SearchContextService: await only in Lambda-backed Vercel mode.
+          if (SettingsService.get('deploymentMode') === 'Vercel') {
+            try {
+              const stored = await cacheMarkdown(url, markdown, cacheGeneration);
+              cacheWriteStatus = stored ? 'stored' : 'skipped';
+            } catch (error) {
+              cacheWriteStatus = 'failed';
+              cacheError = error.message;
+              console.warn(`Failed to cache web page: ${url}`, error.message);
+            }
+          } else {
+            cacheWriteStatus = 'scheduled';
+            void cacheMarkdown(url, markdown, cacheGeneration).catch((error) => {
+              console.warn(`Failed to cache web page: ${url}`, error.message);
+            });
           }
         }
       }
