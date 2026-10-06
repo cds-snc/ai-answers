@@ -174,7 +174,7 @@ const chartA11y = {
 ## Domain rules that are easy to get wrong
 
 - **Accuracy** = `100 − round(hasError/total)`. The API's `hasError` count already includes `harmful` (the review UI only allows harmful after Incorrect). Citation issues and needs-improvement do **not** lower accuracy. Rendered as the accuracy donut on both dashboards, gated at `>= 10` combined evals; the EN/FR footer shows only when *each* language has **more than 10** evals, else omitted.
-- **Category is mutually exclusive**, priority `harmful > hasCitationError > hasError > needsImprovement > correct` (`getPartnerEvalAggregationExpression`, `chat-filters.js`).
+- **Category is mutually exclusive**, priority `harmful > hasError > needsImprovement > hasCitationError > correct` — a citation issue only counts when every sentence is correct (`getPartnerEvalAggregationExpression`, `chat-filters.js`).
 - **Citation errors are not answer errors** and can't carry harmful/content flags. The answer-error signal is sentence/total score `0` only.
 - **Content issues** (`hasContentIssue`, expert-only) split into `needsImprovement` vs `hasError` by the raw error signal; the two sum to the total.
 - **Public feedback `notWanted`** is a *no* click but counts as **positive**. Classify by score, not `feedback`.

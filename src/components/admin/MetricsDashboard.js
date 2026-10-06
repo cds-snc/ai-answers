@@ -509,15 +509,6 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             <SectionWrapper isLoading={loadingState.expert} title={t('metrics.dashboard.expertScored.title')} status={expertScoredStatus} sectionKey="expertScored" t={t} renderStatusMessage={renderStatusMessage}>
               <GcdsText className="font-size-text-xsm-nr mb-300">{t('metrics.dashboard.expertScored.description')}</GcdsText>
               <div>
-                {/* TODO: "Has answer error" below can undercount - see the
-                    long comment above the $group stage in
-                    api/metrics/metrics-expert-feedback.js that computes
-                    hasError/hasCitationError. An evaluation with both a
-                    sentence error and a citation issue only counts under
-                    Citation issue, never here. Same open "should these
-                    stack instead of being mutually exclusive" question as
-                    EvalDashboardPage.js's Partner/AI Eval pills - not yet
-                    decided. */}
                 <DataTable
                   data={[
                     // percentage: 100 override — see the comment on Table 1's
