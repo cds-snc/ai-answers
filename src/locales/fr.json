@@ -1238,9 +1238,11 @@
       "label": "Fournisseur de recherche par défaut du clavardage public"
     },
     "searchContextCache": {
+      "title": "Cache des résultats de recherche",
       "enabledLabel": "Mettre en cache les résultats de recherche",
       "description": "Lorsque cette option est activée, les résultats Google et Canada.ca sont mis en cache pendant la durée indiquée ci-dessous.",
       "durationHoursLabel": "Durée du cache des résultats de recherche (heures)",
+      "clearConfirm": "Vider tous les résultats de recherche en cache ?",
       "clear": "Vider les résultats de recherche en cache",
       "clearing": "Suppression des résultats de recherche en cache...",
       "clearSuccess": "Résultats de recherche en cache supprimés.",
@@ -1257,6 +1259,7 @@
       "label": "Blocage des langues autochtones du Canada"
     },
     "downloadWebPageCache": {
+      "title": "Cache des pages Web téléchargées",
       "enabledLabel": "Mettre en cache les pages Web téléchargées",
       "description": "Lorsque cette option est activée, les pages Web publiques sont mises en cache pendant la durée indiquée ci-dessous. S3 supprime les fichiers du cache après un jour.",
       "durationHoursLabel": "Durée du cache des pages Web (heures)",

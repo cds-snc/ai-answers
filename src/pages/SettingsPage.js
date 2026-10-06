@@ -258,6 +258,7 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [searchContextCacheEnabled, setSearchContextCacheEnabled] = useState('false');
   const [searchContextCacheDurationHours, setSearchContextCacheDurationHours] = useState('12');
   const [clearingSearchCache, setClearingSearchCache] = useState(false);
+  const [clearSearchCacheStatus, setClearSearchCacheStatus] = useState(null); // { text, isError }
   const [chatTransport, setChatTransport] = useState('sse');
   const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
   const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
@@ -482,18 +483,15 @@ const SettingsPage = ({ lang = 'en' }) => {
   }, []);
 
   const clearSearchCache = async () => {
+    if (!window.confirm(t('settings.searchContextCache.clearConfirm'))) return;
     setClearingSearchCache(true);
+    setClearSearchCacheStatus(null);
     try {
       await DataStoreService.clearSearchCache();
-      setSectionStatus((prev) => ({
-        ...prev,
-        cache: { text: t('settings.searchContextCache.clearSuccess'), isError: false }
-      }));
-      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
+      setClearSearchCacheStatus({ text: t('settings.searchContextCache.clearSuccess'), isError: false });
       auditTableRef.current?.reload();
     } catch (_error) {
-      setSectionStatus((prev) => ({ ...prev, cache: { text: t('settings.searchContextCache.clearError'), isError: true } }));
-      setSectionSaveNonce((prev) => ({ ...prev, cache: (prev.cache || 0) + 1 }));
+      setClearSearchCacheStatus({ text: t('settings.searchContextCache.clearError'), isError: true });
     } finally {
       setClearingSearchCache(false);
     }
@@ -889,24 +887,28 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.cache.title')}</summary>
         <div className="settings-form-width">
+          <fieldset>
+            <legend>{t('settings.searchContextCache.title')}</legend>
           {fieldErrors['searchContext.cache.enabled'] && (
             <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
           )}
           <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-200">
             {t('settings.searchContextCache.enabledLabel')}
           </label>
+          <p id="search-context-cache-description" className="field-hint">{t('settings.searchContextCache.description')}</p>
           <select
             id="search-context-cache-enabled"
             className="filter-select"
             value={searchContextCacheEnabled}
             onChange={(e) => { const v = e.target.value; setSearchContextCacheEnabled(v); stageChange('searchContext.cache.enabled', v); }}
             disabled={sectionSaving.cache || clearingSearchCache}
-            aria-describedby={fieldErrors['searchContext.cache.enabled'] ? 'search-context-cache-enabled-error' : undefined}
+            aria-describedby={fieldErrors['searchContext.cache.enabled']
+              ? 'search-context-cache-description search-context-cache-enabled-error'
+              : 'search-context-cache-description'}
           >
             <option value="false">{t('common.off')}</option>
             <option value="true">{t('common.on')}</option>
           </select>
-          <p className="mb-200">{t('settings.searchContextCache.description')}</p>
           {fieldErrors['searchContext.cache.durationHours'] && (
             <FeedbackInlineError id="search-context-cache-duration-hours-error" message={fieldErrors['searchContext.cache.durationHours']} announce={false} />
           )}
@@ -926,12 +928,12 @@ const SettingsPage = ({ lang = 'en' }) => {
             disabled={sectionSaving.cache || clearingSearchCache}
             aria-describedby={fieldErrors['searchContext.cache.durationHours'] ? 'search-context-cache-duration-hours-error' : undefined}
           />
-          <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
-            {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
-          </GcdsButton>
+          </fieldset>
           {/* TODO(a11y): SC 1.3.1 — field errors render above the label on
               every field on this page; GC DS order is label, hint, error,
               field. Move them page-wide in a separate PR. */}
+          <fieldset>
+            <legend>{t('settings.downloadWebPageCache.title')}</legend>
           {fieldErrors['downloadWebPage.cache.enabled'] && (
             <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
           )}
@@ -970,19 +972,24 @@ const SettingsPage = ({ lang = 'en' }) => {
             disabled={sectionSaving.cache || clearingDownloadWebPageCache}
             aria-describedby={fieldErrors['downloadWebPage.cache.durationHours'] ? 'download-web-page-cache-duration-hours-error' : undefined}
           />
-          {/* Acts immediately, separate from the form's Save. */}
-          <div className="mb-400">
-            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
-              {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
-            </GcdsButton>
-            {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
-          </div>
-          <hr className="section-divider mb-400" />
+          </fieldset>
           <SectionSaveControls
             section="cache" saveLabel={t('settings.cache.saveLabel')} dirty={isSectionDirty('cache')}
             saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
             fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
           />
+          <hr className="section-divider mb-400" />
+          {/* These actions take effect immediately, separately from Save. */}
+          <div className="mb-400">
+            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
+              {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
+            </GcdsButton>
+            {renderStatusMessage(clearSearchCacheStatus, 'success', 'searchCacheClear')}
+            <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
+              {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+            </GcdsButton>
+            {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
+          </div>
         </div>
       </details>
 
