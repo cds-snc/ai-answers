@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.207.0](https://github.com/cds-snc/ai-answers/compare/v1.206.1...v1.207.0) (2026-10-06)
+
+
+### Features
+
+* enhance search cache controls with confirmation prompts and improved grouping in SettingsPage ([d92b16f](https://github.com/cds-snc/ai-answers/commit/d92b16fe1df8dafdb7c7224ace92bff3fff2ae18))
+* update cache labels for clarity and reposition save controls in SettingsPage ([8dbee3b](https://github.com/cds-snc/ai-answers/commit/8dbee3b11346e651fe00b2d6c56271a21007c93d))
+
+
+### Bug Fixes
+
+* citation issue filter matches every answer with a citation problem ([d377221](https://github.com/cds-snc/ai-answers/commit/d377221a9f3a34d3db1de2ac75e8be38725f7c0b))
+* citation issue filter matches every answer with a citation problem ([62f94c3](https://github.com/cds-snc/ai-answers/commit/62f94c348bdcbf281094048282051df01061771c))
+* rank sentence scores above citation in eval categories ([d983847](https://github.com/cds-snc/ai-answers/commit/d98384750223ebb0eb71efd1b3d131ebc0d55c3a))
+* rank sentence scores above citation in eval categories ([8d47251](https://github.com/cds-snc/ai-answers/commit/8d47251d04f9d8511353852fad95de9a802c5b6f))
+
+
+### Documentation
+
+* remove stale answer-error undercount TODO ([2871a0a](https://github.com/cds-snc/ai-answers/commit/2871a0a241f8f6816f7279496f4c8d69ace08e53))
+
+
+### Styles
+
+* align cache fieldsets, style legends, equal-width clear buttons ([e517eca](https://github.com/cds-snc/ai-answers/commit/e517ecacc9ce81732b7a0ac361733bbd0c2fc6cd))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump proxy-addr from 2.0.7 to 2.0.8 in /server ([62fb15a](https://github.com/cds-snc/ai-answers/commit/62fb15a5f4ba73e0a7beeb6fce87a2e5a686ff20))
+* **deps:** bump proxy-addr from 2.0.7 to 2.0.8 in /server ([fc1116e](https://github.com/cds-snc/ai-answers/commit/fc1116ec50c07988c5150ecbcc7d854a8f190440))
+* **deps:** bump source-map-js from 1.2.1 to 1.2.2 ([4049b04](https://github.com/cds-snc/ai-answers/commit/4049b04eb70fc582e9376370a7f8d56dfd039ad0))
+* **deps:** bump source-map-js from 1.2.1 to 1.2.2 ([13d19ae](https://github.com/cds-snc/ai-answers/commit/13d19ae98f2b999e2f97c72334c5808321fb7e7c))
+
 ## [1.206.1](https://github.com/cds-snc/ai-answers/compare/v1.206.0...v1.206.1) (2026-10-05)
 
 
