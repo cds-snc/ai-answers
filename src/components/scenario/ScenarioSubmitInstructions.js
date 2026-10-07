@@ -24,7 +24,7 @@ const ScenarioSubmitInstructions = ({ t, lang, departmentKey }) => {
   // Answers team" with the address hidden behind it) - same .split('{placeholder}')
   // pattern already used elsewhere in this codebase for a translated
   // sentence that needs a real element (here a mailto: link) spliced into
-  // the middle of it, e.g. DeleteExpertEval.js's error message.
+  // the middle of it, e.g. ExpertFeedbackComponent.js's required-field message.
   const [beforeEmail, afterEmail] = t('scenarioOverrides.submit.step1').split('{email}');
 
   return (

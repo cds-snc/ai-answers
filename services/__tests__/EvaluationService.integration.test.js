@@ -25,24 +25,6 @@ describe('EvaluationService integration (DB)', () => {
         vi.clearAllMocks();
     });
 
-    it('deleteExpertFeedbackForChat removes expertFeedback refs and deletes documents', async () => {
-        // Create expert feedback and an interaction referencing it
-        const fb = await ExpertFeedback.create({ reviewer: 'tester', comments: 'ok' });
-        const interaction = await Interaction.create({ interactionId: 'i-1', expertFeedback: fb._id });
-        const chat = await Chat.create({ chatId: 'chat-1', interactions: [interaction._id] });
-
-        const result = await EvaluationService.deleteExpertFeedbackForChat('chat-1');
-
-        expect(result).toBeTruthy();
-        expect(result.deletedCount).toBeGreaterThanOrEqual(1);
-
-        const remainingFeedback = await ExpertFeedback.findById(fb._id);
-        expect(remainingFeedback).toBeNull();
-
-        const updatedInteraction = await Interaction.findById(interaction._id);
-        expect(updatedInteraction.expertFeedback).toBeFalsy();
-    });
-
     it('hasExistingEvaluation and getEvaluationForInteraction return expected shapes', async () => {
         // Create expert feedback and eval, attach to interaction
         const fb = await ExpertFeedback.create({ reviewer: 'tester2', comments: 'score' });

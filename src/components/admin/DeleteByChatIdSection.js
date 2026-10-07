@@ -3,14 +3,10 @@ import StatusMessage from './StatusMessage.js';
 import ChatIdLookupField from './ChatIdLookupField.js';
 import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 
-// Shared "delete something by chat ID" row: one <details>/summary/form/
-// status shell, reused by DeleteChatSection.js (deletes the whole chat) and
-// DeleteExpertEval.js (deletes just its expert evaluation) - these two only
-// ever differed in which service call runs and what the button/summary
-// text says, never in layout, validation, or status-message handling.
-// Hand-duplicating that shell across two files is exactly what silently
-// drifts over time (one gets tweaked, the other doesn't) - one shared
-// component makes that impossible instead of something to keep checking.
+// "Delete something by chat ID" row: one <details>/summary/form/status
+// shell, used by DeleteChatSection.js (deletes the whole chat).
+// DeleteExpertEval.js has its own lookup-then-pick flow instead, but shares
+// the same useChatIdLookup.js checks and ChatIdLookupField.js field.
 // Both are rows in AdminPage.js's shared "View and delete chats by ID"
 // section (its own h2) - collapsed by default, summary text is this row's
 // only label, no separate heading here.
@@ -26,7 +22,7 @@ import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
 // StatusMessage's split-template treatment (see AGENTS.md's
 // admin.common.fetchError pattern) - `detail` is a ReactNode the *caller*
 // has already decided whether to wrap in lang="en": raw exception text
-// needs it, an already-translated reason (e.g. "Not evaluated") doesn't.
+// needs it, an already-translated reason doesn't.
 const DeleteByChatIdSection = ({
   lang = 'en',
   titleKey,
@@ -35,14 +31,6 @@ const DeleteByChatIdSection = ({
   loadingLabelKey,
   fieldId,
   onDelete,
-  // The chat existing is DeleteChatSection.js's whole precondition, but not
-  // every consumer's — DeleteExpertEval.js's real precondition is "does this
-  // chat have expert feedback", which a plain existence check can't express
-  // (a chat can exist with none). Let a consumer supply a more specific
-  // check against the same already-fetched chat data instead of adding a
-  // second round trip; defaults preserve the old any-chat-is-valid behavior.
-  validateChat,
-  invalidChatMessageKey,
   // Action-specific "not found" wording — see useChatIdLookup's own note.
   notFoundMessageKey,
 }) => {
@@ -62,7 +50,7 @@ const DeleteByChatIdSection = ({
     errorRef,
     inlineErrorMessage,
     checkChatExists,
-  } = useChatIdLookup({ lang, validateChat, invalidChatMessageKey, notFoundMessageKey });
+  } = useChatIdLookup({ lang, notFoundMessageKey });
 
   const handleDelete = async (e) => {
     e.preventDefault();
@@ -76,8 +64,8 @@ const DeleteByChatIdSection = ({
       return;
     }
 
-    // onDelete's two current callers (DeleteChatSection.js/DeleteExpertEval.js)
-    // already catch everything internally and always resolve to a
+    // onDelete's current caller (DeleteChatSection.js) already catches
+    // everything internally and always resolve to a
     // { isError, text } result rather than reject — but that's a convention,
     // not something this shared component can enforce on a future caller.
     // Guard it here too, so a consumer that doesn't follow it fails as a

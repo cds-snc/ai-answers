@@ -5,226 +5,348 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DeleteExpertEval from '../DeleteExpertEval.js';
-import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 const TRANSLATIONS = {
   'admin.deleteExpertEval.title': 'Delete an expert evaluation',
   'admin.deleteExpertEval.idLabel': 'Chat ID',
-  'admin.deleteExpertEval.button': 'Delete expert evaluation',
-  'admin.deleteExpertEval.loading': 'Deleting...',
-  'admin.deleteExpertEval.error': 'Failed to delete expert evaluation: {error}',
+  'admin.deleteExpertEval.button': 'Find expert evaluations to delete',
   'admin.deleteExpertEval.notEvaluated': 'Not evaluated.',
-  'admin.deleteExpertEval.success': 'Deleted {count} expert feedback record(s) for {chatId}.',
-  'common.confirmDelete': 'Are you sure you want to delete this data?',
+  'admin.deleteExpertEval.pickerLegend': 'Choose evaluations to delete',
+  'admin.deleteExpertEval.rowLabel': 'Answer {number}, {department}, reviewed by {email}',
+  'admin.deleteExpertEval.noDepartment': 'no department',
+  'admin.deleteExpertEval.unknownReviewer': 'unknown reviewer',
+  'admin.deleteExpertEval.deleteSelected': 'Delete selected evaluations ({count})',
+  'admin.deleteExpertEval.noneSelected': 'Choose at least one evaluation to delete.',
+  'admin.deleteExpertEval.success': 'Deleted {count} expert evaluation(s) for {chatId}.',
+  'admin.deleteExpertEval.failed': 'Could not delete the expert evaluation(s). Try again.',
+  'admin.deleteExpertEval.partial': 'Deleted {count} of {total} expert evaluations. The rest could not be deleted and are still listed.',
+  'common.deleting': 'Deleting...',
 };
 const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
-const { mockDeleteExpertEval, mockGetChat } = vi.hoisted(() => ({
-  mockDeleteExpertEval: vi.fn(),
+const { mockDeleteExpertFeedback, mockGetChat } = vi.hoisted(() => ({
+  mockDeleteExpertFeedback: vi.fn(),
   mockGetChat: vi.fn(),
 }));
-vi.mock('../../services/EvaluationService.js', () => ({
-  default: { deleteExpertEval: mockDeleteExpertEval },
+vi.mock('../../services/FeedbackService.js', () => ({
+  default: { deleteExpertFeedback: mockDeleteExpertFeedback },
 }));
 vi.mock('../../services/DataStoreService.js', () => ({
   default: { getChat: mockGetChat },
 }));
 
-// A well-formed chat ID (matches isValidChatIdFormat's uuidv4 pattern) -
-// DeleteByChatIdSection.js now confirms the chat exists (DataStoreService
-// .getChat) before the confirm dialog, so every test below needs both a
-// syntactically valid ID and a resolved getChat mock, not just deleteExpertEval.
-const VALID_CHAT_ID = 'abcdef12-3456-4789-8abc-def012345678';
-
 vi.mock('@gcds-core/components-react', () => ({
-  GcdsButton: ({ children, onClick, disabled }) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
+  GcdsButton: ({ children, onClick, disabled, type }) => (
+    <button type={type} onClick={onClick} disabled={disabled}>{children}</button>
   ),
   GcdsIcon: ({ name }) => <span data-icon={name} />,
 }));
 
-describe('DeleteExpertEval error/success announcements', () => {
+// Matches isValidChatIdFormat's uuidv4 pattern.
+const VALID_CHAT_ID = 'abcdef12-3456-4789-8abc-def012345678';
+
+// Three questions: 1 and 3 reviewed by different experts in different
+// departments, 2 not reviewed.
+const chatWithEvaluations = () => mockGetChat.mockResolvedValue({
+  chat: {
+    chatId: VALID_CHAT_ID,
+    interactions: [
+      { _id: 'int1', context: { department: 'CRA-ARC' }, expertFeedback: { _id: 'ef1', expertEmail: 'a@example.ca' } },
+      { _id: 'int2', context: { department: 'ESDC-EDSC' } },
+      { _id: 'int3', context: { department: 'IRCC' }, expertFeedback: { _id: 'ef3', expertEmail: 'b@example.ca' } },
+    ],
+  },
+});
+
+const ROW1 = 'Answer 1, CRA-ARC, reviewed by a@example.ca';
+const ROW3 = 'Answer 3, IRCC, reviewed by b@example.ca';
+
+// Same event the browser fires when the summary is clicked.
+const toggleSection = () => fireEvent(document.querySelector('details'), new Event('toggle'));
+
+const lookup = (chatId = VALID_CHAT_ID) => {
+  fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: chatId } });
+  fireEvent.click(screen.getByText('Find expert evaluations to delete'));
+};
+
+// Second question unreviewed, so only one evaluation in the chat.
+const chatWithOneEvaluation = () => mockGetChat.mockResolvedValue({
+  chat: {
+    chatId: VALID_CHAT_ID,
+    interactions: [
+      { _id: 'int1' },
+      { _id: 'int2', context: { department: 'CRA-ARC' }, expertFeedback: { _id: 'ef2', expertEmail: 'a@example.ca' } },
+    ],
+  },
+});
+
+describe('DeleteExpertEval with one evaluation', () => {
   afterEach(() => {
     cleanup();
-    mockDeleteExpertEval.mockReset();
+    mockDeleteExpertFeedback.mockReset();
     mockGetChat.mockReset();
     vi.restoreAllMocks();
   });
 
-  const startDelete = (chatId = VALID_CHAT_ID) => {
-    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: chatId } });
-    fireEvent.click(screen.getByText('Delete expert evaluation'));
-  };
-
-  // Every "delete proceeds" test needs the existence pre-check to resolve as
-  // found *and* have expert feedback (validateChat's real precondition for
-  // this consumer — see DeleteExpertEval.js), or it never reaches
-  // window.confirm()/onDelete at all.
-  const chatExists = () => mockGetChat.mockResolvedValue({
-    chat: { chatId: VALID_CHAT_ID, interactions: [{ expertFeedback: { id: 'ef1' } }] },
-  });
-
-  it('asks for confirmation via window.confirm before deleting', async () => {
-    chatExists();
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockDeleteExpertEval.mockResolvedValue({ message: 'Deleted 1 expert feedback(s) for chat abc123', deletedCount: 1 });
-
+  it('still lists it, unticked, and deletes once ticked, with no confirm dialog', async () => {
+    chatWithOneEvaluation();
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 1 });
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitFor(() => expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete this data?'));
+    const row = await screen.findByLabelText('Answer 2, CRA-ARC, reviewed by a@example.ca');
+    expect(row.checked).toBe(false);
+    expect(mockDeleteExpertFeedback).not.toHaveBeenCalled();
+
+    fireEvent.click(row);
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    expect(await screen.findByText(`Deleted 1 expert evaluation(s) for ${VALID_CHAT_ID}.`)).toBeTruthy();
+    expect(mockDeleteExpertFeedback).toHaveBeenCalledWith({ interactionId: 'int2' });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Chat ID').value).toBe('');
   });
 
-  it('does not delete when the confirmation dialog is cancelled', async () => {
-    chatExists();
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-
+  it('reports a failed delete as a translated error, not raw exception text, and keeps the row', async () => {
+    chatWithOneEvaluation();
+    mockDeleteExpertFeedback.mockRejectedValue(new Error('Failed to fetch'));
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitFor(() => expect(confirmSpy).toHaveBeenCalled());
-    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByLabelText('Answer 2, CRA-ARC, reviewed by a@example.ca'));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    const message = await screen.findByText('Could not delete the expert evaluation(s). Try again.');
+    expect(message.closest('.status-message--error-box')).not.toBeNull();
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+    expect(screen.getByLabelText('Answer 2, CRA-ARC, reviewed by a@example.ca')).toBeTruthy();
+  });
+});
+
+describe('DeleteExpertEval picker (several evaluations)', () => {
+  afterEach(() => {
+    cleanup();
+    mockDeleteExpertFeedback.mockReset();
+    mockGetChat.mockReset();
+    vi.restoreAllMocks();
   });
 
-  it('announces a successful delete (deletedCount > 0) as role="status", using the translated key not the raw API message', async () => {
-    chatExists();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    // data.message is server-built, untranslated English text (kept in the
-    // response for logging) — the component must display the translated
-    // admin.deleteExpertEval.success key instead, not this raw string.
-    mockDeleteExpertEval.mockResolvedValue({ message: 'Deleted 1 expert feedback(s) for chat abc123', deletedCount: 1 });
-
+  it('lists one unticked row per evaluated answer, with answer number, department and reviewer', async () => {
+    chatWithEvaluations();
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    const status = await screen.findByText(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}.`);
-    expect(status.closest('.status-message--success-box')).not.toBeNull();
-    await waitForAnnouncement(`Deleted 1 expert feedback record(s) for ${VALID_CHAT_ID}.`);
-    expect(document.querySelector('.status-message--error-box')).toBeNull();
-    expect(screen.queryByText('Deleted 1 expert feedback(s) for chat abc123')).toBeNull();
+    const row1 = await screen.findByLabelText(ROW1);
+    const row3 = screen.getByLabelText(ROW3);
+    expect(row1.checked).toBe(false);
+    expect(row3.checked).toBe(false);
+    expect(screen.queryByText(/Answer 2/)).toBeNull();
+    expect(screen.getByRole('group', { name: 'Choose evaluations to delete' })).toBeTruthy();
+    // The list is the lookup's outcome — focus lands on it.
+    await waitFor(() => expect(document.activeElement).toBe(row1));
+    expect(mockDeleteExpertFeedback).not.toHaveBeenCalled();
   });
 
-  it('treats deletedCount: 0 as an error ("Not evaluated"), not a success', async () => {
-    chatExists();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockDeleteExpertEval.mockResolvedValue({ message: 'Deleted 0 expert feedback(s) for chat abc123', deletedCount: 0 });
-
+  it('falls back to "no department" / "unknown reviewer" when either is missing', async () => {
+    mockGetChat.mockResolvedValue({
+      chat: {
+        chatId: VALID_CHAT_ID,
+        interactions: [
+          { _id: 'int1', expertFeedback: { _id: 'ef1' } },
+          { _id: 'int2', context: { department: 'IRCC' }, expertFeedback: { _id: 'ef2', expertEmail: 'b@example.ca' } },
+        ],
+      },
+    });
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitForAnnouncement('Failed to delete expert evaluation: Not evaluated.', 'assertive', { exact: true });
-    // "Not evaluated" is a known translated reason, not raw exception text —
-    // shouldn't get the lang="en" pronunciation wrapper.
-    const alert = document.querySelector('.status-message--error-box');
-    expect(alert.querySelector('code[lang="en"]')).toBeNull();
+    expect(await screen.findByLabelText('Answer 1, no department, reviewed by unknown reviewer')).toBeTruthy();
   });
 
-  it('announces a chat deleted between the existence check and the delete call (server-side 404 race) in a lang="en" code element, inside role="alert"', async () => {
-    // The existence pre-check found it, but the actual delete call still
-    // fails server-side (e.g. the chat was removed in the gap between the
-    // two requests) — EvaluationService.deleteExpertEval throws for the
-    // API's 404 the same way (services/EvaluationService.js:89, `{ error:
-    // 'Chat not found', status: 404 }`), so DeleteExpertEval.js's own catch
-    // block still needs to handle it, pre-check or not.
-    chatExists();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockDeleteExpertEval.mockRejectedValue(new Error('Chat not found'));
-
-    render(<DeleteExpertEval lang="fr" />);
-    startDelete();
-
-    await waitForAnnouncement('Failed to delete expert evaluation: Chat not found', 'assertive', { exact: true });
-
-    const enSpan = document.querySelector('.status-message--error-box code[lang="en"]');
-    expect(enSpan).toBeTruthy();
-    expect(enSpan.textContent).toBe('Chat not found');
-  });
-
-  it('wraps a generic network/server error in a lang="en" code element too', async () => {
-    chatExists();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockDeleteExpertEval.mockRejectedValue(new Error('Failed to fetch'));
-
-    render(<DeleteExpertEval lang="fr" />);
-    startDelete();
-
-    await waitForAnnouncement('Failed to delete expert evaluation: Failed to fetch', 'assertive', { exact: true });
-    expect(document.querySelector('.status-message--error-box code[lang="en"]')).toBeTruthy();
-  });
-
-  it('clears a stale result message as soon as the admin edits the chat ID again', async () => {
-    chatExists();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockDeleteExpertEval.mockRejectedValue(new Error('Chat not found'));
-
+  it('deletes only the ticked rows, per interaction, with no confirm dialog', async () => {
+    chatWithEvaluations();
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 1 });
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
-    await waitFor(() => expect(document.querySelector('.status-message--error-box')).toBeTruthy());
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    await screen.findByText(`Deleted 1 expert evaluation(s) for ${VALID_CHAT_ID}.`);
+    expect(mockDeleteExpertFeedback).toHaveBeenCalledTimes(1);
+    expect(mockDeleteExpertFeedback).toHaveBeenCalledWith({ interactionId: 'int3' });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    // The kept row is still listed, unticked; the deleted one is gone.
+    expect(screen.getByLabelText(ROW1).checked).toBe(false);
+    expect(screen.queryByLabelText(ROW3)).toBeNull();
+  });
+
+  it('deleting every row removes the list, clears the field and moves focus to the outcome', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 1 });
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW1));
+    fireEvent.click(screen.getByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (2)'));
+
+    const message = await screen.findByText(`Deleted 2 expert evaluation(s) for ${VALID_CHAT_ID}.`);
+    expect(mockDeleteExpertFeedback).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
+    expect(screen.getByLabelText('Chat ID').value).toBe('');
+    const box = message.closest('.status-message--success-box');
+    expect(box).not.toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(box));
+  });
+
+  it('shows an inline error and deletes nothing when no row is ticked', async () => {
+    chatWithEvaluations();
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    await screen.findByLabelText(ROW1);
+    fireEvent.click(screen.getByText('Delete selected evaluations (0)'));
+
+    const error = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
+    expect(error.textContent).toContain('Choose at least one evaluation to delete.');
+    expect(mockDeleteExpertFeedback).not.toHaveBeenCalled();
+  });
+
+  it('reports a partial failure as an error and keeps the failed row listed', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockImplementation(({ interactionId }) => (
+      interactionId === 'int1' ? Promise.resolve({ deletedCount: 1 }) : Promise.reject(new Error('Failed to fetch'))
+    ));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW1));
+    fireEvent.click(screen.getByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (2)'));
+
+    const message = await screen.findByText('Deleted 1 of 2 expert evaluations. The rest could not be deleted and are still listed.');
+    expect(message.closest('.status-message--error-box')).not.toBeNull();
+    // No raw exception text shown.
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+    expect(screen.queryByLabelText(ROW1)).toBeNull();
+    expect(screen.getByLabelText(ROW3).checked).toBe(true);
+  });
+
+  it('clears the list as soon as the admin edits the chat ID again', async () => {
+    chatWithEvaluations();
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+    await screen.findByLabelText(ROW1);
 
     fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID.replace('a', 'b') } });
-    expect(document.querySelector('.status-message--error-box')).toBeNull();
+    expect(screen.queryByLabelText(ROW1)).toBeNull();
   });
 
-  it('shows "not found" and skips the confirm dialog when the chat does not exist', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm');
+  it('shows "not found" when the chat does not exist', async () => {
     mockGetChat.mockResolvedValue({ chat: null });
-
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitFor(() => {
-      expect(screen.getByText('admin.deleteExpertEval.notFound')).toBeTruthy();
-    });
-    expect(confirmSpy).not.toHaveBeenCalled();
-    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
+    expect(await screen.findByText('admin.deleteExpertEval.notFound')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
   });
 
-  it('shows "not evaluated" and skips the confirm dialog when the chat exists but has no expert feedback', async () => {
-    // The real precondition for this consumer isn't "does the chat exist"
-    // (a chat can exist with zero expert feedback) — validateChat checks
-    // the actual thing, from the same getChat() response, no second request.
-    const confirmSpy = vi.spyOn(window, 'confirm');
-    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID, interactions: [{ question: 'q' }] } });
-
+  it('shows "not evaluated" when the chat exists but has no expert feedback', async () => {
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID, interactions: [{ _id: 'int1' }] } });
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitFor(() => {
-      expect(screen.getByText('Not evaluated.')).toBeTruthy();
-    });
-    expect(confirmSpy).not.toHaveBeenCalled();
-    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
+    expect(await screen.findByText('Not evaluated.')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
   });
 
-  it('shows a distinct "lookup failed" message, not "not found", when the existence check itself fails', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm');
+  it('shows a distinct "lookup failed" message, not "not found", when the lookup itself fails', async () => {
     mockGetChat.mockRejectedValue(new Error('Failed to fetch'));
-
     render(<DeleteExpertEval lang="en" />);
-    startDelete();
+    lookup();
 
-    await waitFor(() => {
-      expect(screen.getByText('admin.common.fetchFailed')).toBeTruthy();
-    });
+    expect(await screen.findByText('admin.common.fetchFailed')).toBeTruthy();
     expect(screen.queryByText('admin.deleteExpertEval.notFound')).toBeNull();
-    expect(confirmSpy).not.toHaveBeenCalled();
-    expect(mockDeleteExpertEval).not.toHaveBeenCalled();
   });
 
   it('flags a malformed chat ID as an inline error instead of looking it up', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm');
-
     render(<DeleteExpertEval lang="en" />);
-    startDelete('not-a-real-id');
+    lookup('not-a-real-id');
 
-    // FeedbackInlineError is its own role="alert" (field-tied, not a
-    // StatusMessage) — the only one on the page here.
     const alert = await waitFor(() => { const el = document.querySelector('.form-error-message'); expect(el).toBeTruthy(); return el; });
     expect(alert.textContent).toContain('admin.viewChat.invalidFormat');
     expect(mockGetChat).not.toHaveBeenCalled();
-    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it('counts an evaluation already deleted elsewhere as deleted, not stuck', async () => {
+    chatWithEvaluations();
+    // Server's reply when the interaction no longer has expert feedback.
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 0 });
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    await screen.findByText(`Deleted 1 expert evaluation(s) for ${VALID_CHAT_ID}.`);
+    expect(screen.queryByLabelText(ROW3)).toBeNull();
+  });
+
+  it('marks the delete outcome as announced by moving focus to it', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 1 });
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    const message = await screen.findByText(`Deleted 1 expert evaluation(s) for ${VALID_CHAT_ID}.`);
+    expect(message.closest('[data-announced-via]').getAttribute('data-announced-via')).toBe('focus');
+  });
+
+  it('ignores a delete that finishes after the section was closed', async () => {
+    chatWithEvaluations();
+    let rejectDelete;
+    mockDeleteExpertFeedback.mockReturnValue(new Promise((_, reject) => { rejectDelete = reject; }));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+    await waitFor(() => expect(mockDeleteExpertFeedback).toHaveBeenCalled());
+    toggleSection();
+    rejectDelete(new Error('Failed to fetch'));
+
+    // No crash, no list back, no outcome message, and the field is usable again.
+    await waitFor(() => expect(screen.getByLabelText('Chat ID').disabled).toBe(false));
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
+    expect(screen.queryByText(/could not be deleted|Could not delete/)).toBeNull();
+  });
+
+  it('ignores a lookup that finishes after the section was closed', async () => {
+    let resolveLookup;
+    mockGetChat.mockReturnValue(new Promise((resolve) => { resolveLookup = resolve; }));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    await waitFor(() => expect(mockGetChat).toHaveBeenCalled());
+    toggleSection();
+    toggleSection();
+    resolveLookup({
+      chat: {
+        chatId: VALID_CHAT_ID,
+        interactions: [{ _id: 'int1', context: { department: 'CRA-ARC' }, expertFeedback: { _id: 'ef1', expertEmail: 'a@example.ca' } }],
+      },
+    });
+
+    await waitFor(() => expect(screen.getByLabelText('Chat ID').disabled).toBe(false));
+    expect(screen.queryByLabelText(ROW1)).toBeNull();
   });
 });

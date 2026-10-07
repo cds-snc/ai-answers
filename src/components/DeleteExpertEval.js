@@ -1,72 +1,270 @@
-import React from 'react';
-import { useTranslations } from '../hooks/useTranslations.js';
-import EvaluationService from '../services/EvaluationService.js';
-import DeleteByChatIdSection from './admin/DeleteByChatIdSection.js';
+import React, { useRef, useState } from 'react';
+import { GcdsButton } from '@gcds-core/components-react';
+import FeedbackService from '../services/FeedbackService.js';
+import ChatIdLookupField from './admin/ChatIdLookupField.js';
+import StatusMessage from './admin/StatusMessage.js';
+import FeedbackInlineError from './chat/FeedbackInlineError.js';
+import { useChatIdLookup } from '../hooks/admin/useChatIdLookup.js';
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { formatNumber } from '../utils/numberFormat.js';
-import { useErrorStatus } from '../hooks/useErrorStatus.js';
 
+const FIELD_ID = 'expertEvalChatId';
+
+// One row per evaluated answer. Each answer in a chat can be reviewed by a
+// different expert and belong to a different department, so the picker
+// shows both. Answer number counts every answer in the chat, evaluated or
+// not, so it matches what the chat itself shows.
+const toEvaluations = (chat) => (chat.interactions || [])
+  .map((interaction, index) => ({
+    interactionId: interaction._id,
+    answerNumber: index + 1,
+    department: interaction.context?.department || '',
+    email: interaction.expertFeedback?.expertEmail || '',
+    evaluated: !!interaction.expertFeedback,
+  }))
+  .filter((row) => row.evaluated);
+
+// Lists the chat's evaluations as checkboxes, none ticked: ticking is the
+// confirmation, so there's no confirm dialog. Same flow for one evaluation
+// as for several. Deletes go through the per-interaction
+// endpoint (same as ExpertFeedbackPanel.js's button), which also clears the
+// evaluation's copy on the answer's embedding metadata.
 const DeleteExpertEval = ({ lang = 'en' }) => {
-  const { t } = useTranslations(lang);
-  const { buildErrorStatus, wrapErrorDetail } = useErrorStatus(t);
+  const {
+    t,
+    chatId,
+    setChatId,
+    handleInputChange,
+    handleToggle,
+    loading,
+    setLoading,
+    status,
+    setStatus,
+    statusNonce,
+    hasError,
+    errorCount,
+    errorRef,
+    inlineErrorMessage,
+    checkChatExists,
+  } = useChatIdLookup({
+    lang,
+    validateChat: (chat) => toEvaluations(chat).length > 0,
+    invalidChatMessageKey: 'admin.deleteExpertEval.notEvaluated',
+    notFoundMessageKey: 'admin.deleteExpertEval.notFound',
+  });
 
-  const handleDelete = async (chatId) => {
-    try {
-      const data = await EvaluationService.deleteExpertEval(chatId);
-      if (data.deletedCount > 0) {
-        // data.message is server-built, untranslated English text — use the
-        // translated key instead. chatId is a UUID-validated string (no `$`
-        // risk like raw exception text below); the count goes through
-        // formatNumber per AGENTS.md — French/English format numbers
-        // differently, even a small one like this.
-        const text = t('admin.deleteExpertEval.success')
-          .replace('{count}', formatNumber(data.deletedCount, lang))
-          .replace('{chatId}', chatId);
-        return { isError: false, text };
-      }
-      // The API returns 200 with deletedCount: 0 when the chat exists but
-      // had nothing to delete (no interactions, or none with expert
-      // feedback) — not a network/server failure, but from the admin's
-      // point of view it's the same as "failed to delete an expert
-      // evaluation" (there wasn't one). "Not evaluated" is a known,
-      // translated reason (not raw exception text), so — unlike the catch
-      // block below — it doesn't need a lang="en" wrapper. Goes through
-      // buildErrorStatus anyway so both branches share one prefix/suffix split.
-      const notEvaluated = buildErrorStatus('admin.deleteExpertEval.error', { message: t('admin.deleteExpertEval.notEvaluated') });
-      return { isError: true, prefix: notEvaluated.prefix, detail: notEvaluated.detail, suffix: notEvaluated.suffix };
-    } catch (err) {
-      // TODO (Official Languages): this treats every failure here as
-      // unbounded free text, but the 404 race case specifically (the
-      // pre-check passed, then the chat was deleted before this call
-      // completed — EvaluationService.deleteExpertEval throws 'Chat not
-      // found.' for that, services/EvaluationService.js:89) is actually a
-      // known, bounded outcome and could be a real translated key instead
-      // of a lang="en"-wrapped English string — same reasoning as
-      // admin.deleteExpertEval.notEvaluated just above. Needs the backend
-      // to return a stable error code (not just message text) so this catch
-      // block can tell that case apart from a genuinely unbounded failure
-      // (network drop, unexpected 500). Not done: touches both layers plus
-      // a test rewrite, not just this file — see PR discussion.
-      return wrapErrorDetail('admin.deleteExpertEval.error', err);
-    }
+  const [evaluations, setEvaluations] = useState(null);
+  const [selected, setSelected] = useState([]);
+  const [deleting, setDeleting] = useState(false);
+  const noneSelectedError = useInlineFormError();
+  // The list appearing is the lookup's outcome: focus its first checkbox so
+  // it's read out (legend + row).
+  const [foundCount, setFoundCount] = useState(0);
+  const firstCheckboxRef = useFocusOnChange(foundCount);
+  // A full delete removes the list and its button, dropping focus — move it
+  // to the outcome instead (status-and-error-messaging.md).
+  const [deleteOutcomeCount, setDeleteOutcomeCount] = useState(0);
+  const deleteOutcomeRef = useFocusOnChange(deleteOutcomeCount);
+
+  // Bumped whenever the section closes or the chat ID changes, so a lookup or
+  // delete still in flight knows its result is stale and drops it.
+  const runRef = useRef(0);
+
+  const resetPicker = () => {
+    runRef.current += 1;
+    setEvaluations(null);
+    setSelected([]);
+    noneSelectedError.clearError();
   };
 
+  const onInputChange = (event) => {
+    handleInputChange(event);
+    resetPicker();
+  };
+
+  const onToggle = () => {
+    handleToggle();
+    resetPicker();
+  };
+
+  const rowLabel = (row) => t('admin.deleteExpertEval.rowLabel')
+    .replace('{number}', formatNumber(row.answerNumber, lang))
+    .replace('{department}', row.department || t('admin.deleteExpertEval.noDepartment'))
+    .replace('{email}', row.email || t('admin.deleteExpertEval.unknownReviewer'));
+
+  // Returns the interaction IDs whose evaluation is now gone. Sequential: at
+  // most 3 rows per chat. A deletedCount of 0 means it was already deleted
+  // elsewhere (e.g. the review panel) — gone either way, so it counts.
+  const deleteInteractions = async (interactionIds) => {
+    const deletedIds = [];
+    for (const interactionId of interactionIds) {
+      try {
+        await FeedbackService.deleteExpertFeedback({ interactionId });
+        deletedIds.push(interactionId);
+      } catch (err) {
+        // Counted as not deleted.
+        console.error(`Error deleting expert feedback for interaction ${interactionId}:`, err);
+      }
+    }
+    return deletedIds;
+  };
+
+  const successStatus = (count, extra = {}) => ({
+    ...extra,
+    variant: 'success',
+    text: t('admin.deleteExpertEval.success')
+      .replace('{count}', formatNumber(count, lang))
+      .replace('{chatId}', chatId.trim()),
+  });
+
+  const handleLookup = async (e) => {
+    e.preventDefault();
+    resetPicker();
+    const run = runRef.current;
+    const chat = await checkChatExists(chatId);
+    if (!chat) return;
+    if (run !== runRef.current) {
+      setLoading(false);
+      return;
+    }
+    const rows = toEvaluations(chat);
+    setEvaluations(rows);
+    setLoading(false);
+    setFoundCount((n) => n + 1);
+  };
+
+  const toggleRow = (interactionId, checked) => {
+    setSelected((prev) => (checked ? [...prev, interactionId] : prev.filter((id) => id !== interactionId)));
+    noneSelectedError.clearError();
+  };
+
+  const handleDeleteSelected = async (e) => {
+    e.preventDefault();
+    if (selected.length === 0) {
+      noneSelectedError.triggerError();
+      return;
+    }
+    setDeleting(true);
+    setStatus(null);
+    const run = runRef.current;
+    // Rows that fail stay listed to retry.
+    const deletedIds = await deleteInteractions(selected);
+    if (run !== runRef.current) {
+      setDeleting(false);
+      return;
+    }
+    const total = selected.length;
+    const count = deletedIds.length;
+    if (count === total) {
+      setStatus(successStatus(count, { fromDelete: true }));
+      const remaining = evaluations.filter((row) => !deletedIds.includes(row.interactionId));
+      if (remaining.length === 0) {
+        resetPicker();
+        setChatId('');
+      } else {
+        setEvaluations(remaining);
+        setSelected([]);
+      }
+    } else {
+      setStatus({
+        fromDelete: true,
+        variant: 'error',
+        text: count === 0
+          ? t('admin.deleteExpertEval.failed')
+          : t('admin.deleteExpertEval.partial')
+            .replace('{count}', formatNumber(count, lang))
+            .replace('{total}', formatNumber(total, lang)),
+      });
+      setEvaluations((prev) => prev.filter((row) => !deletedIds.includes(row.interactionId)));
+      setSelected((prev) => prev.filter((id) => !deletedIds.includes(id)));
+    }
+    setDeleting(false);
+    setDeleteOutcomeCount((n) => n + 1);
+  };
+
+  const noneSelectedErrorId = `${FIELD_ID}-picker-error`;
+
   return (
-    <DeleteByChatIdSection
-      lang={lang}
-      titleKey="admin.deleteExpertEval.title"
-      idLabelKey="admin.deleteExpertEval.idLabel"
-      buttonLabelKey="admin.deleteExpertEval.button"
-      loadingLabelKey="admin.deleteExpertEval.loading"
-      notFoundMessageKey="admin.deleteExpertEval.notFound"
-      fieldId="expertEvalChatId"
-      onDelete={handleDelete}
-      // The chat existing isn't this consumer's real precondition — it can
-      // exist with zero expert feedback. getChat()'s response already fully
-      // populates expertFeedback per interaction (db-chat.js), so this
-      // checks the thing that actually matters, from data already fetched.
-      validateChat={(chat) => chat.interactions?.some((i) => i.expertFeedback)}
-      invalidChatMessageKey="admin.deleteExpertEval.notEvaluated"
-    />
+    <details onToggle={onToggle}>
+      <summary id={`${FIELD_ID}-summary`}>{t('admin.deleteExpertEval.title')}</summary>
+      <div className="mt-200 mb-200">
+        <form onSubmit={handleLookup}>
+          <ChatIdLookupField
+            fieldId={FIELD_ID}
+            label={t('admin.deleteExpertEval.idLabel')}
+            placeholder={t('admin.common.chatIdPlaceholder')}
+            value={chatId}
+            onChange={onInputChange}
+            disabled={loading || deleting}
+            hasError={hasError}
+            errorMessage={inlineErrorMessage}
+            errorCount={errorCount}
+            errorRef={errorRef}
+            buttonLabel={loading ? t('admin.viewChat.loading') : t('admin.deleteExpertEval.button')}
+            describedById={`${FIELD_ID}-summary`}
+          />
+        </form>
+        {evaluations && evaluations.length > 0 && (
+          <form onSubmit={handleDeleteSelected} className="mt-300">
+            <fieldset
+              className={`gc-chckbxrdio md canada-ca-choice-fieldset${noneSelectedError.hasError ? ' has-error' : ''}`}
+              aria-describedby={noneSelectedError.hasError ? noneSelectedErrorId : undefined}
+              disabled={deleting}
+            >
+              <legend className="filter-label">{t('admin.deleteExpertEval.pickerLegend')}</legend>
+              {noneSelectedError.hasError && (
+                <FeedbackInlineError
+                  id={noneSelectedErrorId}
+                  message={t('admin.deleteExpertEval.noneSelected')}
+                  errorCount={noneSelectedError.errorCount}
+                  inputRef={noneSelectedError.errorRef}
+                />
+              )}
+              {evaluations.map((row, index) => {
+                const id = `${FIELD_ID}-row-${row.interactionId}`;
+                return (
+                  <div className="checkbox" key={row.interactionId}>
+                    <input
+                      type="checkbox"
+                      id={id}
+                      ref={index === 0 ? firstCheckboxRef : undefined}
+                      checked={selected.includes(row.interactionId)}
+                      onChange={(event) => toggleRow(row.interactionId, event.target.checked)}
+                    />
+                    <label htmlFor={id}>{rowLabel(row)}</label>
+                  </div>
+                );
+              })}
+            </fieldset>
+            <GcdsButton type="submit" buttonRole="danger" disabled={deleting}>
+              {deleting
+                ? t('common.deleting')
+                : t('admin.deleteExpertEval.deleteSelected').replace('{count}', formatNumber(selected.length, lang))}
+            </GcdsButton>
+          </form>
+        )}
+        {status?.variant === 'info' ? (
+          // "Not found" / "Not evaluated" — lookup outcomes, not errors.
+          <StatusMessage variant="info" message={status.text} nonce={statusNonce} />
+        ) : status?.fromDelete ? (
+          // Focus is moved onto it, so it doesn't announce too.
+          <StatusMessage
+            variant={status.variant}
+            message={status.text}
+            nonce={statusNonce}
+            announce={false}
+            announcedVia="focus"
+            ref={deleteOutcomeRef}
+            tabIndex={-1}
+            className="focus-target"
+          />
+        ) : (
+          // Lookup failure (admin.common.fetchFailed).
+          <StatusMessage variant={status?.variant} message={status?.text} nonce={statusNonce} />
+        )}
+      </div>
+    </details>
   );
 };
 

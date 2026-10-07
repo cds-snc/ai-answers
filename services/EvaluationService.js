@@ -11,7 +11,7 @@ import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { requireObjectIdString, requireString } from '../api/util/db-query.js';
+import { requireObjectIdString } from '../api/util/db-query.js';
 
 
 let pool;
@@ -72,46 +72,6 @@ function logEvaluationStages(chatId, interactionId, outcome) {
 
 
 class EvaluationService {
-    /**
-     * Delete all expert feedback for a given chatId
-     * @param {string} chatId
-     * @returns {Promise<{message: string, deletedCount: number}|{error: string, status?: number}>}
-     */
-    async deleteExpertFeedbackForChat(chatId) {
-        try {
-            await dbConnect();
-            if (!chatId) {
-                return { error: 'chatId is required', status: 400 };
-            }
-            chatId = requireString(chatId, 'chatId');
-            const chat = await Chat.findOne({ chatId }).populate('interactions');
-            if (!chat) {
-                return { error: 'Chat not found', status: 404 };
-            }
-            const interactionIds = chat.interactions.map(i => i._id);
-            if (!interactionIds.length) {
-                return { message: `No interactions found for chat ${chatId}`, deletedCount: 0 };
-            }
-            const interactions = await Interaction.find({ _id: { $in: interactionIds } });
-            const expertFeedbackIds = interactions.map(i => i.expertFeedback).filter(Boolean);
-            await Interaction.updateMany(
-                { _id: { $in: interactionIds } },
-                { $unset: { expertFeedback: "" } }
-            );
-            let deletedCount = 0;
-            if (expertFeedbackIds.length) {
-                const result = await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
-                deletedCount = result.deletedCount || 0;
-            }
-            return {
-                message: `Deleted ${deletedCount} expert feedback(s) for chat ${chatId}`,
-                deletedCount
-            };
-        } catch (error) {
-            console.error(error);
-            return { error: 'Failed to delete expert feedback', status: 500 };
-        }
-    }
     /**
      * Delete evaluations (and associated expert feedback) for interactions in a date range or all.
      * @param {Object} options - { timeFilter }

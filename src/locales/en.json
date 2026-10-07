@@ -1011,11 +1011,17 @@
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
       "idLabel": "Chat ID",
-      "button": "Delete expert evaluation",
-      "loading": "Deleting...",
+      "button": "Find expert evaluations to delete",
       "notFound": "Cannot delete evaluation: ID not found.",
-      "success": "Deleted {count} expert feedback record(s) for {chatId}.",
-      "error": "Failed to delete expert evaluation: {error}",
+      "pickerLegend": "Choose evaluations to delete",
+      "rowLabel": "Answer {number}, {department}, reviewed by {email}",
+      "noDepartment": "no department",
+      "unknownReviewer": "unknown reviewer",
+      "deleteSelected": "Delete selected evaluations ({count})",
+      "noneSelected": "Choose at least one evaluation to delete.",
+      "success": "Deleted {count} expert evaluation(s) for {chatId}.",
+      "failed": "Could not delete the expert evaluation(s). Try again.",
+      "partial": "Deleted {count} of {total} expert evaluations. The rest could not be deleted and are still listed.",
       "notEvaluated": "Not evaluated."
     }
   },

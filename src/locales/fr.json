@@ -989,11 +989,17 @@
     "deleteExpertEval": {
       "title": "Supprimer une évaluation d'expert",
       "idLabel": "ID de chat",
-      "button": "Supprimer l'évaluation d'expert",
-      "loading": "Suppression en cours...",
+      "button": "Trouver les évaluations d'expert à supprimer",
       "notFound": "Impossible de supprimer l'évaluation : ID introuvable.",
+      "pickerLegend": "Choisissez les évaluations à supprimer",
+      "rowLabel": "Réponse {number}, {department}, évaluée par {email}",
+      "noDepartment": "aucun ministère",
+      "unknownReviewer": "évaluateur inconnu",
+      "deleteSelected": "Supprimer les évaluations sélectionnées ({count})",
+      "noneSelected": "Choisissez au moins une évaluation à supprimer.",
       "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
-      "error": "Échec de la suppression de l'évaluation d'expert : {error}",
+      "failed": "Impossible de supprimer la ou les évaluations d'expert. Réessayez.",
+      "partial": "{count} évaluation(s) d'expert supprimée(s) sur {total}. Les autres n'ont pas pu être supprimées et sont toujours dans la liste.",
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {
