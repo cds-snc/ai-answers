@@ -43,18 +43,6 @@ class EvaluationService {
     }
     return response.json();
   }
-  static async deleteExpertEval(chatId) {
-    const response = await AuthService.fetch(getApiUrl('db-delete-expert-eval'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chatId })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete expert feedback.');
-    }
-    return data;
-  }
   static async generateEvals({ lastProcessedId = null, startTime, endTime } = {}) {
     try {
       const payload = { action: 'generate' };

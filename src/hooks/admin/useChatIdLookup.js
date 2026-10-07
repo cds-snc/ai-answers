@@ -10,18 +10,17 @@ import { isValidChatIdFormat } from '../../utils/admin/chatIdFormat.js';
 const MIN_SEARCH_LENGTH = 4;
 
 // Shared "validate + confirm this chat ID exists" logic behind
-// DeleteByChatIdSection.js (delete flows) and ViewChatByIdSection.js (a
-// non-destructive navigation) — everything up to and including the
+// DeleteByChatIdSection.js, DeleteExpertEval.js (delete flows) and
+// ViewChatByIdSection.js (a non-destructive navigation) — everything up to and including the
 // existence check is identical between them; what happens *after* isn't
-// (one shows a native confirm() before an async delete, the other just
-// navigates), so that part stays in each caller rather than being forced
-// through one component's delete-shaped contract.
+// (a native confirm() before deleting the chat, a list of evaluations to
+// pick from, or navigating), so that part stays in each caller rather than
+// being forced through one delete-shaped contract.
 //
 // validateChat/invalidChatMessageKey: the chat existing isn't always the
 // real precondition (e.g. DeleteExpertEval.js's is "has expert feedback",
-// which a plain existence check can't express) — see DeleteByChatIdSection.js's
-// own comment for the full reasoning. Checked against the same already-fetched
-// chat data, no second request.
+// which a plain existence check can't express — a chat can exist with none).
+// Checked against the same already-fetched chat data, no second request.
 // notFoundMessageKey: the "no such chat" outcome, worded per action. The
 // delete tools say "Cannot delete …: ID not found" rather than repeating
 // View-by-ID's "No chat found with that ID." — a screen reader that just
@@ -91,10 +90,16 @@ export function useChatIdLookup({
   // TODO: this always fetches db-chat.js's fully-populated chat just to test
   // truthiness; DeleteChatSection.js/ViewChatByIdSection.js discard it and
   // ViewChatByIdSection.js's caller (HomePage.js) re-fetches the same chat
-  // right after. Only DeleteExpertEval.js's validateChat actually needs the
-  // populated data. Low priority — admin/partner-only, low-volume — but a
+  // right after. Only DeleteExpertEval.js actually needs the populated data
+  // (its validateChat and evaluation picker). Low priority — admin/partner-only, low-volume — but a
   // lightweight existence check (unpopulated findOne) would cut the waste
   // for the other two callers.
+  // TODO: a lookup still in flight when the section is closed (handleToggle)
+  // or the chat ID edited still sets its outcome afterwards — a "not found"
+  // can show in a just-reopened section, and ViewChatByIdSection.js can
+  // still navigate. Keep a run counter here, bumped by both, and drop stale
+  // results (setLoading(false), no status). DeleteExpertEval.js's own
+  // runRef then only needs to cover its deletes.
   // notFoundStatus: selectMatch's chat was just found by the search, so
   // "not found" there means it's gone since - an error, worded as such.
   const checkChatExists = async (rawValue, notFoundStatus = null) => {

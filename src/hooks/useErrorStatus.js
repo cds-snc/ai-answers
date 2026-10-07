@@ -50,8 +50,7 @@ export const useErrorStatus = (t) => {
 
   // Same as buildErrorStatus, but `detail` is pre-wrapped in <code lang="en">
   // — for callers that don't render through renderStatusMessage
-  // (DeleteChatSection.js, DeleteExpertEval.js, VectorPage.js's
-  // renderDocdb8Error). Never pass this to renderStatusMessage too — it
+  // (DeleteChatSection.js, VectorPage.js's renderDocdb8Error). Never pass this to renderStatusMessage too — it
   // wraps `detail` itself, nesting the tag twice. DeleteByChatIdSection.js's
   // own nonce state is the reason this can't just be a StatusMessage.js
   // consumer — see the TODO above useRepeatableStatus() there.

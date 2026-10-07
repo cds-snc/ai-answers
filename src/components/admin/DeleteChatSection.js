@@ -26,7 +26,7 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       // race (pre-check passed, then the chat was deleted before this call
       // completed — api/chat/chat-delete.js throws 'Chat not found.' for
       // that) is a known, known-value outcome, same reasoning as
-      // DeleteExpertEval.js's admin.deleteExpertEval.notEvaluated case.
+      // admin.deleteExpertEval.notEvaluated.
       // Genuinely localizing this needs DataStoreService.deleteChat (and
       // the API route it calls) to return a stable error CODE instead of
       // just message text, so this catch block can route the bounded case
