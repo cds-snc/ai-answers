@@ -108,6 +108,25 @@ class FeedbackService {
     return data;
   }
 
+  // expertFeedbackId + expectedLastEditedAt: the evaluation this form loaded.
+  // The server refuses the save (EXPERT_FEEDBACK_CONFLICT) if someone else
+  // edited it since, rather than overwrite their changes.
+  static async updateExpertFeedback({ interactionId, expertFeedbackId, expectedLastEditedAt = null, expertFeedback }) {
+    if (!interactionId || !expertFeedbackId || !expertFeedback) throw new Error('Missing required fields');
+    const response = await AuthService.fetch(getApiUrl('feedback-update-expert'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId, expertFeedbackId, expectedLastEditedAt, expertFeedback })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const err = new Error(data.message || 'Failed to update expert feedback');
+      if (data.code) err.code = data.code;
+      throw err;
+    }
+    return data;
+  }
+
   static async setExpertNeverStale({ interactionId, neverStale }) {
     if (!interactionId || typeof neverStale === 'undefined') throw new Error('Missing required fields');
     const response = await AuthService.fetch(getApiUrl('feedback-expert-never-stale'), {

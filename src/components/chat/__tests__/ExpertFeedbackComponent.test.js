@@ -246,3 +246,90 @@ describe('ExpertFeedbackComponent — language display', () => {
     expect(screen.queryByText(/admin.common.originallyAskedIn/)).toBeNull();
   });
 });
+
+describe('ExpertFeedbackComponent — edit mode', () => {
+  it('starts from initialFeedback and submits the edited values under the custom label', () => {
+    const { onSubmit } = renderComponent({
+      sentenceCount: 1,
+      sentences: ['x'],
+      initialFeedback: { _id: 'ef1', sentence1Score: 80, sentence1Explanation: 'Too vague', citationScore: 25, expertEmail: 'a@b.ca' },
+      submitLabel: 'Save changes',
+    });
+
+    expect(screen.getAllByLabelText(/homepage.expertRating.options.needsImprovement/)[0].checked).toBe(true);
+    expect(screen.getByDisplayValue('Too vague')).toBeTruthy();
+    fireEvent.change(screen.getByDisplayValue('Too vague'), { target: { name: 'sentence1Explanation', value: 'Too vague, missing dates' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const submitted = onSubmit.mock.calls[0][0];
+    expect(submitted).toMatchObject({ sentence1Score: 80, sentence1Explanation: 'Too vague, missing dates', citationScore: 25 });
+    // Only form fields are carried over, not the document's other fields.
+    expect(submitted).not.toHaveProperty('_id');
+    expect(submitted).not.toHaveProperty('expertEmail');
+  });
+
+  it('blocks saving an unchanged evaluation, and clears the error once something changes', () => {
+    const { onSubmit } = renderComponent({
+      sentenceCount: 1,
+      sentences: ['x'],
+      initialFeedback: { sentence1Score: 100, citationScore: 25 },
+      submitLabel: 'Save changes',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('homepage.expertRating.noChangesToSave')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.needsImprovement/)[1]); // citation
+    expect(screen.queryByText('homepage.expertRating.noChangesToSave')).toBeNull();
+  });
+
+  it('does not bring the no-changes error back when a change is undone', () => {
+    renderComponent({
+      sentenceCount: 1,
+      sentences: ['x'],
+      initialFeedback: { sentence1Score: 100, citationScore: 25 },
+      submitLabel: 'Save changes',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByText('homepage.expertRating.noChangesToSave')).toBeTruthy();
+
+    // Change the citation rating, then put it back to its saved value.
+    fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.needsImprovement/)[1]);
+    fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.good/)[1]);
+    expect(screen.queryByText('homepage.expertRating.noChangesToSave')).toBeNull();
+  });
+
+  it('shows the "Editing" pill inside the heading only when editing', () => {
+    const { container } = renderComponent({ initialFeedback: { sentence1Score: 100 } });
+    const heading = screen.getByRole('heading', { level: 4 });
+    expect(heading.textContent).toContain('homepage.expertRating.editingLabel');
+    expect(container.querySelector('.expert-rating-container--editing')).not.toBeNull();
+
+    cleanup();
+    const { container: fresh } = renderComponent();
+    expect(screen.queryByText('homepage.expertRating.editingLabel')).toBeNull();
+    expect(fresh.querySelector('.expert-rating-container--editing')).toBeNull();
+  });
+});
+
+describe('ExpertFeedbackComponent — citation section open state', () => {
+  const citationDetails = (container) => container.querySelector('details.citation-details');
+
+  it('starts collapsed for a new evaluation', () => {
+    const { container } = renderComponent();
+    expect(citationDetails(container).open).toBe(false);
+  });
+
+  it('starts open when editing an evaluation whose citation was rated', () => {
+    const { container } = renderComponent({ initialFeedback: { citationScore: 0 } });
+    expect(citationDetails(container).open).toBe(true);
+  });
+
+  it('stays collapsed when editing an evaluation whose citation was not rated', () => {
+    const { container } = renderComponent({ initialFeedback: { sentence1Score: 100, citationScore: null } });
+    expect(citationDetails(container).open).toBe(false);
+  });
+});

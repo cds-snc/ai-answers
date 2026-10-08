@@ -1,19 +1,41 @@
-import React, { useState, useCallback, useId } from 'react';
+import React, { useState, useCallback, useId, useRef } from 'react';
 import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
+import { formatLocaleDate } from '../../../utils/formatLocaleDate.js';
 import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
 import OriginalLanguagePill from './OriginalLanguagePill.js';
 import StatusMessage from '../../admin/StatusMessage.js';
+import ExpertFeedbackComponent from '../ExpertFeedbackComponent.js';
+import { useFocusOnChange } from '../../../hooks/useFocusOnChange.js';
+import { useReturnFocusOnClose } from '../../../hooks/useReturnFocusOnClose.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, onDeleted }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, citationUrl, department, onDeleted, onUpdated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
-    const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
+    // Ignores a second toggle while one is in flight. Not `disabled`, which
+    // would drop keyboard focus from the checkbox to <body>.
+    const updatingNeverStaleRef = useRef(false);
+    // null, 'on', 'off' or 'failed' - the message under the checkbox.
+    const [neverStaleStatus, setNeverStaleStatus] = useState(null);
+    const [editing, setEditing] = useState(false);
+    const [savedCount, setSavedCount] = useState(0);
+    // null, 'conflict' (someone else edited it meanwhile) or 'failed'.
+    const [saveFailure, setSaveFailure] = useState(null);
+    const [saving, setSaving] = useState(false);
+    // Set synchronously, so a second Save press before the re-render is ignored.
+    const savingRef = useRef(false);
+    const editTitleRef = useFocusOnChange(editing);
+    const editButtonRef = useRef(null);
+    const interactionId = (message?.interaction && (message.interaction._id || message.interaction.id)) || message?.id;
+
+    // Back to Edit when the form closes (Save, Cancel editing or the X). Edit
+    // is drawn fresh at that point - the hook waits for it to render.
+    useReturnFocusOnClose(editing, editButtonRef);
     // Namespaces the "never stale" checkbox id so multiple panel instances
     // (one per message) can render on one page without id collisions.
     const uid = useId();
@@ -23,7 +45,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
     const handleToggle = useCallback(async () => {
         try {
             // If we already have data, make sure it matches the message's interaction.expertFeedback
-            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
             const currentEfId = message.interaction && message.interaction.expertFeedback ? String(message.interaction.expertFeedback) : null;
             const cachedEfId = data && data.expertFeedback ? (data.expertFeedback._id || data.expertFeedback.id || null) : null;
 
@@ -41,7 +62,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
         } finally {
             setLoading(false);
         }
-    }, [data, message]);
+    }, [data, message, interactionId]);
 
     const handleDelete = useCallback(async () => {
         // Note: window.confirm()'s OK/Cancel buttons render in the browser/OS
@@ -55,7 +76,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
         try {
             setDeleting(true);
             setError(null);
-            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
             await FeedbackService.deleteExpertFeedback({ interactionId });
             // Clear local expert feedback references so UI updates
             setData(null);
@@ -80,46 +100,84 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
         } finally {
             setDeleting(false);
         }
-    }, [message, t, onDeleted]);
+    }, [message, interactionId, t, onDeleted]);
+
+    const handleEditSubmit = useCallback(async (expertFeedback) => {
+        if (savingRef.current) return;
+        savingRef.current = true;
+        setSaving(true);
+        setSaveFailure(null);
+        const loaded = (data && data.expertFeedback) || {};
+        let result;
+        try {
+            result = await FeedbackService.updateExpertFeedback({
+                interactionId,
+                expertFeedbackId: loaded._id || loaded.id,
+                expectedLastEditedAt: loaded.lastEditedAt || null,
+                expertFeedback,
+            });
+        } catch (err) {
+            // Detail to the console only - the person gets a translated message.
+            console.error('Expert feedback edit failed:', err);
+            setSaveFailure(err?.code === 'EXPERT_FEEDBACK_CONFLICT' ? 'conflict' : 'failed');
+            return;
+        } finally {
+            savingRef.current = false;
+            setSaving(false);
+        }
+        // Saved. The table reads the returned document - an empty `sentences`
+        // makes its rows fall back to the evaluation's own fields - so there's
+        // no second request that could fail after the save worked.
+        setData((prev) => ({ ...prev, expertFeedback: result.expertFeedback, sentences: [] }));
+        setEditing(false);
+        setSavedCount((n) => n + 1);
+        // Same reason as onDeleted above: the summary's score pill and the
+        // table's rows read message.interaction.expertFeedback, owned by
+        // ChatAppContainer.js.
+        onUpdated?.(result.expertFeedback);
+        try {
+            await ClientLoggingService.info(interactionId, 'Expert feedback edited', {});
+        } catch (logErr) {
+            // Logging only - the save already succeeded.
+        }
+    }, [interactionId, data, onUpdated]);
 
     const handleNeverStaleToggle = useCallback(async () => {
-        try {
-            setError(null);
-            setUpdatingNeverStale(true);
-            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
-            const currentEf = (data && data.expertFeedback) || (message.interaction && message.interaction.expertFeedback) || message.expertFeedback || {};
-            const currentVal = typeof currentEf.neverStale !== 'undefined' && currentEf.neverStale !== null ? currentEf.neverStale : false;
-            const newVal = !currentVal;
-            // Optimistic UI update: update local data/expert object
+        if (updatingNeverStaleRef.current) return;
+        updatingNeverStaleRef.current = true;
+        setNeverStaleStatus(null);
+        const currentEf = (data && data.expertFeedback) || (message.interaction && message.interaction.expertFeedback) || message.expertFeedback || {};
+        const currentVal = typeof currentEf.neverStale !== 'undefined' && currentEf.neverStale !== null ? currentEf.neverStale : false;
+        const newVal = !currentVal;
+        // Optimistic: the tick shows straight away; reverted below if the save fails.
+        const setLocalNeverStale = (value) => {
             if (data && data.expertFeedback) {
-                setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: newVal } });
+                setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: value } });
             } else if (message.interaction && message.interaction.expertFeedback) {
-                message.interaction.expertFeedback.neverStale = newVal;
+                message.interaction.expertFeedback.neverStale = value;
             } else if (message.expertFeedback) {
-                message.expertFeedback.neverStale = newVal;
+                message.expertFeedback.neverStale = value;
             }
-
+        };
+        setLocalNeverStale(newVal);
+        try {
             await FeedbackService.setExpertNeverStale({ interactionId, neverStale: newVal });
-            await ClientLoggingService.info(interactionId, 'Expert feedback neverStale toggled', { neverStale: newVal });
         } catch (err) {
-            // Revert optimistic update on error
-            try {
-                // const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
-                if (data && data.expertFeedback) {
-                    setData({ ...data, expertFeedback: { ...data.expertFeedback, neverStale: !data.expertFeedback.neverStale } });
-                } else if (message.interaction && message.interaction.expertFeedback) {
-                    message.interaction.expertFeedback.neverStale = !message.interaction.expertFeedback.neverStale;
-                } else if (message.expertFeedback) {
-                    message.expertFeedback.neverStale = !message.expertFeedback.neverStale;
-                }
-            } catch (revertErr) {
-                // ignore
-            }
-            setError(err.message || String(err));
+            // Detail to the console only - the person gets a translated message.
+            console.error('Never stale update failed:', err);
+            setLocalNeverStale(currentVal);
+            setNeverStaleStatus('failed');
+            return;
         } finally {
-            setUpdatingNeverStale(false);
+            updatingNeverStaleRef.current = false;
         }
-    }, [data, message]);
+        setNeverStaleStatus(newVal ? 'on' : 'off');
+        try {
+            await ClientLoggingService.info(interactionId, 'Expert feedback neverStale toggled', { neverStale: newVal });
+        } catch (logErr) {
+            // Logging only - the save already succeeded.
+        }
+    }, [data, message, interactionId]);
 
     if (!message) return null;
 
@@ -257,6 +315,34 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                     {t('common.error')} <code lang="en">{error}</code>
                   </StatusMessage>
                 )}
+                {editing ? (
+                    <ExpertFeedbackComponent
+                        onSubmit={handleEditSubmit}
+                        onClose={() => { setSaveFailure(null); setEditing(false); }}
+                        lang={lang}
+                        sentenceCount={sentences.length}
+                        sentences={sentences}
+                        questionLanguage={questionLanguage}
+                        sentencesEnglish={englishSentences}
+                        answerNumber={answerNumber}
+                        citationUrl={citationUrl}
+                        department={department}
+                        titleRef={editTitleRef}
+                        initialFeedback={(data && data.expertFeedback) || expert}
+                        submitLabel={saving ? t('reviewPanels.savingExpertFeedback') : t('reviewPanels.saveExpertFeedback')}
+                        submitBusy={saving}
+                        cancelLabel={t('reviewPanels.cancelExpertFeedbackEdits')}
+                        submitStatus={saveFailure && (
+                            <StatusMessage
+                                variant="error"
+                                className="mt-200"
+                                message={saveFailure === 'conflict'
+                                    ? t('reviewPanels.expertFeedbackEditConflict')
+                                    : t('reviewPanels.expertFeedbackSaveFailed')}
+                            />
+                        )}
+                    />
+                ) : (<>
                 {/* Summary: citation and total score */}
                 <div className="expert-feedback-summary">
                     {(() => {
@@ -299,12 +385,22 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
                                     <div><strong>{t('reviewPanels.expertEmail')}</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
+                                {efSource && efSource.lastEditedAt ? (() => {
+                                    const editedAt = formatLocaleDate(efSource.lastEditedAt, lang, '', { dateStyle: 'long', timeStyle: 'short' });
+                                    const author = String(efSource.expertEmail || '').trim().toLowerCase();
+                                    const editor = String(efSource.lastEditedBy || '').trim().toLowerCase();
+                                    // The editor's email only when it's someone other than the expert above.
+                                    const value = editor && editor !== author
+                                        ? t('reviewPanels.lastEditedDateBy').replace('{date}', () => editedAt).replace('{email}', () => efSource.lastEditedBy)
+                                        : editedAt;
+                                    return <div><strong>{t('reviewPanels.lastEdited')}</strong> {value}</div>;
+                                })() : null}
                                 {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>
                         );
                     })()}
                 </div>
-                <table className="review-table">
+                <table className="review-table mt-200">
                     <caption className="sr-only">{t('reviewPanels.expertFeedbackTitle')}</caption>
                     <thead>
                         <tr>
@@ -401,7 +497,47 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                     if (!hasEf) return null;
                     return (
                         <div className="mt-200">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {/* .gc-chckbxrdio.md — same custom checkbox visual/size used by
+                                ExpertFeedbackComponent's rating checkboxes, in place of the
+                                plain unstyled native checkbox this had before. Needs the
+                                input/label as siblings (input[type=checkbox] + label::before),
+                                not label-wraps-input, for that CSS to apply. */}
+                            <div className="gc-chckbxrdio md never-stale-toggle">
+                                <div className="checkbox">
+                                    <input
+                                        type="checkbox"
+                                        id={`${uid}-never-stale`}
+                                        checked={!!(efSource && efSource.neverStale)}
+                                        onChange={handleNeverStaleToggle}
+                                    />
+                                    <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale')}</label>
+                                </div>
+                            </div>
+                            {neverStaleStatus && (
+                                <StatusMessage
+                                    variant={neverStaleStatus === 'failed' ? 'error' : 'success'}
+                                    message={t({
+                                        on: 'reviewPanels.neverStaleOn',
+                                        off: 'reviewPanels.neverStaleOff',
+                                        failed: 'reviewPanels.neverStaleFailed',
+                                    }[neverStaleStatus])}
+                                />
+                            )}
+                            <div className="canada-ca-button-stack mt-200">
+                                {/* From the server, so it only appears once the
+                                    evaluation has loaded - the form never starts
+                                    from the chat's older copy. */}
+                                {data?.canEdit && (
+                                    <GcdsButton
+                                        ref={editButtonRef}
+                                        onClick={() => { setSavedCount(0); setEditing(true); }}
+                                        buttonRole="secondary"
+                                        disabled={deleting}
+                                        aria-label={withAnswerNumber(t('reviewPanels.editExpertFeedback'))}
+                                    >
+                                        {t('reviewPanels.editExpertFeedback')}
+                                    </GcdsButton>
+                                )}
                                 <GcdsButton
                                     onClick={handleDelete}
                                     buttonRole="danger"
@@ -411,27 +547,14 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                 >
                                     {deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback'))}
                                 </GcdsButton>
-                                {/* .gc-chckbxrdio.md — same custom checkbox visual/size used by
-                                    ExpertFeedbackComponent's rating checkboxes, in place of the
-                                    plain unstyled native checkbox this had before. Needs the
-                                    input/label as siblings (input[type=checkbox] + label::before),
-                                    not label-wraps-input, for that CSS to apply. */}
-                                <div className="gc-chckbxrdio md never-stale-toggle">
-                                    <div className="checkbox">
-                                        <input
-                                            type="checkbox"
-                                            id={`${uid}-never-stale`}
-                                            checked={!!(efSource && efSource.neverStale)}
-                                            onChange={handleNeverStaleToggle}
-                                            disabled={updatingNeverStale}
-                                        />
-                                        <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale')}</label>
-                                    </div>
-                                </div>
                             </div>
+                            {savedCount > 0 && (
+                                <StatusMessage variant="success" message={t('reviewPanels.expertFeedbackUpdated')} nonce={savedCount} />
+                            )}
                         </div>
                     );
                 })()}
+                </>)}
             </div>
         </details>
     );
