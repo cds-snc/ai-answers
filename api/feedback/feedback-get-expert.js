@@ -3,6 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import { canEditExpertFeedback } from '../util/expert-feedback-access.js';
 
 async function feedbackGetExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -34,7 +35,7 @@ async function feedbackGetExpertHandler(req, res) {
         });
       }
     }
-    return res.status(200).json({ expertFeedback: ef, sentences, message: 'OK' });
+    return res.status(200).json({ expertFeedback: ef, sentences, canEdit: canEditExpertFeedback(req.user, ef), message: 'OK' });
   } catch (err) {
     console.error('Error fetching expert feedback:', err);
     return res.status(500).json({ message: 'Failed to retrieve expert feedback', error: err.message });

@@ -695,6 +695,21 @@ Only after step 3 can the Q/A be returned by `matchQuestions` and reach the
 written here at evaluation time — which is why the 365-day recency filter measures the age
 of the *judgement*, not of the conversation.
 
+Editing an evaluation
+([`api/feedback/feedback-update-expert.js`](../../api/feedback/feedback-update-expert.js))
+updates the same `ExpertFeedback` document in place — admins can edit any, partners only
+their own (`expertEmail` match; the rule is
+[`api/util/expert-feedback-access.js`](../../api/util/expert-feedback-access.js), sent to the
+screen as `canEdit` by `feedback-get-expert`). `expertEmail`, `type` and `createdAt` are kept;
+the editor and time go in `lastEditedBy`/`lastEditedAt`. It re-runs step 2, then
+`VectorService.updateExpertFeedbackMetadata` updates the entries already registered in step 3
+rather than adding new ones. Auto-evals (`type: 'ai'`) can't be edited.
+
+The "never stale" toggle and deleting an evaluation go through the same
+`updateExpertFeedbackMetadata` (delete passes no feedback, which drops the interaction's
+entries), so the in-memory `IMVectorService` never keeps serving a changed or deleted
+evaluation. `DocDBVectorService` reads the `Embedding` metadata directly, so it's a no-op there.
+
 Older interactions are brought up to date by the backfill job
 ([`services/EmbeddingMetadataBackfillJobService.js`](../../services/EmbeddingMetadataBackfillJobService.js),
 `EmbeddingMetadataService.backfillBatch`), not by this endpoint.
