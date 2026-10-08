@@ -442,6 +442,31 @@
   position: relative;
 }
 
+/* Editing an existing evaluation: admin purple, matching the "Editing" pill
+   in its heading (.admin-view-label, below). */
+.expert-rating-container--editing {
+  border: 2px solid #6A1B9A;
+}
+
+/* "Editing" pill: same look as HomePage.js's admin view label
+   (.referring-url-label.admin-view-label, below). Own line above the heading
+   text, still pill-width. Two classes so display: block beats
+   .referring-url-label's inline-block, which comes later in this file.
+   TODO: .referring-url-label is really a general pill shape, not a referring
+   URL style - rename it to something neutral (own PR; check the chat input's
+   .field-container focus colour rules that also target it). */
+.referring-url-label.feedback-editing-label {
+  display: block;
+  width: fit-content;
+  margin-bottom: var(--gcds-spacing-100);
+}
+
+/* GC DS secondary is transparent, which shows this box's grey through it.
+   Only at rest, so global.css's hover and focus fills still apply. */
+.expert-rating-container .btn-secondary:not(:hover):not(:focus) {
+  background: var(--gcds-color-white);
+}
+
 .expert-rating-container h3 {
   font-size: 18px;
   color: #333;
