@@ -5,6 +5,8 @@ export const PUBLIC_HOME_ROUTE_PATHS = ['/', '/en', '/fr'];
 export const PUBLIC_AUTH_ALWAYS_EXEMPT_PATHS = [
   '/en/about',
   '/fr/a-propos',
+  '/en/system-card',
+  '/fr/fiche-systeme',
   '/en/signin',
   '/fr/se-connecter',
   '/en/reset-request',

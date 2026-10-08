@@ -44,6 +44,12 @@ Votre utilisation de ce système, ainsi que de toute information qu’il génèr
 - [Réponses IA&nbsp;: Essais à l’échelle de l’organisation pour Canada.ca](https://blogue.canada.ca/2025/12/17/reponses-ia.html)
 - [Résultats de l'étude sur la confiance envers l'IA sur Canada.ca](https://blogue.canada.ca/2025/02/18/confiance-ia.html)
 
+## Documentation de la fiche système
+
+Pour en savoir plus sur le fonctionnement du système et la façon dont il est évalué&nbsp;:
+
+[Consultez la fiche système Réponses IA](/fr/fiche-systeme)
+
 ## Contactez-nous
 
 [Utiliser le formulaire de contact du Bureau de l'expérience Canada.ca](https://blogue.canada.ca/contactez-nous.html)

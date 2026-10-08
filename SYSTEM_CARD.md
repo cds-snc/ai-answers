@@ -1,9 +1,15 @@
 # AI Answers system card
 
-**Version**: 1.3
-**Date**: August 2026
-**Organization**: Canada.ca Experience Office, Service Canada  
-**Contact**: Michael Karlin at servicecanada.gc.ca   
+<dl>
+  <dt>Version</dt>
+  <dd>1.3</dd>
+  <dt>Date</dt>
+  <dd>August 2026</dd>
+  <dt>Organization</dt>
+  <dd>Canada.ca Experience Office, Service Canada</dd>
+  <dt>Contact</dt>
+  <dd>Michael Karlin at servicecanada.gc.ca</dd>
+</dl>
 
 **Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
 

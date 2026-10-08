@@ -206,6 +206,10 @@ the locale files. Edit the markdown, not the component — and always both langu
 - **About page** — `public/content/about-en.md` / `about-fr.md`
 - **Admin how-to guides** — `public/content/admin/`, one file per language, with
   screenshots in `public/content/admin/images/`
+- **System card page** — `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root.
+  The build turns them into the page's content and serves the images/PDFs they
+  link to (`src/config/systemCard.js`); a linked image/PDF that doesn't exist
+  shows as "unavailable" on the page and fails `systemCardMarkdown.test.js`
 
 Both render through `useMarkdownWithFrontmatter` — see
 [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)

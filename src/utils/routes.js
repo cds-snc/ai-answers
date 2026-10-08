@@ -2,6 +2,7 @@ export const ROUTE_SLUGS = {
   // Public
   signin:                  { en: 'signin',                       fr: 'se-connecter' },
   about:                   { en: 'about',                        fr: 'a-propos' },
+  'system-card':           { en: 'system-card',                  fr: 'fiche-systeme' },
   register:                { en: 'register',                     fr: 's-inscrire' },
   logout:                  { en: 'logout',                       fr: 'deconnexion' },
   'reset-request':         { en: 'reset-request',                fr: 'reinitialisation' },

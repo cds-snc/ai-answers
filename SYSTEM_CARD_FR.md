@@ -1,9 +1,15 @@
 # Fiche système Réponses IA
 
-**Version** : 1.3
-**Date** : Août 2026
-**Organisation** : Bureau de l’expérience Canada.ca de Service Canada
-**Contact** : Michael Karlin à servicecanada.gc.ca
+<dl>
+  <dt>Version</dt>
+  <dd>1.3</dd>
+  <dt>Date</dt>
+  <dd>Août 2026</dd>
+  <dt>Organisation</dt>
+  <dd>Bureau de l’expérience Canada.ca de Service Canada</dd>
+  <dt>Contact</dt>
+  <dd>Michael Karlin à servicecanada.gc.ca</dd>
+</dl>
 
 **English** : [SYSTEM_CARD.md](SYSTEM_CARD.md)
 
@@ -55,7 +61,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 - Aider les utilisateurs avec des questions sur les enjeux du gouvernement du Canada
 - Fournir des informations précises sur les programmes, prestations et services du gouvernement du Canada
 - Diriger les utilisateurs vers les ressources gouvernementales appropriées et les prochaines étapes
-- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/short-ai-answers-fr.pdf)
+- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/reponse-courte-fr.pdf)
 
 ### Utilisateurs cibles
 - Toute personne visitant Canada.ca ou des sites Web fédéraux
@@ -269,7 +275,7 @@ n'apprend donc jamais de ses propres jugements.
 
 ### Infrastructure d'évaluation pour les experts humains des institutions partenaires
 - **Système innovant d'évaluation par des experts** :
-  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue [processus d'évaluation avec captures d'écran](docs/pdf/ai-answers-expert-evals-integration.pdf)
+  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue [processus d'évaluation avec captures d'écran](docs/pdf/fr-reponses-ai-integration-evaluations.pdf)
   - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser des identifiants de discussion existants pour évaluer les conversations des utilisateurs
   - **Notation au niveau des phrases** : Chaque phrase des réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées
   - **Notation des citations** : Notation séparée pour l'exactitude et la pertinence des citations (25/20/0 points)

@@ -44,6 +44,12 @@ Your use of this system and any information generated is also subject to the [Ca
 - [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
 
+## System card documentation
+
+For full details on how the system works and how it's tested:
+
+[Read the AI Answers system card](/en/system-card)
+
 ## Contact us
 
 [Use the Canada.ca Experience Office contact form](https://blog.canada.ca/contact-us)

@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } 
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
 import HowToPage from './pages/HowToPage.js';
+import SystemCardPage from './pages/SystemCardPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
@@ -280,8 +281,9 @@ const AppLayout = () => {
           skipToHref="#main-content"
         >
           <GcdsBreadcrumbs slot="breadcrumb">
-            {/* Show AI Answers breadcrumb on About and 404 pages */}
-            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+            {/* Show AI Answers breadcrumb on About, system card and 404 pages */}
+            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') ||
+              location.pathname.includes('/en/system-card') || location.pathname.includes('/fr/fiche-systeme') || is404) && (
               <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
                 {t('notFound.breadcrumb')}
               </GcdsBreadcrumbsItem>
@@ -351,6 +353,8 @@ export default function App() {
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
+      { path: '/en/system-card', element: <SystemCardPage lang="en" /> },
+      { path: '/fr/fiche-systeme', element: <SystemCardPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
       { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },
