@@ -414,9 +414,8 @@ details[open] > summary {
   cursor: pointer;
 }
 
-/* No current usages - keep it, for future use. GcdsButton
-   buttonRole="secondary" at its regular size, for a native <button> beside
-   regular GcdsButtons. */
+/* GcdsButton buttonRole="secondary" at its regular size, for a native
+   <button> beside regular GcdsButtons. */
 .btn-secondary {
   padding: var(--gcds-button-padding);
   background: var(--gcds-button-secondary-default-background);

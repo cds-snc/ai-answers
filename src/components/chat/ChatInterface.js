@@ -874,7 +874,10 @@ const ChatInterface = ({
                               t={adminT}
                               lang={effectiveAdminLang}
                               answerNumber={reviewAnswerNumber}
+                              citationUrl={citationUrl}
+                              department={message.interaction.context?.department}
                               onDeleted={() => onExpertFeedbackChange?.(message.id, undefined)}
+                              onUpdated={(expertFeedback) => onExpertFeedbackChange?.(message.id, expertFeedback)}
                             />
                             <PublicFeedbackPanel
                               message={message}
