@@ -183,6 +183,65 @@ describe('feedback-update-expert API', () => {
     expect(mockFindOneAndUpdate.mock.calls[0][0]).toEqual({ _id: doc._id, lastEditedAt: editedAt });
   });
 
+  it('returns 400 for an expectedLastEditedAt that is not a date', async () => {
+    req.body.expectedLastEditedAt = 'not-a-date';
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Missing or invalid field: expectedLastEditedAt' });
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when expertFeedbackId is missing', async () => {
+    delete req.body.expertFeedbackId;
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the answer has no evaluation', async () => {
+    interaction.expertFeedback = undefined;
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the linked evaluation no longer exists', async () => {
+    mockFeedbackFindById.mockResolvedValue(null);
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 405 for anything but POST', async () => {
+    req.method = 'GET';
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(405);
+  });
+
+  it('never writes fields outside the edit form, such as neverStale', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca', neverStale: true });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    req.body.expertFeedback.neverStale = false;
+
+    await handler(req, res);
+
+    const { $set } = mockFindOneAndUpdate.mock.calls[0][1];
+    expect($set).not.toHaveProperty('neverStale');
+    expect($set).not.toHaveProperty('type');
+    expect($set).not.toHaveProperty('expertEmail');
+  });
+
   it('returns 409 when the evaluation was deleted and re-created since the form loaded', async () => {
     const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
     mockFeedbackFindById.mockResolvedValue(doc);
