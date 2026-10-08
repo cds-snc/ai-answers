@@ -1,11 +1,14 @@
+---
+title: "Fiche système de Réponses IA - Canada.ca"
+description: "Fonctionnement de Réponses IA, mesures de sécurité, approche d'évaluation et gouvernance."
+---
+
 # Fiche système Réponses IA
 
 **Version** : 1.3
 **Date** : Août 2026
 **Organisation** : Bureau de l’expérience Canada.ca de Service Canada
 **Contact** : Michael Karlin à servicecanada.gc.ca
-
-**English** : [SYSTEM_CARD.md](SYSTEM_CARD.md)
 
 ## Sur cette page
 - [Résumé exécutif](#résumé-exécutif)
@@ -26,10 +29,9 @@ Réponses IA est une plateforme d'agent conversationnel IA spécialisée conçue
 
 - **Résultats des essais** : [Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)
 
-![Diagramme de l'architecture du système Réponses IA](docs/images/system_diagram_v2_FR.jpg)
+![Diagramme de l'architecture du système Réponses IA](/content/images/system_diagram_v2_FR.jpg)
 
-<details>
-<summary>Description de l'image (Texte alternatif)</summary>
+### Description du diagramme
 
 Le diagramme est divisé en deux couloirs horizontaux.
 
@@ -41,13 +43,12 @@ Un pipeline linéaire s'écoule de gauche à droite : Question → Mesures de pr
 
 Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca, Réponses IA) et « Usages internes » (Conception du contenu). Les deux alimentent les Mesures de protection d'entrée (Confidentialité/Réduction des risques). Le bloc Contexte, plus grand, est étiqueté « Spécifique au GC » et contient six éléments : Instructions du système GC, Conversation, Instructions ministérielles, Recherche (Uniquement GC), Outils et compétences du GC et ministériels, et Contenu Web (Uniquement GC). Un composant additionnel, « Évaluations des PME », se situe sous le bloc Contexte et alimente une boucle d'« Évaluation continue ». Le contexte alimente le même ensemble de GML (grands modèles de langue), qui se connectent à un nœud « Agents ». Les Agents passent par les Mesures de protection de sortie (Précision/Préjudice/Biais) avant de produire la Réponse. Des flèches provenant de la boucle d'Évaluation continue retournent vers les Agents et le bloc Contexte, indiquant un raffinement itératif.
 
-</details>
 
 ## État actuel
 - **Environnement** : Les essais bêta sur Canada.ca ont été mis en pause après la fin du dernier des quatre essais publics en février 2026.
 - **Résultats des essais** : [Réponses IA : Mise à l’essai à l’échelle de l’organisation pour Canada.ca](https://numerique.canada.ca/2025/12/17/r%C3%A9ponses-ia--mise-%C3%A0-lessai-%C3%A0-l%C3%A9chelle-de-lorganisation-pour-canada.ca/)
 - **Production** : https://reponses-ia.alpha.canada.ca (aucun accès public après février 2026 - disponible uniquement au sein du réseau du GC)
-- **Partenaires institutionnels** : Les partenaires d'institutions fédérales évaluent l'exactitude des réponses et peuvent ajouter des scénarios d'invite, des outils agentiques pour utiliser des API et des fichiers pour répondre à des besoins spécifiques. [Voir la liste actuelle des institutions partenaires](src/constants/partnerDepartments.js)
+- **Partenaires institutionnels** : Les partenaires d'institutions fédérales évaluent l'exactitude des réponses et peuvent ajouter des scénarios d'invite, des outils agentiques pour utiliser des API et des fichiers pour répondre à des besoins spécifiques.
 
 ## Objectif et portée du système
 
@@ -55,7 +56,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 - Aider les utilisateurs avec des questions sur les enjeux du gouvernement du Canada
 - Fournir des informations précises sur les programmes, prestations et services du gouvernement du Canada
 - Diriger les utilisateurs vers les ressources gouvernementales appropriées et les prochaines étapes
-- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](docs/pdf/short-ai-answers-fr.pdf)
+- Modélise une conversation avec un agent de centre d'appels - [des réponses brèves pour un meilleur service](/content/pdf/reponse-courte-fr.pdf)
 
 ### Utilisateurs cibles
 - Toute personne visitant Canada.ca ou des sites Web fédéraux
@@ -78,8 +79,6 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 4. **Base de données** : AWS DocumentDB
 5. **Recherche** : Google ou Recherche Canada.ca, selon le fournisseur de recherche sélectionné
 
-**Pour l'architecture détaillée, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
-
 ### Détails des modèles IA
 - **Modèles de production actuels** : Famille Azure OpenAI GPT-5.1 (bascule le 18 mars 2026 depuis GPT 4.1) ; les agents d'évaluation utilisent GPT-4.1-mini
 - **Routage par famille de modèles** : Le choix d'une famille de modèles (p. ex. GPT-5.1) n'utilise pas un seul modèle pour chaque étape. Le système achemine automatiquement chaque étape du pipeline ou service vers le modèle approprié — les étapes de support (traduction, réécriture de requête) utilisent GPT-4.1-mini pour le coût et la rapidité, tandis que la génération de contexte et la génération de réponse utilisent le modèle complet de la famille choisie (p. ex. GPT-5.1). Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
@@ -100,37 +99,18 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 ### Flux du pipeline (Machine à états LangGraph)
 Le système utilise un **pipeline LangGraph multi-étapes** qui orchestre tout le traitement côté serveur. Plusieurs variantes de graphe existent avec des capacités différentes (p. ex. court-circuit vectoriel, réponses éclairées par les évaluations, modèles de raisonnement). Toutes les étapes ne s'exécutent pas dans chaque variante.
 
-```mermaid
-flowchart TD
-    Q["Question posée"] --> G["Vérifications de sécurité<br/>renseignements personnels<br/>bloqués, jamais conservés"]
-    G --> S["Contenu du gouvernement<br/>du Canada seulement"]
-    S --> D["Institution repérée<br/>ses propres directives ajoutées"]
-    D --> E["Évaluations d'experts de<br/>questions similaires ajoutées"]
-    E --> A["Réponse en langage clair<br/>lien de citation vérifié"]
-    A --> SAVE["Réponse affichée<br/>et sauvegardée"]
-    SAVE --> AI["Évaluation par l'IA<br/>rapports seulement"]
-    SAVE --> HUM["Évaluation par un expert<br/>humain, sur un échantillon"]
-    HUM -. "améliore les réponses futures" .-> E
-```
+### Étapes du pipeline
 
-<details>
-<summary>Description de l'image (texte de remplacement)</summary>
-
-Un organigramme se déroulant de haut en bas. Une question est posée. Elle passe par des
-vérifications de sécurité et de confidentialité, où les renseignements personnels sont
-bloqués et ne sont jamais conservés. Le contenu du gouvernement du Canada est interrogé.
-L'institution visée par la question est repérée, et les directives propres à cette
-institution sont ajoutées. Des évaluations d'experts de questions similaires sont ajoutées.
-Une réponse en langage clair est rédigée, avec un lien de citation vérifié. La réponse est
-affichée et sauvegardée.
-
-La sauvegarde se divise ensuite en deux branches. La première est une évaluation
-automatisée par l'IA, utilisée pour les rapports seulement ; elle s'arrête là. La seconde
-est une évaluation par un expert humain, sur un échantillon de réponses, et une flèche
-pointillée en revient vers l'étape d'ajout des évaluations d'experts, portant la mention
-« améliore les réponses futures ».
-
-</details>
+1. Une question est posée.
+2. Des vérifications de sécurité et de confidentialité sont effectuées. Les renseignements personnels sont bloqués et ne sont jamais conservés.
+3. Le contenu du gouvernement du Canada est interrogé.
+4. L'institution visée par la question est repérée, et les directives propres à cette institution sont ajoutées.
+5. Des évaluations d'experts de questions similaires sont ajoutées.
+6. Une réponse en langage clair est rédigée, avec un lien de citation vérifié.
+7. La réponse est affichée et sauvegardée.
+8. Après la sauvegarde, deux choses peuvent se produire :
+   - Une évaluation automatisée par l'IA est effectuée. Elle sert aux rapports seulement.
+   - Un expert humain évalue un échantillon de réponses. Ces évaluations améliorent les réponses futures en alimentant l'étape 5.
 
 Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel générique.
 
@@ -165,8 +145,6 @@ n'apprend donc jamais de ses propres jugements.
 11. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation
 12. **Évaluation automatique** (en arrière-plan ; toutes les réponses n'en reçoivent pas une) : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction
 13. **Classificateur de tâches** (IA - modèle complet, exécuté en arrière-plan après la livraison de la réponse) : utilise la question et la réponse pour attribuer un programme et une action (p. ex. compte IRCC - ouvrir une session) à la question à des fins de rapport et d'analyse par les institutions
-
-**Pour les détails complets du pipeline, voir [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## Évaluation des risques et mesures de sécurité
 
@@ -269,7 +247,7 @@ n'apprend donc jamais de ses propres jugements.
 
 ### Infrastructure d'évaluation pour les experts humains des institutions partenaires
 - **Système innovant d'évaluation par des experts** :
-  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue [processus d'évaluation avec captures d'écran](docs/pdf/ai-answers-expert-evals-integration.pdf)
+  - **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue [processus d'évaluation avec captures d'écran](/content/pdf/fr-reponses-ai-integration-evaluations.pdf)
   - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser des identifiants de discussion existants pour évaluer les conversations des utilisateurs
   - **Notation au niveau des phrases** : Chaque phrase des réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées
   - **Notation des citations** : Notation séparée pour l'exactitude et la pertinence des citations (25/20/0 points)
@@ -294,8 +272,6 @@ Les évaluations d'experts des réponses passées ne servent pas uniquement à l
 Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sélectionnables (« graphes »), exigent qu'une évaluation d'expert existe pour une réponse passée, et sont conçus pour se dégrader en douceur — si la recherche est indisponible, la génération de réponses se poursuit normalement sans exemples.
 
 **Seules les évaluations humaines alimentent les réponses.** Les évaluations automatisées par l'IA servent aux rapports et à la surveillance, jamais d'exemples pour le modèle : elles sont délibérément exclues du répertoire dont les deux mécanismes se servent. Le système n'apprend pas de ses propres jugements — chaque exemple qui façonne une réponse remonte à l'évaluation d'une personne.
-
-**Pour les détails techniques complets, voir [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
 ### Performance actuelle
 - **Temps de réponse** : La cible est de 6 à 14 secondes selon la complexité. La longueur des pages téléchargées contribue à des délais de réponse plus longs. Des messages de progression sont affichés aux utilisateurs pour chaque étape.

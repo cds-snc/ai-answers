@@ -6,8 +6,8 @@ AI Answers uses a **LangGraph-based state machine architecture** to orchestrate 
 
 **Last Updated:** August 2026
 
-**Companion documents:** [SYSTEM_CARD.md](../../SYSTEM_CARD.md) and
-[SYSTEM_CARD_FR.md](../../SYSTEM_CARD_FR.md) carry the plain-language version of this
+**Companion documents:** [system-card-en.md](../../public/content/system-card-en.md) and
+[fiche-systeme-fr.md](../../public/content/fiche-systeme-fr.md) carry the plain-language version of this
 pipeline for a general and governance audience. This document is the developer view (nodes,
 state, file references); the card is the reader-facing one. They are deliberately at
 different levels of detail, but a step added, removed, or moved out of the production graph
@@ -816,7 +816,7 @@ filter is applied).
 - **[System Prompts](../agents-prompts/system-prompt-documentation.md)**: Complete AI agent prompts for all steps
 - **[Using Evals for Answers](./using-evals-for-answers.md)**: How expert evaluations feed back into live answers (eval-informed answering and instant verified answers)
 - **[Evaluation Service Architecture](./evaluation-service.md)**: The auto-evaluation worker, its trigger modes and scoring flow
-- **[SYSTEM_CARD.md](../../SYSTEM_CARD.md)**: System card with safety measures and evaluation framework
+- **[system-card-en.md](../../public/content/system-card-en.md)**: System card with safety measures and evaluation framework
 
 ### API Documentation
 - See `docs/api/` for API endpoint documentation (when available)

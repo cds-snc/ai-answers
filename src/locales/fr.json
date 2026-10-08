@@ -2284,6 +2284,10 @@
     "message": "Nous ne trouvons pas la page que vous cherchez.",
     "homeLink": "Retourner à Réponses IA"
   },
+  "systemCardPage": {
+    "title": "Fiche système",
+    "backToAbout": "Retour à À propos"
+  },
   "aboutPage": {
     "loading": "Chargement...",
     "title": "À propos",

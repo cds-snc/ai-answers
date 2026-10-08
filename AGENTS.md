@@ -113,7 +113,7 @@ reorder a pipeline step, update all three:
 | Document | Reader | Level |
 |---|---|---|
 | [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
-| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [system-card-en.md](public/content/system-card-en.md) + [fiche-systeme-fr.md](public/content/fiche-systeme-fr.md) (served at `/en/system-card` and `/fr/fiche-systeme`) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
 | [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
 
 They are **not** meant to match one-for-one — the card describes processing steps a reader
@@ -212,8 +212,8 @@ Both render through `useMarkdownWithFrontmatter` — see
 for the frontmatter contract and how to add a how-to guide.
 
 System card has EN and FR versions — always update both:
- *   - English: SYSTEM_CARD.md
- *   - French:  SYSTEM_CARD_FR.md
+ *   - English: public/content/system-card-en.md
+ *   - French:  public/content/fiche-systeme-fr.md
 
 ## Reference docs for coding tasks
 

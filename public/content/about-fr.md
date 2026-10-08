@@ -14,6 +14,8 @@ Réponses IA a été lancé à la fin de 2024 dans le cadre d’un projet pilote
 
 Réponses IA repose sur des principes fondamentaux de convivialité, de protection des renseignements personnels et d’exactitude. Une interface d’administration complète permet à des experts des institutions partenaires d’évaluer les réponses générées. Ces évaluations servent à améliorer la qualité des réponses et à entraîner des évaluations automatisées par l’IA pour des questions semblables.
 
+Lisez la [fiche système de Réponses IA](/fr/fiche-systeme) pour connaître le fonctionnement du service, ses mesures de sécurité et la façon dont les réponses sont évaluées.
+
 ## Accessibilité et convivialité
 
 Les utilisateurs peuvent se sentir dépassés devant de longues pages contenant de multiples instructions et avoir du mal à choisir entre les différents liens. De plus, un grand nombre d’utilisateurs consultent les sites Web du gouvernement à partir d’un appareil mobile. Réponses IA génère des réponses d’au plus quatre phrases, rédigées de manière à être aussi claires que possible. Chaque réponse comprend un seul lien de référence, qui permet de vérifier l’information et de passer à l’étape suivante. Cette approche réduit le nombre de choix présentés à l’utilisateur et contribue également à améliorer l’exactitude des réponses.

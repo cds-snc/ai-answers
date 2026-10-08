@@ -21,6 +21,8 @@ const ABOUT_CONTENT_DIR = '/content';
 export const MARKDOWN_ROUTES = {
   [getPath('about', 'en')]: { dir: ABOUT_CONTENT_DIR, file: 'about-en.md' },
   [getPath('about', 'fr')]: { dir: ABOUT_CONTENT_DIR, file: 'about-fr.md' },
+  [getPath('system-card', 'en')]: { dir: ABOUT_CONTENT_DIR, file: 'system-card-en.md' },
+  [getPath('system-card', 'fr')]: { dir: ABOUT_CONTENT_DIR, file: 'fiche-systeme-fr.md' },
   ...Object.fromEntries(
     HOW_TOS.flatMap((howTo) =>
       ['en', 'fr'].map((lang) => [

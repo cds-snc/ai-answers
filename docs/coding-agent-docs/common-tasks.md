@@ -37,6 +37,7 @@ behind auth, so don't put anything there that shouldn't be public.
 | Page | Files | Renders |
 |---|---|---|
 | About | `public/content/about-{en,fr}.md` | Named `##` sections, picked out by key in `AboutPage.js` |
+| System card | `public/content/system-card-{en,fr}.md` (FR: `fiche-systeme-fr.md`) | The whole document, via `SystemCardPage.js`; headings get GitHub-style ids for the "On this page" links. No raw HTML or mermaid: use headings, lists and plain images with a text description |
 | Admin how-to guides | `public/content/admin/*.md` | The whole document, via `HowToPage.js` |
 
 Both use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
@@ -118,7 +119,7 @@ Model selection is decoupled from workflow: graphs define the pipeline, the
 2. Add a `case` for its `selectedAI` string in the relevant `AgentFactory.js` creators.
 3. Add it to `AVAILABLE_MODELS` in `src/config/workflows.js` — that feeds the Settings, batch and chat dropdowns.
 4. Add its label under `models.*` in both locale files.
-5. Update `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` and the model list in [architecture-quick-ref.md](architecture-quick-ref.md).
+5. Update `public/content/system-card-en.md` / `fiche-systeme-fr.md` and the model list in [architecture-quick-ref.md](architecture-quick-ref.md).
 
 **Switching the default (no deploy):** Settings → General settings → Default model family. Takes effect for new chats immediately; rollback is the same switch. Roll out staging first, run batches and watch eval scores for 1–2 weeks, then production — each interaction records the model used, so quality is comparable on the eval dashboards.
 

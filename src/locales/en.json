@@ -2284,6 +2284,10 @@
     "message": "We can't find the page you're looking for.",
     "homeLink": "Return to AI Answers"
   },
+  "systemCardPage": {
+    "title": "System card",
+    "backToAbout": "Back to About"
+  },
   "aboutPage": {
     "loading": "Loading...",
     "title": "About",

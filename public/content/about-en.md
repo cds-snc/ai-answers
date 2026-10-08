@@ -14,6 +14,8 @@ The AI Answers service began as an experiment in late 2024 by the Canada.ca Expe
 
 Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation of answers by subject-matter experts from partnering institutions.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
+Read the [AI Answers system card](/en/system-card) for details on how the service works, its safety measures and how answers are evaluated.
+
 ## Accessibility and usability
 
 Users can be overwhelmed by long pages with multiple instructions and struggle to choose between links. Many are visiting government sites from mobile phones. AI Answers produces a maximum of four sentences per answer, carefully designed to be as clear as possible. A single citation link is provided to let you take the next step and check the answer, reducing choice overload. Shorter answers with a single citation also increase accuracy.

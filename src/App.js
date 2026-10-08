@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
+import SystemCardPage from './pages/SystemCardPage.js';
 import HowToPage from './pages/HowToPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
@@ -281,7 +282,7 @@ const AppLayout = () => {
         >
           <GcdsBreadcrumbs slot="breadcrumb">
             {/* Show AI Answers breadcrumb on About and 404 pages */}
-            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr')) || is404) && (
               <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
                 {t('notFound.breadcrumb')}
               </GcdsBreadcrumbsItem>
@@ -351,6 +352,8 @@ export default function App() {
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
+      { path: getPath('system-card', 'en'), element: <SystemCardPage lang="en" /> },
+      { path: getPath('system-card', 'fr'), element: <SystemCardPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
       { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },

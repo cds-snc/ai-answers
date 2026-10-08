@@ -1,11 +1,14 @@
+---
+title: "AI Answers system card - Canada.ca"
+description: "How AI Answers works, its safety measures, evaluation approach and governance."
+---
+
 # AI Answers system card
 
 **Version**: 1.3
 **Date**: August 2026
 **Organization**: Canada.ca Experience Office, Service Canada  
 **Contact**: Michael Karlin at servicecanada.gc.ca   
-
-**Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
 
 ## On this page
 - [Executive summary](#executive-summary)
@@ -26,10 +29,9 @@ AI Answers is a specialized AI chat agent platform designed for Government of Ca
 
 - **Trial results**: [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 
-![AI Answers System Architecture Diagram](docs/images/system_diagram_v2_EN.jpg)
+![AI Answers system architecture diagram](/content/images/system_diagram_v2_EN.jpg)
 
-<details>
-<summary>Image Description (Alt Text)</summary>
+### Diagram description
 
 The diagram is divided into two horizontal swim lanes.
 
@@ -41,13 +43,12 @@ A linear pipeline flows left to right: Question → Input Guardrails (Generic/Ha
 
 Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and "Internal uses" (Content design). Both feed into Input Guardrails (Privacy/Harm). The context block is larger and labelled "GC specific," containing six elements: GC System instructions, Conversation, Institutional instructions, Search (GC only), GC & dept skills/tools, and Web Content (GC only). An additional component, "SME Evaluations," sits below the context block and feeds into a "Continuous evaluation" loop. The context feeds into the same set of LLMs, which connect to an "Agents" node. Agents pass through Output Guardrails (Accuracy/Harm/Bias) before producing the Answer. Arrows from the Continuous evaluation loop return to both the Agents and the Context block, indicating iterative refinement.
 
-</details>
 
 ## Current status
 - **Environment**: Beta-testing on Canada.ca paused after the last of four public trials ended in February 2026.
 - **Trial results**: [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - **Production**: https://ai-answers.alpha.canada.ca (no public access after February 2026 - available within GC network only)
-- **Institution partners**: Federal institution partners evaluate answers for accuracy, and can add scenario prompts, agentic tools to use APIs, and files to meet specific needs. [View current list of partner institutions](src/constants/partnerDepartments.js)
+- **Institution partners**: Federal institution partners evaluate answers for accuracy, and can add scenario prompts, agentic tools to use APIs, and files to meet specific needs.
 
 ## System purpose and scope
 
@@ -55,7 +56,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
-- Models a conversation with a call centre agent - [brief answers for better service](docs/pdf/short-ai-answers-en.pdf)
+- Models a conversation with a call centre agent - [brief answers for better service](/content/pdf/short-ai-answers-en.pdf)
 
 ### Target users
 - Anyone visiting Canada.ca or federal websites
@@ -78,8 +79,6 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 4. **Database**: AWS DocumentDB 
 5. **Search**: Google or Canada.ca search, based on the selected search provider
 
-**For detailed architecture, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
-
 ### AI model details
 - **Current production models**: Azure OpenAI GPT-5.1 family (cutover March 18,2026 from GPT 4.1); evaluation agents use GPT-4.1-mini
 - **Model family routing**: Selecting a model family (e.g. GPT-5.1) does not use a single model for every step. The system automatically routes each pipeline step or service to the appropriate model — supporting steps (translation, query rewrite) use GPT-4.1-mini for cost and speed, while context generation and answer generation use the selected family's full model (e.g. GPT-5.1). This routing is handled internally by AgentFactory and is not configurable per step by admins.
@@ -100,35 +99,18 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 ### Pipeline flow (LangGraph state machine)
 The system uses a **multi-step LangGraph pipeline** that orchestrates all processing server-side. Multiple graph variants exist with different capabilities (e.g. vector short-circuit, eval-informed answers, reasoning models). Not all steps run in every variant.
 
-```mermaid
-flowchart TD
-    Q["Question asked"] --> G["Safety and privacy checks<br/>personal information<br/>blocked, never stored"]
-    G --> S["Government of Canada<br/>content searched"]
-    S --> D["Institution identified<br/>its own instructions added"]
-    D --> E["Expert evaluations of similar<br/>past questions added"]
-    E --> A["Plain-language answer<br/>with verified citation link"]
-    A --> SAVE["Answer shown and saved"]
-    SAVE --> AI["Automated AI evaluation<br/>reporting only"]
-    SAVE --> HUM["Human expert evaluation<br/>of a sample of answers"]
-    HUM -. "improves future answers" .-> E
-```
+### Pipeline steps
 
-<details>
-<summary>Image description (alt text)</summary>
-
-A flow chart running top to bottom. A question is asked. It passes through safety and
-privacy checks, where personal information is blocked and never stored. Government of
-Canada content is searched. The institution the question belongs to is identified, and that
-institution's own instructions are added. Expert evaluations of similar past questions are
-added. A plain-language answer is written with a verified citation link. The answer is
-shown and saved.
-
-Saving then branches two ways. One branch is an automated AI evaluation, used for reporting
-only; it ends there. The other is a human expert evaluation of a sample of answers, and a
-dotted arrow returns from it to the step where expert evaluations are added, labelled
-"improves future answers".
-
-</details>
+1. A question is asked.
+2. Safety and privacy checks run. Personal information is blocked and never stored.
+3. Government of Canada content is searched.
+4. The institution the question belongs to is identified, and that institution's own instructions are added.
+5. Expert evaluations of similar past questions are added.
+6. A plain-language answer is written, with a verified citation link.
+7. The answer is shown and saved.
+8. After saving, two things can happen:
+   - An automated AI evaluation runs. It is used for reporting only.
+   - A human expert evaluates a sample of answers. These evaluations improve future answers by feeding back into step 5.
 
 Three things in this flow set AI Answers apart from a general-purpose chatbot.
 
@@ -161,8 +143,6 @@ never become examples, so the system never learns from its own judgements.
 11. **Persistence**: Save interaction to database, create embeddings, trigger evaluation
 12. **Auto-Evaluation** (background; not every answer receives one): Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction
 13. **Task classifier** (AI - full model, runs in the background after the answer is delivered): use question and answer to assign program and action (e.g. IRCC account - sign in) to question for reporting and analysis by institutions 
-
-**For complete pipeline details, see [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md)**
 
 ## Risk assessment and safety measures
 
@@ -265,7 +245,7 @@ never become examples, so the system never learns from its own judgements.
 
 ### Evaluation infrastructure for human experts from partner institutions
 - **Innovative expert evaluation system**: 
-  - **In-app evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation processs with screenshots](docs/pdf/ai-answers-expert-evals-integration.pdf)
+  - **In-app evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation process with screenshots](/content/pdf/ai-answers-expert-evals-integration.pdf)
   - **Flexible evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
   - **Sentence-level scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
   - **Citation rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
@@ -290,8 +270,6 @@ Expert evaluations of past answers are not only used for reporting — they can 
 Both mechanisms are implemented as selectable pipeline variants ("graphs"), require that expert feedback exists for a past answer, and are designed to degrade gracefully — if the lookup is unavailable, answer generation proceeds normally without examples.
 
 **Only human evaluations feed back into answers.** Automated AI evaluations are used for reporting and monitoring, never as examples for the model: they are deliberately excluded from the store that both mechanisms draw on. The system does not learn from its own judgements — every example an answer is shaped by traces back to a person's assessment.
-
-**For full technical detail, see [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md)**
 
 ### Current performance
 - **Response time**: Target is 6 to 14 seconds depending on complexity. Length of downloaded pages contributes to longer response delays. Users are shown progress messages for each step. 

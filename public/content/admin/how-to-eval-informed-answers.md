@@ -64,6 +64,6 @@ Remove one when the content it was based on has changed, the judgement was wrong
 
 ## Related
 
-- [Using evaluations to improve answers](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#using-evaluations-to-improve-answers): the public-facing summary in the system card
+- [Using evaluations to improve answers](/en/system-card#using-evaluations-to-improve-answers): the public-facing summary in the system card
 - [Retrieval mechanics, thresholds, failure modes](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md)
 - [Expert evaluation process, with screenshots](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/ai-answers-expert-evals-integration.pdf)
