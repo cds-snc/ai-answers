@@ -46,7 +46,7 @@ Votre utilisation de ce système, ainsi que de toute information qu’il génèr
 
 ## Documentation de la fiche système
 
-Pour en savoir plus sur le fonctionnement du système et la façon dont il est évalué&nbsp;:
+La fiche système présente en détail le fonctionnement de Réponses IA et la façon dont il est évalué.
 
 [Consultez la fiche système Réponses IA](/fr/fiche-systeme)
 

@@ -122,11 +122,12 @@ const SystemCardPage = ({ lang = 'en' }) => {
           remarkPlugins={[remarkGfm]}
           rehypePlugins={REHYPE_PLUGINS}
           components={{
-            // h2/h3 mirror GcdsHeading's defaults (mt-600, mb-300). h1 keeps the
+            // h2-h4 mirror GcdsHeading's defaults (mt-600, mb-300). h1 keeps the
             // app-wide mb-400 instead of GC DS's mb-300.
             h1: ({ node, ...props }) => <h1 className="mb-400" {...props} />,
             h2: ({ node, ...props }) => <h2 className="mt-600 mb-300" {...props} />,
             h3: ({ node, ...props }) => <h3 className="mt-600 mb-300" {...props} />,
+            h4: ({ node, ...props }) => <h4 className="mt-600 mb-300" {...props} />,
             p: ({ children }) => <p className="mb-300">{children}</p>,
             // GCDS's reset applies `ol,ul{list-style:none}`, so markers have to be
             // asked for explicitly (same as HowToPage.js). spcd-1, not -2: the
@@ -145,6 +146,8 @@ const SystemCardPage = ({ lang = 'en' }) => {
             ),
             a: ({ href, children }) => <a href={href}>{children}</a>,
             img: ({ src, alt }) => <img src={src} alt={alt} className="system-card-image" />,
+            // GC DS utility's hr rule borders all four sides, drawing a thick line.
+            hr: () => <hr className="section-divider" />,
             pre: ({ node, children }) =>
               isMermaidBlock(node) ? (
                 <MermaidDiagram
