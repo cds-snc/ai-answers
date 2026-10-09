@@ -8,7 +8,7 @@
   <dt>Organisation</dt>
   <dd>Bureau de l’expérience Canada.ca de Service Canada</dd>
   <dt>Contact</dt>
-  <dd><a href="mailto:RIA-AIA@servicecanada.gc.ca">RIA-AIA@servicecanada.gc.ca</a></dd>
+  <dd><a href="https://blogue.canada.ca/contactez-nous.html">Utiliser le formulaire de contact du Bureau de l'expérience Canada.ca</a></dd>
 </dl>
 
 ## Sur cette page
@@ -286,7 +286,7 @@ Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sél
 
 ## Contact et support
 - **Problèmes techniques et demandes de fonctionnalités** : Dépôt GitHub
-- **Préoccupations de sécurité** : Contact direct par le courriel du produit [RIA-AIA@servicecanada.gc.ca](mailto:RIA-AIA@servicecanada.gc.ca)
+- **Préoccupations de sécurité** : Contact direct par le [formulaire de contact du Bureau de l'expérience Canada.ca](https://blogue.canada.ca/contactez-nous.html)
 - **Commentaires généraux** : Mécanismes de commentaires multiples pour différents types d'utilisateurs
 
 ---

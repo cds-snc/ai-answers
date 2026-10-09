@@ -8,7 +8,7 @@
   <dt>Organization</dt>
   <dd>Canada.ca Experience Office, Service Canada</dd>
   <dt>Contact</dt>
-  <dd><a href="mailto:RIA-AIA@servicecanada.gc.ca">RIA-AIA@servicecanada.gc.ca</a></dd>
+  <dd><a href="https://blog.canada.ca/contact-us">Use the Canada.ca Experience Office contact form</a></dd>
 </dl>
 
 ## On this page
@@ -286,7 +286,7 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 
 ## Contact and support
 - **Technical issues and feature requests**: GitHub repository
-- **Safety concerns**: Direct contact through product email address [RIA-AIA@servicecanada.gc.ca](mailto:RIA-AIA@servicecanada.gc.ca)
+- **Safety concerns**: Direct contact through the [Canada.ca Experience Office contact form](https://blog.canada.ca/contact-us)
 - **General feedback**: Multiple feedback mechanisms for different user types
 
 ---
