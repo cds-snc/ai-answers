@@ -16,17 +16,12 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
 import { SYSTEM_CARD_CONTENT_DIR, SYSTEM_CARD_FILES } from '../config/systemCard.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
-import MermaidDiagram from '../components/systemcard/MermaidDiagram.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 // rehype-raw: the card's "Image description" panels are raw <details> HTML.
 // rehype-slug: GitHub-style heading ids, which the card's "On this page"
 // links (#executive-summary, #résumé-exécutif, ...) point at.
 const REHYPE_PLUGINS = [rehypeRaw, rehypeSlug];
-
-const isMermaidBlock = (node) =>
-  node?.children?.[0]?.tagName === 'code' &&
-  (node.children[0].properties?.className || []).includes('language-mermaid');
 
 // The "On this page" contents list: every item is just a link to a section
 // of this page. Matched by shape, not heading text, so it works in EN and FR.
@@ -148,15 +143,6 @@ const SystemCardPage = ({ lang = 'en' }) => {
             img: ({ src, alt }) => <img src={src} alt={alt} className="system-card-image" />,
             // GC DS utility's hr rule borders all four sides, drawing a thick line.
             hr: () => <hr className="section-divider" />,
-            pre: ({ node, children }) =>
-              isMermaidBlock(node) ? (
-                <MermaidDiagram
-                  code={node.children[0].children.map((child) => child.value).join('')}
-                  label={t('systemCard.diagramLabel')}
-                />
-              ) : (
-                <pre>{children}</pre>
-              ),
           }}
         >
           {content}

@@ -1141,10 +1141,8 @@ fieldset.gc-chckbxrdio {
   margin-bottom: 0;
 }
 
-/* System card page (SystemCardPage.js). Images and mermaid's SVG both shrink
-   to the column; the SVG keeps its own aspect ratio. */
-.system-card-content .system-card-image,
-.system-card-diagram svg {
+/* System card page (SystemCardPage.js): images shrink to the column. */
+.system-card-content .system-card-image {
   max-width: 100%;
   height: auto;
 }

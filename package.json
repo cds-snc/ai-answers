@@ -77,7 +77,6 @@
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.454.0",
-    "mermaid": "^11.17.2",
     "moment": "^2.31.0",
     "mongodb": "^6.9.0",
     "mongoose": "^8.24.1",

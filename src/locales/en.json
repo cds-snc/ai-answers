@@ -2291,8 +2291,7 @@
   },
   "systemCard": {
     "title": "AI Answers system card",
-    "loadError": "Unable to load the system card.",
-    "diagramLabel": "Flowchart. A text description follows."
+    "loadError": "Unable to load the system card."
   },
   "experimental": {
     "datasets": {

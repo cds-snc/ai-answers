@@ -12,14 +12,6 @@ vi.mock('../../hooks/useTranslations.js', () => ({
   }),
 }));
 
-// mermaid needs a real layout engine; jsdom has none.
-vi.mock('mermaid', () => ({
-  default: {
-    initialize: vi.fn(),
-    render: vi.fn(() => Promise.resolve({ svg: '<svg data-testid="flowchart"></svg>' })),
-  },
-}));
-
 const CARD_MARKDOWN = `---
 title: "Fiche système Réponses IA"
 description: "Description"
@@ -41,11 +33,6 @@ Texte.
 
 - Point un.
 - Point deux, avec un [lien](#résumé-exécutif).
-
-\`\`\`mermaid
-flowchart TD
-    Q["Question"] --> A["Réponse"]
-\`\`\`
 
 <details>
 <summary>Description de l'image</summary>
@@ -106,14 +93,6 @@ describe('SystemCardPage', () => {
     const details = container.querySelector('details');
     expect(details).not.toBeNull();
     expect(details.querySelector('summary').textContent).toBe("Description de l'image");
-  });
-
-  it('draws mermaid blocks as one labelled image instead of showing the code', async () => {
-    render(<SystemCardPage lang="fr" />);
-
-    const diagram = await screen.findByRole('img', { name: 'systemCard.diagramLabel' });
-    expect(diagram.querySelector('svg')).not.toBeNull();
-    expect(screen.queryByText(/flowchart TD/)).toBeNull();
   });
 
   it('shows the error with a focus target when the content fails to load', async () => {
