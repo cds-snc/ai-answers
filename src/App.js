@@ -288,8 +288,8 @@ const AppLayout = () => {
                 {t('notFound.breadcrumb')}
               </GcdsBreadcrumbsItem>
             )}
-            {/* The About page is the only way in to the system card, so it is
-                the card's parent crumb. */}
+            {/* The card is reached from the About page, so About is its
+                parent crumb. */}
             {(location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr'))) && (
               <GcdsBreadcrumbsItem href={getPath('about', currentLang)}>
                 {t('aboutPage.title')}

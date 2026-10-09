@@ -6,7 +6,7 @@
   <dt>Date</dt>
   <dd>Octobre 2026</dd>
   <dt>Organisation</dt>
-  <dd>Bureau de l’expérience Canada.ca de Service Canada</dd>
+  <dd>Bureau de l'expérience Canada.ca de Service Canada</dd>
   <dt>Contact</dt>
   <dd><a href="https://blogue.canada.ca/contactez-nous.html">Utiliser le formulaire de contact du Bureau de l'expérience Canada.ca</a></dd>
 </dl>
