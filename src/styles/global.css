@@ -1115,7 +1115,7 @@ fieldset.gc-chckbxrdio {
    title, as label/value rows. */
 .system-card-content dl {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   column-gap: var(--gcds-spacing-300);
   row-gap: var(--gcds-spacing-100);
   margin: 0 0 var(--gcds-spacing-400);
@@ -1127,6 +1127,21 @@ fieldset.gc-chckbxrdio {
 
 .system-card-content dd {
   margin: 0;
+  /* Safety net at large zoom: the contact email is one unbreakable word. */
+  overflow-wrap: anywhere;
+}
+
+/* GC DS mobile breakpoint: label above value, so the email never forces a
+   sideways scroll (WCAG 1.4.10 reflow). */
+@media only screen and (width < 48em) {
+  .system-card-content dl {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .system-card-content dd {
+    margin-bottom: var(--gcds-spacing-100);
+  }
 }
 
 /* System card nested lists: same gap as the card's canada-ca-list-spcd-1

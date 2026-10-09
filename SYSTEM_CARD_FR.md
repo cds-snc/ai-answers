@@ -215,7 +215,8 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 ### Infrastructure d'évaluation pour les experts humains et les commentaires du public
 
 **Système innovant d'évaluation pour les experts des institutions partenaires :**
-- **Évaluation en application** : Les experts évaluent les questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue [processus d'évaluation avec captures d'écran (PDF, 930&nbsp;Ko)](docs/pdf/fr-reponses-ai-integration-evaluations.pdf).
+- **Évaluation en application** : Les experts évaluent les réponses aux questions dans l'interface réelle de l'application, en examinant la conversation exactement telle que l'utilisateur l'a vue.
+  - [Processus d'évaluation avec captures d'écran (PDF, 930&nbsp;Ko)](docs/pdf/fr-reponses-ai-integration-evaluations.pdf)
 - **Évaluation flexible** : Les experts peuvent entrer leurs propres questions ou utiliser des identifiants de discussion existants pour évaluer les conversations des utilisateurs.
 - **Notation au niveau des phrases** : Chaque phrase des réponses IA est notée individuellement (100/80/0 points) avec des explications détaillées.
 - **Notation des citations** : Notation séparée pour l'exactitude et la pertinence des citations (25/20/0 points).

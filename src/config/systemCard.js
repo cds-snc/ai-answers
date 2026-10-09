@@ -14,6 +14,14 @@
  * depends on GitHub being up.
  */
 
+// TODO: the docs/pdf/ PDFs need a shared home in the app. The how-to guides
+// (public/content/admin/how-to-evaluate-answers.md, how-to-eval-informed-answers.md
+// and their FR pairs) still link "Expert evaluation process" to GitHub, so
+// those links fail when GitHub is down; pointing them at this page's folder
+// would tie the guides to how the system card is built. Also, none of the 4
+// PDFs is tagged for screen readers or declares a language; the short-answers
+// PDFs may be text-as-image. Re-export them tagged from source (content owner).
+
 /** Directory the generated markdown and its assets are served from. */
 export const SYSTEM_CARD_CONTENT_DIR = '/content/system-card';
 

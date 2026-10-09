@@ -215,7 +215,8 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 ### Evaluation infrastructure for human experts and public feedback
 
 **Innovative evaluation system for experts from partner institutions:**
-- **In-app evaluation**: Experts evaluate questions within the actual app interface, reviewing the conversation exactly as the user saw it [evaluation process with screenshots (PDF, 1.04 MB)](docs/pdf/ai-answers-expert-evals-integration.pdf).
+- **In-app evaluation**: Experts evaluate answers to questions within the actual app interface, reviewing the conversation exactly as the user saw it.
+  - [Evaluation process with screenshots (PDF, 1.04 MB)](docs/pdf/ai-answers-expert-evals-integration.pdf)
 - **Flexible evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations.
 - **Sentence-level scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations.
 - **Citation rating**: Separate scoring for citation accuracy and relevance (25/20/0 points).
