@@ -46,20 +46,14 @@ heading.
 
 ### System card
 
-The system card is the one markdown page whose source is not in `public/`. The
-root files are the single source for both GitHub readers and the app: the
-`systemCard` plugin in `vite.config.js` turns them into the page's markdown at
-build time (and on request in `npm start`). See `src/config/systemCard.js`.
+Source is the root `SYSTEM_CARD*.md`, not `public/`. The `systemCard` plugin in
+`vite.config.js` builds the page's markdown from it (see `src/config/systemCard.js`).
 
-- **No frontmatter in the source.** GitHub would show it as a table at the top of
-  the card. The build adds it: `title` from the card's `#` heading, `description`
-  from `SYSTEM_CARD_DESCRIPTIONS`. The frontmatter contract below applies to the
-  generated file, not the one you edit.
-- **Linked images and PDFs are served by the app**, under `/content/system-card/`
-  at their repo path. Links to other repo files point to GitHub.
-- **A missing linked image or PDF never fails the build.** The page shows it as
-  "unavailable", and `systemCardMarkdown.test.js` fails so it's caught in the PR.
-- **Raw HTML works:** `<details>` image descriptions and the `<dl>` version block.
+- Don't add frontmatter: GitHub shows it as a table. The build adds `title` (from
+  the `#` heading) and `description` (`SYSTEM_CARD_DESCRIPTIONS`).
+- Linked images and PDFs are served by the app; other repo links go to GitHub.
+- A missing image or PDF shows as "unavailable" and fails
+  `systemCardMarkdown.test.js`. It never fails the build.
 
 ### Frontmatter contract
 
