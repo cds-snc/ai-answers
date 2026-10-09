@@ -113,7 +113,7 @@ reorder a pipeline step, update all three:
 | Document | Reader | Level |
 |---|---|---|
 | [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
-| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) (also the public page at `/en/system-card` and `/fr/fiche-systeme`) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths, no links to developer docs. Both languages, always. |
 | [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
 
 They are **not** meant to match one-for-one — the card describes processing steps a reader

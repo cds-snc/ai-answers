@@ -38,10 +38,28 @@ behind auth, so don't put anything there that shouldn't be public.
 |---|---|---|
 | About | `public/content/about-{en,fr}.md` | Named `##` sections, picked out by key in `AboutPage.js` |
 | Admin how-to guides | `public/content/admin/*.md` | The whole document, via `HowToPage.js` |
+| System card | `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root | The whole document, via `SystemCardPage.js` |
 
-Both use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
+All three use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
 file, splits the YAML frontmatter, and also exposes `sections` keyed by `##`
 heading.
+
+### System card
+
+The system card is the one markdown page whose source is not in `public/`. The
+root files are the single source for both GitHub readers and the app: the
+`systemCard` plugin in `vite.config.js` turns them into the page's markdown at
+build time (and on request in `npm start`). See `src/config/systemCard.js`.
+
+- **No frontmatter in the source.** GitHub would show it as a table at the top of
+  the card. The build adds it: `title` from the card's `#` heading, `description`
+  from `SYSTEM_CARD_DESCRIPTIONS`. The frontmatter contract below applies to the
+  generated file, not the one you edit.
+- **Linked images and PDFs are served by the app**, under `/content/system-card/`
+  at their repo path. Links to other repo files point to GitHub.
+- **A missing linked image or PDF never fails the build.** The page shows it as
+  "unavailable", and `systemCardMarkdown.test.js` fails so it's caught in the PR.
+- **Raw HTML works:** `<details>` image descriptions and the `<dl>` version block.
 
 ### Frontmatter contract
 
