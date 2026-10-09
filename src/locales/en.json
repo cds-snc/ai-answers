@@ -2289,6 +2289,10 @@
     "title": "About",
     "loadError": "Unable to load content."
   },
+  "systemCard": {
+    "title": "AI Answers system card",
+    "loadError": "Unable to load the system card."
+  },
   "experimental": {
     "datasets": {
       "title": "Experimental Datasets",

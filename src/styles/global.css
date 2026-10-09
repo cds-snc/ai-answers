@@ -181,6 +181,11 @@ gcds-details {
   margin-bottom: 0.625em;
 }
 
+/* -0: link-only lists, e.g. a page's "On this page" contents list. */
+.canada-ca-list-spcd-0 li {
+  margin-bottom: 0.2em;
+}
+
 .flex-center {
   display: flex;
   align-items: center;
@@ -1104,4 +1109,55 @@ fieldset.gc-chckbxrdio {
 .experimental-results-table {
   width: 100%;
   margin-inline: auto;
+}
+
+/* System card page: the Version/Date/Organization/Contact <dl> under the
+   title, as label/value rows. */
+.system-card-content dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--gcds-spacing-300);
+  row-gap: var(--gcds-spacing-100);
+  margin: 0 0 var(--gcds-spacing-400);
+}
+
+.system-card-content dt {
+  font-weight: 700;
+}
+
+.system-card-content dd {
+  margin: 0;
+  /* Safety net at large zoom: the contact email is one unbreakable word. */
+  overflow-wrap: anywhere;
+}
+
+/* GC DS mobile breakpoint: label above value, so the email never forces a
+   sideways scroll (WCAG 1.4.10 reflow). */
+@media only screen and (width < 48em) {
+  .system-card-content dl {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .system-card-content dd {
+    margin-bottom: var(--gcds-spacing-100);
+  }
+}
+
+/* System card nested lists: same gap as the card's canada-ca-list-spcd-1
+   items, above the first sub-bullet and after the last. Overrides the mb-400
+   every list gets, which is for top-level lists; the parent item's own
+   margin-bottom supplies the gap after the sub-list. */
+.system-card-content li > :is(ul, ol) {
+  margin-block: 0.625em 0;
+}
+
+.system-card-content li > :is(ul, ol) > li:last-child {
+  margin-bottom: 0;
+}
+
+/* System card page (SystemCardPage.js): images shrink to the column. */
+.system-card-content .system-card-image {
+  max-width: 100%;
+  height: auto;
 }

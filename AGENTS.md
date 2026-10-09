@@ -113,7 +113,7 @@ reorder a pipeline step, update all three:
 | Document | Reader | Level |
 |---|---|---|
 | [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
-| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) (also the public page at `/en/system-card` and `/fr/fiche-systeme`) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths, no links to developer docs. Both languages, always. |
 | [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
 
 They are **not** meant to match one-for-one — the card describes processing steps a reader
@@ -206,6 +206,10 @@ the locale files. Edit the markdown, not the component — and always both langu
 - **About page** — `public/content/about-en.md` / `about-fr.md`
 - **Admin how-to guides** — `public/content/admin/`, one file per language, with
   screenshots in `public/content/admin/images/`
+- **System card page** — `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root.
+  The build turns them into the page's content and serves the images/PDFs they
+  link to (`src/config/systemCard.js`); a linked image/PDF that doesn't exist
+  shows as "unavailable" on the page and fails `systemCardMarkdown.test.js`
 
 Both render through `useMarkdownWithFrontmatter` — see
 [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)

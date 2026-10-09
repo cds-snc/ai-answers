@@ -8,7 +8,8 @@ AI Answers uses a **LangGraph-based state machine architecture** to orchestrate 
 
 **Companion documents:** [SYSTEM_CARD.md](../../SYSTEM_CARD.md) and
 [SYSTEM_CARD_FR.md](../../SYSTEM_CARD_FR.md) carry the plain-language version of this
-pipeline for a general and governance audience. This document is the developer view (nodes,
+pipeline for a general and governance audience, and are also published in the app at
+`/en/system-card` and `/fr/fiche-systeme`. This document is the developer view (nodes,
 state, file references); the card is the reader-facing one. They are deliberately at
 different levels of detail, but a step added, removed, or moved out of the production graph
 here has to be reflected there — in both languages. See

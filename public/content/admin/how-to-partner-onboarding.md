@@ -76,4 +76,4 @@ Results are compared across institutions, tasks, and languages to see where erro
 
 - [Evaluate answers](/en/how-to/evaluate-answers): how to score an answer once you have one
 - [Evaluation-informed answers](/en/how-to/eval-informed-answers): how your evaluations shape future answers
-- [Using evaluations to improve answers](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#using-evaluations-to-improve-answers): the public-facing summary in the system card
+- [Using evaluations to improve answers](/en/system-card#using-evaluations-to-improve-answers): the public-facing summary in the system card

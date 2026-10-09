@@ -147,6 +147,6 @@ The answer is worth 75 of it and the citation 25, because this is an answers too
 
 - [Partner onboarding](/en/how-to/partner-onboarding): choosing which questions to evaluate, and the rest of the partner role
 - [Evaluation-informed answers](/en/how-to/eval-informed-answers): how your evaluations shape future answers
-- [Using evaluations to improve answers](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#using-evaluations-to-improve-answers): the public-facing summary in the system card
+- [Using evaluations to improve answers](/en/system-card#using-evaluations-to-improve-answers): the public-facing summary in the system card
 - [Retrieval mechanics, thresholds, failure modes](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md)
 - [Expert evaluation process, with screenshots](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/ai-answers-expert-evals-integration.pdf)

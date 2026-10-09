@@ -2289,6 +2289,10 @@
     "title": "À propos",
     "loadError": "Impossible de charger le contenu."
   },
+  "systemCard": {
+    "title": "Fiche système Réponses IA",
+    "loadError": "Impossible de charger la fiche système."
+  },
   "experimental": {
     "datasets": {
       "title": "Ensembles de données expérimentaux",

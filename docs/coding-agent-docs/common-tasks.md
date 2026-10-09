@@ -38,10 +38,22 @@ behind auth, so don't put anything there that shouldn't be public.
 |---|---|---|
 | About | `public/content/about-{en,fr}.md` | Named `##` sections, picked out by key in `AboutPage.js` |
 | Admin how-to guides | `public/content/admin/*.md` | The whole document, via `HowToPage.js` |
+| System card | `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root | The whole document, via `SystemCardPage.js` |
 
-Both use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
+All three use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
 file, splits the YAML frontmatter, and also exposes `sections` keyed by `##`
 heading.
+
+### System card
+
+Source is the root `SYSTEM_CARD*.md`, not `public/`. The `systemCard` plugin in
+`vite.config.js` builds the page's markdown from it (see `src/config/systemCard.js`).
+
+- Don't add frontmatter: GitHub shows it as a table. The build adds `title` (from
+  the `#` heading) and `description` (`SYSTEM_CARD_DESCRIPTIONS`).
+- Linked images and PDFs are served by the app; other repo links go to GitHub.
+- A missing image or PDF shows as "unavailable" and fails
+  `systemCardMarkdown.test.js`. It never fails the build.
 
 ### Frontmatter contract
 

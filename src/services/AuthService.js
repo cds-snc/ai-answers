@@ -261,7 +261,7 @@ class AuthService {
   }
 
   static isPublicRoute(pathname) {
-    const publicRouteNames = ['signin', 'about', 'register', 'logout', 'reset-request', 'reset-verify', 'reset-complete'];
+    const publicRouteNames = ['signin', 'about', 'system-card', 'register', 'logout', 'reset-request', 'reset-verify', 'reset-complete'];
     const publicPaths = ['/', '/contact'];
     for (const name of publicRouteNames) {
       const slugs = ROUTE_SLUGS[name];

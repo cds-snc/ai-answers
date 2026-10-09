@@ -12,7 +12,7 @@ Canada.ca AI Answers is a specialized artificial intelligence (AI) chat platform
 
 The AI Answers service began as an experiment in late 2024 by the Canada.ca Experience Office and the Canadian Digital Service. Later, in trials on selected Canada.ca pages in 2025, the service sourced content across 60+ federal institutions to answer thousands of questions.   
 
-Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive Admin interface supports human evaluation of answers by subject-matter experts from partnering institutions.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
+Canada.ca AI Answers is built with usability, privacy, and accuracy as core principles. An extensive admin interface supports human evaluation of answers by subject-matter experts from partnering institutions.  The evaluations are used to improve answer quality and to produce automated AI evaluations of similar questions.
 
 ## Accessibility and usability
 
@@ -43,6 +43,12 @@ Your use of this system and any information generated is also subject to the [Ca
 ## AI Answers Blog posts
 - [AI Answers: Enterprise-scale trials for Canada.ca](https://blog.canada.ca/2025/12/17/ai-answers.html)
 - [Results from the AI Trust study on Canada.ca](https://blog.canada.ca/2025/02/18/ai-trust-study.html)
+
+## System card documentation
+
+The system card gives full details on how AI Answers works and how it's tested.
+
+[Read the AI Answers system card](/en/system-card)
 
 ## Contact us
 

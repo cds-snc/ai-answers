@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } 
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
 import HowToPage from './pages/HowToPage.js';
+import SystemCardPage from './pages/SystemCardPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
@@ -280,10 +281,18 @@ const AppLayout = () => {
           skipToHref="#main-content"
         >
           <GcdsBreadcrumbs slot="breadcrumb">
-            {/* Show AI Answers breadcrumb on About and 404 pages */}
-            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+            {/* Show AI Answers breadcrumb on About, system card and 404 pages */}
+            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') ||
+              location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr')) || is404) && (
               <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
                 {t('notFound.breadcrumb')}
+              </GcdsBreadcrumbsItem>
+            )}
+            {/* The card is reached from the About page, so About is its
+                parent crumb. */}
+            {(location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr'))) && (
+              <GcdsBreadcrumbsItem href={getPath('about', currentLang)}>
+                {t('aboutPage.title')}
               </GcdsBreadcrumbsItem>
             )}
           </GcdsBreadcrumbs>
@@ -347,10 +356,16 @@ export default function App() {
     }));
     homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true } };
 
+    // TODO: most route paths here (and in config/appRoutePaths.js) are
+    // hardcoded strings that duplicate ROUTE_SLUGS. Switch them all to
+    // getPath(name, lang) in their own PR, with a test that every route
+    // matches its getPath() value, so a slug rename can't silently 404.
     const publicRoutes = [
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
+      { path: getPath('system-card', 'en'), element: <SystemCardPage lang="en" /> },
+      { path: getPath('system-card', 'fr'), element: <SystemCardPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
       { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },
