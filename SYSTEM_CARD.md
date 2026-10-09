@@ -1,4 +1,4 @@
-# AI Answers system card
+# AI Answers System card
 
 <dl>
   <dt>Version</dt>
@@ -8,7 +8,7 @@
   <dt>Organization</dt>
   <dd>Canada.ca Experience Office, Service Canada</dd>
   <dt>Contact</dt>
-  <dd>Michael Karlin at servicecanada.gc.ca</dd>
+  <dd>RIA-AIA at servicecanada.gc.ca</dd>
 </dl>
 
 ## On this page
