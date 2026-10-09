@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.208.0](https://github.com/cds-snc/ai-answers/compare/v1.207.0...v1.208.0) (2026-10-09)
+
+
+### Features
+
+* add in-app system card page built from SYSTEM_CARD.md ([bbc95ad](https://github.com/cds-snc/ai-answers/commit/bbc95ad6f5776dec3356cb70eba4636235a72a64))
+* pick which expert evaluations to delete by chat ID ([7cf9010](https://github.com/cds-snc/ai-answers/commit/7cf90109a4fc16681cce71957c5637df9667c995))
+* pick which expert evaluations to delete by chat ID ([937022b](https://github.com/cds-snc/ai-answers/commit/937022bac11ed504084a788c70d2c3807641fa41))
+* send Sentinel logs through the forwarder hub instead of Cognito ([#1931](https://github.com/cds-snc/ai-answers/issues/1931)) ([d50200e](https://github.com/cds-snc/ai-answers/commit/d50200e19f0ed72afdf2c5fbd6f12f0782238d6c))
+* system card page ([697242a](https://github.com/cds-snc/ai-answers/commit/697242af21f24473537d77db5a2fd618b5f14975))
+
+
+### Bug Fixes
+
+* system card review fixes and email link ([abcd3da](https://github.com/cds-snc/ai-answers/commit/abcd3da46afce34011a9b9c36e88334fa4d7178f))
+* system card version block stacks on mobile; review text fixes ([784a2a9](https://github.com/cds-snc/ai-answers/commit/784a2a908ef0d9e4b19542af51da7ea6b96e0b16))
+
+
+### Documentation
+
+* breadcrumb contact ([092c5c9](https://github.com/cds-snc/ai-answers/commit/092c5c901bc9b938bdf571636f208373072674ce))
+* contact email ([fa515d8](https://github.com/cds-snc/ai-answers/commit/fa515d839d50a7a1dce7806edb22ab9a80bf0f99))
+* describe the system card as a public in-app page ([2724301](https://github.com/cds-snc/ai-answers/commit/2724301c184cc340f974147bb4acbbcc2c5bb419))
+* describe the system card as a public in-app page ([53c77c6](https://github.com/cds-snc/ai-answers/commit/53c77c6c9cf6171cfa2bbf1f79f3b8b764818fb8))
+* edit and cut ([e6bc92c](https://github.com/cds-snc/ai-answers/commit/e6bc92c8e513f9275b0e705f2a0b4ddac6265180))
+* system card breadcrumb comment; FR apostrophe consistency ([bbb8169](https://github.com/cds-snc/ai-answers/commit/bbb8169877a1428f1450f8877b6fba2097ac34e1))
+* system card style guide edits; heading and divider styling ([6e4fdc1](https://github.com/cds-snc/ai-answers/commit/6e4fdc136559c41093d4e8b5c03c9042ba25c3f6))
+
+
+### Miscellaneous Chores
+
+* remove unused Mermaid code from system card page ([7c55a40](https://github.com/cds-snc/ai-answers/commit/7c55a40b66da8db31fd9015d0c4e930d4ef6b7aa))
+* remove unused system card language-line stripper ([edeb826](https://github.com/cds-snc/ai-answers/commit/edeb826b92debc453ee3fda3403cc67c1a88c932))
+
 ## [1.207.0](https://github.com/cds-snc/ai-answers/compare/v1.206.1...v1.207.0) (2026-10-06)
 
 
