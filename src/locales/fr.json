@@ -624,6 +624,12 @@
       "totalInactive": "utilisateur(s) inactif(s) au total",
       "viewUsers": "Voir et gérer les utilisateurs"
     },
+    "footer": {
+      "aboutAiAnswers": "À propos de Réponses IA",
+      "contactCeo": "Contacter le BEC",
+      "termsAndConditions": "Avis",
+      "privacy": "Confidentialité"
+    },
     "howTo": {
       "title": "Guides pratiques",
       "trigger": "Voir tous les guides pratiques pour les partenaires",

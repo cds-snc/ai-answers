@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
@@ -37,6 +37,7 @@ import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
 import { useAuth } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
+import { useHasAnyRole } from './components/RoleBasedUI.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
@@ -53,6 +54,8 @@ import { useTranslations } from './hooks/useTranslations.js';
 import { translatePathSegments, getPath } from './utils/routes.js';
 import { HOW_TOS } from './config/howTos.js';
 import { PUBLIC_HOME_ROUTE_PATHS, isPublicAuthExemptPath } from './config/appRoutePaths.js';
+import { getAdminFooterLinks, getAdminFooterNewTabHrefs } from './utils/admin/adminFooterLinks.js';
+import useFooterNewTabLinks from './hooks/admin/useFooterNewTabLinks.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -229,6 +232,14 @@ const AppLayout = () => {
   const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
+  // Chat review is the chat page plus ?review=1, so it has no admin route to
+  // flag. Anyone can open that URL, so also require an admin/partner role.
+  const isChatReview = PUBLIC_HOME_ROUTE_PATHS.includes(location.pathname)
+    && new URLSearchParams(location.search).get('review') === '1';
+  const adminFooter = matches.some(m => m.handle?.adminFooter) || (isChatReview && isAdminOrPartner);
+  const footerRef = useRef(null);
+  useFooterNewTabLinks(footerRef, getAdminFooterNewTabHrefs(currentLang), adminFooter);
   // isChatReviewMode/skipRouteFocus derivation and the <title>/meta-tag
   // effect used to live inline here - extracted to usePageMetadata.js (see
   // its own header for why no existing library replaces it).
@@ -331,7 +342,15 @@ const AppLayout = () => {
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>
-      <GcdsFooter display={is404 ? 'full' : 'compact'} lang={currentLang} />
+      {/* Remount when switching between admin and public footer so admin links
+          can't linger: GcdsFooter doesn't reset its stored links when subLinks is unset. */}
+      <GcdsFooter
+        key={adminFooter ? 'admin' : 'default'}
+        ref={footerRef}
+        display={is404 ? 'full' : 'compact'}
+        lang={currentLang}
+        subLinks={adminFooter ? getAdminFooterLinks(currentLang, t) : undefined}
+      />
     </>
   );
 };
@@ -467,7 +486,11 @@ export default function App() {
           ...publicRoutes,
           ...protectedRoutes.map(route => ({
             path: route.path,
-            handle: route.handle,
+            // Chat home is only here when REQUIRE_AUTH_FOR_CHAT is on (staging);
+            // it keeps the public footer anyway.
+            handle: PUBLIC_HOME_ROUTE_PATHS.includes(route.path)
+              ? route.handle
+              : { ...route.handle, adminFooter: true },
             element: (
               <RoleProtectedRoute roles={route.roles} lang={route.path === '/fr' || route.path.startsWith('/fr/') ? 'fr' : 'en'}>
                 {route.element}

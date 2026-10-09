@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
@@ -29,6 +29,29 @@ const AdminPage = ({ lang = 'en' }) => {
 
   // Determine if user is partner only
   const isPartner = currentUser?.role === 'partner';
+
+  // Footer "How to guides" link: the section renders after the browser's own
+  // jump-to-#anchor on load, so focus it here (and open the list). Retries
+  // until focus sticks - GcdsContainer keeps its content hidden until it
+  // hydrates, and focus() on a hidden element silently does nothing.
+  const linkedToHowTos = window.location.hash === '#how-to-guides';
+  useEffect(() => {
+    if (!linkedToHowTos) return undefined;
+    let frame;
+    let tries = 0;
+    const focusTarget = () => {
+      const target = document.getElementById('how-to-guides');
+      if (target) {
+        target.setAttribute('tabindex', '-1');
+        target.classList.add('focus-target');
+        target.focus();
+        if (document.activeElement === target) return;
+      }
+      if (tries++ < 120) frame = requestAnimationFrame(focusTarget);
+    };
+    focusTarget();
+    return () => cancelAnimationFrame(frame);
+  }, [linkedToHowTos, currentUser]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
@@ -193,8 +216,8 @@ const AdminPage = ({ lang = 'en' }) => {
       {/* How-to guides, rendered in-app from public/content/admin/ */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
-          <h2 className="mt-400 mb-200">{t('admin.howTo.title')}</h2>
-          <details>
+          <h2 id="how-to-guides" className="mt-400 mb-200">{t('admin.howTo.title')}</h2>
+          <details open={linkedToHowTos}>
             <summary>{t('admin.howTo.trigger')}</summary>
             <ul className="list-disc canada-ca-list-spcd-1 mt-200">
               {HOW_TOS.map((howTo) => (
