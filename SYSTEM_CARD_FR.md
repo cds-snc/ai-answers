@@ -8,7 +8,7 @@
   <dt>Organisation</dt>
   <dd>Bureau de l’expérience Canada.ca de Service Canada</dd>
   <dt>Contact</dt>
-  <dd>Michael Karlin à servicecanada.gc.ca</dd>
+  <dd><a href="mailto:RIA-AIA@servicecanada.gc.ca">RIA-AIA@servicecanada.gc.ca</a></dd>
 </dl>
 
 ## Sur cette page
@@ -280,7 +280,7 @@ Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sél
 
 ## Contact et support
 - **Problèmes techniques et demandes de fonctionnalités** : Dépôt GitHub
-- **Préoccupations de sécurité** : Contact direct par le courriel du produit RIA-AIA at servicecanada.gc.ca
+- **Préoccupations de sécurité** : Contact direct par le courriel du produit [RIA-AIA@servicecanada.gc.ca](mailto:RIA-AIA@servicecanada.gc.ca)
 - **Commentaires généraux** : Mécanismes de commentaires multiples pour différents types d'utilisateurs
 
 ---

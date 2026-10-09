@@ -283,7 +283,7 @@ const AppLayout = () => {
           <GcdsBreadcrumbs slot="breadcrumb">
             {/* Show AI Answers breadcrumb on About, system card and 404 pages */}
             {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') ||
-              location.pathname.includes('/en/system-card') || location.pathname.includes('/fr/fiche-systeme') || is404) && (
+              location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr')) || is404) && (
               <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
                 {t('notFound.breadcrumb')}
               </GcdsBreadcrumbsItem>
@@ -349,12 +349,16 @@ export default function App() {
     }));
     homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true } };
 
+    // TODO: most route paths here (and in config/appRoutePaths.js) are
+    // hardcoded strings that duplicate ROUTE_SLUGS. Switch them all to
+    // getPath(name, lang) in their own PR, with a test that every route
+    // matches its getPath() value, so a slug rename can't silently 404.
     const publicRoutes = [
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
-      { path: '/en/system-card', element: <SystemCardPage lang="en" /> },
-      { path: '/fr/fiche-systeme', element: <SystemCardPage lang="fr" /> },
+      { path: getPath('system-card', 'en'), element: <SystemCardPage lang="en" /> },
+      { path: getPath('system-card', 'fr'), element: <SystemCardPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
       { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },

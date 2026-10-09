@@ -8,7 +8,7 @@
   <dt>Organization</dt>
   <dd>Canada.ca Experience Office, Service Canada</dd>
   <dt>Contact</dt>
-  <dd>RIA-AIA at servicecanada.gc.ca</dd>
+  <dd><a href="mailto:RIA-AIA@servicecanada.gc.ca">RIA-AIA@servicecanada.gc.ca</a></dd>
 </dl>
 
 ## On this page
@@ -280,7 +280,7 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 
 ## Contact and support
 - **Technical issues and feature requests**: GitHub repository
-- **Safety concerns**: Direct contact through product email address RIA-AIA at servicecanada.gc.ca
+- **Safety concerns**: Direct contact through product email address [RIA-AIA@servicecanada.gc.ca](mailto:RIA-AIA@servicecanada.gc.ca)
 - **General feedback**: Multiple feedback mechanisms for different user types
 
 ---

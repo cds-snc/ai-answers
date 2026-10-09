@@ -70,12 +70,24 @@ const SystemCardPage = ({ lang = 'en' }) => {
   }, [frontmatter, loading]);
 
   // The content arrives after the browser's own jump-to-#section on load, so
-  // a link straight to a section (e.g. from a how-to guide) has to be
-  // scrolled to once the headings exist.
+  // a link straight to a section (e.g. from a how-to guide) is handled once
+  // the headings exist. Focus moves there, not just the scroll, so keyboard
+  // and screen-reader users start at the section they came for (focus()
+  // also scrolls).
   useEffect(() => {
     if (loading || !content || !window.location.hash) return;
-    const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
-    if (target) target.scrollIntoView();
+    let id;
+    try {
+      id = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      // Malformed link (e.g. #50%off) - stay at the top rather than crash.
+      return;
+    }
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.setAttribute('tabindex', '-1');
+    target.classList.add('focus-target');
+    target.focus();
   }, [loading, content]);
 
   if (loading) {

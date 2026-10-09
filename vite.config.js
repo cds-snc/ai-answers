@@ -37,7 +37,6 @@ const jsAsJsx = {
 // SystemCardPage's content, so the card keeps a single source of truth and
 // the page never depends on GitHub. See src/config/systemCard.js.
 const systemCard = () => {
-  // Re-read on every call so `npm start` picks up edits without a restart.
   // A missing linked file is only warned about - the page shows it as
   // unavailable - so a card typo never stops the app from building.
   // systemCardMarkdown.test.js is what fails on it.
@@ -77,9 +76,24 @@ const systemCard = () => {
   return {
     name: 'system-card',
     configureServer(server) {
+      // Built once, then kept until a card file or anything under docs/ (where
+      // its images/PDFs live) changes, so `npm start` picks up edits without a
+      // restart but doesn't redo every file on every request.
+      let files = null;
+      const sources = Object.values(SYSTEM_CARD_FILES).map(({ source }) => path.resolve(source));
+      const docsDir = path.resolve('docs') + path.sep;
+      const invalidate = (changed) => {
+        if (sources.includes(changed) || changed.startsWith(docsDir)) files = null;
+      };
+      server.watcher.add(sources);
+      server.watcher.on('change', invalidate);
+      server.watcher.on('add', invalidate);
+      server.watcher.on('unlink', invalidate);
+
       server.middlewares.use(`${SYSTEM_CARD_CONTENT_DIR}/`, (req, res, next) => {
         const name = decodeURIComponent(req.url.split('?')[0].replace(/^\//, ''));
-        const contents = buildFiles((msg) => server.config.logger.warn(msg)).get(name);
+        files ??= buildFiles((msg) => server.config.logger.warn(msg));
+        const contents = files.get(name);
         if (contents === undefined) return next();
         res.setHeader('Content-Type', CONTENT_TYPES[path.extname(name).toLowerCase()]);
         res.end(contents);

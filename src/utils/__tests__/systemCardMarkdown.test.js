@@ -71,6 +71,14 @@ describe('buildSystemCardMarkdown', () => {
     expect(missing.missingAssets).toEqual(['docs/images/system_diagram_v2_EN.jpg', 'docs/pdf/short-ai-answers-en.pdf']);
   });
 
+  it('treats a ../ image or PDF as unavailable, since serving it would fail the build', () => {
+    const outside = build('# T\n\n[a PDF](../secret.pdf) ![pic](docs/../../x.png)', { assetExists: () => true });
+    const body = parseFrontmatter(outside.markdown).contentBody;
+    expect(body).toContain('a PDF *(PDF unavailable)*');
+    expect(body).toContain('*Image unavailable (pic)*');
+    expect(outside.assets).toEqual([]);
+  });
+
   // The real cards: the build only warns about a missing linked file (the
   // page shows it as unavailable), so this is what catches it in the PR.
   it.each(Object.entries(SYSTEM_CARD_FILES))('the %s card links only files that exist', (lang, { source }) => {

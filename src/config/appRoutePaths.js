@@ -1,12 +1,13 @@
 import { normalizePathname } from '../utils/normalizePathname.js';
+import { getPath } from '../utils/routes.js';
 
 export const PUBLIC_HOME_ROUTE_PATHS = ['/', '/en', '/fr'];
 
 export const PUBLIC_AUTH_ALWAYS_EXEMPT_PATHS = [
   '/en/about',
   '/fr/a-propos',
-  '/en/system-card',
-  '/fr/fiche-systeme',
+  getPath('system-card', 'en'),
+  getPath('system-card', 'fr'),
   '/en/signin',
   '/fr/se-connecter',
   '/en/reset-request',

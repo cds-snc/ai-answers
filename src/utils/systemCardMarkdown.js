@@ -47,7 +47,9 @@ export function buildSystemCardMarkdown(source, { lang, description, assetExists
         return `${bang}[${label}](${REPO_BLOB_URL}/${repoPath}${hash})`;
       }
 
-      if (!assetExists(repoPath)) {
+      // A ../ path would be served from outside the content folder, which
+      // fails the build - treat it like a missing file instead.
+      if (repoPath.split('/').includes('..') || !assetExists(repoPath)) {
         missingAssets.add(repoPath);
         if (bang) return `*${text.imageUnavailable} (${label})*`;
         const unavailable = /\.pdf$/i.test(repoPath) ? text.pdfUnavailable : text.imageUnavailable;

@@ -64,6 +64,7 @@ describe('SystemCardPage', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    window.history.replaceState(null, '', '/');
   });
 
   it('fetches the generated file for the page language', async () => {
@@ -119,7 +120,28 @@ describe('SystemCardPage', () => {
     global.fetch = vi.fn(() => Promise.resolve({ ok: false, status: 404 }));
     render(<SystemCardPage lang="en" />);
 
-    expect(await screen.findByText('systemCard.loadError')).not.toBeNull();
+    const notice = await screen.findByText('systemCard.loadError');
     expect(screen.getByRole('heading', { level: 1, name: 'systemCard.title' })).not.toBeNull();
+    const box = notice.closest('.status-message--error-box');
+    expect(box.getAttribute('tabindex')).toBe('-1');
+    await waitFor(() => expect(document.activeElement).toBe(box));
+  });
+
+  it('moves focus to the section a link points at, once the content loads', async () => {
+    window.history.replaceState(null, '', '/fr/fiche-systeme#r%C3%A9sum%C3%A9-ex%C3%A9cutif');
+    render(<SystemCardPage lang="fr" />);
+
+    const heading = await screen.findByRole('heading', { level: 2, name: 'Résumé exécutif' });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(heading.getAttribute('tabindex')).toBe('-1');
+    expect(heading.classList.contains('focus-target')).toBe(true);
+  });
+
+  it('stays at the top instead of crashing on a malformed section link', async () => {
+    window.history.replaceState(null, '', '/en/system-card#50%off');
+    render(<SystemCardPage lang="en" />);
+
+    expect(await screen.findByRole('heading', { level: 2, name: 'Résumé exécutif' })).not.toBeNull();
+    expect(document.activeElement).toBe(document.body);
   });
 });
