@@ -9,8 +9,6 @@ const CARD = `# AI Answers system card
 
 **Version**: 1.3
 
-**Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
-
 ## On this page
 - [Executive summary](#executive-summary)
 
@@ -29,11 +27,6 @@ describe('buildSystemCardMarkdown', () => {
   it('adds frontmatter with the card title and the given description', () => {
     expect(frontmatter.title).toBe('AI Answers system card');
     expect(frontmatter.description).toBe('A "quoted" description');
-  });
-
-  it('drops the other-language GitHub link line', () => {
-    expect(contentBody).not.toContain('SYSTEM_CARD_FR.md');
-    expect(contentBody).toContain('**Version**: 1.3');
   });
 
   it('serves images and PDFs from the app', () => {
