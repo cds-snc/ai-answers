@@ -52,7 +52,10 @@ async function mapWithConcurrency(items, concurrency, mapper) {
   return results;
 }
 
-function isAutoEvalFeedback(feedback) {
+// The one "is this an AI evaluation?" check - use it everywhere instead of
+// comparing `type` yourself, so every caller agrees on what counts (case,
+// spaces). See AGENTS.md "Never let AI evaluations feed answer generation".
+export function isAutoEvalFeedback(feedback) {
   if (!feedback || typeof feedback !== 'object') return false;
   return String(feedback.type || '').trim().toLowerCase() === 'ai';
 }
