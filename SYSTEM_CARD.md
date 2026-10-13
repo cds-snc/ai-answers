@@ -77,7 +77,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 1. **Frontend**: React-based chat interface for the public
 2. **Admin interface**: React-based, with 2FA and role-based access (admin and partner) for evaluation, metrics and system settings
 3. **Backend**: Node.js with LangGraph state machine orchestration
-4. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models (e.g. Cohere, Anthropic) through Amazon Bedrock if deployed/procured
+4. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models if deployed/procured
 5. **Database**: AWS DocumentDB
 6. **Sessions**: AWS ElastiCache (Redis) for user sessions
 7. **File storage**: AWS S3, private and encrypted, for server logs and cached search results
@@ -90,7 +90,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 - **Model family routing**: The system automatically routes each pipeline step or service to the appropriate model — supporting steps (translation, query rewrite) use mini for cost and speed, while answer generation uses the full model GPT-5.1. This routing is handled internally by AgentFactory and is not configurable per step by admins.
 - **Temperature**: 0 (deterministic responses), reasoning low.
 - **Context engineering**: Separate agents in LangGraph perform pipeline steps, context agent selects dept prompt and context files to pull in as needed.
-- **Model independence**: System designed to work with different AI providers, tested with GPT & in prototype with Anthropic API, plans to deploy more models, including Cohere, via AWS Bedrock.
+- **Model independence**: System designed to work with different AI providers, tested with GPT & in prototype with Anthropic API.
 
 ### Agentic capabilities
 - **Tool usage**: During answer generation, the AI can autonomously choose to use specialized tools:

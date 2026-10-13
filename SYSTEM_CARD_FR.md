@@ -77,7 +77,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 1. **Interface utilisateur** : Interface de clavardage basée sur React pour le public
 2. **Interface d'administration** : Basée sur React, avec authentification à deux facteurs et accès basé sur les rôles (administrateur et partenaire) pour l'évaluation, les métriques et les paramètres du système
 3. **Serveur** : Node.js avec orchestration de machine à états LangGraph
-4. **Services IA** : Modèles Azure OpenAI GPT, avec des points d'ancrage pour utiliser d'autres modèles d'IA (p. ex. Cohere, Anthropic) via Amazon Bedrock s'ils sont déployés/acquis
+4. **Services IA** : Modèles Azure OpenAI GPT, avec des points d'ancrage pour utiliser d'autres modèles d'IA s'ils sont déployés/acquis
 5. **Base de données** : AWS DocumentDB
 6. **Sessions** : AWS ElastiCache (Redis) pour les sessions des utilisateurs
 7. **Stockage de fichiers** : AWS S3, privé et chiffré, pour les journaux du serveur et les résultats de recherche mis en cache
@@ -90,7 +90,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 - **Routage par famille de modèles** : Le système achemine automatiquement chaque étape du pipeline ou service vers le modèle approprié — les étapes de support (traduction, réécriture de requête) utilisent un mini modèle pour le coût et la rapidité, tandis que la génération de réponse utilise le modèle complet GPT-5.1. Ce routage est géré en interne par AgentFactory et n'est pas configurable par étape par les administrateurs.
 - **Température** : 0 (réponses déterministes), raisonnement faible.
 - **Ingénierie de contexte** : Des agents séparés dans LangGraph effectuent les étapes du pipeline, l'agent de contexte sélectionne l'invite de département et les fichiers de contexte à tirer au besoin.
-- **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs d'IA, testé avec GPT et, en prototype, avec l'API d'Anthropic, des plans prévoient le déploiement d'autres modèles, dont Cohere, via AWS Bedrock.
+- **Indépendance de modèle** : Système conçu pour fonctionner avec différents fournisseurs d'IA, testé avec GPT et, en prototype, avec l'API d'Anthropic.
 
 ### Capacités agentiques
 - **Utilisation d'outils** : Pendant la génération de réponses, l'IA peut choisir de manière autonome d'utiliser des outils spécialisés :
