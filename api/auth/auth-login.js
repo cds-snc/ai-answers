@@ -86,7 +86,8 @@ const loginHandler = (req, res, next) => {
           delete req.session.pending2FA;
           return res.status(500).json({
             success: false,
-            message: 'Error during login'
+            message: 'Error during login',
+            reason: sendResult.reason || 'twofa_send_failed'
           });
         }
 
@@ -106,7 +107,8 @@ const loginHandler = (req, res, next) => {
         delete req.session.pending2FA;
         return res.status(500).json({
           success: false,
-          message: 'Error during login'
+          message: 'Error during login',
+          reason: error?.code || 'twofa_send_error'
         });
       }
     }

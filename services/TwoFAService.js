@@ -17,9 +17,17 @@ export const MAX_ATTEMPTS = 5;
 export const LOCKOUT_MS = 30 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 60 * 1000;
 
+// Errors carry a fixed `code` so the login response can say which step failed
+// without sending error text to the browser.
+function codedError(code, message) {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+}
+
 function hashCode(userId, code) {
   const key = process.env.TWOFA_SECRET || process.env.SESSION_SECRET;
-  if (!key) throw new Error('TWOFA_SECRET or SESSION_SECRET must be set to use 2FA');
+  if (!key) throw codedError('twofa_no_secret', 'TWOFA_SECRET or SESSION_SECRET must be set to use 2FA');
   return crypto.createHmac('sha256', key).update(`${userId}:${code}`).digest('hex');
 }
 
@@ -69,7 +77,7 @@ async function sendChallenge({ userOrId, resend = false } = {}) {
   const templateId = getTemplateId();
   if (!templateId) {
     ServerLoggingService.error('GC 2FA template id missing', 'twofa-service');
-    throw new Error('GC_NOTIFY_2FA_TEMPLATE_ID missing');
+    throw codedError('twofa_no_template', 'GC_NOTIFY_2FA_TEMPLATE_ID missing');
   }
 
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
