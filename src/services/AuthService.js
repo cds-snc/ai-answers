@@ -183,12 +183,12 @@ class AuthService {
     return data;
   }
 
-  static async verify2FA(email, code) {
+  static async verify2FA(code) {
     const response = await fetch(getApiUrl('auth-verify-2fa'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, code }),
+      body: JSON.stringify({ code }),
     });
 
     if (!response.ok) {
@@ -240,16 +240,14 @@ class AuthService {
     return await resp.json();
   }
 
-  // Send a 2FA code to the user's email using the canonical endpoint only.
-  static async send2FA(email) {
-    if (!email) throw new Error('Email required');
-
+  // Send the 2FA code again. The server knows who is signing in from the session.
+  static async send2FA() {
     const url = getApiUrl('auth-send-2fa');
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({}),
     });
 
     if (!resp.ok) {

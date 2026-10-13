@@ -1,147 +1,149 @@
+import crypto from 'crypto';
 import GCNotifyService from './GCNotifyService.js';
 import { User } from '../models/user.js';
 import ServerLoggingService from './ServerLoggingService.js';
-import speakeasy from 'speakeasy';
 import { SettingsService } from './SettingsService.js';
+import { requireObjectIdString } from '../api/util/db-query.js';
 
-// When using TOTP we do not store transient codes. We store a per-user secret.
+// Email one-time codes for the second sign-in step.
+//
+// Each challenge is a fresh random 6-digit code, stored only as an HMAC with an
+// expiry, valid for one successful use. Failed guesses are counted on the user
+// document (not the session, which an attacker can throw away) and lock the
+// account's 2FA once MAX_ATTEMPTS is reached. See docs/plans/auth-hardening.md.
 
-function generateSecret() {
-  const secret = speakeasy.generateSecret({ length: 20 });
-  return secret.base32; // Return base32 encoded secret for storage
+export const CODE_TTL_MS = 10 * 60 * 1000;
+export const MAX_ATTEMPTS = 5;
+export const LOCKOUT_MS = 30 * 60 * 1000;
+export const RESEND_COOLDOWN_MS = 60 * 1000;
+
+function hashCode(userId, code) {
+  const key = process.env.TWOFA_SECRET || process.env.SESSION_SECRET;
+  if (!key) throw new Error('TWOFA_SECRET or SESSION_SECRET must be set to use 2FA');
+  return crypto.createHmac('sha256', key).update(`${userId}:${code}`).digest('hex');
 }
 
-async function getTwoFATemplateId(explicitTemplateId) {
-  if (explicitTemplateId) return explicitTemplateId;
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
+function isEnabled() {
+  return SettingsService.toBoolean(SettingsService.get('twoFA.enabled'), false);
+}
+
+function getTemplateId() {
   const configured = SettingsService.get('twoFA.templateId');
   if (configured && String(configured).trim()) return String(configured).trim();
   return process.env.GC_NOTIFY_2FA_TEMPLATE_ID || null;
 }
 
-async function ensureTwoFAEnabled() {
-  const enabledSetting = SettingsService.get('twoFA.enabled');
-  return SettingsService.toBoolean(enabledSetting, false);
+async function loadUser(userOrId) {
+  if (userOrId && typeof userOrId === 'object' && userOrId._id) {
+    return User.findById(userOrId._id);
+  }
+  return User.findById(requireObjectIdString(userOrId, 'user ID'));
 }
 
-async function send2FACode({ userOrId, templateId } = {}) {
-  let user = null;
-  if (typeof userOrId === 'string' || userOrId instanceof String) {
-    user = await User.findById(userOrId);
-  } else if (userOrId && userOrId._id) {
-    user = userOrId;
-  }
+// Send a new code. `resend: true` (the "send again" button) enforces the
+// cooldown; the first send right after a correct password does not.
+async function sendChallenge({ userOrId, resend = false } = {}) {
+  const user = await loadUser(userOrId);
+  if (!user) return { success: false, reason: 'not_found' };
+  if (!user.email) throw new Error('User has no email');
 
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  if (!user.email) {
-    throw new Error('User has no email');
-  }
-
-  const twoFAEnabled = await ensureTwoFAEnabled();
-  if (!twoFAEnabled) {
+  if (!isEnabled()) {
     ServerLoggingService.info('2FA disabled; skipping code send', 'twofa-service', { user: user._id });
     return { success: false, reason: 'twofa_disabled' };
   }
 
-  const resolvedTemplateId = await getTwoFATemplateId(templateId);
+  const now = Date.now();
+  if (user.twoFALockedUntil && user.twoFALockedUntil.getTime() > now) {
+    return { success: false, reason: 'locked' };
+  }
+  if (resend && user.twoFALastSentAt && now - user.twoFALastSentAt.getTime() < RESEND_COOLDOWN_MS) {
+    return { success: false, reason: 'cooldown' };
+  }
 
-  if (!resolvedTemplateId) {
+  const templateId = getTemplateId();
+  if (!templateId) {
     ServerLoggingService.error('GC 2FA template id missing', 'twofa-service');
     throw new Error('GC_NOTIFY_2FA_TEMPLATE_ID missing');
   }
 
-  // Ensure user has a twoFASecret
-  if (!user.twoFASecret) {
-    user.twoFASecret = generateSecret();
-    await user.save();
-  }
-
-  const code = speakeasy.totp({
-    secret: user.twoFASecret,
-    encoding: 'base32'
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  await User.updateOne({ _id: user._id }, {
+    $set: {
+      twoFACode: hashCode(user._id, code),
+      twoFAExpires: new Date(now + CODE_TTL_MS),
+      twoFALastSentAt: new Date(now),
+    },
   });
 
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      const masked = user.twoFASecret ? `${String(user.twoFASecret).slice(0, 4)}...${String(user.twoFASecret).slice(-4)}` : '(none)';
-      ServerLoggingService.debug(`2FA send timestamp=${new Date().toISOString()} email=${user.email} maskedSecret=${masked} generated=${code}`, 'twofa-service');
-    } catch (e) {
-      // ignore logging errors
-    }
-  }
-
-  // Personalisation expected by the 2FA template:
-  // Hi ((name)),
-  //
-  // Here is your verification code to log in to -application name-:
-  //
-  // ((verify_code)), please update
-  const personalisation = {
-    // Template expects a name field; leave blank to match notify template expectations
-    name: '',
-    verify_code: code,
-  };
-
-  // Send email via GCNotifyService with explicit templateId
+  // Personalisation expected by the 2FA template: name (blank) and verify_code.
   const res = await GCNotifyService.sendEmail({
     email: user.email,
-    personalisation,
-    templateId: resolvedTemplateId,
+    personalisation: { name: '', verify_code: code },
+    templateId,
   });
-
-  return { success: res.success, codeSent: code, notifyResponse: res };
+  return { success: !!res?.success };
 }
 
-async function verify2FACode({ userOrId, code } = {}) {
-  let user = null;
-  if (typeof userOrId === 'string' || userOrId instanceof String) {
-    user = await User.findById(userOrId);
-  } else if (userOrId && userOrId._id) {
-    user = userOrId;
+// Check a code. Never says which part was wrong beyond locked/invalid.
+async function verifyChallenge({ userOrId, code } = {}) {
+  const user = await loadUser(userOrId);
+  if (!user) return { success: false, reason: 'invalid' };
+  if (!isEnabled()) return { success: false, reason: 'twofa_disabled' };
+
+  const now = Date.now();
+  if (user.twoFALockedUntil) {
+    if (user.twoFALockedUntil.getTime() > now) return { success: false, reason: 'locked' };
+    // Lockout over: start fresh.
+    await User.updateOne({ _id: user._id }, { $set: { twoFALockedUntil: null, twoFAAttempts: 0 } });
   }
 
-  if (!user) return { success: false, reason: 'not_found' };
-
-  if (!user.twoFASecret) return { success: false, reason: 'no_secret' };
-
-  const twoFAEnabled = await ensureTwoFAEnabled();
-  if (!twoFAEnabled) {
-    ServerLoggingService.info('2FA disabled; skipping verification', 'twofa-service', { user: user._id });
-    return { success: false, reason: 'twofa_disabled' };
+  if (!user.twoFACode || !user.twoFAExpires || user.twoFAExpires.getTime() <= now) {
+    return { success: false, reason: 'invalid' };
   }
 
-  // Sanitize inputs: trim whitespace/newlines which can accidentally appear
-  const token = String(code).trim();
-  const secret = String(user.twoFASecret).trim();
+  // Count the attempt first, atomically, so parallel guesses can't beat the cap.
+  const counted = await User.findOneAndUpdate(
+    { _id: user._id },
+    { $inc: { twoFAAttempts: 1 } },
+    { new: true }
+  );
+  if (!counted || !counted.twoFACode) return { success: false, reason: 'invalid' };
+  if (counted.twoFAAttempts > MAX_ATTEMPTS) return { success: false, reason: 'locked' };
 
-  // Optional debug logging in non-production to help trace issues (do not log full secret in prod)
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      const masked = secret ? `${secret.slice(0, 4)}...${secret.slice(-4)}` : '(none)';
-      const expected = speakeasy.totp({ secret, encoding: 'base32' });
-      ServerLoggingService.debug(`2FA verify timestamp=${new Date().toISOString()} token=${token} expected=${expected} secret=${masked}`, 'twofa-service');
-    } catch (e) {
-      // ignore logging errors
+  const token = String(code ?? '').trim();
+  const matches = /^\d{6}$/.test(token) && safeEqual(counted.twoFACode, hashCode(user._id, token));
+
+  if (!matches) {
+    if (counted.twoFAAttempts >= MAX_ATTEMPTS) {
+      await User.updateOne({ _id: user._id }, {
+        $set: {
+          twoFACode: null,
+          twoFAExpires: null,
+          twoFAAttempts: 0,
+          twoFALockedUntil: new Date(now + LOCKOUT_MS),
+        },
+      });
+      ServerLoggingService.warn('2FA locked after repeated failures', 'twofa-service', { user: user._id });
+      return { success: false, reason: 'locked' };
     }
+    return { success: false, reason: 'invalid' };
   }
 
-  const isValid = speakeasy.totp.verify({
-    secret: secret,
-    encoding: 'base32',
-    token: token,
-    window: 20 // Allow +/- 20 time steps (~10 minutes) for email delays
-  });
-
-  if (!isValid) return { success: false, reason: 'mismatch' };
-
-  return { success: true };
+  // Single use: only the request that clears the stored hash wins.
+  const consumed = await User.findOneAndUpdate(
+    { _id: user._id, twoFACode: counted.twoFACode },
+    { $set: { twoFACode: null, twoFAExpires: null, twoFAAttempts: 0 } },
+    { new: true }
+  );
+  return consumed ? { success: true } : { success: false, reason: 'invalid' };
 }
 
-const TwoFAService = {
-  send2FACode,
-  verify2FACode,
-};
+const TwoFAService = { sendChallenge, verifyChallenge };
 
 export default TwoFAService;

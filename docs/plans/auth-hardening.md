@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in and two-factor authentication
 
-Status: proposed, not started. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status: Phase 1 implemented on branch `auth-hardening` (not yet merged); Phases 2 and 3 not started. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP

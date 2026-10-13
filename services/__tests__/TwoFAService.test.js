@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+process.env.TWOFA_SECRET = process.env.TWOFA_SECRET || 'test-twofa-secret';
 
 vi.mock('../SettingsService.js', () => ({
   SettingsService: {
@@ -6,122 +8,196 @@ vi.mock('../SettingsService.js', () => ({
     toBoolean: vi.fn((value, defaultValue = true) => {
       if (value === undefined || value === null || value === '') return defaultValue;
       if (typeof value === 'boolean') return value;
-      if (typeof value === 'number') return value !== 0;
-      const normalized = String(value).trim().toLowerCase();
-      if (!normalized) return defaultValue;
-      if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
-      if (['false', '0', 'no', 'off'].includes(normalized)) return false;
-      return defaultValue;
+      return ['true', '1', 'yes', 'on'].includes(String(value).trim().toLowerCase());
     }),
   },
 }));
 
-// Module under test
-import TwoFAService from '../TwoFAService.js';
+// Real module needs GC_NOTIFY_API_KEY at import time.
+vi.mock('../GCNotifyService.js', () => ({ default: { sendEmail: vi.fn() } }));
+
+vi.mock('../ServerLoggingService.js', () => ({
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+}));
+
+// Minimal in-memory stand-in for the User model: just the calls TwoFAService makes.
+const docs = new Map();
+vi.mock('../../models/user.js', () => {
+  const clone = (d) => (d ? { ...d } : null);
+  const matches = (d, filter) => Object.entries(filter).every(([k, v]) => d[k] === v);
+  const apply = (d, update) => {
+    for (const [k, v] of Object.entries(update.$inc || {})) d[k] = (d[k] || 0) + v;
+    for (const [k, v] of Object.entries(update.$set || {})) d[k] = v;
+  };
+  return {
+    User: {
+      findById: vi.fn(async (id) => clone(docs.get(String(id)))),
+      findOneAndUpdate: vi.fn(async (filter, update) => {
+        const d = docs.get(String(filter._id));
+        if (!d || !matches(d, filter)) return null;
+        apply(d, update);
+        return clone(d);
+      }),
+      updateOne: vi.fn(async (filter, update) => {
+        const d = docs.get(String(filter._id));
+        if (d) apply(d, update);
+      }),
+    },
+  };
+});
+
+import TwoFAService, { MAX_ATTEMPTS, CODE_TTL_MS, LOCKOUT_MS, RESEND_COOLDOWN_MS } from '../TwoFAService.js';
 import GCNotifyService from '../GCNotifyService.js';
-import { User } from '../../models/user.js';
-import speakeasy from 'speakeasy';
 import { SettingsService } from '../SettingsService.js';
 
-describe('TwoFAService', () => {
-  let findByIdSpy;
-  let saveSpy;
+const ID = '507f1f77bcf86cd799439011';
 
+function freshUser(extra = {}) {
+  docs.set(ID, {
+    _id: ID,
+    email: 'admin@canada.ca',
+    twoFACode: null,
+    twoFAExpires: null,
+    twoFAAttempts: 0,
+    twoFALockedUntil: null,
+    twoFALastSentAt: null,
+    ...extra,
+  });
+}
+
+// Send a code and return the 6 digits that went into the email.
+async function sendAndCapture(opts = {}) {
+  const send = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: true });
+  const res = await TwoFAService.sendChallenge({ userOrId: ID, ...opts });
+  const code = send.mock.calls[0]?.[0]?.personalisation?.verify_code;
+  send.mockRestore();
+  return { res, code };
+}
+
+describe('TwoFAService', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    SettingsService.get.mockReset();
+    docs.clear();
+    freshUser();
     SettingsService.get.mockImplementation((key) => {
       if (key === 'twoFA.enabled') return 'true';
-      if (key === 'twoFA.templateId') return 'tpl-from-settings';
+      if (key === 'twoFA.templateId') return 'tpl-2fa';
       return null;
     });
   });
 
-  it('sends a 2FA email and persists code', async () => {
-    const fakeUser = {
-      _id: 'u1',
-      email: 'test@x.com',
-      twoFASecret: null,
-      save: async function () {
-        // pretend saved
-        return this;
-      },
-    };
+  afterEach(() => vi.useRealTimers());
 
-    findByIdSpy = vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-
-    const fakeNotify = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: true });
-    const secret = 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLD';
-
-    // Mock speakeasy.generateSecret to return a secret with base32 property
-    vi.spyOn(speakeasy, 'generateSecret').mockReturnValue({ base32: secret });
-    // Mock speakeasy.totp to return the code
-    vi.spyOn(speakeasy, 'totp').mockReturnValue('999999');
-
-    const result = await TwoFAService.send2FACode({ userOrId: 'u1', templateId: 'tpl-2fa', fetchImpl: async () => ({ ok: true, status: 201, json: async () => ({ id: 'n1' }) }) });
-
-    expect(result.success).toBe(true);
-    expect(result.codeSent).toBe('999999');
-    expect(fakeUser.twoFASecret).toBe(secret);
-    expect(fakeNotify).toHaveBeenCalledWith(expect.objectContaining({
-      email: fakeUser.email,
-      templateId: 'tpl-2fa',
-      personalisation: expect.objectContaining({ name: '', verify_code: '999999' }),
-    }));
+  it('emails a 6-digit code and stores only a hash of it', async () => {
+    const { res, code } = await sendAndCapture();
+    expect(res.success).toBe(true);
+    expect(code).toMatch(/^\d{6}$/);
+    expect(docs.get(ID).twoFACode).toMatch(/^[0-9a-f]{64}$/);
+    expect(docs.get(ID).twoFACode).not.toContain(code);
+    expect(docs.get(ID).twoFAExpires.getTime()).toBeGreaterThan(Date.now());
   });
 
-  it('verifies a valid code and clears it', async () => {
-    const fakeUser = {
-      _id: 'u2',
-      email: 'verify@x.com',
-      twoFASecret: 'SECRET123',
-      save: async function () { return this; }
-    };
+  it('does not return the code to the caller', async () => {
+    const { res } = await sendAndCapture();
+    expect(JSON.stringify(res)).not.toMatch(/\d{6}/);
+  });
 
-    vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-    // Mock speakeasy.totp.verify to return true
-    vi.spyOn(speakeasy.totp, 'verify').mockReturnValue(true);
+  it('accepts the right code once, then rejects it', async () => {
+    const { code } = await sendAndCapture();
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code })).success).toBe(true);
+    const replay = await TwoFAService.verifyChallenge({ userOrId: ID, code });
+    expect(replay.success).toBe(false);
+  });
 
-    const res = await TwoFAService.verify2FACode({ userOrId: 'u2', code: '123456' });
+  it('rejects a wrong code and malformed input', async () => {
+    const { code } = await sendAndCapture();
+    const wrong = code === '000000' ? '111111' : '000000';
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong })).success).toBe(false);
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: '12' })).success).toBe(false);
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: undefined })).success).toBe(false);
+  });
+
+  it('rejects an expired code', async () => {
+    vi.useFakeTimers();
+    const { code } = await sendAndCapture();
+    vi.advanceTimersByTime(CODE_TTL_MS + 1000);
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code })).success).toBe(false);
+  });
+
+  it('locks after MAX_ATTEMPTS wrong codes, and then even the right code fails', async () => {
+    const { code } = await sendAndCapture();
+    const wrong = code === '000000' ? '111111' : '000000';
+    let last;
+    for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
+      last = await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
+    }
+    expect(last.reason).toBe('locked');
+    expect(docs.get(ID).twoFACode).toBeNull();
+    const right = await TwoFAService.verifyChallenge({ userOrId: ID, code });
+    expect(right.success).toBe(false);
+    expect(right.reason).toBe('locked');
+  });
+
+  it('does not give back guesses when a new code is requested', async () => {
+    const first = await sendAndCapture();
+    const wrong = first.code === '000000' ? '111111' : '000000';
+    for (let i = 0; i < MAX_ATTEMPTS - 1; i += 1) {
+      await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
+    }
+    expect(docs.get(ID).twoFAAttempts).toBe(MAX_ATTEMPTS - 1);
+
+    await sendAndCapture(); // fresh code, counter must survive
+    expect(docs.get(ID).twoFAAttempts).toBe(MAX_ATTEMPTS - 1);
+    const res = await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
+    expect(res.reason).toBe('locked');
+  });
+
+  it('refuses to send while locked', async () => {
+    freshUser({ twoFALockedUntil: new Date(Date.now() + LOCKOUT_MS) });
+    const send = vi.spyOn(GCNotifyService, 'sendEmail');
+    const res = await TwoFAService.sendChallenge({ userOrId: ID });
+    expect(res.reason).toBe('locked');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('lets the user try again once the lockout has ended', async () => {
+    vi.useFakeTimers();
+    freshUser({ twoFALockedUntil: new Date(Date.now() + LOCKOUT_MS), twoFAAttempts: 0 });
+    vi.advanceTimersByTime(LOCKOUT_MS + 1000);
+    const { res, code } = await sendAndCapture();
+    expect(res.success).toBe(true);
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code })).success).toBe(true);
+  });
+
+  it('enforces the resend cooldown only on resend', async () => {
+    await sendAndCapture();
+    const tooSoon = await TwoFAService.sendChallenge({ userOrId: ID, resend: true });
+    expect(tooSoon.reason).toBe('cooldown');
+
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + RESEND_COOLDOWN_MS + 1000);
+    const { res } = await sendAndCapture({ resend: true });
     expect(res.success).toBe(true);
   });
 
-  it('rejects expired code', async () => {
-    // With TOTP flow, expiration isn't stored; an invalid code is a mismatch
-    const fakeUser = {
-      _id: 'u3',
-      email: 'expired@x.com',
-      twoFASecret: 'SECRET123',
-      save: async function () { return this; }
-    };
-
-    vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-    // Mock speakeasy.totp.verify to return false
-    vi.spyOn(speakeasy.totp, 'verify').mockReturnValue(false);
-
-    const res = await TwoFAService.verify2FACode({ userOrId: 'u3', code: '000000' });
-    expect(res.success).toBe(false);
-    expect(res.reason).toBe('mismatch');
+  it('a new code invalidates the old one', async () => {
+    const first = await sendAndCapture();
+    const second = await sendAndCapture();
+    if (first.code !== second.code) {
+      expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: first.code })).success).toBe(false);
+    }
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: second.code })).success).toBe(true);
   });
 
-  it('returns disabled reason when 2FA is disabled', async () => {
-    SettingsService.get.mockImplementation((key) => {
-      if (key === 'twoFA.enabled') return 'false';
-      if (key === 'twoFA.templateId') return 'tpl-from-settings';
-      return null;
-    });
+  it('does nothing when 2FA is disabled', async () => {
+    SettingsService.get.mockImplementation((key) => (key === 'twoFA.enabled' ? 'false' : null));
+    const send = vi.spyOn(GCNotifyService, 'sendEmail');
+    expect((await TwoFAService.sendChallenge({ userOrId: ID })).reason).toBe('twofa_disabled');
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: '123456' })).success).toBe(false);
+    expect(send).not.toHaveBeenCalled();
+  });
 
-    const fakeUser = {
-      _id: 'u4',
-      email: 'disabled@x.com',
-      twoFASecret: 'SECRETXYZ',
-      save: async function () { return this; }
-    };
-
-    vi.spyOn(User, 'findById').mockResolvedValue(fakeUser);
-
-    const sendRes = await TwoFAService.send2FACode({ userOrId: 'u4' });
-    expect(sendRes.success).toBe(false);
-    expect(sendRes.reason).toBe('twofa_disabled');
+  it('rejects an id that is not an ObjectId string', async () => {
+    await expect(TwoFAService.sendChallenge({ userOrId: { $ne: null } })).rejects.toThrow();
   });
 });

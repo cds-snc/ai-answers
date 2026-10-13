@@ -117,7 +117,7 @@ const LoginPage = ({ lang = 'en' }) => {
     announce(t('login.form.submitting'), { skippable: true });
     try {
       // backend method remains verify2FA
-      const data = await AuthService.verify2FA(email, code);
+      const data = await AuthService.verify2FA(code);
       // AuthService stores token and user; refresh context
       await refreshUser();
       // Prefer explicit defaultRoute from the verify response if present
@@ -135,14 +135,13 @@ const LoginPage = ({ lang = 'en' }) => {
     }
   };
 
-  // Request a verification code to be sent to the user's email (public endpoint)
+  // Ask for the verification code to be sent again (the server uses the sign-in session)
   const requestTwoStep = async () => {
-    if (!email) return;
     setIsLoading(true);
     clearTwoStepError();
     try {
       // backend method remains send2FA
-      await AuthService.send2FA(email);
+      await AuthService.send2FA();
       setShowTwoStep(true);
     } catch (err) {
       setTwoStepError(t('login.2fa.sendError'));
@@ -202,7 +201,7 @@ const LoginPage = ({ lang = 'en' }) => {
             <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
               {t('login.2fa.verify')}
             </button>
-            <button onClick={requestTwoStep} disabled={isLoading || !email}>
+            <button onClick={requestTwoStep} disabled={isLoading}>
               {t('login.2fa.resend')}
             </button>
           </div>

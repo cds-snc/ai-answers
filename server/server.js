@@ -123,6 +123,7 @@ import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js
 import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import vectorMetadataBackfillJobHandler from '../api/vector/vector-metadata-backfill-job.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
+import authRateLimiter from '../middleware/auth-rate-limiter.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import vectorDocdb8CapabilityTestHandler from '../api/vector/vector-docdb8-capability-test.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
@@ -387,6 +388,7 @@ app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
+app.use('/api/auth', authRateLimiter);
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
 app.post('/api/auth/auth-logout', logoutHandler);

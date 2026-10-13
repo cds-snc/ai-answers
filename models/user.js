@@ -55,7 +55,8 @@ const userSchema = new mongoose.Schema({
     // (chats created or evaluated by group members). Needs `group` set.
     prefilterGroup: { type: Boolean, default: false }
   },
-  // Two factor authentication fields
+  // Two factor authentication challenge (services/TwoFAService.js).
+  // twoFACode is an HMAC of the emailed one-time code, never the code itself.
   twoFACode: {
     type: String,
     default: null,
@@ -63,11 +64,34 @@ const userSchema = new mongoose.Schema({
   twoFAExpires: {
     type: Date,
     default: null,
-  }
-  ,
-  // If using otplib TOTP flow, store a per-user secret
+  },
+  // Wrong-code count. NOT reset when a new code is sent, only on success or
+  // after the lockout ends, so asking for fresh codes can't buy more guesses.
+  twoFAAttempts: {
+    type: Number,
+    default: 0,
+  },
+  twoFALockedUntil: {
+    type: Date,
+    default: null,
+  },
+  twoFALastSentAt: {
+    type: Date,
+    default: null,
+  },
+  // Legacy TOTP secret. No longer used for sign-in codes; kept so existing
+  // documents still load. Safe to drop in a later cleanup migration.
   twoFASecret: {
     type: String,
+    default: null,
+  },
+  // Password sign-in lockout (config/passport.js)
+  loginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  loginLockedUntil: {
+    type: Date,
     default: null,
   },
   // Password reset fields

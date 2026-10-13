@@ -62,19 +62,28 @@ const loginHandler = (req, res, next) => {
         });
       });
     } else {
-      // Store user temporarily for 2FA verification (don't log in yet)
-      req.session.pendingUser = {
+      // Password is correct but the user is not logged in yet. The session
+      // remembers who passed the password step; auth-verify-2fa and
+      // auth-send-2fa act only on this, never on a client-supplied email.
+      req.session.pending2FA = {
         userId: user._id.toString(),
-        email: user.email,
-        role: user.role
+        createdAt: Date.now()
       };
 
       try {
-        const templateId = SettingsService.get('twoFA.templateId');
-        const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
+        const sendResult = await TwoFAService.sendChallenge({ userOrId: user });
+
+        if (sendResult.reason === 'locked') {
+          delete req.session.pending2FA;
+          return res.status(429).json({
+            success: false,
+            message: 'Too many attempts. Try again later.'
+          });
+        }
 
         if (!sendResult.success) {
           console.error('TwoFAService failed to send code', sendResult);
+          delete req.session.pending2FA;
           return res.status(500).json({
             success: false,
             message: 'Error during login'
@@ -94,6 +103,7 @@ const loginHandler = (req, res, next) => {
         });
       } catch (error) {
         console.error('2FA send error:', error);
+        delete req.session.pending2FA;
         return res.status(500).json({
           success: false,
           message: 'Error during login'
