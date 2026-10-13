@@ -624,6 +624,13 @@
       "totalInactive": "total inactive user(s)",
       "viewUsers": "View and manage users"
     },
+    "footer": {
+      "heading": "Admin and partner resources",
+      "aboutAiAnswers": "About AI Answers",
+      "contactTeam": "Contact AI Answers",
+      "termsAndConditions": "Terms and conditions",
+      "privacy": "Privacy"
+    },
     "howTo": {
       "title": "How to guides",
       "trigger": "See all partner how tos",
