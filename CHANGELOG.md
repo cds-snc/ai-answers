@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.208.1](https://github.com/cds-snc/ai-answers/compare/v1.208.0...v1.208.1) (2026-10-13)
+
+
+### Documentation
+
+* edits for auth ([28f1fc2](https://github.com/cds-snc/ai-answers/commit/28f1fc2bdcf4e91cc7b55074cc9545139f6742c7))
+* edits for auth ([683fdc9](https://github.com/cds-snc/ai-answers/commit/683fdc99444f5e8d94eee7917dad1674f1e4cdba))
+* remove bedrock ([df846f2](https://github.com/cds-snc/ai-answers/commit/df846f263b713150b06cb5ef8e7b453ba3ba4653))
+
 ## [1.208.0](https://github.com/cds-snc/ai-answers/compare/v1.207.0...v1.208.0) (2026-10-09)
 
 
