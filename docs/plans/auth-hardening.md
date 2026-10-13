@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in and two-factor authentication
 
-Status: Phase 1 implemented on branch `auth-hardening` (not yet merged); Phases 2 and 3 not started. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status: Phase 1 implemented on branch `auth-hardening` (not yet merged; see "Phase 1 status" for open items); Phases 2 and 3 not started. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -156,6 +156,42 @@ PR (AGENTS.md rule 14).
 6. **Tests** (vitest): verify without a prior password step fails; wrong email in body is
    ignored; code is rejected the second time; 5 wrong codes then the right code still fails;
    attempts persist across new sessions; resend cooldown; expired code.
+
+### Phase 1 status: built, tested on a preview, open items
+
+Built and unit-tested (see `admin-and-auth.md` for the flow). Preview testing on 2026-10-13
+found the following. None of it is a flaw in the Phase 1 design, but all of it must be settled
+before `twoFA.enabled` goes on anywhere real.
+
+1. **`TWOFA_SECRET` (or `SESSION_SECRET`) must be set as an environment variable** on every
+   environment, or sign-in with 2FA on returns 500 `reason: "twofa_no_secret"`. The preview
+   didn't have it; the request went to the infrastructure owner. Open question: the session
+   code also reads a `session.secret` *setting* and falls back to a default. If any environment
+   supplies its secret that way, make `TwoFAService.hashCode` use the same lookup instead of
+   requiring a new variable.
+2. **Settings are cached per server instance, loaded once at startup**
+   (`SettingsService.loadAll()`, `server/server.js`; no timer). Saving a setting updates the
+   database and only the cache of the instance that served the save. With several Lambda or ECS
+   instances, `twoFA.enabled` appears on for some requests and off for others, and the Settings
+   page can show the old value. **Not fixed yet** (the maintainer chose to wait). Proposed fix:
+   reload settings from the database every ~60 seconds, own PR, with a test. Do this before
+   turning 2FA on in production.
+3. **The login page masks every failure as "Invalid email or password"**
+   (`src/pages/LoginPage.js`, the `catch` in `handleSubmit`), including 500s and 429s. It made
+   this debugging much slower. Suggested follow-up: show a different message for server errors.
+   Needs EN and FR locale keys.
+4. The login 500 for a failed 2FA send now includes a fixed `reason` code (`twofa_no_secret`,
+   `twofa_no_template`, `twofa_send_failed`, `twofa_send_error`, no error text) so the cause is
+   visible in the browser's Network tab. Keep it; there is no log viewer in the app.
+5. **Not yet exercised on a working preview:** the full 2FA sign-in with a real emailed code,
+   resend, a wrong code, and the 5-strikes lockout. Do this once items 1 and 2 are sorted.
+6. Dead code to clean up, undecided: `twoFASecret` on the user and its generation in
+   `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
+7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
+   email (inherent to lockout; admin is VPN-only); the failed-password counter has no decay and
+   a parallel burst can slip a few extra guesses past 10; the per-IP limiter depends on
+   `trust proxy` counting the right number of hops behind Akamai, which is unchecked; the
+   session isn't regenerated at the password step (fold into Phase 3).
 
 ### Phase 2: Sign-up controls (F3)
 

@@ -80,6 +80,17 @@ address, but not the account. `middleware/auth-rate-limiter.js` adds a loose per
 POSTs per 15 minutes, per task) on `/api/auth/*` as a backstop only. It is generous because staff
 share VPN addresses.
 
+Requirements and gotchas when turning 2FA on:
+
+- `TWOFA_SECRET` (or `SESSION_SECRET`) must be an environment variable, or login returns 500 with
+  `reason: "twofa_no_secret"`. Other `reason` values on that 500: `twofa_no_template`,
+  `twofa_send_failed`, `twofa_send_error`.
+- Settings are cached per instance at startup with no refresh, so on a multi-instance deployment
+  a saved `twoFA.enabled` only takes effect on some instances. Unfixed; see the Phase 1 status
+  section of the plan.
+- The login page shows "Invalid email or password" for any failure, so check the `auth-login`
+  response in the browser's Network tab to see the real status.
+
 Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
 logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
 [docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field no longer used for
