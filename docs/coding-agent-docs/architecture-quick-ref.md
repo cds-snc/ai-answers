@@ -130,7 +130,7 @@ The ones you'll touch most; `models/` holds more (audit, counters, logs, backfil
 | `PublicFeedback` | User ratings (thumbs up/down, feedback text) |
 | `Embedding` | Vector embeddings for Q+A pairs |
 | `Tool` | Tool invocations (downloadWebPage, checkUrl) per answer |
-| `User` | Auth user (admin/partner/expert roles) |
+| `User` | Auth user (`admin` / `partner` roles, institution, group) — see [admin-and-auth.md](admin-and-auth.md) |
 | `Batch` / `BatchItem` | Batch question processing |
 | `ScenarioOverride` | Admin-created custom scenario text per department |
 | `Setting` | App feature flags and settings |
@@ -143,7 +143,7 @@ Each file exports `async function handler(req, res)`. Organised by domain:
 
 | Subdirectory | Covers |
 |-------------|--------|
-| `api/auth/` | Login, signup, 2FA, reset, logout |
+| `api/auth/` | Login, signup, 2FA, reset, logout (see [admin-and-auth.md](admin-and-auth.md)) |
 | `api/chat/` | Graph run, init, persist, similar-answer, dashboard, export |
 | `api/data/` | Program/action seed data and loader |
 | `api/db/` | DB connect/check, migrations, embeddings, evals, logs |
