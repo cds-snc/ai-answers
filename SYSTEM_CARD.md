@@ -74,12 +74,16 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 ## Technical architecture
 
 ### System components
-1. **Frontend**: React-based chat interface 
-2. **Backend**: Node.js with LangGraph state machine orchestration
-3. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models (e.g. Cohere, Anthropic) through Amazon Bedrock if deployed/procured
-4. **Database**: AWS DocumentDB 
-5. **Search**: Google or Canada.ca search, based on the selected search provider
-6. **Hosting**: AWS ECS with auto-scaling and CloudWatch monitoring
+1. **Frontend**: React-based chat interface for the public
+2. **Admin interface**: React-based, with 2FA and role-based access (admin and partner) for evaluation, metrics and system settings
+3. **Backend**: Node.js with LangGraph state machine orchestration
+4. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models (e.g. Cohere, Anthropic) through Amazon Bedrock if deployed/procured
+5. **Database**: AWS DocumentDB
+6. **Sessions**: AWS ElastiCache (Redis) for user sessions
+7. **File storage**: AWS S3, private and encrypted, for server logs and cached search results
+8. **Search**: Google or Canada.ca search, based on the selected search provider
+9. **Email**: GC Notify for sign-in codes and password reset emails
+10. **Hosting**: AWS ECS with auto-scaling behind an application load balancer, in a private network, with CloudWatch monitoring
 
 ### AI model details
 - **Current production models**: Azure OpenAI GPT-5.1 for answers, GPT-4o for personal information detection (kept in Canada East), and mini models for supporting steps.
@@ -267,7 +271,9 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 ### User roles and access control
 - **Admin users**: Full system access including user management, database operations, and system configuration
 - **Partner users**: Access to suite of evaluation tools and reports to score sentences and citation for chat responses, batch processing, and performance metrics
-- **Authentication**: Secure login system with role-based route protection
+- **Accounts**: The first account created becomes an administrator. Every later signup is created as a partner and stays inactive until an administrator activates it. Administrators can also change roles, assign an institution and group, deactivate or delete accounts.
+- **Authentication**: Email and password sign-in, with optional one-time email verification codes (sent through GC Notify) that administrators can turn on in Settings. Password reset uses a time-limited emailed link and locks out after repeated failed attempts. Session length is configurable.
+- **Access enforcement**: Roles are checked on the server for every admin and partner request, not only by hiding pages in the interface.
 
 ### Admin tools
 - **Batch processing**: Upload question sets, process them with different workflow settings, and compare trial results to reference answers

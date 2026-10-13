@@ -226,6 +226,7 @@ Before starting work, read the relevant reference doc:
 - **Backend/pipeline/agent/service changes:** [docs/coding-agent-docs/architecture-quick-ref.md](docs/coding-agent-docs/architecture-quick-ref.md)
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
+- **Admin interface, roles, accounts, login/2FA, sessions, protecting an admin route or endpoint:** [docs/coding-agent-docs/admin-and-auth.md](docs/coding-agent-docs/admin-and-auth.md)
 - **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 - **Any server-side paginated/searchable table, dashboard or not (which wrapper to use, migrating a hand-rolled table):** [docs/coding-agent-docs/tables.md](docs/coding-agent-docs/tables.md)
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)

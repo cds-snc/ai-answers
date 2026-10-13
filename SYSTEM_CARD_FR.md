@@ -74,12 +74,16 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 ## Architecture technique
 
 ### Composants du système
-1. **Interface utilisateur** : Interface de clavardage basée sur React
-2. **Serveur** : Node.js avec orchestration de machine à états LangGraph
-3. **Services IA** : Modèles Azure OpenAI GPT, avec des points d'ancrage pour utiliser d'autres modèles d'IA (p. ex. Cohere, Anthropic) via Amazon Bedrock s'ils sont déployés/acquis
-4. **Base de données** : AWS DocumentDB
-5. **Recherche** : Google ou Recherche Canada.ca, selon le fournisseur de recherche sélectionné
-6. **Hébergement** : AWS ECS avec mise à l'échelle automatique et surveillance CloudWatch
+1. **Interface utilisateur** : Interface de clavardage basée sur React pour le public
+2. **Interface d'administration** : Basée sur React, avec authentification à deux facteurs et accès basé sur les rôles (administrateur et partenaire) pour l'évaluation, les métriques et les paramètres du système
+3. **Serveur** : Node.js avec orchestration de machine à états LangGraph
+4. **Services IA** : Modèles Azure OpenAI GPT, avec des points d'ancrage pour utiliser d'autres modèles d'IA (p. ex. Cohere, Anthropic) via Amazon Bedrock s'ils sont déployés/acquis
+5. **Base de données** : AWS DocumentDB
+6. **Sessions** : AWS ElastiCache (Redis) pour les sessions des utilisateurs
+7. **Stockage de fichiers** : AWS S3, privé et chiffré, pour les journaux du serveur et les résultats de recherche mis en cache
+8. **Recherche** : Google ou Recherche Canada.ca, selon le fournisseur de recherche sélectionné
+9. **Courriel** : Notification GC pour les codes de connexion et les courriels de réinitialisation du mot de passe
+10. **Hébergement** : AWS ECS avec mise à l'échelle automatique derrière un équilibreur de charge d'application, dans un réseau privé, avec surveillance CloudWatch
 
 ### Détails des modèles IA
 - **Modèles de production actuels** : Azure OpenAI GPT-5.1 pour les réponses, GPT-4o pour la détection des renseignements personnels (maintenu dans la région Canada Est) et des mini modèles pour les étapes de soutien.
@@ -267,7 +271,9 @@ Les deux mécanismes sont mis en œuvre sous forme de variantes de pipeline sél
 ### Rôles d'utilisateurs et contrôle d'accès
 - **Utilisateurs administrateurs** : Accès complet au système, incluant la gestion des utilisateurs, les opérations de base de données et la configuration du système
 - **Utilisateurs partenaires** : Accès à une suite d'outils et de rapports d'évaluation pour noter les phrases et les citations des réponses de clavardage, au traitement par lot et aux métriques de performance
-- **Authentification** : Système de connexion sécurisé avec protection des routes basée sur les rôles
+- **Comptes** : Le premier compte créé devient administrateur. Toute inscription ultérieure crée un compte partenaire, qui reste inactif jusqu'à son activation par un administrateur. Les administrateurs peuvent aussi modifier les rôles, attribuer une institution et un groupe, désactiver ou supprimer des comptes.
+- **Authentification** : Connexion par courriel et mot de passe, avec codes de vérification à usage unique envoyés par courriel (par Notification GC) que les administrateurs peuvent activer dans les paramètres. La réinitialisation du mot de passe utilise un lien envoyé par courriel, limité dans le temps, et verrouille la réinitialisation après plusieurs tentatives échouées. La durée de la session est configurable.
+- **Application des accès** : Les rôles sont vérifiés sur le serveur pour chaque requête d'administration et de partenaire, et pas seulement en masquant des pages dans l'interface.
 
 ### Outils d'administration
 - **Traitement par lot** : Télécharger des ensembles de questions, les traiter avec différents paramètres de flux de travail et comparer les résultats des essais à des réponses de référence
