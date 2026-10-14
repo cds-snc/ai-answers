@@ -8,13 +8,13 @@ const translator = (locale) => (key) => key.split('.').reduce((o, k) => o?.[k], 
 describe('getAdminFooterProps', () => {
   it('puts the team links in the contextual band and Canada.ca links in the sub band (English)', () => {
     const props = getAdminFooterProps('en', translator(en));
-    expect(Object.keys(props.contextualLinks)).toEqual(['Contact AI Answers', 'About AI Answers', 'How to guides']);
+    expect(Object.keys(props.contextualLinks)).toEqual(['Contact AI Answers', 'How to guides', 'AI Answers system card']);
     expect(props).toEqual({
       contextualHeading: 'Admin and partner resources',
       contextualLinks: {
         'Contact AI Answers': 'mailto:RIA-AIA@servicecanada.gc.ca',
-        'About AI Answers': '/en/about',
         'How to guides': '/en/admin#how-to-guides',
+        'AI Answers system card': '/en/system-card',
       },
       subLinks: {
         'Terms and conditions': 'https://www.canada.ca/en/transparency/terms.html',
@@ -28,8 +28,8 @@ describe('getAdminFooterProps', () => {
     expect(props.contextualHeading).toBe('Ressources pour les administrateurs et les partenaires');
     expect(Object.values(props.contextualLinks)).toEqual([
       'mailto:RIA-AIA@servicecanada.gc.ca',
-      '/fr/a-propos',
       '/fr/admin#how-to-guides',
+      '/fr/fiche-systeme',
     ]);
     expect(Object.values(props.subLinks)).toEqual([
       'https://www.canada.ca/fr/transparence/avis.html',

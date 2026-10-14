@@ -15,8 +15,8 @@ export function getAdminFooterProps(lang, t) {
     contextualHeading: t('admin.footer.heading'),
     contextualLinks: {
       [t('admin.footer.contactTeam')]: `mailto:${AI_ANSWERS_TEAM_EMAIL}`,
-      [t('admin.footer.aboutAiAnswers')]: getPath('about', lang),
       [t('admin.howTo.title')]: howToGuidesHref(lang),
+      [t('systemCard.title')]: getPath('system-card', lang),
     },
     subLinks: {
       [t('admin.footer.termsAndConditions')]: fr
