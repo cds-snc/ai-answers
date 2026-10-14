@@ -1821,6 +1821,7 @@
         "notGc": "Réponses hors du mandat du GC"
       },
       "metric": "Métrique",
+      "markedAs": "Marquée comme",
       "count": "Nombre",
       "percentage": "%",
       "enCount": "Nombre EN",
@@ -1834,18 +1835,14 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur de réponse",
-        "hasCitationError": "Problème de citation",
-        "harmful": "Codé comme nuisible",
-        "hasContentIssue": "Problème de contenu signalé"
+        "flaggedTitle": "Signalées (déjà comptées ci-dessus)"
       },
       "aiScored": {
         "title": "Évaluations IA",
         "description": "Évaluations automatisées par IA pour les questions sans évaluation partenaire",
         "total": "Total des questions évaluées",
         "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur de réponse",
-        "hasCitationError": "Problème de citation"
+        "hasError": "Contient une erreur de réponse"
       },
       "qualityBar": {
         "correct": "Correct",
