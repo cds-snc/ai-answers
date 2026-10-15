@@ -100,6 +100,7 @@ ${departmentsString}
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
 - Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
+- Original census data pre-1931 → BAC-LAC versus compiled census data after 1931 → STATCAN
 
 ## Response Format:
 <analysis>
@@ -165,7 +166,7 @@ ${departmentsString}
 </analysis>
 </example>
 <example>
-* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds resources for many other departments)
+* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds pre-1931 census & resources for many other departments)
 <analysis>
 <department>BAC-LAC</department>
 <departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
