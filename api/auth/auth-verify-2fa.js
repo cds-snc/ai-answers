@@ -8,9 +8,12 @@ import { SettingsService } from '../../services/SettingsService.js';
 // the code and nothing else.
 const verify2FAHandler = async (req, res) => {
   try {
+    // 'expired' tells the client to restart at the password step. It reveals
+    // nothing about any account: it only describes this browser's session.
     const pending = req.session?.pending2FA;
     if (!pending || Date.now() - pending.createdAt > CODE_TTL_MS) {
-      return res.status(401).json({ success: false, reason: 'invalid' });
+      if (req.session) delete req.session.pending2FA;
+      return res.status(401).json({ success: false, reason: 'expired' });
     }
 
     const code = req.body?.code;
@@ -28,9 +31,12 @@ const verify2FAHandler = async (req, res) => {
       return res.status(401).json({ success: false, reason: 'invalid' });
     }
 
+    // Removed or deactivated since the password step: back to sign-in, which
+    // gives the usual answer for that account.
     const user = await User.findById(pending.userId);
     if (!user || !user.active) {
-      return res.status(401).json({ success: false, reason: 'invalid' });
+      delete req.session.pending2FA;
+      return res.status(401).json({ success: false, reason: 'expired' });
     }
 
     // Preserve visitorId across session regeneration triggered by req.login

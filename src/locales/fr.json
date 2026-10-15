@@ -1050,6 +1050,7 @@
     "password": "Mot de passe",
     "submit": "Se connecter",
     "invalidCredentials": "Courriel ou mot de passe invalide. Après 10 tentatives échouées, la connexion est suspendue pendant 15 minutes.",
+    "serverError": "Nous n'avons pas pu vous connecter. Réessayez dans quelques minutes.",
     "sessionExpired": {
       "title": "Session expirée",
       "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
@@ -1067,11 +1068,12 @@
       "resend": "Renvoyer le code",
       "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
       "send": "Envoyer le code de vérification",
-      "sendError": "Impossible d'envoyer le code de vérification.",
+      "sendError": "Nous n'avons pas pu envoyer votre code de vérification. Réessayez dans quelques minutes.",
       "invalidCode": "Code de vérification invalide.",
       "resent": "Nouveau code envoyé.",
       "cooldown": "Attendez une minute avant de demander un nouveau code.",
-      "locked": "Trop de codes incorrects. Réessayez plus tard."
+      "locked": "Trop de codes incorrects. Attendez 30 minutes, puis reconnectez-vous.",
+      "expired": "Votre connexion a expiré. Entrez de nouveau votre courriel et votre mot de passe pour obtenir un nouveau code."
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"

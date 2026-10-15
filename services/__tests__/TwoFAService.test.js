@@ -189,6 +189,29 @@ describe('TwoFAService', () => {
     expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: second.code })).success).toBe(true);
   });
 
+  it('a failed resend starts no cooldown', async () => {
+    await sendAndCapture();
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + RESEND_COOLDOWN_MS + 1000);
+    const send = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: false });
+    const failed = await TwoFAService.sendChallenge({ userOrId: ID, resend: true });
+    send.mockRestore();
+    expect(failed).toEqual({ success: false, reason: 'send_failed' });
+
+    const retry = await sendAndCapture({ resend: true });
+    expect(retry.res.success).toBe(true);
+  });
+
+  it('keeps the current code when the email fails', async () => {
+    const first = await sendAndCapture();
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + RESEND_COOLDOWN_MS + 1000);
+    const send = vi.spyOn(GCNotifyService, 'sendEmail').mockResolvedValue({ success: false });
+    await TwoFAService.sendChallenge({ userOrId: ID, resend: true });
+    send.mockRestore();
+    expect((await TwoFAService.verifyChallenge({ userOrId: ID, code: first.code })).success).toBe(true);
+  });
+
   it('does nothing when 2FA is disabled', async () => {
     SettingsService.get.mockImplementation((key) => (key === 'twoFA.enabled' ? 'false' : null));
     const send = vi.spyOn(GCNotifyService, 'sendEmail');

@@ -55,12 +55,16 @@ function rejectWith(reason) {
   return Promise.reject(err);
 }
 
-async function reachTwoStep() {
-  mockLogin.mockResolvedValue({ twoFA: true });
+function submitPassword() {
   render(<LoginPage lang="en" />);
   fireEvent.change(screen.getByRole('textbox', { name: 'login.email' }), { target: { value: 'admin@example.com' } });
   fireEvent.change(screen.getByLabelText('login.password'), { target: { value: 'correct-password' } });
   fireEvent.submit(screen.getByRole('button', { name: 'login.submit' }).closest('form'));
+}
+
+async function reachTwoStep() {
+  mockLogin.mockResolvedValue({ twoFA: true });
+  submitPassword();
   await screen.findByText('login.2fa.sentToEmail');
 }
 
@@ -114,5 +118,37 @@ describe('LoginPage two-step messages', () => {
     mockVerify2FA.mockImplementation(() => rejectWith('invalid'));
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
     expect(await screen.findByText('login.2fa.invalidCode')).toBeTruthy();
+  });
+
+  it.each([
+    ['locked', 'login.2fa.locked'],
+    ['send_failed', 'login.2fa.sendError'],
+    ['server_error', 'login.serverError'],
+  ])('explains a %s sign-in failure instead of blaming the password', async (reason, key) => {
+    mockLogin.mockImplementation(() => rejectWith(reason));
+    submitPassword();
+    expect(await screen.findByText(key)).toBeTruthy();
+    expect(screen.queryByText('login.invalidCredentials')).toBeNull();
+    // The password was right, so neither field is flagged.
+    expect(screen.getByRole('textbox', { name: 'login.email' }).getAttribute('aria-invalid')).toBe('false');
+  });
+
+  it('keeps one message for a wrong password, unknown email or password lockout', async () => {
+    mockLogin.mockImplementation(() => rejectWith(null));
+    submitPassword();
+    expect(await screen.findByText('login.invalidCredentials')).toBeTruthy();
+  });
+
+  it.each([
+    ['verify', () => mockVerify2FA, 'login.2fa.verify'],
+    ['resend', () => mockSend2FA, 'login.2fa.resend'],
+  ])('sends the user back to the password form when %s finds the sign-in expired', async (_name, getMock, button) => {
+    await reachTwoStep();
+    getMock().mockImplementation(() => rejectWith('expired'));
+    fireEvent.click(screen.getByRole('button', { name: button }));
+    expect(await screen.findByText('login.2fa.expired')).toBeTruthy();
+    expect(screen.queryByText('login.2fa.sentToEmail')).toBeNull();
+    expect(screen.getByLabelText('login.password').value).toBe('');
+    expect(document.activeElement.textContent).toContain('login.2fa.expired');
   });
 });

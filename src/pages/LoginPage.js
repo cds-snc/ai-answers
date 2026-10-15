@@ -84,7 +84,19 @@ const LoginPage = ({ lang = 'en' }) => {
       // wherever the old page's cursor was, with nothing read.
       navigate(defaultRoute);
     } catch (err) {
-      setError(t('login.invalidCredentials'), ['email', 'password']);
+      // Only a correct password reaches the 2FA step, so these reasons say
+      // nothing about the account that the code screen wouldn't. A wrong
+      // password, an unknown email and a password lockout all stay identical.
+      const messages = {
+        locked: 'login.2fa.locked',
+        send_failed: 'login.2fa.sendError',
+        server_error: 'login.serverError',
+      };
+      if (messages[err.reason]) {
+        setError(t(messages[err.reason]));
+      } else {
+        setError(t('login.invalidCredentials'), ['email', 'password']);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -109,6 +121,16 @@ const LoginPage = ({ lang = 'en' }) => {
   // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
   // don't rely on it to announce resend-specific feedback.
   const twoStepIntroRef = useFocusOnChange(showTwoStep);
+
+  // The sign-in session behind the code screen has lapsed (or the account
+  // changed). A new code can't help, so go back to the password form and say why.
+  const restartSignIn = () => {
+    setShowTwoStep(false);
+    setCode('');
+    setPassword('');
+    clearTwoStepError();
+    setError(t('login.2fa.expired'));
+  };
   // "New code sent." after a resend. Repeatable, so a second resend announces again.
   const { message: resendMessage, nonce: resendNonce, announce: announceResent, clear: clearResent } = useRepeatableStatus();
 
@@ -132,6 +154,10 @@ const LoginPage = ({ lang = 'en' }) => {
       if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
     } catch (err) {
+      if (err.reason === 'expired') {
+        restartSignIn();
+        return;
+      }
       setTwoStepError(err.reason === 'locked' ? t('login.2fa.locked') : t('login.2fa.invalidCode'));
     } finally {
       setIsLoading(false);
@@ -149,6 +175,10 @@ const LoginPage = ({ lang = 'en' }) => {
       setShowTwoStep(true);
       announceResent(t('login.2fa.resent'));
     } catch (err) {
+      if (err.reason === 'expired') {
+        restartSignIn();
+        return;
+      }
       // The server refuses a resend within a minute of the last code (the one
       // sent at sign-in counts) and while 2FA is locked. Say so, not "failed".
       const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked' };

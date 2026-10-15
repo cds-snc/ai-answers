@@ -73,11 +73,14 @@ const loginHandler = (req, res, next) => {
       try {
         const sendResult = await TwoFAService.sendChallenge({ userOrId: user });
 
+        // Only reachable after a correct password, which the 2FA screen would
+        // confirm anyway, so naming the lockout here reveals nothing new.
         if (sendResult.reason === 'locked') {
           delete req.session.pending2FA;
           return res.status(429).json({
             success: false,
-            message: 'Too many attempts. Try again later.'
+            message: 'Too many attempts. Try again later.',
+            reason: 'locked'
           });
         }
 
@@ -87,7 +90,7 @@ const loginHandler = (req, res, next) => {
           return res.status(500).json({
             success: false,
             message: 'Error during login',
-            reason: sendResult.reason || 'twofa_send_failed'
+            reason: 'send_failed'
           });
         }
 
@@ -103,12 +106,13 @@ const loginHandler = (req, res, next) => {
           }
         });
       } catch (error) {
-        console.error('2FA send error:', error);
+        // The internal error code goes to the log only, never to the browser.
+        console.error('2FA send error:', error?.code, error);
         delete req.session.pending2FA;
         return res.status(500).json({
           success: false,
           message: 'Error during login',
-          reason: error?.code || 'twofa_send_error'
+          reason: 'send_failed'
         });
       }
     }

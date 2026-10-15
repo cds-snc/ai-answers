@@ -168,7 +168,11 @@ class AuthService {
     });
 
     if (!response.ok) {
-      throw new Error('Login failed');
+      const json = await response.json().catch(() => ({}));
+      const err = new Error('Login failed');
+      // 'locked' | 'send_failed' from the 2FA step; none for a wrong password.
+      err.reason = json.reason || (response.status >= 500 ? 'server_error' : null);
+      throw err;
     }
 
     const data = await response.json();
@@ -194,7 +198,7 @@ class AuthService {
     if (!response.ok) {
       const json = await response.json().catch(() => ({}));
       const err = new Error(json.message || json.reason || '2FA verify failed');
-      err.reason = json.reason || null; // 'invalid' | 'locked'
+      err.reason = json.reason || null; // 'invalid' | 'locked' | 'expired'
       throw err;
     }
 
@@ -255,7 +259,7 @@ class AuthService {
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));
       const err = new Error(json.message || 'Failed to send 2FA');
-      err.reason = json.reason || null; // 'cooldown' | 'locked' | 'invalid'
+      err.reason = json.reason || null; // 'cooldown' | 'locked' | 'expired' | 'send_failed'
       throw err;
     }
 

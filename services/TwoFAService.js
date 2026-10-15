@@ -85,21 +85,26 @@ async function sendChallenge({ userOrId, resend = false } = {}) {
   }
 
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
-  await User.updateOne({ _id: user._id }, {
-    $set: {
-      twoFACode: hashCode(user._id, code),
-      twoFAExpires: new Date(now + CODE_TTL_MS),
-      twoFALastSentAt: new Date(now),
-    },
-  });
+  const codeHash = hashCode(user._id, code);
 
+  // Email first, store after. If the send fails, the code already in the
+  // user's inbox keeps working and no cooldown starts for a code that never arrived.
   // Personalisation expected by the 2FA template: name (blank) and verify_code.
   const res = await GCNotifyService.sendEmail({
     email: user.email,
     personalisation: { name: '', verify_code: code },
     templateId,
   });
-  return { success: !!res?.success };
+  if (!res?.success) return { success: false, reason: 'send_failed' };
+
+  await User.updateOne({ _id: user._id }, {
+    $set: {
+      twoFACode: codeHash,
+      twoFAExpires: new Date(now + CODE_TTL_MS),
+      twoFALastSentAt: new Date(now),
+    },
+  });
+  return { success: true };
 }
 
 // Check a code. Never says which part was wrong beyond locked/invalid.
