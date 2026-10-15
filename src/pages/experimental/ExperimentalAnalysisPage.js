@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePauseToggle } from '../../hooks/usePauseToggle.js';
 import PauseToggleButton from '../../components/admin/PauseToggleButton.js';
+import { buildLabelPillHtml } from '../../utils/labelPill.js';
 import CellRootLink from '../../components/admin/CellRootLink.js';
 import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink, GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsNotice } from '@gcds-core/components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../../config/workflows.js';
@@ -12,6 +14,10 @@ import ExperimentalServerDataTable from '../../components/experimental/Experimen
 import { getPath } from '../../utils/routes.js';
 import StatusMessage, { useRepeatableStatus } from '../../components/admin/StatusMessage.js';
 import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+import { announce } from '../../utils/liveAnnouncer.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
+import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import FeedbackInlineError from '../../components/chat/FeedbackInlineError.js';
 import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 
 // One batch's progress: a status line + a real progressbar. Its own small
@@ -21,6 +27,37 @@ import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
 // announcer whenever its text changes (useAnnounceOnChange), not by being
 // a live region itself: cards appear when a run starts, and an element
 // inserted with its text already in it is never heard.
+// Outcome of a row button in one of the history tables, shown above that
+// table. A successful Delete or Resume rebuilds the table and takes the
+// button with it, so those move focus onto the message instead.
+function useTableStatus() {
+    const status = useRepeatableStatus();
+    const [focusCount, setFocusCount] = useState(0);
+    const [movesFocus, setMovesFocus] = useState(false);
+    const ref = useFocusOnChange(focusCount);
+    const report = (text, { isError = false, focus = false } = {}) => {
+        setMovesFocus(focus);
+        status.announce(text, { isError });
+        if (focus) setFocusCount(n => n + 1);
+    };
+    return { ...status, ref, movesFocus, report };
+}
+
+function TableStatusMessage({ status }) {
+    return (
+        <StatusMessage
+            ref={status.ref}
+            tabIndex={-1}
+            className="focus-target mb-200"
+            announce={!status.movesFocus}
+            announcedVia={status.movesFocus ? 'focus' : undefined}
+            variant={status.message ? (status.isError ? 'error' : 'success') : undefined}
+            message={status.message}
+            nonce={status.nonce}
+        />
+    );
+}
+
 function ProgressCard({ id, prog, t, lang, getStatusLabel }) {
     const statusRef = useRef(null);
     useAnnounceOnChange(statusRef);
@@ -43,7 +80,7 @@ function ProgressCard({ id, prog, t, lang, getStatusLabel }) {
                     transition: 'width 0.5s ease-in-out'
                 }}></div>
             </div>
-            <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
+            <div className="font-size-text-xxs-nr" style={{ marginTop: '5px' }}>
                 {t('experimental.analysis.progressSummary')
                     .replace('{completed}', formatNumber(prog.completed, lang))
                     .replace('{failed}', formatNumber(prog.failed, lang))
@@ -107,6 +144,15 @@ const canResumeBatch = (batch) => batch?.status === 'processing' && !isActivelyR
 const isLambdaRuntime = () => typeof window !== 'undefined' && window.RUNTIME_CONFIG?.IS_LAMBDA === true;
 
 const getAnalyzerTranslationKey = (analyzerId, field) => `experimental.analysis.analyzers.${analyzerId}.${field}`;
+// Batch status -> the shared .label colour tiers (admin.css): green done,
+// blue working, grey waiting, red failed.
+const STATUS_PILL_CLASSES = {
+    completed: 'complete',
+    processing: 'in_progress',
+    pending: 'pending',
+    failed: 'error'
+};
+
 const getStatusTranslationKey = (status) => `experimental.analysis.statuses.${String(status || '').toLowerCase()}`;
 
 const ANALYSIS_RULE_ROWS = {
@@ -168,6 +214,10 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const runStatus = useRepeatableStatus();
     const showInfo = (text) => runStatus.announce(text, { isError: false });
     const showError = (text) => runStatus.announce(text, { isError: true });
+    const comparisonStatus = useRepeatableStatus();
+    const historyStatus = useTableStatus();
+    const comparisonTableStatus = useTableStatus();
+    const datasetError = useInlineFormError();
     const [startingRun, setStartingRun] = useState(null);
     // The "starting run" card below is announced when it appears / its
     // text changes, rather than being a live region itself (it's
@@ -384,13 +434,11 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     const handleRunAnalysis = async () => {
-        if (!selectedAnalyzerId) {
-            showError(t('experimental.analysis.messages.selectAnalyzer'));
-            return;
-        }
+        // Run stays disabled until an analyzer is picked.
+        if (!selectedAnalyzerId) return;
 
         if (!selectedDatasetId) {
-            showError(t('experimental.analysis.messages.selectDataset'));
+            datasetError.triggerError();
             return;
         }
 
@@ -439,16 +487,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
 
             if (result.multiple) {
                 // For multiple results, kick off processing for each and track progress.
+                let failedCount = 0;
                 for (const b of result.batches) {
                     try {
                         await ExperimentalBatchClientService.processBatch(b._id);
-                        if (!runStatus.message) showInfo(t('experimental.analysis.messages.processingStarted'));
                     } catch (err) {
                         console.error('Process batch error:', err);
-                        showError(t('experimental.analysis.messages.startProcessingError'));
+                        failedCount += 1;
                     }
                 }
-                showInfo(t('experimental.analysis.messages.startedCount').replace('{count}', result.batches.length));
+                if (failedCount > 0) {
+                    showError(t('experimental.analysis.messages.startProcessingError'));
+                } else {
+                    showInfo(t('experimental.analysis.messages.startedCount').replace('{count}', result.batches.length));
+                }
             } else {
                 try {
                     await ExperimentalBatchClientService.processBatch(result._id);
@@ -474,29 +526,35 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         }
     };
 
-    const handleDeleteBatch = async (batchId) => {
+    // A row outcome names its batch: the message shows above the table, away
+    // from the row, and a deleted row is gone.
+    const withBatchName = (key, batch) => t(key).replace('{name}', () => batch.name);
+
+    const handleDeleteBatch = async (batch, tableStatus) => {
         if (!window.confirm(t('experimental.analysis.messages.confirmDelete'))) return;
         try {
-            await ExperimentalBatchClientService.deleteBatch(batchId);
+            await ExperimentalBatchClientService.deleteBatch(batch._id);
             await loadBatches(selectedDatasetId);
+            setTableRefreshKey(key => key + 1);
+            tableStatus.report(withBatchName('experimental.analysis.messages.deleteSuccess', batch), { focus: true });
         } catch (err) {
             console.error('Delete error:', err);
-            alert(t('experimental.analysis.messages.deleteFailed'));
+            tableStatus.report(withBatchName('experimental.analysis.messages.deleteFailed', batch), { isError: true });
         }
     };
 
-    const handleExport = async (batchId) => {
+    const handleExport = async (batch, tableStatus) => {
         try {
-            const blob = await ExperimentalBatchClientService.exportBatch(batchId, 'excel', lang);
+            const blob = await ExperimentalBatchClientService.exportBatch(batch._id, 'excel', lang);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `batch-${batchId}-results.xlsx`;
+            a.download = `batch-${batch._id}-results.xlsx`;
             a.click();
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Export error:', err);
-            alert(t('experimental.analysis.messages.exportFailed'));
+            tableStatus.report(withBatchName('experimental.analysis.messages.exportFailed', batch), { isError: true });
         }
     };
 
@@ -511,19 +569,20 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Export chat logs error:', err);
-            alert(t('experimental.analysis.messages.exportChatLogsError'));
+            historyStatus.report(withBatchName('experimental.analysis.messages.exportChatLogsError', batch), { isError: true });
         }
     };
 
-    const handleResumeBatch = async (batchId) => {
+    const handleResumeBatch = async (batch) => {
         try {
             setLoading(true);
-            await ExperimentalBatchClientService.processBatch(batchId, true);
-            showInfo(t('experimental.analysis.messages.resumeStarted'));
+            await ExperimentalBatchClientService.processBatch(batch._id, true);
             await loadBatches(selectedDatasetId);
+            setTableRefreshKey(key => key + 1);
+            historyStatus.report(withBatchName('experimental.analysis.messages.resumeStarted', batch), { focus: true });
         } catch (err) {
             console.error('Resume batch error:', err);
-            showError(t('experimental.analysis.messages.resumeFailed'));
+            historyStatus.report(withBatchName('experimental.analysis.messages.resumeFailed', batch), { isError: true });
         } finally {
             setLoading(false);
         }
@@ -542,10 +601,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         && supportsBatchComparison(batch)
         && (!comparisonBaseline || resolveBatchAnalyzerId(batch) === resolveBatchAnalyzerId(comparisonBaseline))
     ));
+    const noComparisonCandidates = Boolean(comparisonBaselineId) && comparisonCandidates.length === 0;
+
+    // The notice replaces the "Compare against" dropdown without taking focus,
+    // so say why the dropdown went away.
+    useEffect(() => {
+        if (!noComparisonCandidates) return;
+        announce(`${t('experimental.analysis.comparison.noCandidatesTitle')}. ${t('experimental.analysis.comparison.noCandidates')}`);
+    }, [noComparisonCandidates, comparisonBaselineId, t]);
 
     const handleCreateComparison = async () => {
         if (!comparisonBaselineId || !comparisonCandidateId) {
-            showError(t('experimental.analysis.messages.selectComparisonRuns'));
+            comparisonStatus.announce(t('experimental.analysis.messages.selectComparisonRuns'), { isError: true });
             return;
         }
 
@@ -576,13 +643,13 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                     status: 'processing'
                 }], true)
             }));
-            showInfo(t('experimental.analysis.messages.comparisonStarted'));
+            comparisonStatus.announce(t('experimental.analysis.messages.comparisonStarted'), { isError: false });
             setComparisonBaselineId('');
             setComparisonCandidateId('');
             await loadBatches(selectedDatasetId);
         } catch (err) {
             console.error('Comparison creation error:', err);
-            showError(t('experimental.analysis.messages.comparisonFailed'));
+            comparisonStatus.announce(t('experimental.analysis.messages.comparisonFailed'), { isError: true });
         } finally {
             setComparisonLoading(false);
         }
@@ -624,46 +691,62 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         ExperimentalBatchClientService.listBatches(1, 10, 'comparison', selectedDatasetId, query)
     ), [selectedDatasetId]);
 
+    const formatDate = (value) => new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
+    // Second line under a cell's main value, in smaller grey text.
+    const secondaryLine = (text) => `<div class="experimental-table-secondary">${escapeHtml(text)}</div>`;
+    // Labelled values in one cell; values arrive already escaped.
+    const detailsList = (pairs) => `<dl class="canada-ca-dl-columns canada-ca-dl-columns--single experimental-table-dl">${pairs.map(([term, value]) => `<div><dt>${escapeHtml(term)}</dt><dd>${value}</dd></div>`).join('')}</dl>`;
+    const statusPill = (status) => buildLabelPillHtml(STATUS_PILL_CLASSES[status] || 'unknown', getStatusLabel(status));
+    const resultsCell = (row, withFlagged) => {
+        const summary = row.summary || {};
+        const completed = t('experimental.analysis.results.completed')
+            .replace('{completed}', formatNumber(summary.completed || 0, lang))
+            .replace('{total}', formatNumber(summary.total || 0, lang));
+        const detail = (withFlagged ? t('experimental.analysis.results.failedFlagged') : t('experimental.analysis.results.failed'))
+            .replace('{failed}', formatNumber(summary.failed || 0, lang))
+            .replace('{flagged}', formatNumber(summary.flagged || 0, lang));
+        return `${escapeHtml(completed)}${secondaryLine(detail)}`;
+    };
+
     const batchColumns = [
-        { title: t('experimental.analysis.columns.name'), data: 'name', width: '9%', render: (data, type) => type === 'display' ? `<span class="experimental-table-name">${escapeHtml(data)}</span>` : data },
-        { title: t('experimental.analysis.columns.analyzer'), data: null, width: '8%', render: (_data, _type, row) => getAnalyzerLabel(row) },
-        { title: t('experimental.analysis.columns.workflow'), data: null, width: '8%', render: (_data, _type, row) => getWorkflowLabel(row) },
-        { title: t('experimental.analysis.columns.modelFamily'), data: null, width: '8%', render: (_data, _type, row) => getModelLabel(row) },
-        { title: t('experimental.analysis.columns.appVersion'), data: 'appVersion', width: '5%', render: (data, type) => type === 'display' ? getAppVersionLabel({ appVersion: data }) : data },
-        { title: t('experimental.analysis.columns.status'), data: 'status', width: '7%', render: (data) => getStatusLabel(data) },
-        { title: t('experimental.analysis.columns.completed'), data: 'summary.completed', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.columns.failed'), data: 'summary.failed', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.columns.totalQuestions'), data: 'summary.total', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.columns.createdBy'), data: null, width: '10%', render: (_data, _type, row) => row.createdBy?.email || t('common.na') },
-        { title: t('experimental.analysis.columns.flagged'), data: 'summary.flagged', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.columns.date'), data: 'createdAt', width: '6%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+        { title: t('experimental.analysis.columns.name'), data: 'name', width: '22%', render: (data, type, row) => type === 'display' ? detailsList([
+            [t('experimental.analysis.details.name'), `<span class="experimental-table-name">${escapeHtml(data)}</span>`],
+            [t('experimental.analysis.details.createdBy'), escapeHtml(row.createdBy?.email || t('common.na'))]
+        ]) : data },
+        { title: t('experimental.analysis.columns.analyzer'), data: 'config.analyzerId', width: '12%', render: (_data, _type, row) => escapeHtml(getAnalyzerLabel(row)) },
+        { title: t('experimental.analysis.columns.setup'), data: null, orderable: false, width: '19%', render: (_data, _type, row) => detailsList([
+            [t('experimental.analysis.columns.workflow'), escapeHtml(getWorkflowLabel(row))],
+            [t('batch.upload.model.label'), escapeHtml(getModelLabel(row))],
+            [t('experimental.analysis.columns.appVersion'), escapeHtml(getAppVersionLabel(row))]
+        ]) },
+        { title: t('experimental.analysis.columns.results'), data: 'summary.completed', className: 'dt-left', width: '14%', render: (_data, type, row) => type === 'display' ? resultsCell(row, true) : row.summary?.completed },
+        { title: t('experimental.analysis.columns.status'), data: 'status', width: '9%', render: (data, type) => type === 'display' ? statusPill(data) : data },
+        { title: t('experimental.analysis.columns.date'), data: 'createdAt', width: '10%', render: (data, type) => type === 'display' ? formatDate(data) : data }
     ];
 
     const comparisonColumns = [
-        { title: t('experimental.analysis.comparison.columns.name'), data: 'name', width: '23%', render: (data, type) => type === 'display' ? `<span style="white-space: normal; overflow-wrap: anywhere;">${escapeHtml(data)}</span>` : data },
-        { title: t('experimental.analysis.comparison.columns.analyzer'), data: null, width: '15%', render: (_data, _type, row) => getAnalyzerLabel(row) },
-        { title: t('experimental.analysis.comparison.columns.status'), data: 'status', width: '10%', render: (data) => getStatusLabel(data) },
-        { title: t('experimental.analysis.comparison.columns.completed'), data: 'summary.completed', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.comparison.columns.failed'), data: 'summary.failed', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.comparison.columns.total'), data: 'summary.total', width: '7%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '11%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+        { title: t('experimental.analysis.comparison.columns.name'), data: 'name', width: '28%', render: (data, type) => type === 'display' ? `<span class="experimental-table-name">${escapeHtml(data)}</span>` : data },
+        { title: t('experimental.analysis.comparison.columns.analyzer'), data: 'config.analyzerId', width: '16%', render: (_data, _type, row) => escapeHtml(getAnalyzerLabel(row)) },
+        { title: t('experimental.analysis.columns.results'), data: 'summary.completed', className: 'dt-left', width: '18%', render: (_data, type, row) => type === 'display' ? resultsCell(row, false) : row.summary?.completed },
+        { title: t('experimental.analysis.comparison.columns.status'), data: 'status', width: '12%', render: (data, type) => type === 'display' ? statusPill(data) : data },
+        { title: t('experimental.analysis.comparison.columns.date'), data: 'createdAt', width: '12%', render: (data, type) => type === 'display' ? formatDate(data) : data }
     ];
 
     const renderComparisonActions = (comparison) => (
-        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
+        <div className="experimental-table-actions experimental-table-actions--group experimental-table-actions--stacked" role="group" aria-label={t('experimental.analysis.comparison.columns.actions')}>
             <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${comparison._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison._id)}>{t('experimental.analysis.export')}</GcdsButton>
-            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison._id)}>{t('experimental.analysis.delete')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(comparison, comparisonTableStatus)}>{t('experimental.analysis.export')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(comparison, comparisonTableStatus)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
     );
 
     const renderBatchActions = (batch) => (
-        <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.analysis.columns.actions')}>
+        <div className="experimental-table-actions experimental-table-actions--group experimental-table-actions--stacked" role="group" aria-label={t('experimental.analysis.columns.actions')}>
             <CellRootLink className="filter-button filter-button-primary" navigate={navigate} href={`${getPath('experimental-analysis', lang)}/${batch._id}`}>{t('experimental.analysis.viewResults')}</CellRootLink>
-            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch._id)}>{t('experimental.analysis.export')}</GcdsButton>
+            <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExport(batch, historyStatus)}>{t('experimental.analysis.export')}</GcdsButton>
             <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportChatLogs(batch)}>{t('experimental.analysis.exportChatLogs')}</GcdsButton>
-            {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch._id)}>{t('experimental.analysis.resume')}</GcdsButton>}
-            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch._id)}>{t('experimental.analysis.delete')}</GcdsButton>
+            {isLambdaRuntime() && canResumeBatch(batch) && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleResumeBatch(batch)}>{t('experimental.analysis.resume')}</GcdsButton>}
+            <GcdsButton size="small" buttonRole="danger" onClick={() => handleDeleteBatch(batch, historyStatus)}>{t('experimental.analysis.delete')}</GcdsButton>
         </div>
     );
 
@@ -688,13 +771,14 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
         const keyPrefix = mode === 'comparison'
             ? 'experimental.analysis.comparison.analyzerRules'
             : 'experimental.analysis.analyzerRules';
+        const titleId = `${mode}-${analyzerId}-rules-title`;
 
         return (
             <div className="overflow-auto mt-300">
                 <GcdsText className="mb-200">
-                    <strong>{t(`${keyPrefix}.${analyzerId}.title`)}</strong>
+                    <strong id={titleId}>{t(`${keyPrefix}.${analyzerId}.title`)}</strong>
                 </GcdsText>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table aria-labelledby={titleId} style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-200">{t(`${keyPrefix}.headers.setup`)}</th>
@@ -717,34 +801,76 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     };
 
     return (
-        <GcdsContainer layout="page" className="mb-600">
+        <GcdsContainer layout="page" className="mb-600 filter-fields-full-size">
             <header className="mb-400">
-                <GcdsHeading tag="h1">
-                    {selectedDataset?.name || t('experimental.analysis.title')}
-                </GcdsHeading>
-                {selectedDataset?.description && (
-                    <GcdsText className="mb-200">
-                        {selectedDataset.description}
+                <GcdsHeading tag="h1">{t('experimental.analysis.title')}</GcdsHeading>
+                <nav aria-label={t('admin.navigation.ariaLabel')}>
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
+                        {t('experimental.datasets.backToList')}
+                    </GcdsLink>
+                </nav>
+            </header>
+
+            {/* One dataset for the whole page: it scopes both tabs' forms and tables. */}
+            <div className="mb-400 settings-form-width">
+                {datasetError.hasError && (
+                    <FeedbackInlineError
+                        id="dataset-select-error"
+                        message={t('experimental.analysis.messages.selectDataset')}
+                        errorCount={datasetError.errorCount}
+                        inputRef={datasetError.errorRef}
+                    />
+                )}
+                <label htmlFor="dataset-select" className="filter-label display-block">
+                    {t('experimental.analysis.useExistingDatasetLabel')}
+                </label>
+                <select
+                    id="dataset-select"
+                    value={selectedDatasetId}
+                    onChange={(e) => {
+                        setSelectedDatasetId(e.target.value);
+                        datasetError.clearError();
+                    }}
+                    aria-describedby={[
+                        datasetError.hasError && 'dataset-select-error',
+                        selectedDataset?.description && 'dataset-select-description'
+                    ].filter(Boolean).join(' ') || undefined}
+                    className="filter-select"
+                >
+                    <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
+                    {datasets.map(ds => (
+                        <option key={ds._id} value={ds._id}>
+                            {ds.name} ({formatNumber(ds.rowCount, lang)} {t('experimental.analysis.datasetRows')})
+                        </option>
+                    ))}
+                </select>
+                {!selectedDatasetId && (
+                    <GcdsText className="mt-200">
+                        {t('experimental.analysis.datasetHelper')}
                     </GcdsText>
                 )}
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <nav aria-label={t('admin.navigation.ariaLabel')}>
-                        <GcdsLink href={getPath('experimental-datasets', lang)}>
-                            {t('experimental.datasets.backToList')}
+                {/* The dropdown already shows the name; the description is read
+                    with it. */}
+                {selectedDataset?.description && (
+                    <div className="mt-200">
+                        <dl className="canada-ca-dl-inline">
+                            <div>
+                                <dt>{t('experimental.suite.descriptionLabel')}</dt>
+                                <dd id="dataset-select-description">{selectedDataset.description}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                )}
+                {/* The suite grid lists comparisons, so it has nothing to show
+                    until this dataset has one. */}
+                {selectedDataset && comparisons.length > 0 && (
+                    <GcdsText marginTop="300" marginBottom="0">
+                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${selectedDataset._id}`}>
+                            {t('experimental.analysis.suiteViewForDataset')}
                         </GcdsLink>
-                    </nav>
-                    {/* TODO(a11y): this link's destination follows the dataset
-                        dropdown further down the page, so it isn't stable page
-                        navigation - it belongs beside that dataset picker (as
-                        "open suite grid for this dataset"), not in the header.
-                        Kept out of the <nav> above until it moves. */}
-                    {selectedDatasetId && (
-                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${selectedDatasetId}`}>
-                            {t('experimental.analysis.suiteView')}
-                        </GcdsLink>
-                    )}
-                </div>
-            </header>
+                    </GcdsText>
+                )}
+            </div>
 
             <div
                 className="experimental-analysis-tabs"
@@ -790,7 +916,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         <GcdsHeading tag="h2">{t('experimental.analysis.configuration')}</GcdsHeading>
 
                         {/* Analyzer selector */}
-                        <div className="mb-400">
+                        <div className="mb-200 settings-form-width">
                             <label htmlFor="analyzer-select" className="filter-label display-block">
                                 {t('experimental.analysis.selectAnalyzers')}
                             </label>
@@ -809,31 +935,33 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     </option>
                                 ))}
                             </select>
-                            {selectedAnalyzerId && selectedAnalyzer && (
-                                <GcdsDetails detailsTitle={t('experimental.analysis.analyzerDetailsTitle')} className="mt-200">
-                                    <GcdsText className="mb-200">
-                                        <strong>{getAnalyzerDisplayName(selectedAnalyzer)}</strong>
-                                    </GcdsText>
-                                    {getAnalyzerDescription(selectedAnalyzer)
-                                        .split('\n')
-                                        .filter(line => line.trim())
-                                        .map((line, idx) => (
-                                            <GcdsText key={idx} className="mb-200">{line}</GcdsText>
-                                        ))}
-                                    {renderAnalyzerRulesTable(selectedAnalyzerId, 'analysis')}
-                                </GcdsDetails>
-                            )}
                         </div>
+                        {selectedAnalyzerId && selectedAnalyzer && (
+                            <GcdsDetails detailsTitle={t('experimental.analysis.analyzerDetailsTitle')} className="mb-400">
+                                <GcdsText className="mb-200">
+                                    <strong>{getAnalyzerDisplayName(selectedAnalyzer)}</strong>
+                                </GcdsText>
+                                {getAnalyzerDescription(selectedAnalyzer)
+                                    .split('\n')
+                                    .filter(line => line.trim())
+                                    .map((line, idx) => (
+                                        <GcdsText key={idx} className="mb-200">{line}</GcdsText>
+                                    ))}
+                                {renderAnalyzerRulesTable(selectedAnalyzerId, 'analysis')}
+                            </GcdsDetails>
+                        )}
 
-                        <div className="mb-400">
+                        <div className="mb-400 settings-form-width">
                             <label htmlFor="analysis-mode-select" className="filter-label display-block">
                                 {t('experimental.analysis.analysisMode.label')}
                             </label>
-                            {hasDatasetReferenceAnswer ? (
+                            {hasDatasetReferenceAnswer ? (<>
+                                <p id="analysis-mode-hint" className="field-hint">{t('experimental.analysis.analysisMode.hint')}</p>
                                 <select
                                     id="analysis-mode-select"
                                     value={analysisMode}
                                     onChange={(e) => setAnalysisMode(e.target.value)}
+                                    aria-describedby="analysis-mode-hint"
                                     className="filter-select"
                                 >
                                     <option value="dataset-reference">{t('experimental.analysis.analysisMode.reference')}</option>
@@ -841,12 +969,12 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                         <option value="generated-answer">{t('experimental.analysis.analysisMode.generated')}</option>
                                     )}
                                 </select>
-                            ) : (
+                            </>) : (
                                 <GcdsText>{t('experimental.analysis.analysisMode.generatedOnly')}</GcdsText>
                             )}
                         </div>
 
-                        <div className="mb-400">
+                        <div className="mb-400 settings-form-width">
                             <label htmlFor="workflow-select" className="filter-label display-block">
                                 {t('experimental.analysis.workflowLabel')}
                             </label>
@@ -864,7 +992,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </select>
                         </div>
 
-                        <div className="mb-400">
+                        <div className="mb-400 settings-form-width">
                             <label htmlFor="model-select" className="filter-label display-block">
                                 {t('batch.upload.model.label')}
                             </label>
@@ -882,7 +1010,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </select>
                         </div>
 
-                        <div className="mb-400">
+                        <div className="mb-400 settings-form-width">
                             <label htmlFor="search-provider-select" className="filter-label display-block">
                                 {t('batch.upload.searchService.label')}
                             </label>
@@ -899,32 +1027,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             </select>
                         </div>
 
-                        {/* Dataset Selection */}
-                        <div className="mb-400">
-                            <label htmlFor="dataset-select" className="filter-label display-block">
-                                {t('experimental.analysis.useExistingDatasetLabel')}
-                            </label>
-                            <select
-                                id="dataset-select"
-                                value={selectedDatasetId}
-                                onChange={(e) => setSelectedDatasetId(e.target.value)}
-                                className="filter-select"
-                            >
-                                <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
-                                {datasets.map(ds => (
-                                    <option key={ds._id} value={ds._id}>
-                                        {ds.name} ({formatNumber(ds.rowCount, lang)} {t('experimental.analysis.datasetRows')})
-                                    </option>
-                                ))}
-                            </select>
-                            {!selectedDatasetId && (
-                                <GcdsText className="mt-200">
-                                    {t('experimental.analysis.datasetHelper')}
-                                </GcdsText>
-                            )}
-                        </div>
-
-                        <div className="mb-400">
+                        <div className="mb-400 settings-form-width">
                             <label htmlFor="trials-select" className="filter-label display-block">
                                 {t('experimental.analysis.trialsLabel')}
                             </label>
@@ -948,8 +1051,8 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             )}
                         </div>
 
-                        <div className="mb-400">
-                            <label htmlFor="run-label-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                        <div className="mb-400 settings-form-width">
+                            <label htmlFor="run-label-input" className="filter-label display-block">
                                 {t('experimental.analysis.runLabelLabel')}
                             </label>
                             <input
@@ -959,7 +1062,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                 maxLength={200}
                                 onChange={(e) => setRunLabel(e.target.value)}
                                 placeholder={t('experimental.analysis.runLabelPlaceholder')}
-                                style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                                className="filter-input"
                             />
                         </div>
 
@@ -990,6 +1093,24 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             <GcdsText>{t('experimental.analysis.noActiveRuns')}</GcdsText>
                         </section>
                     )}
+                    <section id="batches-history">
+                        <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
+                        <TableStatusMessage status={historyStatus} />
+                        <ExperimentalServerDataTable
+                            columns={batchColumns}
+                            fetchData={fetchBatchTableData}
+                            actionsTitle={t('experimental.analysis.columns.actions')}
+                            renderActions={renderBatchActions}
+                            lang={lang}
+                            tableKey={`batches-${selectedDatasetId}-${tableRefreshKey}`}
+                            order={[[5, 'desc']]}
+                            actionsWidth="14%"
+                            autoWidth={false}
+                            containerClassName="metrics-table-container experimental-table-layout table-scroll"
+                            searchLabelSrOnly={t('experimental.analysis.filterBatchesLabel')}
+                            searchPlaceholder={t('admin.common.filterPlaceholder')}
+                        />
+                    </section>
             </>}
             </div>
 
@@ -998,26 +1119,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             <section>
                 <GcdsHeading tag="h2">{t('experimental.analysis.comparison.title')}</GcdsHeading>
                 <GcdsText className="mb-300">{t('experimental.analysis.comparison.hint')}</GcdsText>
-                <div className="mb-300">
-                    <label htmlFor="comparison-dataset-select" className="filter-label display-block">
-                        {t('experimental.analysis.useExistingDatasetLabel')}
-                    </label>
-                    <select
-                        id="comparison-dataset-select"
-                        value={selectedDatasetId}
-                        onChange={(e) => setSelectedDatasetId(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="">{t('experimental.analysis.datasetSelectPlaceholder')}</option>
-                        {datasets.map(ds => (
-                            <option key={ds._id} value={ds._id}>
-                                {ds.name} ({formatNumber(ds.rowCount, lang)} {t('experimental.analysis.datasetRows')})
-                            </option>
-                        ))}
-                    </select>
-                    {!selectedDatasetId && <GcdsText className="mt-200">{t('experimental.analysis.datasetHelper')}</GcdsText>}
-                </div>
-                <div className="mb-300">
+                <div className="mb-300 settings-form-width">
                     <label htmlFor="comparison-baseline-select" className="filter-label display-block">
                         {t('experimental.analysis.comparison.baseline')}
                     </label>
@@ -1036,26 +1138,42 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         ))}
                     </select>
                 </div>
-                <div className="mb-300">
-                    <label htmlFor="comparison-candidate-select" className="filter-label display-block">
-                        {t('experimental.analysis.comparison.candidate')}
-                    </label>
-                    <select
-                        id="comparison-candidate-select"
-                        value={comparisonCandidateId}
-                        onChange={(e) => setComparisonCandidateId(e.target.value)}
-                        disabled={!comparisonBaselineId}
-                        className="filter-select"
-                    >
-                        <option value="">{t('experimental.analysis.comparison.selectCandidate')}</option>
-                        {comparisonCandidates.map(batch => (
-                            <option key={batch._id} value={batch._id}>{getRunLabel(batch)}</option>
-                        ))}
-                    </select>
+                <div className="mb-300 settings-form-width">
+                    {noComparisonCandidates ? (
+                        <>
+                            <p className="filter-label display-block mt-0">{t('experimental.analysis.comparison.candidate')}</p>
+                            <GcdsNotice
+                                noticeRole="info"
+                                noticeTitleTag="h3"
+                                noticeTitle={t('experimental.analysis.comparison.noCandidatesTitle')}
+                            >
+                                <GcdsText>{t('experimental.analysis.comparison.noCandidates')}</GcdsText>
+                            </GcdsNotice>
+                        </>
+                    ) : (
+                        <>
+                            <label htmlFor="comparison-candidate-select" className="filter-label display-block">
+                                {t('experimental.analysis.comparison.candidate')}
+                            </label>
+                            <select
+                                id="comparison-candidate-select"
+                                value={comparisonCandidateId}
+                                onChange={(e) => setComparisonCandidateId(e.target.value)}
+                                disabled={!comparisonBaselineId}
+                                className="filter-select"
+                            >
+                                <option value="">{t('experimental.analysis.comparison.selectCandidate')}</option>
+                                {comparisonCandidates.map(batch => (
+                                    <option key={batch._id} value={batch._id}>{getRunLabel(batch)}</option>
+                                ))}
+                            </select>
+                        </>
+                    )}
                 </div>
                 <GcdsButton onClick={handleCreateComparison} disabled={comparisonLoading || !comparisonBaselineId || !comparisonCandidateId}>
                     {comparisonLoading ? t('experimental.analysis.starting') : t('experimental.analysis.comparison.create')}
                 </GcdsButton>
+                <StatusMessage className="mt-200" variant={comparisonStatus.message ? (comparisonStatus.isError ? 'error' : 'info') : undefined} message={comparisonStatus.message} nonce={comparisonStatus.nonce} />
                 {Object.keys(comparisonProgress).length > 0 && (
                     <section className="mt-400 mb-400">
                         <GcdsHeading tag="h2">{t('experimental.analysis.runningStatus')}</GcdsHeading>
@@ -1072,49 +1190,29 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                         {renderAnalyzerRulesTable(comparisonAnalyzer.id, 'comparison')}
                     </GcdsDetails>
                 )}
+                <TableStatusMessage status={comparisonTableStatus} />
                 {comparisons.length > 0 && (
                     <div className="mt-300">
-                        <div className="experimental-table-container">
-                            <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
-                            <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.comparison.columns.previousComparisons')}</GcdsHeading>
-                            <ExperimentalServerDataTable
-                                columns={comparisonColumns}
-                                fetchData={fetchComparisonTableData}
-                                actionsTitle={t('experimental.analysis.comparison.columns.actions')}
-                                renderActions={renderComparisonActions}
-                                lang={lang}
-                                tableKey={`comparisons-${selectedDatasetId}-${tableRefreshKey}`}
-                                actionsWidth="20%"
-                                autoWidth={false}
-                                containerClassName="experimental-table-layout"
-                            />
-                            </div>
-                        </div>
+                        <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.comparison.columns.previousComparisons')}</GcdsHeading>
+                        <ExperimentalServerDataTable
+                            columns={comparisonColumns}
+                            fetchData={fetchComparisonTableData}
+                            actionsTitle={t('experimental.analysis.comparison.columns.actions')}
+                            renderActions={renderComparisonActions}
+                            lang={lang}
+                            tableKey={`comparisons-${selectedDatasetId}-${tableRefreshKey}`}
+                            actionsWidth="14%"
+                            autoWidth={false}
+                            containerClassName="metrics-table-container experimental-table-layout table-scroll"
+                            searchLabelSrOnly={t('experimental.analysis.filterComparisonsLabel')}
+                            searchPlaceholder={t('admin.common.filterPlaceholder')}
+                        />
                     </div>
                 )}
             </section>
             </>}
             </div>
 
-            {/* History List */}
-            {activeTab === 'batches' && <section id="batches-history" className="experimental-table-container">
-                <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 1rem' }}>
-                    <GcdsHeading tag="h2" className="mt-600">{t('experimental.analysis.previousRuns')}</GcdsHeading>
-                    <ExperimentalServerDataTable
-                        columns={batchColumns}
-                        fetchData={fetchBatchTableData}
-                        actionsTitle={t('experimental.analysis.columns.actions')}
-                        renderActions={renderBatchActions}
-                        lang={lang}
-                        tableKey={`batches-${selectedDatasetId}-${tableRefreshKey}`}
-                        order={[[11, 'desc']]}
-                        actionsWidth="23%"
-                        autoWidth={false}
-                        containerClassName="experimental-table-layout"
-                    />
-                </div>
-            </section>
-            }
         </GcdsContainer>
     );
 }

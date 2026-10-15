@@ -1,4 +1,5 @@
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { User } from '../../models/user.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import { requireLiteralString, requireObjectIdString } from '../util/db-query.js';
 
@@ -34,15 +35,22 @@ async function handler(req, res) {
                 { description: { $regex: escaped, $options: 'i' } },
                 { status: { $regex: escaped, $options: 'i' } },
                 { 'config.workflow': { $regex: escaped, $options: 'i' } },
-                { 'config.aiProvider': { $regex: escaped, $options: 'i' } }
+                { 'config.aiProvider': { $regex: escaped, $options: 'i' } },
+                { 'config.analyzerId': { $regex: escaped, $options: 'i' } }
             ];
+            // "Created by" shows the creator's email, which lives on the user,
+            // so match those users first and search by their ids.
+            const creators = await User.find({ email: { $regex: escaped, $options: 'i' } }).select('_id').lean();
+            if (creators.length > 0) {
+                query.$or.push({ createdBy: { $in: creators.map(user => user._id) } });
+            }
         }
 
         const total = await ExperimentalBatch.countDocuments(baseQuery);
         const filtered = await ExperimentalBatch.countDocuments(query);
         const skip = isDataTablesRequest ? Math.max(0, parseInt(req.query.start) || 0) : (page - 1) * limit;
         const take = isDataTablesRequest ? Math.max(1, parseInt(req.query.length) || 10) : limit;
-        const sortFields = new Set(['createdAt', 'name', 'status', 'summary.completed', 'summary.failed', 'summary.total']);
+        const sortFields = new Set(['createdAt', 'name', 'status', 'config.analyzerId', 'summary.completed', 'summary.failed', 'summary.total']);
         const orderBy = sortFields.has(req.query.orderBy) ? req.query.orderBy : 'createdAt';
         const orderDir = req.query.orderDir === 'asc' ? 1 : -1;
 

@@ -37,7 +37,7 @@ describe('SuiteGridTable', () => {
         renderGrid();
 
         const link = screen.getByRole('link', { name: /^2\/3 .*, Run one, Trials test$/ });
-        expect(link.querySelector('[aria-hidden="true"]').textContent).toBe('✓✗✓');
+        expect(link.querySelector('[aria-hidden="true"]').textContent).toBe('✓⚑✓');
     });
 
     it('leaves a missing cell with no link and renders no buttons', () => {
