@@ -1055,7 +1055,10 @@
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
       "sendError": "Failed to send verification code.",
-      "invalidCode": "Invalid verification code."
+      "invalidCode": "Invalid verification code.",
+      "resent": "New code sent.",
+      "cooldown": "Wait a minute before asking for a new code.",
+      "locked": "Too many incorrect codes. Try again later."
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"

@@ -1068,7 +1068,10 @@
       "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
       "send": "Envoyer le code de vérification",
       "sendError": "Impossible d'envoyer le code de vérification.",
-      "invalidCode": "Code de vérification invalide."
+      "invalidCode": "Code de vérification invalide.",
+      "resent": "Nouveau code envoyé.",
+      "cooldown": "Attendez une minute avant de demander un nouveau code.",
+      "locked": "Trop de codes incorrects. Réessayez plus tard."
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"

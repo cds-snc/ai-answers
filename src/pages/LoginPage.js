@@ -10,7 +10,7 @@ import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -109,10 +109,13 @@ const LoginPage = ({ lang = 'en' }) => {
   // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
   // don't rely on it to announce resend-specific feedback.
   const twoStepIntroRef = useFocusOnChange(showTwoStep);
+  // "New code sent." after a resend. Repeatable, so a second resend announces again.
+  const { message: resendMessage, nonce: resendNonce, announce: announceResent, clear: clearResent } = useRepeatableStatus();
 
   const verifyTwoStep = async () => {
     setIsLoading(true);
     clearTwoStepError();
+    clearResent();
     // Same reasoning as handleSubmit's announce().
     announce(t('login.form.submitting'), { skippable: true });
     try {
@@ -129,7 +132,7 @@ const LoginPage = ({ lang = 'en' }) => {
       if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
     } catch (err) {
-      setTwoStepError(t('login.2fa.invalidCode'));
+      setTwoStepError(err.reason === 'locked' ? t('login.2fa.locked') : t('login.2fa.invalidCode'));
     } finally {
       setIsLoading(false);
     }
@@ -139,12 +142,17 @@ const LoginPage = ({ lang = 'en' }) => {
   const requestTwoStep = async () => {
     setIsLoading(true);
     clearTwoStepError();
+    clearResent();
     try {
       // backend method remains send2FA
       await AuthService.send2FA();
       setShowTwoStep(true);
+      announceResent(t('login.2fa.resent'));
     } catch (err) {
-      setTwoStepError(t('login.2fa.sendError'));
+      // The server refuses a resend within a minute of the last code (the one
+      // sent at sign-in counts) and while 2FA is locked. Say so, not "failed".
+      const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked' };
+      setTwoStepError(t(messages[err.reason] || 'login.2fa.sendError'));
     } finally {
       setIsLoading(false);
     }
@@ -178,6 +186,7 @@ const LoginPage = ({ lang = 'en' }) => {
           <p tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
+          <StatusMessage variant="success" message={resendMessage} nonce={resendNonce} className="mb-400" />
           {twoStepError && (
             <AnnouncedError
               id="login-2fa-error"

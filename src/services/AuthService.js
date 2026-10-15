@@ -193,7 +193,9 @@ class AuthService {
 
     if (!response.ok) {
       const json = await response.json().catch(() => ({}));
-      throw new Error(json.message || json.reason || '2FA verify failed');
+      const err = new Error(json.message || json.reason || '2FA verify failed');
+      err.reason = json.reason || null; // 'invalid' | 'locked'
+      throw err;
     }
 
     const data = await response.json();
@@ -252,7 +254,9 @@ class AuthService {
 
     if (!resp.ok) {
       const json = await resp.json().catch(() => ({}));
-      throw new Error(json.message || 'Failed to send 2FA');
+      const err = new Error(json.message || 'Failed to send 2FA');
+      err.reason = json.reason || null; // 'cooldown' | 'locked' | 'invalid'
+      throw err;
     }
 
     return await resp.json();
