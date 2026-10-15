@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { GcdsButton } from '@cdssnc/gcds-components-react';
+import React from 'react';
+import { GcdsButton, GcdsDetails, GcdsHeading } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import { getItemVerdict, humanizeFieldName, truncate, flattenAnalyzerValue } from '../../utils/experimental/batchItems.js';
@@ -75,8 +75,9 @@ const renderAnalyzerSummary = (item, analyzerId, comparisonMode = false) => {
 };
 
 /**
- * Chat-level drill-down: one row per interaction, with analyzer outputs in
- * dynamic columns so the conversation can be reviewed as a table.
+ * Chat-level drill-down: one block per interaction - its fields as a labelled
+ * list, the two answers side by side in a table (the one comparison here),
+ * and each analyzer's full output in its own collapsible section.
  */
 export default function BatchItemDetail({
     item,
@@ -94,16 +95,18 @@ export default function BatchItemDetail({
     backButtonRef
 }) {
     const { t } = useTranslations(lang);
-    const [detailMode, setDetailMode] = useState(false);
-
     if (!item) return null;
 
     const interactions = chatItems.length > 0 ? chatItems : [item];
     const analyzerColumns = getAnalyzerColumns(interactions);
     const analyzerIds = [...new Set(analyzerColumns.map(column => column.analyzerId))];
-    const visibleAnalyzerColumns = detailMode
-        ? analyzerColumns
-        : analyzerIds.map(analyzerId => ({ analyzerId, field: null }));
+    // Translated analyzer name; an analyzer with no locale entry falls back to
+    // its id, as on the Analysis page.
+    const analyzerName = (analyzerId) => {
+        const key = `experimental.analysis.analyzers.${analyzerId}.name`;
+        const name = t(key);
+        return name === key ? humanizeFieldName(analyzerId) : name;
+    };
     const verdict = getItemVerdict(item);
     const verdictLabel = t(`experimental.results.verdict.${verdict}`);
     const referenceAnswerLabel = comparisonMode
@@ -148,87 +151,74 @@ export default function BatchItemDetail({
                 <strong>{t('experimental.results.detail.chat')}</strong>: {item.chatId || t('experimental.results.table.noChatId')}
             </div>
 
-            {/* TODO(design): needs design review. Native <button>s (not
-                <GcdsButton>), same rationale as PauseToggleButton.js:
-                GcdsButton copies aria-* attributes onto its shadow-DOM button
-                inside its own click handler, before React's state update from
-                that same click commits, so aria-pressed was always one click
-                behind for screen readers. Styled via .filter-button-primary
-                (active) / .filter-button-outline (inactive) to reproduce
-                GcdsButton's buttonRole primary/secondary look for now; a
-                designer hasn't signed off on this specific treatment. */}
-            <div className="mb-300" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button
-                    type="button"
-                    className={`filter-button ${detailMode ? 'filter-button-outline' : 'filter-button-primary'}`}
-                    onClick={() => setDetailMode(false)}
-                    aria-pressed={!detailMode}
-                >
-                    {t('experimental.results.detail.simpleView')}
-                </button>
-                <button
-                    type="button"
-                    className={`filter-button ${detailMode ? 'filter-button-primary' : 'filter-button-outline'}`}
-                    onClick={() => setDetailMode(true)}
-                    aria-pressed={detailMode}
-                >
-                    {t('experimental.results.detail.detailedView')}
-                </button>
-            </div>
-
-            <div className="overflow-auto experimental-results-table-container">
-                <table className="experimental-results-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-                            <th className="p-200">{t('experimental.results.detail.interaction')}</th>
-                            <th className="p-200">{t('experimental.results.table.question')}</th>
-                            <th className="p-200">{referenceAnswerLabel}</th>
-                            <th className="p-200">{currentAnswerLabel}</th>
-                            <th className="p-200">{t('experimental.results.table.verdict')}</th>
-                            {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
-                                <th key={`${analyzerId}-${field || 'summary'}`} className="p-200">
-                                    {humanizeFieldName(analyzerId)}{field
-                                        ? `: ${humanizeFieldName(field)}`
-                                        : comparisonMode ? `: ${humanizeFieldName('comparisonExplanation')}` : ''}
-                                </th>
-                            ))}
-                            <th className="p-200">{t('experimental.results.table.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {interactions.map((interaction, index) => {
-                            const interactionVerdict = getItemVerdict(interaction);
-                            return (
-                                <tr key={interaction._id || index} style={{ borderBottom: '1px solid #eee', verticalAlign: 'top' }}>
-                                    <td className="p-200">{index + 1}</td>
-                                    <td className="p-200">{interaction.question || '—'}</td>
-                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                                        {interaction.goldenReferenceAnswer || interaction.referenceAnswer || noReferenceAnswerLabel}
-                                    </td>
-                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                                        {interaction.answer || noAnswerLabel}
-                                    </td>
-                                    <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
-                                    {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
-                                        <td key={`${analyzerId}-${field || 'summary'}`} className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                                            {field
-                                                ? renderAnalyzerCell(interaction, analyzerId, field)
-                                                : renderAnalyzerSummary(interaction, analyzerId, comparisonMode)}
-                                        </td>
-                                    ))}
-                                    <td className="p-200">
-                                        {interaction.chatId && (
-                                            <GcdsButton size="small" buttonRole="secondary" onClick={() => openChatViewer(interaction.chatId, lang)}>
-                                                {t('experimental.results.detail.viewChatLogs')}
-                                            </GcdsButton>
-                                        )}
-                                    </td>
+            {interactions.map((interaction, index) => {
+                const headingId = `interaction-${interaction._id || index}-heading`;
+                const interactionVerdict = getItemVerdict(interaction);
+                return (
+                    <section key={interaction._id || index} aria-labelledby={headingId} className="mb-500">
+                        <GcdsHeading tag="h2" id={headingId}>
+                            {t('experimental.results.detail.interactionNumber').replace('{n}', String(index + 1))}
+                        </GcdsHeading>
+                        <dl className="experimental-interaction-dl">
+                            <div>
+                                <dt>{t('experimental.results.detail.question')}</dt>
+                                <dd>{interaction.question || '—'}</dd>
+                            </div>
+                        </dl>
+                        {/* The two answers are the one comparison here, so they get a table. */}
+                        <table className="experimental-answer-table" aria-labelledby={headingId}>
+                            <thead>
+                                <tr>
+                                    <th scope="col">{referenceAnswerLabel}</th>
+                                    <th scope="col">{currentAnswerLabel}</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{interaction.goldenReferenceAnswer || interaction.referenceAnswer || noReferenceAnswerLabel}</td>
+                                    <td>{interaction.answer || noAnswerLabel}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <dl className="experimental-interaction-dl">
+                            <div>
+                                <dt>{t('experimental.results.table.verdict')}</dt>
+                                <dd>{t(`experimental.results.verdict.${interactionVerdict}`)}</dd>
+                            </div>
+                            {analyzerIds.map(analyzerId => (
+                                <div key={analyzerId}>
+                                    <dt>
+                                        {analyzerName(analyzerId)}
+                                        {comparisonMode ? `: ${humanizeFieldName('comparisonExplanation')}` : ''}
+                                    </dt>
+                                    <dd>{renderAnalyzerSummary(interaction, analyzerId, comparisonMode)}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                        {analyzerIds.map(analyzerId => (
+                            <GcdsDetails
+                                key={analyzerId}
+                                detailsTitle={t('experimental.results.detail.analyzerDetails').replace('{analyzer}', () => analyzerName(analyzerId))}
+                                className="mb-300"
+                            >
+                                <dl className="experimental-interaction-dl">
+                                    {analyzerColumns.filter(column => column.analyzerId === analyzerId).map(({ field }) => (
+                                        <div key={field}>
+                                            <dt>{humanizeFieldName(field)}</dt>
+                                            <dd>{renderAnalyzerCell(interaction, analyzerId, field)}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </GcdsDetails>
+                        ))}
+                        {interaction.chatId && (
+                            <GcdsButton size="small" buttonRole="secondary" onClick={() => openChatViewer(interaction.chatId, lang)}>
+                                {t('experimental.results.detail.viewChatLogs')}
+                            </GcdsButton>
+                        )}
+                    </section>
+                );
+            })}
         </section>
     );
 }

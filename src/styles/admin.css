@@ -1042,6 +1042,45 @@ a.filter-button:focus {
   margin-top: 0;
 }
 
+/* One interaction on the batch results detail view: labels above values,
+   one per line. */
+.experimental-interaction-dl {
+  display: grid;
+  gap: var(--gcds-spacing-300);
+  margin: 0 0 var(--gcds-spacing-300);
+}
+
+.experimental-interaction-dl dt {
+  font-weight: var(--gcds-font-weights-bold);
+}
+
+.experimental-interaction-dl dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The two answers side by side, equal width, long text wrapping. */
+.experimental-answer-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0 0 var(--gcds-spacing-300);
+}
+
+.experimental-answer-table th,
+.experimental-answer-table td {
+  padding: var(--gcds-spacing-200);
+  border: var(--gcds-border-width-sm) solid var(--gcds-border-default);
+  text-align: left;
+  vertical-align: top;
+}
+
+.experimental-answer-table td {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Experimental tables use the full viewport so wide analysis columns do not
    create artificial gutters inside the page container. */
 .experimental-analysis-tabs {

@@ -2747,9 +2747,8 @@
       },
       "detail": {
         "chat": "Clavardage",
-        "interaction": "Interaction",
-        "simpleView": "Vue simple",
-        "detailedView": "Vue détaillée",
+        "interactionNumber": "Interaction {n}",
+        "analyzerDetails": "Voir : {analyzer}",
         "backToList": "Retour à la liste",
         "previous": "Précédent",
         "next": "Suivant",

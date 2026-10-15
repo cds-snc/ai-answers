@@ -2747,9 +2747,8 @@
       },
       "detail": {
         "chat": "Chat",
-        "interaction": "Interaction",
-        "simpleView": "Simple view",
-        "detailedView": "Detailed view",
+        "interactionNumber": "Interaction {n}",
+        "analyzerDetails": "View: {analyzer}",
         "backToList": "Back to list",
         "previous": "Previous",
         "next": "Next",
