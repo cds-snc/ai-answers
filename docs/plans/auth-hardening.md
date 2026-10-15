@@ -190,8 +190,8 @@ before `twoFA.enabled` goes on anywhere real.
    Keep it; there is no log viewer in the app. Database and driver error codes never go in
    `detail`, only in the server log.
 5. **Exercised on a preview (2026-10-15):** 2FA sign-in with a real emailed code, a wrong code,
-   the resend cooldown and a successful resend. **Not yet confirmed:** the 5-wrong-codes 2FA
-   lockout, and that the password lockout rejects the correct password while it lasts.
+   the resend cooldown and a successful resend, the 5-wrong-codes 2FA lockout, and the password
+   lockout. The error-message and timed-out changes made later the same day need a preview pass too.
 6. Dead code to clean up, undecided: `twoFASecret` on the user and its generation in
    `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
