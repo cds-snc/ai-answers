@@ -25,10 +25,14 @@ function codedError(code, message) {
   return err;
 }
 
+// Any server-only secret works as the HMAC key. JWT_SECRET_KEY is last because it
+// is the one every environment has: staging/production (ECS) and PR previews
+// (Lambda, which gets no SESSION_SECRET). The "twofa:" prefix keeps these hashes
+// distinct from anything else signed with the same key.
 function hashCode(userId, code) {
-  const key = process.env.TWOFA_SECRET || process.env.SESSION_SECRET;
-  if (!key) throw codedError('twofa_no_secret', 'TWOFA_SECRET or SESSION_SECRET must be set to use 2FA');
-  return crypto.createHmac('sha256', key).update(`${userId}:${code}`).digest('hex');
+  const key = process.env.TWOFA_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET_KEY;
+  if (!key) throw codedError('twofa_no_secret', 'TWOFA_SECRET, SESSION_SECRET or JWT_SECRET_KEY must be set to use 2FA');
+  return crypto.createHmac('sha256', key).update(`twofa:${userId}:${code}`).digest('hex');
 }
 
 function safeEqual(a, b) {

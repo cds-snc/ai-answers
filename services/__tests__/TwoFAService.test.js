@@ -200,4 +200,25 @@ describe('TwoFAService', () => {
   it('rejects an id that is not an ObjectId string', async () => {
     await expect(TwoFAService.sendChallenge({ userOrId: { $ne: null } })).rejects.toThrow();
   });
+
+  describe('hash key', () => {
+    const saved = {};
+    const KEYS = ['TWOFA_SECRET', 'SESSION_SECRET', 'JWT_SECRET_KEY'];
+    beforeEach(() => KEYS.forEach((k) => { saved[k] = process.env[k]; delete process.env[k]; }));
+    afterEach(() => KEYS.forEach((k) => {
+      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+    }));
+
+    // PR preview Lambdas get JWT_SECRET_KEY but neither of the other two.
+    it('works with only JWT_SECRET_KEY set', async () => {
+      process.env.JWT_SECRET_KEY = 'preview-jwt-secret';
+      const { res, code } = await sendAndCapture();
+      expect(res.success).toBe(true);
+      expect((await TwoFAService.verifyChallenge({ userOrId: ID, code })).success).toBe(true);
+    });
+
+    it('fails with twofa_no_secret when no key is set', async () => {
+      await expect(sendAndCapture()).rejects.toMatchObject({ code: 'twofa_no_secret' });
+    });
+  });
 });

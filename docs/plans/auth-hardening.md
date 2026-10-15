@@ -163,12 +163,11 @@ Built and unit-tested (see `admin-and-auth.md` for the flow). Preview testing on
 found the following. None of it is a flaw in the Phase 1 design, but all of it must be settled
 before `twoFA.enabled` goes on anywhere real.
 
-1. **`TWOFA_SECRET` (or `SESSION_SECRET`) must be set as an environment variable** on every
-   environment, or sign-in with 2FA on returns 500 `reason: "twofa_no_secret"`. The preview
-   didn't have it; the request went to the infrastructure owner. Open question: the session
-   code also reads a `session.secret` *setting* and falls back to a default. If any environment
-   supplies its secret that way, make `TwoFAService.hashCode` use the same lookup instead of
-   requiring a new variable.
+1. **Fixed: 2FA hash key missing on previews.** Sign-in with 2FA on returned 500
+   `reason: "twofa_no_secret"` because preview Lambdas get neither `TWOFA_SECRET` nor
+   `SESSION_SECRET` (`.github/scripts/create-lambda-function.sh`). `TwoFAService.hashCode` now
+   also falls back to `JWT_SECRET_KEY`, which every environment has. No infrastructure change
+   needed.
 2. **Settings are cached per server instance, loaded once at startup**
    (`SettingsService.loadAll()`, `server/server.js`; no timer). Saving a setting updates the
    database and only the cache of the instance that served the save. With several Lambda or ECS
@@ -189,9 +188,13 @@ before `twoFA.enabled` goes on anywhere real.
    `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
    email (inherent to lockout; admin is VPN-only); the failed-password counter has no decay and
-   a parallel burst can slip a few extra guesses past 10; the per-IP limiter depends on
-   `trust proxy` counting the right number of hops behind Akamai, which is unchecked; the
-   session isn't regenerated at the password step (fold into Phase 3).
+   a parallel burst can slip a few extra guesses past 10; the session isn't regenerated at the
+   password step (fold into Phase 3).
+8. **Per-IP auth limiter removed.** Phase 1 first added one in front of `/api/auth/*` (item 3
+   above). It was dropped because `trust proxy` is 1, so behind Akamai and the load balancer
+   `req.ip` is likely a proxy address shared by many users, not the client, and the limiter could
+   block staff sign-in as a group. The per-account lockouts are the real control. Revisit only
+   with the hop count verified and counters in Redis.
 
 ### Phase 2: Sign-up controls (F3)
 

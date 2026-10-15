@@ -76,14 +76,14 @@ When 2FA is disabled, step 1 logs the user straight in, and the verify and send 
 (no `pending2FA`). `NODE_ENV=test` also skips 2FA.
 
 Attempt counters are on the user document on purpose: an attacker can discard a session or change
-address, but not the account. `middleware/auth-rate-limiter.js` adds a loose per-IP limit (100
-POSTs per 15 minutes, per task) on `/api/auth/*` as a backstop only. It is generous because staff
-share VPN addresses.
+address, but not the account. There is no separate per-IP limit on `/api/auth/*`; see the plan's
+Phase 1 status for why it was dropped.
 
 Requirements and gotchas when turning 2FA on:
 
-- `TWOFA_SECRET` (or `SESSION_SECRET`) must be an environment variable, or login returns 500 with
-  `reason: "twofa_no_secret"`. Other `reason` values on that 500: `twofa_no_template`,
+- The code hash is keyed from `TWOFA_SECRET`, else `SESSION_SECRET`, else `JWT_SECRET_KEY`. Every
+  deployed environment has `JWT_SECRET_KEY` (PR previews have no `SESSION_SECRET`), so nothing
+  needs setting. With none of the three, login returns 500 with `reason: "twofa_no_secret"`. Other `reason` values on that 500: `twofa_no_template`,
   `twofa_send_failed`, `twofa_send_error`.
 - Settings are cached per instance at startup with no refresh, so on a multi-instance deployment
   a saved `twoFA.enabled` only takes effect on some instances. Unfixed; see the Phase 1 status
