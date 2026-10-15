@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.209.0](https://github.com/cds-snc/ai-answers/compare/v1.208.1...v1.209.0) (2026-10-15)
+
+
+### Features
+
+* admin footer links to system card, after how-to guides ([b2e9ad9](https://github.com/cds-snc/ai-answers/commit/b2e9ad965877cddf5e83ac26074a934bdf2ee992))
+
+
+### Bug Fixes
+
+* finesse census ([87a7b3a](https://github.com/cds-snc/ai-answers/commit/87a7b3a665bc22d43aad9009afcaba5aa5b6707a))
+* LAC issue and DTC ([e250935](https://github.com/cds-snc/ai-answers/commit/e250935f9839550a86783731eec2f5868f15aa36))
+* LAC issue and DTC - tested in preview ([0510caf](https://github.com/cds-snc/ai-answers/commit/0510cafb6f88ff689e71d23539d581b8bc36a9fb))
+* match metrics eval row labels to partner dashboard ([315a1e8](https://github.com/cds-snc/ai-answers/commit/315a1e8e7d47e5d7fb6f6add335b6daaf5fcc31a))
+
+
+### Documentation
+
+* passage retrieval plan ([89a5398](https://github.com/cds-snc/ai-answers/commit/89a53986292dc750d33aa4cd8e212196caa0a4e1))
+* passage retrieval plan ([62c403f](https://github.com/cds-snc/ai-answers/commit/62c403fe54d5f0123de78fae46ea9aed55613d45))
+
 ## [1.208.1](https://github.com/cds-snc/ai-answers/compare/v1.208.0...v1.208.1) (2026-10-13)
 
 
