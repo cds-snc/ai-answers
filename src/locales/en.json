@@ -624,6 +624,12 @@
       "totalInactive": "total inactive user(s)",
       "viewUsers": "View and manage users"
     },
+    "footer": {
+      "heading": "Admin and partner resources",
+      "contactTeam": "Contact AI Answers",
+      "termsAndConditions": "Terms and conditions",
+      "privacy": "Privacy"
+    },
     "howTo": {
       "title": "How to guides",
       "trigger": "See all partner how tos",
@@ -1821,6 +1827,7 @@
         "notGc": "Not in GC scope answers"
       },
       "metric": "Metric",
+      "markedAs": "Marked as",
       "count": "Count",
       "percentage": "%",
       "enCount": "EN count",
@@ -1834,18 +1841,14 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has answer error",
-        "hasCitationError": "Citation issue",
-        "harmful": "Coded as harmful",
-        "hasContentIssue": "Content issue flagged"
+        "flaggedTitle": "Flagged (already counted above)"
       },
       "aiScored": {
         "title": "AI evaluations",
         "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
-        "needsImprovement": "Needs improvement",
-        "hasError": "Has answer error",
-        "hasCitationError": "Citation issue"
+        "hasError": "Has answer error"
       },
       "qualityBar": {
         "correct": "Correct",
