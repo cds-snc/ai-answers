@@ -1049,7 +1049,7 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "invalidCredentials": "Courriel ou mot de passe invalide.",
+    "invalidCredentials": "Courriel ou mot de passe invalide. Après 10 tentatives échouées, la connexion est suspendue pendant 15 minutes.",
     "sessionExpired": {
       "title": "Session expirée",
       "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."

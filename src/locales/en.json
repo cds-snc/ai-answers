@@ -1036,7 +1036,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password.",
+    "invalidCredentials": "Invalid email or password. After 10 failed attempts, sign-in is paused for 15 minutes.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."

@@ -31,6 +31,8 @@ passport.deserializeUser(async (sessionUser, done) => {
 // Password sign-in lockout: after MAX_LOGIN_ATTEMPTS wrong passwords the account
 // rejects every sign-in (even the right password) until the lockout ends. The
 // counter lives on the user document, so changing session or IP does not help.
+// The sign-in error (login.invalidCredentials, EN and FR) states both numbers;
+// update it if they change.
 export const MAX_LOGIN_ATTEMPTS = 10;
 export const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
 
