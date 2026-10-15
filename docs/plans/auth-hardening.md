@@ -159,8 +159,8 @@ PR (AGENTS.md rule 14).
 
 ### Phase 1 status: built, tested on a preview, open items
 
-Built and unit-tested (see `admin-and-auth.md` for the flow). Preview testing on 2026-10-13
-found the following. None of it is a flaw in the Phase 1 design, but all of it must be settled
+Built and unit-tested (see `admin-and-auth.md` for the flow). Preview testing on 2026-10-13 and
+2026-10-15 found the following. None of it is a flaw in the Phase 1 design, but all of it must be settled
 before `twoFA.enabled` goes on anywhere real.
 
 1. **Fixed: 2FA hash key missing on previews.** Sign-in with 2FA on returned 500
@@ -175,21 +175,27 @@ before `twoFA.enabled` goes on anywhere real.
    page can show the old value. **Not fixed yet** (the maintainer chose to wait). Proposed fix:
    reload settings from the database every ~60 seconds, own PR, with a test. Do this before
    turning 2FA on in production.
-3. **The login page masks every failure as "Invalid email or password"**
+3. **The password step still masks every failure as "Invalid email or password"**
    (`src/pages/LoginPage.js`, the `catch` in `handleSubmit`), including 500s and 429s. It made
    this debugging much slower. Suggested follow-up: show a different message for server errors.
-   Needs EN and FR locale keys.
+   Needs EN and FR locale keys. The 2FA step was fixed on 2026-10-15: it showed "Failed to send"
+   for the resend cooldown, which looked like a bug in testing. It now shows a message per
+   `reason` and confirms a successful resend. The password failure message now also states the
+   lockout rule, since the lockout itself is deliberately not revealed.
 4. The login 500 for a failed 2FA send now includes a fixed `reason` code (`twofa_no_secret`,
    `twofa_no_template`, `twofa_send_failed`, `twofa_send_error`, no error text) so the cause is
    visible in the browser's Network tab. Keep it; there is no log viewer in the app.
-5. **Not yet exercised on a working preview:** the full 2FA sign-in with a real emailed code,
-   resend, a wrong code, and the 5-strikes lockout. Do this once items 1 and 2 are sorted.
+5. **Exercised on a preview (2026-10-15):** 2FA sign-in with a real emailed code, a wrong code,
+   the resend cooldown and a successful resend. **Not yet confirmed:** the 5-wrong-codes 2FA
+   lockout, and that the password lockout rejects the correct password while it lasts.
 6. Dead code to clean up, undecided: `twoFASecret` on the user and its generation in
    `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
    email (inherent to lockout; admin is VPN-only); the failed-password counter has no decay and
    a parallel burst can slip a few extra guesses past 10; the session isn't regenerated at the
-   password step (fold into Phase 3).
+   password step (Phase 3.5); there is no cap on resends per challenge (planned above as ~3).
+   Only the 60-second cooldown limits them, and only someone who passed the password step can
+   resend, so the email-bomb risk is one email a minute to their own account.
 8. **Per-IP auth limiter removed.** Phase 1 first added one in front of `/api/auth/*` (item 3
    above). It was dropped because `trust proxy` is 1, so behind Akamai and the load balancer
    `req.ip` is likely a proxy address shared by many users, not the client, and the limiter could
@@ -208,8 +214,10 @@ before `twoFA.enabled` goes on anywhere real.
    syntactically invalid addresses and known disposable domains on the server.
 3. **Do not log the user in at sign-up** (removes the rate-limit upgrade), and return the same
    message whether or not the email already exists.
-4. **Abuse controls.** Per-IP and per-email limits on sign-up and on verification-email sends
-   (a verification email is a free email cannon otherwise), plus a honeypot field. Add a CAPTCHA
+4. **Abuse controls.** Per-email limits on sign-up and on verification-email sends (a
+   verification email is a free email cannon otherwise), plus a honeypot field. Per-IP limits
+   have the same problem that got the Phase 1 limiter removed (Phase 1 status, item 8): verify
+   what `req.ip` is behind Akamai before keying anything on it, and put counters in Redis. Add a CAPTCHA
    only if the first two don't hold; it costs accessibility and needs an approved provider.
 5. **Server-side password policy** (NIST 800-63B): minimum 8 enforced on the server, allow long
    passphrases, no composition rules, reject known-breached or very common passwords. Apply to
@@ -233,6 +241,10 @@ before `twoFA.enabled` goes on anywhere real.
 3. Log auth events (failed password, failed 2FA, lockout, sign-up, verification) with account id
    rather than raw email, and alert on spikes. Fix the email-in-logs item from F4.
 4. Consider requiring 2FA for admin accounts regardless of the global setting.
+5. Regenerate the session when the password step succeeds (before `pending2FA` is set), not only
+   at final login, to rule out session fixation.
+6. Log password lockouts. 2FA lockouts are already logged (`TwoFAService`); password lockouts in
+   `config/passport.js` are not.
 
 ### Docs to update with each phase
 

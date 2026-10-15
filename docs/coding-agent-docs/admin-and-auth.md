@@ -56,6 +56,9 @@ Password sign-in (`config/passport.js`): wrong passwords are counted on the user
 10 failures lock the account for 15 minutes. While locked even the right password is rejected,
 with the same "Invalid credentials" message as any other failure. An unknown email takes as long
 to reject as a known one. The deactivated-account message is only shown after a correct password.
+Because a lockout is never revealed per account, the login page's failure message
+(`login.invalidCredentials`) tells everyone the rule ("After 10 failed attempts, sign-in is paused
+for 15 minutes"). It repeats the numbers in `config/passport.js`; change both together.
 
 Flow when 2FA is enabled (`api/auth/auth-login.js`, `auth-verify-2fa.js`, `auth-send-2fa.js`,
 `services/TwoFAService.js`):
@@ -70,7 +73,12 @@ Flow when 2FA is enabled (`api/auth/auth-login.js`, `auth-verify-2fa.js`, `auth-
 4. Failed codes are counted on the user document. 5 wrong codes discard the code and lock 2FA for
    30 minutes (429). Requesting a new code does not reset the count.
 5. "Send again" (`auth-send-2fa`) also uses `pending2FA`, takes no email, and has a 60-second
-   cooldown.
+   cooldown. The code sent at sign-in counts, so a resend in the first minute is refused. Each
+   resend replaces the previous code.
+
+On the 2FA screen the login page shows a specific message for each refusal: `cooldown` ("Wait a
+minute…"), `locked` ("Too many incorrect codes…"), a wrong code, and a success confirmation after a
+resend. `AuthService.send2FA`/`verify2FA` put the server's `reason` on the thrown error.
 
 When 2FA is disabled, step 1 logs the user straight in, and the verify and send endpoints refuse
 (no `pending2FA`). `NODE_ENV=test` also skips 2FA.
@@ -88,8 +96,9 @@ Requirements and gotchas when turning 2FA on:
 - Settings are cached per instance at startup with no refresh, so on a multi-instance deployment
   a saved `twoFA.enabled` only takes effect on some instances. Unfixed; see the Phase 1 status
   section of the plan.
-- The login page shows "Invalid email or password" for any failure, so check the `auth-login`
-  response in the browser's Network tab to see the real status.
+- The password step of the login page shows the same message for any failure, including 500s
+  and 429s, so check the `auth-login` response in the browser's Network tab to see the real
+  status.
 
 Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
 logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
