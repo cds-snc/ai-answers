@@ -95,7 +95,7 @@ ${departmentsString}
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
-- "CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- Digital Transformation Canada,"CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
@@ -162,6 +162,13 @@ ${departmentsString}
 <analysis>
 <department>DND-MDN</department>
 <departmentUrl>https://www.canada.ca/en/department-national-defence.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds resources for many other departments)
+<analysis>
+<department>BAC-LAC</department>
+<departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
 </analysis>
 </example>
 </examples>
