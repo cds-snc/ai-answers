@@ -188,10 +188,16 @@ describe('auth-login with 2FA on', () => {
     expect(req.session.pending2FA).toBeUndefined();
   });
 
-  it('reports send_failed and never an internal error code', async () => {
+  it('reports send_failed and never a database error code', async () => {
     TwoFAService.sendChallenge.mockRejectedValue(Object.assign(new Error('db'), { code: 11000 }));
     const { res } = await login();
     expect(res.statusCode).toBe(500);
-    expect(res.json.mock.calls[0][0].reason).toBe('send_failed');
+    expect(res.json.mock.calls[0][0]).toMatchObject({ reason: 'send_failed', detail: 'twofa_send_error' });
+  });
+
+  it("keeps TwoFAService's own fixed code in detail, for the Network tab", async () => {
+    TwoFAService.sendChallenge.mockRejectedValue(Object.assign(new Error('no key'), { code: 'twofa_no_secret' }));
+    const { res } = await login();
+    expect(res.json.mock.calls[0][0]).toMatchObject({ reason: 'send_failed', detail: 'twofa_no_secret' });
   });
 });

@@ -94,6 +94,11 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // When loginAttempts last went up; older than LOGIN_ATTEMPT_WINDOW_MS means start the count again.
+  loginLastFailedAt: {
+    type: Date,
+    default: null,
+  },
   // Password reset fields
   // Permanent secret for TOTP password reset codes
   resetPasswordSecret: {

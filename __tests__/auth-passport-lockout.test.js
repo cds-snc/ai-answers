@@ -5,7 +5,7 @@ vi.mock('../models/user.js', () => ({
   User: { findOne: vi.fn(), findOneAndUpdate: vi.fn(), updateOne: vi.fn(), findById: vi.fn() },
 }));
 
-import passport, { MAX_LOGIN_ATTEMPTS, LOGIN_LOCKOUT_MS } from '../config/passport.js';
+import passport, { MAX_LOGIN_ATTEMPTS, LOGIN_LOCKOUT_MS, LOGIN_ATTEMPT_WINDOW_MS } from '../config/passport.js';
 import { User } from '../models/user.js';
 
 const verify = passport._strategy('local')._verify;
@@ -36,6 +36,42 @@ describe('password sign-in lockout', () => {
     expect(user).toBe(false);
     expect(info.message).toBe('Invalid credentials');
     expect(User.updateOne).not.toHaveBeenCalled();
+  });
+
+  it('records when each failure happened', async () => {
+    User.findOne.mockResolvedValue(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
+    User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
+    await run('a@canada.ca', 'bad');
+    const [, update] = User.findOneAndUpdate.mock.calls[0];
+    expect(update.$inc).toEqual({ loginAttempts: 1 });
+    expect(update.$set.loginLastFailedAt).toBeInstanceOf(Date);
+  });
+
+  it('starts the count again when the last failure is older than the window', async () => {
+    User.findOne.mockResolvedValue(makeUser({
+      loginAttempts: 9,
+      loginLastFailedAt: new Date(Date.now() - LOGIN_ATTEMPT_WINDOW_MS - 1000),
+      comparePassword: vi.fn().mockResolvedValue(false),
+    }));
+    User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
+    await run('a@canada.ca', 'bad');
+    const [filter, update] = User.updateOne.mock.calls[0];
+    expect(update).toEqual({ $set: { loginAttempts: 0 } });
+    // Conditional, so it can't erase a failure another request just recorded.
+    expect(filter.$or).toBeDefined();
+    expect(User.updateOne).toHaveBeenCalledTimes(1); // reset only, no lockout
+  });
+
+  it('keeps counting failures that come close together', async () => {
+    User.findOne.mockResolvedValue(makeUser({
+      loginAttempts: 9,
+      loginLastFailedAt: new Date(Date.now() - 60 * 1000),
+      comparePassword: vi.fn().mockResolvedValue(false),
+    }));
+    User.findOneAndUpdate.mockResolvedValue({ loginAttempts: MAX_LOGIN_ATTEMPTS });
+    await run('a@canada.ca', 'bad');
+    expect(User.updateOne).toHaveBeenCalledTimes(1);
+    expect(User.updateOne.mock.calls[0][1].$set.loginLockedUntil).toBeInstanceOf(Date);
   });
 
   it('locks the account on the MAX_LOGIN_ATTEMPTS-th failure', async () => {

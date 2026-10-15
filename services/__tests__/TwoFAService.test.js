@@ -24,7 +24,23 @@ vi.mock('../ServerLoggingService.js', () => ({
 const docs = new Map();
 vi.mock('../../models/user.js', () => {
   const clone = (d) => (d ? { ...d } : null);
-  const matches = (d, filter) => Object.entries(filter).every(([k, v]) => d[k] === v);
+  // Enough of Mongo's matching for the filters TwoFAService uses: equality
+  // (null also matches a missing field), $ne, $gt, $lte and $or. Dates compare by value.
+  const val = (x) => (x instanceof Date ? x.getTime() : x ?? null);
+  const fieldMatches = (actual, cond) => {
+    if (cond && typeof cond === 'object' && !(cond instanceof Date)) {
+      return Object.entries(cond).every(([op, v]) => {
+        if (op === '$ne') return val(actual) !== val(v);
+        if (actual == null) return false;
+        if (op === '$gt') return val(actual) > val(v);
+        if (op === '$lte') return val(actual) <= val(v);
+        throw new Error(`mock does not support ${op}`);
+      });
+    }
+    return val(actual) === val(cond);
+  };
+  const matches = (d, filter) => Object.entries(filter).every(([k, v]) =>
+    (k === '$or' ? v.some((f) => matches(d, f)) : fieldMatches(d[k], v)));
   const apply = (d, update) => {
     for (const [k, v] of Object.entries(update.$inc || {})) d[k] = (d[k] || 0) + v;
     for (const [k, v] of Object.entries(update.$set || {})) d[k] = v;
@@ -40,7 +56,7 @@ vi.mock('../../models/user.js', () => {
       }),
       updateOne: vi.fn(async (filter, update) => {
         const d = docs.get(String(filter._id));
-        if (d) apply(d, update);
+        if (d && matches(d, filter)) apply(d, update);
       }),
     },
   };
@@ -48,6 +64,7 @@ vi.mock('../../models/user.js', () => {
 
 import TwoFAService, { MAX_ATTEMPTS, CODE_TTL_MS, LOCKOUT_MS, RESEND_COOLDOWN_MS } from '../TwoFAService.js';
 import GCNotifyService from '../GCNotifyService.js';
+import { User } from '../../models/user.js';
 import { SettingsService } from '../SettingsService.js';
 
 const ID = '507f1f77bcf86cd799439011';
@@ -150,6 +167,36 @@ describe('TwoFAService', () => {
     expect(docs.get(ID).twoFAAttempts).toBe(MAX_ATTEMPTS - 1);
     const res = await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
     expect(res.reason).toBe('locked');
+  });
+
+  it('a request working from a read taken before the lockout ended cannot reset the count', async () => {
+    vi.useFakeTimers();
+    freshUser({ twoFALockedUntil: new Date(Date.now() + LOCKOUT_MS) });
+    vi.advanceTimersByTime(LOCKOUT_MS + 1000);
+    const { code } = await sendAndCapture();
+    const wrong = code === '000000' ? '111111' : '000000';
+    const staleRead = { ...docs.get(ID) }; // still shows the ended lock
+
+    for (let i = 0; i < MAX_ATTEMPTS - 1; i += 1) {
+      await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
+    }
+    expect(docs.get(ID).twoFAAttempts).toBe(MAX_ATTEMPTS - 1);
+
+    // A slow parallel guess resumes with its stale read. It must not clear the count.
+    User.findById.mockResolvedValueOnce(staleRead);
+    const res = await TwoFAService.verifyChallenge({ userOrId: ID, code: wrong });
+    expect(res.reason).toBe('locked');
+  });
+
+  it('does not count a guess once the code has expired, even from an older read', async () => {
+    vi.useFakeTimers();
+    const { code } = await sendAndCapture();
+    const staleRead = { ...docs.get(ID) };
+    vi.advanceTimersByTime(CODE_TTL_MS + 1000);
+    User.findById.mockResolvedValueOnce(staleRead);
+    const res = await TwoFAService.verifyChallenge({ userOrId: ID, code });
+    expect(res).toEqual({ success: false, reason: 'invalid' });
+    expect(docs.get(ID).twoFAAttempts).toBe(0);
   });
 
   it('refuses to send while locked', async () => {

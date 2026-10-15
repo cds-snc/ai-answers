@@ -53,7 +53,8 @@ Two-factor authentication (2FA) is a setting, `twoFA.enabled` (Settings page, ad
 before saying "2FA is on" about any deployment.
 
 Password sign-in (`config/passport.js`): wrong passwords are counted on the user document, and
-10 failures lock the account for 15 minutes. While locked even the right password is rejected,
+10 failures lock the account for 15 minutes. The count starts again after 15 minutes with no
+failed sign-in (`LOGIN_ATTEMPT_WINDOW_MS`), so occasional typos never add up to a lockout. While locked even the right password is rejected,
 with the same "Invalid credentials" message as any other failure. An unknown email takes as long
 to reject as a known one. The deactivated-account message is only shown after a correct password.
 Because a lockout is never revealed per account, the login page's failure message

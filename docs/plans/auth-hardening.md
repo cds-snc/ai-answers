@@ -175,24 +175,30 @@ before `twoFA.enabled` goes on anywhere real.
    page can show the old value. **Not fixed yet** (the maintainer chose to wait). Proposed fix:
    reload settings from the database every ~60 seconds, own PR, with a test. Do this before
    turning 2FA on in production.
-3. **The password step still masks every failure as "Invalid email or password"**
-   (`src/pages/LoginPage.js`, the `catch` in `handleSubmit`), including 500s and 429s. It made
-   this debugging much slower. Suggested follow-up: show a different message for server errors.
-   Needs EN and FR locale keys. The 2FA step was fixed on 2026-10-15: it showed "Failed to send"
-   for the resend cooldown, which looked like a bug in testing. It now shows a message per
-   `reason` and confirms a successful resend. The password failure message now also states the
-   lockout rule, since the lockout itself is deliberately not revealed.
-4. The login 500 for a failed 2FA send now includes a fixed `reason` code (`twofa_no_secret`,
-   `twofa_no_template`, `twofa_send_failed`, `twofa_send_error`, no error text) so the cause is
-   visible in the browser's Network tab. Keep it; there is no log viewer in the app.
+3. **Fixed 2026-10-15: the password step masked every failure as "Invalid email or password"**
+   (`src/pages/LoginPage.js`), including 500s and 429s, which made debugging much slower. Each
+   failure now gets its own message: 2FA locked, code could not be sent, server error, and
+   "sign-in timed out" (which returns to the password form when the pending sign-in expires).
+   These only appear after a correct password, so they reveal nothing new. A wrong password, an
+   unknown email and a password lockout still share one message, which states the lockout rule.
+   The 2FA step shows a message per `reason` and confirms a successful resend. A failed resend
+   no longer invalidates the code already emailed: the new code is stored only after it is sent.
+4. Server responses use a fixed `reason` the page acts on (`locked`, `send_failed`, `expired`,
+   `cooldown`, `invalid`). A failed 2FA send at login also carries `detail` with
+   TwoFAService's own code (`twofa_no_secret`, `twofa_no_template`, `send_failed`,
+   `twofa_send_error`, no error text) so the cause is visible in the browser's Network tab.
+   Keep it; there is no log viewer in the app. Database and driver error codes never go in
+   `detail`, only in the server log.
 5. **Exercised on a preview (2026-10-15):** 2FA sign-in with a real emailed code, a wrong code,
    the resend cooldown and a successful resend. **Not yet confirmed:** the 5-wrong-codes 2FA
    lockout, and that the password lockout rejects the correct password while it lasts.
 6. Dead code to clean up, undecided: `twoFASecret` on the user and its generation in
    `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
-   email (inherent to lockout; admin is VPN-only); the failed-password counter has no decay and
-   a parallel burst can slip a few extra guesses past 10; the session isn't regenerated at the
+   email (inherent to lockout; admin is VPN-only; blocking burst lockouts would need the per-IP
+   limits dropped in item 8); a parallel burst can slip a few extra guesses past 10. The
+   failed-password count now resets after 15 minutes with no failure. The 2FA wrong-code count
+   still has no decay, but reaching it needs the password; the session isn't regenerated at the
    password step (Phase 3.5); there is no cap on resends per challenge (planned above as ~3).
    Only the 60-second cooldown limits them, and only someone who passed the password step can
    resend, so the email-bomb risk is one email a minute to their own account.
@@ -201,6 +207,23 @@ before `twoFA.enabled` goes on anywhere real.
    `req.ip` is likely a proxy address shared by many users, not the client, and the limiter could
    block staff sign-in as a group. The per-account lockouts are the real control. Revisit only
    with the hop count verified and counters in Redis.
+
+### Phase 1 follow-up: clean-up PR (after Phase 1 merges)
+
+From the 2026-10-15 code review. Neither changes what users see or the security of sign-in, so
+they were kept out of the Phase 1 PR to keep it reviewable. Ship together as one small PR.
+
+1. **One place for the signed-in session length.** `api/auth/auth-login.js` and
+   `api/auth/auth-verify-2fa.js` each work out the authenticated session TTL, with different
+   fallbacks when no setting or env var is set (`'60'` vs `'10'` minutes). So a 2FA sign-in can
+   get a 10-minute session where a password-only sign-in gets 60. Move it into one shared helper
+   used by both, pick the intended default, and test that both paths get the same length.
+2. **Fewer database round trips per sign-in step** (matters on DocumentDB). `TwoFAService`'s
+   `loadUser` re-reads a user document it was already given (the login step passes the Passport
+   user), and `auth-verify-2fa.js` reads the user again after `verifyChallenge`. Use the given
+   document where it is fresh enough, and have `verifyChallenge` return the user document it
+   updated so the handler doesn't fetch it again. Keep the atomic filters on the writes: the
+   stale-read race fixed on 2026-10-15 depends on them, not on the first read.
 
 ### Phase 2: Sign-up controls (F3)
 

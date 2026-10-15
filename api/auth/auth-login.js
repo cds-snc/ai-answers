@@ -90,7 +90,8 @@ const loginHandler = (req, res, next) => {
           return res.status(500).json({
             success: false,
             message: 'Error during login',
-            reason: 'send_failed'
+            reason: 'send_failed',
+            detail: sendResult.reason
           });
         }
 
@@ -106,13 +107,17 @@ const loginHandler = (req, res, next) => {
           }
         });
       } catch (error) {
-        // The internal error code goes to the log only, never to the browser.
+        // `detail` shows the cause in the browser's Network tab (there is no log
+        // viewer). Only TwoFAService's own fixed `twofa_*` codes go there; database
+        // and driver codes stay in the server log.
         console.error('2FA send error:', error?.code, error);
         delete req.session.pending2FA;
+        const ownCode = typeof error?.code === 'string' && error.code.startsWith('twofa_');
         return res.status(500).json({
           success: false,
           message: 'Error during login',
-          reason: 'send_failed'
+          reason: 'send_failed',
+          detail: ownCode ? error.code : 'twofa_send_error'
         });
       }
     }

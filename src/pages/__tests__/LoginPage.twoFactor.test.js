@@ -104,6 +104,20 @@ describe('LoginPage two-step messages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.resend' }));
     const confirmation = await screen.findByText('login.2fa.resent');
     expect(confirmation.closest('.status-message--success-box')).toBeTruthy();
+    // Resend disables itself while sending, so focus must land on the confirmation.
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain('login.2fa.resent'));
+  });
+
+  it('moves focus to the confirmation again on a second resend', async () => {
+    await reachTwoStep();
+    mockSend2FA.mockResolvedValue({ success: true });
+    const resend = screen.getByRole('button', { name: 'login.2fa.resend' });
+    fireEvent.click(resend);
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain('login.2fa.resent'));
+    resend.focus();
+    fireEvent.click(resend);
+    await vi.waitFor(() => expect(document.activeElement).not.toBe(resend));
+    expect(document.activeElement.textContent).toContain('login.2fa.resent');
   });
 
   it('says the account is locked when verify is refused for that', async () => {

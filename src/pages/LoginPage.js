@@ -133,6 +133,9 @@ const LoginPage = ({ lang = 'en' }) => {
   };
   // "New code sent." after a resend. Repeatable, so a second resend announces again.
   const { message: resendMessage, nonce: resendNonce, announce: announceResent, clear: clearResent } = useRepeatableStatus();
+  // Resend disables itself while sending, which drops focus to <body>. Move
+  // focus to the confirmation instead (focus reads it, so announce={false}).
+  const resendFocusRef = useFocusOnChange(resendNonce);
 
   const verifyTwoStep = async () => {
     setIsLoading(true);
@@ -216,7 +219,15 @@ const LoginPage = ({ lang = 'en' }) => {
           <p tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
-          <StatusMessage variant="success" message={resendMessage} nonce={resendNonce} className="mb-400" />
+          <StatusMessage
+            variant="success"
+            message={resendMessage}
+            className="mb-400"
+            ref={resendFocusRef}
+            tabIndex={-1}
+            announce={false}
+            announcedVia="focus"
+          />
           {twoStepError && (
             <AnnouncedError
               id="login-2fa-error"

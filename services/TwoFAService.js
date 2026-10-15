@@ -116,8 +116,12 @@ async function verifyChallenge({ userOrId, code } = {}) {
   const now = Date.now();
   if (user.twoFALockedUntil) {
     if (user.twoFALockedUntil.getTime() > now) return { success: false, reason: 'locked' };
-    // Lockout over: start fresh.
-    await User.updateOne({ _id: user._id }, { $set: { twoFALockedUntil: null, twoFAAttempts: 0 } });
+    // Lockout over: start fresh. Only clears the exact lock this request saw, so
+    // a request working from an older read can't zero a count others have since added to.
+    await User.updateOne(
+      { _id: user._id, twoFALockedUntil: user.twoFALockedUntil },
+      { $set: { twoFALockedUntil: null, twoFAAttempts: 0 } }
+    );
   }
 
   if (!user.twoFACode || !user.twoFAExpires || user.twoFAExpires.getTime() <= now) {
@@ -125,12 +129,20 @@ async function verifyChallenge({ userOrId, code } = {}) {
   }
 
   // Count the attempt first, atomically, so parallel guesses can't beat the cap.
+  // The filter re-checks code, expiry and lock on the live document, since
+  // `user` may already be out of date.
+  const nowDate = new Date(now);
   const counted = await User.findOneAndUpdate(
-    { _id: user._id },
+    {
+      _id: user._id,
+      twoFACode: { $ne: null },
+      twoFAExpires: { $gt: nowDate },
+      $or: [{ twoFALockedUntil: null }, { twoFALockedUntil: { $lte: nowDate } }],
+    },
     { $inc: { twoFAAttempts: 1 } },
     { new: true }
   );
-  if (!counted || !counted.twoFACode) return { success: false, reason: 'invalid' };
+  if (!counted) return { success: false, reason: 'invalid' };
   if (counted.twoFAAttempts > MAX_ATTEMPTS) return { success: false, reason: 'locked' };
 
   const token = String(code ?? '').trim();

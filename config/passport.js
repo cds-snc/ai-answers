@@ -35,6 +35,9 @@ passport.deserializeUser(async (sessionUser, done) => {
 // update it if they change.
 export const MAX_LOGIN_ATTEMPTS = 10;
 export const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+// Failures only add up while they keep coming: after this long with no failed
+// sign-in, the count starts again. Mistyped passwords spread over weeks never lock anyone out.
+export const LOGIN_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 
 // Compared against when the email is unknown, so an unknown account takes as
 // long to reject as a known one.
@@ -62,9 +65,19 @@ passport.use(new LocalStrategy({
 
     const isValid = await user.comparePassword(password);
     if (!isValid) {
+      const windowStart = new Date(Date.now() - LOGIN_ATTEMPT_WINDOW_MS);
+      const lastFailed = user.loginLastFailedAt?.getTime?.() ?? 0;
+      if (user.loginAttempts > 0 && lastFailed <= windowStart.getTime()) {
+        // The previous failure is too old to count. The filter re-checks it, so a
+        // parallel failure that has just been recorded is not wiped out.
+        await User.updateOne(
+          { _id: user._id, $or: [{ loginLastFailedAt: null }, { loginLastFailedAt: { $lte: windowStart } }] },
+          { $set: { loginAttempts: 0 } }
+        );
+      }
       const updated = await User.findOneAndUpdate(
         { _id: user._id },
-        { $inc: { loginAttempts: 1 } },
+        { $inc: { loginAttempts: 1 }, $set: { loginLastFailedAt: new Date() } },
         { new: true }
       );
       if (updated && updated.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
