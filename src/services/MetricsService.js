@@ -66,6 +66,10 @@ class MetricsService {
     return this._fetchMetric('metrics-harmful-chats', filters, signal);
   }
 
+  static async getEvalInformedChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-informed-chats', filters, signal);
+  }
+
   static async _fetchMetric(endpoint, filters, signal) {
     try {
       const queryParams = new URLSearchParams(filters).toString();

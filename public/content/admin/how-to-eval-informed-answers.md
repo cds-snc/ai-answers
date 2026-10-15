@@ -43,6 +43,16 @@ Remove one when the content it was based on has changed, the judgement was wrong
 - Takes effect on the next question. There is nothing to re-run or re-index.
 - Worth a pass whenever a program's web content changes substantially.
 
+## See how often it is used
+
+The **Partner dashboard** shows an **Eval-informed answers** card in its overview.
+
+- The percentage is the share of questions where past evaluations were used.
+- It counts only questions answered since evaluation-informed answering went live. Older questions are left out.
+- It follows the dashboard's filters.
+
+Select the card to jump to the most recent examples. Open a chat ID to see the past evaluations it used.
+
 ## Rules the system applies
 
 - Matches on meaning rather than wording.

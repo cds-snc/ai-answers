@@ -2050,6 +2050,24 @@ td:has(> .verdict-cell__link) {
   min-width: 220px;
 }
 
+/* Opt-in: a half-width collapsible card (partner dashboard's content-issue
+   and eval-informed chat lists) goes full width and to the top of the row
+   while open — same behaviour as the third-width trio above. Matches only
+   the CollapsibleCard's own <details>, not a chart's "Table view" toggle,
+   so the Public dashboard's half-width charts are unaffected. */
+.dashboard-col-half--expand-on-open > .dashboard-card {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* A lone list (the other one has no rows) is full width too, open or not. */
+.dashboard-col-half--expand-on-open:only-child,
+.dashboard-col-half--expand-on-open:has(> .collapsible-card > details[open]) {
+  order: -1;
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
 .dashboard-col-three-quarter {
   flex: 0 0 calc((100% - var(--gcds-spacing-200)) * 0.75);
   max-width: calc((100% - var(--gcds-spacing-200)) * 0.75);
@@ -2382,6 +2400,13 @@ td:has(> .verdict-cell__link) {
 .stat-card__sub {
   color: var(--gcds-color-grayscale-700);
   margin: var(--gcds-spacing-75) 0 0;
+}
+
+/* Small grey "* …" caption an asterisk points to (stat card, metrics table). */
+.stat-card__footnote,
+.dashboard-footnote {
+  color: var(--gcds-color-grayscale-700);
+  margin: var(--gcds-spacing-50) 0 0;
 }
 
 /* ---- NoDataCard ---- */

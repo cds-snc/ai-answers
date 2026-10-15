@@ -868,6 +868,8 @@
       "chatNoLongerFound": "Ce clavardage est désormais introuvable.",
       "fetchFailed": "Échec du chargement des données. Veuillez réessayer.",
       "fetchError": "Échec du chargement des données : {error}",
+      "evalInformedAnswers": "Réponses informées par les évaluations",
+      "evalInformedFrom": "À partir du {date} seulement",
       "searchResultsAnnouncement": "{count} résultats trouvés.",
       "searchResultsUpdatedAnnouncement": "Résultats de recherche mis à jour.",
       "metricsLoading": "Chargement des métriques...",
@@ -1655,7 +1657,8 @@
       "harmful": "Nuisible",
       "harmfulSub": "EN : {en} · FR : {fr}",
       "contentIssues": "Problèmes de contenu",
-      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}"
+      "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}",
+      "evalInformedSub": "{n} sur {total} questions"
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
@@ -1736,6 +1739,12 @@
       "title": "Clavardages nuisibles par ID de clavardage",
       "trigger": "Voir tous les clavardages nuisibles par ID",
       "noData": "Aucun clavardage nuisible signalé pour cette période."
+    },
+    "evalInformedChats": {
+      "title": "Réponses informées par les évaluations, par ID de clavardage",
+      "subtitle": "Affiche jusqu'aux {n} plus récentes",
+      "trigger": "Clavardages récents informés par les évaluations, par ID",
+      "noData": "Aucune réponse informée par les évaluations pour cette période."
     },
     "evalAnalysis": {
       "title": "Analyse des évaluations",
@@ -1895,6 +1904,9 @@
       },
       "questionTypes": {
         "title": "Types de questions"
+      },
+      "evalInformed": {
+        "eligible": "Questions vérifiées pour des évaluations antérieures"
       },
       "tokens": {
         "title": "Jetons",
