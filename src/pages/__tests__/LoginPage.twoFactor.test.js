@@ -127,6 +127,24 @@ describe('LoginPage two-step messages', () => {
     expect(await screen.findByText('login.2fa.locked')).toBeTruthy();
   });
 
+  it.each([
+    ['server_error', 'login.serverError'],
+    ['network', 'login.networkError'],
+  ])('does not call a %s on the code check a wrong code', async (reason, key) => {
+    await reachTwoStep();
+    mockVerify2FA.mockImplementation(() => rejectWith(reason));
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
+    expect(await screen.findByText(key)).toBeTruthy();
+    expect(screen.queryByText('login.2fa.invalidCode')).toBeNull();
+  });
+
+  it('says the connection failed when a resend gets no response', async () => {
+    await reachTwoStep();
+    mockSend2FA.mockImplementation(() => rejectWith('network'));
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.resend' }));
+    expect(await screen.findByText('login.networkError')).toBeTruthy();
+  });
+
   it('keeps "invalid code" for a wrong code', async () => {
     await reachTwoStep();
     mockVerify2FA.mockImplementation(() => rejectWith('invalid'));
@@ -138,6 +156,7 @@ describe('LoginPage two-step messages', () => {
     ['locked', 'login.2fa.locked'],
     ['send_failed', 'login.2fa.sendError'],
     ['server_error', 'login.serverError'],
+    ['network', 'login.networkError'],
   ])('explains a %s sign-in failure instead of blaming the password', async (reason, key) => {
     mockLogin.mockImplementation(() => rejectWith(reason));
     submitPassword();

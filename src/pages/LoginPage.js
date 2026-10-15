@@ -91,6 +91,7 @@ const LoginPage = ({ lang = 'en' }) => {
         locked: 'login.2fa.locked',
         send_failed: 'login.2fa.sendError',
         server_error: 'login.serverError',
+        network: 'login.networkError',
       };
       if (messages[err.reason]) {
         setError(t(messages[err.reason]));
@@ -161,7 +162,10 @@ const LoginPage = ({ lang = 'en' }) => {
         restartSignIn();
         return;
       }
-      setTwoStepError(err.reason === 'locked' ? t('login.2fa.locked') : t('login.2fa.invalidCode'));
+      // Only a reason-less 4xx is a wrong code. A server or connection failure
+      // says so, or the user retypes a correct code into the lockout count.
+      const messages = { locked: 'login.2fa.locked', server_error: 'login.serverError', network: 'login.networkError' };
+      setTwoStepError(t(messages[err.reason] || 'login.2fa.invalidCode'));
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +188,7 @@ const LoginPage = ({ lang = 'en' }) => {
       }
       // The server refuses a resend within a minute of the last code (the one
       // sent at sign-in counts) and while 2FA is locked. Say so, not "failed".
-      const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked' };
+      const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked', network: 'login.networkError' };
       setTwoStepError(t(messages[err.reason] || 'login.2fa.sendError'));
     } finally {
       setIsLoading(false);

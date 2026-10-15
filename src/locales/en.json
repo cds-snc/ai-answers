@@ -1038,6 +1038,7 @@
     "submit": "Sign in",
     "invalidCredentials": "Invalid email or password. After 10 failed attempts, sign-in is paused for 15 minutes.",
     "serverError": "We couldn't sign you in. Try again in a few minutes.",
+    "networkError": "We couldn't reach the server. Check your connection, then try again.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."

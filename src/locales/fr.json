@@ -1051,6 +1051,7 @@
     "submit": "Se connecter",
     "invalidCredentials": "Courriel ou mot de passe invalide. Après 10 tentatives échouées, la connexion est suspendue pendant 15 minutes.",
     "serverError": "Nous n'avons pas pu vous connecter. Réessayez dans quelques minutes.",
+    "networkError": "Nous n'avons pas pu joindre le serveur. Vérifiez votre connexion, puis réessayez.",
     "sessionExpired": {
       "title": "Session expirée",
       "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."

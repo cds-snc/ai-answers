@@ -45,7 +45,7 @@ const verify2FAHandler = async (req, res) => {
     req.login(user, (err) => {
       if (err) {
         console.error('Login after 2FA error:', err);
-        return res.status(500).json({ success: false, message: 'Login failed' });
+        return res.status(500).json({ success: false, message: 'Login failed', reason: 'server_error' });
       }
 
       try {
@@ -77,7 +77,7 @@ const verify2FAHandler = async (req, res) => {
     });
   } catch (err) {
     console.error('auth-verify-2fa handler error', err);
-    return res.status(500).json({ success: false, error: 'failed to verify 2fa' });
+    return res.status(500).json({ success: false, reason: 'server_error' });
   }
 };
 

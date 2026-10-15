@@ -92,6 +92,14 @@ describe('auth-verify-2fa', () => {
     expect(req.login).not.toHaveBeenCalled();
   });
 
+  it('reports server_error, not a wrong code, when the check itself fails', async () => {
+    TwoFAService.verifyChallenge.mockRejectedValue(new Error('db down'));
+    const res = makeRes();
+    await verifyHandler(makeReq({ session: pendingSession(), body: { code: '123456' } }), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.json).toHaveBeenCalledWith({ success: false, reason: 'server_error' });
+  });
+
   it('does not log in a user who was deactivated after the password step', async () => {
     TwoFAService.verifyChallenge.mockResolvedValue({ success: true });
     User.findById.mockResolvedValue({ _id: USER_ID, active: false });
