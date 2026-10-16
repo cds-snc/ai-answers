@@ -4,6 +4,7 @@ import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
+import { EVAL_INFORMED_WORKFLOW } from '../../src/config/workflows.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -283,7 +284,7 @@ graph.addNode('persistNode', async (state) => {
     finalCitationUrl,
     context: contextData,
     chatId: state.chatId,
-    workflow: 'GenericWithQAGraph',
+    workflow: EVAL_INFORMED_WORKFLOW,
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,

@@ -255,6 +255,22 @@ export function getHasCitationErrorAggregationExpression(feedbackPath = '$intera
   };
 }
 
+// Eval-informed answering: the graph persists the expert-rated examples it
+// injected into the answer prompt on the context (context.qaMatches), so a
+// non-empty array is the flag. No separate field is stored. Used by the Eval
+// dashboard's "Informed" column and the partner dashboard's eval-informed
+// count/list. `qaMatchesExpr` resolves to the qaMatches array.
+export function getEvalInformedAggregationExpression(qaMatchesExpr) {
+  return {
+    $let: {
+      vars: { qa: qaMatchesExpr },
+      // $isArray guard: $size throws on a non-array and would fail the
+      // whole aggregation for one malformed document.
+      in: { $gt: [{ $size: { $cond: [{ $isArray: '$$qa' }, '$$qa', []] } }, 0] }
+    }
+  };
+}
+
 // Content issue is a separate tag partners/admins can check per-sentence
 // during evaluation (sentenceNContentIssue) — independent of the score-
 // derived category above (a "correct" answer can still be flagged), so it's
