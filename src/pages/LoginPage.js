@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
@@ -9,6 +9,7 @@ import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
+import { normalizeTwoFACode } from '../utils/auth/twoFACode.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
@@ -154,15 +155,30 @@ const LoginPage = ({ lang = 'en' }) => {
     showStatus(t('login.2fa.expired'), { variant: 'error' });
   };
 
-  const verifyTwoStep = async () => {
-    setIsLoading(true);
+  // A second Enter (or key repeat) can land before isLoading disables the
+  // form; without this it would send the same code again and show "Invalid
+  // verification code" while the first request signs the user in.
+  const verifyingRef = useRef(false);
+
+  const verifyTwoStep = async (e) => {
+    e.preventDefault();
+    if (verifyingRef.current) return;
     clearTwoStepError();
     clearStatus();
+    // Checked here like the password form's empty fields, with the same rule
+    // the server uses: a typo isn't sent, so it can't count toward the lockout.
+    const normalizedCode = normalizeTwoFACode(code);
+    if (!normalizedCode) {
+      setTwoStepError(t('login.2fa.codeFormat'));
+      return;
+    }
+    verifyingRef.current = true;
+    setIsLoading(true);
     // Same reasoning as handleSubmit's announce().
     announce(t('login.form.submitting'), { skippable: true });
     try {
       // backend method remains verify2FA
-      const data = await AuthService.verify2FA(code);
+      const data = await AuthService.verify2FA(normalizedCode);
       // AuthService stores token and user; refresh context
       await refreshUser();
       // Prefer explicit defaultRoute from the verify response if present
@@ -187,6 +203,7 @@ const LoginPage = ({ lang = 'en' }) => {
         setTwoStepError(t('login.2fa.invalidCode'));
       }
     } finally {
+      verifyingRef.current = false;
       setIsLoading(false);
     }
   };
@@ -252,25 +269,35 @@ const LoginPage = ({ lang = 'en' }) => {
               inputRef={twoStepErrorRef}
             />
           )}
-          <div className="auth-form-group">
-            <label htmlFor="code">{t('login.2fa.code')}</label>
-            <input
-              id="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              disabled={isLoading}
-              aria-describedby={twoStepError ? 'login-2fa-error' : undefined}
-              aria-invalid={!!twoStepError}
-            />
-          </div>
-          <div>
-            <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
-              {t('login.2fa.verify')}
-            </button>
-            <button onClick={requestTwoStep} disabled={isLoading} className="btn-secondary-sm auth-secondary-button">
-              {t('login.2fa.resend')}
-            </button>
-          </div>
+          {/* A form so Enter in the field verifies, as on the password step.
+              Resend is type="button" so it never submits. */}
+          <form onSubmit={verifyTwoStep} noValidate>
+            <div className="auth-form-group">
+              <label htmlFor="code">{t('login.2fa.code')}</label>
+              <p id="login-2fa-code-hint" className="field-hint">{t('login.2fa.codeHint')}</p>
+              {/* inputMode/autoComplete: number pad and emailed-code autofill on
+                  phones. No maxLength: it would silently cut a pasted code. */}
+              <input
+                id="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                disabled={isLoading}
+                aria-required="true"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-describedby={twoStepError ? 'login-2fa-code-hint login-2fa-error' : 'login-2fa-code-hint'}
+                aria-invalid={!!twoStepError}
+              />
+            </div>
+            <div>
+              <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
+                {t('login.2fa.verify')}
+              </button>
+              <button type="button" onClick={requestTwoStep} disabled={isLoading} className="btn-secondary-sm auth-secondary-button">
+                {t('login.2fa.resend')}
+              </button>
+            </div>
+          </form>
         </div>
       ) : (
         // Default login form with signup link when not in 2FA flow

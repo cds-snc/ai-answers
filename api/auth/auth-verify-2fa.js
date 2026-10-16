@@ -1,7 +1,6 @@
-import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
 import TwoFAService, { CODE_TTL_MS } from '../../services/TwoFAService.js';
-import { SettingsService } from '../../services/SettingsService.js';
+import { getSessionTtlMs } from '../../middleware/express-session.js';
 
 // Second step of sign-in. The user is identified only by req.session.pending2FA,
 // which auth-login.js sets after a correct password. The request body supplies
@@ -16,14 +15,13 @@ const verify2FAHandler = async (req, res) => {
       return res.status(401).json({ success: false, reason: 'expired' });
     }
 
+    // No format check here: TwoFAService decides what counts as a code, so an
+    // empty, malformed or wrong code all get the same 'invalid' answer below.
     const code = req.body?.code;
-    if (!code) {
-      return res.status(400).json({ success: false, message: 'code required' });
-    }
 
     await dbConnect();
 
-    const result = await TwoFAService.verifyChallenge({ userOrId: pending.userId, code });
+    const result = await TwoFAService.verifyChallenge({ userId: pending.userId, code });
     if (!result.success) {
       if (result.reason === 'locked') {
         return res.status(429).json({ success: false, reason: 'locked' });
@@ -32,8 +30,9 @@ const verify2FAHandler = async (req, res) => {
     }
 
     // Removed or deactivated since the password step: back to sign-in, which
-    // gives the usual answer for that account.
-    const user = await User.findById(pending.userId);
+    // gives the usual answer for that account. verifyChallenge returns the
+    // document it just updated, so no second read is needed.
+    const { user } = result;
     if (!user || !user.active) {
       delete req.session.pending2FA;
       return res.status(401).json({ success: false, reason: 'expired' });
@@ -51,13 +50,8 @@ const verify2FAHandler = async (req, res) => {
       try {
         if (visitorId) req.session.visitorId = visitorId;
 
-        const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '10';
-        const authTTLSetting = SettingsService.get('session.authenticatedTTLMinutes') || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
-        const parsedAuthMinutes = Number(authTTLSetting);
-        const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : 60;
-
         if (req.session && req.session.cookie) {
-          req.session.cookie.maxAge = authMinutes * 60 * 1000;
+          req.session.cookie.maxAge = getSessionTtlMs(req);
         }
         delete req.session.pending2FA;
       } catch (e) {

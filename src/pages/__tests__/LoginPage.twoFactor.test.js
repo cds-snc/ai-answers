@@ -68,6 +68,10 @@ async function reachTwoStep() {
   await screen.findByText('login.2fa.sentToEmail');
 }
 
+function typeCode(value) {
+  fireEvent.change(screen.getByRole('textbox', { name: 'login.2fa.code' }), { target: { value } });
+}
+
 describe('LoginPage two-step messages', () => {
   afterEach(() => {
     cleanup();
@@ -148,6 +152,7 @@ describe('LoginPage two-step messages', () => {
   it('says the account is locked when verify is refused for that', async () => {
     await reachTwoStep();
     mockVerify2FA.mockImplementation(() => rejectWith('locked'));
+    typeCode('123456');
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
     expect(await screen.findByText('login.2fa.locked')).toBeTruthy();
   });
@@ -158,6 +163,7 @@ describe('LoginPage two-step messages', () => {
   ])('does not call a %s on the code check a wrong code', async (reason, key) => {
     await reachTwoStep();
     mockVerify2FA.mockImplementation(() => rejectWith(reason));
+    typeCode('123456');
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
     expect(await screen.findByText(key)).toBeTruthy();
     expect(screen.queryByText('login.2fa.invalidCode')).toBeNull();
@@ -173,9 +179,88 @@ describe('LoginPage two-step messages', () => {
     expect(await screen.findByText('login.networkError')).toBeTruthy();
   });
 
+  it.each(['', '   ', '12345', 'abcdef'])('flags the code field for %j without calling the server', async (value) => {
+    await reachTwoStep();
+    typeCode(value);
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
+    expect(await screen.findByText('login.2fa.codeFormat')).toBeTruthy();
+    expect(mockVerify2FA).not.toHaveBeenCalled();
+    const field = screen.getByRole('textbox', { name: 'login.2fa.code' });
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    // The hint stays linked alongside the error.
+    expect(field.getAttribute('aria-describedby')).toBe('login-2fa-code-hint login-2fa-error');
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain('login.2fa.codeFormat'));
+  });
+
+  it('sends the code without spaces, as copied from the email or typed in groups', async () => {
+    await reachTwoStep();
+    mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
+    typeCode(' 123 456 ');
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456'));
+  });
+
+  it('verifies on Enter in the code field, like the password step', async () => {
+    await reachTwoStep();
+    mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
+    typeCode('123456');
+    fireEvent.submit(screen.getByRole('textbox', { name: 'login.2fa.code' }).closest('form'));
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456'));
+  });
+
+  it('sends the code once when Enter is pressed twice quickly', async () => {
+    await reachTwoStep();
+    let finish;
+    mockVerify2FA.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    typeCode('123456');
+    const form = screen.getByRole('textbox', { name: 'login.2fa.code' }).closest('form');
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(mockVerify2FA).toHaveBeenCalledTimes(1);
+    finish({ user: { role: 'admin' } });
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledTimes(1));
+  });
+
+  it('lets the user try again after a failed check', async () => {
+    await reachTwoStep();
+    mockVerify2FA.mockImplementationOnce(() => rejectWith('invalid'));
+    typeCode('123456');
+    const form = screen.getByRole('textbox', { name: 'login.2fa.code' }).closest('form');
+    fireEvent.submit(form);
+    await screen.findByText('login.2fa.invalidCode');
+    mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
+    fireEvent.submit(form);
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledTimes(2));
+  });
+
+  it('resend never submits the code', async () => {
+    await reachTwoStep();
+    mockSend2FA.mockResolvedValue({ success: true });
+    typeCode('123456');
+    const resend = screen.getByRole('button', { name: 'login.2fa.resend' });
+    expect(resend.getAttribute('type')).toBe('button');
+    fireEvent.click(resend);
+    await screen.findByText('login.2fa.resent');
+    expect(mockVerify2FA).not.toHaveBeenCalled();
+  });
+
+  it('states the format up front and marks the field required', async () => {
+    await reachTwoStep();
+    const field = screen.getByRole('textbox', { name: 'login.2fa.code' });
+    expect(field.getAttribute('aria-describedby')).toBe('login-2fa-code-hint');
+    expect(document.getElementById('login-2fa-code-hint').textContent).toBe('login.2fa.codeHint');
+    // aria-required, not required: noValidate keeps the browser's own
+    // English-only bubble off, and the page does the checking.
+    expect(field.getAttribute('aria-required')).toBe('true');
+    expect(field.required).toBe(false);
+    expect(field.getAttribute('inputmode')).toBe('numeric');
+    expect(field.getAttribute('autocomplete')).toBe('one-time-code');
+  });
+
   it('keeps "invalid code" for a wrong code', async () => {
     await reachTwoStep();
     mockVerify2FA.mockImplementation(() => rejectWith('invalid'));
+    typeCode('123456');
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
     expect(await screen.findByText('login.2fa.invalidCode')).toBeTruthy();
   });
@@ -208,6 +293,7 @@ describe('LoginPage two-step messages', () => {
   ])('sends the user back to the password form when %s finds the sign-in expired', async (_name, getMock, button) => {
     await reachTwoStep();
     getMock().mockImplementation(() => rejectWith('expired'));
+    typeCode('123456');
     fireEvent.click(screen.getByRole('button', { name: button }));
     expect(await screen.findByText('login.2fa.expired')).toBeTruthy();
     expect(screen.queryByText('login.2fa.sentToEmail')).toBeNull();

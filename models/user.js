@@ -79,8 +79,9 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-  // Legacy TOTP secret. No longer used for sign-in codes; kept so existing
-  // documents still load. Safe to drop in a later cleanup migration.
+  // Legacy TOTP secret. Nothing reads or writes it any more (sign-up stopped
+  // filling it); kept so existing documents still load. Clearing it from those
+  // documents needs a migration.
   twoFASecret: {
     type: String,
     default: null,
