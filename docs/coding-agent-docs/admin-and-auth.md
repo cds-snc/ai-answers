@@ -92,14 +92,16 @@ Requirements and gotchas when turning 2FA on:
 
 - The code hash is keyed from `TWOFA_SECRET`, else `SESSION_SECRET`, else `JWT_SECRET_KEY`. Every
   deployed environment has `JWT_SECRET_KEY` (PR previews have no `SESSION_SECRET`), so nothing
-  needs setting. With none of the three, login returns 500 with `reason: "twofa_no_secret"`. Other `reason` values on that 500: `twofa_no_template`,
-  `twofa_send_failed`, `twofa_send_error`.
+  needs setting. With none of the three, login returns 500 with `reason: "send_failed"` and
+  `detail: "twofa_no_secret"`. Other `detail` values on that 500: `twofa_no_template`,
+  `send_failed` (GC Notify did not send the email) and `twofa_send_error` (any other error).
 - Settings are cached per instance at startup with no refresh, so on a multi-instance deployment
   a saved `twoFA.enabled` only takes effect on some instances. Unfixed; see the Phase 1 status
   section of the plan.
-- The password step of the login page shows the same message for any failure, including 500s
-  and 429s, so check the `auth-login` response in the browser's Network tab to see the real
-  status.
+- The password step of the login page shows its own message for 2FA lockout, a failed code
+  send, a server error and a lost connection. A wrong password, an unknown email and a password
+  lockout still share one message. For the cause of a failed send, check `detail` in the
+  `auth-login` response in the browser's Network tab.
 
 Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
 logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
