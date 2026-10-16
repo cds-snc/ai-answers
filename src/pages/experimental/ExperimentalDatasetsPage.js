@@ -1,21 +1,50 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsInput, GcdsSelect, GcdsFileUploader } from '@gcds-core/components-react';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
 import ExperimentalServerDataTable from '../../components/experimental/ExperimentalServerDataTable.js';
 import CellRootLink from '../../components/admin/CellRootLink.js';
+import { buildLabelPillHtml } from '../../utils/labelPill.js';
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-}[character]));
+import { escapeHtml } from '../../utils/htmlEscape.js';
 import StatusMessage from '../../components/admin/StatusMessage.js';
+import { useTableStatus } from '../../hooks/experimental/useTableStatus.js';
+
+// Row buttons render in their own React roots, so a busy flag kept in page
+// state only shows by rebuilding the table, which drops keyboard focus. This
+// button keeps its own.
+function BusyButton({ onClick, label, busyLabel }) {
+    const [busy, setBusy] = useState(false);
+    const handleClick = async () => {
+        setBusy(true);
+        try {
+            await onClick();
+        } finally {
+            setBusy(false);
+        }
+    };
+    return (
+        <GcdsButton size="small" buttonRole="secondary" onClick={handleClick} disabled={busy}>
+            {busy ? busyLabel : label}
+        </GcdsButton>
+    );
+}
+
+// creationStatus -> the shared .label colour tiers (admin.css): green done,
+// blue working, grey waiting, red failed.
+const STATUS_PILL_CLASSES = {
+    complete: 'complete',
+    processing: 'in_progress',
+    queued: 'pending',
+    failed: 'error'
+};
+
+// What the table shows per row; a change means it needs redrawing.
+const tableSignature = (data = []) => data.map(ds => `${ds._id}:${ds.creationStatus || ''}:${ds.rowCount}`).join('|');
 
 export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
@@ -25,10 +54,17 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
     const [datasetListResult, setDatasetListResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [exportingDatasetId, setExportingDatasetId] = useState(null);
+    // Upload errors only; they show inside the upload panel.
     const [message, setMessage] = useState(null);
-    const [processingDatasetId, setProcessingDatasetId] = useState(null);
     const processingDatasetRef = useRef(null);
+    const [tableRefreshKey, setTableRefreshKey] = useState(0);
+    const tableSignatureRef = useRef(null);
+    const fileUploaderRef = useRef(null);
+    const [fileUploaderKey, setFileUploaderKey] = useState(0);
+    // Outcomes of table actions and uploads, shown above the table.
+    // focus: the button that caused it is gone (deleted row, closed panel).
+    const tableStatus = useTableStatus();
+    const reportTableStatus = tableStatus.report;
 
     // Upload form state
     const [newName, setNewName] = useState('');
@@ -69,6 +105,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             const result = await ExperimentalBatchClientService.listDatasets(1, 10);
             setDatasets(result.data);
             setDatasetListResult(result);
+            // Redraw only when a row was added, removed or changed status, so
+            // the 5s poll doesn't rebuild the table (and drop focus) for nothing.
+            const signature = tableSignature(result.data);
+            if (tableSignatureRef.current !== null && tableSignatureRef.current !== signature) {
+                setTableRefreshKey(k => k + 1);
+            }
+            tableSignatureRef.current = signature;
             if (result.executionMode === 'lambda') {
                 const active = (result.data || []).find(ds => ['queued', 'processing'].includes(ds.creationStatus));
                 if (active && !processingDatasetRef.current) {
@@ -82,13 +125,17 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = () => {
+        const file = fileUploaderRef.current?.files?.[0];
         if (file) {
             setSelectedFile(file);
             if (!newName) setNewName(file.name.split('.')[0]);
         }
     };
+
+    // An outcome names its dataset: the message shows above the table, away
+    // from the row, and a deleted row is gone.
+    const withDatasetName = (key, name) => t(key).replace('{name}', () => name);
 
     const handleUpload = async () => {
         if (!selectedFile || !newName) return;
@@ -107,13 +154,15 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         selectedFile.name,
                         { name: newName, description: newDesc, type: newType, category: newCategory.trim() }
                     );
-                    setMessage({ type: 'success', text: t('experimental.datasets.uploadSuccess') });
-                    fetchDatasets();
+                    setMessage(null);
+                    await fetchDatasets();
                     setNewName('');
                     setNewDesc('');
                     setNewCategory('');
                     setSelectedFile(null);
+                    setFileUploaderKey(k => k + 1);
                     setShowUpload(false);
+                    reportTableStatus(withDatasetName('experimental.datasets.uploadSuccess', newName), { focus: true });
                 } catch (err) {
                     // Always the translated message here, not
                     // err.response?.data?.error directly - same as the
@@ -140,27 +189,24 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (dataset) => {
         if (!window.confirm(t('experimental.datasets.confirmDelete'))) return;
 
         try {
-            await ExperimentalBatchClientService.deleteDataset(id);
-            fetchDatasets();
+            await ExperimentalBatchClientService.deleteDataset(dataset._id);
+            await fetchDatasets();
+            reportTableStatus(withDatasetName('experimental.datasets.deleteSuccess', dataset.name), { focus: true });
         } catch (err) {
-            // Native alert() had no ARIA role and, worse, showed raw
-            // untranslated err.message text — routed through the page's
-            // existing setMessage/StatusMessage pattern instead, same as
-            // every other outcome on this page.
+            // Translated text only, never the raw err.message.
             if (err.response?.data?.code === 'IN_USE') {
-                setMessage({ type: 'error', text: t('experimental.datasets.inUse') });
+                reportTableStatus(withDatasetName('experimental.datasets.inUse', dataset.name), { isError: true });
             } else {
-                setMessage({ type: 'error', text: t('experimental.datasets.deleteFailed') });
+                reportTableStatus(withDatasetName('experimental.datasets.deleteFailed', dataset.name), { isError: true });
             }
         }
     };
 
     const handleExportDataset = async (dataset) => {
-        setExportingDatasetId(dataset._id);
         try {
             const blob = await ExperimentalBatchClientService.exportDataset(dataset._id);
             const fileName = `dataset-${dataset.name || dataset._id}.csv`
@@ -180,16 +226,13 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Export dataset error:', err);
-            alert(t('experimental.datasets.exportFailed'));
-        } finally {
-            setExportingDatasetId(null);
+            reportTableStatus(withDatasetName('experimental.datasets.exportFailed', dataset.name), { isError: true });
         }
     };
 
     const handleProcessDataset = async (dataset, showMessage = true, refresh = true) => {
         if (processingDatasetRef.current === dataset._id) return;
         processingDatasetRef.current = dataset._id;
-        setProcessingDatasetId(dataset._id);
         try {
             await ExperimentalBatchClientService.processDataset(dataset._id, dataset.creationStatus === 'processing');
             if (refresh) await fetchDatasets(false);
@@ -197,14 +240,11 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             const alreadyProcessing = err.code === 'stillProcessing' || err.status === 409;
             if (!alreadyProcessing) {
                 console.error('Process dataset error:', err);
-                // message.text renders as plain text (<GcdsText>{message.text}</GcdsText>),
-                // no room to wrap a raw err.message in <code lang="en"> here —
-                // always show the translated message rather than raw text.
-                if (showMessage) setMessage({ type: 'error', text: t('experimental.datasets.processFailed') });
+                // Translated text only, never the raw err.message.
+                if (showMessage) reportTableStatus(withDatasetName('experimental.datasets.processFailed', dataset.name), { isError: true });
             }
         } finally {
             processingDatasetRef.current = null;
-            setProcessingDatasetId(null);
         }
     };
 
@@ -230,9 +270,9 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
         {
             title: t('experimental.datasets.nameLabel'),
             data: 'name',
-            width: '24%',
+            width: '21%',
             render: (data, type, row) => type === 'display'
-                ? `<div class="experimental-dataset-name"><strong>${escapeHtml(data)}</strong>${row.description ? `<span>${escapeHtml(row.description)}</span>` : ''}</div>`
+                ? `<div class="experimental-dataset-name"><span class="font-bold">${escapeHtml(data)}</span>${row.description ? `<span>${escapeHtml(row.description)}</span>` : ''}</div>`
                 : data
         },
         {
@@ -247,22 +287,23 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         ? t('experimental.datasets.type.batchOutput')
                         : data
         },
-        { title: t('experimental.datasets.uploadedBy'), data: null, width: '16%', render: (_data, _type, row) => row.createdBy?.email || t('common.na') },
-        { title: t('experimental.datasets.rowCount'), data: 'rowCount', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.datasets.uploadedBy'), data: null, width: '14%', render: (_data, _type, row) => row.createdBy?.email || t('common.na') },
+        { title: t('experimental.datasets.rowCount'), data: 'rowCount', width: '6%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
         {
             title: t('experimental.datasets.creationStatus.title'),
             data: 'creationStatus',
-            width: '11%',
+            width: '14%',
             render: (data, _type, row) => {
-                const status = (!data || data === 'complete') ? t('experimental.datasets.creationStatus.complete') : t(`experimental.datasets.creationStatus.${data}`);
-                if (data === 'complete' && row.creationSkippedSourceRows > 0) {
-                    return `<span>${status}</span><div class="font-size-text-xsm-nr">${t('experimental.datasets.creationStatus.skippedSourceRows').replace('{count}', formatNumber(row.creationSkippedSourceRows, lang))}</div>`;
+                const key = data || 'complete';
+                const pill = buildLabelPillHtml(STATUS_PILL_CLASSES[key] || 'unknown', t(`experimental.datasets.creationStatus.${key}`));
+                if (key === 'complete' && row.creationSkippedSourceRows > 0) {
+                    return `${pill}<div class="font-size-text-xxs-nr">${escapeHtml(t('experimental.datasets.creationStatus.skippedSourceRows').replace('{count}', formatNumber(row.creationSkippedSourceRows, lang)))}</div>`;
                 }
-                return status;
+                return pill;
             }
         },
-        { title: t('experimental.datasets.runCountLabel'), data: 'runCount', width: '4%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
-        { title: t('experimental.datasets.created'), data: 'createdAt', width: '8%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
+        { title: t('experimental.datasets.runCountLabel'), data: 'runCount', width: '6%', render: (data, type) => type === 'display' ? formatNumber(data, lang) : data },
+        { title: t('experimental.datasets.created'), data: 'createdAt', width: '10%', render: (data, type) => type === 'display' ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data)) : data }
     ];
 
     const fetchDatasetTableData = useCallback((query) => (
@@ -279,12 +320,16 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
             : <GcdsButton size="small" buttonRole="secondary" disabled>{label}</GcdsButton>
         );
         return (
-            <div className="experimental-table-actions experimental-table-actions--group" role="group" aria-label={t('experimental.datasets.actions')}>
-                {!isComplete && <GcdsButton size="small" buttonRole="secondary" onClick={() => handleProcessDataset(ds)} disabled={['queued', 'processing'].includes(ds.creationStatus) || processingDatasetId === ds._id}>{processingDatasetId === ds._id || ['queued', 'processing'].includes(ds.creationStatus) ? t('experimental.datasets.processing') : t('experimental.datasets.startAgain')}</GcdsButton>}
+            <div className="experimental-table-actions experimental-table-actions--group experimental-table-actions--stacked" role="group" aria-label={t('experimental.datasets.actions')}>
+                {!isComplete && (['queued', 'processing'].includes(ds.creationStatus)
+                    ? <GcdsButton size="small" buttonRole="secondary" disabled>{t('experimental.datasets.processing')}</GcdsButton>
+                    : <BusyButton onClick={() => handleProcessDataset(ds)} label={t('experimental.datasets.resume')} busyLabel={t('experimental.datasets.processing')} />)}
                 {navButton(`${getPath('experimental-analysis', lang)}?datasetId=${ds._id}`, t('experimental.datasets.analyze'))}
                 {navButton(`${getPath('experimental-suites', lang)}/${ds._id}`, t('experimental.datasets.suiteView'))}
-                <GcdsButton size="small" buttonRole="secondary" onClick={() => handleExportDataset(ds)} disabled={exportingDatasetId === ds._id || !isComplete}>{exportingDatasetId === ds._id ? t('experimental.datasets.exporting') : t('experimental.datasets.export')}</GcdsButton>
-                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds._id)}>{t('experimental.datasets.delete')}</GcdsButton>
+                {isComplete
+                    ? <BusyButton onClick={() => handleExportDataset(ds)} label={t('experimental.datasets.export')} busyLabel={t('experimental.datasets.exporting')} />
+                    : <GcdsButton size="small" buttonRole="secondary" disabled>{t('experimental.datasets.export')}</GcdsButton>}
+                <GcdsButton size="small" buttonRole="danger" onClick={() => handleDelete(ds)}>{t('experimental.datasets.delete')}</GcdsButton>
             </div>
         );
     };
@@ -324,67 +369,61 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                     {t('experimental.datasets.createButton')}
                 </Link>
 
+                {/* Always in the DOM so the toggle's aria-controls resolves. */}
+                <div id="experimental-dataset-upload-panel" hidden={!showUpload}>
                 {showUpload && (
-                    <div id="experimental-dataset-upload-panel" className="mt-400 p-400 border rounded bg-light">
+                    <div className="mt-400">
                         <GcdsHeading tag="h2">{t('experimental.datasets.uploadNew')}</GcdsHeading>
-                        <div style={{ display: 'grid', gap: '1rem', maxWidth: '600px' }}>
+                        <div className="text-measure">
                             <GcdsInput
+                                inputId="ds-name"
+                                name="ds-name"
                                 label={t('experimental.datasets.nameLabel')}
-                                id="ds-name"
                                 value={newName}
                                 onGcdsInput={(e) => setNewName(e.target.value)}
                                 required
                             />
                             <GcdsInput
+                                inputId="ds-desc"
+                                name="ds-desc"
                                 label={t('experimental.datasets.descLabel')}
-                                id="ds-desc"
                                 value={newDesc}
                                 onGcdsInput={(e) => setNewDesc(e.target.value)}
                             />
-                            <div>
-                                <label htmlFor="ds-type" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                    {t('experimental.datasets.typeLabel')}
-                                </label>
-                                <select
-                                    id="ds-type"
-                                    value={newType}
-                                    onChange={(e) => setNewType(e.target.value)}
-                                    style={{ padding: '8px', width: '100%', marginBottom: '10px' }}
-                                >
-                                    <option value="question-only">{t('experimental.datasets.type.questionOnly')}</option>
-                                    <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="ds-category" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                    {t('experimental.datasets.categoryLabel')}
-                                </label>
-                                <input
-                                    id="ds-category"
-                                    type="text"
-                                    value={newCategory}
-                                    maxLength={100}
-                                    onChange={(e) => setNewCategory(e.target.value)}
-                                    placeholder={t('experimental.datasets.categoryPlaceholder')}
-                                    style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
-                                />
-                            </div>
+                            <GcdsSelect
+                                selectId="ds-type"
+                                name="ds-type"
+                                label={t('experimental.datasets.typeLabel')}
+                                value={newType}
+                                onGcdsChange={(e) => setNewType(e.detail)}
+                            >
+                                <option value="question-only">{t('experimental.datasets.type.questionOnly')}</option>
+                                <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
+                            </GcdsSelect>
+                            <GcdsInput
+                                inputId="ds-category"
+                                name="ds-category"
+                                label={t('experimental.datasets.categoryLabel')}
+                                hint={t('experimental.datasets.categoryPlaceholder')}
+                                maxlength={100}
+                                value={newCategory}
+                                onGcdsInput={(e) => setNewCategory(e.target.value)}
+                            />
                             <GcdsText className="mb-200">
                                 {typeInfo.description}
                             </GcdsText>
                             <GcdsText className="mb-200">
-                                <strong>{t('experimental.datasets.requiredColumns')} </strong>
-                                {typeInfo.columns}
+                                <span className="font-bold">{t('experimental.datasets.requiredColumns')}</span> {typeInfo.columns}
                             </GcdsText>
                             <GcdsText className="mb-200">
                                 {t('experimental.datasets.columnAliasHint')}
                             </GcdsText>
-                            <table className="review-table">
+                            <table className="review-table mb-400">
                                 <caption>{t('experimental.datasets.columnVariants.title')}</caption>
                                 <thead>
                                     <tr>
-                                        <th>{t('experimental.datasets.columnVariants.fieldHeader')}</th>
-                                        <th>{t('experimental.datasets.columnVariants.variantsHeader')}</th>
+                                        <th scope="col">{t('experimental.datasets.columnVariants.fieldHeader')}</th>
+                                        <th scope="col">{t('experimental.datasets.columnVariants.variantsHeader')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -396,17 +435,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                                     ))}
                                 </tbody>
                             </table>
-                            <div>
-                                <label htmlFor="experimental-dataset-file" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                    {t('experimental.datasets.fileLabel')}
-                                </label>
-                                <input id="experimental-dataset-file" type="file" accept=".xlsx, .csv" onChange={handleFileChange} />
-                            </div>
-                            <div>
-                                <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>
-                                    {uploading ? t('experimental.datasets.uploading') : t('experimental.datasets.upload')}
-                                </GcdsButton>
-                            </div>
+                            <GcdsFileUploader
+                                key={fileUploaderKey}
+                                ref={fileUploaderRef}
+                                className="csv-file-uploader"
+                                uploaderId="experimental-dataset-file"
+                                name="experimental-dataset-file"
+                                label={t('experimental.datasets.fileLabel')}
+                                accept=".xlsx,.csv"
+                                required
+                                onGcdsChange={handleFileChange}
+                            />
+                            <GcdsButton onClick={handleUpload} disabled={uploading || !selectedFile || !newName}>
+                                {uploading ? t('experimental.datasets.uploading') : t('experimental.datasets.upload')}
+                            </GcdsButton>
                             <StatusMessage
                                 variant={message?.type}
                             >
@@ -426,9 +468,20 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         </div>
                     </div>
                 )}
+                </div>
             </div>
 
             <GcdsHeading tag="h2" className="mt-600">{t('experimental.datasets.existing')}</GcdsHeading>
+            <StatusMessage
+                ref={tableStatus.ref}
+                tabIndex={-1}
+                className="focus-target"
+                announce={!tableStatus.movesFocus}
+                announcedVia={tableStatus.movesFocus ? 'focus' : undefined}
+                variant={tableStatus.message ? (tableStatus.isError ? 'error' : 'success') : undefined}
+                message={tableStatus.message}
+                nonce={tableStatus.nonce}
+            />
             {loading ? (
                 <GcdsText>{t('experimental.datasets.loading')}</GcdsText>
             ) : (
@@ -440,10 +493,12 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         lang={lang}
                         initialResult={datasetListResult}
                         emptyTableText={t('experimental.datasets.empty')}
-                        actionsWidth="23%"
+                        actionsWidth="17%"
                         autoWidth={false}
-                        containerClassName="experimental-table-container experimental-dataset-table-container"
-                        tableKey={`datasets-${processingDatasetId || ''}-${exportingDatasetId || ''}`}
+                        containerClassName="metrics-table-container experimental-dataset-table-container table-scroll"
+                        searchLabelSrOnly={t('experimental.datasets.filterLabel')}
+                        searchPlaceholder={t('admin.common.filterPlaceholder')}
+                        tableKey={`datasets-${tableRefreshKey}`}
                     order={[[6, 'desc']]}
                 />
             )}
