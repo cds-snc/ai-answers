@@ -34,9 +34,30 @@ const LoginPage = ({ lang = 'en' }) => {
   // nearby trigger the user just interacted with to anchor their attention.
   const sessionExpiredRef = useFocusOnChange(sessionExpired);
 
+  // Sign-in outcomes no field is at fault for (server/connection failure,
+  // lockout, timed-out session, a resend's result). A status, not a form
+  // error: wrong email/password and wrong code stay on AnnouncedError.
+  // The buttons disable while working, which drops focus to <body>, so focus
+  // moves onto the message (focus reads it, so announce={false}). Repeatable,
+  // so the same message twice in a row is read again.
+  const { message: statusText, variant: statusVariant, nonce: statusNonce, announce: showStatus, clear: clearStatus } = useRepeatableStatus();
+  const statusRef = useFocusOnChange(statusNonce);
+  const statusBox = (
+    <StatusMessage
+      variant={statusVariant}
+      message={statusText}
+      className="mb-400"
+      ref={statusRef}
+      tabIndex={-1}
+      announce={false}
+      announcedVia="focus"
+    />
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
+    clearStatus();
     // If 2FA flow already started, ignore normal submit
     if (showTwoStep) {
       return;
@@ -94,7 +115,7 @@ const LoginPage = ({ lang = 'en' }) => {
         network: 'login.networkError',
       };
       if (messages[err.reason]) {
-        setError(t(messages[err.reason]));
+        showStatus(t(messages[err.reason]), { variant: 'error' });
       } else {
         setError(t('login.invalidCredentials'), ['email', 'password']);
       }
@@ -130,18 +151,13 @@ const LoginPage = ({ lang = 'en' }) => {
     setCode('');
     setPassword('');
     clearTwoStepError();
-    setError(t('login.2fa.expired'));
+    showStatus(t('login.2fa.expired'), { variant: 'error' });
   };
-  // "New code sent." after a resend. Repeatable, so a second resend announces again.
-  const { message: resendMessage, nonce: resendNonce, announce: announceResent, clear: clearResent } = useRepeatableStatus();
-  // Resend disables itself while sending, which drops focus to <body>. Move
-  // focus to the confirmation instead (focus reads it, so announce={false}).
-  const resendFocusRef = useFocusOnChange(resendNonce);
 
   const verifyTwoStep = async () => {
     setIsLoading(true);
     clearTwoStepError();
-    clearResent();
+    clearStatus();
     // Same reasoning as handleSubmit's announce().
     announce(t('login.form.submitting'), { skippable: true });
     try {
@@ -165,7 +181,11 @@ const LoginPage = ({ lang = 'en' }) => {
       // Only a reason-less 4xx is a wrong code. A server or connection failure
       // says so, or the user retypes a correct code into the lockout count.
       const messages = { locked: 'login.2fa.locked', server_error: 'login.serverError', network: 'login.networkError' };
-      setTwoStepError(t(messages[err.reason] || 'login.2fa.invalidCode'));
+      if (messages[err.reason]) {
+        showStatus(t(messages[err.reason]), { variant: 'error' });
+      } else {
+        setTwoStepError(t('login.2fa.invalidCode'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -175,12 +195,12 @@ const LoginPage = ({ lang = 'en' }) => {
   const requestTwoStep = async () => {
     setIsLoading(true);
     clearTwoStepError();
-    clearResent();
+    clearStatus();
     try {
       // backend method remains send2FA
       await AuthService.send2FA();
       setShowTwoStep(true);
-      announceResent(t('login.2fa.resent'));
+      showStatus(t('login.2fa.resent'), { variant: 'success' });
     } catch (err) {
       if (err.reason === 'expired') {
         restartSignIn();
@@ -189,7 +209,7 @@ const LoginPage = ({ lang = 'en' }) => {
       // The server refuses a resend within a minute of the last code (the one
       // sent at sign-in counts) and while 2FA is locked. Say so, not "failed".
       const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked', network: 'login.networkError' };
-      setTwoStepError(t(messages[err.reason] || 'login.2fa.sendError'));
+      showStatus(t(messages[err.reason] || 'login.2fa.sendError'), { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -223,15 +243,7 @@ const LoginPage = ({ lang = 'en' }) => {
           <p tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
-          <StatusMessage
-            variant="success"
-            message={resendMessage}
-            className="mb-400"
-            ref={resendFocusRef}
-            tabIndex={-1}
-            announce={false}
-            announcedVia="focus"
-          />
+          {statusBox}
           {twoStepError && (
             <AnnouncedError
               id="login-2fa-error"
@@ -263,6 +275,7 @@ const LoginPage = ({ lang = 'en' }) => {
       ) : (
         // Default login form with signup link when not in 2FA flow
         <>
+          {statusBox}
           {error && (
             <AnnouncedError id="login-error" message={error} errorCount={errorCount} inputRef={errorRef} />
           )}

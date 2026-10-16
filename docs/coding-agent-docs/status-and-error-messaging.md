@@ -95,7 +95,7 @@ The form-error family follows the same rule: `AnnouncedError` is always the focu
 
 `StatusMessage` is not a forms component. A validation error tied to one field uses the form-error family, which wires the error to its field via `id`/`aria-describedby` and moves focus on submit failure:
 
-- **`src/components/chat/FeedbackInlineError.js`** / **`src/components/auth/AnnouncedError.js`** — one message for one thing (a field's error; a page-level auth/system error).
+- **`src/components/chat/FeedbackInlineError.js`** / **`src/components/auth/AnnouncedError.js`** — one message for one field's error. A page-level auth/system error (server, connection, lockout) is a `StatusMessage`, not one of these.
 - **`src/components/chat/ExplanationErrorSummary.js`** — a GC DS `gcds-error-summary`-style box (heading + jump-links) for *several* invalid fields at once (`SettingsPage.js`, `ExpertFeedbackComponent.js`). Not for a single error.
 
 **`FeedbackInlineError` needs `errorCount`, or repeat identical failures go silent.** It renders `<p key={errorCount} role="alert">`; the `key` forces a fresh node on every trigger. With plain `useState` + `setError(text)`, two submits with the same invalid input produce the same string, React bails on the update, and the second failure is never announced. Use `src/hooks/useInlineFormError.js`:

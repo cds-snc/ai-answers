@@ -82,6 +82,8 @@ describe('LoginPage two-step messages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.resend' }));
     expect(await screen.findByText('login.2fa.cooldown')).toBeTruthy();
     expect(screen.queryByText('login.2fa.sendError')).toBeNull();
+    // Nothing was typed, so the empty code field isn't flagged.
+    expect(screen.getByRole('textbox', { name: 'login.2fa.code' }).getAttribute('aria-invalid')).toBe('false');
   });
 
   it('says the account is locked when a resend is refused for that', async () => {
@@ -136,6 +138,9 @@ describe('LoginPage two-step messages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
     expect(await screen.findByText(key)).toBeTruthy();
     expect(screen.queryByText('login.2fa.invalidCode')).toBeNull();
+    // A status, not a form error: the code field isn't flagged.
+    expect(screen.getByRole('textbox', { name: 'login.2fa.code' }).getAttribute('aria-invalid')).toBe('false');
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain(key));
   });
 
   it('says the connection failed when a resend gets no response', async () => {
@@ -164,6 +169,8 @@ describe('LoginPage two-step messages', () => {
     expect(screen.queryByText('login.invalidCredentials')).toBeNull();
     // The password was right, so neither field is flagged.
     expect(screen.getByRole('textbox', { name: 'login.email' }).getAttribute('aria-invalid')).toBe('false');
+    expect(screen.getByRole('textbox', { name: 'login.email' }).getAttribute('aria-describedby')).toBeNull();
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain(key));
   });
 
   it('keeps one message for a wrong password, unknown email or password lockout', async () => {

@@ -9,9 +9,10 @@ import { validateRequiredEmailFields } from '../../utils/auth/validateAuthFields
 //
 // validate() runs the shared required/email-format check (see
 // validateAuthFields.js) and announces + flags on failure. setError() covers
-// page-specific errors that check isn't aware of (password mismatch, invalid
-// credentials, server errors) — pass the field name(s) it concerns as the
-// second argument, or omit it when no specific field is at fault.
+// page-specific field errors that check isn't aware of (password mismatch,
+// invalid credentials) — pass the field name(s) it concerns as the second
+// argument. An error no field is at fault for (server, connection, lockout)
+// is a StatusMessage, not this.
 export const useAuthFormValidation = () => {
   const { error, errorCount, errorRef, setError: setAnnouncedError, clearError: clearAnnouncedError } = useAnnouncedError();
   const [invalidFields, setInvalidFields] = useState([]);
