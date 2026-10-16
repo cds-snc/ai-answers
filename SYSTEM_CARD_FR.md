@@ -75,7 +75,7 @@ Deux points d'entrée apparaissent à gauche : « Usages externes » (Canada.ca,
 
 ### Composants du système
 1. **Interface utilisateur** : Interface de clavardage basée sur React pour le public
-2. **Interface d'administration** : Basée sur React, avec authentification à deux facteurs facultative et accès basé sur les rôles (administrateur et partenaire) pour l'évaluation, les métriques et les paramètres du système
+2. **Interface d'administration** : Basée sur React, avec authentification à deux facteurs et accès basé sur les rôles (administrateur et partenaire) pour l'évaluation, les métriques et les paramètres du système
 3. **Serveur** : Node.js avec orchestration de machine à états LangGraph
 4. **Services IA** : Modèles Azure OpenAI GPT, avec des points d'ancrage pour utiliser d'autres modèles d'IA s'ils sont déployés/acquis
 5. **Base de données** : AWS DocumentDB

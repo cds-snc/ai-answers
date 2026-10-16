@@ -75,7 +75,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### System components
 1. **Frontend**: React-based chat interface for the public
-2. **Admin interface**: React-based, with optional 2FA and role-based access (admin and partner) for evaluation, metrics and system settings
+2. **Admin interface**: React-based, with 2FA and role-based access (admin and partner) for evaluation, metrics and system settings
 3. **Backend**: Node.js with LangGraph state machine orchestration
 4. **AI Services**: Azure OpenAI GPT models, with hooks to use other AI models if deployed/procured
 5. **Database**: AWS DocumentDB

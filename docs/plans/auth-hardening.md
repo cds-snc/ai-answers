@@ -289,8 +289,8 @@ Phase 1 leftovers and fixes from an accessibility review and a code review (two 
   which would silently cut a pasted code. `TWOFA_CODE_LENGTH` has a comment naming the strings
   to update if the length changes.
 - **Phase 1 leftovers:** sign-up no longer generates `twoFASecret` (Phase 1 status, item 6).
-  The system card's components list says 2FA is optional, matching its authentication section
-  and production (EN and FR). The sign-up test's `User` mock was fixed for Vitest 4.
+  The sign-up test's `User` mock was fixed for Vitest 4. The system card is deliberately not
+  changed here; see "Docs to update with each phase".
 - **Accepted, recorded in Phase 1 status item 7:** the sign-in step's lock check uses
   Passport's read, and a malformed code on a locked account answers `invalid`.
 - **Not changed (pre-existing, affects every session):** when
@@ -392,6 +392,10 @@ The original items, as planned:
 
 - `docs/coding-agent-docs/admin-and-auth.md`: remove the "Gaps worth knowing" list as each
   item is fixed.
+- Open, for a separate system card change: the components list (EN and FR, item 2 "Admin
+  interface") says the admin interface has 2FA, but the card's authentication section says the
+  codes are optional, and 2FA is off in production. Make the components list say optional, or
+  leave it until 2FA goes on ("Before turning 2FA on in production", item 5).
 - `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md`: authentication wording and any new sign-up controls
   (both languages, per AGENTS.md). Do not claim email verification, domain limits or lockout
   until they ship. The safety claims and the implementation must not differ.
