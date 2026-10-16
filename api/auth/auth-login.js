@@ -62,22 +62,36 @@ const loginHandler = (req, res, next) => {
         });
       });
     } else {
-      // Store user temporarily for 2FA verification (don't log in yet)
-      req.session.pendingUser = {
+      // Password is correct but the user is not logged in yet. The session
+      // remembers who passed the password step; auth-verify-2fa and
+      // auth-send-2fa act only on this, never on a client-supplied email.
+      req.session.pending2FA = {
         userId: user._id.toString(),
-        email: user.email,
-        role: user.role
+        createdAt: Date.now()
       };
 
       try {
-        const templateId = SettingsService.get('twoFA.templateId');
-        const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
+        const sendResult = await TwoFAService.sendChallenge({ userOrId: user });
+
+        // Only reachable after a correct password, which the 2FA screen would
+        // confirm anyway, so naming the lockout here reveals nothing new.
+        if (sendResult.reason === 'locked') {
+          delete req.session.pending2FA;
+          return res.status(429).json({
+            success: false,
+            message: 'Too many attempts. Try again later.',
+            reason: 'locked'
+          });
+        }
 
         if (!sendResult.success) {
           console.error('TwoFAService failed to send code', sendResult);
+          delete req.session.pending2FA;
           return res.status(500).json({
             success: false,
-            message: 'Error during login'
+            message: 'Error during login',
+            reason: 'send_failed',
+            detail: sendResult.reason
           });
         }
 
@@ -93,10 +107,17 @@ const loginHandler = (req, res, next) => {
           }
         });
       } catch (error) {
-        console.error('2FA send error:', error);
+        // `detail` shows the cause in the browser's Network tab (there is no log
+        // viewer). Only TwoFAService's own fixed `twofa_*` codes go there; database
+        // and driver codes stay in the server log.
+        console.error('2FA send error:', error?.code, error);
+        delete req.session.pending2FA;
+        const ownCode = typeof error?.code === 'string' && error.code.startsWith('twofa_');
         return res.status(500).json({
           success: false,
-          message: 'Error during login'
+          message: 'Error during login',
+          reason: 'send_failed',
+          detail: ownCode ? error.code : 'twofa_send_error'
         });
       }
     }

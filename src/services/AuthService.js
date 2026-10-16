@@ -2,6 +2,36 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import { ROUTE_SLUGS } from '../utils/routes.js';
 
 
+// POST for the sign-in steps. The login page picks its message from
+// err.reason, so every failure gets one: the server's own reason when it sent
+// one, 'server_error' for any other 5xx, and 'network' when no response came
+// back (offline, VPN dropped). Without these, both would read as a wrong
+// password or wrong code. A 4xx with no reason stays null: wrong credentials.
+async function postSignInStep(endpoint, body) {
+  let response;
+  try {
+    response = await fetch(getApiUrl(endpoint), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+  } catch (cause) {
+    const err = new Error(`${endpoint}: no response`);
+    err.reason = 'network';
+    err.cause = cause;
+    throw err;
+  }
+
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}));
+    const err = new Error(`${endpoint} failed (${response.status})`);
+    err.reason = json.reason || (response.status >= 500 ? 'server_error' : null);
+    throw err;
+  }
+  return response.json();
+}
+
 class AuthService {
   static unauthorizedCallback = null;
   static currentUser = null; // Cache for current user
@@ -158,20 +188,7 @@ class AuthService {
   }
 
   static async login(email, password) {
-    const response = await fetch(getApiUrl('auth-login'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Login failed');
-    }
-
-    const data = await response.json();
+    const data = await postSignInStep('auth-login', { email, password });
     // If backend indicates twoFA is required, do not cache user yet
     if (data && data.twoFA) {
       return data;
@@ -183,20 +200,9 @@ class AuthService {
     return data;
   }
 
-  static async verify2FA(email, code) {
-    const response = await fetch(getApiUrl('auth-verify-2fa'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, code }),
-    });
-
-    if (!response.ok) {
-      const json = await response.json().catch(() => ({}));
-      throw new Error(json.message || json.reason || '2FA verify failed');
-    }
-
-    const data = await response.json();
+  static async verify2FA(code) {
+    // reason: 'invalid' | 'locked' | 'expired' | 'server_error' | 'network'
+    const data = await postSignInStep('auth-verify-2fa', { code });
     // Cookies are set automatically by the server
     if (data.user) {
       this.currentUser = data.user;
@@ -240,24 +246,10 @@ class AuthService {
     return await resp.json();
   }
 
-  // Send a 2FA code to the user's email using the canonical endpoint only.
-  static async send2FA(email) {
-    if (!email) throw new Error('Email required');
-
-    const url = getApiUrl('auth-send-2fa');
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email }),
-    });
-
-    if (!resp.ok) {
-      const json = await resp.json().catch(() => ({}));
-      throw new Error(json.message || 'Failed to send 2FA');
-    }
-
-    return await resp.json();
+  // Send the 2FA code again. The server knows who is signing in from the session.
+  static async send2FA() {
+    // reason: 'cooldown' | 'locked' | 'expired' | 'send_failed' | 'server_error' | 'network'
+    return postSignInStep('auth-send-2fa', {});
   }
 
   static isPublicRoute(pathname) {

@@ -1036,7 +1036,9 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password.",
+    "invalidCredentials": "Invalid email or password. After 10 failed attempts, sign-in is paused for 15 minutes.",
+    "serverError": "We couldn't sign you in. Try again in a few minutes.",
+    "networkError": "We couldn't reach the server. Check your connection, then try again.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."
@@ -1054,8 +1056,12 @@
       "resend": "Resend code",
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
-      "sendError": "Failed to send verification code.",
-      "invalidCode": "Invalid verification code."
+      "sendError": "We couldn't send your verification code. Try again in a few minutes.",
+      "invalidCode": "Invalid verification code.",
+      "resent": "New code sent.",
+      "cooldown": "Wait a minute before asking for a new code.",
+      "locked": "Too many incorrect codes. Wait 30 minutes, then sign in again.",
+      "expired": "Your sign-in timed out. Enter your email and password again to get a new code."
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
