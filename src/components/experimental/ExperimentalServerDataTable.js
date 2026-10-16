@@ -1,11 +1,24 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import DataTable from 'datatables.net-react';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import DT from 'datatables.net-dt';
 import { dataTableLanguage } from '../../utils/dataTableLanguage.js';
+import { escapeHtml } from '../../utils/htmlEscape.js';
+import { announce } from '../../utils/liveAnnouncer.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import LoadingOverlay from '../admin/LoadingOverlay.js';
 
 DataTable.use(DT);
+
+// The shared admin-table zones (docs/coding-agent-docs/tables.md): filter box
+// top-left, page info and entries per page bottom-left, paging bottom-right.
+const DEFAULT_LAYOUT = {
+    topStart: 'search',
+    topEnd: {},
+    bottomStart: { features: ['pageLength', 'info'] },
+    bottomEnd: { paging: { firstLast: false } }
+};
 
 export default function ExperimentalServerDataTable({
     columns,
@@ -19,9 +32,17 @@ export default function ExperimentalServerDataTable({
     initialResult = null,
     emptyTableText,
     actionsWidth,
-    autoWidth = true
+    autoWidth = true,
+    // sr-only label for the filter-style box (docs/coding-agent-docs/tables.md).
+    layout = DEFAULT_LAYOUT,
+    searchLabelSrOnly,
+    searchPlaceholder
 }) {
+    const { t } = useTranslations(lang);
     const initialResultRef = useRef(initialResult);
+    // Drives the scoped LoadingOverlay, as in ServerDataTable: DataTables'
+    // own `processing` node is never announced by screen readers.
+    const [loading, setLoading] = useState(true);
     const tableColumns = useMemo(() => {
         const normalizedColumns = columns.map(column => ({ defaultContent: '', ...column }));
         return renderActions
@@ -30,18 +51,21 @@ export default function ExperimentalServerDataTable({
     }, [actionsTitle, actionsWidth, columns, renderActions]);
 
     const options = useMemo(() => ({
-        processing: true,
         serverSide: true,
         paging: true,
         searching: true,
         ordering: true,
         autoWidth,
         order,
+        layout,
         language: {
             ...dataTableLanguage(lang),
-            ...(emptyTableText ? { emptyTable: emptyTableText } : {})
+            ...(emptyTableText ? { emptyTable: emptyTableText } : {}),
+            ...(searchLabelSrOnly ? { search: `<span class="sr-only">${escapeHtml(searchLabelSrOnly)}</span>` } : {}),
+            ...(searchPlaceholder ? { searchPlaceholder } : {})
         },
         ajax: async (params, callback) => {
+            setLoading(true);
             try {
                 const sort = params.order?.[0];
                 const result = initialResultRef.current || await fetchData({
@@ -66,9 +90,13 @@ export default function ExperimentalServerDataTable({
                     recordsFiltered,
                     data
                 });
+                setLoading(false);
+                // Replaces the overlay's skippable "Loading…", as in ServerDataTable.
+                announce(recordsFiltered === 0 ? t('admin.common.noData') : t('admin.common.resultsLoaded'), { assertive: true });
             } catch (error) {
                 console.error('Failed to load experimental table data:', error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                setLoading(false);
             }
         },
         createdRow: renderActions ? (row, rowData) => {
@@ -79,16 +107,23 @@ export default function ExperimentalServerDataTable({
             actionsCell._experimentalTableRoot = root;
             root.render(renderActions(rowData));
         } : undefined
-    }), [autoWidth, emptyTableText, fetchData, lang, order, renderActions, tableColumns]);
+    }), [autoWidth, emptyTableText, fetchData, lang, layout, order, renderActions, searchLabelSrOnly, searchPlaceholder, t, tableColumns]);
 
     return (
-        <div className={containerClassName}>
-            <DataTable
-                key={tableKey}
-                className="display dashboard-table"
-                columns={tableColumns}
-                options={options}
-            />
+        // tabIndex: keyboard users can reach and scroll an overflowing table
+        // (Safari/Firefox don't focus scroll regions on their own).
+        <div className={containerClassName} tabIndex={0}>
+            {/* Positioned, isolated ancestor that keeps the scoped overlay
+                over this table only (see ServerDataTable). */}
+            <div className="server-data-table-loading-wrapper">
+                <DataTable
+                    key={tableKey}
+                    className="display dashboard-table zebra-stable-on-hover"
+                    columns={tableColumns}
+                    options={options}
+                />
+                {loading && <LoadingOverlay scoped message={t('common.loading')} />}
+            </div>
         </div>
     );
 }
