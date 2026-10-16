@@ -43,12 +43,11 @@ describe('Auth Signup Handler', () => {
         User.findOne.mockResolvedValue(null);
         User.countDocuments.mockResolvedValue(0);
 
-        // Mock User constructor
-        User.mockImplementation((data) => ({
-            ...data,
-            save: vi.fn().mockResolvedValue(true),
-            _id: 'mock-id'
-        }));
+        // A `function`, not an arrow: the handler calls `new User(...)`, and
+        // Vitest 4 can't construct an arrow-function mock.
+        User.mockImplementation(function (data) {
+            return { ...data, save: vi.fn().mockResolvedValue(true), _id: 'mock-id' };
+        });
 
         await signupHandler(req, res);
 
@@ -61,6 +60,9 @@ describe('Auth Signup Handler', () => {
         expect(User).toHaveBeenCalledWith(expect.objectContaining({
             email: 'testuser@example.com'
         }));
+
+        // The legacy 2FA secret is no longer generated or stored
+        expect(User.mock.calls[0][0]).not.toHaveProperty('twoFASecret');
 
         // Verify success response
         expect(res.status).toHaveBeenCalledWith(201);
@@ -81,11 +83,9 @@ describe('Auth Signup Handler', () => {
 
         User.findOne.mockResolvedValue(null);
         User.countDocuments.mockResolvedValue(0);
-        User.mockImplementation((data) => ({
-            ...data,
-            save: vi.fn().mockResolvedValue(true),
-            _id: 'mock-id'
-        }));
+        User.mockImplementation(function (data) {
+            return { ...data, save: vi.fn().mockResolvedValue(true), _id: 'mock-id' };
+        });
 
         await signupHandler(req, res);
 

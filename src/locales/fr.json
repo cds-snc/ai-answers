@@ -1071,6 +1071,8 @@
       "send": "Envoyer le code de vérification",
       "sendError": "Nous n'avons pas pu envoyer votre code de vérification. Réessayez dans quelques minutes.",
       "invalidCode": "Code de vérification invalide.",
+      "codeFormat": "Entrez le code à six chiffres reçu par courriel.",
+      "codeHint": "Six chiffres",
       "resent": "Nouveau code envoyé.",
       "cooldown": "Attendez une minute avant de demander un nouveau code.",
       "locked": "Trop de codes incorrects. Attendez 30 minutes, puis reconnectez-vous.",

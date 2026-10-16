@@ -4,6 +4,7 @@ import { User } from '../models/user.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { SettingsService } from './SettingsService.js';
 import { requireObjectIdString } from '../api/util/db-query.js';
+import { normalizeTwoFACode, TWOFA_CODE_LENGTH } from '../src/utils/auth/twoFACode.js';
 
 // Email one-time codes for the second sign-in step.
 //
@@ -51,17 +52,22 @@ function getTemplateId() {
   return process.env.GC_NOTIFY_2FA_TEMPLATE_ID || null;
 }
 
-async function loadUser(userOrId) {
-  if (userOrId && typeof userOrId === 'object' && userOrId._id) {
-    return User.findById(userOrId._id);
-  }
-  return User.findById(requireObjectIdString(userOrId, 'user ID'));
+function loadUser(userId) {
+  return User.findById(requireObjectIdString(userId, 'user ID'));
 }
 
-// Send a new code. `resend: true` (the "send again" button) enforces the
-// cooldown; the first send right after a correct password does not.
-async function sendChallenge({ userOrId, resend = false } = {}) {
-  const user = await loadUser(userOrId);
+// Send a new code. Pass exactly one of `user` (a full user document read in
+// this request: the login step hands over the one Passport just read) or
+// `userId` (read fresh here). `resend: true` (the "send again" button)
+// enforces the cooldown; the first send right after a correct password does not.
+async function sendChallenge({ user: givenUser, userId, resend = false } = {}) {
+  if ((givenUser == null) === (userId == null)) {
+    throw new Error('sendChallenge needs exactly one of user or userId');
+  }
+  if (givenUser != null && !givenUser._id) {
+    throw new Error('sendChallenge user must be a user document');
+  }
+  const user = givenUser ?? await loadUser(userId);
   if (!user) return { success: false, reason: 'not_found' };
   if (!user.email) throw new Error('User has no email');
 
@@ -84,7 +90,7 @@ async function sendChallenge({ userOrId, resend = false } = {}) {
     throw codedError('twofa_no_template', 'GC_NOTIFY_2FA_TEMPLATE_ID missing');
   }
 
-  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  const code = String(crypto.randomInt(0, 10 ** TWOFA_CODE_LENGTH)).padStart(TWOFA_CODE_LENGTH, '0');
   const codeHash = hashCode(user._id, code);
 
   // Email first, store after. If the send fails, the code already in the
@@ -108,8 +114,15 @@ async function sendChallenge({ userOrId, resend = false } = {}) {
 }
 
 // Check a code. Never says which part was wrong beyond locked/invalid.
-async function verifyChallenge({ userOrId, code } = {}) {
-  const user = await loadUser(userOrId);
+// On success, also returns the updated user document. Always reads the user
+// itself: the pre-checks below must see the current code and lock.
+async function verifyChallenge({ userId, code } = {}) {
+  // A typo that can't be a code (empty, letters, wrong length, not a string)
+  // is not a guess: refused before any database work, so it is never counted.
+  const token = normalizeTwoFACode(code);
+  if (!token) return { success: false, reason: 'invalid' };
+
+  const user = await loadUser(userId);
   if (!user) return { success: false, reason: 'invalid' };
   if (!isEnabled()) return { success: false, reason: 'twofa_disabled' };
 
@@ -145,8 +158,7 @@ async function verifyChallenge({ userOrId, code } = {}) {
   if (!counted) return { success: false, reason: 'invalid' };
   if (counted.twoFAAttempts > MAX_ATTEMPTS) return { success: false, reason: 'locked' };
 
-  const token = String(code ?? '').trim();
-  const matches = /^\d{6}$/.test(token) && safeEqual(counted.twoFACode, hashCode(user._id, token));
+  const matches = safeEqual(counted.twoFACode, hashCode(user._id, token));
 
   if (!matches) {
     if (counted.twoFAAttempts >= MAX_ATTEMPTS) {
@@ -170,7 +182,7 @@ async function verifyChallenge({ userOrId, code } = {}) {
     { $set: { twoFACode: null, twoFAExpires: null, twoFAAttempts: 0 } },
     { new: true }
   );
-  return consumed ? { success: true } : { success: false, reason: 'invalid' };
+  return consumed ? { success: true, user: consumed } : { success: false, reason: 'invalid' };
 }
 
 const TwoFAService = { sendChallenge, verifyChallenge };

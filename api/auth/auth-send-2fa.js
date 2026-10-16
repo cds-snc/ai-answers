@@ -14,7 +14,7 @@ const send2FAHandler = async (req, res) => {
     }
 
     await dbConnect();
-    const result = await TwoFAService.sendChallenge({ userOrId: pending.userId, resend: true });
+    const result = await TwoFAService.sendChallenge({ userId: pending.userId, resend: true });
 
     if (result.reason === 'locked') return res.status(429).json({ success: false, reason: 'locked' });
     if (result.reason === 'cooldown') return res.status(429).json({ success: false, reason: 'cooldown' });

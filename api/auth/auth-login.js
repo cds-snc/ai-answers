@@ -1,6 +1,7 @@
 import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import passport from '../../config/passport.js';
+import { getSessionTtlMs } from '../../middleware/express-session.js';
 
 const loginHandler = (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
@@ -37,13 +38,8 @@ const loginHandler = (req, res, next) => {
           if (visitorId) req.session.visitorId = visitorId;
 
           // Set authenticated session TTL
-          const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '60';
-          const authTTLSetting = SettingsService.get('session.authenticatedTTLMinutes') || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
-          const parsedAuthMinutes = Number(authTTLSetting);
-          const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : 60;
-
           if (req.session && req.session.cookie) {
-            req.session.cookie.maxAge = authMinutes * 60 * 1000;
+            req.session.cookie.maxAge = getSessionTtlMs(req);
           }
         } catch (e) {
           console.warn('Failed to restore visitorId or set TTL after login', e);
@@ -71,7 +67,7 @@ const loginHandler = (req, res, next) => {
       };
 
       try {
-        const sendResult = await TwoFAService.sendChallenge({ userOrId: user });
+        const sendResult = await TwoFAService.sendChallenge({ user });
 
         // Only reachable after a correct password, which the 2FA screen would
         // confirm anyway, so naming the lockout here reveals nothing new.

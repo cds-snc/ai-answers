@@ -20,6 +20,7 @@ import verifyHandler from '../api/auth/auth-verify-2fa.js';
 import sendHandler from '../api/auth/auth-send-2fa.js';
 import TwoFAService from '../services/TwoFAService.js';
 import { User } from '../models/user.js';
+import { SettingsService } from '../services/SettingsService.js';
 
 const USER_ID = '507f1f77bcf86cd799439011';
 
@@ -34,18 +35,18 @@ function makeReq({ session = {}, body = {} } = {}) {
   const req = {
     body,
     session: { cookie: {}, ...session },
-    login: vi.fn((user, cb) => cb(null)),
+    // Like Passport's req.login: the session now carries the signed-in user.
+    login: vi.fn((user, cb) => { req.session.passport = { user: { userId: String(user._id) } }; cb(null); }),
   };
   return req;
 }
 
 const pendingSession = (over = {}) => ({ pending2FA: { userId: USER_ID, createdAt: Date.now(), ...over } });
 
+const verifiedUser = (over = {}) => ({ _id: USER_ID, email: 'a@canada.ca', role: 'admin', active: true, createdAt: new Date(), ...over });
+
 describe('auth-verify-2fa', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    User.findById.mockResolvedValue({ _id: USER_ID, email: 'a@canada.ca', role: 'admin', active: true, createdAt: new Date() });
-  });
+  beforeEach(() => vi.clearAllMocks());
 
   it('rejects when the password step never happened, even with an email and code', async () => {
     const req = makeReq({ body: { email: 'admin@canada.ca', code: '123456' } });
@@ -57,14 +58,28 @@ describe('auth-verify-2fa', () => {
   });
 
   it('ignores any email in the body and verifies the user from the session', async () => {
-    TwoFAService.verifyChallenge.mockResolvedValue({ success: true });
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser() });
     const req = makeReq({ session: pendingSession(), body: { email: 'victim@canada.ca', code: '123456' } });
     const res = makeRes();
     await verifyHandler(req, res);
-    expect(TwoFAService.verifyChallenge).toHaveBeenCalledWith({ userOrId: USER_ID, code: '123456' });
+    expect(TwoFAService.verifyChallenge).toHaveBeenCalledWith({ userId: USER_ID, code: '123456' });
     expect(User.findOne).not.toHaveBeenCalled();
+    // verifyChallenge already returned the user it updated.
+    expect(User.findById).not.toHaveBeenCalled();
     expect(req.login).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(200);
+  });
+
+  it.each([[{}], [{ code: '' }]])('answers a missing code like any other bad code (%j)', async (body) => {
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: false, reason: 'invalid' });
+    const req = makeReq({ session: pendingSession(), body });
+    const res = makeRes();
+    await verifyHandler(req, res);
+    // TwoFAService is the one place that judges the code.
+    expect(TwoFAService.verifyChallenge).toHaveBeenCalledWith({ userId: USER_ID, code: body.code });
+    expect(res.statusCode).toBe(401);
+    expect(res.json).toHaveBeenCalledWith({ success: false, reason: 'invalid' });
+    expect(req.login).not.toHaveBeenCalled();
   });
 
   it('rejects a stale pending sign-in', async () => {
@@ -101,8 +116,7 @@ describe('auth-verify-2fa', () => {
   });
 
   it('does not log in a user who was deactivated after the password step', async () => {
-    TwoFAService.verifyChallenge.mockResolvedValue({ success: true });
-    User.findById.mockResolvedValue({ _id: USER_ID, active: false });
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser({ active: false }) });
     const req = makeReq({ session: pendingSession(), body: { code: '123456' } });
     const res = makeRes();
     await verifyHandler(req, res);
@@ -126,7 +140,7 @@ describe('auth-send-2fa (resend)', () => {
     TwoFAService.sendChallenge.mockResolvedValue({ success: true });
     const res = makeRes();
     await sendHandler(makeReq({ session: pendingSession(), body: { email: 'victim@canada.ca' } }), res);
-    expect(TwoFAService.sendChallenge).toHaveBeenCalledWith({ userOrId: USER_ID, resend: true });
+    expect(TwoFAService.sendChallenge).toHaveBeenCalledWith({ userId: USER_ID, resend: true });
     expect(res.statusCode).toBe(200);
   });
 
@@ -196,6 +210,12 @@ describe('auth-login with 2FA on', () => {
     expect(req.session.pending2FA).toBeUndefined();
   });
 
+  it('hands TwoFAService the user Passport just read, not an id to read again', async () => {
+    TwoFAService.sendChallenge.mockResolvedValue({ success: true });
+    await login();
+    expect(TwoFAService.sendChallenge).toHaveBeenCalledWith({ user: passwordUser });
+  });
+
   it('reports send_failed and never a database error code', async () => {
     TwoFAService.sendChallenge.mockRejectedValue(Object.assign(new Error('db'), { code: 11000 }));
     const { res } = await login();
@@ -207,5 +227,41 @@ describe('auth-login with 2FA on', () => {
     TwoFAService.sendChallenge.mockRejectedValue(Object.assign(new Error('no key'), { code: 'twofa_no_secret' }));
     const { res } = await login();
     expect(res.json.mock.calls[0][0]).toMatchObject({ reason: 'send_failed', detail: 'twofa_no_secret' });
+  });
+});
+
+describe('signed-in session length', () => {
+  const realEnv = process.env.NODE_ENV;
+  afterEach(() => {
+    process.env.NODE_ENV = realEnv;
+    SettingsService.get.mockImplementation(() => null);
+  });
+
+  // Password-only sign-in (2FA off) and sign-in through the code screen.
+  async function bothPaths() {
+    vi.clearAllMocks();
+    process.env.NODE_ENV = 'test'; // auth-login skips 2FA
+    const loginReq = makeReq();
+    const loginRes = makeRes();
+    await loginHandler(loginReq, loginRes, vi.fn());
+    await vi.waitFor(() => expect(loginRes.json).toHaveBeenCalled());
+
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser() });
+    const verifyReq = makeReq({ session: pendingSession(), body: { code: '123456' } });
+    await verifyHandler(verifyReq, makeRes());
+
+    return [loginReq.session.cookie.maxAge, verifyReq.session.cookie.maxAge];
+  }
+
+  it('is 60 minutes on both paths when nothing is configured', async () => {
+    expect(await bothPaths()).toEqual([60 * 60 * 1000, 60 * 60 * 1000]);
+  });
+
+  it('follows session.authenticatedTTLMinutes on both paths', async () => {
+    SettingsService.get.mockImplementation((key) => ({
+      'session.defaultTTLMinutes': '10',
+      'session.authenticatedTTLMinutes': '45',
+    }[key] ?? null));
+    expect(await bothPaths()).toEqual([45 * 60 * 1000, 45 * 60 * 1000]);
   });
 });
