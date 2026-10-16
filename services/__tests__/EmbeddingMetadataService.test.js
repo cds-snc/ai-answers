@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import EmbeddingMetadataService from '../EmbeddingMetadataService.js';
+import EmbeddingMetadataService, { isAutoEvalFeedback } from '../EmbeddingMetadataService.js';
 
 const {
   mockUpdateMany,
@@ -649,5 +649,22 @@ describe('EmbeddingMetadataService', () => {
       embeddingId: null,
       metadataStatus: 'missingEmbedding',
     }));
+  });
+});
+
+// The one shared "is this an AI evaluation?" check (AGENTS.md "Never let AI
+// evaluations feed answer generation"). Every caller relies on it agreeing.
+describe('isAutoEvalFeedback', () => {
+  it.each(['ai', 'AI', ' ai ', 'Ai'])('is true for %j', (type) => {
+    expect(isAutoEvalFeedback({ type })).toBe(true);
+  });
+
+  it.each(['', 'expert', 'public', undefined, null])('is false for a human evaluation typed %j', (type) => {
+    expect(isAutoEvalFeedback({ type })).toBe(false);
+  });
+
+  it('is false when there is no feedback', () => {
+    expect(isAutoEvalFeedback(null)).toBe(false);
+    expect(isAutoEvalFeedback(undefined)).toBe(false);
   });
 });

@@ -155,3 +155,64 @@ describe('IMVectorService', () => {
     expect(matches.map(match => match.id)).toEqual(['fresh', 'never-stale']);
   });
 });
+
+describe('IMVectorService.updateExpertFeedbackMetadata', () => {
+  let svc;
+
+  beforeEach(() => {
+    svc = new IMVectorService();
+    svc.qaDB = { del: vi.fn() };
+    svc.questionsDB = { del: vi.fn() };
+    svc.sentenceDB = { del: vi.fn() };
+    svc._addMeta('qa', 'qa1', { interactionId: 'i1', expertFeedbackId: 'ef1', expertFeedbackScore: 100, expertFeedbackNeverStale: false });
+    svc._addMeta('questions', 'qa1:q', { interactionId: 'i1', expertFeedbackId: 'ef1', expertFeedbackScore: 100, expertFeedbackNeverStale: false });
+    svc._addMeta('qa', 'qa2', { interactionId: 'i2', expertFeedbackId: 'ef2', expertFeedbackScore: 100, expertFeedbackNeverStale: false });
+    svc._addMeta('sentences', 's1', { interactionId: 'i1', sentenceIndex: 0, expertFeedbackId: 'ef1', expertFeedbackScore: 100 });
+    svc.stats.embeddings = 2;
+    svc.stats.questions = 1;
+    svc.stats.sentences = 1;
+  });
+
+  it("updates an edited evaluation's score and never-stale flag in place, without adding entries", () => {
+    svc.updateExpertFeedbackMetadata('i1', { _id: 'ef1', totalScore: 0, neverStale: true });
+
+    expect(svc.qaMeta.size).toBe(3);
+    expect(svc.qaMeta.get('qa1')).toMatchObject({ expertFeedbackScore: 0, expertFeedbackNeverStale: true });
+    expect(svc.qaMeta.get('qa1:q')).toMatchObject({ expertFeedbackScore: 0, expertFeedbackNeverStale: true });
+    expect(svc.sentMeta.get('s1')).toMatchObject({ expertFeedbackScore: 0 });
+    expect(svc.qaMeta.get('qa2').expertFeedbackScore).toBe(100);
+  });
+
+  it("drops a deleted evaluation's entries from the search", () => {
+    svc.updateExpertFeedbackMetadata('i1', null);
+
+    expect([...svc.qaMeta.keys()]).toEqual(['qa2']);
+    expect(svc.sentMeta.size).toBe(0);
+    expect(svc.qaDB.del).toHaveBeenCalledWith({ id: 'qa1' });
+    expect(svc.questionsDB.del).toHaveBeenCalledWith({ id: 'qa1:q' });
+    expect(svc.sentenceDB.del).toHaveBeenCalledWith({ id: 's1' });
+    // Each entry only from its own index, and the counts follow.
+    expect(svc.qaDB.del).not.toHaveBeenCalledWith({ id: 'qa1:q' });
+    expect(svc.questionsDB.del).not.toHaveBeenCalledWith({ id: 'qa1' });
+    expect(svc.stats).toMatchObject({ embeddings: 1, questions: 0, sentences: 0 });
+    expect(svc.idsByInteraction.qa.has('i1')).toBe(false);
+    expect(svc.idsByInteraction.qa.get('i2')).toEqual(new Set(['qa2']));
+  });
+
+  it('finds entries added at runtime too', () => {
+    svc.qaDB.add = vi.fn();
+    svc.addExpertFeedbackEmbedding({ interactionId: 'i3', expertFeedbackId: 'ef3', expertFeedbackTotalScore: 100, questionsAnswerEmbedding: [0.1, 0.2] });
+    svc.updateExpertFeedbackMetadata('i3', { _id: 'ef3', totalScore: 20 });
+
+    const [entry] = [...svc.idsByInteraction.qa.get('i3')].map((id) => svc.qaMeta.get(id));
+    expect(entry.expertFeedbackScore).toBe(20);
+  });
+
+  it("drops an AI evaluation's entries instead of copying its score (AGENTS.md)", () => {
+    svc.updateExpertFeedbackMetadata('i1', { _id: 'ef1', type: ' AI ', totalScore: 100, neverStale: true });
+
+    expect([...svc.qaMeta.keys()]).toEqual(['qa2']);
+    expect(svc.sentMeta.size).toBe(0);
+    expect(svc.qaDB.del).toHaveBeenCalledWith({ id: 'qa1' });
+  });
+});
