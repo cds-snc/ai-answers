@@ -86,6 +86,29 @@ describe('LoginPage two-step messages', () => {
     expect(screen.getByRole('textbox', { name: 'login.2fa.code' }).getAttribute('aria-invalid')).toBe('false');
   });
 
+  it.each([
+    ['cooldown', 'login.2fa.cooldown'],
+    ['locked', 'login.2fa.locked'],
+    [null, 'login.2fa.sendError'],
+  ])('moves focus to the status for a %s resend failure', async (reason, key) => {
+    await reachTwoStep();
+    mockSend2FA.mockImplementation(() => rejectWith(reason));
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.resend' }));
+    await screen.findByText(key);
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain(key));
+  });
+
+  it('moves focus again when the same resend failure repeats', async () => {
+    await reachTwoStep();
+    mockSend2FA.mockImplementation(() => rejectWith('cooldown'));
+    const resend = screen.getByRole('button', { name: 'login.2fa.resend' });
+    fireEvent.click(resend);
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain('login.2fa.cooldown'));
+    resend.focus();
+    fireEvent.click(resend);
+    await vi.waitFor(() => expect(document.activeElement.textContent).toContain('login.2fa.cooldown'));
+  });
+
   it('says the account is locked when a resend is refused for that', async () => {
     await reachTwoStep();
     mockSend2FA.mockImplementation(() => rejectWith('locked'));
