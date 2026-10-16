@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.209.1](https://github.com/cds-snc/ai-answers/compare/v1.209.0...v1.209.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* auth hardening phase 1 ([964d1e2](https://github.com/cds-snc/ai-answers/commit/964d1e2929334d1f43496c45d49cf9465360ade1))
+* better error messages ([c0dc5f3](https://github.com/cds-snc/ai-answers/commit/c0dc5f365fef24a01de154b9da8abc626d424251))
+* code and accessibilty review ([7c6b04d](https://github.com/cds-snc/ai-answers/commit/7c6b04d7706fcc5c8e4a020459894ca19fbf914c))
+* explain 2FA cooldown period ([b30cb19](https://github.com/cds-snc/ai-answers/commit/b30cb1983b8704dfa4de46681f807c020e990a57))
+* jennifer findings ([5c54453](https://github.com/cds-snc/ai-answers/commit/5c54453b80386d5a04538d3b1f9f2374ea7bc0b8))
+* login status messages use StatusMessage ([358c68b](https://github.com/cds-snc/ai-answers/commit/358c68beda6ccf5e25c9d2315a815440a48b73c3))
+* make 2FA work on PR previews and drop per-IP auth limiter ([00ecb56](https://github.com/cds-snc/ai-answers/commit/00ecb5671083b42153e60b9372183f0e35e04d3b))
+* mask ECR login password in workflow ([30ee3bc](https://github.com/cds-snc/ai-answers/commit/30ee3bca95fb4bd5c1b841f05b072549118ffb79))
+* mask ECR login password in workflow ([b61d621](https://github.com/cds-snc/ai-answers/commit/b61d621edb34a3773b682e3cd002c2af95d8d68b))
+* resend code is a secondary button ([8e22f37](https://github.com/cds-snc/ai-answers/commit/8e22f3760e99034c9a0c7e296b6804fa38ff716f))
+* warn about lockout ([d124f2d](https://github.com/cds-snc/ai-answers/commit/d124f2d7174e4f2c9214746323c29b8f29b1164f))
+
+
+### Documentation
+
+* update ([d5a5538](https://github.com/cds-snc/ai-answers/commit/d5a553813902def48943629f7020d8a0756d4056))
+* updates ([bcbbe59](https://github.com/cds-snc/ai-answers/commit/bcbbe59223c9fa796b9104d1032bb9ff7ada1a58))
+* updates ([784b9f3](https://github.com/cds-snc/ai-answers/commit/784b9f37168aaaf023026f0b656179cdca1d4c48))
+
 ## [1.209.0](https://github.com/cds-snc/ai-answers/compare/v1.208.1...v1.209.0) (2026-10-15)
 
 
