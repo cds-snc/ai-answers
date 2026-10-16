@@ -3124,6 +3124,11 @@ td:has(> .verdict-cell__link) {
   cursor: not-allowed;
 }
 
+.auth-secondary-button {
+  width: 100%;
+  margin-top: var(--gcds-spacing-200);
+}
+
 .auth-links {
   margin-top: 20px;
   text-align: center;

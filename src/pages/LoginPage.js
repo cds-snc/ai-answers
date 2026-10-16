@@ -267,7 +267,7 @@ const LoginPage = ({ lang = 'en' }) => {
             <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
               {t('login.2fa.verify')}
             </button>
-            <button onClick={requestTwoStep} disabled={isLoading}>
+            <button onClick={requestTwoStep} disabled={isLoading} className="btn-secondary-sm auth-secondary-button">
               {t('login.2fa.resend')}
             </button>
           </div>
