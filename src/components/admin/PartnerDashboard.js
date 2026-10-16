@@ -19,7 +19,10 @@ import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
+import { formatEvalInformedRate, getEvalInformedFromDate } from '../../utils/dashboard/evalInformedRate.js';
+import { formatLocaleDate } from '../../utils/formatLocaleDate.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { EVAL_INFORMED_CHATS_LIMIT } from '../../config/workflows.js';
 import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
 
@@ -36,7 +39,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true });
   useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
@@ -239,6 +242,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // collapsed <details> auto-opens it (see CollapsibleCard.js's anchorId).
   const CONTENT_ISSUE_ANCHOR = 'content-issue-chats-section';
   const HARMFUL_CHATS_ANCHOR = 'harmful-chats-section';
+  const EVAL_INFORMED_ANCHOR = 'eval-informed-chats-section';
   // Every row here is harmful by definition (the endpoint only ever returns
   // harmful-flagged chats) — status is set client-side so the table can still
   // show the red "Harmful" pill via ContentIssueChatsCard's optional status
@@ -248,6 +252,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     () => (metrics.harmfulChats || []).map((c) => ({ ...c, status: 'harmful' })),
     [metrics.harmfulChats],
   );
+
+  // Eval-informed answers: share of questions where past expert evaluations
+  // were added to the AI's context. The denominator is questions answered by
+  // the eval-informed workflow (metrics-usage.js), not all questions, so
+  // pre-launch data doesn't drag the rate down.
+  const evalInformed = metrics.evalInformed || {};
+  const evalInformedChats = metrics.evalInformedChats || [];
+  const evalInformedFromDate = getEvalInformedFromDate(evalInformed.firstDate, metrics.firstDataDate);
 
   // Top citation pages (GC pages AI Answers cited, by question) + the answer-type
   // breakdown (how many questions got a citation vs. a non-citation answer type).
@@ -333,7 +345,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
-      {/* KPI cards — 4 columns: questions, expert eval, accuracy, content issues */}
+      {/* KPI cards — 4 columns: questions, expert eval, content issues, eval-informed */}
       <div className="dashboard-row">
         <StatCard
           label={t('partnerDashboard.kpi.questionsAsked')}
@@ -359,6 +371,31 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                 .replace('{error}', fmtN(contentIssue.hasError))}
             </>
           )}
+        />
+        <StatCard
+          // The asterisks are visual only (aria-hidden): the card is itself a
+          // link, so the "*" can't be a footnote link, and the footnote text
+          // is read straight after the count anyway.
+          label={(
+            <>
+              {t('admin.common.evalInformedAnswers')}
+              {evalInformedFromDate && <span aria-hidden="true">*</span>}
+            </>
+          )}
+          value={formatEvalInformedRate(evalInformed.informed?.total, evalInformed.eligible?.total, fmtPct)}
+          href={evalInformedChats.length > 0 ? `#${EVAL_INFORMED_ANCHOR}` : null}
+          sub={evalInformed.eligible?.total > 0
+            ? t('partnerDashboard.kpi.evalInformedSub')
+              .replace('{n}', fmtN(evalInformed.informed.total))
+              .replace('{total}', fmtN(evalInformed.eligible.total))
+            : undefined}
+          footnote={evalInformedFromDate ? (
+            <>
+              <span aria-hidden="true">* </span>
+              {t('admin.common.evalInformedFrom')
+                .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
+            </>
+          ) : undefined}
         />
       </div>
 
@@ -564,28 +601,68 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Content issue chats — collapsible list of chats with at least one
-          expert-flagged content issue in the current filter scope, most
-          recent first. Hidden entirely when there are none (presence-gated,
-          like referrals/citations) — the KPI "Content issues" count above
-          still shows 0 rather than hiding, only this list does. */}
-      {contentIssueChats.length > 0 && (
-        <div className="dashboard-section">
-          <ContentIssueChatsCard
-            title={t('partnerDashboard.contentIssueChats.title')}
-            triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
-            chats={contentIssueChats}
-            chatIdColLabel={t('reviewPanels.chatId')}
-            dateColLabel={t('admin.chatDashboard.columns.date')}
-            statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
-            statusLabels={{
-              hasError: t('partnerDashboard.charts.hasError'),
-              needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
-            }}
-            noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
-            lang={lang}
-            anchorId={CONTENT_ISSUE_ANCHOR}
-          />
+      {/* Content issue + eval-informed chat lists, side by side (half width
+          each) while collapsed; an opened one goes full width and to the top
+          of the row (.dashboard-col-half--expand-on-open). A lone list is
+          full width. */}
+      {(contentIssueChats.length > 0 || evalInformedChats.length > 0) && (
+        <div className="dashboard-row">
+          {/* Content issue chats — collapsible list of chats with at least one
+              expert-flagged content issue in the current filter scope, most
+              recent first. Hidden entirely when there are none (presence-gated,
+              like referrals/citations) — the KPI "Content issues" count above
+              still shows 0 rather than hiding, only this list does. */}
+          {contentIssueChats.length > 0 && (
+            <div className="dashboard-col-half dashboard-col-half--expand-on-open">
+              <ContentIssueChatsCard
+                title={t('partnerDashboard.contentIssueChats.title')}
+                triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
+                chats={contentIssueChats}
+                chatIdColLabel={t('reviewPanels.chatId')}
+                questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+                questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+                questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+                dateColLabel={t('admin.chatDashboard.columns.date')}
+                statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
+                statusLabels={{
+                  hasError: t('partnerDashboard.charts.hasError'),
+                  needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
+                }}
+                // Never shown: the list is hidden when empty and the card
+                // above shows 0. Kept for now.
+                noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
+                lang={lang}
+                anchorId={CONTENT_ISSUE_ANCHOR}
+              />
+            </div>
+          )}
+
+          {/* Eval-informed chats — a recent sample (server caps it) for
+              spot-checking, linked from the Eval-informed answers card.
+              Review mode's "Past evaluations used" panel shows which evaluations each
+              answer used, so this list needs no extra columns. Presence-gated
+              like the lists above. */}
+          {evalInformedChats.length > 0 && (
+            <div className="dashboard-col-half dashboard-col-half--expand-on-open">
+              <ContentIssueChatsCard
+                title={t('partnerDashboard.evalInformedChats.title')}
+                subtitle={t('partnerDashboard.evalInformedChats.subtitle').replace('{n}', fmtN(EVAL_INFORMED_CHATS_LIMIT))}
+                triggerLabel={t('partnerDashboard.evalInformedChats.trigger')}
+                chats={evalInformedChats}
+                chatIdColLabel={t('reviewPanels.chatId')}
+                questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+                questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+                questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+                dateColLabel={t('admin.chatDashboard.columns.date')}
+                // Never shown: the list is hidden when empty and the card
+                // above shows 0%. Kept for now.
+                noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
+                lang={lang}
+                anchorId={EVAL_INFORMED_ANCHOR}
+                collapsible={evalInformedChats.length >= 3}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -698,9 +775,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             triggerLabel={t('partnerDashboard.harmfulChats.trigger')}
             chats={harmfulChats}
             chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
             dateColLabel={t('admin.chatDashboard.columns.date')}
             statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
             statusLabels={{ harmful: t('partnerDashboard.kpi.harmful') }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
             noDataLabel={t('partnerDashboard.harmfulChats.noData')}
             lang={lang}
             anchorId={HARMFUL_CHATS_ANCHOR}

@@ -35,7 +35,7 @@ A change to `FilterPanel.js` or `getChatFilterConditions` must be verified on **
 
 - **DataTables `stateSave`**: when changing column `searchable`/`orderable`, bump the page's `TABLE_STORAGE_KEY` version — stale localStorage silently applies old column filters.
 - **Eval dashboard aggregates from `Chat`, then unwinds interactions**: one row per interaction, but `user`, `chatId`, `pageLanguage` stay on the chat document.
-- **Eval dashboard "Eval-informed" column** is derived in the endpoint from the context lookup: `context.qaMatches` non-empty means expert-rated examples were injected into the answer prompt (see [using-evals-for-answers.md](../architecture/using-evals-for-answers.md#graph-node)). No separate flag is stored.
+- **Eval-informed** is derived from the context lookup: `context.qaMatches` non-empty means expert-rated examples were injected into the answer prompt (see [using-evals-for-answers.md](../architecture/using-evals-for-answers.md#graph-node)). No separate flag is stored. Build it with `getEvalInformedAggregationExpression` (`api/util/chat-filters.js`) — the Eval dashboard column and the partner dashboard card/list all use it.
 - **Cleanup `$project` stages**: a field added via `$lookup` + `$addFields` must survive any later `$project` that needs it.
 - **Only AutoEval has per-column filters** (built in `initComplete`, sent as `columnSearch`; no global search). Chat and Eval use one global search. Adding column filters to Chat needs frontend (`initComplete` + `columnSearch`) and backend (`chat-dashboard.js`) work; the eval endpoint already handles `columnSearch`.
 - **Chat grouping is shared**: striping and keep-chat-together cells for Chat, Eval and AutoEval come from `src/utils/admin/chatGroupedTable.js` — see [tables.md](tables.md#grouped-chat-tables).
@@ -61,7 +61,7 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                               setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...tail })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — 7 parallel fetches (usage, sessions, expert, ai, public feedback, departments, technical), then a best-effort tail round: blocked queries always; referrals, citations, programs, content-issue chats and harmful chats only when opted in (`useDashboardMetrics({ includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats })` — partner opts into all five, public into none). Each tail fetch falls back to its empty shape on failure. `fetchMetrics(filters)` passes the filters object through unchanged.
+- **`src/hooks/admin/useDashboardMetrics.js`** — 7 parallel fetches (usage, sessions, expert, ai, public feedback, departments, technical), then a best-effort tail round: blocked queries always; referrals, citations, programs, content-issue chats, harmful chats and eval-informed chats only when opted in (`useDashboardMetrics({ includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats, includeEvalInformedChats })` — partner opts into all six, public into none). Each tail fetch falls back to its empty shape on failure. `fetchMetrics(filters)` passes the filters object through unchanged.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the filters object to query params.
 - **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)` (`metrics-common.js`), reading `startDate/endDate/timezoneOffsetMinutes/department/userType/answerType/partnerEval/aiEval/urlEn/urlFr`. `userType` `'all'`/undefined = no filter.
 
@@ -94,13 +94,14 @@ End dates run through today (23:59:59); the picker allows today. There is **no**
 
 **Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue and harmful chat lists (`ContentIssueChatsCard`, linked from the Content issues/Harmful `StatCard`s), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`, linked from the Content issues/Harmful/Eval-informed answers `StatCard`s), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
 
 ## Metric bundle shape
 
 ```
 metrics.firstDataDate                                    // earliest createdAt in range; null if no data
 metrics.totalQuestions / totalQuestionsEn / totalQuestionsFr / totalConversations
+metrics.evalInformed.{ eligible, informed }.{ total, en, fr } + .firstDate   // usage; eligible = questions answered by EVAL_INFORMED_WORKFLOW (src/config/workflows.js)
 metrics.totalInputTokens / totalOutputTokens (+En/Fr)    // usage
 metrics.responseTime.{ count, median, p90, p95, max, maxChatId }   // ms, technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
@@ -117,7 +118,8 @@ metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERS
 metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
-metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, status? }]
+metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
+metrics.evalInformedChats[]                     // partner: same shape, no status; one row per question, so a chat can repeat; 20 most recent (a sample, not all)
 ```
 
 ### What each metric counts

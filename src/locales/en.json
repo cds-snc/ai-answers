@@ -868,6 +868,8 @@
       "chatNoLongerFound": "This chat can no longer be found.",
       "fetchFailed": "Failed to load data. Please try again.",
       "fetchError": "Failed to load data: {error}",
+      "evalInformedAnswers": "Eval-informed answers",
+      "evalInformedFrom": "From {date} only",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
       "metricsLoading": "Loading metrics...",
@@ -1655,7 +1657,8 @@
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
-      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}",
+      "evalInformedSub": "{n} of {total} questions"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
@@ -1736,6 +1739,12 @@
       "title": "Harmful chats by chat ID",
       "trigger": "See all harmful chats by ID",
       "noData": "No harmful chats flagged in this period."
+    },
+    "evalInformedChats": {
+      "title": "Eval-informed answers by chat ID",
+      "subtitle": "Shows up to the {n} most recent",
+      "trigger": "Recent eval-informed chats by ID",
+      "noData": "No eval-informed answers in this period."
     },
     "evalAnalysis": {
       "title": "Eval analysis",
@@ -1895,6 +1904,9 @@
       },
       "questionTypes": {
         "title": "Question types"
+      },
+      "evalInformed": {
+        "eligible": "Questions checked for past evaluations"
       },
       "tokens": {
         "title": "Tokens",
