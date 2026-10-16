@@ -1744,7 +1744,7 @@
       "title": "Eval-informed answers by chat ID",
       "subtitle": "Shows up to the {n} most recent",
       "trigger": "Recent eval-informed chats by ID",
-      "noData": "No evaluation-informed answers in this period."
+      "noData": "No eval-informed answers in this period."
     },
     "evalAnalysis": {
       "title": "Eval analysis",

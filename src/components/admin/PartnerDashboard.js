@@ -628,6 +628,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                   hasError: t('partnerDashboard.charts.hasError'),
                   needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
                 }}
+                // Never shown: the list is hidden when empty and the card
+                // above shows 0. Kept for now.
                 noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
                 lang={lang}
                 anchorId={CONTENT_ISSUE_ANCHOR}
@@ -652,6 +654,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                 questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
                 questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
                 dateColLabel={t('admin.chatDashboard.columns.date')}
+                // Never shown: the list is hidden when empty and the card
+                // above shows 0%. Kept for now.
                 noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
                 lang={lang}
                 anchorId={EVAL_INFORMED_ANCHOR}
@@ -777,6 +781,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             dateColLabel={t('admin.chatDashboard.columns.date')}
             statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
             statusLabels={{ harmful: t('partnerDashboard.kpi.harmful') }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
             noDataLabel={t('partnerDashboard.harmfulChats.noData')}
             lang={lang}
             anchorId={HARMFUL_CHATS_ANCHOR}
