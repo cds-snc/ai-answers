@@ -345,7 +345,7 @@ const AppLayout = () => {
           </StatusMessage>
         </div>
       )}
-      <main id="main-content" ref={mainRef} tabIndex={-1}>
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="no-focus-ring">
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>

@@ -292,7 +292,7 @@ const ExpertFeedbackComponent = ({
         aria-label={t('common.close')}
       />
       <fieldset className={`gc-chckbxrdio md expert-rating-fieldset${hasError ? ' has-error' : ''}`}>
-        <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
+        <h4 className="feedback-followup-title no-focus-ring" ref={titleRef} tabIndex={-1}>
           {t('homepage.expertRating.intro')}
           {answerNumber && (
             <span className="feedback-answer-number">{answerText}</span>

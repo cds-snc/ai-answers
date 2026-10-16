@@ -1049,7 +1049,6 @@ const VectorPage = ({ lang = 'en' }) => {
         <StatusMessage
           ref={lookupChatStatusRef}
           tabIndex={-1}
-          className="focus-target"
           announce={!(metadataLookupFromPick && lookupChat.status)}
           announcedVia={metadataLookupFromPick && lookupChat.status ? 'focus' : undefined}
           variant={lookupChat.status?.variant}
@@ -1059,7 +1058,6 @@ const VectorPage = ({ lang = 'en' }) => {
         <StatusMessage
           ref={metadataLookupErrorRef}
           tabIndex={-1}
-          className="focus-target"
           announce={!(metadataLookupFromPick && metadataLookupErrorStatus.message)}
           announcedVia={metadataLookupFromPick && metadataLookupErrorStatus.message ? 'focus' : undefined}
           variant={metadataLookupErrorStatus.message ? 'error' : undefined}
@@ -1068,7 +1066,7 @@ const VectorPage = ({ lang = 'en' }) => {
         />
         {metadataLookupResult?.chat && (
           <div className="mb-400">
-            <dl id="metadata-lookup-result" ref={metadataLookupResultRef} tabIndex={-1} className="canada-ca-dl-columns canada-ca-dl-columns--single font-size-text-sm-nr metadata-lookup-summary focus-target">
+            <dl id="metadata-lookup-result" ref={metadataLookupResultRef} tabIndex={-1} className="canada-ca-dl-columns canada-ca-dl-columns--single font-size-text-sm-nr metadata-lookup-summary">
               {[
                 ['chatId', metadataLookupResult.chat.chatId],
                 ['interactions', fmtN(metadataLookupResult.chat.interactionCount)],

@@ -162,7 +162,7 @@ describe('SimilarChatsDashboard — was window.alert(), now StatusMessage/Feedba
     fireEvent.click(await screen.findByRole('button', { name: OTHER_ID }));
 
     await waitFor(() => expect(document.activeElement?.tagName).toBe('TABLE'));
-    expect(document.activeElement.classList.contains('focus-target')).toBe(true);
+    expect(document.activeElement.getAttribute('tabindex')).toBe('-1');
   });
 
   it('moves focus to the error message when fetching similar chats fails after a pick', async () => {

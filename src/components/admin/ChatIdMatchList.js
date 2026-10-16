@@ -66,15 +66,7 @@ const ChatIdMatchList = ({
   const headingId = `${fieldId}-matches-heading`;
 
   return (
-    // .focus-target opts back into global.css's visible focus ring
-    // (suppressed by default for tabindex="-1" targets, on the assumption
-    // a sighted keyboard user has nothing to act on there - see its own
-    // comment). That default doesn't hold here: this block is real,
-    // visible content and genuinely an in-page jump target (the pick-list
-    // is what the admin acts on next), the same shape as BatchUpload's "Go
-    // to the Incomplete batches section" .focus-target - not a silent
-    // screen-reader-only cursor move.
-    <div ref={wrapperRef} tabIndex={-1} className="mt-200 focus-target">
+    <div ref={wrapperRef} tabIndex={-1} className="mt-200">
       <p id={headingId}>{matchesHeading}</p>
       <ul className="chat-id-match-list mb-200" aria-labelledby={headingId}>
         {matches.map((matchId) => (

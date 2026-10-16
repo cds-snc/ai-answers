@@ -257,7 +257,6 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
             announcedVia="focus"
             ref={deleteOutcomeRef}
             tabIndex={-1}
-            className="focus-target"
           />
         ) : (
           // Lookup failure (admin.common.fetchFailed).

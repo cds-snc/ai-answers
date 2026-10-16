@@ -647,7 +647,7 @@ const ChatInterface = ({
           <React.Fragment key={`message-${message.id}`}>
           <div
             id={message.id ? `interactionId${message.id}` : undefined}
-            className={`message ${message.sender}`}
+            className={`message ${message.sender} no-focus-ring`}
             ref={isLastAIMessage ? lastAIMessageRef : null}
             tabIndex={isLastAIMessage ? -1 : undefined}
           >
@@ -689,7 +689,7 @@ const ChatInterface = ({
                 {message.error ? (
                   message.isBlockedError ? (
                     <div
-                      className="error-message-box blocked-error-box"
+                      className="error-message-box blocked-error-box no-focus-ring"
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
@@ -705,7 +705,7 @@ const ChatInterface = ({
                     </div>
                   ) : message.isRedactionError && message.redactedText ? (
                     <div
-                      className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"}`}
+                      className={`error-message-box ${message.redactedText?.includes("XXX") ? "privacy-error-box" : "error-box"} no-focus-ring`}
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
@@ -724,7 +724,7 @@ const ChatInterface = ({
                     </div>
                   ) : message.isSessionTimeout ? (
                     <div
-                      className="limit-reached-message"
+                      className="limit-reached-message no-focus-ring"
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
@@ -742,7 +742,7 @@ const ChatInterface = ({
                     </div>
                   ) : (
                     <div
-                      className="error-message-box error-box"
+                      className="error-message-box error-box no-focus-ring"
                       ref={isLastErrorMessage ? lastErrorRef : null}
                       tabIndex={isLastErrorMessage ? -1 : undefined}
                     >
@@ -998,7 +998,7 @@ const ChatInterface = ({
           <>
             <div
               key="loading"
-              className="loading-container"
+              className="loading-container no-focus-ring"
               ref={loadingContainerRef}
               tabIndex={-1}
               // Both phrases in one atomic, focus-triggered announcement — the

@@ -1,25 +1,19 @@
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
 
-/* Suppress focus ring on programmatically focused elements (tabindex="-1")
-   that exist only to move the screen-reader cursor for a status/loading
-   announcement (e.g. FeedbackComponent's "thank you" message, ChatInterface's
-   loading indicator) — sighted keyboard users have nothing to act on there,
-   so a visible ring would be confusing rather than helpful. */
-[tabindex="-1"]:focus {
-  outline: none;
-}
-
-/* Opt back into a visible ring for tabindex="-1" targets a sighted keyboard
-   user deliberately lands on, where the focus itself is meaningful and not
-   just a screen-reader cursor move: role="alert" errors (AnnouncedError.js,
-   FeedbackInlineError.js) and in-page jump targets (.focus-target — e.g.
-   BatchUpload's "Go to the Incomplete batches section" landing on
-   BatchPage's tabindex="-1" section). */
-[role="alert"][tabindex="-1"]:focus,
-.focus-target:focus {
+/* Elements focus is moved to (tabindex="-1") show the GC DS focus ring, so a
+   sighted keyboard user can see where focus landed. :focus-visible keeps it
+   to keyboard use: focus moved after a mouse click shows no ring. */
+[tabindex="-1"]:focus-visible {
   outline: var(--gcds-border-width-lg) solid var(--gcds-focus-background);
   outline-offset: 2px;
+}
+
+/* No ring where focus moves only so a screen reader reads the content, or
+   where a ring would wrap something too large to help (<main> on every page
+   change, a whole chat answer). Must stay after the rule above. */
+.no-focus-ring:focus {
+  outline: none;
 }
 
 /* Custom non-responsive font sizes */

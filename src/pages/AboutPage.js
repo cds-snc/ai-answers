@@ -139,7 +139,6 @@ const AboutPage = ({ lang = 'en' }) => {
           tabIndex={-1}
           announce={false}
           announcedVia="focus"
-          className="focus-target"
         />
       </div>
     );

@@ -63,7 +63,7 @@ describe('StatusMessage', () => {
     expect(announce).not.toHaveBeenCalled();
     // The component can't know — no attribute rather than a guess.
     expect(container.firstChild.hasAttribute('data-announced-via')).toBe(false);
-    // A focus-target caller says so...
+    // A caller that moves focus onto it says so...
     rerender(<StatusMessage variant="error" message="Failed." announce={false} tabIndex={-1} announcedVia="focus" />);
     expect(container.firstChild.getAttribute('data-announced-via')).toBe('focus');
     // ...and a caller that announces the text itself points at the region.

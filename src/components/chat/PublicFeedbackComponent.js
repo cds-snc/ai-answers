@@ -75,7 +75,7 @@ const PublicFeedbackComponent = ({
       </h4>
       <div className="feedback-reason-card">
         <fieldset
-          className={`gc-chckbxrdio feedback-reason-fieldset${hasError ? ' has-error' : ''}`}
+          className={`gc-chckbxrdio feedback-reason-fieldset no-focus-ring${hasError ? ' has-error' : ''}`}
           aria-labelledby="public-feedback-title public-feedback-legend public-feedback-hint"
           ref={titleRef}
           tabIndex={-1}

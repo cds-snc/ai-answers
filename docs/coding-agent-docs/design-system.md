@@ -137,6 +137,12 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 - The 5-state system was built accessibility-led without a design refinement pass — functional but provisional.
 - A loading overlay (full-page, or `scoped` to one region) is a separate component, `src/components/admin/LoadingOverlay.js` — see status-and-error-messaging.md.
 
+## Focus ring on moved focus
+
+Every element focus is moved to (`tabindex="-1"`) shows the GC DS focus ring on `:focus-visible` (`global.css`), so it shows for keyboard users and not after a mouse click. Nothing to add for a new focus target.
+
+Add `.no-focus-ring` only where the ring would not help: `<main>` on page change, a whole chat answer, or chat content focused just so a screen reader reads it (the loading box, error messages).
+
 ## GC DS utility classes
 
 Before writing custom CSS, check whether a GCDS utility class (spacing, typography, colour, flex/grid) already covers it: https://design-system.canada.ca/en/css-shortcuts/

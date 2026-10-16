@@ -70,7 +70,6 @@ const HowToPage = ({ lang = 'en', howToId }) => {
           tabIndex={-1}
           announce={false}
           announcedVia="focus"
-          className="focus-target"
         />
       </GcdsContainer>
     );
@@ -96,7 +95,6 @@ const HowToPage = ({ lang = 'en', howToId }) => {
           tabIndex={-1}
           announce={false}
           announcedVia="focus"
-          className="focus-target"
         />
       </GcdsContainer>
     );

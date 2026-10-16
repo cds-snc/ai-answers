@@ -113,7 +113,6 @@ describe('SystemCardPage', () => {
     const heading = await screen.findByRole('heading', { level: 2, name: 'Résumé exécutif' });
     await waitFor(() => expect(document.activeElement).toBe(heading));
     expect(heading.getAttribute('tabindex')).toBe('-1');
-    expect(heading.classList.contains('focus-target')).toBe(true);
   });
 
   it('stays at the top instead of crashing on a malformed section link', async () => {

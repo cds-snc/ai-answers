@@ -81,7 +81,6 @@ const SystemCardPage = ({ lang = 'en' }) => {
     const target = document.getElementById(id);
     if (!target) return;
     target.setAttribute('tabindex', '-1');
-    target.classList.add('focus-target');
     target.focus();
   }, [loading, content]);
 
@@ -104,7 +103,6 @@ const SystemCardPage = ({ lang = 'en' }) => {
           tabIndex={-1}
           announce={false}
           announcedVia="focus"
-          className="focus-target"
         />
       </div>
     );

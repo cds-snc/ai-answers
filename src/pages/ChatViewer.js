@@ -489,7 +489,6 @@ const ChatViewer = ({ lang = 'en' }) => {
           <StatusMessage
             ref={pickStatusRef}
             tabIndex={-1}
-            className="focus-target"
             announce={!(chatIdStatus && statusFromPick)}
             announcedVia={chatIdStatus && statusFromPick ? 'focus' : undefined}
             variant={chatIdStatus ? chatIdStatus.variant : (refreshAnnouncement ? 'error' : undefined)}

@@ -48,7 +48,6 @@ const AdminPage = ({ lang = 'en' }) => {
       const target = document.getElementById('how-to-guides');
       if (target) {
         target.setAttribute('tabindex', '-1');
-        target.classList.add('focus-target');
         target.focus();
         if (document.activeElement === target) return;
       }

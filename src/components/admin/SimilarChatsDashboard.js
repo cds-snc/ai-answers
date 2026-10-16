@@ -52,7 +52,6 @@ const SimilarChatsDashboard = ({ lang = 'en', describedById }) => {
       return;
     }
     table.setAttribute('tabindex', '-1');
-    table.classList.add('focus-target');
     table.focus();
   }, [pickFocusCount]);
 
@@ -134,7 +133,6 @@ const SimilarChatsDashboard = ({ lang = 'en', describedById }) => {
       <StatusMessage
         ref={lookupStatusRef}
         tabIndex={-1}
-        className="focus-target"
         announce={!(fromPick && lookupChat.status)}
         announcedVia={fromPick && lookupChat.status ? 'focus' : undefined}
         variant={lookupChat.status?.variant}
@@ -144,7 +142,6 @@ const SimilarChatsDashboard = ({ lang = 'en', describedById }) => {
       {renderStatusMessage(fetchMessage, 'success', 'fetch', {
         ref: fetchMessageRef,
         tabIndex: -1,
-        className: 'focus-target',
         announce: !(fromPick && fetchMessage),
         announcedVia: fromPick && fetchMessage ? 'focus' : undefined,
       })}

@@ -54,7 +54,7 @@ const SourceViewComponent = ({
       >
         <i className="fa-solid fa-close"></i>
       </span>
-      <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
+      <h4 className="feedback-followup-title no-focus-ring" ref={titleRef} tabIndex={-1}>
         {withAnswerNumber(t('homepage.expertRating.sourceView.title'))}
       </h4>
       <div className="mb-100">
