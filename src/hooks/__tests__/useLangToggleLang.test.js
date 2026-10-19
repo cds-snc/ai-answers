@@ -3,21 +3,18 @@
  */
 import React from 'react';
 import { render, cleanup, waitFor } from '@testing-library/react';
-import { describe, expect, it, afterEach, vi } from 'vitest';
+import { describe, expect, it, afterEach } from 'vitest';
 import { useLangToggleLang } from '../useLangToggleLang.js';
 
 // Stand-ins with the real nesting: gcds-header -> shadow gcds-lang-toggle ->
-// shadow gcds-link (no lang, as GC DS renders it today), each exposing
-// Stencil's componentOnReady.
+// shadow gcds-link (no lang, as GC DS renders it today). Like the real
+// custom-elements build, they have no componentOnReady.
 const defineStub = (tag, renderShadow) => {
   if (customElements.get(tag)) return;
   customElements.define(tag, class extends HTMLElement {
     connectedCallback() {
       if (this.shadowRoot) return;
       this.attachShadow({ mode: 'open' }).innerHTML = renderShadow();
-    }
-    componentOnReady() {
-      return Promise.resolve(this);
     }
   });
 };
@@ -48,18 +45,26 @@ describe('useLangToggleLang', () => {
     await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('en'));
   });
 
-  it('warns instead of throwing when the header has no language link', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const NoToggle = () => {
-        useLangToggleLang('en');
-        return <gcds-header />;
-      };
-      const { container } = render(<NoToggle />);
-      container.querySelector('gcds-header').shadowRoot.innerHTML = '';
-      await waitFor(() => expect(warn).toHaveBeenCalled());
-    } finally {
-      warn.mockRestore();
-    }
+  // Real page load: the React wrapper sets langHref after gcds-header's first
+  // render, so the toggle only shows up afterwards.
+  it('sets lang on a language link that appears after the header loads', async () => {
+    const { container } = render(<Host lang="en" />);
+    const shadow = container.querySelector('gcds-header').shadowRoot;
+    shadow.innerHTML = '';
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    shadow.innerHTML = '<gcds-lang-toggle href="/fr"></gcds-lang-toggle>';
+    await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('fr'));
+  });
+
+  // Real page load: each GC DS element renders on its own schedule, so the
+  // toggle can be there before it has drawn its link.
+  it('sets lang on a link the toggle draws after the toggle appears', async () => {
+    const { container } = render(<Host lang="fr" />);
+    const toggleShadow = container.querySelector('gcds-header').shadowRoot
+      .querySelector('gcds-lang-toggle').shadowRoot;
+    toggleShadow.innerHTML = '';
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    toggleShadow.innerHTML = '<gcds-link href="/en"><span>English</span><abbr>en</abbr></gcds-link>';
+    await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('en'));
   });
 });

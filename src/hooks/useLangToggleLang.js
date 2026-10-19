@@ -9,35 +9,40 @@
 // Remove once GC DS fixes it (still present in @gcds-core/components 1.6.0).
 import { useEffect } from 'react';
 
-const whenReady = async (tag, el) => {
-  await customElements.whenDefined(tag);
-  if (typeof el.componentOnReady === 'function') await el.componentOnReady();
-};
+const WATCH = { childList: true, subtree: true };
 
 export const useLangToggleLang = (currentLang) => {
   useEffect(() => {
+    const header = document.querySelector('gcds-header');
+    if (!header) return undefined;
     let cancelled = false;
     const linkLang = currentLang === 'fr' ? 'en' : 'fr';
 
-    const apply = async () => {
-      const header = document.querySelector('gcds-header');
-      if (!header) return;
-      await whenReady('gcds-header', header);
+    // This build has no componentOnReady to wait on, each element renders on
+    // its own schedule, and the React wrapper sets langHref after
+    // gcds-header's first render - so the toggle and its link can appear (or
+    // be re-created) at any point. Watch both shadow roots and re-apply.
+    // Observing a root that's already observed just replaces its options.
+    const apply = () => {
       const toggle = header.shadowRoot?.querySelector('gcds-lang-toggle');
-      if (toggle) await whenReady('gcds-lang-toggle', toggle);
-      const link = toggle?.shadowRoot?.querySelector('gcds-link');
-      if (cancelled) return;
-      if (!link) {
-        // GC DS changed the header's structure - this workaround needs updating.
-        console.warn('useLangToggleLang: language link not found in gcds-header');
-        return;
+      if (!toggle?.shadowRoot) return;
+      observer.observe(toggle.shadowRoot, WATCH);
+      const link = toggle.shadowRoot.querySelector('gcds-link');
+      if (link && link.getAttribute('lang') !== linkLang) {
+        link.setAttribute('lang', linkLang);
       }
-      link.setAttribute('lang', linkLang);
     };
+    const observer = new MutationObserver(apply);
 
-    apply().catch((err) => console.warn('useLangToggleLang:', err));
+    customElements.whenDefined('gcds-header').then(() => {
+      if (cancelled || !header.shadowRoot) return;
+      observer.observe(header.shadowRoot, WATCH);
+      apply();
+    });
+
     return () => {
       cancelled = true;
+      observer.disconnect();
     };
   }, [currentLang]);
 };
