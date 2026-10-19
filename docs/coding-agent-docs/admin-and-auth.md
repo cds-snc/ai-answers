@@ -49,33 +49,64 @@ The role lives in three places that must agree when you add a page or endpoint:
 
 ## Login and two-factor authentication
 
-Two-factor authentication (2FA) is **off by default** — setting `twoFA.enabled` (Settings page,
-admin). Check it before saying "2FA is on" about any deployment.
+Two-factor authentication (2FA) is a setting, `twoFA.enabled` (Settings page, admin). Check it
+before saying "2FA is on" about any deployment.
 
-Flow when it is enabled (`api/auth/auth-login.js`, `auth-verify-2fa.js`,
+Password sign-in (`config/passport.js`): wrong passwords are counted on the user document, and
+10 failures lock the account for 15 minutes. The count starts again after 15 minutes with no
+failed sign-in (`LOGIN_ATTEMPT_WINDOW_MS`), so occasional typos never add up to a lockout. While locked even the right password is rejected,
+with the same "Invalid credentials" message as any other failure. An unknown email takes as long
+to reject as a known one. The deactivated-account message is only shown after a correct password.
+Because a lockout is never revealed per account, the login page's failure message
+(`login.invalidCredentials`) tells everyone the rule ("After 10 failed attempts, sign-in is paused
+for 15 minutes"). It repeats the numbers in `config/passport.js`; change both together.
+
+Flow when 2FA is enabled (`api/auth/auth-login.js`, `auth-verify-2fa.js`, `auth-send-2fa.js`,
 `services/TwoFAService.js`):
 
-1. Email + password checked by Passport. The user is **not** logged in yet.
-2. A 6-digit time-based code (TOTP, `speakeasy`, per-user `twoFASecret`) is emailed through
-   **GC Notify** (`services/GCNotifyService.js`, template from `twoFA.templateId` or
-   `GC_NOTIFY_2FA_TEMPLATE_ID`).
-3. User submits the code to `auth-verify-2fa`; accepted with a ±20 step window (about 10
-   minutes) to allow for email delay. Then `req.login` and the session TTL is applied.
+1. Email + password checked by Passport. The user is **not** logged in yet; the session records
+   `pending2FA = { userId, createdAt }`.
+2. A random 6-digit code is emailed through **GC Notify** (template from `twoFA.templateId` or
+   `GC_NOTIFY_2FA_TEMPLATE_ID`). Only an HMAC of it is stored on the user, with a 10-minute expiry.
+3. The user submits the code to `auth-verify-2fa`. **The endpoint takes the user from
+   `pending2FA` and ignores any email in the body**, so it cannot be used without the password
+   step. A correct code works once.
+4. Failed codes are counted on the user document. 5 wrong codes discard the code and lock 2FA for
+   30 minutes (429). Requesting a new code does not reset the count.
+5. "Send again" (`auth-send-2fa`) also uses `pending2FA`, takes no email, and has a 60-second
+   cooldown. The code sent at sign-in counts, so a resend in the first minute is refused. Each
+   resend replaces the previous code.
 
-When 2FA is disabled, step 1 logs the user straight in. `NODE_ENV=test` also skips 2FA.
+On the 2FA screen the login page shows a specific message for each refusal: `cooldown` ("Wait a
+minute…"), `locked` ("Too many incorrect codes…"), a wrong code, and a success confirmation after a
+resend. `AuthService.send2FA`/`verify2FA` put the server's `reason` on the thrown error.
 
-Gaps worth knowing (flag to maintainers, do not silently "fix" — they are security decisions):
+When 2FA is disabled, step 1 logs the user straight in, and the verify and send endpoints refuse
+(no `pending2FA`). `NODE_ENV=test` also skips 2FA.
 
-- `auth-verify-2fa` and `auth-send-2fa` take only an email and a code. They don't check that
-  the password step happened (`req.session.pendingUser` is set at login but not read back), so
-  2FA currently acts as a standalone login factor rather than a second one.
-- Failed 2FA attempts have no account lockout, only the general rate limiter, and the ±20 step
-  window makes roughly 40 codes valid at once. The rate limiter keys on session, so a client that
-  drops cookies gets a fresh bucket each request.
-- Signup does no email verification, domain check or server-side password rule, and logs the
-  new (inactive) user in, which moves them to the signed-in rate-limit bucket.
+Attempt counters are on the user document on purpose: an attacker can discard a session or change
+address, but not the account. There is no separate per-IP limit on `/api/auth/*`; see the plan's
+Phase 1 status for why it was dropped.
 
-Full analysis and fix plan: [docs/plans/auth-hardening.md](../plans/auth-hardening.md).
+Requirements and gotchas when turning 2FA on:
+
+- The code hash is keyed from `TWOFA_SECRET`, else `SESSION_SECRET`, else `JWT_SECRET_KEY`. Every
+  deployed environment has `JWT_SECRET_KEY` (PR previews have no `SESSION_SECRET`), so nothing
+  needs setting. With none of the three, login returns 500 with `reason: "send_failed"` and
+  `detail: "twofa_no_secret"`. Other `detail` values on that 500: `twofa_no_template`,
+  `send_failed` (GC Notify did not send the email) and `twofa_send_error` (any other error).
+- Settings are cached per instance at startup with no refresh, so on a multi-instance deployment
+  a saved `twoFA.enabled` only takes effect on some instances. Unfixed; see the Phase 1 status
+  section of the plan.
+- The password step of the login page shows its own message for 2FA lockout, a failed code
+  send, a server error and a lost connection. A wrong password, an unknown email and a password
+  lockout still share one message. For the cause of a failed send, check `detail` in the
+  `auth-login` response in the browser's Network tab.
+
+Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
+logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
+[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field no longer used for
+sign-in codes; signup still fills it and it can be dropped in a cleanup.
 
 ## Password reset
 

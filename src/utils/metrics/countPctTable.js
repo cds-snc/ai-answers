@@ -36,8 +36,9 @@ export function buildCountPctRow(metricLabel, counts, denom) {
 
 /** Column defs matching buildCountPctRow's shape. `t`/`fmtN`/`fmtPct` are
  * passed in rather than imported, since each caller's are already bound to
- * its own `lang`. */
-export function getCountPctColumns(t, fmtN, fmtPct) {
+ * its own `lang`. `firstColumnKey` relabels the first column (e.g. "Marked as"
+ * for Expert scored's flags table, which holds flags, not metrics). */
+export function getCountPctColumns(t, fmtN, fmtPct, firstColumnKey = 'metrics.dashboard.metric') {
   const numCol = (data, titleKey) => ({
     title: t(titleKey),
     data,
@@ -51,7 +52,7 @@ export function getCountPctColumns(t, fmtN, fmtPct) {
     render: (d, type) => type === 'display' ? fmtPct(d) : d
   });
   return [
-    { title: t('metrics.dashboard.metric'), data: 'metric' },
+    { title: t(firstColumnKey), data: 'metric' },
     numCol('count', 'metrics.dashboard.count'),
     pctCol('percentage', 'metrics.dashboard.percentage'),
     numCol('enCount', 'metrics.dashboard.enCount'),

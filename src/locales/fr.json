@@ -624,6 +624,12 @@
       "totalInactive": "utilisateur(s) inactif(s) au total",
       "viewUsers": "Voir et gérer les utilisateurs"
     },
+    "footer": {
+      "heading": "Ressources pour les administrateurs et les partenaires",
+      "contactTeam": "Contacter Réponses IA",
+      "termsAndConditions": "Avis",
+      "privacy": "Confidentialité"
+    },
     "howTo": {
       "title": "Guides pratiques",
       "trigger": "Voir tous les guides pratiques pour les partenaires",
@@ -1043,7 +1049,9 @@
     "email": "Courriel",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "invalidCredentials": "Courriel ou mot de passe invalide.",
+    "invalidCredentials": "Courriel ou mot de passe invalide. Après 10 tentatives échouées, la connexion est suspendue pendant 15 minutes.",
+    "serverError": "Nous n'avons pas pu vous connecter. Réessayez dans quelques minutes.",
+    "networkError": "Nous n'avons pas pu joindre le serveur. Vérifiez votre connexion, puis réessayez.",
     "sessionExpired": {
       "title": "Session expirée",
       "message": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
@@ -1061,8 +1069,12 @@
       "resend": "Renvoyer le code",
       "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
       "send": "Envoyer le code de vérification",
-      "sendError": "Impossible d'envoyer le code de vérification.",
-      "invalidCode": "Code de vérification invalide."
+      "sendError": "Nous n'avons pas pu envoyer votre code de vérification. Réessayez dans quelques minutes.",
+      "invalidCode": "Code de vérification invalide.",
+      "resent": "Nouveau code envoyé.",
+      "cooldown": "Attendez une minute avant de demander un nouveau code.",
+      "locked": "Trop de codes incorrects. Attendez 30 minutes, puis reconnectez-vous.",
+      "expired": "Votre connexion a expiré. Entrez de nouveau votre courriel et votre mot de passe pour obtenir un nouveau code."
     },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe"
@@ -1821,6 +1833,7 @@
         "notGc": "Réponses hors du mandat du GC"
       },
       "metric": "Métrique",
+      "markedAs": "Marquée comme",
       "count": "Nombre",
       "percentage": "%",
       "enCount": "Nombre EN",
@@ -1834,18 +1847,14 @@
         "correct": "Correct",
         "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur de réponse",
-        "hasCitationError": "Problème de citation",
-        "harmful": "Codé comme nuisible",
-        "hasContentIssue": "Problème de contenu signalé"
+        "flaggedTitle": "Signalées (déjà comptées ci-dessus)"
       },
       "aiScored": {
         "title": "Évaluations IA",
         "description": "Évaluations automatisées par IA pour les questions sans évaluation partenaire",
         "total": "Total des questions évaluées",
         "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",
-        "hasError": "Contient une erreur de réponse",
-        "hasCitationError": "Problème de citation"
+        "hasError": "Contient une erreur de réponse"
       },
       "qualityBar": {
         "correct": "Correct",
