@@ -45,13 +45,13 @@ Retirez-en une lorsque le contenu sur lequel elle reposait a changé, que le jug
 
 ## Voir à quelle fréquence la fonction est utilisée
 
-Le **Tableau de bord partenaire** affiche une carte **Réponses informées par les évaluations** dans son aperçu.
+Le **Tableau de bord partenaire** affiche une carte **Réponses informées par les évaluations** dans sa propre section, à côté d'une liste des exemples les plus récents.
 
 - Le pourcentage indique la part des questions pour lesquelles des évaluations antérieures ont été utilisées.
 - Seules les questions traitées depuis la mise en service des réponses informées par les évaluations sont comptées. Les questions plus anciennes sont exclues.
 - La carte suit les filtres du tableau de bord.
 
-Sélectionnez la carte pour accéder aux exemples les plus récents. Ouvrez un ID de clavardage pour voir les évaluations antérieures qu'il a utilisées.
+Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures qu'il a utilisées.
 
 ## Règles appliquées par le système
 

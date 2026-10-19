@@ -1648,7 +1648,8 @@
   "partnerDashboard": {
     "title": "Tableau de bord partenaire",
     "overviewTitle": "Vue d'ensemble",
-    "error": "Échec du chargement des données. Veuillez réessayer.",
+    "evalInformedTitle": "Mesures liées aux réponses informées par les évaluations",
+    "error":"Échec du chargement des données. Veuillez réessayer.",
     "kpi": {
       "questionsAsked": "Questions posées",
       "questionsSub": "EN : {en} · FR : {fr}",
@@ -1658,7 +1659,7 @@
       "harmfulSub": "EN : {en} · FR : {fr}",
       "contentIssues": "Problèmes de contenu",
       "contentIssuesSub": "Nécessite une amélioration : {ni} · Erreur : {error}",
-      "evalInformedSub": "{n} sur {total} questions"
+      "evalInformedSub": "{n} sur {total} questions admissibles"
     },
     "charts": {
       "accuracyTitle": "Qualité des réponses (évaluation experte et IA)",
@@ -1906,7 +1907,9 @@
         "title": "Types de questions"
       },
       "evalInformed": {
-        "eligible": "Questions vérifiées pour des évaluations antérieures"
+        "eligible": "Questions admissibles",
+        "from": "Première question admissible trouvée : {date}. Les questions antérieures ne sont pas comptées.",
+        "note": "Les questions admissibles sont celles traitées par le flux de travail informé par les évaluations. Les flux de travail plus anciens ou différents ne consultent pas les évaluations antérieures, donc leurs questions ne sont pas comptées."
       },
       "tokens": {
         "title": "Jetons",

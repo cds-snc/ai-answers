@@ -1648,6 +1648,7 @@
   "partnerDashboard": {
     "title": "Partner dashboard",
     "overviewTitle": "Overview",
+    "evalInformedTitle": "Evaluation informed metrics",
     "error": "Failed to load data. Please try again.",
     "kpi": {
       "questionsAsked": "Questions asked",
@@ -1658,7 +1659,7 @@
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
       "contentIssuesSub": "Needs improvement: {ni} · Error: {error}",
-      "evalInformedSub": "{n} of {total} questions"
+      "evalInformedSub": "{n} of {total} eligible questions"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
@@ -1906,7 +1907,9 @@
         "title": "Question types"
       },
       "evalInformed": {
-        "eligible": "Questions checked for past evaluations"
+        "eligible": "Eligible questions",
+        "from": "Earliest eligible question found: {date}. Earlier questions aren't counted.",
+        "note": "Eligible questions are those answered by the eval-informed workflow. Older and other workflows don't look up past evaluations, so their questions aren't counted."
       },
       "tokens": {
         "title": "Tokens",

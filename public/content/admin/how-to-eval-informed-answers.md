@@ -45,13 +45,13 @@ Remove one when the content it was based on has changed, the judgement was wrong
 
 ## See how often it is used
 
-The **Partner dashboard** shows an **Eval-informed answers** card in its overview.
+The **Partner dashboard** shows an **Eval-informed answers** card in its own section, beside a list of the most recent examples.
 
 - The percentage is the share of questions where past evaluations were used.
 - It counts only questions answered since evaluation-informed answering went live. Older questions are left out.
 - It follows the dashboard's filters.
 
-Select the card to jump to the most recent examples. Open a chat ID to see the past evaluations it used.
+Open a chat ID in the list to see the past evaluations it used.
 
 ## Rules the system applies
 

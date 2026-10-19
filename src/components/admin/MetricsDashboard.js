@@ -607,7 +607,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                 expert evaluations were added to the AI's context. Out of
                 questions answered by the eval-informed workflow, not all
                 questions — per language too (metrics-usage.js). Same rule
-                and "* From {date} only" footnote as the partner dashboard's
+                and footnote trigger as the partner dashboard's
                 card: only when the range starts before that workflow. The
                 asterisks are visual only; the footnote is read right after
                 the heading. */}
@@ -627,10 +627,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
               {evalInformedFromDate && (
                 <p className="dashboard-footnote font-size-text-xxs-nr mb-300">
                   <span aria-hidden="true">* </span>
-                  {t('admin.common.evalInformedFrom')
+                  {t('metrics.dashboard.evalInformed.from')
                     .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
                 </p>
               )}
+              <p className="mb-300">{t('metrics.dashboard.evalInformed.note')}</p>
               <div>
                 <DataTable
                   data={[

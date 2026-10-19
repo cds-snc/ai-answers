@@ -242,7 +242,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // collapsed <details> auto-opens it (see CollapsibleCard.js's anchorId).
   const CONTENT_ISSUE_ANCHOR = 'content-issue-chats-section';
   const HARMFUL_CHATS_ANCHOR = 'harmful-chats-section';
-  const EVAL_INFORMED_ANCHOR = 'eval-informed-chats-section';
   // Every row here is harmful by definition (the endpoint only ever returns
   // harmful-flagged chats) — status is set client-side so the table can still
   // show the red "Harmful" pill via ContentIssueChatsCard's optional status
@@ -345,7 +344,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
-      {/* KPI cards — 4 columns: questions, expert eval, content issues, eval-informed */}
+      {/* KPI cards — 3 columns: questions, expert eval, content issues */}
       <div className="dashboard-row">
         <StatCard
           label={t('partnerDashboard.kpi.questionsAsked')}
@@ -372,55 +371,33 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             </>
           )}
         />
-        <StatCard
-          // The asterisks are visual only (aria-hidden): the card is itself a
-          // link, so the "*" can't be a footnote link, and the footnote text
-          // is read straight after the count anyway.
-          label={(
-            <>
-              {t('admin.common.evalInformedAnswers')}
-              {evalInformedFromDate && <span aria-hidden="true">*</span>}
-            </>
-          )}
-          value={formatEvalInformedRate(evalInformed.informed?.total, evalInformed.eligible?.total, fmtPct)}
-          href={evalInformedChats.length > 0 ? `#${EVAL_INFORMED_ANCHOR}` : null}
-          sub={evalInformed.eligible?.total > 0
-            ? t('partnerDashboard.kpi.evalInformedSub')
-              .replace('{n}', fmtN(evalInformed.informed.total))
-              .replace('{total}', fmtN(evalInformed.eligible.total))
-            : undefined}
-          footnote={evalInformedFromDate ? (
-            <>
-              <span aria-hidden="true">* </span>
-              {t('admin.common.evalInformedFrom')
-                .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
-            </>
-          ) : undefined}
-        />
       </div>
 
       {/* Answer-accuracy donut + answer-quality bar (wide) beside it. Below 10
           evals both are replaced by placeholders rather than dropped, so the
           reason stays on the page. */}
       <div className="dashboard-row">
-        {evalTotal >= 10 ? (
-          <DonutCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
-            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
-            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
-            footer={accuracyByLangFooter}
-            lang={lang}
-            a11y={chartA11y}
-          />
-        ) : (
-          <NoDataCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            message={t('common.notEnoughData')}
-          />
-        )}
+        {/* Third-width column so the donut lines up with the KPI cards above. */}
+        <div className="dashboard-col-third">
+          {evalTotal >= 10 ? (
+            <DonutCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+              centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
+              centreLabel={t('partnerDashboard.charts.accuracyCentre')}
+              centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
+              footer={accuracyByLangFooter}
+              lang={lang}
+              a11y={chartA11y}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
         <div className="dashboard-chart-wide">
           {evalTotal >= 10 ? (
             <HBarCard
@@ -601,70 +578,93 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Content issue + eval-informed chat lists, side by side (half width
-          each) while collapsed; an opened one goes full width and to the top
-          of the row (.dashboard-col-half--expand-on-open). A lone list is
-          full width. */}
-      {(contentIssueChats.length > 0 || evalInformedChats.length > 0) && (
-        <div className="dashboard-row">
-          {/* Content issue chats — collapsible list of chats with at least one
-              expert-flagged content issue in the current filter scope, most
-              recent first. Hidden entirely when there are none (presence-gated,
-              like referrals/citations) — the KPI "Content issues" count above
-              still shows 0 rather than hiding, only this list does. */}
-          {contentIssueChats.length > 0 && (
-            <div className="dashboard-col-half dashboard-col-half--expand-on-open">
-              <ContentIssueChatsCard
-                title={t('partnerDashboard.contentIssueChats.title')}
-                triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
-                chats={contentIssueChats}
-                chatIdColLabel={t('reviewPanels.chatId')}
-                questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
-                questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
-                questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
-                dateColLabel={t('admin.chatDashboard.columns.date')}
-                statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
-                statusLabels={{
-                  hasError: t('partnerDashboard.charts.hasError'),
-                  needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
-                }}
-                // Never shown: the list is hidden when empty and the card
-                // above shows 0. Kept for now.
-                noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
-                lang={lang}
-                anchorId={CONTENT_ISSUE_ANCHOR}
-              />
-            </div>
-          )}
-
-          {/* Eval-informed chats — a recent sample (server caps it) for
-              spot-checking, linked from the Eval-informed answers card.
-              Review mode's "Past evaluations used" panel shows which evaluations each
-              answer used, so this list needs no extra columns. Presence-gated
-              like the lists above. */}
-          {evalInformedChats.length > 0 && (
-            <div className="dashboard-col-half dashboard-col-half--expand-on-open">
-              <ContentIssueChatsCard
-                title={t('partnerDashboard.evalInformedChats.title')}
-                subtitle={t('partnerDashboard.evalInformedChats.subtitle').replace('{n}', fmtN(EVAL_INFORMED_CHATS_LIMIT))}
-                triggerLabel={t('partnerDashboard.evalInformedChats.trigger')}
-                chats={evalInformedChats}
-                chatIdColLabel={t('reviewPanels.chatId')}
-                questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
-                questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
-                questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
-                dateColLabel={t('admin.chatDashboard.columns.date')}
-                // Never shown: the list is hidden when empty and the card
-                // above shows 0%. Kept for now.
-                noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
-                lang={lang}
-                anchorId={EVAL_INFORMED_ANCHOR}
-                collapsible={evalInformedChats.length >= 3}
-              />
-            </div>
-          )}
+      {/* Content issue chats — collapsible list of chats with at least one
+          expert-flagged content issue in the current filter scope, most
+          recent first. Hidden entirely when there are none (presence-gated,
+          like referrals/citations) — the KPI "Content issues" count above
+          still shows 0 rather than hiding, only this list does. */}
+      {contentIssueChats.length > 0 && (
+        <div className="dashboard-section">
+          <ContentIssueChatsCard
+            title={t('partnerDashboard.contentIssueChats.title')}
+            triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
+            chats={contentIssueChats}
+            chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+            dateColLabel={t('admin.chatDashboard.columns.date')}
+            statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
+            statusLabels={{
+              hasError: t('partnerDashboard.charts.hasError'),
+              needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
+            }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
+            noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
+            lang={lang}
+            anchorId={CONTENT_ISSUE_ANCHOR}
+          />
         </div>
       )}
+
+      {/* Eval-informed answers card (left third) + its chats list (right two
+          thirds). The card always shows; the list is presence-gated like the
+          lists above. */}
+      <h2 className="dashboard-section-title">{t('partnerDashboard.evalInformedTitle')}</h2>
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            // The asterisks are visual only (aria-hidden): the footnote text
+            // is read straight after the count anyway. Not a link — the list
+            // it would jump to sits right beside it.
+            label={(
+              <>
+                {t('admin.common.evalInformedAnswers')}
+                {evalInformedFromDate && <span aria-hidden="true">*</span>}
+              </>
+            )}
+            value={formatEvalInformedRate(evalInformed.informed?.total, evalInformed.eligible?.total, fmtPct)}
+            sub={evalInformed.eligible?.total > 0
+              ? t('partnerDashboard.kpi.evalInformedSub')
+                .replace('{n}', fmtN(evalInformed.informed.total))
+                .replace('{total}', fmtN(evalInformed.eligible.total))
+              : undefined}
+            footnote={evalInformedFromDate ? (
+              <>
+                <span aria-hidden="true">* </span>
+                {t('admin.common.evalInformedFrom')
+                  .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
+              </>
+            ) : undefined}
+          />
+        </div>
+
+        {/* Eval-informed chats — a recent sample (server caps it) for
+            spot-checking, beside its card. Review mode's
+            "Past evaluations used" panel shows which evaluations each answer
+            used, so this list needs no extra columns. */}
+        {evalInformedChats.length > 0 && (
+          <div className="dashboard-chart-wide">
+            <ContentIssueChatsCard
+              title={t('partnerDashboard.evalInformedChats.title')}
+              subtitle={t('partnerDashboard.evalInformedChats.subtitle').replace('{n}', fmtN(EVAL_INFORMED_CHATS_LIMIT))}
+              triggerLabel={t('partnerDashboard.evalInformedChats.trigger')}
+              chats={evalInformedChats}
+              chatIdColLabel={t('reviewPanels.chatId')}
+              questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+              questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+              questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+              dateColLabel={t('admin.chatDashboard.columns.date')}
+              // Never shown: the list is hidden when empty and the card
+              // beside it shows 0%. Kept for now.
+              noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
+              lang={lang}
+              collapsible={evalInformedChats.length >= 3}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from

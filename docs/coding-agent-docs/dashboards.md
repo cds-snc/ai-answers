@@ -94,7 +94,7 @@ End dates run through today (23:59:59); the picker allows today. There is **no**
 
 **Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`, linked from the Content issues/Harmful/Eval-informed answers `StatCard`s), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
 
 ## Metric bundle shape
 
