@@ -45,6 +45,13 @@ describe('useLangToggleLang', () => {
     await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('en'));
   });
 
+  it('updates lang when the page language changes', async () => {
+    const { container, rerender } = render(<Host lang="en" />);
+    await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('fr'));
+    rerender(<Host lang="fr" />);
+    await waitFor(() => expect(findLink(container).getAttribute('lang')).toBe('en'));
+  });
+
   // Real page load: the React wrapper sets langHref after gcds-header's first
   // render, so the toggle only shows up afterwards.
   it('sets lang on a language link that appears after the header loads', async () => {
