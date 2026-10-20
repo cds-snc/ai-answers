@@ -1,5 +1,5 @@
 ---
-title: "À propos de Réponses IA"
+title: "À propos de Réponses IA - Canada.ca"
 description: "En savoir plus sur Canada.ca Réponses IA, un agent de discussion IA spécialisé conçu pour les utilisateurs des sites Web du gouvernement du Canada"
 ogImage: "og-about-fr.png"
 ---
