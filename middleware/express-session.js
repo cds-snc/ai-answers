@@ -14,7 +14,11 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
-const _getSessionTtlMinutes = (req) => {
+// Session cookie lifetime in ms. Signed-in sessions get
+// session.authenticatedTTLMinutes, others session.defaultTTLMinutes (default 60).
+// The sign-in handlers call this after req.login, because the regenerated
+// session would otherwise keep the anonymous default.
+export const getSessionTtlMs = (req) => {
   const defaultMinutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
   const authenticatedMinutes = Number(_getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || defaultMinutes);
 
@@ -68,7 +72,7 @@ const buildSessionMiddleware = (app) => {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? 'strict' : 'lax',
-      maxAge: _getSessionTtlMinutes(),
+      maxAge: getSessionTtlMs(),
       path: '/'
     },
     rolling: true
@@ -119,7 +123,7 @@ export default function createSessionMiddleware(app) {
 
     instance(req, res, () => {
       if (req.session && req.session.cookie) {
-        req.session.cookie.maxAge = _getSessionTtlMinutes(req);
+        req.session.cookie.maxAge = getSessionTtlMs(req);
 
         if (parentDomain) {
           req.session.cookie.domain = parentDomain;

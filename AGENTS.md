@@ -4,6 +4,7 @@
 - **React build restriction**: Files imported by frontend code (`src/`) must live inside `src/`. Never place shared config intended for UI components in `config/` (root) — use `src/config/` instead. Server-side code (`api/`, `agents/`, `services/`) can import from anywhere.
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
 - **CSS/styling**: See [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md) for all CSS and visual style rules.
+- **Line endings**: Most files are LF, but some use CRLF (e.g. `src/pages/LoginPage.js`) or mixed endings (`git ls-files --eol` lists them). Keep each file's existing endings. Editing through a script (Python `open(...).write`, `sed`, heredocs) can rewrite every line and turn a 5-line change into a whole-file diff. After any edit, check `git diff --stat`. If a file shows far more changed lines than you touched, restore its original endings before you finish.
 
 ## Commit messages and releases
 
