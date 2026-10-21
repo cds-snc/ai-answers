@@ -72,7 +72,10 @@ Flow when 2FA is enabled (`api/auth/auth-login.js`, `auth-verify-2fa.js`, `auth-
    `pending2FA` and ignores any email in the body**, so it cannot be used without the password
    step. A correct code works once.
 4. Failed codes are counted on the user document. 5 wrong codes discard the code and lock 2FA for
-   30 minutes (429). Requesting a new code does not reset the count.
+   30 minutes (429). Requesting a new code does not reset the count. Input that isn't 6 digits
+   (after removing spaces) is refused before any database work, so it never counts. The page and
+   the server share that rule (`normalizeTwoFACode` in `src/utils/auth/twoFACode.js`); the page
+   flags a bad code before sending it (`login.2fa.codeFormat`).
 5. "Send again" (`auth-send-2fa`) also uses `pending2FA`, takes no email, and has a 60-second
    cooldown. The code sent at sign-in counts, so a resend in the first minute is refused. Each
    resend replaces the previous code.
@@ -88,7 +91,8 @@ Attempt counters are on the user document on purpose: an attacker can discard a 
 address, but not the account. There is no separate per-IP limit on `/api/auth/*`; see the plan's
 Phase 1 status for why it was dropped.
 
-Requirements and gotchas when turning 2FA on:
+Requirements and gotchas when turning 2FA on (the full go-live list is "Before turning 2FA on
+in production" in the plan):
 
 - The code hash is keyed from `TWOFA_SECRET`, else `SESSION_SECRET`, else `JWT_SECRET_KEY`. Every
   deployed environment has `JWT_SECRET_KEY` (PR previews have no `SESSION_SECRET`), so nothing
@@ -105,8 +109,13 @@ Requirements and gotchas when turning 2FA on:
 
 Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
 logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
-[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field no longer used for
-sign-in codes; signup still fills it and it can be dropped in a cleanup.
+[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field that nothing reads or
+writes; existing accounts still hold a value until a migration clears it.
+
+Open (F5 in the plan, own PR): `UserService.listUsers()` leaves out only `password`, so the
+admin users list sends every user's `resetPasswordSecret`, `twoFACode` and lockout fields to
+the browser. Don't add consumers of that response; the fix is an allowlist of the fields the
+Users page shows.
 
 ## Password reset
 
@@ -123,7 +132,9 @@ deliberately not reset by requesting a new email. Template: `notify.resetTemplat
 development/test, `sameSite: strict` when secure, rolling expiry. Store is chosen by
 `session.type` (`mongo` default, `redis`, or in-memory). Anonymous visitors and signed-in users
 both have sessions; signed-in users get `session.authenticatedTTLMinutes` (falls back to
-`session.defaultTTLMinutes`, default 60). Admins can view/manage sessions on the Sessions page
+`session.defaultTTLMinutes`, default 60). That rule is `getSessionTtlMs`; both sign-in handlers
+(`auth-login.js`, `auth-verify-2fa.js`) call it after `req.login`, because the regenerated session
+would otherwise keep the anonymous length. Admins can view/manage sessions on the Sessions page
 (`session.managementEnabled`).
 
 Rate limiting (`middleware/rate-limiter.js`) is applied to all `/api` routes, with a larger

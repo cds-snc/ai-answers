@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in and two-factor authentication
 
-Status (2026-10-16): Phase 1 implemented on branch `auth-hardening`, in final review, not yet merged (see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR and Phases 2 and 3 are not started. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) and Phases 2 and 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -67,6 +67,20 @@ rate limiting, password guidance).
   privacy position in the system card.
 - Email-only 2FA shares a mailbox with password reset, so it does not protect against mailbox
   compromise. That is a known limit of this design and should be stated plainly, not fixed here.
+
+### F5. The admin users list sends sign-in secrets to the browser (Medium, found 2026-10-16)
+
+`UserService.listUsers()` (`GET /api/user/user-users`, admin only) leaves out only `password`,
+so every user's full document reaches the Users page. That includes `resetPasswordSecret` (the
+permanent key behind password-reset codes: holding it is enough to make valid reset codes for
+that account), `twoFACode` (hash of the current sign-in code), the legacy `twoFASecret`, and the
+lockout counters. The page uses only `_id`, `email`, `role`, `active`, `institution`, `group` and
+`createdAt`. Live in production today whether or not 2FA is on; admin is VPN-only, but the
+secrets still sit in browser memory, devtools and any saved network trace.
+
+Fix in its own small PR, not tied to a phase: return only the fields the page uses (an allowlist,
+not an exclusion list) and test that no secret or counter field comes back. In the same file, stop
+sending `error.message` in the 500 responses.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 
@@ -217,8 +231,10 @@ before `twoFA.enabled` goes on anywhere real.
    change where these messages appear and where focus goes, so before merging, repeat the
    keyboard resend check and one of the message checks (lockout, timed out or no connection)
    on a preview.
-6. Dead code to clean up, undecided: `twoFASecret` on the user and its generation in
-   `api/auth/auth-signup.js`. Keep `speakeasy`, password reset still uses it.
+6. **Decided 2026-10-16: `twoFASecret` is no longer generated.** Sign-up stopped filling it in
+   the clean-up PR. The schema field stays so existing documents still load; clearing the value
+   from existing accounts needs a migration and is not planned. `speakeasy` stays, password reset
+   still uses it.
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
    email (inherent to lockout; admin is VPN-only; blocking burst lockouts would need the per-IP
    limits dropped in item 8); a parallel burst can slip a few extra guesses past 10. The
@@ -227,6 +243,13 @@ before `twoFA.enabled` goes on anywhere real.
    password step (Phase 3.5); there is no cap on resends per challenge (planned above as ~3).
    Only the 60-second cooldown limits them, and only someone who passed the password step can
    resend, so the email-bomb risk is one email a minute to their own account.
+   Since the clean-up PR, the sign-in step checks the 2FA lock against the user document
+   Passport read before the password check (about 100 ms earlier) instead of reading it again.
+   Someone who has the password and locks 2FA with parallel guesses inside that window can get
+   one code emailed during the lockout. Verify still refuses, because it reads the lock live,
+   and the email only reaches the account owner. A malformed code on a locked account answers
+   `invalid` rather than `locked`, because the format check runs before any database work; the
+   login page never sends one.
    Built thresholds, for comparison with plan items 2 and 4: 5 wrong 2FA codes lock 2FA for 30
    minutes straight away (there is no separate "invalidate the challenge" step first), and 10
    wrong passwords pause password sign-in for 15 minutes. `auth-send-2fa` was kept as the resend
@@ -241,6 +264,47 @@ before `twoFA.enabled` goes on anywhere real.
 
 From the 2026-10-15 and 2026-10-16 reviews. None of these is a security gap, so they were kept
 out of the Phase 1 PR to keep it reviewable. Ship together as one small PR.
+
+**Built on branch `auth-cleanup` (2026-10-16), not yet merged.** All three items below, plus
+Phase 1 leftovers and fixes from an accessibility review and a code review (two rounds each).
+
+- **Item 1, session length:** both sign-in handlers call `getSessionTtlMs` in
+  `middleware/express-session.js`, the rule the middleware already used. Default 60 minutes on
+  both paths; a test checks both get the same length.
+- **Item 2, fewer reads:** `sendChallenge` takes exactly one of `user` (the document Passport
+  read in the same request) or `userId`; `verifyChallenge` takes only `userId`, always reads the
+  user itself, and returns the document it updated, so `auth-verify-2fa.js` doesn't read it
+  again. The atomic write filters are unchanged.
+- **Item 3, code format:** one rule, `normalizeTwoFACode` in `src/utils/auth/twoFACode.js`,
+  used by the login page and `TwoFAService` (which also takes the code length from it). It
+  removes spaces (`123 456` works) and refuses anything that isn't a string. The service checks
+  it before any database work, so a malformed code is never counted. `auth-verify-2fa.js` no
+  longer has its own empty-code check (the 400 with no `reason`): an empty, malformed or wrong
+  code all get `401 { success: false, reason: 'invalid' }`.
+- **Code screen:** "Enter the six-digit code from your email." (`login.2fa.codeFormat`) as a
+  field error before sending; a "Six digits" hint linked to the field (SC 3.3.2);
+  `aria-required` (not `required`, so the browser's English-only check never appears); a
+  `<form>` so Enter verifies, with Resend as `type="button"`;  `inputMode="numeric"` and `autoComplete="one-time-code"`. No `maxLength`,
+  which would silently cut a pasted code. `TWOFA_CODE_LENGTH` has a comment naming the strings
+  to update if the length changes.
+- **Phase 1 leftovers:** sign-up no longer generates `twoFASecret` (Phase 1 status, item 6).
+  The sign-up test's `User` mock was fixed for Vitest 4. The system card is deliberately not
+  changed here; see "Docs to update with each phase".
+- **Accepted, recorded in Phase 1 status item 7:** the sign-in step's lock check uses
+  Passport's read, and a malformed code on a locked account answers `invalid`.
+- **Not changed (pre-existing, affects every session):** when
+  `session.authenticatedTTLMinutes` is invalid, signed-in sessions fall back to 60 minutes
+  rather than to a valid `session.defaultTTLMinutes`.
+
+**Check on staging before merging** (2FA is on there):
+- Verify with an empty code and with `12ab`: "Enter the six-digit code from your email." shows
+  with focus on it.
+- A correct code signs in, typed as `123456` and as `123 456`.
+- Enter in the code field verifies.
+- With a keyboard, Resend still moves focus to "New code sent."
+- On a phone, the number pad opens.
+
+The original items, as planned:
 
 1. **One place for the signed-in session length.** `api/auth/auth-login.js` and
    `api/auth/auth-verify-2fa.js` each work out the authenticated session TTL, with different
@@ -309,10 +373,28 @@ out of the Phase 1 PR to keep it reviewable. Ship together as one small PR.
 6. Log password lockouts. 2FA lockouts are already logged (`TwoFAService`); password lockouts in
    `config/passport.js` are not.
 
+### Before turning 2FA on in production
+
+2FA stays off in production until all of these are done. It is on in staging for testing.
+
+1. Phases 1, 2 and 3, the Phase 1 clean-up PR and the F5 fix are merged.
+2. Settings reload across instances (Phase 1 status, item 2), so `twoFA.enabled` takes effect on
+   every instance, not only the one that saved it.
+3. The production 2FA email template is set (`twoFA.templateId` or
+   `GC_NOTIFY_2FA_TEMPLATE_ID`) and a test sign-in receives the code.
+4. A full pass on staging with 2FA on: the checks in Phase 1 status item 5, plus any added by
+   later phases.
+5. `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` updated in the same release to say 2FA is on (and
+   whether it is required for admins, Phase 3 item 4), so the card matches production.
+
 ### Docs to update with each phase
 
 - `docs/coding-agent-docs/admin-and-auth.md`: remove the "Gaps worth knowing" list as each
   item is fixed.
+- Open, for a separate system card change: the components list (EN and FR, item 2 "Admin
+  interface") says the admin interface has 2FA, but the card's authentication section says the
+  codes are optional, and 2FA is off in production. Make the components list say optional, or
+  leave it until 2FA goes on ("Before turning 2FA on in production", item 5).
 - `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md`: authentication wording and any new sign-up controls
   (both languages, per AGENTS.md). Do not claim email verification, domain limits or lockout
   until they ship. The safety claims and the implementation must not differ.
@@ -336,7 +418,8 @@ Phase 1 as urgent.
 ## Decisions needed from maintainers
 
 1. Which email domains may register? (Phase 2.2)
-2. Is `twoFA.enabled` on in production today, and should 2FA become mandatory for admins?
+2. Should 2FA become mandatory for admins? (Answered 2026-10-16: `twoFA.enabled` is off in
+   production and on in staging; see "Before turning 2FA on in production".)
 3. Is a CAPTCHA acceptable for GC users, and is there an approved provider?
 4. Existing unverified accounts: delete them all, or send a one-time verification email first?
 5. Who creates the new GC Notify templates (verification, and any 2FA wording change), in both
