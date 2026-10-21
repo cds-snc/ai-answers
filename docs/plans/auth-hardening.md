@@ -284,8 +284,7 @@ Phase 1 leftovers and fixes from an accessibility review and a code review (two 
 - **Code screen:** "Enter the six-digit code from your email." (`login.2fa.codeFormat`) as a
   field error before sending; a "Six digits" hint linked to the field (SC 3.3.2);
   `aria-required` (not `required`, so the browser's English-only check never appears); a
-  `<form>` so Enter verifies, with Resend as `type="button"`; a second submit is ignored while
-  one is in flight; `inputMode="numeric"` and `autoComplete="one-time-code"`. No `maxLength`,
+  `<form>` so Enter verifies, with Resend as `type="button"`;  `inputMode="numeric"` and `autoComplete="one-time-code"`. No `maxLength`,
   which would silently cut a pasted code. `TWOFA_CODE_LENGTH` has a comment naming the strings
   to update if the length changes.
 - **Phase 1 leftovers:** sign-up no longer generates `twoFASecret` (Phase 1 status, item 6).
