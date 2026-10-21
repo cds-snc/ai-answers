@@ -2803,6 +2803,67 @@
         "error": "Error",
         "missing": "No result"
       }
+    },
+    "passages": {
+      "title": "Passage retrieval test",
+      "description": "Test the Coveo passage retrieval API on CRA pages before it becomes an answer tool. Requests use the Canada.ca search key on the server.",
+      "singleHeading": "Single query",
+      "queryLabel": "Question",
+      "urlLabel": "CRA page URL (optional)",
+      "urlHint": "With a URL, passages come from that page only. Without one, passages can come from any page. Only canada.ca CRA pages are accepted.",
+      "langLabel": "Language",
+      "maxLabel": "Maximum passages",
+      "send": "Send",
+      "sending": "Sending request…",
+      "singleDone": "Request finished. Passages returned: {count}.",
+      "editRequest": "Edit this request",
+      "rawLabel": "Request body (JSON)",
+      "rawHint": "Sent as-is to the passages endpoint. The server adds the API key.",
+      "rawInvalid": "Enter a valid JSON object.",
+      "sendRaw": "Send edited request",
+      "closeRaw": "Close editor",
+      "resultLine": "Status: {status} · Time: {latency} ms · Passages: {count}",
+      "coveoDetail": "Coveo response:",
+      "score": "Score:",
+      "dateModified": "Date modified:",
+      "textLength": "{count} characters",
+      "requestSent": "Request sent",
+      "rawResponse": "Raw response",
+      "probeHeading": "Probe run",
+      "probeDescription": "Upload a batch input export (question, citationUrl and answer columns). Each question runs once limited to its cited page and once open, at most 2 calls per second.",
+      "fileLabel": "CSV file",
+      "fileLoaded": "Questions loaded: {count}. With a cited URL: {withUrl}.",
+      "fileMissingQuestion": "The file has no question column.",
+      "fileInvalid": "The file couldn't be read as a CSV.",
+      "probeStart": "Start probe run",
+      "probeStop": "Stop",
+      "progress": "Calls finished: {done} of {total}",
+      "probeDone": "Probe run finished. Calls made: {count}.",
+      "probeStopped": "Probe run stopped. Calls made: {count}.",
+      "downloadJson": "Download results (JSON)",
+      "downloadCsv": "Download results (CSV)",
+      "tableCaption": "Probe run results",
+      "col": {
+        "mode": "Mode",
+        "outcome": "Outcome",
+        "passages": "Passages",
+        "citedPage": "Cited page returned",
+        "latency": "Time (ms)"
+      },
+      "mode": {
+        "page": "Cited page",
+        "open": "Open"
+      },
+      "outcomeOk": "OK",
+      "reason": {
+        "out_of_scope": "Not a CRA page. No request was sent.",
+        "http_error": "Coveo returned an error.",
+        "timeout": "The request timed out.",
+        "network_error": "Couldn't reach Coveo.",
+        "unexpected_response": "Coveo's response had no passages list.",
+        "not_configured": "The search endpoint isn't set up for passages on this server.",
+        "request_failed": "The test request failed."
+      }
     }
   }
 }

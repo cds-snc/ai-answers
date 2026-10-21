@@ -50,6 +50,7 @@ import ExperimentalDatasetsPage from './pages/experimental/ExperimentalDatasetsP
 import ExperimentalCreateDatasetPage from './pages/experimental/ExperimentalCreateDatasetPage.js';
 import ExperimentalBatchResultsPage from './pages/experimental/ExperimentalBatchResultsPage.js';
 import ExperimentalSuitePage from './pages/experimental/ExperimentalSuitePage.js';
+import ExperimentalPassagesPage from './pages/experimental/ExperimentalPassagesPage.js';
 import NotFoundPage from './pages/404.js';
 import { useTranslations } from './hooks/useTranslations.js';
 import { translatePathSegments, getPath } from './utils/routes.js';
@@ -482,7 +483,9 @@ export default function App() {
       { path: '/en/experimental/analysis/:batchId', element: <ExperimentalBatchResultsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.results.title' } },
       { path: '/fr/experimental/analyse/:batchId', element: <ExperimentalBatchResultsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.results.title' } },
       { path: '/en/experimental/suites/:datasetId', element: <ExperimentalSuitePage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.suite.title' } },
-      { path: '/fr/experimental/suites-de-tests/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.suite.title' } }
+      { path: '/fr/experimental/suites-de-tests/:datasetId', element: <ExperimentalSuitePage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.suite.title' } },
+      { path: getPath('experimental-passages', 'en'), element: <ExperimentalPassagesPage lang="en" />, roles: ['admin'], handle: { titleKey: 'experimental.passages.title' } },
+      { path: getPath('experimental-passages', 'fr'), element: <ExperimentalPassagesPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'experimental.passages.title' } }
     ];
 
     // sessions routes are defined in the protectedRoutes array above

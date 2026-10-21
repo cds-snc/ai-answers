@@ -75,7 +75,8 @@ our own server code, as standard search does today. This also fits the codebase:
 - Our tools are plain LangChain tools in `agents/tools/`, wired in `AgentFactory.createTools`.
   `ToolTrackingHandler` already records every call (`tool`, `duration`) as a `Tool` document,
   which gives us the batch metrics for free.
-- The client can reuse `canadaCaContextSearch.js`'s retry wrapper and secret masking.
+- The client reuses `canadaCaContextSearch.js`'s secret masking. It has no retries in Phase 1,
+  so the test page's latency is one call; decide on retries when it becomes a tool.
 
 We keep our own `downloadWebPage` rather than Coveo's "fetch", because it reads the **live**
 page (see risk 2). We keep our own search step, because the context node depends on it.
@@ -114,8 +115,8 @@ page (see risk 2). We keep our own search step, because the context node depends
   }
   ```
 
-  For open mode, drop `filter` (or replace it with a filter limiting results to CRA pages;
-  see open question 3).
+  For open mode, drop `filter`. The CRA search page context already limits results to CRA
+  (see [Answered by Coveo](#answered-by-coveo-department-scoping)).
 
 - **Fields:** every indexed URL has fields such as `dateissued`, `datemodified`, `title` and
   `author`. Any of them can come back through `additionalFields`.
@@ -137,9 +138,9 @@ raw mode should pin down which settings matter:
 | Search hub key | `searchHub` | `searchhub` (lowercase) |
 | `maxPassages` | 5 | 20 |
 
-Questions for the test page: does it matter whether we send the CRA search page or the
-Canada.ca one? Is `searchhub` vs `searchHub` just case-insensitive? Is the named pipeline
-required?
+The search page matters: the CRA one scopes results to CRA, the Canada.ca one doesn't (see
+[Answered by Coveo](#answered-by-coveo-department-scoping)). Questions left for the test page:
+is `searchhub` vs `searchHub` just case-insensitive? Is the named pipeline required?
 
 ### From Coveo docs (not yet confirmed for our org)
 
@@ -165,11 +166,13 @@ exercises the real code path and nothing is rewritten when it becomes a tool.
 
 - `retrievePassages({ query, url, lang, maxPassages })`. Builds the confirmed request body.
   With `url`, adds the `@clickableuri==` filter.
-- **Scope check.** A `url`, if given, must be a CRA page (`canada.ca/en/revenue-agency/…` or
-  `canada.ca/fr/agence-revenu/…`; exact prefixes are open question 4). Any other URL returns
-  a clear "not available" result, with no call made.
+- **Scope check.** A `url`, if given, must be a CRA page on `www.canada.ca`, under
+  `/en/revenue-agency/`, `/fr/agence-revenu/`, `/en/services/taxes/` or
+  `/fr/services/impots/`. Any other URL returns a clear "not available" result, with no call
+  made.
 - Uses the CRA search page context (`searchPageUrl`, `searchPageRelativeUrl`) for the
-  language, as in the example.
+  language, as in Coveo's English and French examples. That context is what scopes results
+  to CRA.
 - Returns passages with text, score, `clickableuri`, `title` and `datemodified`, plus the
   request body sent, the HTTP status and the latency (the test page shows these).
 - Explicit `AbortSignal.timeout`. On failure or timeout, returns an empty result with a
@@ -179,7 +182,7 @@ exercises the real code path and nothing is rewritten when it becomes a tool.
   always present, scope check rejects non-CRA URLs, failure and timeout return an empty
   result.
 
-### 1b. Admin endpoint: `api/util/util-passages-test.js`
+### 1b. Admin endpoint: `api/experimental/experimental-passages-test.js`
 
 - `POST`, admin only: `withProtection(handler, authMiddleware, adminMiddleware)`, as
   `util-connectivity.js` does. Registered in `server/server.js`.
@@ -405,20 +408,34 @@ Further reading:
 | How much merging is needed? | The Passages API does passage merging itself. | Nothing for us to build. |
 | Are passages answers? | No. They're nearby text and still need a generative model to form an answer. | The question is whether a passage holds **enough** to skip a download. Phase 1 measures this. |
 
+### Answered by Coveo: department scoping
+
+- **`searchPageUrl` sets the scope.** Conditions in our Coveo query pipeline match on the
+  search page URL and limit results to a department. To search CRA, send a CRA search page;
+  to search all of Canada.ca, send the general one (`/en/sr/srb.html`). We control these
+  rules and can change them.
+- **CRA** is scoped by a `legalname` metadata field, not by URL pattern, so services-level
+  pages such as `canada.ca/en/services/taxes/income-tax.html` are included.
+- **French CRA context** (from Coveo's example): `searchPageUrl`
+  `https://www.canada.ca/fr/agence-revenu/`, `searchPageRelativeUrl`
+  `/fr/agence-revenu/search.html`, `locale: 'fr'` in both places.
+- **For later (IRCC, GAC):**
+  - IRCC: a `searchPageUrl` containing `/en/services/immigration-citizenship/helpcentre/`
+    limits to `cic.gc.ca/english/helpcentre` and `ircc.canada.ca/english/`. French:
+    `/fr/services/immigration-citoyennete/centre-aide/` limits to
+    `cic.gc.ca/francais/centre-aide` and `ircc.canada.ca/francais/`.
+  - GAC: `/en/services/travel/` searches many domains, including parts of
+    `international.canada.ca`, `travel.gc.ca`, CBSA and public health. It would need its own
+    scoping decision.
+
 ### Still open
 
-1. Does `searchPageUrl` need to be the CRA search page, and what's the French one
-   (`/fr/agence-revenu/recherche.html`?)
-2. Is the `Canada public websites - Generic - customContext` pipeline required, and what are
+1. Is the `Canada public websites - Generic - customContext` pipeline required, and what are
    its settings (thesaurus, SE threshold, boost, item count, `numberOfDocumentsToConsider`)?
-3. For open mode, what's the right filter to return CRA pages only (IRCC and GAC are in the
-   passage model too)?
-4. Which CRA URL prefixes exactly are scraped? Only `canada.ca/en/revenue-agency` and
-   `canada.ca/fr/agence-revenu`, or also CRA content under `canada.ca/en/services/taxes`?
-5. Are our SE and CPR models configured for French?
-6. How often is our passage model actually rebuilt?
-7. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
-8. Is the 5 QPS limit shared with production canada.ca search traffic on our key?
+2. Are our SE and CPR models configured for French?
+3. How often is our passage model actually rebuilt?
+4. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
+5. Is the 5 QPS limit shared with production canada.ca search traffic on our key?
 
 ## Out of scope
 
