@@ -41,10 +41,16 @@ extra tokens in the context agent, and no doubled Coveo call on every question.
 
 ## Approach in one paragraph
 
-Build the passage client first and exercise it with a script against real questions and
-URLs, until every part of the request is known to work. Then wrap that same client as a
-LangChain tool, offered only in an experimental batch arm and only for CRA questions. A short prompt block, loaded only with the tool, tells the model when a passage is
-enough to skip a download. Compare against a production baseline on the same dataset.
+Build the passage client first and exercise it from an admin test page against real
+questions and URLs, until every part of the request is known to work. Then wrap that same client as a
+LangChain tool, offered only in an experimental batch arm and only for CRA questions. A
+short prompt block, loaded only with the tool, tells the model when a passage is enough to
+skip a download. Compare against a production baseline on the same dataset.
+
+**Where it runs:** everything, the test page and the tool, runs only in the PR's preview
+deployment, never merged to production during the trial. Previews already have the Canada.ca
+search key (standard search works there), and the passages endpoint is reachable from outside
+the GC VPN (a request without credentials returns `401`, not a timeout).
 
 ### Why not a new workflow
 
@@ -81,7 +87,11 @@ page (see risk 2). We keep our own search step, because the context node depends
 - **Endpoint:** `POST https://employmentandsocialdevelopmentcanadaproduction3vn562uw.org.coveo.com/rest/search/v3/passages/retrieve`
   — the same Coveo org as standard search.
 - **Auth:** our existing bearer token (`CANADA_CA_SEARCH_API_KEY`) works. No new credentials.
-  Add one env var for the URL (e.g. `CANADA_CA_PASSAGES_URI`) next to `CANADA_CA_SEARCH_URI`.
+- **URL:** no new env var. The client builds the passages URL from `CANADA_CA_SEARCH_URI`
+  (same host, path `/rest/search/v3/passages/retrieve`). A new variable would need an SSM
+  parameter and a line in `.github/scripts/create-lambda-function.sh` before previews could
+  see it. If `CANADA_CA_SEARCH_URI` isn't a `*.org.coveo.com` URL, the client throws a clear
+  error rather than calling the wrong place. The test page's first query confirms this.
 - **Passages for one page:** add a `filter` on `@clickableuri`. The same call can either
   return all passages from a page or search for passages only within it. Example request
   from the search team:
@@ -116,8 +126,8 @@ change one thing at a time.
 
 ### Differences between the two examples we've been given
 
-The first example (from before the URL question) and the one above differ. The script should
-pin down which settings matter:
+The first example (from before the URL question) and the one above differ. The test page's
+raw mode should pin down which settings matter:
 
 | | First example | URL-filter example |
 |---|---|---|
@@ -127,7 +137,7 @@ pin down which settings matter:
 | Search hub key | `searchHub` | `searchhub` (lowercase) |
 | `maxPassages` | 5 | 20 |
 
-Questions for the script: does it matter whether we send the CRA search page or the
+Questions for the test page: does it matter whether we send the CRA search page or the
 Canada.ca one? Is `searchhub` vs `searchHub` just case-insensitive? Is the named pipeline
 required?
 
@@ -145,10 +155,11 @@ Docs: [Use the Passage Retrieval API](https://docs.coveo.com/en/o86c8334/),
 [About CPR](https://docs.coveo.com/en/oaie5277/),
 [CPR implementation overview](https://docs.coveo.com/en/oaoe7068/).
 
-## Phase 1 — Passage client and probe script
+## Phase 1 — Passage client and admin test page
 
-The client is built first, as the module the tool will later wrap, so the script tests the
-real code path and nothing is rewritten when it becomes a tool.
+Everything in this phase runs in the PR's preview deployment, through the browser. No local
+setup. The client is built first, as the module the tool will later wrap, so the test page
+exercises the real code path and nothing is rewritten when it becomes a tool.
 
 ### 1a. Client: `agents/tools/canadaCaPassages.js`
 
@@ -159,7 +170,8 @@ real code path and nothing is rewritten when it becomes a tool.
   a clear "not available" result, with no call made.
 - Uses the CRA search page context (`searchPageUrl`, `searchPageRelativeUrl`) for the
   language, as in the example.
-- Returns passages with text, score, `clickableuri`, `title` and `datemodified`.
+- Returns passages with text, score, `clickableuri`, `title` and `datemodified`, plus the
+  request body sent, the HTTP status and the latency (the test page shows these).
 - Explicit `AbortSignal.timeout`. On failure or timeout, returns an empty result with a
   reason. Never throws into the agent.
 - Masks the bearer token in logs, as `canadaCaContextSearch.js` does.
@@ -167,27 +179,63 @@ real code path and nothing is rewritten when it becomes a tool.
   always present, scope check rejects non-CRA URLs, failure and timeout return an empty
   result.
 
-### 1b. Script: `scripts/probe-passage-retrieval.js`
+### 1b. Admin endpoint: `api/util/util-passages-test.js`
 
-Calls the client directly, no pipeline changes. Two uses:
+- `POST`, admin only: `withProtection(handler, authMiddleware, adminMiddleware)`, as
+  `util-connectivity.js` does. Registered in `server/server.js`.
+- Two modes:
+  - **Client mode** (`{ query, url, lang, maxPassages }`): calls `retrievePassages`. This is
+    what the tool will do.
+  - **Raw mode** (`{ body }`): sends an edited request body as-is, with our auth added on the
+    server. This is for trying the open settings one at a time (pipeline, search page,
+    locale, `searchhub` spelling, French) without a redeploy per change. Whatever works gets
+    built into the client.
+- The key never leaves the server. The response returns the body sent, status, latency and
+  the passages (or Coveo's error body).
+- Validate inputs strictly (string query, optional string URL, `maxPassages` 1–20, `body` a plain object), and fail with `400` otherwise.
 
-1. **Smoke test, one call at a time.** `--query "…" [--url …] [--lang en|fr]`
-   prints the request body, the status, latency and each passage (score, URL, title,
-   `datemodified`, text length, first lines of text). This is how we get each piece of the
-   API working: the example body first, then one change at a time (the questions in
+### 1c. Admin page: "Passage retrieval test"
+
+A small admin page under the experimental section (route `experimental-passages`, e.g.
+`experimental/passages` in both languages — "passages" is also the French word), linked from
+the admin page's experimental list. Layered as usual: service → hook → page.
+
+1. **Single query.** A form with question, optional CRA URL, language and `maxPassages`.
+   "Send" runs client mode. The result shows the request body sent, status, latency, and
+   each passage: score, URL, title, `datemodified`, text length and text.
+   **Edit request** copies the body into a JSON text area; "Send raw" runs raw mode. This
+   is how we get each piece of the API working: the example body first, then one change at
+   a time (the questions in
    [Differences](#differences-between-the-two-examples-weve-been-given), French, open mode).
-2. **Probe run over a question file.** `--input <file>` with rows of question, language and
-   (optionally) the URL the answer cited. Throttle to ≤ 2 calls per second
-   (Coveo's limit is 5 QPS, possibly shared with production; see risk 6). Writes a JSON/CSV
-   report.
+2. **Probe run.** Upload a CSV in the same format as our existing batch input exports
+   (e.g. `CRA-T2 EN Golden.csv`): `chatId, createdAt, referringUrl, question, citationUrl,
+   answer`, UTF-8 with a BOM. The page uses `question` as the query and `citationUrl` as the
+   page-mode URL, and carries `answer` through to the results so passages can be judged
+   against it. There's no language column, so the language is picked on the page for the
+   whole file. Leading batch numbering (`01. `) is stripped from the question before sending,
+   because CPR uses the query as sent. Each row runs in both page mode and open mode.
+   The browser sends one call at a time, at most 2 per second (Coveo's limit is 5 QPS,
+   possibly shared with production; see risk 6), and shows progress. "Download results"
+   saves JSON and CSV with every row's question, golden answer, passages, status and
+   latency. Running the loop in the browser keeps each request short, well under the
+   preview Lambda's 300-second timeout.
 
-Inputs for the probe run: ~150 recent questions from interactions matched to CRA, with the
-CRA URL each answer cited. English first; ~30 French once French smoke tests work.
+Admin page conventions still apply: EN/FR locale keys, the labelled "back to admin" `<nav>`,
+`StatusMessage` for errors and progress (never a raw `err.message`), sentence case.
+
+The page exists for the trial. Whether it stays if the tool ever ships is a later decision.
+
+### 1d. What the probe measures
+
+Inputs for the probe run: start with `CRA-T2 EN Golden.csv` (14 golden CRA questions, all
+citing `canada.ca/en/revenue-agency` pages), then a larger chat export of ~150 recent CRA
+questions in the same format. English first; ~30 French once French single queries work.
+Answer rate is judged by reading the downloaded passages against each row's answer.
 
 | Measure | Question it answers |
 |---|---|
-| **Page-mode answer rate**: for ~30 questions with known answers, do the passages from the cited URL hold **enough** to answer without downloading the page? | Can page mode replace a download? (Coveo is clear passages are nearby text, not answers.) |
-| **Open-mode answer rate**: same ~30, question only | Does open mode find the right page on its own? |
+| **Page-mode answer rate**: for the golden questions, do the passages from the cited URL hold **enough** to answer without downloading the page? | Can page mode replace a download? (Coveo is clear passages are nearby text, not answers.) |
+| **Open-mode answer rate**: same questions, no URL. The results flag whether any passage came from the row's `citationUrl` | Does open mode find the right page on its own? |
 | **Coverage**: share of cited URLs that return ≥ 1 passage | Are the pages we cite actually in the passage model? |
 | **Latency**: p50/p95 per call, both modes | Is a passage call clearly cheaper than a download? |
 | **Size**: tokens per response at `maxPassages` 5, 10 and 20, vs a typical `downloadWebPage` result | Token cost, and a sensible default `maxPassages` |
@@ -303,7 +351,7 @@ The tool arm passes if, compared with the baseline:
 6. **Rate limit.** Coveo allows 5 queries per second, and our key may share that with
    production canada.ca search traffic. The tool adds one call per use. Keep
    `BATCH_CONCURRENCY` at its default (2), run arms one after another, and throttle the
-   script (≤ 2 calls/second). Watch for 429 responses in batch logs.
+   test page's probe run (≤ 2 calls/second). Watch for 429 responses in batch logs.
 7. **French.** Coveo supports French in beta. If Phase 1 shows French doesn't work, the tool
    is English only for the trial, which can't ship as is.
 
@@ -351,7 +399,7 @@ Further reading:
 | Is CPR English-only? | Other languages are "beta", but many customers run them in production. | Phase 1 tests French. |
 | Full Canada.ca index or a subset? | Either. For this trial, CRA, IRCC and GAC are scraped. | Tool scope is CRA only, to keep testing simple. |
 | How often is the passage model refreshed? | It can be updated daily. | Passages can be about a day behind the crawl (risk 2). |
-| Latency and rate limits? | Similar to the Search API. **5 queries per second**. | Throttle the script; keep batch concurrency low (risk 6). |
+| Latency and rate limits? | Similar to the Search API. **5 queries per second**. | Throttle the probe run; keep batch concurrency low (risk 6). |
 | Can we get passages for one URL? | Yes, with a `filter` on `@clickableuri`: all passages from a page, or a search within it. | This is page mode, the main mode of the tool. |
 | Which `additionalFields`? | Any document field. | Settled. |
 | How much merging is needed? | The Passages API does passage merging itself. | Nothing for us to build. |
