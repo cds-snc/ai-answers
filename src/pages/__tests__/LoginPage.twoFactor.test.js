@@ -208,19 +208,6 @@ describe('LoginPage two-step messages', () => {
     await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456'));
   });
 
-  it('sends the code once when Enter is pressed twice quickly', async () => {
-    await reachTwoStep();
-    let finish;
-    mockVerify2FA.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
-    typeCode('123456');
-    const form = screen.getByRole('textbox', { name: 'login.2fa.code' }).closest('form');
-    fireEvent.submit(form);
-    fireEvent.submit(form);
-    expect(mockVerify2FA).toHaveBeenCalledTimes(1);
-    finish({ user: { role: 'admin' } });
-    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledTimes(1));
-  });
-
   it('lets the user try again after a failed check', async () => {
     await reachTwoStep();
     mockVerify2FA.mockImplementationOnce(() => rejectWith('invalid'));

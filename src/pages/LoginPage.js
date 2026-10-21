@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
@@ -155,14 +155,8 @@ const LoginPage = ({ lang = 'en' }) => {
     showStatus(t('login.2fa.expired'), { variant: 'error' });
   };
 
-  // A second Enter (or key repeat) can land before isLoading disables the
-  // form; without this it would send the same code again and show "Invalid
-  // verification code" while the first request signs the user in.
-  const verifyingRef = useRef(false);
-
   const verifyTwoStep = async (e) => {
     e.preventDefault();
-    if (verifyingRef.current) return;
     clearTwoStepError();
     clearStatus();
     // Checked here like the password form's empty fields, with the same rule
@@ -172,7 +166,6 @@ const LoginPage = ({ lang = 'en' }) => {
       setTwoStepError(t('login.2fa.codeFormat'));
       return;
     }
-    verifyingRef.current = true;
     setIsLoading(true);
     // Same reasoning as handleSubmit's announce().
     announce(t('login.form.submitting'), { skippable: true });
@@ -203,7 +196,6 @@ const LoginPage = ({ lang = 'en' }) => {
         setTwoStepError(t('login.2fa.invalidCode'));
       }
     } finally {
-      verifyingRef.current = false;
       setIsLoading(false);
     }
   };

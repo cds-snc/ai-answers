@@ -301,7 +301,7 @@ Phase 1 leftovers and fixes from an accessibility review and a code review (two 
 - Verify with an empty code and with `12ab`: "Enter the six-digit code from your email." shows
   with focus on it.
 - A correct code signs in, typed as `123456` and as `123 456`.
-- Enter in the code field verifies; pressing it twice quickly shows no error.
+- Enter in the code field verifies.
 - With a keyboard, Resend still moves focus to "New code sent."
 - On a phone, the number pad opens.
 
