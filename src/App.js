@@ -19,6 +19,7 @@ import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@g
 import StatusMessage from './components/admin/StatusMessage.js';
 import { useRouteChangeFocus } from './hooks/useRouteChangeFocus.js';
 import { usePageMetadata } from './hooks/usePageMetadata.js';
+import { useLangToggleLang } from './hooks/useLangToggleLang.js';
 import { installPagingFocusGuard } from './utils/admin/dataTableAccessibility.js';
 import './styles/global.css';
 import './styles/admin.css';
@@ -267,6 +268,9 @@ const AppLayout = () => {
   useLayoutEffect(() => {
     document.documentElement.lang = currentLang;
   }, [currentLang]);
+
+  // Puts lang on the header's language link, which GC DS leaves off.
+  useLangToggleLang(currentLang);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
