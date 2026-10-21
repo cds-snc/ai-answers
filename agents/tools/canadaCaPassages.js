@@ -8,7 +8,9 @@ import { maskSecretValue } from './utils/searchUtils.js';
 // No retries on purpose: the test page measures latency per call, and a hidden
 // retry would blur it. Revisit when this becomes an agent tool.
 
-const PASSAGES_PATH = '/rest/search/v3/passages/retrieve';
+// The Coveo org endpoint confirmed by the Canada.ca search team; not a secret. It can't be
+// built from CANADA_CA_SEARCH_URI: standard search goes through a proxy on apps.canada.ca.
+const PASSAGES_ENDPOINT = 'https://employmentandsocialdevelopmentcanadaproduction3vn562uw.org.coveo.com/rest/search/v3/passages/retrieve';
 const PASSAGES_REQUEST_TIMEOUT_MS = 15000;
 export const MAX_PASSAGES_LIMIT = 20;
 
@@ -31,24 +33,6 @@ const SEARCH_PAGES = {
 };
 
 const ADDITIONAL_FIELDS = ['clickableuri', 'title', 'datemodified', 'dateissued'];
-
-/**
- * The passages endpoint is on the same Coveo org host as standard search, so it is
- * built from CANADA_CA_SEARCH_URI rather than a new env var (previews already have it).
- * @returns {string} the passages URL
- * @throws if CANADA_CA_SEARCH_URI is missing or isn't a Coveo org URL
- */
-export function getPassagesEndpoint() {
-    const searchUri = process.env.CANADA_CA_SEARCH_URI;
-    if (!searchUri) {
-        throw new Error('CANADA_CA_SEARCH_URI is not set');
-    }
-    const { protocol, hostname, origin } = new URL(searchUri);
-    if (protocol !== 'https:' || !hostname.endsWith('.org.coveo.com')) {
-        throw new Error(`CANADA_CA_SEARCH_URI host is not a Coveo org (${hostname})`);
-    }
-    return `${origin}${PASSAGES_PATH}`;
-}
 
 /**
  * @param {string} url
@@ -130,19 +114,13 @@ export function extractPassages(response) {
 export async function sendPassagesRequest(requestBody) {
     const base = { requestBody, status: null, latencyMs: null, response: null, passages: [] };
 
-    let endpoint;
-    try {
-        endpoint = getPassagesEndpoint();
-    } catch (error) {
-        return { ...base, ok: false, reason: 'not_configured', detail: error.message };
-    }
     if (!process.env.CANADA_CA_SEARCH_API_KEY) {
         return { ...base, ok: false, reason: 'not_configured', detail: 'CANADA_CA_SEARCH_API_KEY is not set' };
     }
 
     const started = Date.now();
     try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(PASSAGES_ENDPOINT, {
             method: 'POST',
             signal: AbortSignal.timeout(PASSAGES_REQUEST_TIMEOUT_MS),
             headers: {

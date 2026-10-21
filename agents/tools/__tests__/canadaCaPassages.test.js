@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     buildPassagesRequest,
-    getPassagesEndpoint,
     isCraUrl,
     retrievePassages,
     sendPassagesRequest,
@@ -28,7 +27,6 @@ describe('canadaCaPassages', () => {
 
     beforeEach(() => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
-        process.env.CANADA_CA_SEARCH_URI = 'https://exampleorg.org.coveo.com/rest/search/v2';
         process.env.CANADA_CA_SEARCH_API_KEY = 'secret-key';
         fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
@@ -37,22 +35,6 @@ describe('canadaCaPassages', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.restoreAllMocks();
-    });
-
-    describe('getPassagesEndpoint', () => {
-        it('builds the passages URL on the search host', () => {
-            expect(getPassagesEndpoint()).toBe('https://exampleorg.org.coveo.com/rest/search/v3/passages/retrieve');
-        });
-
-        it('throws when the search URI is not a Coveo org', () => {
-            process.env.CANADA_CA_SEARCH_URI = 'https://search.example.com/rest/search/v2';
-            expect(() => getPassagesEndpoint()).toThrow(/not a Coveo org/);
-        });
-
-        it('throws when the search URI is missing', () => {
-            delete process.env.CANADA_CA_SEARCH_URI;
-            expect(() => getPassagesEndpoint()).toThrow(/not set/);
-        });
     });
 
     describe('isCraUrl', () => {
@@ -127,7 +109,7 @@ describe('canadaCaPassages', () => {
             }]);
 
             const [endpoint, init] = fetchMock.mock.calls[0];
-            expect(endpoint).toBe('https://exampleorg.org.coveo.com/rest/search/v3/passages/retrieve');
+            expect(endpoint).toBe('https://employmentandsocialdevelopmentcanadaproduction3vn562uw.org.coveo.com/rest/search/v3/passages/retrieve');
             expect(init.headers.Authorization).toBe('Bearer secret-key');
         });
 
@@ -171,8 +153,8 @@ describe('canadaCaPassages', () => {
             expect(result.response).toEqual({ results: [] });
         });
 
-        it.each(['CANADA_CA_SEARCH_URI', 'CANADA_CA_SEARCH_API_KEY'])('returns not_configured without calling Coveo when %s is unset', async (name) => {
-            delete process.env[name];
+        it('returns not_configured without calling Coveo when the key is unset', async () => {
+            delete process.env.CANADA_CA_SEARCH_API_KEY;
             const result = await sendPassagesRequest({ query: 'q' });
             expect(result).toMatchObject({ ok: false, reason: 'not_configured' });
             expect(fetchMock).not.toHaveBeenCalled();

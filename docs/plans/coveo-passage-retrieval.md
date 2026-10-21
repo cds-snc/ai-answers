@@ -86,13 +86,13 @@ page (see risk 2). We keep our own search step, because the context node depends
 ### Confirmed by the Canada.ca search team
 
 - **Endpoint:** `POST https://employmentandsocialdevelopmentcanadaproduction3vn562uw.org.coveo.com/rest/search/v3/passages/retrieve`
-  — the same Coveo org as standard search.
+  — the Coveo org behind standard search. Our standard search calls it through a proxy on
+  `apps.canada.ca`; the passages client calls Coveo directly.
 - **Auth:** our existing bearer token (`CANADA_CA_SEARCH_API_KEY`) works. No new credentials.
-- **URL:** no new env var. The client builds the passages URL from `CANADA_CA_SEARCH_URI`
-  (same host, path `/rest/search/v3/passages/retrieve`). A new variable would need an SSM
-  parameter and a line in `.github/scripts/create-lambda-function.sh` before previews could
-  see it. If `CANADA_CA_SEARCH_URI` isn't a `*.org.coveo.com` URL, the client throws a clear
-  error rather than calling the wrong place. The test page's first query confirms this.
+- **URL:** a constant in the client, not an env var. It isn't a secret, and it can't be
+  built from `CANADA_CA_SEARCH_URI`: in the preview that points at a proxy on
+  `apps.canada.ca`, not at Coveo. A new env var would need an SSM parameter and a line in
+  `.github/scripts/create-lambda-function.sh` before previews could see it.
 - **Passages for one page:** add a `filter` on `@clickableuri`. The same call can either
   return all passages from a page or search for passages only within it. Example request
   from the search team:
