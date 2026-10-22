@@ -18,6 +18,8 @@ export const MAX_PASSAGES_LIMIT = 20;
 // URL, and that includes the services-level tax pages (Coveo engineer, see the plan).
 const CRA_HOSTNAME = 'www.canada.ca';
 const CRA_PATH_PREFIXES = ['/en/revenue-agency/', '/fr/agence-revenu/', '/en/services/taxes/', '/fr/services/impots/'];
+// The top page of each folder sits outside it (taxes.html, not taxes/index.html).
+const CRA_TOP_PAGES = CRA_PATH_PREFIXES.map((prefix) => `${prefix.slice(0, -1)}.html`);
 
 const SEARCH_PAGES = {
     en: {
@@ -43,7 +45,7 @@ export function isCraUrl(url) {
         const { protocol, hostname, pathname } = new URL(url);
         return protocol === 'https:'
             && hostname === CRA_HOSTNAME
-            && CRA_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+            && (CRA_TOP_PAGES.includes(pathname) || CRA_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix)));
     } catch {
         return false;
     }
