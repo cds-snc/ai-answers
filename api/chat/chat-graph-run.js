@@ -4,14 +4,28 @@ import ConversationIntegrityService from '../../services/ConversationIntegritySe
 import { withOptionalUser } from '../../middleware/auth.js';
 import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
-import { MODEL_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
+import { MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
 import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/searchProviders.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
+import dbConnect from '../db/db-connect.js';
+import { Batch } from '../../models/batch.js';
+import { normalizeObjectIdString } from '../util/db-query.js';
 
 const REQUIRED_METHOD = 'POST';
 const DEFAULT_CHAT_TRANSPORT = 'sse';
 const NDJSON_CHAT_TRANSPORT = 'ndjson';
+
+// The batch a batch question belongs to, or null when the signed-in user
+// can't run it (not theirs, not found, signed out). Admins can run any batch.
+async function findRunnableBatch(batchId, user) {
+  batchId = normalizeObjectIdString(batchId);
+  if (!batchId || !user) return null;
+  await dbConnect();
+  const batch = await Batch.findById(batchId).lean();
+  if (!batch) return null;
+  return user.role === 'admin' || batch.createdBy === user.userId ? batch : null;
+}
 
 function normalizeChatTransport(value) {
   return value === NDJSON_CHAT_TRANSPORT ? NDJSON_CHAT_TRANSPORT : DEFAULT_CHAT_TRANSPORT;
@@ -144,7 +158,7 @@ async function handler(req, res) {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
-  const { graph: clientGraph, input } = req.body || {};
+  const { graph: clientGraph, batchId, input } = req.body || {};
 
   if (typeof input !== 'object' || input === null) {
     return res.status(400).json({ message: 'input must be an object' });
@@ -171,7 +185,20 @@ async function handler(req, res) {
   // Only admins get the workflow/model/search choices in Options
   // (ChatOptions.js) - everyone else, partners included, runs the defaults.
   const isAdmin = req.user?.role === 'admin';
-  if (isAdmin) {
+
+  // Batch questions run with the settings saved on their batch - partners
+  // included - so results always match what the batch is labelled with.
+  let batch = null;
+  if (batchId != null) {
+    batch = await findRunnableBatch(batchId, req.user);
+    if (!batch) {
+      return res.status(403).json({ message: 'Batch not found' });
+    }
+  }
+
+  if (batch) {
+    graphName = WORKFLOW_VALUES.includes(batch.workflow) ? batch.workflow : defaultWorkflow;
+  } else if (isAdmin) {
     graphName = (typeof clientGraph === 'string' && clientGraph.trim())
       ? clientGraph.trim()
       : defaultWorkflow;
@@ -189,7 +216,10 @@ async function handler(req, res) {
   const configuredSearchProvider = resolveSearchProvider(
     SettingsService.get('search.default')
   );
-  if (!isAdmin) {
+  if (batch) {
+    input.selectedAI = MODEL_VALUES.includes(batch.aiProvider) ? batch.aiProvider : defaultModel;
+    input.searchProvider = resolveSearchProvider(batch.searchProvider, configuredSearchProvider);
+  } else if (!isAdmin) {
     // Non-admins: forced to use the system default model and search provider
     input.selectedAI = defaultModel;
     input.searchProvider = configuredSearchProvider;
