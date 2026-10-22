@@ -46,13 +46,13 @@ describe('passagesProbe', () => {
 
     it('writes one CSV line per call with the passages', () => {
         const csv = probeResultsToCsv([{
-            question: 'Q', citationUrl: CRA_URL, goldenAnswer: 'A', lang: 'en', maxPassages: 10, mode: 'page', ok: true, status: 200, latencyMs: 120,
+            question: 'Q', citationUrl: CRA_URL, goldenAnswer: 'A', lang: 'en', maxPassages: 10, mode: 'page', ok: true, status: 200, retries: 1, latencyMs: 120,
             passages: [{ score: 0.8, url: CRA_URL, text: 'Passage, with "quotes"' }],
         }]);
         const [header, row] = parseDelimitedText(csv);
         expect(header[0]).toBe('question');
         expect(row).toEqual([
-            'Q', CRA_URL, 'A', 'en', '10', 'page', 'true', '', '', '200', '120', '1', 'true', `[0.8] ${CRA_URL}\nPassage, with "quotes"`,
+            'Q', CRA_URL, 'A', 'en', '10', 'page', 'true', '', '', '200', '1', '120', '1', 'true', `[0.8] ${CRA_URL}\nPassage, with "quotes"`,
         ]);
     });
 });

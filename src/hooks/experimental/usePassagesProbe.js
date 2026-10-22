@@ -2,9 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { PassagesTestClientService } from '../../services/experimental/PassagesTestClientService.js';
 import { probeModesForRow } from '../../utils/experimental/passagesProbe.js';
 
-// Coveo allows 5 queries per second, possibly shared with production canada.ca
-// search, so the probe starts at most 2 calls per second.
-export const MIN_CALL_INTERVAL_MS = 500;
+// Coveo allows 5 queries per second, shared with production canada.ca search: at 2 calls
+// per second the probe still got 429s, so it starts at most 1 call per second.
+export const MIN_CALL_INTERVAL_MS = 1000;
+
+// After a 429, wait and try again, longer each time. Retries are counted in the results,
+// so the probe shows how often we hit the limit.
+export const RATE_LIMIT_WAITS_MS = [2000, 5000, 10000];
 
 // Results the server returns without calling Coveo, so no pacing wait is needed.
 const NO_CALL_REASONS = ['out_of_scope', 'not_configured'];
@@ -37,23 +41,33 @@ export function usePassagesProbe() {
         let done = 0;
         for (const { row, mode } of calls) {
             if (stopRef.current) break;
-            const started = Date.now();
+            let started;
             let result;
-            try {
-                result = await PassagesTestClientService.runQuery({
-                    query: row.question,
-                    url: mode === 'page' ? row.url : undefined,
-                    lang,
-                    maxPassages,
-                });
-            } catch (err) {
-                // Keep the endpoint's status and code (e.g. 400 INVALID_QUERY) so the
-                // results say why, not just that it failed.
-                result = { ok: false, reason: 'request_failed', status: err.status ?? null, detail: err.code || null, passages: [] };
+            let retries = 0;
+            for (;;) {
+                started = Date.now();
+                try {
+                    result = await PassagesTestClientService.runQuery({
+                        query: row.question,
+                        url: mode === 'page' ? row.url : undefined,
+                        lang,
+                        maxPassages,
+                    });
+                } catch (err) {
+                    // Keep the endpoint's status and code (e.g. 400 INVALID_QUERY) so the
+                    // results say why, not just that it failed.
+                    result = { ok: false, reason: 'request_failed', status: err.status ?? null, detail: err.code || null, passages: [] };
+                }
+                const rateLimited = result.reason === 'http_error' && result.status === 429;
+                if (!rateLimited || retries >= RATE_LIMIT_WAITS_MS.length || stopRef.current) break;
+                await wait(RATE_LIMIT_WAITS_MS[retries]);
+                retries += 1;
+                if (stopRef.current) break;
             }
             done += 1;
             setResults((prev) => [...prev, {
                 ...result,
+                retries,
                 question: row.question,
                 citationUrl: row.url,
                 goldenAnswer: row.answer,

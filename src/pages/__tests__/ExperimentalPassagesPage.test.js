@@ -119,4 +119,19 @@ describe('ExperimentalPassagesPage', () => {
 
         expect(await screen.findByText('INVALID_QUERY', {}, { timeout: 3000 })).toBeTruthy();
     });
+
+    it('shows the Coveo status and message when a probe call gets an HTTP error', async () => {
+        mocks.runQuery.mockResolvedValue({
+            ok: false, reason: 'http_error', status: 503, detail: 'Service unavailable', passages: [],
+        });
+        render(<ExperimentalPassagesPage lang="en" />);
+
+        const file = { name: 'probe.csv', text: async () => 'question\nHow do I appeal?\n' };
+        fireEvent.change(screen.getByLabelText('experimental.passages.fileLabel'), { target: { files: [file] } });
+        const start = screen.getByRole('button', { name: 'experimental.passages.probeStart' });
+        await waitFor(() => expect(start.disabled).toBe(false));
+        fireEvent.click(start);
+
+        expect(await screen.findByText('503 Service unavailable', {}, { timeout: 3000 })).toBeTruthy();
+    });
 });

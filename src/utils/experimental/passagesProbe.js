@@ -43,7 +43,7 @@ export function probeModesForRow(row) {
 
 const CSV_HEADERS = [
     'question', 'citationUrl', 'goldenAnswer', 'lang', 'maxPassages', 'mode', 'ok', 'reason', 'detail',
-    'status', 'latencyMs', 'passageCount', 'citedPageReturned', 'passages',
+    'status', 'retries', 'latencyMs', 'passageCount', 'citedPageReturned', 'passages',
 ];
 
 function formatPassagesForCsv(passages) {
@@ -65,6 +65,7 @@ export function probeResultsToCsv(results) {
         result.reason || '',
         result.detail || '',
         result.status ?? '',
+        result.retries ?? '',
         result.latencyMs ?? '',
         (result.passages || []).length,
         citedPageReturned(result.passages, result.citationUrl) ? 'true' : 'false',

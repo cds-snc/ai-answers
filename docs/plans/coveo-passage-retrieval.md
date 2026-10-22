@@ -358,7 +358,11 @@ The tool arm passes if, compared with the baseline:
 6. **Rate limit.** Coveo allows 5 queries per second, and our key may share that with
    production canada.ca search traffic. The tool adds one call per use. Keep
    `BATCH_CONCURRENCY` at its default (2), run arms one after another, and throttle the
-   test page's probe run (≤ 2 calls/second). Watch for 429 responses in batch logs.
+   test page's probe run. Watch for 429 responses in batch logs.
+   **Confirmed in Phase 1:** at 2 calls/second the probe got 429s on 5 of its 14
+   open-mode calls, so the limit is shared with other traffic. The probe now makes at most 1
+   call/second and retries a 429 after 2, 5 and 10 seconds, recording the retry count. The
+   Phase 2 tool will need its own 429 handling, since a batch run calls it in parallel.
 7. **French.** Coveo supports French in beta. Phase 1 testing showed French works in both
    modes, but see the next risk.
 8. **Pages missing from the index.** In Phase 1 testing, page mode returned 0 passages for a
@@ -447,7 +451,8 @@ Further reading:
 2. Are our SE and CPR models configured for French?
 3. How often is our passage model actually rebuilt?
 4. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
-5. Is the 5 QPS limit shared with production canada.ca search traffic on our key?
+5. The 5 QPS limit looks shared with production canada.ca search (we got 429s at 2 calls
+   per second). Can our key get its own limit, or a higher one, for the trial?
 6. Why is `.../compte-epargne-libre-impot/cotiser.html` missing from the passage index when
    it's live, and is French coverage thinner than English? Why do cancelled pages
    ("ANNULÉ") rank first, and can the pipeline filter them out?
