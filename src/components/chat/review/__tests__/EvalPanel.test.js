@@ -38,7 +38,7 @@ vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, onClick, disabled, ...rest }) => (
     <button onClick={onClick} disabled={disabled} {...rest}>{children}</button>
   ),
-  GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
+  GcdsLink: ({ children, href, lang }) => <a href={href} lang={lang}>{children}</a>,
   GcdsIcon: ({ name }) => <span aria-hidden="true" data-icon={name} />,
 }));
 
@@ -73,6 +73,18 @@ describe('EvalPanel', () => {
     const label = screen.getByText('Processed');
     expect(label.tagName).toBe('DT');
     expect(screen.getAllByText('yes')[0].tagName).toBe('DD');
+  });
+
+  // The link's lang only drives GcdsLink's "(opens in a new tab)" hint, which
+  // follows the admin language, as do the review panels it opens.
+  it('chat ID links keep the /en route and carry the admin language', () => {
+    render(<EvalPanel message={buildMessage({ ...baseAutoEval, fallbackSourceChatId: 'chat-9' })} t={mockT} lang="fr" />);
+    const links = screen.getAllByText('chat-9');
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach((link) => {
+      expect(link.getAttribute('lang')).toBe('fr');
+      expect(link.getAttribute('href')).toBe('/en?chat=chat-9&review=1&adminLang=fr');
+    });
   });
 
   // The audit's alternative fix (bold labels, not headings) is what shipped,
