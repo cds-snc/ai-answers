@@ -14,6 +14,9 @@ export const MOCK_METRICS = {
   totalOutputTokens: 284610,
   totalOutputTokensEn: 197820,
   totalOutputTokensFr: 86790,
+  // eligible = questions answered by the eval-informed workflow.
+  // firstDate after firstDataDate shows the card's "From {date} only" label.
+  evalInformed: { eligible: { total: 312, en: 218, fr: 94 }, informed: { total: 58, en: 41, fr: 17 }, firstDate: '2026-08-04T14:00:00.000Z' },
   responseTime: { count: 347, median: 2340, p90: 4120, p95: 5680, max: 12440, maxChatId: 'mock-chat-id' },
   sessionsByQuestionCount: {
     singleQuestion: { total: 134 },
@@ -140,16 +143,22 @@ export const MOCK_METRICS = {
   // interactionId is a Mongo ObjectId (interactions._id) — real-length IDs so
   // the mock preview matches production layout/wrapping.
   contentIssueChats: [
-    { chatId: 'd9a9ae8f-f693-497c-b25a-b836f679f4f8', interactionId: '1c9d435778754754f0550a06', pageLanguage: 'en', createdAt: '2026-08-08T14:22:00Z', status: 'hasError' },
-    { chatId: 'ff8e12ab-1d6a-419e-b105-4a7cf73103af', interactionId: '8c5d238682cb43c288f7853b', pageLanguage: 'fr', createdAt: '2026-08-07T10:05:00Z', status: 'hasError' },
-    { chatId: '6a04a7c6-3f8b-4d3f-bca8-b156df9f7477', interactionId: '408cf01f3cac4d9a2792c19f', pageLanguage: 'en', createdAt: '2026-08-05T16:41:00Z', status: 'hasError' },
-    { chatId: 'ecd0beb5-1f50-4a55-8a7e-bbce16027555', interactionId: 'a754d771e912da938be8b756', pageLanguage: 'en', createdAt: '2026-08-08T09:12:00Z', status: 'needsImprovement' },
-    { chatId: 'e59a72ef-2d4e-4dfb-93cb-fe7456a671c5', interactionId: '31fd86f4a38c94d0f420dcd9', pageLanguage: 'en', createdAt: '2026-08-06T13:37:00Z', status: 'needsImprovement' },
-    { chatId: '8498df91-7fd9-4f4c-a628-d61fcf95d696', interactionId: '5e6c6e46a95cd3ed7a239449', pageLanguage: 'fr', createdAt: '2026-08-04T11:50:00Z', status: 'needsImprovement' },
-    { chatId: '39724676-4c16-4e60-9b93-b2745abe20cd', interactionId: '08bd7b1d662aa3a55baf29fb', pageLanguage: 'en', createdAt: '2026-08-02T08:29:00Z', status: 'needsImprovement' },
+    { chatId: 'd9a9ae8f-f693-497c-b25a-b836f679f4f8', interactionId: '1c9d435778754754f0550a06', pageLanguage: 'en', questionNumber: 2, createdAt: '2026-08-08T14:22:00Z', status: 'hasError' },
+    { chatId: 'ff8e12ab-1d6a-419e-b105-4a7cf73103af', interactionId: '8c5d238682cb43c288f7853b', pageLanguage: 'fr', questionNumber: 1, createdAt: '2026-08-07T10:05:00Z', status: 'hasError' },
+    { chatId: '6a04a7c6-3f8b-4d3f-bca8-b156df9f7477', interactionId: '408cf01f3cac4d9a2792c19f', pageLanguage: 'en', questionNumber: 3, createdAt: '2026-08-05T16:41:00Z', status: 'hasError' },
+    { chatId: 'ecd0beb5-1f50-4a55-8a7e-bbce16027555', interactionId: 'a754d771e912da938be8b756', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-08T09:12:00Z', status: 'needsImprovement' },
+    { chatId: 'e59a72ef-2d4e-4dfb-93cb-fe7456a671c5', interactionId: '31fd86f4a38c94d0f420dcd9', pageLanguage: 'en', questionNumber: 2, createdAt: '2026-08-06T13:37:00Z', status: 'needsImprovement' },
+    { chatId: '8498df91-7fd9-4f4c-a628-d61fcf95d696', interactionId: '5e6c6e46a95cd3ed7a239449', pageLanguage: 'fr', questionNumber: 1, createdAt: '2026-08-04T11:50:00Z', status: 'needsImprovement' },
+    { chatId: '39724676-4c16-4e60-9b93-b2745abe20cd', interactionId: '08bd7b1d662aa3a55baf29fb', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-02T08:29:00Z', status: 'needsImprovement' },
   ],
   // Matches expertScored.harmful.total above (1).
   harmfulChats: [
-    { chatId: 'e19496bb-c253-4320-9c1f-6bbdbc73a97e', interactionId: '3f94b153ecd6fd60b20d4cab', pageLanguage: 'en', createdAt: '2026-08-07T15:03:00Z' },
+    { chatId: 'e19496bb-c253-4320-9c1f-6bbdbc73a97e', interactionId: '3f94b153ecd6fd60b20d4cab', pageLanguage: 'en', questionNumber: 2, createdAt: '2026-08-07T15:03:00Z' },
+  ],
+  // Most recent sample only (server caps at 20), not all evalInformed.total.
+  evalInformedChats: [
+    { chatId: '2b7f0c1e-6d4a-4f2b-9a51-3c8e7d1f0a42', interactionId: '6f1a2b3c4d5e6f7a8b9c0d1e', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-08T12:10:00Z' },
+    { chatId: '9c3e5a7b-1f2d-4e6a-8b0c-5d7f9a1b3c5e', interactionId: '7a2b3c4d5e6f7a8b9c0d1e2f', pageLanguage: 'fr', questionNumber: 3, createdAt: '2026-08-07T09:44:00Z' },
+    { chatId: '4d6f8a0b-2c4e-4a6b-9d1f-3e5a7c9b1d3f', interactionId: '8b3c4d5e6f7a8b9c0d1e2f3a', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-06T15:18:00Z' },
   ],
 };

@@ -17,6 +17,8 @@ import { useSearchAnnouncement } from '../../hooks/admin/useSearchAnnouncement.j
 import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildCountPctRow, getCountPctColumns } from '../../utils/metrics/countPctTable.js';
 import { useErrorStatus } from '../../hooks/useErrorStatus.js';
+import { getEvalInformedFromDate } from '../../utils/dashboard/evalInformedRate.js';
+import { formatLocaleDate } from '../../utils/formatLocaleDate.js';
 
 DataTable.use(DT);
 
@@ -72,6 +74,12 @@ const initialMetricsState = {
     'clarifying-question': { total: 0, en: 0, fr: 0 },
     'pt-muni': { total: 0, en: 0, fr: 0 },
     'not-gc': { total: 0, en: 0, fr: 0 }
+  },
+  firstDataDate: null,
+  evalInformed: {
+    eligible: { total: 0, en: 0, fr: 0 },
+    informed: { total: 0, en: 0, fr: 0 },
+    firstDate: null
   },
   expertScored: {
     total: { total: 0, en: 0, fr: 0 },
@@ -294,6 +302,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const accuracyStatus = useSectionErrorStatus(errorState.expert || errorState.ai || errorState.usage);
   const sessionsStatus = useSectionErrorStatus(errorState.session);
   const questionTypesStatus = useSectionErrorStatus(errorState.usage);
+  const evalInformedStatus = useSectionErrorStatus(errorState.usage);
+  const evalInformedFromDate = getEvalInformedFromDate(metrics.evalInformed.firstDate, metrics.firstDataDate);
   const expertScoredStatus = useSectionErrorStatus(errorState.expert);
   const aiScoredStatus = useSectionErrorStatus(errorState.ai);
   const publicFbStatus = useSectionErrorStatus(errorState.publicFb);
@@ -589,6 +599,51 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   }}
                 >
                   <caption className="sr-only">{t('metrics.dashboard.aiScored.title')}</caption>
+                </DataTable>
+              </div>
+            </SectionWrapper>
+
+            {/* Eval-informed answers: share of questions where past
+                expert evaluations were added to the AI's context. Out of
+                questions answered by the eval-informed workflow, not all
+                questions — per language too (metrics-usage.js). Same rule
+                and footnote trigger as the partner dashboard's
+                card: only when the range starts before that workflow. The
+                asterisks are visual only; the footnote is read right after
+                the heading. */}
+            <SectionWrapper
+              isLoading={loadingState.usage}
+              title={(
+                <>
+                  {t('admin.common.evalInformedAnswers')}
+                  {evalInformedFromDate && <span aria-hidden="true">*</span>}
+                </>
+              )}
+              status={evalInformedStatus}
+              sectionKey="evalInformed"
+              t={t}
+              renderStatusMessage={renderStatusMessage}
+            >
+              {evalInformedFromDate && (
+                <p className="dashboard-footnote font-size-text-xxs-nr mb-300">
+                  <span aria-hidden="true">* </span>
+                  {t('metrics.dashboard.evalInformed.from')
+                    .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
+                </p>
+              )}
+              <p className="mb-300">{t('metrics.dashboard.evalInformed.note')}</p>
+              <div>
+                <DataTable
+                  data={[
+                    // percentage: 100 override — see the comment on Table 1's
+                    // "Total questions" row further up.
+                    { ...buildCountPctRow(t('metrics.dashboard.evalInformed.eligible'), metrics.evalInformed.eligible, metrics.evalInformed.eligible.total), percentage: 100 },
+                    buildCountPctRow(t('admin.common.evalInformedAnswers'), metrics.evalInformed.informed, metrics.evalInformed.eligible)
+                  ]}
+                  columns={getCountPctColumns(t, fmtN, fmtPct)}
+                  options={{ paging: false, searching: false, ordering: false, info: false, stripe: true, initComplete: function () { setColumnHeaderScope(this.api()); }, className: 'display zebra-stable-on-hover', language: dataTableLanguage(lang) }}
+                >
+                  <caption className="sr-only">{t('admin.common.evalInformedAnswers')}</caption>
                 </DataTable>
               </div>
             </SectionWrapper>

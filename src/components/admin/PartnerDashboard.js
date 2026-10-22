@@ -19,7 +19,10 @@ import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
 import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
+import { formatEvalInformedRate, getEvalInformedFromDate } from '../../utils/dashboard/evalInformedRate.js';
+import { formatLocaleDate } from '../../utils/formatLocaleDate.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { EVAL_INFORMED_CHATS_LIMIT } from '../../config/workflows.js';
 import StatusMessage from './StatusMessage.js';
 import LoadingOverlay from './LoadingOverlay.js';
 
@@ -36,7 +39,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true });
   useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
@@ -249,6 +252,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     [metrics.harmfulChats],
   );
 
+  // Eval-informed answers: share of questions where past expert evaluations
+  // were added to the AI's context. The denominator is questions answered by
+  // the eval-informed workflow (metrics-usage.js), not all questions, so
+  // pre-launch data doesn't drag the rate down.
+  const evalInformed = metrics.evalInformed || {};
+  const evalInformedChats = metrics.evalInformedChats || [];
+  const evalInformedFromDate = getEvalInformedFromDate(evalInformed.firstDate, metrics.firstDataDate);
+
   // Top citation pages (GC pages AI Answers cited, by question) + the answer-type
   // breakdown (how many questions got a citation vs. a non-citation answer type).
   // Both come from metrics-citations; `normal` answers are the ones with a citation.
@@ -333,7 +344,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
-      {/* KPI cards — 4 columns: questions, expert eval, accuracy, content issues */}
+      {/* KPI cards — 3 columns: questions, expert eval, content issues */}
       <div className="dashboard-row">
         <StatCard
           label={t('partnerDashboard.kpi.questionsAsked')}
@@ -366,24 +377,27 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           evals both are replaced by placeholders rather than dropped, so the
           reason stays on the page. */}
       <div className="dashboard-row">
-        {evalTotal >= 10 ? (
-          <DonutCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
-            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
-            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
-            footer={accuracyByLangFooter}
-            lang={lang}
-            a11y={chartA11y}
-          />
-        ) : (
-          <NoDataCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            message={t('common.notEnoughData')}
-          />
-        )}
+        {/* Third-width column so the donut lines up with the KPI cards above. */}
+        <div className="dashboard-col-third">
+          {evalTotal >= 10 ? (
+            <DonutCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+              centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
+              centreLabel={t('partnerDashboard.charts.accuracyCentre')}
+              centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
+              footer={accuracyByLangFooter}
+              lang={lang}
+              a11y={chartA11y}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
         <div className="dashboard-chart-wide">
           {evalTotal >= 10 ? (
             <HBarCard
@@ -576,18 +590,81 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
             chats={contentIssueChats}
             chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
             dateColLabel={t('admin.chatDashboard.columns.date')}
             statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
             statusLabels={{
               hasError: t('partnerDashboard.charts.hasError'),
               needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
             }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
             noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
             lang={lang}
             anchorId={CONTENT_ISSUE_ANCHOR}
           />
         </div>
       )}
+
+      {/* Eval-informed answers card (left third) + its chats list (right two
+          thirds). The card always shows; the list is presence-gated like the
+          lists above. */}
+      <h2 className="dashboard-section-title">{t('partnerDashboard.evalInformedTitle')}</h2>
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            // The asterisks are visual only (aria-hidden): the footnote text
+            // is read straight after the count anyway. Not a link — the list
+            // it would jump to sits right beside it.
+            label={(
+              <>
+                {t('admin.common.evalInformedAnswers')}
+                {evalInformedFromDate && <span aria-hidden="true">*</span>}
+              </>
+            )}
+            value={formatEvalInformedRate(evalInformed.informed?.total, evalInformed.eligible?.total, fmtPct)}
+            sub={evalInformed.eligible?.total > 0
+              ? t('partnerDashboard.kpi.evalInformedSub')
+                .replace('{n}', fmtN(evalInformed.informed.total))
+                .replace('{total}', fmtN(evalInformed.eligible.total))
+              : undefined}
+            footnote={evalInformedFromDate ? (
+              <>
+                <span aria-hidden="true">* </span>
+                {t('admin.common.evalInformedFrom')
+                  .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
+              </>
+            ) : undefined}
+          />
+        </div>
+
+        {/* Eval-informed chats — a recent sample (server caps it) for
+            spot-checking, beside its card. Review mode's
+            "Past evaluations used" panel shows which evaluations each answer
+            used, so this list needs no extra columns. */}
+        {evalInformedChats.length > 0 && (
+          <div className="dashboard-chart-wide">
+            <ContentIssueChatsCard
+              title={t('partnerDashboard.evalInformedChats.title')}
+              subtitle={t('partnerDashboard.evalInformedChats.subtitle').replace('{n}', fmtN(EVAL_INFORMED_CHATS_LIMIT))}
+              triggerLabel={t('partnerDashboard.evalInformedChats.trigger')}
+              chats={evalInformedChats}
+              chatIdColLabel={t('reviewPanels.chatId')}
+              questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+              questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+              questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+              dateColLabel={t('admin.chatDashboard.columns.date')}
+              // Never shown: the list is hidden when empty and the card
+              // beside it shows 0%. Kept for now.
+              noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
+              lang={lang}
+              collapsible={evalInformedChats.length >= 3}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
@@ -698,9 +775,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             triggerLabel={t('partnerDashboard.harmfulChats.trigger')}
             chats={harmfulChats}
             chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
             dateColLabel={t('admin.chatDashboard.columns.date')}
             statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
             statusLabels={{ harmful: t('partnerDashboard.kpi.harmful') }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
             noDataLabel={t('partnerDashboard.harmfulChats.noData')}
             lang={lang}
             anchorId={HARMFUL_CHATS_ANCHOR}

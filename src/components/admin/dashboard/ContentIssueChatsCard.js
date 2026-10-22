@@ -5,7 +5,11 @@ import { buildChatReviewHref, chatLangFromPageLanguage } from '../../../utils/re
 
 // Collapsible list of chats matching some expert-feedback flag (content
 // issue, harmful, ...), server-scoped to the dashboard's current filters.
-// `chats` = [{ chatId, interactionId, pageLanguage, createdAt, status? }].
+// `chats` = [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }].
+// One row per question, so a chat can fill several rows with the same chat
+// ID link: the "#" column and each link's sr-only `questionLinkLabel`
+// (", question {number}") tell them apart (WCAG 2.4.4) — same pattern as
+// AccountPage.js's assigned-chats table.
 // `statusColLabel`/`statusLabels` are optional — pass them when rows carry a
 // per-row `status` worth distinguishing (e.g. content issues' 'hasError' |
 // 'needsImprovement' split); omit them for a homogeneous list where every
@@ -22,6 +26,9 @@ const ContentIssueChatsCard = ({
   chats = [],
   lang = 'en',
   chatIdColLabel,
+  questionColLabel,
+  questionColAriaLabel,
+  questionLinkLabel,
   dateColLabel,
   statusColLabel,
   statusLabels = {},
@@ -50,6 +57,7 @@ const ContentIssueChatsCard = ({
             <thead>
               <tr>
                 <th scope="col" style={head}>{chatIdColLabel}</th>
+                <th scope="col" style={head} aria-label={questionColAriaLabel}>{questionColLabel}</th>
                 {showStatus && <th scope="col" style={head}>{statusColLabel}</th>}
                 <th scope="col" style={head}>{dateColLabel}</th>
               </tr>
@@ -72,11 +80,19 @@ const ContentIssueChatsCard = ({
                           full note. Same upstream GC DS issue, not fixable
                           from our CSS (real shadow DOM, no exposed `part`
                           on that span). */}
-                      <GcdsLink href={href} target="_blank" lang={lang}>{c.chatId}</GcdsLink>
+                      <GcdsLink href={href} target="_blank" lang={lang}>
+                        {c.chatId}
+                        {c.questionNumber != null && (
+                          <span className="sr-only">{questionLinkLabel.replace('{number}', () => String(c.questionNumber))}</span>
+                        )}
+                      </GcdsLink>
                     </td>
-                    <td style={cell}>
-                      <span className={`label ${c.status}`}>{statusLabels[c.status] || c.status}</span>
-                    </td>
+                    <td style={cell}>{c.questionNumber ?? ''}</td>
+                    {showStatus && (
+                      <td style={cell}>
+                        <span className={`label ${c.status}`}>{statusLabels[c.status] || c.status}</span>
+                      </td>
+                    )}
                     <td style={cell}>{fmtDate(c.createdAt)}</td>
                   </tr>
                 );
