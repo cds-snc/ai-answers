@@ -504,6 +504,12 @@ table.dataTable.dashboard-table td .filter-select {
   max-width: 50%;
 }
 
+@media (max-width: 47.9375em) {
+  .settings-form-width {
+    max-width: 100%;
+  }
+}
+
 .filter-advanced-details {
   font-size: 16px;
   font-family: 'Noto Sans', sans-serif;
@@ -1092,7 +1098,9 @@ a.filter-button:focus {
 }
 
 .experimental-table-container table.dataTable th,
-.experimental-table-container table.dataTable td {
+.experimental-table-container table.dataTable td,
+.experimental-table-layout table.dataTable th,
+.experimental-table-layout table.dataTable td {
   padding: 0.35rem 0.5rem;
   white-space: normal;
   vertical-align: top;
@@ -1118,25 +1126,77 @@ a.filter-button:focus {
   flex: 0 0 auto;
 }
 
+/* Second line under a cell's main value (who ran a batch, app version,
+   failed/flagged counts). */
+.experimental-table-secondary {
+  color: var(--gcds-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* canada-ca-dl-columns inside a table cell: no outer margin, and each
+   label sits above its value, since a cell is too narrow for both side by
+   side. */
+.canada-ca-dl-columns.experimental-table-dl {
+  margin: 0;
+}
+
+.canada-ca-dl-columns.experimental-table-dl > div {
+  display: block;
+  border-bottom: 0;
+}
+
+.canada-ca-dl-columns.experimental-table-dl dt {
+  color: var(--gcds-text-secondary);
+  font-size: 0.875rem;
+  font-weight: var(--gcds-font-weights-bold);
+  line-height: 1.4;
+}
+
+.canada-ca-dl-columns.experimental-table-dl dd {
+  line-height: 1.4;
+}
+
+/* One button per line, all the same width. */
+.experimental-table-actions--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  --gcds-button-width: 100%;
+}
+
+.experimental-table-actions--stacked .filter-button {
+  justify-content: center;
+  text-align: center;
+}
+
 /* The dataset table reserves room for its inline actions and limits the
    name/description cell to two lines rather than widening the whole table. */
 .experimental-dataset-table-container table.dataTable {
   table-layout: fixed;
 }
 
+/* Rows are as tall as the stacked action buttons; keep text at the top. */
+.experimental-dataset-table-container table.dataTable td {
+  vertical-align: top;
+}
+
+/* min-width: on a narrow screen the table scrolls sideways instead of
+   squeezing every column down to a letter wide; on desktop it fits the page. */
 .experimental-table-layout table.dataTable {
   table-layout: fixed;
+  min-width: 48rem;
 }
 
 /* The shared dashboard header rule keeps sortable headings on one line. The
    experimental table has intentionally narrow numeric columns, so allow its
    headings to wrap instead of letting adjacent labels overlap. */
-.experimental-table-container table.dataTable.dashboard-table thead > tr > th {
+.experimental-table-container table.dataTable.dashboard-table thead > tr > th,
+.experimental-table-layout table.dataTable.dashboard-table thead > tr > th {
   white-space: normal;
   line-height: 1.25;
 }
 
-.experimental-table-container table.dataTable.dashboard-table thead > tr > th .dt-column-title {
+.experimental-table-container table.dataTable.dashboard-table thead > tr > th .dt-column-title,
+.experimental-table-layout table.dataTable.dashboard-table thead > tr > th .dt-column-title {
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -3661,6 +3721,25 @@ details gcds-button::part(button) {
 .canada-ca-field-hint {
   color: var(--gcds-hint-text);
   margin: var(--gcds-hint-margin);
+}
+
+/* A short label/value list read as a line: bold label, value right after it. */
+.canada-ca-dl-inline {
+  margin: 0 0 var(--gcds-spacing-300);
+}
+
+.canada-ca-dl-inline > div {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--gcds-spacing-50);
+}
+
+.canada-ca-dl-inline dt {
+  font-weight: var(--gcds-font-weights-bold);
+}
+
+.canada-ca-dl-inline dd {
+  margin: 0;
 }
 
 /* Short lists: one column, capped so the label stays near its number. */
