@@ -61,7 +61,7 @@ describe('canadaCaPassages', () => {
         it('always sends globalSemantic, and has no filter in open mode', () => {
             const body = buildPassagesRequest({ query: 'how do i appeal?', lang: 'en', maxPassages: 5 });
             expect(body.context.customContext).toBe('globalSemantic');
-            expect(body.context.searchPageRelativeUrl).toBe('/en/revenue-agency/search.html');
+            expect(body.context.searchPageRelativeUrl).toBe('/en/sr/srb.html');
             expect(body.locale).toBe('en');
             expect(body.maxPassages).toBe(5);
             expect(body).not.toHaveProperty('filter');
@@ -81,7 +81,7 @@ describe('canadaCaPassages', () => {
             const body = buildPassagesRequest({ query: 'q', lang: 'fr', maxPassages: 5 });
             expect(body.localization.locale).toBe('fr');
             expect(body.context.customContext).toBe('globalSemantic');
-            expect(body.context.searchPageRelativeUrl).toMatch(/^\/fr\/agence-revenu\//);
+            expect(body.context.searchPageRelativeUrl).toBe('/fr/sr/srb.html');
         });
 
         it.each([

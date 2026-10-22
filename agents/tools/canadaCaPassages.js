@@ -21,16 +21,16 @@ const CRA_PATH_PREFIXES = ['/en/revenue-agency/', '/fr/agence-revenu/', '/en/ser
 // The top page of each folder sits outside it (taxes.html, not taxes/index.html).
 const CRA_TOP_PAGES = CRA_PATH_PREFIXES.map((prefix) => `${prefix.slice(0, -1)}.html`);
 
+// The site-wide canada.ca search page, as Coveo advised: it gave better results than the CRA
+// search page in testing. It doesn't scope to CRA, so open mode can return any canada.ca page.
 const SEARCH_PAGES = {
     en: {
-        searchPageUrl: 'https://www.canada.ca/en/revenue-agency/search.html',
-        searchPageRelativeUrl: '/en/revenue-agency/search.html',
+        searchPageUrl: 'https://www.canada.ca/en/sr/srb.html',
+        searchPageRelativeUrl: '/en/sr/srb.html',
     },
-    // As in Coveo's French example. The pipeline condition matches on the URL containing
-    // /fr/agence-revenu/, which is what scopes the search to CRA.
     fr: {
-        searchPageUrl: 'https://www.canada.ca/fr/agence-revenu/',
-        searchPageRelativeUrl: '/fr/agence-revenu/search.html',
+        searchPageUrl: 'https://www.canada.ca/fr/sr/srb.html',
+        searchPageRelativeUrl: '/fr/sr/srb.html',
     },
 };
 

@@ -170,9 +170,10 @@ exercises the real code path and nothing is rewritten when it becomes a tool.
   `/en/revenue-agency/`, `/fr/agence-revenu/`, `/en/services/taxes/` or
   `/fr/services/impots/`. Any other URL returns a clear "not available" result, with no call
   made.
-- Uses the CRA search page context (`searchPageUrl`, `searchPageRelativeUrl`) for the
-  language, as in Coveo's English and French examples. That context is what scopes results
-  to CRA.
+- Uses the site-wide Canada.ca search page context (`/en/sr/srb.html`, `/fr/sr/srb.html`)
+  for the language, on Coveo's advice: it gave better results than the CRA search page in
+  testing. It doesn't scope results to CRA, so open mode can return any canada.ca page; page
+  mode is unaffected because the URL filter already limits it to one page.
 - Returns passages with text, score, `clickableuri`, `title` and `datemodified`, plus the
   request body sent, the HTTP status and the latency (the test page shows these).
 - Explicit `AbortSignal.timeout`. On failure or timeout, returns an empty result with a
@@ -273,6 +274,9 @@ count) are theirs to change.
 5. **Tests.** Tool present only with flag on and department `CRA-ARC`; absent otherwise;
    non-CRA URL returns the readable "not available" result; failure returns an empty
    result the model can read, not an exception.
+6. **No passages for a page.** Page mode returns nothing both when the page doesn't answer
+   the question and when the page isn't in the index (see Risks). Coveo doesn't tell these
+   apart, so the tool result says no passages were found and to use `downloadWebPage`.
 
 Search stays on `canadaca`, so the tool is the only thing that changes.
 
@@ -355,8 +359,15 @@ The tool arm passes if, compared with the baseline:
    production canada.ca search traffic. The tool adds one call per use. Keep
    `BATCH_CONCURRENCY` at its default (2), run arms one after another, and throttle the
    test page's probe run (≤ 2 calls/second). Watch for 429 responses in batch logs.
-7. **French.** Coveo supports French in beta. If Phase 1 shows French doesn't work, the tool
-   is English only for the trial, which can't ship as is.
+7. **French.** Coveo supports French in beta. Phase 1 testing showed French works in both
+   modes, but see the next risk.
+8. **Pages missing from the index.** In Phase 1 testing, page mode returned 0 passages for a
+   live French CRA page
+   (`/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser.html`)
+   while another French page worked with the same question. The open search didn't return that
+   page either, and its top result was a cancelled ("ANNULÉ") TFSA guide. So the page is most
+   likely not in the passage index. The probe's `citedPageReturned` measures how often this
+   happens for pages we actually cite.
 
 ## Coveo's advice
 
@@ -418,7 +429,8 @@ Further reading:
   pages such as `canada.ca/en/services/taxes/income-tax.html` are included.
 - **French CRA context** (from Coveo's example): `searchPageUrl`
   `https://www.canada.ca/fr/agence-revenu/`, `searchPageRelativeUrl`
-  `/fr/agence-revenu/search.html`, `locale: 'fr'` in both places.
+  `/fr/agence-revenu/search.html`, `locale: 'fr'` in both places. No longer used: Coveo
+  later advised the site-wide context instead (see Phase 1a).
 - **For later (IRCC, GAC):**
   - IRCC: a `searchPageUrl` containing `/en/services/immigration-citizenship/helpcentre/`
     limits to `cic.gc.ca/english/helpcentre` and `ircc.canada.ca/english/`. French:
@@ -436,6 +448,9 @@ Further reading:
 3. How often is our passage model actually rebuilt?
 4. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
 5. Is the 5 QPS limit shared with production canada.ca search traffic on our key?
+6. Why is `.../compte-epargne-libre-impot/cotiser.html` missing from the passage index when
+   it's live, and is French coverage thinner than English? Why do cancelled pages
+   ("ANNULÉ") rank first, and can the pipeline filter them out?
 
 ## Out of scope
 
