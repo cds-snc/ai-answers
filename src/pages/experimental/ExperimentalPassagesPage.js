@@ -319,6 +319,9 @@ export default function ExperimentalPassagesPage({ lang = 'en' }) {
                                             <td>
                                                 {result.ok ? t('experimental.passages.outcomeOk') : reasonText(result.reason)}
                                                 {result.reason === 'request_failed' && result.detail && <> <code lang="en">{result.detail}</code></>}
+                                                {result.reason === 'http_error' && (
+                                                    <> <code lang="en">{[result.status, result.detail?.slice(0, 200)].filter(Boolean).join(' ')}</code></>
+                                                )}
                                             </td>
                                             <td>{formatNumber(result.passages?.length || 0, lang)}</td>
                                             <td>{citedPageReturned(result.passages, result.citationUrl) ? t('common.yes') : t('common.no')}</td>
