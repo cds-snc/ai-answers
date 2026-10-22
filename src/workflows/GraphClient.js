@@ -21,7 +21,8 @@ export class GraphClient {
     translationF,
     onStatusUpdate,
     searchProvider,
-    overrideUserId = null
+    overrideUserId = null,
+    batchId = null
   ) {
     const controller = new AbortController();
     let reader = null;
@@ -40,6 +41,8 @@ export class GraphClient {
 
       const payload = {
         graph: this.graphName,
+        // Batch questions: the server runs the settings saved on this batch
+        batchId,
         input: {
           chatId,
           userMessage,

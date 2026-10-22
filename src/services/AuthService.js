@@ -1,5 +1,6 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import { ROUTE_SLUGS } from '../utils/routes.js';
+import { clearChatOptionChoices } from '../utils/chat/chatOptionsStorage.js';
 
 
 // POST for the sign-in steps. The login page picks its message from
@@ -197,6 +198,7 @@ class AuthService {
     // Cookies are set automatically by the server
     this.currentUser = data.user;
     this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
+    clearChatOptionChoices();
     return data;
   }
 
@@ -206,6 +208,7 @@ class AuthService {
     // Cookies are set automatically by the server
     if (data.user) {
       this.currentUser = data.user;
+      clearChatOptionChoices();
     }
     this.sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt).getTime() : null;
     return data;
