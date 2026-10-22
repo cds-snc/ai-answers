@@ -1,4 +1,4 @@
-FROM node:24.18.0
+FROM node:24.22.1
 
 # Install basic development tools
 RUN apt-get update && apt-get install -y \
