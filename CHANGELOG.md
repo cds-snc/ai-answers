@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.210.1](https://github.com/cds-snc/ai-answers/compare/v1.210.0...v1.210.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* non-admins always run default workflow, model and search ([f7c788a](https://github.com/cds-snc/ai-answers/commit/f7c788a1fdf60e004a227b6f6660a85ed7c7efb5))
+* non-admins always run default workflow, model and search ([76722d5](https://github.com/cds-snc/ai-answers/commit/76722d585164be6595133075362dfa0cb37c352f))
+* partner batches run the settings saved on the batch ([054edc0](https://github.com/cds-snc/ai-answers/commit/054edc064b753c9a36615a8adeb83ef6ac6015f4))
+* skip PR preview deploys for closed PRs ([6aa6a6d](https://github.com/cds-snc/ai-answers/commit/6aa6a6d4d9fa4f6604efd65377c75edfebdc0c41))
+* skip PR preview deploys for closed PRs ([ee20cd9](https://github.com/cds-snc/ai-answers/commit/ee20cd9acc703a21225e801a62f5d4f8b98687c6))
+
+
+### Documentation
+
+* partners run chat defaults; batches run their saved settings ([e729be1](https://github.com/cds-snc/ai-answers/commit/e729be1dc8bba18f715502aa71448b4b7920835a))
+
 ## [1.210.0](https://github.com/cds-snc/ai-answers/compare/v1.209.2...v1.210.0) (2026-10-22)
 
 
