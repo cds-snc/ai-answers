@@ -397,7 +397,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                     <td>{s.code || ''}</td>
                     <td style={{ whiteSpace: 'pre-wrap' }}>{s.message || ''}</td>
                     <td style={{ whiteSpace: 'pre-wrap' }}>
-                      <pre style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
+                      <pre className="review-pre-wrap font-size-text-xsm-nr" style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
                     </td>
                   </tr>
                 ))}
@@ -405,7 +405,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
             </table>
             <div className="mt-100">
               <strong>{t('reviewPanels.rawTimeline')}</strong>
-              <pre style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
+              <pre className="review-pre-wrap font-size-text-xsm-nr" style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
             </div>
           </div>
         ) : (
