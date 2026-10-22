@@ -217,11 +217,11 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.streamInput.searchProvider).toBe('canadaca');
   });
 
-  it('preserves the explicitly passed search provider for authenticated chats', async () => {
+  it('preserves the explicitly passed search provider for admin chats', async () => {
     mockSettingsTransport('sse');
     setupGraphStream();
     const req = createRequest();
-    req.user = { userId: 'user-123' };
+    req.user = { userId: 'user-123', role: 'admin' };
     req.isAuthenticated = () => true;
     req.body.input.searchProvider = 'canadaca';
 
@@ -230,7 +230,7 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.streamInput.searchProvider).toBe('canadaca');
   });
 
-  it('uses the configured search provider for invalid authenticated values', async () => {
+  it('uses the configured search provider for invalid admin values', async () => {
     mocks.settingsGet.mockImplementation((key) => {
       if (key === 'chat.transport') return 'sse';
       if (key === 'workflow.default') return 'GenericGraph';
@@ -240,13 +240,71 @@ describe('chatGraphRunHandler transport setting', () => {
     });
     setupGraphStream();
     const req = createRequest();
-    req.user = { userId: 'user-123' };
+    req.user = { userId: 'user-123', role: 'admin' };
     req.isAuthenticated = () => true;
     req.body.input.searchProvider = 'unsupported-provider';
 
     await chatGraphRunHandler(req, createResponse());
 
     expect(mocks.streamInput.searchProvider).toBe('canadaca');
+  });
+
+  it('runs the workflow, model and search provider an admin chose', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.user = { userId: 'admin-1', role: 'admin' };
+    req.isAuthenticated = () => true;
+    req.body.graph = 'DefaultWithVectorGraph';
+    req.body.input.selectedAI = 'openai-other';
+    req.body.input.searchProvider = 'canadaca';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.getGraphApp).toHaveBeenLastCalledWith('DefaultWithVectorGraph');
+    expect(mocks.streamInput.selectedAI).toBe('openai-other');
+    expect(mocks.streamInput.searchProvider).toBe('canadaca');
+  });
+
+  it('ignores a partner\'s workflow, model and search provider and runs the system defaults', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.user = { userId: 'partner-1', role: 'partner' };
+    req.isAuthenticated = () => true;
+    req.body.graph = 'DefaultWithVectorGraph';
+    req.body.input.selectedAI = 'openai-other';
+    req.body.input.searchProvider = 'canadaca';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.getGraphApp).toHaveBeenLastCalledWith('GenericGraph');
+    expect(mocks.streamInput.selectedAI).toBe('openai-gpt51');
+    expect(mocks.streamInput.searchProvider).toBe('google');
+  });
+
+  it('applies scenario overrides for the signed-in user, not the user ID the client sent', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.user = { userId: 'partner-1', role: 'partner' };
+    req.isAuthenticated = () => true;
+    req.body.input.overrideUserId = 'someone-else';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.overrideUserId).toBe('partner-1');
+  });
+
+  it('applies no scenario override for a signed-out user who sends a user ID', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.body.input.overrideUserId = 'someone-else';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.overrideUserId).toBeNull();
   });
 
 });

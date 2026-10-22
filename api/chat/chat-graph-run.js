@@ -152,6 +152,9 @@ async function handler(req, res) {
 
   // Ensure the graph uses the validated/generated chatId from the session middleware
   input.chatId = req.chatId;
+  // Scenario overrides (GraphWorkflowHelper.applyScenarioOverride) belong to
+  // the signed-in user - never trust a client-sent user ID.
+  input.overrideUserId = req.user?.userId ?? null;
   const requestStartedAt = Date.now();
 
   // Server-side Workflow Resolution
@@ -165,14 +168,15 @@ async function handler(req, res) {
   // worth an explicit cache-not-ready check/log instead of a silent fallback.
   const defaultWorkflow = SettingsService.get('workflow.default') || DEFAULT_WORKFLOW;
 
-  if (req.user) {
-    // Authenticated users can choose their workflow, fallback to default if not provided
+  // Only admins get the workflow/model/search choices in Options
+  // (ChatOptions.js) - everyone else, partners included, runs the defaults.
+  const isAdmin = req.user?.role === 'admin';
+  if (isAdmin) {
     graphName = (typeof clientGraph === 'string' && clientGraph.trim())
       ? clientGraph.trim()
       : defaultWorkflow;
   } else {
-    // Unauthenticated users are FORCED to use the system default workflow
-    // ignoring any client-provided value to prevent unauthorized graph usage
+    // Ignore any client-provided value to prevent unauthorized graph usage
     graphName = defaultWorkflow;
   }
 
@@ -185,16 +189,16 @@ async function handler(req, res) {
   const configuredSearchProvider = resolveSearchProvider(
     SettingsService.get('search.default')
   );
-  if (!req.user) {
-    // Unauthenticated users: forced to use the system default model
+  if (!isAdmin) {
+    // Non-admins: forced to use the system default model and search provider
     input.selectedAI = defaultModel;
     input.searchProvider = configuredSearchProvider;
   } else if (!SEARCH_PROVIDER_VALUES.includes(input.searchProvider)) {
-    // Authenticated callers may explicitly select a provider, but missing or
-    // invalid values follow the same system setting as public chats.
+    // Admins may explicitly select a provider, but missing or invalid values
+    // follow the same system setting as public chats.
     input.searchProvider = configuredSearchProvider;
   } else if (!input.selectedAI) {
-    // Authenticated users: use default model when client didn't explicitly set one
+    // Admins: use default model when client didn't explicitly set one
     input.selectedAI = defaultModel;
   }
 

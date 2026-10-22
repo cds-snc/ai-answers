@@ -8,6 +8,7 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 import DataStoreService from '../../services/DataStoreService.js';
 import AuthService from '../../services/AuthService.js';
 import { AVAILABLE_MODELS, MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../config/workflows.js';
+import { chatOptionStorageKey } from '../../utils/chat/chatOptionsStorage.js';
 import { SEARCH_PROVIDER_VALUES } from '../../config/searchProviders.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
@@ -98,7 +99,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
-  const storageKey = (k) => `aiAnswers.${k}`;
+  const storageKey = chatOptionStorageKey;
   // A stored value is an *override*: this admin has deliberately chosen
   // something other than what Settings says, and it sticks until they pick
   // "use system settings" again. Without a stored value we follow the
