@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.210.0](https://github.com/cds-snc/ai-answers/compare/v1.209.2...v1.210.0) (2026-10-22)
+
+
+### Features
+
+* eval-informed answer rate and examples API ([b0bb20d](https://github.com/cds-snc/ai-answers/commit/b0bb20d5b0fcd3994bf62b8e5c7ebc0d61426e91))
+* eval-informed answer rate on partner dashboard and metrics page ([30414f5](https://github.com/cds-snc/ai-answers/commit/30414f5af6ea3ba40fd484fe10c24148576d9c60))
+
+## [1.209.2](https://github.com/cds-snc/ai-answers/compare/v1.209.1...v1.209.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* bump Node.js to 24.22.1 for October 2026 security release ([9f15a6e](https://github.com/cds-snc/ai-answers/commit/9f15a6ed623ee5d04a2fc5f1c786181dc1d3a9fc))
+* bump Node.js to 24.22.1 for October 2026 security release ([11f0bca](https://github.com/cds-snc/ai-answers/commit/11f0bcad574e9b34045a97db495dc311a73a9883))
+
 ## [1.209.1](https://github.com/cds-snc/ai-answers/compare/v1.209.0...v1.209.1) (2026-10-21)
 
 

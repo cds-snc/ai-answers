@@ -21,14 +21,14 @@ Une erreur corrigée une fois par un expert devrait cesser de se reproduire dans
 
 ## Voir quelles évaluations ont été utilisées
 
-1. Ouvrez le chat en mode révision. Sélectionnez un ID de chat dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
+1. Ouvrez le chat en mode révision. Sélectionnez un ID de clavardage dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
 2. Déployez **Évaluations antérieures utilisées** sous la réponse. Ce panneau n'apparaît que si le système a trouvé des évaluations admissibles pour cette question. La plupart des questions n'en ont aucune : pour bien des réponses, il n'y a donc rien à déployer.
 
-![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
+![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de clavardage et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
 
 - Chaque ligne est un chat antérieur ayant informé la réponse, avec le score de l'expert sur 100.
 - Un mélange de scores élevés et faibles est normal. Il n'y a aucun score minimal.
-- Les ID de chat sont des liens. Ouvrez-en un pour lire les notes de l'expert phrase par phrase et l'évaluation de la citation.
+- Les ID de clavardage sont des liens. Ouvrez-en un pour lire les notes de l'expert phrase par phrase et l'évaluation de la citation.
 
 ### Retirer une évaluation
 
@@ -42,6 +42,16 @@ Retirez-en une lorsque le contenu sur lequel elle reposait a changé, que le jug
 
 - Prend effet dès la question suivante. Il n'y a rien à relancer ni à réindexer.
 - À revoir chaque fois que le contenu web d'un programme change de façon importante.
+
+## Voir à quelle fréquence la fonction est utilisée
+
+Le **Tableau de bord partenaire** affiche une carte **Réponses informées par les évaluations** dans sa propre section, à côté d'une liste des exemples les plus récents.
+
+- Le pourcentage indique la part des questions pour lesquelles des évaluations antérieures ont été utilisées.
+- Seules les questions traitées depuis la mise en service des réponses informées par les évaluations sont comptées. Les questions plus anciennes sont exclues.
+- La carte suit les filtres du tableau de bord.
+
+Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures qu'il a utilisées.
 
 ## Règles appliquées par le système
 

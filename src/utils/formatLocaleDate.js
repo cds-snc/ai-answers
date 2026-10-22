@@ -12,6 +12,10 @@
 // helper instead of staying a second copy. Left alone for now — deliberately
 // not bundled into unrelated work; migrate it in its own change so a diff
 // touching that page is reviewed for that page's own reasons.
+//
+// TODO: French style writes the first of the month as "1er" ("1er août"),
+// but fr-CA toLocaleString gives "1 août" — e.g. the dashboards' "À partir
+// du {date} seulement" footnote. Fix here so every caller gets it.
 export function formatLocaleDate(value, lang, fallback = null, options) {
   if (!value) return fallback;
   try {

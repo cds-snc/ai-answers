@@ -2384,6 +2384,13 @@ td:has(> .verdict-cell__link) {
   margin: var(--gcds-spacing-75) 0 0;
 }
 
+/* Small grey "* …" caption an asterisk points to (stat card, metrics table). */
+.stat-card__footnote,
+.dashboard-footnote {
+  color: var(--gcds-color-grayscale-700);
+  margin: var(--gcds-spacing-50) 0 0;
+}
+
 /* ---- NoDataCard ---- */
 
 .no-data-card {
