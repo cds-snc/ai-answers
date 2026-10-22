@@ -6,8 +6,12 @@ vi.mock('@langchain/openai', () => ({
     AzureChatOpenAI: vi.fn().mockImplementation(function AzureChatOpenAI() { return { _type: 'azure' }; })
 }));
 
+vi.mock('@langchain/langgraph/prebuilt', () => ({
+    createReactAgent: vi.fn(async ({ tools }) => ({ tools }))
+}));
+
 // Import AFTER mocking so the mocks are in place when AgentFactory initializes
-const { createQuestionVariationAgent, createRankerAgent, createSafetyLLM } = await import('../../agents/AgentFactory.js');
+const { createChatAgent, createQuestionVariationAgent, createRankerAgent, createSafetyLLM } = await import('../../agents/AgentFactory.js');
 const { ChatOpenAI, AzureChatOpenAI } = await import('@langchain/openai');
 
 describe('createSafetyLLM', () => {
@@ -93,5 +97,22 @@ describe('createRankerAgent', () => {
             temperature: undefined,
             maxCompletionTokens: 4096,
         }));
+    });
+});
+
+describe('createChatAgent tools', () => {
+    const toolNames = (agent) => agent.tools.map((tool) => tool.name);
+
+    it('gives the answer agent the standard tools by default', async () => {
+        const agent = await createChatAgent('openai-gpt51', 'chat-1');
+        expect(toolNames(agent)).toEqual(['downloadWebPage', 'checkUrl', 'searchOpenData']);
+    });
+
+    it('adds retrievePassages only when passageTool is on', async () => {
+        const off = await createChatAgent('azure', 'chat-1', { passageTool: false, lang: 'en' });
+        expect(toolNames(off)).not.toContain('retrievePassages');
+
+        const on = await createChatAgent('openai-gpt51', 'chat-1', { passageTool: true, lang: 'fr' });
+        expect(toolNames(on)).toEqual(['downloadWebPage', 'checkUrl', 'searchOpenData', 'retrievePassages']);
     });
 });

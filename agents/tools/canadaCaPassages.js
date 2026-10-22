@@ -2,11 +2,11 @@ import { maskSecretValue } from './utils/searchUtils.js';
 
 // Client for the Coveo Passage Retrieval (CPR) API on the Canada.ca Coveo org.
 // Phase 1 of docs/plans/coveo-passage-retrieval.md: the admin passage test page
-// calls this directly, and the retrievePassages tool will wrap it later, so both
-// exercise the same request.
+// calls this directly, and the retrievePassages tool wraps it, so both exercise
+// the same request.
 //
 // No retries on purpose: the test page measures latency per call, and a hidden
-// retry would blur it. Revisit when this becomes an agent tool.
+// retry would blur it. The tool retries 429s itself (retrievePassages.js).
 
 // The Coveo org endpoint confirmed by the Canada.ca search team; not a secret. It can't be
 // built from CANADA_CA_SEARCH_URI: standard search goes through a proxy on apps.canada.ca.

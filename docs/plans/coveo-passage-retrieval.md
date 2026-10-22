@@ -1,6 +1,7 @@
 # Plan: Test Coveo passage retrieval as an answer-agent tool
 
-Status: proposed, not started. Access to the Coveo Passage Retrieval (CPR) API comes through
+Status: Phase 1 done (see [Phase 1 findings](#phase-1-findings)). Phase 2 tool built. Phase 3
+prompt block drafted, awaiting maintainer review. Access to the Coveo Passage Retrieval (CPR) API comes through
 the Canada.ca search API. The Canada.ca search team has confirmed the endpoint, that our
 existing search credentials work with it, and how to limit passages to one page (see
 [API notes](#api-notes)). Coveo's search engineer has advised on how to use it (see
@@ -15,8 +16,10 @@ citation accuracy.
 
 **Trial scope: CRA only.** CRA, IRCC and GAC are scraped into the passage model, but the
 trial uses CRA alone to keep testing simple. The tool is offered only when the question is
-matched to CRA, and it only returns passages from CRA pages. IRCC and GAC can follow if CRA
-works.
+matched to CRA. Page mode only accepts CRA pages. Open mode uses the site-wide search context
+on Coveo's advice, so it can return any canada.ca page; Phase 1 showed those non-CRA
+passages are often relevant (the CERB contact numbers are on an ESDC page). IRCC and GAC can
+follow if CRA works.
 
 ## Decision: a tool, not passages in search results
 
@@ -251,53 +254,136 @@ Answer rate is judged by reading the downloaded passages against each row's answ
 tuning; the pipeline settings (passage count, thesaurus, Semantic Encoder threshold/boost/item
 count) are theirs to change.
 
+### Phase 1 findings
+
+Probe run on 2026-10-22: the 14 golden CRA questions, English, `maxPassages` 5, each row in
+page mode and open mode. Questions were sent raw, with users' typos ("taxx", "owning",
+"revenue Canada"). The agent will send a cleaned-up query, so open mode should do better as a
+tool. Results were shared with Coveo.
+
+**Coverage (page mode): 10 of 14 cited pages returned passages.** The 4 empty results were
+on 3 URLs:
+
+- `.../about-your-tax-return/change-your-return.html`: open mode returned the same content
+  from the services-level copy, `/en/services/taxes/.../after-you-file/change-return.html`.
+  Canada.ca has duplicate pages like this, so a URL match undercounts.
+- `.../about-your-tax-return/a-copy-your-notice-assessment-reassessment.html` (2 questions)
+- `.../publications/t4040.html` for the RRIF/LIF question. That page **is** indexed (the
+  "what is form T4040" question got passages from it); the in-page search found nothing
+  relevant on what is only a landing page. So an empty page-mode result means either "not
+  indexed" or "nothing relevant here", as Phase 2 item 6 assumed.
+
+**Open mode found the cited page for 2 of 14 questions** (RRSP at 72, T4040), or 2 of the 10
+indexed pages. But it often found other relevant pages, so judge it on whether a passage
+answers the question, not on the URL:
+
+- CERB debt → the ESDC CERB page, which lists the CRA and Service Canada numbers, and
+  `repay-covid-benefits/how-make-payment.html`
+- RRIF/LIF beneficiary → IC78-18 (RRIFs) and the T4040 RRSP chapter, better than the cited
+  landing page
+- Non-resident status → 4 passages from `.../information-been-moved/determining-your-residency-...`.
+  If that's a moved page, it's the same stale-ranking problem as the "ANNULÉ" French result.
+
+**Passages are much bigger than Coveo's docs suggest.** The docs describe ~400-token chunks;
+these run close to whole pages:
+
+| | Typical passage | Largest | Total per call |
+|---|---|---|---|
+| Page mode | 2k–8k characters | 21k | up to ~26k characters (3 passages) |
+| Open mode | 10k–15k characters | 80k | ~45k–130k characters (~12k–32k tokens) |
+
+In the CERB example, one passage runs to the page's "Page details" footer and the next starts
+at its H1. Together they're the whole page, with a section repeated. Short pages come back
+whole (T4040 at 831 characters, "RRSP options when you turn 71" at 2,181). `downloadWebPage`
+returns the page as Markdown up to 48k tokens, and the median page is ~1,200 tokens. So a
+passage call is **not** smaller than a download, and in open mode it can be much bigger. This
+looks like fixed-size chunking with heavy passage merging (still-open question 4).
+
+**Page mode usually returns 1 passage** (8 of the 10 indexed pages), even with `maxPassages` 5.
+
+**Scores look rank-based.** The top page-mode passage always scores 0.200 and the next ones
+step down (0.183, 0.156). The model can't use them as a confidence threshold.
+
+**Latency:** page mode p50 ~220 ms (max 282), open mode p50 ~280 ms (max 394). One direct
+comparison on `rrsp-options-when-you-turn-71.html`: `downloadWebPage` took 660 ms in a chat
+trace, against 278 ms for page mode and 511 ms for open mode on the test page. That's one
+sample, and `downloadWebPage` has a storage cache, so a cache hit could be faster. On that
+page the passage was the whole page, so the token cost was the same. Any saving is in the
+call, not in what the model reads.
+
+**What this changed in Phase 2:** `maxPassages` is 3, not 5, to keep a result near one page's
+size. Open mode stays in the tool, because it finds relevant pages even when they aren't the
+cited one. The experiment measures whether either mode saves time end to end.
+
 ## Phase 2 — `retrievePassages` tool
+
+Built. To run an arm, tick **Offer the passage tool to CRA questions** on the batch analysis
+page. That sets `config.passageTool` on the batch, and adds "Passage tool" to the run name.
 
 1. **Tool.** `agents/tools/retrievePassages.js`: a LangChain tool wrapping the Phase 1 client.
    Inputs: `query` (a focused question in the user's words) and optional `url`. The schema
    description says the URL must be a CRA page.
+   - Asks for 3 passages (see [Phase 1 findings](#phase-1-findings) on size).
+   - Each passage comes back as title, URL, date modified and text.
+   - In page mode the language comes from the URL (`/en/` or `/fr/`). In open mode it's the
+     batch's page language.
+   - Retries a 429 after 1 and 2 seconds (risk 6). The client itself still never retries, so
+     the test page keeps measuring single calls.
 2. **Gating, two layers:**
-   - **Offered only for CRA questions.** The answer agent is created per request in
-     `AnswerGenerationService` (via `createChatAgent`), after the context node has matched a
-     department. Add the tool to `AgentFactory.createTools` only when the batch flag (e.g.
-     `batch.config.passageTool`) is on **and** the department is `CRA-ARC` (the abbrKey in
-     `departments_EN.js`). Every other question, and all production traffic, gets today's
-     tools.
+   - **Offered only for CRA questions.** `AnswerGenerationService.invokeAgent` passes
+     `passageTool: true` to `createChatAgent` → `createTools` only when the batch flag is on
+     **and** the department is `CRA-ARC`. Every other question, and all production traffic,
+     gets today's tools.
    - **Scope check in the client.** If the agent passes a non-CRA URL, the tool says
      passages aren't available for that page and to use `downloadWebPage`.
-3. **Plumbing.** Pass the flag the same way `searchProvider` travels from the batch config
-   to the graph, then through `sendAnswerRequest` → `AnswerGenerationService.generateAnswer`
-   → `createChatAgent`/`createTools`. When changing that payload, carry every existing field
-   through (see AGENTS.md on dropped prompt tags).
-4. **Tracking.** Wrap it with `ToolTrackingHandler` like the other tools, so calls and
+3. **Plumbing.** The flag travels in the graph request context (`graphRequestContext`, the
+   `AsyncLocalStorage` that already carries the batch user into the run), not through graph
+   state. `ExperimentalBatchService._processItem` sets `passageTool` from
+   `batch.config.passageTool`, and `invokeAgent` reads it. This changes no graph, no
+   `sendAnswerRequest` payload and no prompt tags. Chat runs never set it.
+4. **Tracking.** Wrapped with `ToolTrackingHandler` like the other tools, so calls and
    durations land in `Tool` documents.
-5. **Tests.** Tool present only with flag on and department `CRA-ARC`; absent otherwise;
-   non-CRA URL returns the readable "not available" result; failure returns an empty
-   result the model can read, not an exception.
+5. **Tests.** `agents/tools/__tests__/retrievePassages.test.js` (formatting, language, empty
+   results, out-of-scope, failure, 429 retries). Gating in `AnswerGenerationService.test.js`,
+   tool list in `AgentFactory.test.js`, flag in `ExperimentalBatchService.test.js`.
 6. **No passages for a page.** Page mode returns nothing both when the page doesn't answer
-   the question and when the page isn't in the index (see Risks). Coveo doesn't tell these
-   apart, so the tool result says no passages were found and to use `downloadWebPage`.
+   the question and when the page isn't in the index. Phase 1 saw both. Coveo doesn't tell
+   these apart, so the tool result says no passages were found and to use `downloadWebPage`.
+
+Without the Phase 3 prompt block the model sees the tool and its description, but
+`agenticBase.js` Step 3 still requires a download. So a run before Phase 3 measures
+"passages **plus** downloads" (risk 4), not the saving.
 
 Search stays on `canadaca`, so the tool is the only thing that changes.
 
 ## Phase 3 — Prompt variant (maintainers only)
 
 Per AGENTS.md, this is a prompt change and needs a maintainer (Lisa Fast or Ryan Hyma) to
-write and approve it.
+write and approve it. **Drafted, awaiting maintainer review.**
 
-- **Plumbing (code):** pass the same flag-and-department decision into
-  `buildAnswerSystemPrompt` options, so the block loads exactly when the tool is offered.
-  Test that it never appears without the tool, or in production.
-- **Prompt (maintainers):** a short block, kept terse because it ships on every call in the
-  arm. Draft direction to tune: list `retrievePassages` under `### TOOLS`. Before downloading
-  a page from `<searchResults>`, ask for its passages with your question. If a passage
-  directly states the answer, cite that page without downloading it. Download when the
-  passage is partial or conditional, or when the answer depends on eligibility, amounts or
-  dates.
-- Decide whether Step 3's "REQUIRED" wording needs a matching exception, or whether the
-  variant block is enough to override it. Arm results will show this.
-- Regenerate `docs/agents-prompts/system-prompt-documentation.md` if a shared prompt file
-  changes.
+- **Plumbing (code):** `invokeAgent` passes the same `passageTool` value it gives
+  `createChatAgent` into `buildAnswerSystemPrompt`, so the block loads exactly when the tool
+  is offered. Tests: `agents/__tests__/systemPrompt.passageTool.test.js` and the gating
+  block in `AnswerGenerationService.test.js` (CRA with the flag gets it; another department
+  or no flag doesn't).
+- **Prompt:** `agents/prompts/passageToolPrompt.js`, appended after `BASE_SYSTEM_PROMPT` as
+  "PASSAGE TOOL — amends Step 3". No shared prompt file changes, so production prompts and
+  `docs/agents-prompts/system-prompt-documentation.md` are untouched. In short:
+  - try passages for a CRA candidate URL before downloading it; open mode only when no URL
+    fits
+  - a passage counts as reading the page for Step 3, and a passage that states the answer
+    can be cited without a download
+  - download when the passage is partial, conditional or off-topic, or the answer turns on
+    eligibility, amounts, rates or deadlines (freshness and lost-context risks)
+  - scenario ⚠️DOWNLOAD URLs still get downloaded
+  - at most one passage call per page, plus one open-mode call. These don't count toward
+    the download limit, so a weak passage can always be checked with a download. Worst case
+    is about 3 passage calls plus 3 downloads; the Phase 4 metrics show how often that
+    happens.
+- Step 3's "REQUIRED" wording is left alone; the block amends it. If arm results show the
+  model still downloads after a good passage, strengthen the block before touching Step 3.
+- The "amounts, rates or deadlines" condition covers many CRA answers. If almost every
+  answer still downloads, that line is the first thing to tune.
 
 ## Phase 4 — Metrics in batch results
 
@@ -362,7 +448,8 @@ The tool arm passes if, compared with the baseline:
    **Confirmed in Phase 1:** at 2 calls/second the probe got 429s on 5 of its 14
    open-mode calls, so the limit is shared with other traffic. The probe now makes at most 1
    call/second and retries a 429 after 2, 5 and 10 seconds, recording the retry count. The
-   Phase 2 tool will need its own 429 handling, since a batch run calls it in parallel.
+   Phase 2 tool retries a 429 after 1 and 2 seconds, then tells the model to download
+   instead. Retries count against any time saved.
 7. **French.** Coveo supports French in beta. Phase 1 testing showed French works in both
    modes, but see the next risk.
 8. **Pages missing from the index.** In Phase 1 testing, page mode returned 0 passages for a
@@ -370,8 +457,13 @@ The tool arm passes if, compared with the baseline:
    (`/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser.html`)
    while another French page worked with the same question. The open search didn't return that
    page either, and its top result was a cancelled ("ANNULÉ") TFSA guide. So the page is most
-   likely not in the passage index. The probe's `citedPageReturned` measures how often this
-   happens for pages we actually cite.
+   likely not in the passage index. The English probe found 2 more likely-missing pages
+   (see [Phase 1 findings](#phase-1-findings)).
+9. **Passage size.** Passages run close to whole pages (see
+   [Phase 1 findings](#phase-1-findings)), so a passage call doesn't cut what the model reads,
+   and open mode can add up to ~30k tokens. If the agent calls passages and then downloads
+   anyway, it reads the same text twice. Watch input tokens per answer in the arm, not just
+   tool time. Coveo's chunking settings may fix this (still-open question 4).
 
 ## Coveo's advice
 
@@ -451,11 +543,22 @@ Further reading:
 2. Are our SE and CPR models configured for French?
 3. How often is our passage model actually rebuilt?
 4. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
+   **Most important now:** passages run 2k–80k characters, not ~400 tokens, and passages from
+   the same page overlap (see [Phase 1 findings](#phase-1-findings)). Asked Coveo on
+   2026-10-22.
 5. The 5 QPS limit looks shared with production canada.ca search (we got 429s at 2 calls
    per second). Can our key get its own limit, or a higher one, for the trial?
 6. Why is `.../compte-epargne-libre-impot/cotiser.html` missing from the passage index when
    it's live, and is French coverage thinner than English? Why do cancelled pages
    ("ANNULÉ") rank first, and can the pipeline filter them out?
+7. Are `change-your-return.html` and `a-copy-your-notice-assessment-reassessment.html` in
+   the passage index? To check on the test page: a page filter with a broad query, or the
+   "all passages from a page" call the search team described.
+8. Why does page mode usually return 1 passage when `maxPassages` is 5? What decides the
+   count?
+9. Are the `relevanceScore` values rank-based? The top page-mode passage always scores 0.200.
+10. Pages under `.../information-been-moved/` rank first for the non-resident question. Are
+    they moved or archived, and should the pipeline rank them lower?
 
 ## Out of scope
 

@@ -2411,6 +2411,10 @@
       "analyzerDetailsTitle": "Analyzer details",
       "analyzerPrefix": "Analyzer:",
       "workflowLabel": "Workflow",
+      "passageTool": {
+        "label": "Offer the passage tool to CRA questions",
+        "runName": "Passage tool"
+      },
       "analysisMode": {
         "label": "Analysis mode",
         "reference": "Compare a newly generated answer with the dataset reference answer",

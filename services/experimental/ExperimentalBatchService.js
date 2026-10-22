@@ -708,7 +708,12 @@ class ExperimentalBatchService {
 
                 let workflowDebugPayload = null;
 
-                await graphRequestContext.run({ headers: {}, user: batchUser }, async () => {
+                // passageTool: the experimental Coveo passage tool, read by AnswerGenerationService.
+                await graphRequestContext.run({
+                    headers: {},
+                    user: batchUser,
+                    passageTool: batch.config.passageTool === true,
+                }, async () => {
                     const stream = await app.stream(input, { streamMode: 'updates' });
                     for await (const update of stream) {
                         const answerText = findAnswerInUpdate(update);

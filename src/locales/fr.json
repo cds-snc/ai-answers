@@ -2411,6 +2411,10 @@
       "analyzerDetailsTitle": "Détails de l'analyseur",
       "analyzerPrefix": "Analyseur :",
       "workflowLabel": "Flux de travail",
+      "passageTool": {
+        "label": "Offrir l’outil de passages aux questions de l’ARC",
+        "runName": "Outil de passages"
+      },
       "analysisMode": {
         "label": "Mode d’analyse",
         "reference": "Comparer une réponse nouvellement générée à la réponse de référence de l’ensemble de données",

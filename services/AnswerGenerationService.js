@@ -4,9 +4,13 @@ import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { ToolTrackingHandler } from '../agents/ToolTrackingHandler.js';
 import { buildAnswerSystemPrompt } from '../agents/prompts/systemPrompt.js';
 import ConversationIntegrityService from './ConversationIntegrityService.js';
+import { graphRequestContext } from '../agents/graphs/requestContext.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
+
+// The passage tool trial covers CRA only (docs/plans/coveo-passage-retrieval.md).
+const PASSAGE_TOOL_DEPARTMENT = 'CRA-ARC';
 
 const convertInteractionsToMessages = (interactions) => {
     const messages = [];
@@ -49,15 +53,25 @@ async function invokeAgent({
     similarQuestions,
     originalMessage,
 }, chatId) {
+    // Experimental: an experimental batch run with the passage tool on sets passageTool in
+    // the request context. Only CRA questions get the tool and its prompt block; production
+    // never sets the flag.
+    const passageTool = graphRequestContext.getStore()?.passageTool === true
+        && department === PASSAGE_TOOL_DEPARTMENT;
+
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
         departmentUrl,
         searchResults,
         scenarioOverrideText,
         similarQuestions,
+        passageTool,
     });
 
-    const agent = await createChatAgent(provider, chatId);
+    const agent = await createChatAgent(provider, chatId, {
+        passageTool,
+        lang: lang === 'fr' ? 'fr' : 'en',
+    });
     const messages = [
         { role: 'system', content: systemPrompt },
         ...convertInteractionsToMessages(conversationHistory),

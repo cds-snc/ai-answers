@@ -26,6 +26,9 @@ const ExperimentalBatchSchema = new mongoose.Schema({
         // For 'batch' type
         workflow: { type: String },
         searchProvider: { type: String },
+        // Offers the experimental Coveo passage tool to CRA questions
+        // (docs/plans/coveo-passage-retrieval.md).
+        passageTool: { type: Boolean, default: false },
         pageLanguage: { type: String, default: 'en' },
 
         // For 'analysis' type
