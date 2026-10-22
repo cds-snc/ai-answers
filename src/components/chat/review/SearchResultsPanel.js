@@ -53,7 +53,7 @@ const SearchResultsPanel = ({ message, t, answerNumber, lang = 'en', chatLang = 
                       <dt>{t(FIELD_LABEL_KEYS[label])}</dt>
                       <dd lang={searchLang}>
                         {label === 'Link' && /^https?:\/\//i.test(value)
-                          ? <GcdsLink href={value} target="_blank" lang={searchLang} className="url-break-all">{value}</GcdsLink>
+                          ? <GcdsLink href={value} target="_blank" lang={lang} className="url-break-all">{value}</GcdsLink>
                           : value}
                       </dd>
                     </React.Fragment>
