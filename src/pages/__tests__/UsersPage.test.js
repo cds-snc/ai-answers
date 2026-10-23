@@ -23,11 +23,12 @@ vi.mock('../../contexts/AuthContext.js', () => ({
   useAuth: () => ({ currentUser: { role: 'admin', _id: 'me' } }),
 }));
 
-const { mockGetAll, mockDelete, mockUpdate, lastColumns } = vi.hoisted(() => ({
+const { mockGetAll, mockDelete, mockUpdate, lastColumns, lastData } = vi.hoisted(() => ({
   mockGetAll: vi.fn(),
   mockDelete: vi.fn(),
   mockUpdate: vi.fn(),
   lastColumns: { current: null },
+  lastData: { current: null },
 }));
 vi.mock('../../services/UserService.js', () => ({
   default: {
@@ -45,6 +46,7 @@ vi.mock('../../services/UserService.js', () => ({
 vi.mock('datatables.net-react', () => {
   const MockDataTable = ({ data, options, columns }) => {
     lastColumns.current = columns;
+    lastData.current = data;
     const ref = React.useRef(null);
     React.useEffect(() => {
       if (!ref.current || !options?.createdRow || !data || !data[0]) return;
@@ -343,5 +345,67 @@ describe('UsersPage created date column', () => {
     expect(col.render(iso, 'sort')).toBe(new Date(iso).getTime());
     expect(col.render(iso, 'type')).toBe(new Date(iso).getTime());
     expect(col.render(iso, 'display')).toBe(new Date(iso).toLocaleDateString());
+  });
+});
+
+describe('UsersPage ?show= filter', () => {
+  const daysAgo = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const USERS = [
+    { _id: 'active', email: 'a@x.ca', role: 'partner', active: true, createdAt: daysAgo(1) },
+    { _id: 'new', email: 'n@x.ca', role: 'partner', active: false, createdAt: daysAgo(2) },
+    { _id: 'old', email: 'o@x.ca', role: 'partner', active: false, createdAt: daysAgo(30) },
+  ];
+  const renderAt = (url) => render(
+    <MemoryRouter initialEntries={[url]}><UsersPage lang="en" /></MemoryRouter>
+  );
+  const shownIds = () => (lastData.current || []).map((u) => u._id);
+
+  afterEach(() => { cleanup(); mockGetAll.mockReset(); mockUpdate.mockReset(); });
+
+  it('shows only new inactive accounts for ?show=new, with a summary and Show all link', async () => {
+    mockGetAll.mockResolvedValue(USERS);
+    renderAt('/en/users?show=new');
+    await screen.findByText(/users\.filtered\.newOne/);
+    expect(shownIds()).toEqual(['new']);
+    await waitFor(() => expect(document.activeElement?.id).toBe('users-filter-summary'));
+    expect(document.activeElement.textContent).toContain('users.filtered.newOne');
+  });
+
+  it('Show all users clears the filter, focuses the heading and announces it', async () => {
+    mockGetAll.mockResolvedValue(USERS);
+    renderAt('/en/users?show=new');
+    fireEvent.click(await screen.findByRole('button', { name: 'users.filtered.showAll' }));
+    await waitFor(() => expect(shownIds()).toEqual(['active', 'new', 'old']));
+    expect(screen.queryByText(/users\.filtered\.newOne/)).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+    await waitForAnnouncement('users.filtered.showingAll');
+  });
+
+  it('shows every inactive account for ?show=inactive', async () => {
+    mockGetAll.mockResolvedValue(USERS);
+    renderAt('/en/users?show=inactive');
+    await screen.findByText(/users\.filtered\.inactiveOther/);
+    expect(shownIds()).toEqual(['new', 'old']);
+  });
+
+  it('drops an activated user from the filtered list and lowers the count', async () => {
+    mockGetAll.mockResolvedValue(USERS);
+    mockUpdate.mockImplementation(async (userId, updates) => ({ ...USERS.find((u) => u._id === userId), ...updates }));
+    renderAt('/en/users?show=inactive');
+    await screen.findByText(/users\.filtered\.inactiveOther/);
+    expect(shownIds()).toEqual(['new', 'old']);
+
+    fireEvent.change(screen.getByLabelText('users.columns.status — n@x.ca'), { target: { value: 'true' } });
+    fireEvent.click(screen.getByText('users.actions.save'));
+
+    await waitFor(() => expect(shownIds()).toEqual(['old']));
+    expect(screen.getByText(/users\.filtered\.inactiveOne/)).toBeTruthy();
+  });
+
+  it('shows everyone, with no summary, without ?show=', async () => {
+    mockGetAll.mockResolvedValue(USERS);
+    renderAt('/en/users');
+    await waitFor(() => expect(shownIds()).toEqual(['active', 'new', 'old']));
+    expect(screen.queryByText(/users\.filtered\./)).toBeNull();
   });
 });

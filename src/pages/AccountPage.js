@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { GcdsButton, GcdsContainer, GcdsLink, GcdsNotice, GcdsText } from '@gcds-core/components-react';
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import DashboardService from '../services/DashboardService.js';
@@ -12,9 +13,11 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { useFocusIdWhenReady } from '../hooks/useFocusIdWhenReady.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { announce } from '../utils/liveAnnouncer.js';
 import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
+import { formatNumber, isSingular } from '../utils/numberFormat.js';
 
 // Bolds just the dashboard-type name(s) inside a "How filter preferences
 // work" label (e.g. "*Chat* and *evaluation* dashboards:") - the locale
@@ -86,6 +89,38 @@ const AccountPage = ({ lang = 'en' }) => {
   // window-focus session check's sign-out as is. Separate PR.
   const refreshUser = useAuth()?.refreshUser;
   const authUserId = useAuth()?.currentUser?.userId;
+
+  // ?show=pending, linked from AdminNotifications.js: only questions with no
+  // expert score yet. pendingTotal comes from the same count the
+  // notification shows (api/user/user-stats.js): the table's own total
+  // counts chats, not questions, in its default date order. If the count
+  // fails, the box still shows (no number) so the filter is labelled and
+  // Show all stays reachable.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const showPending = searchParams.get('show') === 'pending';
+  const [pendingLoaded, setPendingLoaded] = useState(false);
+  const [pendingTotal, setPendingTotal] = useState(null);
+  useEffect(() => {
+    if (!showPending) return undefined;
+    let didCancel = false;
+    UserService.getStats()
+      .then((stats) => { if (!didCancel) setPendingTotal(stats?.pendingAssignedCount || 0); })
+      .catch((error) => console.error('Error loading pending assigned count:', error))
+      .finally(() => { if (!didCancel) setPendingLoaded(true); });
+    return () => { didCancel = true; };
+  }, [showPending]);
+  useFocusIdWhenReady(showPending ? 'assigned-filter-summary' : null, pendingLoaded);
+  // Show all: the box (and this button) unmounts, so focus goes to the h2
+  // and the change is announced. replace: Back skips the filtered view.
+  const [showAllCount, setShowAllCount] = useState(0);
+  const assignedHeadingRef = useFocusOnChange(showAllCount);
+  const handleShowAllAssigned = () => {
+    setSearchParams({}, { replace: true });
+    setPendingLoaded(false);
+    setPendingTotal(null);
+    setShowAllCount((n) => n + 1);
+    announce(t('account.assignedChats.filtered.showingAll'));
+  };
 
   useEffect(() => {
     let didCancel = false;
@@ -272,13 +307,15 @@ const AccountPage = ({ lang = 'en' }) => {
       search,
       orderBy: orderBy || 'createdAt',
       orderDir,
+      // Same "no evaluation" filter the chat dashboard uses: partnerEval empty
+      ...(showPending ? { partnerEval: 'noEval' } : {}),
     });
     return {
       data: Array.isArray(result?.data) ? result.data : [],
       recordsTotal: result?.recordsTotal || 0,
       recordsFiltered: result?.recordsFiltered || 0,
     };
-  }, [authUserId]);
+  }, [authUserId, showPending]);
 
   const assignedChatColumns = useMemo(() => [
     {
@@ -541,10 +578,32 @@ const AccountPage = ({ lang = 'en' }) => {
       )}
       {profile && (
         <section className="mb-400">
-          <h2 className="mb-400">{t('account.activityHeading')}</h2>
+          <h2 ref={assignedHeadingRef} tabIndex={-1} className="mb-400 focus-target">{t('account.activityHeading')}</h2>
           {assignedChatsError && <StatusMessage variant="error" message={t('account.assignedChats.loadError')} />}
+          {/* Focus moves here on arrival (useFocusIdWhenReady above), which reads it */}
+          {showPending && pendingLoaded && (
+            <StatusMessage
+              id="assigned-filter-summary"
+              tabIndex={-1}
+              variant="info"
+              announce={false}
+              announcedVia="focus"
+            >
+              <p className="m-0 font-size-text-sm-nr">
+                {pendingTotal === null
+                  ? t('account.assignedChats.filtered.pendingNoCount')
+                  : (isSingular(pendingTotal, lang) ? t('account.assignedChats.filtered.pendingOne') : t('account.assignedChats.filtered.pendingOther')).replace('{count}', () => formatNumber(pendingTotal, lang))}
+              </p>
+              <p className="mt-300 mb-100">
+                <button type="button" className="btn-secondary-sm" onClick={handleShowAllAssigned}>
+                  {t('account.assignedChats.filtered.showAll')}
+                </button>
+              </p>
+            </StatusMessage>
+          )}
           <ServerDataTable
-            tableKey={`assigned-chats-${authUserId || 'none'}`}
+            // Filter in the key: a full rebuild re-fetches with the new filter
+            tableKey={`assigned-chats-${authUserId || 'none'}-${showPending ? 'pending' : 'all'}`}
             caption={t('account.assignedChats.heading')}
             searchLabelSrOnly={t('account.assignedChats.filterLabel')}
             searchPlaceholder={t('admin.common.filterPlaceholder')}
