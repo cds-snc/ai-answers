@@ -107,7 +107,8 @@ const PROFILE_FIELDS = { email: 1, role: 1, active: 1, ...MEMBERSHIP_FIELDS };
 // What the admin Users page shows, for listUsers and adminUpdateUser (the
 // page swaps the saved row for the PATCH response). An allowlist, not
 // '-password': the document also holds resetPasswordSecret (enough to mint
-// valid reset codes), 2FA codes and lockout counters.
+// valid reset codes), 2FA codes and lockout counters. No .lean(): hydrating
+// fills schema defaults, so older users without institution/group get ''.
 const ADMIN_USER_FIELDS = '_id email role active institution group createdAt';
 
 const toProfile = (user) => ({
@@ -233,7 +234,7 @@ class UserServiceClass {
 
   async listUsers() {
     await dbConnect();
-    return User.find({}, ADMIN_USER_FIELDS).sort({ createdAt: -1 }).lean();
+    return User.find({}, ADMIN_USER_FIELDS).sort({ createdAt: -1 });
   }
 
   async adminUpdateUser(userId, { active, role, institution, group } = {}) {
@@ -264,7 +265,7 @@ class UserServiceClass {
       userId,
       updateFields,
       { new: true, select: ADMIN_USER_FIELDS }
-    ).lean();
+    );
     if (!user) throw fail(404, 'User not found');
     return user;
   }

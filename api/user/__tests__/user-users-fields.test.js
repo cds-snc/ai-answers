@@ -71,6 +71,19 @@ describe('user-users only returns the fields the Users page uses', () => {
     expect(row.email).toBe(target.email);
   });
 
+  it('GET fills institution and group for users stored without them', async () => {
+    await dbConnect();
+    const admin = await makeUserWithSecrets({ role: 'admin' });
+    const target = await makeUserWithSecrets();
+    await User.collection.updateOne({ _id: target._id }, { $unset: { institution: '', group: '' } });
+
+    const res = await run('GET', { user: { role: 'admin', userId: admin._id.toString() } });
+
+    const row = res.payload.find(u => u._id === target._id.toString());
+    expect(row.institution).toBe('');
+    expect(row.group).toBe('');
+  });
+
   it('PATCH returns the updated user without secrets or counters', async () => {
     await dbConnect();
     const admin = await makeUserWithSecrets({ role: 'admin' });
