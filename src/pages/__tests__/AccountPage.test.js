@@ -10,12 +10,20 @@ import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
 vi.mock('../../hooks/useTranslations.js', () => ({
   // Keys echo back, except templates whose placeholder a test checks.
-  useTranslations: () => ({ t: (key) => (key === 'account.assignedChats.chatIdQuestion' ? ', question {number}' : key) }),
+  useTranslations: () => ({ t: (key) => (key === 'account.assignedChats.chatIdQuestion' ? ', question {number}' : key.startsWith('account.assignedChats.filtered.pending') ? `${key} {count}` : key) }),
 }));
 
-const { mockGetMe, mockUpdateMe, mockRefreshUser } = vi.hoisted(() => ({ mockGetMe: vi.fn(), mockUpdateMe: vi.fn(), mockRefreshUser: vi.fn() }));
-vi.mock('../../services/UserService.js', () => ({ default: { getMe: mockGetMe, updateMe: mockUpdateMe } }));
-vi.mock('../../contexts/AuthContext.js', () => ({ useAuth: () => ({ refreshUser: mockRefreshUser }) }));
+const { mockGetMe, mockUpdateMe, mockGetStats, mockRefreshUser } = vi.hoisted(() => ({ mockGetMe: vi.fn(), mockUpdateMe: vi.fn(), mockGetStats: vi.fn(), mockRefreshUser: vi.fn() }));
+vi.mock('../../services/UserService.js', () => ({ default: { getMe: mockGetMe, updateMe: mockUpdateMe, getStats: mockGetStats } }));
+const { authState, routerState } = vi.hoisted(() => ({ authState: { userId: undefined }, routerState: { initial: '', lastOpts: null } }));
+vi.mock('../../contexts/AuthContext.js', () => ({ useAuth: () => ({ refreshUser: mockRefreshUser, currentUser: { userId: authState.userId } }) }));
+// Query string held in component state, so setSearchParams re-renders
+vi.mock('react-router-dom', () => ({
+  useSearchParams: () => {
+    const [params, setParams] = React.useState(() => new URLSearchParams(routerState.initial));
+    return [params, (next, opts) => { routerState.lastOpts = opts; setParams(new URLSearchParams(next)); }];
+  },
+}));
 
 vi.mock('datatables.net-react', () => {
   const MockDataTable = ({ columns, children }) => (
@@ -30,7 +38,8 @@ vi.mock('../../components/admin/ServerDataTable.js', () => ({
   default: (props) => {
     const { columns, fetchData } = props;
     tablePropsByCaption[props.caption] = props;
-    React.useEffect(() => { fetchData({ start: 0, length: 10, search: '', orderBy: 'createdAt', orderDir: 'desc' }); }, [fetchData]);
+    // Failures go to onError, as in the real ServerDataTable
+    React.useEffect(() => { Promise.resolve(fetchData({ start: 0, length: 10, search: '', orderBy: 'createdAt', orderDir: 'desc' })).catch((e) => props.onError?.(e)); }, [fetchData]);
     return <table data-testid="mock-server-table"><thead><tr>{columns.map((c) => <th key={c.data}>{c.title}</th>)}</tr></thead></table>;
   },
 }));
@@ -402,5 +411,82 @@ describe('AccountPage', () => {
     // than a visible heading - activityHeading is the meaningful check
     // that the whole assigned-chats section didn't render.
     expect(screen.queryByText('account.activityHeading')).toBeNull();
+  });
+});
+
+describe('AccountPage ?show=pending filter', () => {
+  const PARTNER = { email: 'p@dnd.ca', role: 'partner', active: true, institution: '', group: '', createdAt: '2026-01-15T00:00:00.000Z' };
+  const lastQuery = () => mockGetChatDashboard.mock.calls.at(-1)[0];
+
+  afterEach(() => {
+    cleanup(); mockGetMe.mockReset(); mockGetChatDashboard.mockReset(); mockGetStats.mockReset();
+    authState.userId = undefined; routerState.initial = ''; routerState.lastOpts = null;
+  });
+
+  it('shows only pending questions, in the default date order, and focuses a summary with the count', async () => {
+    authState.userId = 'u1';
+    routerState.initial = 'show=pending';
+    mockGetMe.mockResolvedValue(PARTNER);
+    // Table total counts chats (2 pending questions in 1 chat); the box
+    // shows the question count, same as the notification
+    mockGetStats.mockResolvedValue({ pendingAssignedCount: 2 });
+    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 1, recordsFiltered: 1 });
+    render(<AccountPage lang="en" />);
+    await waitFor(() => expect(document.activeElement?.id).toBe('assigned-filter-summary'));
+    expect(document.activeElement.textContent).toContain('account.assignedChats.filtered.pendingOther 2');
+    expect(lastQuery()).toEqual(expect.objectContaining({ assignedTo: 'u1', partnerEval: 'noEval' }));
+    expect(tablePropsByCaption['account.assignedChats.heading'].order).toEqual([]);
+  });
+
+  it('Show all clears the filter without a history entry, focuses the heading and announces it', async () => {
+    authState.userId = 'u1';
+    routerState.initial = 'show=pending';
+    mockGetMe.mockResolvedValue(PARTNER);
+    mockGetStats.mockResolvedValue({ pendingAssignedCount: 1 });
+    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 1, recordsFiltered: 1 });
+    render(<AccountPage lang="en" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'account.assignedChats.filtered.showAll' }));
+    await waitFor(() => expect(lastQuery().partnerEval).toBeUndefined());
+    expect(routerState.lastOpts).toEqual({ replace: true });
+    expect(screen.queryByText(/account\.assignedChats\.filtered\.pending/)).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'account.activityHeading' }));
+    await waitForAnnouncement('account.assignedChats.filtered.showingAll');
+  });
+
+  it('shows every assigned question, with no summary, without ?show=', async () => {
+    authState.userId = 'u1';
+    mockGetMe.mockResolvedValue(PARTNER);
+    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 5, recordsFiltered: 5 });
+    render(<AccountPage lang="en" />);
+    await waitFor(() => expect(mockGetChatDashboard).toHaveBeenCalled());
+    expect(lastQuery().partnerEval).toBeUndefined();
+    expect(screen.queryByText(/account\.assignedChats\.filtered\./)).toBeNull();
+    expect(mockGetStats).not.toHaveBeenCalled();
+  });
+
+  it('labels the filter without a number when the count fails to load', async () => {
+    authState.userId = 'u1';
+    routerState.initial = 'show=pending';
+    mockGetMe.mockResolvedValue(PARTNER);
+    mockGetStats.mockRejectedValue(new Error('boom'));
+    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 1, recordsFiltered: 1 });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AccountPage lang="en" />);
+    await waitFor(() => expect(document.activeElement?.id).toBe('assigned-filter-summary'));
+    expect(document.activeElement.textContent).toContain('account.assignedChats.filtered.pendingNoCount');
+    expect(screen.getByRole('button', { name: 'account.assignedChats.filtered.showAll' })).toBeTruthy();
+    expect(lastQuery().partnerEval).toBe('noEval');
+    consoleError.mockRestore();
+  });
+
+  it('still shows the summary and Show all when the filtered table fails to load', async () => {
+    authState.userId = 'u1';
+    routerState.initial = 'show=pending';
+    mockGetMe.mockResolvedValue(PARTNER);
+    mockGetStats.mockResolvedValue({ pendingAssignedCount: 1 });
+    mockGetChatDashboard.mockRejectedValue(new Error('boom'));
+    render(<AccountPage lang="en" />);
+    await waitFor(() => expect(document.activeElement?.id).toBe('assigned-filter-summary'));
+    expect(screen.getByRole('button', { name: 'account.assignedChats.filtered.showAll' })).toBeTruthy();
   });
 });

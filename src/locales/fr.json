@@ -618,11 +618,15 @@
       }
     },
     "notifications": {
-      "title": "Notifications utilisateur",
-      "ariaLabel": "Notifications utilisateur",
-      "newInactive": "nouvel(aux) utilisateur(s) en attente d'activation (7 derniers jours)",
-      "totalInactive": "utilisateur(s) inactif(s) au total",
-      "viewUsers": "Voir et gérer les utilisateurs"
+      "ariaLabel": "Notifications",
+      "assignedHeading": "Questions à évaluer",
+      "accountsHeading": "Comptes utilisateur inactifs",
+      "pendingAssignedOne": "{count} question attend votre évaluation",
+      "pendingAssignedOther": "{count} questions attendent votre évaluation",
+      "newInactiveOne": "{count} nouvelle demande de compte au cours des 7 derniers jours",
+      "newInactiveOther": "{count} nouvelles demandes de compte au cours des 7 derniers jours",
+      "totalInactiveOne": "{count} compte inactif au total",
+      "totalInactiveOther": "{count} comptes inactifs au total"
     },
     "footer": {
       "heading": "Ressources pour les administrateurs et les partenaires",
@@ -1154,6 +1158,13 @@
         "partnerNotes": "Notes",
         "evaluated": "Évalué"
       },
+      "filtered": {
+        "pendingOne": "Affichage de {count} question en attente de votre évaluation.",
+        "pendingOther": "Affichage de {count} questions en attente de votre évaluation.",
+        "pendingNoCount": "Affichage des questions en attente de votre évaluation.",
+        "showAll": "Afficher toutes les questions attribuées",
+        "showingAll": "Affichage de toutes les questions attribuées."
+      },
       "evalStatus": {
         "completed": "Terminé",
         "pending": "En attente"
@@ -1189,6 +1200,14 @@
     "groupClearedAnnouncement": "Groupe effacé.",
     "groupRestoredAnnouncement": "Groupe rétabli : {group}.",
     "filterLabel": "Filtrer les utilisateurs",
+    "filtered": {
+      "newOne": "Affichage de {count} nouvelle demande de compte des 7 derniers jours.",
+      "newOther": "Affichage de {count} nouvelles demandes de compte des 7 derniers jours.",
+      "inactiveOne": "Affichage de {count} compte inactif.",
+      "inactiveOther": "Affichage de {count} comptes inactifs.",
+      "showAll": "Afficher tous les utilisateurs",
+      "showingAll": "Affichage de tous les utilisateurs."
+    },
     "columns": {
       "email": "Courriel",
       "role": "Rôle",

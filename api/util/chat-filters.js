@@ -132,6 +132,12 @@ export function getFeedbackDataProjection(docsField, { includeContentIssue = fal
 // (categorizeExpertFeedback above is the older categorizer with different
 // edge-case semantics — a scored row without totalScore 100 falls back to
 // 'correct' there, but stays null here and in the aggregation.)
+// Every field deriveExpertFeedbackCategory reads, for callers that fetch
+// only these (a find() projection). Add to it when the function reads more.
+export const EXPERT_FEEDBACK_CATEGORY_FIELDS = [1, 2, 3, 4]
+  .flatMap((n) => [`sentence${n}Score`, `sentence${n}Harmful`])
+  .concat(['citationScore', 'totalScore']);
+
 export function deriveExpertFeedbackCategory(ef) {
   if (!ef) return null;
   const sentenceScores = [1, 2, 3, 4].map((n) => ef[`sentence${n}Score`]);
