@@ -4,6 +4,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import dbConnect from './db-connect.js';
+import { isAutoEvalFeedback } from '../../services/EmbeddingMetadataService.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
 
@@ -42,8 +43,10 @@ async function repairExpertFeedbackHandler(req, res) {
           }
         );
         stats.expertFeedback.updated++;
-      } else if (feedback.type === 'ai') {
-        // Leave AI types alone but count them
+      } else if (isAutoEvalFeedback(feedback)) {
+        // Leave AI types alone but count them. The shared check, so 'AI' or
+        // ' ai' isn't treated as unknown below and stamped 'expert' - that
+        // would turn an AI evaluation into a human one.
         stats.expertFeedback.alreadyCorrect++;
       } else if (feedback.type === 'expert') {
         // Already correct, count it
