@@ -25,7 +25,7 @@ describe('buildSystemCardMarkdown', () => {
   const { frontmatter, contentBody } = parseFrontmatter(markdown);
 
   it('adds frontmatter with the card title and the given description', () => {
-    expect(frontmatter.title).toBe('AI Answers system card');
+    expect(frontmatter.title).toBe('AI Answers system card - Canada.ca');
     expect(frontmatter.description).toBe('A "quoted" description');
   });
 
@@ -51,7 +51,7 @@ describe('buildSystemCardMarkdown', () => {
 
   it('falls back to the standard page title when the card has none', () => {
     const fr = parseFrontmatter(build('no title here', { lang: 'fr' }).markdown);
-    expect(fr.frontmatter.title).toBe('Fiche système Réponses IA');
+    expect(fr.frontmatter.title).toBe('Fiche système Réponses IA - Canada.ca');
   });
 
   it('shows a missing image or PDF as unavailable text, in the page language, instead of failing', () => {

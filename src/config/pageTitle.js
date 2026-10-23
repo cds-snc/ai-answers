@@ -13,9 +13,14 @@ export const buildSiteTitle = (lang) => {
     : `Beta: ${DEFAULT_METADATA.TITLE[langKey]}`;
 };
 
+// Public pages (chat home, 404, About, system card) end in "- Canada.ca",
+// like AEM pages. About and system card add it in their own titles.
+export const withCanadaCaSuffix = (title) => `${title} - Canada.ca`;
+
 // pageTitle: the already-translated page title (e.g. t(titleKey)), or null
 // for routes with no titleKey - callers match App.js's own fallback there.
-export const buildPageTitle = (pageTitle, lang) => {
+export const buildPageTitle = (pageTitle, lang, { canadaCa = false } = {}) => {
   const siteTitle = buildSiteTitle(lang);
-  return pageTitle ? `${pageTitle} - ${siteTitle}` : siteTitle;
+  const title = pageTitle ? `${pageTitle} - ${siteTitle}` : siteTitle;
+  return canadaCa ? withCanadaCaSuffix(title) : title;
 };

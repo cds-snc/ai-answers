@@ -1053,6 +1053,7 @@
     },
     "2fa": {
       "title": "Two-factor authentication",
+      "pageTitle": "Two-factor authentication sign in",
       "code": "Verification code",
       "verify": "Verify code",
       "resend": "Resend code",

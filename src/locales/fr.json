@@ -1066,6 +1066,7 @@
     },
     "2fa": {
       "title": "Authentification à deux facteurs",
+      "pageTitle": "Connexion par authentification à deux facteurs",
       "code": "Code de vérification",
       "verify": "Vérifier le code",
       "resend": "Renvoyer le code",
