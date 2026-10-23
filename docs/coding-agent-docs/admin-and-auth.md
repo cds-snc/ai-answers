@@ -112,10 +112,11 @@ logs the new (inactive) user in, which moves them to the signed-in rate-limit bu
 [docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field that nothing reads or
 writes; existing accounts still hold a value until a migration clears it.
 
-Open (F5 in the plan, own PR): `UserService.listUsers()` leaves out only `password`, so the
-admin users list sends every user's `resetPasswordSecret`, `twoFACode` and lockout fields to
-the browser. Don't add consumers of that response; the fix is an allowlist of the fields the
-Users page shows.
+The admin users endpoint (`user-users`, list and PATCH) returns only the fields in
+`ADMIN_USER_FIELDS` (`services/UserService.js`), never the whole user document, which holds
+`resetPasswordSecret`, `twoFACode` and lockout counters (F5 in the plan). To show a new column on
+the Users page, add its field to that allowlist, and keep secrets and counters out of it.
+`api/user/__tests__/user-users-fields.test.js` fails if anything else comes back.
 
 ## Password reset
 

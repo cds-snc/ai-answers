@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in and two-factor authentication
 
-Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) and Phases 2 and 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phases 2 and 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -81,6 +81,21 @@ secrets still sit in browser memory, devtools and any saved network trace.
 Fix in its own small PR, not tied to a phase: return only the fields the page uses (an allowlist,
 not an exclusion list) and test that no secret or counter field comes back. In the same file, stop
 sending `error.message` in the 500 responses.
+
+**Status (2026-10-23): built on branch `auth-hardening-emails`, not yet merged.** One allowlist
+(`ADMIN_USER_FIELDS` in `services/UserService.js`) covers both `listUsers` and the PATCH response
+from `adminUpdateUser`. PATCH had the same leak, because it also left out only `password`, and the
+page replaces the saved row with that response. The 500 responses no longer include
+`error.message`. Test: `api/user/__tests__/user-users-fields.test.js`.
+
+Follow-ups found in review, each its own PR:
+- **Hide secret fields by default.** Mark `resetPasswordSecret`, `twoFACode`, `twoFASecret` and
+  the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
+  asks. Then F5 can't come back through some other endpoint. The sign-in, 2FA and reset code
+  must then select them with `+field`.
+- **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
+  schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
+  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 

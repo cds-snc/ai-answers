@@ -8,7 +8,7 @@ async function usersHandler(req, res) {
                 res.status(200).json(await UserService.listUsers());
             } catch (error) {
                 console.error('Error retrieving users:', error);
-                res.status(500).json({ message: 'Failed to retrieve users', error: error.message });
+                res.status(500).json({ message: 'Failed to retrieve users' });
             }
             break;
 
@@ -22,7 +22,7 @@ async function usersHandler(req, res) {
             } catch (error) {
                 if (error.status) return res.status(error.status).json({ message: error.message });
                 console.error('Error updating user:', error);
-                res.status(500).json({ message: 'Failed to update user', error: error.message });
+                res.status(500).json({ message: 'Failed to update user' });
             }
             break;
 
@@ -37,7 +37,7 @@ async function usersHandler(req, res) {
             } catch (error) {
                 if (error.status) return res.status(error.status).json({ message: error.message });
                 console.error('Error deleting user:', error);
-                res.status(500).json({ message: 'Failed to delete user', error: error.message });
+                res.status(500).json({ message: 'Failed to delete user' });
             }
             break;
 

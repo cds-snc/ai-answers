@@ -104,6 +104,12 @@ function assertGroupFitsInstitution(current, updateFields) {
 const MEMBERSHIP_FIELDS = { institution: 1, group: 1, preferences: 1 };
 const PROFILE_FIELDS = { email: 1, role: 1, active: 1, ...MEMBERSHIP_FIELDS };
 
+// What the admin Users page shows, for listUsers and adminUpdateUser (the
+// page swaps the saved row for the PATCH response). An allowlist, not
+// '-password': the document also holds resetPasswordSecret (enough to mint
+// valid reset codes), 2FA codes and lockout counters.
+const ADMIN_USER_FIELDS = '_id email role active institution group createdAt';
+
 const toProfile = (user) => ({
   email: user.email,
   role: user.role,
@@ -227,7 +233,7 @@ class UserServiceClass {
 
   async listUsers() {
     await dbConnect();
-    return User.find({}, { password: 0 }).sort({ createdAt: -1 });
+    return User.find({}, ADMIN_USER_FIELDS).sort({ createdAt: -1 }).lean();
   }
 
   async adminUpdateUser(userId, { active, role, institution, group } = {}) {
@@ -257,8 +263,8 @@ class UserServiceClass {
     const user = await User.findByIdAndUpdate(
       userId,
       updateFields,
-      { new: true, select: '-password' }
-    );
+      { new: true, select: ADMIN_USER_FIELDS }
+    ).lean();
     if (!user) throw fail(404, 'User not found');
     return user;
   }
