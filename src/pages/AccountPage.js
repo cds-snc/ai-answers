@@ -109,7 +109,9 @@ const AccountPage = ({ lang = 'en' }) => {
       .finally(() => { if (!didCancel) setPendingLoaded(true); });
     return () => { didCancel = true; };
   }, [showPending]);
-  useFocusIdWhenReady(showPending ? 'assigned-filter-summary' : null, pendingLoaded);
+  // The box renders inside {profile && ...}, so wait for both: otherwise a
+  // slow profile load outlasts the hook's retries and focus never lands
+  useFocusIdWhenReady(showPending ? 'assigned-filter-summary' : null, pendingLoaded && Boolean(profile));
   // Show all: the box (and this button) unmounts, so focus goes to the h2
   // and the change is announced. replace: Back skips the filtered view.
   const [showAllCount, setShowAllCount] = useState(0);

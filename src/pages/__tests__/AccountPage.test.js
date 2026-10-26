@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import AccountPage from '../AccountPage.js';
 import { getAnnouncedTexts } from '../../utils/liveAnnouncer.js';
 import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
@@ -488,5 +488,26 @@ describe('AccountPage ?show=pending filter', () => {
     render(<AccountPage lang="en" />);
     await waitFor(() => expect(document.activeElement?.id).toBe('assigned-filter-summary'));
     expect(screen.getByRole('button', { name: 'account.assignedChats.filtered.showAll' })).toBeTruthy();
+  });
+
+  it('still focuses the summary when the profile loads after the count', async () => {
+    authState.userId = 'u1';
+    routerState.initial = 'show=pending';
+    let resolveMe;
+    mockGetMe.mockReturnValue(new Promise((resolve) => { resolveMe = resolve; }));
+    mockGetStats.mockResolvedValue({ pendingAssignedCount: 1 });
+    mockGetChatDashboard.mockResolvedValue({ data: [], recordsTotal: 1, recordsFiltered: 1 });
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+    try {
+      render(<AccountPage lang="en" />);
+      await act(async () => {});
+      // Count loaded, profile not yet: run past every focus retry
+      act(() => { vi.advanceTimersByTime(5000); });
+      await act(async () => { resolveMe(PARTNER); });
+      act(() => { vi.advanceTimersByTime(100); });
+      expect(document.activeElement?.id).toBe('assigned-filter-summary');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
