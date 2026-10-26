@@ -1,5 +1,4 @@
-import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaContextSearch.js';
-import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
+import { getSearchProvider } from '../agents/tools/searchProvider.js';
 import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
@@ -7,9 +6,7 @@ import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const searchFunction = searchService.toLowerCase() === 'google'
-        ? googleContextSearch
-        : canadaContextSearch;
+    const searchFunction = getSearchProvider(searchService);
 
     return await exponentialBackoff(() => searchFunction(query, lang));
 }
@@ -17,9 +14,10 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
 function countSearchResults(resultsString) {
     if (!resultsString || resultsString === 'No results found.') return 0;
     // Coveo results use "Summary:", Google results use "Title:"
+    const passageCount = (resultsString.match(/^Passage: /gm) || []).length;
     const summaryCount = (resultsString.match(/^Summary: /gm) || []).length;
     const titleCount = (resultsString.match(/^Title: /gm) || []).length;
-    return Math.max(summaryCount, titleCount);
+    return Math.max(passageCount, summaryCount, titleCount);
 }
 
 export const SearchContextService = {

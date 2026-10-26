@@ -7,7 +7,7 @@ const ChatOptions = ({
   safeT,
   selectedAI,
   handleAIToggle,
-  // selectedSearch,
+  selectedSearch,
   handleSearchToggle,
   workflow,
   handleWorkflowChange,
@@ -54,23 +54,19 @@ const ChatOptions = ({
             </div>
           </div>
 
-          {/* Search selection is hidden for now; Google is forced as the search provider
-              We keep the radio inputs in the DOM (visually hidden) so this can be
-              re-enabled easily in the future. */}
-          <div className="search-toggle" aria-hidden="true">
+          <div className="search-toggle">
             <fieldset className="ai-toggle_fieldset">
-              {/* visually hide the options but keep them in DOM for future re-enable */}
-              <div className="ai-toggle_container" style={{ display: 'none' }}>
-                <legend className="ai-toggle_legend">
-                  {safeT('homepage.chat.options.searchSelection.label')}
-                </legend>
+              <legend className="ai-toggle_legend">
+                {safeT('homepage.chat.options.searchSelection.label')}
+              </legend>
+              <div className="ai-toggle_container">
                 <div className="ai-toggle_option">
                   <input
                     type="radio"
                     id="search-canadaca"
                     name="search-selection"
                     value="canadaca"
-                    checked={false}
+                    checked={selectedSearch === 'canadaca'}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
@@ -84,12 +80,26 @@ const ChatOptions = ({
                     id="search-google"
                     name="search-selection"
                     value="google"
-                    checked={true}
+                    checked={selectedSearch === 'google'}
                     onChange={handleSearchToggle}
                     className="ai-toggle_radio-input"
                   />
                   <label htmlFor="search-google">
                     {safeT('homepage.chat.options.searchSelection.google')}
+                  </label>
+                </div>
+                <div className="ai-toggle_option">
+                  <input
+                    type="radio"
+                    id="search-coveo-passage-retrieval"
+                    name="search-selection"
+                    value="coveo-passage-retrieval"
+                    checked={selectedSearch === 'coveo-passage-retrieval'}
+                    onChange={handleSearchToggle}
+                    className="ai-toggle_radio-input"
+                  />
+                  <label htmlFor="search-coveo-passage-retrieval">
+                    {safeT('homepage.chat.options.searchSelection.coveoPassageRetrieval')}
                   </label>
                 </div>
               </div>
@@ -114,4 +124,3 @@ const ChatOptions = ({
 };
 
 export default ChatOptions;
-

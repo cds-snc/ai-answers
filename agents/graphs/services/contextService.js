@@ -1,8 +1,7 @@
 import { AgentOrchestratorService } from '../../../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../../../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../../../agents/strategies/queryRewriteStrategy.js';
-import { contextSearch as canadaContextSearch } from '../../../agents/tools/canadaCaContextSearch.js';
-import { contextSearch as googleContextSearch } from '../../../agents/tools/googleContextSearch.js';
+import { getSearchProvider } from '../../../agents/tools/searchProvider.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import loadContextSystemPrompt from '../../prompts/contextSystemPrompt.js';
 import ServerLoggingService from '../../../services/ServerLoggingService.js';
@@ -47,7 +46,7 @@ export function parseContextMessage(context) {
 }
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-  const searchFn = searchService?.toLowerCase() === 'google' ? googleContextSearch : canadaContextSearch;
+  const searchFn = getSearchProvider(searchService);
   return exponentialBackoff(() => searchFn(query, lang), 5, 500);
 }
 
