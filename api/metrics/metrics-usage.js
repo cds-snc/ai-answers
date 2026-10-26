@@ -1,7 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression, getEvalInformedAggregationExpression } from '../util/chat-filters.js';
+import { EVAL_INFORMED_WORKFLOW } from '../../src/config/workflows.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter = []) {
@@ -41,6 +42,11 @@ function getBasePipelineStages(dateFilter, extraFilters = [], departmentFilter =
                 searchProvider: 1,
                 pageLanguage: 1,
                 department: { $arrayElemAt: ['$ctx.department', 0] },
+                // Eval-informed rate: only questions answered by the
+                // eval-informed workflow count toward it (eligible), and only
+                // those can be eval-informed — combined in the next $project.
+                evalInformedEligible: { $eq: ['$interactions.workflow', EVAL_INFORMED_WORKFLOW] },
+                hasQaMatches: getEvalInformedAggregationExpression({ $arrayElemAt: ['$ctx.qaMatches', 0] }),
                 contextInputTokens: { $convert: { input: '$interactions.context.inputTokens', to: 'int', onError: 0, onNull: 0 } },
                 contextOutputTokens: { $convert: { input: '$interactions.context.outputTokens', to: 'int', onError: 0, onNull: 0 } },
                 // We need answer lookup for tokens and answerType
@@ -100,6 +106,8 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             inputTokens: { $add: ['$contextInputTokens', '$answerInputTokens'] },
             outputTokens: { $add: ['$contextOutputTokens', '$answerOutputTokens'] },
             answerType: { $ifNull: ['$answer.answerType', 'normal'] },
+            evalInformedEligible: 1,
+            evalInformed: { $and: ['$evalInformedEligible', '$hasQaMatches'] },
             expertFeedbackId: 1,
             autoEvalId: 1
         }
@@ -123,11 +131,12 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
+                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
                 }
             },
             { $match: partnerEvalFilter },
-            { $project: { ef_filter: 0, category: 0 } } // Cleanup temporary fields
+            { $project: { ef_filter: 0, category: 0, hasCitationError: 0 } } // Cleanup temporary fields
         );
     }
 
@@ -152,11 +161,12 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             },
             { $match: aiEvalFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } } // Cleanup
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0, hasCitationError: 0 } } // Cleanup
         );
     }
 
@@ -175,6 +185,14 @@ function buildOverallStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             totalOutputTokensEn: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'en'] }, '$outputTokens', 0] } },
             totalOutputTokensFr: { $sum: { $cond: [{ $eq: ['$pageLanguage', 'fr'] }, '$outputTokens', 0] } },
             totalGoogleSearches: { $sum: { $cond: [{ $eq: ['$searchProvider', 'google'] }, 1, 0] } },
+            evalInformedEligible: { $sum: { $cond: ['$evalInformedEligible', 1, 0] } },
+            // $min skips nulls, so this is the first eligible question's date.
+            evalInformedFirstDate: { $min: { $cond: ['$evalInformedEligible', '$createdAt', null] } },
+            evalInformedEligibleEn: { $sum: { $cond: [{ $and: ['$evalInformedEligible', { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
+            evalInformedEligibleFr: { $sum: { $cond: [{ $and: ['$evalInformedEligible', { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
+            evalInformedCount: { $sum: { $cond: ['$evalInformed', 1, 0] } },
+            evalInformedCountEn: { $sum: { $cond: [{ $and: ['$evalInformed', { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
+            evalInformedCountFr: { $sum: { $cond: [{ $and: ['$evalInformed', { $eq: ['$pageLanguage', 'fr'] }] }, 1, 0] } },
             // Answer types
             normalCount: { $sum: { $cond: [{ $eq: ['$answerType', 'normal'] }, 1, 0] } },
             normalCountEn: { $sum: { $cond: [{ $and: [{ $eq: ['$answerType', 'normal'] }, { $eq: ['$pageLanguage', 'en'] }] }, 1, 0] } },
@@ -211,7 +229,7 @@ async function getUsageMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
 
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
@@ -232,6 +250,16 @@ async function getUsageMetrics(req, res) {
             totalOutputTokensEn: overall.totalOutputTokensEn || 0,
             totalOutputTokensFr: overall.totalOutputTokensFr || 0,
             totalGoogleSearches: overall.totalGoogleSearches || 0,
+            // eligible = questions answered by the eval-informed workflow
+            // (the rate's denominator, per language too); informed =
+            // eval-informed answers.
+            evalInformed: {
+                eligible: { total: overall.evalInformedEligible || 0, en: overall.evalInformedEligibleEn || 0, fr: overall.evalInformedEligibleFr || 0 },
+                informed: { total: overall.evalInformedCount || 0, en: overall.evalInformedCountEn || 0, fr: overall.evalInformedCountFr || 0 },
+                // Earliest eligible question in range; later than firstDataDate
+                // when the range starts before eval-informed answering did.
+                firstDate: overall.evalInformedFirstDate || null
+            },
             answerTypes: {
                 normal: { total: overall.normalCount || 0, en: overall.normalCountEn || 0, fr: overall.normalCountFr || 0 },
                 'clarifying-question': { total: overall.clarifyingCount || 0, en: overall.clarifyingCountEn || 0, fr: overall.clarifyingCountFr || 0 },
@@ -258,4 +286,4 @@ async function getUsageMetrics(req, res) {
     }
 }
 
-export default withProtection(getUsageMetrics);
+export default withProtection(getUsageMetrics, authMiddleware, partnerOrAdminMiddleware);

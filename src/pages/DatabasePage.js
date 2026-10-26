@@ -1,26 +1,54 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink, GcdsIcon, GcdsFieldset } from '@gcds-core/components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { formatNumber } from '../utils/numberFormat.js';
+import { formatLocaleDate } from '../utils/formatLocaleDate.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useInlineFormError } from '../hooks/useInlineFormError.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
+import { useAnnounceOnChange } from '../hooks/useAnnounceOnChange.js';
+import { announce } from '../utils/liveAnnouncer.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
   getDatabaseExportCollections,
-  getDatabaseExportFilenameTag
+  getDatabaseExportFilenameTag,
+  exportHasNoDates,
+  toExportDateBounds
 } from '../utils/database/exportCollections.js';
+
+// How often the page asks whether a running index rebuild has finished
+const INDEX_REBUILD_POLL_MS = 5000;
 
 const DatabasePage = ({ lang }) => {
   const { t } = useTranslations(lang);
+
+  // Every ...Message state below shares the same { text } (success) or
+  // { prefix, suffix, detail, isError } (error) shape — buildErrorStatus/
+  // renderStatusMessage build and render it, shared with SettingsPage.js's
+  // own single use of the same shape (useErrorStatus.js) rather than each
+  // hand-rolling it independently.
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
+
   const [isExporting, setIsExporting] = useState(false);
   const [collections, setCollections] = useState([]);
+  const [collectionsWithoutDates, setCollectionsWithoutDates] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
-  const [importSelectedCollections, setImportSelectedCollections] = useState(['All']);
+  const importProgressRef = useRef(null);
+  // skippable: a chunk tick is only worth saying if it's still the latest
+  // one — fast chunks would otherwise queue up behind the announcer's
+  // minimum gap and delay the final outcome behind stale "chunk N of M"s.
+  useAnnounceOnChange(importProgressRef, { skippable: true });
+  // 'All' | 'AllButLogs' | 'Chosen' (only the tables in importChosenTables)
+  const [importScope, setImportScope] = useState('All');
+  const [importChosenTables, setImportChosenTables] = useState([]);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
@@ -28,33 +56,73 @@ const DatabasePage = ({ lang }) => {
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isRepairingQaMatchScores, setIsRepairingQaMatchScores] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
-  const [message, setMessage] = useState('');
+  // Each async action below gets its own { text, isError } | null message
+  // state, rendered right next to its own button, instead of one shared
+  // state that only ever renders in one fixed page position regardless of
+  // which button was clicked (was: a single `message` state rendered near
+  // the top during import and at the very bottom of the page otherwise).
+  const [exportMessage, setExportMessage] = useState(null);
+  const [importMessage, setImportMessage] = useState(null);
+  const [createIndexesMessage, setCreateIndexesMessage] = useState(null);
+  const [dropIndexesMessage, setDropIndexesMessage] = useState(null);
+  const [indexStatusMessage, setIndexStatusMessage] = useState(null);
+  const [deleteSystemLogsMessage, setDeleteSystemLogsMessage] = useState(null);
+  const [repairTimestampsMessage, setRepairTimestampsMessage] = useState(null);
+  const [deleteAllBatchesMessage, setDeleteAllBatchesMessage] = useState(null);
+  const [repairExpertFeedbackMessage, setRepairExpertFeedbackMessage] = useState(null);
+  const [migratePublicFeedbackMessage, setMigratePublicFeedbackMessage] = useState(null);
+  const [repairQaMatchScoresMessage, setRepairQaMatchScoresMessage] = useState(null);
+  // Keyed by check.id — each integrity check button announces its own
+  // outcome next to itself, not through one shared page-level message.
+  const [checksMessages, setChecksMessages] = useState({});
+  const [removeDuplicatesMessage, setRemoveDuplicatesMessage] = useState(null);
   const [isCreatingIndexes, setIsCreatingIndexes] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
   const [tableCounts, setTableCounts] = useState(null);
-  const [countsError, setCountsError] = useState('');
+  const [countsError, setCountsError] = useState(null);
   // Import controls: chunk size in MB and optional throttle between chunk uploads (ms)
   const [importChunkMB, setImportChunkMB] = useState(90); // default 90 MB per file slice
   const [importThrottleMs, setImportThrottleMs] = useState(0); // default no extra delay between chunk POSTs
   const fileInputRef = useRef(null);
+  // "No file selected" is a validation error tied to this field, not a
+  // page-level outcome — matches SettingsPage.js's FeedbackInlineError
+  // pattern (field-tied via id/aria-describedby) rather than StatusMessage.
+  // useInlineFormError (rather than a bare useState) is what makes repeat
+  // identical failures (e.g. clicking Import twice with no file selected)
+  // still re-announce to screen readers — see the hook's own comment.
+  const fileSelectError = useInlineFormError();
+  // "Only the tables I choose" with nothing ticked — same field-tied pattern.
+  const importTablesError = useInlineFormError();
   const [checksRunning, setChecksRunning] = useState({});
   const [checksResults, setChecksResults] = useState({});
   const [isRemovingDuplicates, setIsRemovingDuplicates] = useState(false);
   const [isCheckingIndexStatus, setIsCheckingIndexStatus] = useState(false);
   const [indexStatus, setIndexStatus] = useState(null);
-  const [creationDetails, setCreationDetails] = useState(null);
+  // Last "Rebuild all indexes" run from the server — it rebuilds in the
+  // background, so the page polls this while it's running.
+  const [indexRebuild, setIndexRebuild] = useState(null);
+  // Second box, only when a rebuild both failed and left collections still
+  // building — so each box's colour matches its own list.
+  const [stillBuildingMessage, setStillBuildingMessage] = useState(null);
+  // Only a rebuild started by a click on this visit is announced. One the
+  // page finds on load is shown quietly — rebuilding is a small part of
+  // this page, and nobody just asked for it.
+  const announceRebuildRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     async function fetchCountsAndCollections() {
-      setCountsError('');
+      setCountsError(null);
       try {
         const counts = await DataStoreService.getTableCounts();
         if (isMounted) setTableCounts(counts);
       } catch (e) {
-        if (isMounted) setCountsError(e.message);
+        // Was raw e.message, untranslated and unwrapped — same fix as the
+        // ~13 buildErrorStatus call sites below, just missed on this one
+        // since it predates them (fetched on mount, not from a button).
+        if (isMounted) setCountsError(buildErrorStatus('admin.database.countsError', e));
       }
       // Fetch collections for export dropdown
       try {
@@ -62,8 +130,9 @@ const DatabasePage = ({ lang }) => {
           method: 'GET'
         });
         if (collectionsRes.ok) {
-          const { collections } = await collectionsRes.json();
+          const { collections, collectionsWithoutDates } = await collectionsRes.json();
           if (isMounted && Array.isArray(collections)) setCollections(collections);
+          if (isMounted && Array.isArray(collectionsWithoutDates)) setCollectionsWithoutDates(collectionsWithoutDates);
         }
       } catch (e) {
         // ignore
@@ -73,10 +142,106 @@ const DatabasePage = ({ lang }) => {
     return () => { isMounted = false; };
   }, []);
 
+  // Finished rebuild: success; info when some collections are still
+  // building (not a failure); or error, plus a separate info box when some
+  // are also still building. Each list sits in its own box below.
+  // Dated, since the page also shows one from an earlier visit.
+  const showRebuildResult = (rebuild, announce) => {
+    const time = formatLocaleDate(rebuild.finishedAt, lang, null, { dateStyle: 'long', timeStyle: 'short' });
+    const total = rebuild.success.length + rebuild.failed.length + rebuild.stillBuilding.length;
+    const stillBuilding = rebuild.stillBuilding.length > 0
+      ? t('admin.database.createIndexesStillBuilding').replace('{count}', rebuild.stillBuilding.length)
+      : '';
+    const counts = t('admin.database.createIndexesCounts')
+      .replace('{successCount}', rebuild.success.length)
+      .replace('{failCount}', rebuild.failed.length);
+    if (rebuild.failed.length > 0) {
+      setCreateIndexesMessage({
+        text: [
+          t('admin.database.createIndexesFailed')
+            .replace('{failCount}', rebuild.failed.length)
+            .replace('{total}', total)
+            .replace('{time}', time),
+          counts
+        ].join(' '),
+        isError: true,
+        announce
+      });
+      setStillBuildingMessage(stillBuilding ? { text: stillBuilding, announce } : null);
+      return;
+    }
+    setCreateIndexesMessage({
+      text: [t('admin.database.createIndexesFinished').replace('{time}', time), counts, stillBuilding].filter(Boolean).join(' '),
+      variant: stillBuilding ? 'info' : 'success',
+      announce
+    });
+    setStillBuildingMessage(null);
+  };
+
+  // Show the last rebuild's result, and pick up one still running
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLastRebuild() {
+      try {
+        const rebuild = await DataStoreService.getIndexRebuildStatus();
+        if (!isMounted || !rebuild) return;
+        setIndexRebuild(rebuild);
+        if (rebuild.running) {
+          setCreateIndexesMessage({ text: t('admin.database.createIndexesAlreadyRunning'), variant: 'info', announce: false });
+        } else {
+          showRebuildResult(rebuild, false);
+        }
+      } catch (e) {
+        // ignore — the page works without it
+      }
+    }
+    fetchLastRebuild();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!indexRebuild?.running) return undefined;
+    const timer = setTimeout(async () => {
+      try {
+        const rebuild = await DataStoreService.getIndexRebuildStatus();
+        const announce = announceRebuildRef.current;
+        setIndexRebuild(rebuild);
+        if (!rebuild) {
+          // Server restarted mid-rebuild, so its record is gone
+          setCreateIndexesMessage({ text: t('admin.database.createIndexesLost'), variant: 'warning', announce });
+        } else if (!rebuild.running) {
+          showRebuildResult(rebuild, announce);
+        }
+      } catch (error) {
+        setIndexRebuild(null);
+        setCreateIndexesMessage({ ...buildErrorStatus('admin.database.indexRebuildStatusError', error), announce: announceRebuildRef.current });
+      }
+    }, INDEX_REBUILD_POLL_MS);
+    return () => clearTimeout(timer);
+  }, [indexRebuild]);
+
+  // TODO (pending review — open question, not yet a confirmed gap):
+  // SettingsPage.js's real convention (stageChange) is narrower than it
+  // first looks — editing a field clears only that *section's* own stale
+  // save message, never a sibling section's. Export/Import here already
+  // match that exactly (each clears its own message when its own fields
+  // change). The other ~10 operations (Drop indexes, Repair timestamps,
+  // Migrate public feedback, etc.) are single-button actions with no
+  // editable fields at all, so there's no field-edit event to hook a clear
+  // into the way Settings/Export/Import do — per that actual precedent,
+  // that may not be a gap. Open question for review: should an unrelated
+  // stale message (e.g. "Repair timestamps succeeded" sitting on screen
+  // while the admin then clicks "Drop indexes") get cleared by that
+  // unrelated click, or is per-operation persistence until its own button
+  // is re-clicked actually fine? Don't copy VectorPage.js's
+  // fetchVectorStats (clears a sibling message too) as precedent here —
+  // that pattern hasn't been reviewed yet.
+  const exportDatesUnavailable = exportHasNoDates(selectedCollection, collectionsWithoutDates);
+
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      setMessage('');
+      setExportMessage(null);
 
       // Use selectedCollection for export
       const collectionsToExport = getDatabaseExportCollections(selectedCollection, collections);
@@ -91,6 +256,7 @@ const DatabasePage = ({ lang }) => {
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
       const initialChunkSize = Number(exportLimit) || 10000;
+      const dateBounds = exportDatesUnavailable ? {} : toExportDateBounds({ startDate, endDate });
       const minChunkSize = 1;
 
       for (let i = 0; i < collectionsToExport.length; i++) {
@@ -107,8 +273,8 @@ const DatabasePage = ({ lang }) => {
               // Add date range and always use updatedAt
               let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&limit=${chunkSize}`);
               if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
-              if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
-              if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+              if (dateBounds.startDate) url += `&startDate=${encodeURIComponent(dateBounds.startDate)}`;
+              if (dateBounds.endDate) url += `&endDate=${encodeURIComponent(dateBounds.endDate)}`;
               if (selectedCollection === EXPERT_EVAL_CHATS_EXPORT) url += '&exportScope=expertEvalChats';
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
@@ -154,9 +320,9 @@ const DatabasePage = ({ lang }) => {
         }
       }
       await writer.close();
-      setMessage('Database exported successfully');
+      setExportMessage({ text: t('admin.database.exportSuccess'), isError: false });
     } catch (error) {
-      setMessage(`Export failed: ${error.message}`);
+      setExportMessage(buildErrorStatus('admin.database.exportError', error));
       console.error('Export error:', error);
     } finally {
       setIsExporting(false);
@@ -165,14 +331,24 @@ const DatabasePage = ({ lang }) => {
 
   const handleImport = async (event) => {
     event.preventDefault();
+    // One error at a time: each moves focus onto itself.
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setMessage('Please select a file to import');
+      fileSelectError.triggerError();
       return;
     }
+    fileSelectError.clearError();
+    if (importScope === 'Chosen' && importChosenTables.length === 0) {
+      importTablesError.triggerError();
+      return;
+    }
+    importTablesError.clearError();
+    // Import upserts over existing records, so it gets the same popup as
+    // every other destructive action on this page.
+    if (!window.confirm(t('admin.database.importConfirm'))) return;
 
     setIsImporting(true);
-    setMessage('Starting import...');
+    setImportMessage({ text: t('admin.database.importStarting'), isError: false });
     // lineBuffer is managed inside the try block per chunk
     let accumulatedStats = { inserted: 0, failed: 0, skipped: 0, skippedExamples: [] };
 
@@ -188,12 +364,7 @@ const DatabasePage = ({ lang }) => {
       // helper: sleep and send with retries (exponential backoff)
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       // build collection payload for POST: 'All' | 'AllButLogs' | [list]
-      const buildCollectionPayload = () => {
-        const sel = Array.isArray(importSelectedCollections) ? importSelectedCollections : [importSelectedCollections];
-        if (sel.includes('All')) return 'All';
-        if (sel.includes('AllButLogs') && sel.length === 1) return 'AllButLogs';
-        return sel.filter(s => s !== 'All' && s !== 'AllButLogs');
-      };
+      const buildCollectionPayload = () => (importScope === 'Chosen' ? importChosenTables : importScope);
       const sendChunkWithRetry = async (bodyObj, attemptLimit = 5) => {
         let delay = 500; // start 500ms
         let lastErr = null;
@@ -263,7 +434,15 @@ const DatabasePage = ({ lang }) => {
               }
             }
           }
-          setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+          setImportMessage({
+            text: t('admin.database.importChunkProgress')
+              .replace('{chunk}', chunkIndex + 1)
+              .replace('{total}', totalChunks)
+              .replace('{inserted}', accumulatedStats.inserted)
+              .replace('{failed}', accumulatedStats.failed)
+              .replace('{skipped}', accumulatedStats.skipped),
+            isError: false,
+          });
           // Optional throttle between chunk uploads to avoid flooding the server
           // Only apply throttle delay if the server performed upserts for this chunk
           if (Number(importThrottleMs) > 0) {
@@ -299,7 +478,15 @@ const DatabasePage = ({ lang }) => {
             }
           }
         }
-        setMessage(`Processed chunk ${chunkIndex + 1} of ${totalChunks}. Current totals - Inserted: ${accumulatedStats.inserted}, Failed: ${accumulatedStats.failed}, Skipped: ${accumulatedStats.skipped}`);
+        setImportMessage({
+          text: t('admin.database.importChunkProgress')
+            .replace('{chunk}', chunkIndex + 1)
+            .replace('{total}', totalChunks)
+            .replace('{inserted}', accumulatedStats.inserted)
+            .replace('{failed}', accumulatedStats.failed)
+            .replace('{skipped}', accumulatedStats.skipped),
+          isError: false,
+        });
         // Only apply throttle delay if the server performed upserts for this chunk
         if (Number(importThrottleMs) > 0) {
           const didUpsert = result && result.stats && (result.stats.inserted && Number(result.stats.inserted) > 0);
@@ -311,17 +498,23 @@ const DatabasePage = ({ lang }) => {
       }
 
       // Build final completion message, optionally include skipped example snippets
-      let finalMsg = `Database import completed. Total Inserted: ${accumulatedStats.inserted}, Total Failed: ${accumulatedStats.failed}`;
-      if (accumulatedStats.skipped) finalMsg += `, Skipped: ${accumulatedStats.skipped}`;
+      let finalMsg = accumulatedStats.skipped
+        ? t('admin.database.importCompleteWithSkipped')
+          .replace('{inserted}', accumulatedStats.inserted)
+          .replace('{failed}', accumulatedStats.failed)
+          .replace('{skipped}', accumulatedStats.skipped)
+        : t('admin.database.importComplete')
+          .replace('{inserted}', accumulatedStats.inserted)
+          .replace('{failed}', accumulatedStats.failed);
       if (accumulatedStats.skippedExamples && accumulatedStats.skippedExamples.length) {
-        finalMsg += `\nSkipped examples:\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
+        finalMsg += `\n${t('admin.database.importSkippedExamplesHeader')}\n${accumulatedStats.skippedExamples.slice(0, 10).join('\n')}`;
       }
-      setMessage(finalMsg);
+      setImportMessage({ text: finalMsg, isError: false });
       if (fileInputRef.current) {
         fileInputRef.current.value = ''; // Reset file input
       }
     } catch (error) {
-      setMessage(`Import failed: ${error.message}`);
+      setImportMessage(buildErrorStatus('admin.database.importError', error));
       console.error('Import error:', error);
     } finally {
       setIsImporting(false);
@@ -335,7 +528,7 @@ const DatabasePage = ({ lang }) => {
 
     try {
       setIsDroppingIndexes(true);
-      setMessage('');
+      setDropIndexesMessage(null);
 
       const response = await AuthService.fetch(getApiUrl('db-database-management'), {
         method: 'DELETE'
@@ -347,9 +540,9 @@ const DatabasePage = ({ lang }) => {
       }
 
       const result = await response.json();
-      setMessage(t('admin.database.dropIndexesSuccess').replace('{count}', result.results.success.length));
+      setDropIndexesMessage({ text: t('admin.database.dropIndexesSuccess').replace('{count}', result.results.success.length), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.dropIndexesError').replace('{error}', error.message));
+      setDropIndexesMessage(buildErrorStatus('admin.database.dropIndexesError', error));
       console.error('Drop indexes error:', error);
     } finally {
       setIsDroppingIndexes(false);
@@ -359,16 +552,16 @@ const DatabasePage = ({ lang }) => {
   const handleDeleteSystemLogs = async () => {
     if (!window.confirm(t('admin.database.deleteSystemLogsConfirm'))) return;
     setIsDeletingSystemLogs(true);
-    setMessage('');
+    setDeleteSystemLogsMessage(null);
     try {
       const response = await AuthService.fetch(getApiUrl('db-delete-system-logs'), {
         method: 'DELETE'
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to delete system logs');
-      setMessage(t('admin.database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount));
+      setDeleteSystemLogsMessage({ text: t('admin.database.deleteSystemLogsSuccess').replace('{count}', result.deletedCount), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.deleteSystemLogsError').replace('{error}', error.message));
+      setDeleteSystemLogsMessage(buildErrorStatus('admin.database.deleteSystemLogsError', error));
     } finally {
       setIsDeletingSystemLogs(false);
     }
@@ -378,15 +571,15 @@ const DatabasePage = ({ lang }) => {
     if (!window.confirm(t('admin.database.deleteAllBatchesConfirm'))) return;
 
     setIsDeletingAllBatches(true);
-    setMessage('');
+    setDeleteAllBatchesMessage(null);
     try {
       const result = await BatchService.deleteAllBatches();
       // Expecting { deletedBatches, deletedBatchItems } or similar
       const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
       const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
-      setMessage(t('admin.database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems));
+      setDeleteAllBatchesMessage({ text: t('admin.database.deleteAllBatchesSuccess').replace('{batches}', deletedBatches).replace('{batchItems}', deletedBatchItems), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.deleteAllBatchesError').replace('{error}', error.message));
+      setDeleteAllBatchesMessage(buildErrorStatus('admin.database.deleteAllBatchesError', error));
       console.error('Delete all batches error:', error);
     } finally {
       setIsDeletingAllBatches(false);
@@ -397,13 +590,13 @@ const DatabasePage = ({ lang }) => {
     if (!window.confirm(t('admin.database.repairTimestampsConfirm'))) return;
 
     setIsRepairingTimestamps(true);
-    setMessage('');
+    setRepairTimestampsMessage(null);
 
     try {
       const result = await DataStoreService.repairTimestamps();
-      setMessage(t('admin.database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total));
+      setRepairTimestampsMessage({ text: t('admin.database.repairTimestampsSuccess').replace('{updated}', result.stats.tools.updated).replace('{total}', result.stats.tools.total), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.repairTimestampsError').replace('{error}', error.message));
+      setRepairTimestampsMessage(buildErrorStatus('admin.database.repairTimestampsError', error));
     } finally {
       setIsRepairingTimestamps(false);
     }
@@ -413,13 +606,13 @@ const DatabasePage = ({ lang }) => {
     if (!window.confirm(t('admin.database.repairExpertFeedbackConfirm'))) return;
 
     setIsRepairingExpertFeedback(true);
-    setMessage('');
+    setRepairExpertFeedbackMessage(null);
 
     try {
       const result = await DataStoreService.repairExpertFeedback();
-      setMessage(t('admin.database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect));
+      setRepairExpertFeedbackMessage({ text: t('admin.database.repairExpertFeedbackSuccess').replace('{updated}', result.stats.expertFeedback.updated).replace('{total}', result.stats.expertFeedback.total).replace('{alreadyCorrect}', result.stats.expertFeedback.alreadyCorrect), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.repairExpertFeedbackError').replace('{error}', error.message));
+      setRepairExpertFeedbackMessage(buildErrorStatus('admin.database.repairExpertFeedbackError', error));
     } finally {
       setIsRepairingExpertFeedback(false);
     }
@@ -428,12 +621,12 @@ const DatabasePage = ({ lang }) => {
   const handleRepairQaMatchScores = async () => {
     if (!window.confirm(t('admin.database.repairQaMatchScoresConfirm'))) return;
     setIsRepairingQaMatchScores(true);
-    setMessage('');
+    setRepairQaMatchScoresMessage(null);
     try {
       const result = await DataStoreService.repairQaMatchScores();
-      setMessage(t('admin.database.repairQaMatchScoresSuccess').replace('{updated}', result.stats.updated).replace('{matches}', result.stats.matches));
+      setRepairQaMatchScoresMessage({ text: t('admin.database.repairQaMatchScoresSuccess').replace('{updated}', result.stats.updated).replace('{matches}', result.stats.matches), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.repairQaMatchScoresError').replace('{error}', error.message));
+      setRepairQaMatchScoresMessage(buildErrorStatus('admin.database.repairQaMatchScoresError', error));
     } finally {
       setIsRepairingQaMatchScores(false);
     }
@@ -442,12 +635,12 @@ const DatabasePage = ({ lang }) => {
   const handleMigratePublicFeedback = async () => {
     if (!window.confirm(t('admin.database.migratePublicFeedbackConfirm'))) return;
     setIsMigratingPublicFeedback(true);
-    setMessage('');
+    setMigratePublicFeedbackMessage(null);
     try {
       const result = await DataStoreService.migratePublicFeedback();
-      setMessage(t('admin.database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0));
+      setMigratePublicFeedbackMessage({ text: t('admin.database.migratePublicFeedbackSuccess').replace('{migrated}', result.migrated || 0), isError: false });
     } catch (error) {
-      setMessage(t('admin.database.migratePublicFeedbackError').replace('{error}', error.message));
+      setMigratePublicFeedbackMessage(buildErrorStatus('admin.database.migratePublicFeedbackError', error));
     } finally {
       setIsMigratingPublicFeedback(false);
     }
@@ -460,18 +653,19 @@ const DatabasePage = ({ lang }) => {
 
     try {
       setIsCreatingIndexes(true);
-      setMessage('');
+      setCreateIndexesMessage(null);
+      announceRebuildRef.current = true;
 
-      const result = await DataStoreService.createIndexes();
+      const { alreadyRunning, rebuild } = await DataStoreService.createIndexes();
 
-      const successCount = result.results.success ? result.results.success.length : 0;
-      const failCount = result.results.failed ? result.results.failed.length : 0;
-
-      setCreationDetails(result.results);
-      setMessage(t('admin.database.createIndexesSuccess').replace('{successCount}', successCount).replace('{failCount}', failCount));
+      setIndexRebuild(rebuild);
+      setCreateIndexesMessage({
+        text: t(alreadyRunning ? 'admin.database.createIndexesAlreadyRunning' : 'admin.database.createIndexesStarted'),
+        variant: 'info'
+      });
     } catch (error) {
-      setCreationDetails(null);
-      setMessage(t('admin.database.createIndexesError').replace('{error}', error.message));
+      setIndexRebuild(null);
+      setCreateIndexesMessage(buildErrorStatus('admin.database.createIndexesError', error));
       console.error('Create indexes error:', error);
     } finally {
       setIsCreatingIndexes(false);
@@ -482,7 +676,10 @@ const DatabasePage = ({ lang }) => {
   return (
     <GcdsContainer layout="page">
       <GcdsHeading tag="h1">{t('admin.database.title')}</GcdsHeading>
-      <nav className="mb-400">
+      {/* TODO: this aria-label is hand-copied onto every admin page's own <nav> —
+          worth centralizing into a shared local nav/breadcrumb component so new
+          pages can't reintroduce the unlabeled-nav gap this fixes. */}
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsLink href={`/${lang}/admin`}>
           {t('common.backToAdmin')}
         </GcdsLink>
@@ -490,35 +687,38 @@ const DatabasePage = ({ lang }) => {
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{t('admin.database.tableRecordCounts')}</GcdsHeading>
-        {countsError && <div style={{ color: 'red' }}>{countsError}</div>}
+        {renderStatusMessage(countsError, 'success', 'counts')}
         {tableCounts ? (
-          <table style={{ margin: '12px 0', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.tableColumn')}</th>
-                <th style={{ textAlign: 'right' }}>{t('admin.database.countColumn')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(tableCounts).map(([table, count]) => (
-                <tr key={table}>
-                  <td style={{ paddingRight: 16 }}>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</td>
-                  <td style={{ textAlign: 'right' }}>{formatNumber(count, lang)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <dl className="canada-ca-dl-columns font-size-text-sm-nr">
+            {Object.entries(tableCounts).map(([table, count]) => (
+              <div key={table}>
+                <dt>{t(`admin.database.collections.${table.toLowerCase()}`) || table}</dt>
+                <dd>{formatNumber(count, lang)}</dd>
+              </div>
+            ))}
+          </dl>
         ) : (
           !countsError && <div>{t('common.loading')}</div>
         )}
       </div>
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <label>
-          {t('admin.database.tableLabel')}&nbsp;
+      <div className="mb-400 filter-fields-full-size">
+        <GcdsHeading tag="h2">{t('admin.database.exportTitle')}</GcdsHeading>
+        {/* Every export field clears exportMessage on change — a stale
+            "Export failed"/"Export succeeded" from the last run shouldn't
+            keep showing once the admin has started changing what they're
+            about to export next. Same idea as SettingsPage.js's
+            stageChange clearing a section's stale save-outcome message on
+            edit; inline here rather than a shared helper/lookup table
+            since it's only 4 fields, not ~30 across 6 sections. */}
+        <div className="mb-300">
+          <label htmlFor="database-export-table" className="filter-label display-block">
+            {t('admin.database.tableLabel')}
+          </label>
           <select
+            id="database-export-table"
+            className="filter-select filter-select--narrow"
             value={selectedCollection}
-            onChange={e => setSelectedCollection(e.target.value)}
-            style={{ minWidth: 120 }}
+            onChange={e => { setSelectedCollection(e.target.value); setExportMessage(null); }}
             disabled={isExporting || collections.length === 0}
           >
             <option value="All">{t('admin.database.collections.all')}</option>
@@ -529,26 +729,68 @@ const DatabasePage = ({ lang }) => {
               <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
             ))}
           </select>
-        </label>
-        <label>{t('admin.database.startDate')}&nbsp;
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        </label>
-        <label>{t('admin.database.endDate')}&nbsp;
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </label>
-        <label>{t('admin.database.limitLabel')}&nbsp;
+        </div>
+        {/* Dates filter on updatedAt. For a table without it, an info
+            message takes their place instead of fields that do nothing. */}
+        {exportDatesUnavailable ? (
+          <div className="mb-300">
+            <StatusMessage variant="info" message={t('admin.database.datesNotApplicableTable')} />
+          </div>
+        ) : (
+          <GcdsFieldset
+            className="mb-300"
+            legend={t('admin.database.dateRangeLegend')}
+            legendSize="h6"
+            hint={t('admin.database.dateRangeHint')}
+          >
+            <div className="mb-300">
+              <label htmlFor="database-export-start-date" className="filter-label display-block">
+                {t('admin.database.startDate')}
+              </label>
+              <input
+                id="database-export-start-date"
+                type="date"
+                className="filter-input filter-input--narrow"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setExportMessage(null); }}
+              />
+            </div>
+            <div>
+              <label htmlFor="database-export-end-date" className="filter-label display-block">
+                {t('admin.database.endDate')}
+              </label>
+              <input
+                id="database-export-end-date"
+                type="date"
+                className="filter-input filter-input--narrow"
+                value={endDate}
+                onChange={e => { setEndDate(e.target.value); setExportMessage(null); }}
+              />
+            </div>
+          </GcdsFieldset>
+        )}
+        <div className="mb-300">
+          <label htmlFor="database-export-limit" className="filter-label display-block">
+            {t('admin.database.limitLabel')}
+          </label>
           <input
+            id="database-export-limit"
             type="number"
             min="1"
+            className="filter-input filter-input--narrow"
             value={exportLimit}
-            onChange={e => setExportLimit(e.target.value)}
-            style={{ width: 100 }}
+            onChange={e => { setExportLimit(e.target.value); setExportMessage(null); }}
             disabled={isExporting}
           />
-        </label>
-        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
-          {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
+        </div>
+        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0} className="mb-200">
+          {/* Decorative icon; the text is the whole accessible name. */}
+          <span className="export-button-label">
+            <GcdsIcon name="download" />
+            {isExporting ? t('admin.database.exporting') : t('admin.database.exportButton')}
+          </span>
         </GcdsButton>
+        {renderStatusMessage(exportMessage, 'success', 'export')}
       </div>
       {/* Integrity checks: orphan and parent-invalid-child counts */}
       <div className="mb-400">
@@ -556,9 +798,10 @@ const DatabasePage = ({ lang }) => {
         <GcdsText>
           {t('admin.database.integrityDescription')}
         </GcdsText>
-        <details open className="mb-200" style={{ padding: 12, border: '1px solid #e6e6e6' }}>
+        <details open className="mb-200">
           <summary style={{ cursor: 'pointer', fontWeight: '600' }}>{t('admin.database.coreChecksLabel')}</summary>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* role="list": Safari drops list semantics without bullets */}
+          <ul className="mt-200" role="list">
             {[
               { id: 'orphanCitations', labelKey: 'checks.orphanCitations' },
               { id: 'orphanTools', labelKey: 'checks.orphanTools' },
@@ -573,82 +816,97 @@ const DatabasePage = ({ lang }) => {
               { id: 'evalInvalidInteraction', labelKey: 'checks.evalInvalidInteraction' },
               { id: 'duplicateKeys', labelKey: 'checks.duplicateKeys' }
             ].map(check => (
-              <div key={check.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1 }}>{t(`admin.database.${check.labelKey}`)}</div>
-                <GcdsButton
-                  onClick={async () => {
-                    try {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: true }));
-                      setMessage('');
-                      const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
-                        method: 'GET'
-                      });
-                      const json = await res.json();
-                      if (!res.ok) throw new Error(json.message || 'Check failed');
-                      setChecksResults(prev => ({ ...prev, [check.id]: json }));
-                    } catch (err) {
-                      setMessage(`Check ${check.id} failed: ${err.message}`);
-                    } finally {
-                      setChecksRunning(prev => ({ ...prev, [check.id]: false }));
-                    }
-                  }}
-                  disabled={!!checksRunning[check.id]}
-                  buttonRole="secondary"
-                >
-                  {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
-                </GcdsButton>
-                <div style={{ minWidth: 220, textAlign: 'right' }}>
-                  {checksResults[check.id] ? (
-                    <div style={{ fontSize: 13 }}>
-                      {t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong>
-                      {checksResults[check.id].breakdown ? (
-                        <div style={{ marginTop: 6, textAlign: 'right' }}>
-                          <div style={{ fontSize: 12 }}>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
-                          {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                            <div style={{ marginTop: 6 }}>
-                              {t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : checksResults[check.id].samples && checksResults[check.id].samples.length ? (
-                        <div style={{ marginTop: 6 }}>
-                          Samples: {checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', ')}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : <div style={{ fontSize: 13, color: '#666' }}>{t('admin.database.noResultsLabel')}</div>}
+              <li key={check.id} className="canada-ca-action-result-row">
+                {/* Name | buttons + message | results */}
+                <div className="font-size-text-sm-nr">{t(`admin.database.${check.labelKey}`)}</div>
+                <div>
+                  <div className="d-flex flex-wrap gap-200">
+                    {/* Native, not GcdsButton: its sr-only check name must
+                        reach the accessible name. aria-disabled keeps focus. */}
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      aria-disabled={checksRunning[check.id] ? 'true' : undefined}
+                      onClick={async () => {
+                        if (checksRunning[check.id]) return;
+                        try {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: true }));
+                          setChecksMessages(prev => ({ ...prev, [check.id]: null }));
+                          const res = await AuthService.fetch(getApiUrl(`db-integrity-checks?check=${encodeURIComponent(check.id)}&limit=10`), {
+                            method: 'GET'
+                          });
+                          const json = await res.json();
+                          if (!res.ok) throw new Error(json.message || 'Check failed');
+                          setChecksResults(prev => ({ ...prev, [check.id]: json }));
+                          announce(`${t(`admin.database.${check.labelKey}`)}. ${t('admin.database.countLabel')} ${json.count}`);
+                        } catch (err) {
+                          setChecksMessages(prev => ({
+                            ...prev,
+                            [check.id]: buildErrorStatus(
+                              'admin.database.checkFailed',
+                              err,
+                              { check: check.id },
+                            ),
+                          }));
+                        } finally {
+                          setChecksRunning(prev => ({ ...prev, [check.id]: false }));
+                        }
+                      }}
+                    >
+                      {checksRunning[check.id] ? t('admin.database.runningLabel') : t('admin.database.runCheckButton')}
+                      {/* Names the check - 12 buttons otherwise share one name */}
+                      <span className="sr-only"> – {t(`admin.database.${check.labelKey}`)}</span>
+                    </button>
+                    {/* Add Remove Duplicates button only for duplicateKeys check */}
+                    {check.id === 'duplicateKeys' && (
+                      <GcdsButton
+                        onClick={async () => {
+                          if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
+                          try {
+                            setIsRemovingDuplicates(true);
+                            setRemoveDuplicatesMessage(null);
+                            const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
+                              method: 'DELETE'
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
+                            setRemoveDuplicatesMessage({ text: t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount), isError: false });
+                            // Refresh the check results
+                            setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
+                          } catch (err) {
+                            setRemoveDuplicatesMessage(buildErrorStatus('admin.database.removeDuplicatesError', err));
+                          } finally {
+                            setIsRemovingDuplicates(false);
+                          }
+                        }}
+                        disabled={isRemovingDuplicates}
+                        buttonRole="danger"
+                      >
+                        {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
+                      </GcdsButton>
+                    )}
+                  </div>
+                  {renderStatusMessage(checksMessages[check.id], 'success', `check-${check.id}`)}
+                  {check.id === 'duplicateKeys' && (
+                    renderStatusMessage(removeDuplicatesMessage, 'success', 'removeDuplicates')
+                  )}
                 </div>
-                {/* Add Remove Duplicates button only for duplicateKeys check */}
-                {check.id === 'duplicateKeys' && (
-                  <GcdsButton
-                    onClick={async () => {
-                      if (!window.confirm(t('admin.database.removeDuplicatesConfirm'))) return;
-                      try {
-                        setIsRemovingDuplicates(true);
-                        setMessage('');
-                        const res = await AuthService.fetch(getApiUrl('db-integrity-checks?action=removeDuplicates'), {
-                          method: 'DELETE'
-                        });
-                        const json = await res.json();
-                        if (!res.ok) throw new Error(json.message || 'Remove duplicates failed');
-                        setMessage(t('admin.database.removeDuplicatesSuccess').replace('{count}', json.deletedCount));
-                        // Refresh the check results
-                        setChecksResults(prev => ({ ...prev, duplicateKeys: null }));
-                      } catch (err) {
-                        setMessage(t('admin.database.removeDuplicatesError').replace('{error}', err.message));
-                      } finally {
-                        setIsRemovingDuplicates(false);
-                      }
-                    }}
-                    disabled={isRemovingDuplicates}
-                    buttonRole="danger"
-                  >
-                    {isRemovingDuplicates ? t('admin.database.removingLabel') : t('admin.database.removeDuplicatesButton')}
-                  </GcdsButton>
-                )}
-              </div>
+                <div className="font-size-text-sm-nr">
+                  {checksResults[check.id] ? (
+                    <>
+                      <div>{t('admin.database.countLabel')} <strong>{checksResults[check.id].count}</strong></div>
+                      {checksResults[check.id].breakdown && (
+                        <div>{t('admin.database.breakdownMissing').replace('{chat}', checksResults[check.id].breakdown.missingChat).replace('{interaction}', checksResults[check.id].breakdown.missingInteraction).replace('{question}', checksResults[check.id].breakdown.missingQuestion).replace('{answer}', checksResults[check.id].breakdown.missingAnswer)}</div>
+                      )}
+                      {checksResults[check.id].samples && checksResults[check.id].samples.length ? (
+                        <div>{t('admin.database.breakdownSamples').replace('{samples}', checksResults[check.id].samples.slice(0, 5).map(s => (s._id || s)).join(', '))}</div>
+                      ) : null}
+                    </>
+                  ) : <span className="label pending">{t('admin.database.notRunLabel')}</span>}
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </details>
       </div >
 
@@ -657,72 +915,152 @@ const DatabasePage = ({ lang }) => {
         <GcdsText>
           {t('admin.database.importDescription')}
         </GcdsText>
-        {/* Show import progress message above the import button */}
-        {isImporting && message && (
-          <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
-        )}
-        <form onSubmit={handleImport} className="mb-200">
-          <div style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-            <label>
-              {t('admin.database.chunkSizeLabel')}&nbsp;
-              <input
-                type="number"
-                min="0.0625"
-                step="0.0625"
-                value={importChunkMB}
-                onChange={e => setImportChunkMB(e.target.value)}
-                style={{ width: 100 }}
-                disabled={isImporting}
-              />
-            </label>
-            <label>
-              {t('admin.database.throttleLabel')}&nbsp;
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={importThrottleMs}
-                onChange={e => setImportThrottleMs(e.target.value)}
-                style={{ width: 100 }}
-                disabled={isImporting}
-              />
-            </label>
-            <label>
-              {t('admin.database.tableSelectLabel')}&nbsp;
-              <select
-                value={importSelectedCollections}
-                onChange={e => {
-                  const options = Array.from(e.target.options);
-                  const vals = options.filter(o => o.selected).map(o => o.value);
-                  // If nothing selected, default to All
-                  setImportSelectedCollections(vals.length ? vals : ['All']);
-                }}
-                style={{ minWidth: 200, minHeight: 100 }}
-                multiple
-                disabled={isImporting || collections.length === 0}
-              >
-                <option value="All">{t('admin.database.collections.all')}</option>
-                <option value="AllButLogs">{t('admin.database.collections.allButLogs')}</option>
-                {collections.map((col) => (
-                  <option key={col} value={col}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</option>
-                ))}
-              </select>
-            </label>
-          </div>
+        <form onSubmit={handleImport} className="mb-200 filter-fields-full-size">
+          {/* Every import field clears importMessage on change — same
+              reasoning as the export section above. */}
+          <label htmlFor="database-import-file" className="filter-label display-block">
+            {t('admin.database.importFileLabel')}
+          </label>
+          {fileSelectError.hasError && (
+            <FeedbackInlineError
+              id="database-import-file-error"
+              message={t('admin.database.fileSelectError')}
+              errorCount={fileSelectError.errorCount}
+              inputRef={fileSelectError.errorRef}
+            />
+          )}
+          {/* Native file input dressed as GC DS's file uploader
+              (.canada-ca-file-input), keeping the app's own field-tied
+              FeedbackInlineError rather than GcdsFileUploader's. */}
           <input
+            id="database-import-file"
             type="file"
             accept=".jsonl"
             ref={fileInputRef}
-            className="mb-200"
-            style={{ display: 'block' }}
+            onChange={() => { setImportMessage(null); fileSelectError.clearError(); }}
+            className="canada-ca-file-input mb-300"
+            aria-describedby={fileSelectError.hasError ? 'database-import-file-error' : undefined}
+            disabled={isImporting}
           />
+
+          <fieldset className="gc-chckbxrdio md canada-ca-choice-fieldset">
+            <legend className="filter-label">{t('admin.database.importTablesLegend')}</legend>
+            {[
+              { value: 'All', label: t('admin.database.collections.all') },
+              { value: 'AllButLogs', label: t('admin.database.collections.allButLogs') },
+              { value: 'Chosen', label: t('admin.database.importScopeChosen') }
+            ].map(option => (
+              <div className="radio" key={option.value}>
+                <input
+                  type="radio"
+                  id={`database-import-scope-${option.value}`}
+                  name="database-import-scope"
+                  value={option.value}
+                  checked={importScope === option.value}
+                  onChange={() => { setImportScope(option.value); setImportMessage(null); importTablesError.clearError(); }}
+                  disabled={isImporting || collections.length === 0}
+                />
+                <label htmlFor={`database-import-scope-${option.value}`}>{option.label}</label>
+              </div>
+            ))}
+            {/* Revealed right under the radio that asks for it. */}
+            {importScope === 'Chosen' && (
+              <fieldset
+                className={`gc-chckbxrdio md canada-ca-choice-fieldset${importTablesError.hasError ? ' has-error' : ''}`}
+                aria-describedby={importTablesError.hasError ? 'database-import-tables-error' : undefined}
+              >
+                <legend className="filter-label">{t('admin.database.importChosenLegend')}</legend>
+                {importTablesError.hasError && (
+                  <FeedbackInlineError
+                    id="database-import-tables-error"
+                    message={t('admin.database.importTablesError')}
+                    errorCount={importTablesError.errorCount}
+                    inputRef={importTablesError.errorRef}
+                  />
+                )}
+                {collections.map(col => (
+                  <div className="checkbox" key={col}>
+                    <input
+                      type="checkbox"
+                      id={`database-import-table-${col}`}
+                      value={col}
+                      checked={importChosenTables.includes(col)}
+                      onChange={e => {
+                        setImportChosenTables(prev => (e.target.checked ? [...prev, col] : prev.filter(c => c !== col)));
+                        setImportMessage(null);
+                        importTablesError.clearError();
+                      }}
+                      disabled={isImporting}
+                    />
+                    <label htmlFor={`database-import-table-${col}`}>{t(`admin.database.collections.${col.toLowerCase()}`) || col}</label>
+                  </div>
+                ))}
+              </fieldset>
+            )}
+          </fieldset>
+
+          <div className="mb-300">
+            <label htmlFor="database-import-chunk-size" className="filter-label display-block">
+              {t('admin.database.chunkSizeLabel')}
+            </label>
+            <input
+              id="database-import-chunk-size"
+              type="number"
+              min="0.0625"
+              step="0.0625"
+              className="filter-input filter-input--narrow"
+              value={importChunkMB}
+              onChange={e => { setImportChunkMB(e.target.value); setImportMessage(null); }}
+              disabled={isImporting}
+            />
+          </div>
+          <div className="mb-300">
+            <label htmlFor="database-import-throttle" className="filter-label display-block">
+              {t('admin.database.throttleLabel')}
+            </label>
+            <input
+              id="database-import-throttle"
+              type="number"
+              min="0"
+              step="50"
+              className="filter-input filter-input--narrow"
+              value={importThrottleMs}
+              onChange={e => { setImportThrottleMs(e.target.value); setImportMessage(null); }}
+              disabled={isImporting}
+            />
+          </div>
+
           <GcdsButton
             type="submit"
             disabled={isImporting}
-            buttonRole="secondary"
+            buttonRole="primary"
+            className="mb-200"
           >
             {isImporting ? t('admin.database.importingLabel') : t('admin.database.importButton')}
           </GcdsButton>
+          {/* Right under the Import button, like the other sections' outcomes:
+              the fields between the file input and the button (up to one
+              checkbox per table) would otherwise push this out of view of
+              whoever just clicked. During import it's the per-chunk
+              progress as plain text (.status-message--progress), not a
+              StatusMessage box, since a chunk tick isn't a settled outcome;
+              once import finishes, a StatusMessage box shows the result.
+              TODO: chunkIndex/totalChunks are already known during the
+              import loop (see handleImport) — a real determinate progress
+              bar could replace this text-only counter later. If it does,
+              it should be its own small component (bar + a text line
+              announced via useAnnounceOnChange, same shape as
+              ExperimentalAnalysisPage.js's ProgressCard), not a new
+              StatusMessage prop — see the scope note in StatusMessage.js.
+              Each chunk tick is announced through the shared announcer
+              (importProgressRef), not by this div being a live region — it's
+              conditionally rendered, so as its own role="status" the first
+              tick was inserted-with-text and never heard. */}
+          {isImporting ? (
+            <div ref={importProgressRef} className="status-message--progress">{importMessage?.text}</div>
+          ) : (
+            renderStatusMessage(importMessage, 'success', 'import')
+          )}
         </form>
       </div>
 
@@ -739,16 +1077,33 @@ const DatabasePage = ({ lang }) => {
         >
           {isCreatingIndexes ? t('admin.database.creatingIndexesLabel') : t('admin.database.createIndexesButton')}
         </GcdsButton>
-        {creationDetails && creationDetails.failed && creationDetails.failed.length > 0 && (
-          <div style={{ marginTop: 12, border: '1px solid #d93939', padding: 12, borderRadius: 4, backgroundColor: '#fff5f5' }}>
-            <div style={{ fontWeight: 600, color: '#d93939', marginBottom: 8 }}>
-              {t('admin.database.indexCreationFailed')}
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
-              {creationDetails.failed.map((f, i) => (
-                <li key={i} style={{ marginBottom: 4 }}>
-                  <strong>{f.collection}</strong>: <span style={{ color: '#555' }}>{f.error}</span>
-                  {f.code && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>({t('admin.database.indexCodeLabel').replace('{code}', f.code)})</span>}
+        {renderStatusMessage(createIndexesMessage, createIndexesMessage?.variant, 'createIndexes')}
+        {/* Lists sit in their own box, outside the StatusMessage, so only
+            the message line is announced. */}
+        {indexRebuild && !indexRebuild.running && indexRebuild.failed.length > 0 && (
+          <div className="status-details-box status-details-box--error">
+            <p>{t('admin.database.indexCreationFailed')}</p>
+            <ul className="list-disc canada-ca-list-spcd-1">
+              {indexRebuild.failed.map((f) => (
+                <li key={f.collection}>
+                  <strong>{f.collection}</strong>: <code lang="en">{f.error}</code>
+                  {f.code != null && ` (${t('admin.database.indexCodeLabel').replace('{code}', f.code)})`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {indexRebuild && !indexRebuild.running && indexRebuild.failed.length > 0 && (
+          renderStatusMessage(stillBuildingMessage, 'info', 'createIndexesStillBuilding')
+        )}
+        {indexRebuild && !indexRebuild.running && indexRebuild.stillBuilding.length > 0 && (
+          <div className="status-details-box status-details-box--info">
+            <p>{t('admin.database.indexStillBuilding')}</p>
+            <ul className="list-disc canada-ca-list-spcd-1">
+              {indexRebuild.stillBuilding.map((s) => (
+                <li key={s.collection}>
+                  <strong>{s.collection}</strong>: <code lang="en">{s.error}</code>
+                  {s.code != null && ` (${t('admin.database.indexCodeLabel').replace('{code}', s.code)})`}
                 </li>
               ))}
             </ul>
@@ -770,6 +1125,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDroppingIndexes ? t('admin.database.droppingLabel') : t('admin.database.dropIndexesButton')}
         </GcdsButton>
+        {renderStatusMessage(dropIndexesMessage, 'success', 'dropIndexes')}
       </div>
 
       <div className="mb-400">
@@ -782,11 +1138,11 @@ const DatabasePage = ({ lang }) => {
             try {
               setIsCheckingIndexStatus(true);
               setIndexStatus(null);
-              setMessage('');
+              setIndexStatusMessage(null);
               const json = await DataStoreService.checkIndexStatus();
               setIndexStatus(json);
             } catch (err) {
-              setMessage(t('admin.database.indexStatusError').replace('{error}', err.message));
+              setIndexStatusMessage(buildErrorStatus('admin.database.indexStatusError', err));
             } finally {
               setIsCheckingIndexStatus(false);
             }
@@ -797,18 +1153,35 @@ const DatabasePage = ({ lang }) => {
         >
           {isCheckingIndexStatus ? t('admin.database.checkingLabel') : t('admin.database.checkIndexStatusButton')}
         </GcdsButton>
+        {renderStatusMessage(indexStatusMessage, 'success', 'indexStatus')}
         {indexStatus && (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, color: indexStatus.anyBuilding ? 'blue' : indexStatus.allComplete ? 'green' : 'orange' }}>
-              {indexStatus.message}
+            {/* Was a hand-rolled colored <div> showing indexStatus.message
+                verbatim — raw, untranslated server text with no t() call at
+                all. The server's message is actually always one of these
+                same 3 fixed strings (see api/db/db-database-management.js),
+                picked from the exact same anyBuilding/allComplete booleans
+                already computed here — so the frontend translates its own
+                copy instead of echoing the server's English one. */}
+            <div style={{ marginBottom: 8 }}>
+              <StatusMessage
+                variant={indexStatus.anyBuilding ? 'info' : indexStatus.allComplete ? 'success' : 'warning'}
+                message={t(
+                  indexStatus.anyBuilding
+                    ? 'admin.database.indexStatusBuilding'
+                    : indexStatus.allComplete
+                      ? 'admin.database.indexStatusComplete'
+                      : 'admin.database.indexStatusIncomplete'
+                )}
+              />
             </div>
-            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="font-size-text-sm-nr" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.currentColumn')}</th>
-                  <th style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.expectedColumn')}</th>
-                  <th style={{ textAlign: 'left' }}>{t('admin.database.statusColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'left', paddingRight: 16 }}>{t('admin.database.collectionColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.currentColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'right', paddingRight: 16 }}>{t('admin.database.expectedColumn')}</th>
+                  <th scope="col" style={{ textAlign: 'left' }}>{t('admin.database.statusColumn')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -817,15 +1190,20 @@ const DatabasePage = ({ lang }) => {
                     <td style={{ paddingRight: 16 }}>{col.collection}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.currentIndexCount ?? '-'}</td>
                     <td style={{ textAlign: 'right', paddingRight: 16 }}>{col.expectedIndexCount ?? '-'}</td>
-                    <td style={{ color: col.status === 'complete' ? 'green' : col.status === 'building' ? 'blue' : col.status === 'error' ? 'red' : 'orange' }}>
-                      {col.status}
+                    <td>
+                      {/* TODO: confirm the backend (api/db/db-database-management.js) never emits
+                          a status outside building/complete/incomplete/error — if it doesn't, this
+                          whitelist is dead code and can simplify to `label ${col.status}`. */}
+                      <span className={`label ${['complete', 'building', 'error'].includes(col.status) ? col.status : 'incomplete'}`}>
+                        {col.status}
+                      </span>
                       {col.status === 'building' && col.building?.length > 0 && (
-                        <span style={{ marginLeft: 8, fontSize: 11 }}>
+                        <span style={{ marginLeft: 8 }}>
                           ({col.building.map(b => b.progress != null ? `${b.progress}%` : t('admin.database.inProgressLabel')).join(', ')})
                         </span>
                       )}
                       {col.status === 'incomplete' && col.missingIndexes?.length > 0 && (
-                        <span style={{ marginLeft: 8, fontSize: 11, fontStyle: 'italic' }}>
+                        <span style={{ marginLeft: 8 }}>
                           {t('admin.database.missingLabel')} {col.missingIndexes.join('; ')}
                         </span>
                       )}
@@ -852,6 +1230,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingSystemLogs ? t('admin.database.deletingLabel') : t('admin.database.deleteSystemLogsButton')}
         </GcdsButton>
+        {renderStatusMessage(deleteSystemLogsMessage, 'success', 'deleteSystemLogs')}
       </div>
 
       <div className="mb-400">
@@ -867,6 +1246,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingTimestamps ? t('admin.database.repairingLabel') : t('admin.database.repairTimestampsButton')}
         </GcdsButton>
+        {renderStatusMessage(repairTimestampsMessage, 'success', 'repairTimestamps')}
       </div>
 
       <div className="mb-400">
@@ -882,6 +1262,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isDeletingAllBatches ? t('admin.database.deletingLabel') : t('admin.database.deleteAllBatchesButton')}
         </GcdsButton>
+        {renderStatusMessage(deleteAllBatchesMessage, 'success', 'deleteAllBatches')}
       </div>
 
       <div className="mb-400">
@@ -897,6 +1278,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isRepairingExpertFeedback ? t('admin.database.repairingLabel') : t('admin.database.repairExpertFeedbackButton')}
         </GcdsButton>
+        {renderStatusMessage(repairExpertFeedbackMessage, 'success', 'repairExpertFeedback')}
       </div>
 
       <div className="mb-400">
@@ -912,6 +1294,7 @@ const DatabasePage = ({ lang }) => {
         >
           {isMigratingPublicFeedback ? t('admin.database.migratingLabel') : t('admin.database.migratePublicFeedbackButton')}
         </GcdsButton>
+        {renderStatusMessage(migratePublicFeedbackMessage, 'success', 'migratePublicFeedback')}
       </div>
 
       <div className="mb-400">
@@ -920,10 +1303,8 @@ const DatabasePage = ({ lang }) => {
         <GcdsButton onClick={handleRepairQaMatchScores} disabled={isRepairingQaMatchScores} buttonRole="secondary" className="mb-200">
           {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
+        {renderStatusMessage(repairQaMatchScoresMessage, 'success', 'repairQaMatchScores')}
       </div>
-
-      {/* Show other messages (not import progress) at the bottom */}
-      {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
     </GcdsContainer >
   );
 };

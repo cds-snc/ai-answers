@@ -13,7 +13,7 @@ describe('GenericGraph Workflow', () => {
         vi.resetModules();
 
         vi.doMock('../workflows/GraphWorkflowHelper.js', () => ({
-            GraphWorkflowHelper: vi.fn().mockImplementation(() => ({
+            GraphWorkflowHelper: vi.fn().mockImplementation(function () { return {
                 validateShortQuery: vi.fn().mockResolvedValue(),
                 processRedaction: vi.fn().mockResolvedValue({ redactedText: 'redacted' }),
                 translateQuestion: vi.fn().mockResolvedValue({ translatedText: 'translated', originalLanguage: 'en' }),
@@ -29,7 +29,7 @@ describe('GenericGraph Workflow', () => {
                 persistInteraction: vi.fn().mockResolvedValue({ success: true }),
                 buildTranslationContext: vi.fn().mockReturnValue([]),
                 determineOutputLang: vi.fn().mockReturnValue('eng')
-            }))
+            }; })
         }));
 
 

@@ -31,6 +31,24 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
     // auto-open the first loaded item once, from the ?open deep link
     const pendingOpenRef = useRef(Boolean(openTarget));
 
+    // Focus management for the list <-> detail transition. The consumer
+    // attaches detailFocusRef to the first control in the detail view (e.g.
+    // its "Back to list" button); this hook moves focus there on entering
+    // detail, and restores focus to whatever triggered the selection when
+    // returning to the list. Deliberately scoped to the null<->non-null edge
+    // only (see the effect below) so next/prev navigation *within* the
+    // detail view doesn't keep yanking focus away from the Next/Prev button
+    // a keyboard user is repeatedly pressing.
+    const detailFocusRef = useRef(null);
+    const lastTriggerRef = useRef(null);
+    const wasDetailOpenRef = useRef(false);
+    // Skip the auto-focus-into-detail step the first time the effect below
+    // runs — a ?open= deep link can land selectedIndex on a non-null value
+    // before the user has done anything, and stealing focus straight to the
+    // "Back to list" button on page load would skip past the normal
+    // land-on-<h1> landing a fresh page load should get.
+    const isFirstRenderRef = useRef(true);
+
     const load = useCallback(async () => {
         if (!batchId) return;
         setLoading(true);
@@ -72,7 +90,30 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
         setSelectedIndex(null);
     };
 
-    const selectItem = (index) => setSelectedIndex(index);
+    const selectItem = (index) => {
+        // Only capture the trigger when coming from the list — a next/prev
+        // click while already in detail view shouldn't overwrite it.
+        if (selectedIndex === null && document.activeElement instanceof HTMLElement) {
+            lastTriggerRef.current = document.activeElement;
+        }
+        setSelectedIndex(index);
+    };
+
+    // Move focus on the list<->detail edge only.
+    useEffect(() => {
+        const isDetailOpen = selectedIndex !== null;
+        if (isDetailOpen && !wasDetailOpenRef.current && !isFirstRenderRef.current) {
+            detailFocusRef.current?.focus?.();
+        } else if (!isDetailOpen && wasDetailOpenRef.current) {
+            const trigger = lastTriggerRef.current;
+            if (trigger && document.body.contains(trigger)) {
+                trigger.focus();
+            }
+            lastTriggerRef.current = null;
+        }
+        wasDetailOpenRef.current = isDetailOpen;
+        isFirstRenderRef.current = false;
+    }, [selectedIndex]);
 
     const selectedGroupIndex = selectedIndex === null
         ? null
@@ -147,7 +188,8 @@ export function useExperimentalBatchItems(batchId, { initialFilter = 'attention'
         goNext,
         goPrev,
         hasNext,
-        hasPrev
+        hasPrev,
+        detailFocusRef
     };
 }
 

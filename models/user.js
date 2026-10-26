@@ -22,7 +22,41 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // Two factor authentication fields
+  // Institution the user belongs to, as a partner department abbrKey from
+  // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
+  // (Manage user accounts page) or once by the user (Manage your account
+  // page; api/user/user-me.js locks it for partners after that). Seeds the
+  // dashboards' department filter via preferences.prefilterDepartment and
+  // scopes who a partner can assign chats to (api/chat/chat-assign-interaction.js).
+  // Orthogonal to a chat's context.department - a DND reviewer can
+  // evaluate an IRCC chat.
+  institution: {
+    type: String,
+    default: '',
+    trim: true,
+    index: true
+  },
+  // Group / team within the institution, one of
+  // src/constants/partnerGroups.js ('' = none). Set the same two ways as
+  // institution (not collected at signup). Drives the reviewer filter
+  // (api/util/reviewer-filter.js) via preferences.prefilterGroup and the
+  // chat-assign-interaction membership rule.
+  group: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  // Self-service preferences, edited on the Account dashboard page.
+  preferences: {
+    // Open dashboards with the Partner institution filter set to the
+    // user's own institution (needs `institution` to be set).
+    prefilterDepartment: { type: Boolean, default: false },
+    // Apply the reviewer filter for the user's own group on every dashboard
+    // (chats created or evaluated by group members). Needs `group` set.
+    prefilterGroup: { type: Boolean, default: false }
+  },
+  // Two factor authentication challenge (services/TwoFAService.js).
+  // twoFACode is an HMAC of the emailed one-time code, never the code itself.
   twoFACode: {
     type: String,
     default: null,
@@ -30,11 +64,40 @@ const userSchema = new mongoose.Schema({
   twoFAExpires: {
     type: Date,
     default: null,
-  }
-  ,
-  // If using otplib TOTP flow, store a per-user secret
+  },
+  // Wrong-code count. NOT reset when a new code is sent, only on success or
+  // after the lockout ends, so asking for fresh codes can't buy more guesses.
+  twoFAAttempts: {
+    type: Number,
+    default: 0,
+  },
+  twoFALockedUntil: {
+    type: Date,
+    default: null,
+  },
+  twoFALastSentAt: {
+    type: Date,
+    default: null,
+  },
+  // Legacy TOTP secret. Nothing reads or writes it any more (sign-up stopped
+  // filling it); kept so existing documents still load. Clearing it from those
+  // documents needs a migration.
   twoFASecret: {
     type: String,
+    default: null,
+  },
+  // Password sign-in lockout (config/passport.js)
+  loginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  loginLockedUntil: {
+    type: Date,
+    default: null,
+  },
+  // When loginAttempts last went up; older than LOGIN_ATTEMPT_WINDOW_MS means start the count again.
+  loginLastFailedAt: {
+    type: Date,
     default: null,
   },
   // Password reset fields

@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Helper: poll the public settings endpoint until the expected value is observed
 async function waitForSetting(page, key, expectedValue, timeoutMs = 10000, intervalMs = 500) {
-    const url = `/api/setting/setting-public-handler?key=${encodeURIComponent(key)}`;
+    const url = `/api/setting/setting-handler?key=${encodeURIComponent(key)}`;
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         try {

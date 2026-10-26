@@ -7,6 +7,10 @@ import moment from '../../utils/momentSetup.js';
 import 'daterangepicker';
 import 'daterangepicker/daterangepicker.css';
 import { PARTNER_DEPARTMENTS } from '../../constants/partnerDepartments.js';
+import { formatLabelValue } from '../../utils/labelValue.js';
+import { useAuth } from '../../contexts/AuthContext.js';
+import { getPreferredDepartment, getPreferredGroup } from '../../utils/admin/accountPreferences.js';
+import { getPartnerGroupLabel } from '../../constants/partnerGroups.js';
 
 const FilterPanel = ({
   lang,
@@ -15,7 +19,10 @@ const FilterPanel = ({
   isVisible = false,
   autoApply = false,
   applyButtonText = null,
-  applyDisabled = false,
+  // Moves focus onto the panel's <summary> when the panel first renders -
+  // for a page whose trigger unmounts itself to reveal the panel
+  // (ChatLogsDashboard's "Get logs"), so focus has somewhere to land.
+  focusSummaryOnMount = false,
   defaultUserType = 'all',
   defaultOpen = true,
   filterLoading = false,
@@ -35,9 +42,27 @@ const FilterPanel = ({
   // eval, AI eval) — for a dashboard whose charts don't break results down
   // by those categories, applying one just silently shrinks every number
   // with no visible way to tell why (see PartnerDashboard's own comment).
-  showAdvancedSection = true
+  showAdvancedSection = true,
+  // Independent of showAdvancedSection: hides just answerType/partnerEval/
+  // aiEval, keeping URL (EN/FR). Those three are each a hard pre-aggregation
+  // $match, so filtering by one collapses its own breakdown chart to a
+  // 100%/0% tautology (see Metrics/TechnicalMetricsDashboard.js).
+  showCategoryFilters = true,
+  // Extra controls a dashboard needs applied together with the filters,
+  // rendered inside the panel after "More filters" and just above the
+  // Clear all/Apply buttons, so they share the panel's Apply button
+  // (ChatLogsDashboard's export view/format). Only rendered when passed;
+  // every other dashboard leaves it empty.
+  children = null
 }) => {
   const { t } = useTranslations(lang);
+  // While the consumer's fetch/export is in flight, Apply, Clear all and
+  // the pills are aria-disabled and their handlers no-op: the full-page
+  // LoadingOverlay blocks the pointer but not the keyboard, so a keyboard
+  // user could otherwise reset the panel mid-request and see results that
+  // no longer match it. aria-disabled, not native disabled - a natively
+  // disabled focused button is blurred to <body>.
+  const busy = !!filterLoading;
   const dateRangePickerRef = useRef(null);
   const dateRangePickerInstance = useRef(null);
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -46,6 +71,41 @@ const FilterPanel = ({
   // Set to true by handleClear so the auto-close effect doesn't immediately
   // re-close the panel after the clear re-fetch completes.
   const skipNextAutoClose = useRef(false);
+  // Clear can be triggered from the compact pills row's own inline "Clear
+  // all" button (filter-bar__pills-row below) - that whole row (including
+  // the clicked button itself) unmounts once pills.length drops to 0, which
+  // silently drops focus to <body> with no indication where it went.
+  // handleClear already reopens the full panel as a side effect
+  // (setIsOpen(true)), so redirect focus to that panel's own summary once it
+  // does - see the appliedFilters effect below.
+  const panelSummaryRef = useRef(null);
+  const pendingClearFocusRef = useRef(false);
+  // Captured in handleApply itself, not re-derived later from
+  // document.activeElement: the last point guaranteed to still see the
+  // real target before the fetch resolves. Collapsing a native <details>
+  // hides everything except its <summary> - if focus was still on the
+  // Apply button (a keyboard/screen-reader user who just pressed it) that
+  // button vanishes from the accessibility tree, so this drives the same
+  // redirect-to-summary fix as pendingClearFocusRef above.
+  const focusWasInPanelOnApplyRef = useRef(false);
+  useEffect(() => {
+    if (focusSummaryOnMount) panelSummaryRef.current?.focus();
+    // Mount only: the prop describes the first render, not later changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Removing a single pill (removeFilter, as opposed to Clear all above) -
+  // buildPills() always pushes exactly one entry per category in the same
+  // fixed order, so whatever's now at the same array index the clicked pill
+  // occupied is either the thing that replaced it (department/userType/
+  // partnerEval/aiEval always have an "All X" info-pill fallback - same
+  // slot, same index, just a different render) or, if that category had no
+  // fallback and truly disappeared (urlEn/urlFr/answerType), whatever
+  // shifted into that slot - falling back to index-1 only if the removed
+  // pill was the last one in the row. index-1 is always safe to land on:
+  // the only way to reach zero pills at all is Clear all above, which
+  // removeFilter never triggers on its own.
+  const pillsRowRef = useRef(null);
+  const pendingPillFocusIndexRef = useRef(null);
   // Holds the previously applied date range so cancel on the picker restores it.
   const datePickerCancelRestoreRef = useRef(null);
   // Tracks the start date clicked when only one date has been selected so far.
@@ -56,14 +116,45 @@ const FilterPanel = ({
   // Collapse when results load successfully; keep open on error or no results.
   // Skipped once after a Clear so the panel stays open for the user to re-filter.
   useEffect(() => {
-    if (!hasAppliedFilters || filterLoading) return;
+    if (!hasAppliedFilters) {
+      // No results in flight or shown - some consumers (e.g. ChatDashboardPage)
+      // treat Clear as a full restart: onClearFilters resets hasAppliedFilters
+      // to false instead of re-fetching, so there's no forthcoming "clear
+      // finished" transition left for a pending skip to protect. Disarm it
+      // here rather than letting it linger armed - otherwise it silently
+      // swallows the auto-close of whatever unrelated Apply happens to be the
+      // next one to bring hasAppliedFilters back to true, not the Clear it was
+      // actually meant for. For consumers where Clear re-fetches immediately
+      // (hasAppliedFilters stays true throughout), this branch never runs, so
+      // their existing skip-then-consume flow below is unaffected.
+      skipNextAutoClose.current = false;
+      focusWasInPanelOnApplyRef.current = false;
+      return;
+    }
+    if (filterLoading) return;
     if (skipNextAutoClose.current) {
       skipNextAutoClose.current = false;
+      // Same staleness concern as skipNextAutoClose above: a Clear fired
+      // while an earlier Apply's loading was still in flight shouldn't let
+      // that Apply's armed flag silently redirect focus on some later,
+      // unrelated close.
+      focusWasInPanelOnApplyRef.current = false;
       return;
     }
     if (filterError || filterResultCount === 0) {
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(true);
     } else if (filterResultCount > 0) {
+      // panelSummaryRef.current is always mounted (a native <summary> stays
+      // visible whether its <details> is open or closed), so there's no
+      // need to wait for the collapse to actually commit before focusing it
+      // - unlike pendingClearFocusRef's case (Clear reopens the panel, so
+      // the target isn't rendered yet when Clear fires), the redirect
+      // target here already exists at arm time.
+      if (focusWasInPanelOnApplyRef.current) {
+        panelSummaryRef.current?.focus();
+      }
+      focusWasInPanelOnApplyRef.current = false;
       setIsOpen(false);
     }
   }, [hasAppliedFilters, filterLoading, filterError, filterResultCount]);
@@ -116,7 +207,19 @@ const FilterPanel = ({
 
   // Store dates as strings (like original FilterPanel.js)
   const [dateRange, setDateRange] = useState(getDefaultDates());
-  const [department, setDepartment] = useState('');
+  // Account preference: open with the user's own institution selected. Same
+  // default-vs-universal split as defaultUserType - Clear returns to this
+  // default, the pill's x goes to the universal '' (all). useAuth() is
+  // undefined outside an AuthProvider (unit tests), hence the optional chain.
+  const authUser = useAuth()?.currentUser;
+  const preferredDepartment = getPreferredDepartment(authUser);
+  const [department, setDepartment] = useState(preferredDepartment);
+  // "Filter dashboards to my group" preference: no control of its own here -
+  // it rides along as a hidden `group` filter (chats created or evaluated by
+  // the group's members, resolved server-side) with a closable pill, so it
+  // is visible and droppable per visit like any other applied filter.
+  const preferredGroup = getPreferredGroup(authUser);
+  const [group, setGroup] = useState(preferredGroup);
   const [urlEn, setUrlEn] = useState('');
   const [urlFr, setUrlFr] = useState('');
   const [userType, setUserType] = useState(defaultUserType);
@@ -141,7 +244,8 @@ const FilterPanel = ({
       const defaultFilters = {
         startDate: startObj ? startObj.toISOString() : undefined,
         endDate: endObj ? endObj.toISOString() : undefined,
-        department: '',
+        department: preferredDepartment,
+        group: preferredGroup,
         urlEn: '',
         urlFr: '',
         userType: defaultUserType,
@@ -632,16 +736,16 @@ const FilterPanel = ({
 
   // Department options — partner list is shared across the app
   const departmentOptions = [
-    { value: '', label: t('admin.filters.allDepartments') || 'All Departments' },
+    { value: '', label: t('admin.filters.allDepartments') },
     ...PARTNER_DEPARTMENTS.map(d => ({ value: d, label: d })),
   ];
 
   // User type options
   const userTypeOptions = [
-    { value: 'all', label: t('admin.filters.allUsers') || 'All Users' },
-    { value: 'public', label: t('admin.filters.publicUsers') || 'Public Users' },
-    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') || 'Public Referred' },
-    { value: 'admin', label: t('admin.filters.adminUsers') || 'Admin Users' }
+    { value: 'all', label: t('admin.filters.allUsers') },
+    { value: 'public', label: t('admin.filters.publicUsers') },
+    { value: 'referredPublic', label: t('admin.filters.referredPublicUsers') },
+    { value: 'admin', label: t('admin.filters.adminUsers') }
   ];
 
   // Answer type options
@@ -688,6 +792,17 @@ const FilterPanel = ({
   ];
 
   const handleApply = () => {
+    if (busy) return;
+    // Captured here, synchronously, before anything else runs - see
+    // focusWasInPanelOnApplyRef's own comment above for why this can't be
+    // deferred to the auto-close effect below. .closest('details') rather
+    // than .parentElement: names the actual ancestor relationship this
+    // depends on instead of a one-hop DOM fact that happens to hold today.
+    const activeEl = document.activeElement;
+    const panelEl = panelSummaryRef.current?.closest('details');
+    focusWasInPanelOnApplyRef.current =
+      !!panelEl && !!activeEl && activeEl !== panelSummaryRef.current && panelEl.contains(activeEl);
+
     // Prefer the picker's live state over React state: the picker tracks the
     // user's calendar selection in real-time, so dates are correct even when
     // the user chose a custom range without clicking Apply inside the calendar.
@@ -711,6 +826,7 @@ const FilterPanel = ({
       startDate: startObj ? startObj.toISOString() : undefined,
       endDate: endObj ? endObj.toISOString() : undefined,
       department,
+      group,
       urlEn,
       urlFr,
       userType,
@@ -725,9 +841,11 @@ const FilterPanel = ({
   };
 
   const handleClear = () => {
+    if (busy) return;
     const defaultDates = getDefaultDates();
     setDateRange(defaultDates);
-    setDepartment('');
+    setDepartment(preferredDepartment);
+    setGroup(preferredGroup);
     setUrlEn('');
     setUrlFr('');
     setUserType(defaultUserType);
@@ -753,7 +871,8 @@ const FilterPanel = ({
     const defaultFilters = {
       startDate: startObj ? startObj.toISOString() : undefined,
       endDate: endObj ? endObj.toISOString() : undefined,
-      department: '',
+      department: preferredDepartment,
+      group: preferredGroup,
       urlEn: '',
       urlFr: '',
       userType: defaultUserType,
@@ -766,6 +885,7 @@ const FilterPanel = ({
     setAppliedFilters(null);
     setIsOpen(true);
     skipNextAutoClose.current = true;
+    pendingClearFocusRef.current = true;
     if (autoApply) {
       onApplyFilters(defaultFilters);
     } else {
@@ -776,6 +896,7 @@ const FilterPanel = ({
   // Remove a single filter pill. For multi-select filters, `value` is the specific
   // value to remove; omit to reset the whole filter to default.
   const removeFilter = (key, value) => {
+    if (busy) return;
     const next = { ...appliedFilters };
     if (key === 'date') {
       // Save applied dates so cancel can restore them — pill must always match what's in effect.
@@ -799,7 +920,14 @@ const FilterPanel = ({
       }, 50);
       return;
     } else if (key === 'department') { setDepartment(''); next.department = ''; }
-    else if (key === 'userType') { setUserType(defaultUserType); next.userType = defaultUserType; }
+    else if (key === 'group') { setGroup(''); next.group = ''; }
+    else if (key === 'userType') {
+      // Reset to the universal 'all', not defaultUserType — a page whose
+      // default isn't 'all' (e.g. MetricsDashboard.js's 'public') would
+      // otherwise make the × a no-op.
+      setUserType('all');
+      next.userType = 'all';
+    }
     else if (key === 'urlEn') { setUrlEn(''); next.urlEn = ''; }
     else if (key === 'urlFr') { setUrlFr(''); next.urlFr = ''; }
     else if (key === 'answerType') {
@@ -823,9 +951,8 @@ const FilterPanel = ({
   // Blue info pills (no ×) show the current state for always-present filters.
   // Grey closable pills (×) show when a filter differs from its default.
   // French requires a space before ':' (e.g. "Utilisateurs : Tous"); English
-  // doesn't. Centralizes that rule for every "Label: value" pill built here,
-  // rather than hardcoding ':' at each call site.
-  const formatPillLabel = (label, value) => (lang === 'fr' ? `${label} : ${value}` : `${label}: ${value}`);
+  // doesn't - formatLabelValue holds that rule for every "Label: value" pill.
+  const formatPillLabel = (label, value) => formatLabelValue(label, value, lang);
 
   const buildPills = () => {
     if (!appliedFilters) return [];
@@ -846,73 +973,96 @@ const FilterPanel = ({
       info: deptIsDefault,
     });
 
-    const userIsDefault = !appliedFilters.userType || appliedFilters.userType === defaultUserType;
-    if (userIsDefault) {
-      pills.push({ key: 'usersAll', label: formatPillLabel(t('admin.filters.users'), t('admin.filters.allUsers')), info: true });
-    } else {
-      const userOpt = userTypeOptions.find(o => o.value === appliedFilters.userType);
-      pills.push({ key: 'userType', label: userOpt ? userOpt.label : appliedFilters.userType });
+    // Group scope from the account preference - only ever present when set,
+    // and always closable (there is no "all groups" state to announce).
+    if (appliedFilters.group) {
+      pills.push({ key: 'group', label: formatPillLabel(t('admin.filters.group'), getPartnerGroupLabel(appliedFilters.group, lang)) });
     }
 
-    const advancedDefault =
+    // The non-closable info pill is reserved for the true 'all', not for
+    // "whatever this page's default happens to be" — a 'public' default
+    // (MetricsDashboard.js) still gets a real, closable "Users: Public" pill.
+    // Previously this rendered a mislabeled "All Users" info pill instead,
+    // even though the query itself correctly stayed scoped to 'public'.
+    const effectiveUserType = appliedFilters.userType || defaultUserType || 'all';
+    const userOpt = userTypeOptions.find(o => o.value === effectiveUserType);
+    const userLabel = userOpt ? userOpt.label : effectiveUserType;
+    if (effectiveUserType === 'all') {
+      pills.push({ key: 'usersAll', label: formatPillLabel(t('admin.filters.users'), userLabel), info: true });
+    } else {
+      pills.push({ key: 'userType', label: userLabel });
+    }
+
+    // Split in two, matching showCategoryFilters' own split of the "More
+    // filters" UI (URL always shown when showAdvancedSection; answerType/
+    // partnerEval/aiEval additionally gated on showCategoryFilters) — so
+    // "default" and the pills below never reference a category that has no
+    // checkbox UI to set/clear it on this page.
+    const urlDefault = !appliedFilters.urlEn && !appliedFilters.urlFr;
+    const categoryDefault =
       (!appliedFilters.answerType || appliedFilters.answerType === 'all') &&
       (!appliedFilters.partnerEval || appliedFilters.partnerEval === 'all') &&
-      (!appliedFilters.aiEval || appliedFilters.aiEval === 'all') &&
-      !appliedFilters.urlEn &&
-      !appliedFilters.urlFr;
+      (!appliedFilters.aiEval || appliedFilters.aiEval === 'all');
+    const advancedDefault = urlDefault && (!showCategoryFilters || categoryDefault);
 
-    if (advancedDefault) {
+    // Only render an advanced-filter pill when "More filters" is actually
+    // rendered — with showAdvancedSection={false}, these fields are always
+    // at "default" (no UI to change them), which made this pill always show
+    // referencing a section that isn't on the page.
+    if (showAdvancedSection && advancedDefault) {
       pills.push({ key: 'advancedAll', label: t('admin.filters.advancedAll'), info: true });
-    } else {
+    } else if (showAdvancedSection) {
       if (appliedFilters.urlEn) pills.push({ key: 'urlEn', label: formatPillLabel(t('admin.filters.urlEn'), appliedFilters.urlEn) });
       if (appliedFilters.urlFr) pills.push({ key: 'urlFr', label: formatPillLabel(t('admin.filters.urlFr'), appliedFilters.urlFr) });
-      if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
-        appliedFilters.answerType.split(',').forEach(val => {
-          const opt = answerTypeOptions.find(o => o.value === val);
-          pills.push({ key: 'answerType', value: val, label: opt ? opt.label : val });
-        });
-      }
-      // Once we're in this branch, at least one advanced filter has been
-      // customized — so partnerEval/aiEval each get a pill regardless of
-      // whether that particular one is still at its default. Omitting the
-      // still-default one entirely (as urlEn/urlFr/answerType do above)
-      // would be ambiguous here: with only e.g. "Partner evaluation:
-      // Correct" showing, there'd be no way to tell "AI eval is
-      // deliberately unfiltered" apart from "AI eval isn't customizable at
-      // all" — and it also hides half of what the AND/OR toggle below is
-      // actually combining.
-      const partnerEvalHasSelection = appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all';
-      const aiEvalHasSelection = appliedFilters.aiEval && appliedFilters.aiEval !== 'all';
-      if (partnerEvalHasSelection) {
-        appliedFilters.partnerEval.split(',').forEach(val => {
-          const opt = partnerEvalOptions.find(o => o.value === val);
-          pills.push({ key: 'partnerEval', value: val, label: formatPillLabel(t('admin.filters.partnerEval'), opt ? opt.label : val) });
-        });
-      } else {
-        pills.push({ key: 'partnerEvalAll', label: formatPillLabel(t('admin.filters.partnerEval'), t('admin.filters.allPartnerEvals')), info: true });
-      }
-      // AND/OR connector pill — only meaningful once both partnerEval and
-      // aiEval have a real selection (evalLogic is a no-op otherwise: an
-      // 'all' side imposes no match condition for either logic to combine
-      // with), and only where evalLogic is actually wired up (see
-      // showEvalLogic prop comment). Always sits between the two groups'
-      // pills so the combining logic reads in place, not just in the
-      // "More filters" radio toggle that set it.
-      if (showEvalLogic && partnerEvalHasSelection && aiEvalHasSelection) {
-        const logicLabel = appliedFilters.evalLogic === 'or' ? t('admin.filters.evalLogicPillOr') : t('admin.filters.evalLogicPillAnd');
-        // Own pill style (white, light grey outline) — distinct from both
-        // the blue "info" pills (which mean "at default") and the grey
-        // closable ones (an active filter), since this is neither: it's an
-        // operator relating the two eval pills, not a filter state itself.
-        pills.push({ key: 'evalLogic', label: logicLabel, info: true, connector: true });
-      }
-      if (aiEvalHasSelection) {
-        appliedFilters.aiEval.split(',').forEach(val => {
-          const opt = aiEvalOptions.find(o => o.value === val);
-          pills.push({ key: 'aiEval', value: val, label: formatPillLabel(t('admin.filters.aiEval'), opt ? opt.label : val) });
-        });
-      } else {
-        pills.push({ key: 'aiEvalAll', label: formatPillLabel(t('admin.filters.aiEval'), t('admin.filters.allAiEvals')), info: true });
+      if (showCategoryFilters) {
+        if (appliedFilters.answerType && appliedFilters.answerType !== 'all') {
+          appliedFilters.answerType.split(',').forEach(val => {
+            const opt = answerTypeOptions.find(o => o.value === val);
+            pills.push({ key: 'answerType', value: val, label: opt ? opt.label : val });
+          });
+        }
+        // Once we're in this branch, at least one advanced filter has been
+        // customized — so partnerEval/aiEval each get a pill regardless of
+        // whether that particular one is still at its default. Omitting the
+        // still-default one entirely (as urlEn/urlFr/answerType do above)
+        // would be ambiguous here: with only e.g. "Partner evaluation:
+        // Correct" showing, there'd be no way to tell "AI eval is
+        // deliberately unfiltered" apart from "AI eval isn't customizable at
+        // all" — and it also hides half of what the AND/OR toggle below is
+        // actually combining.
+        const partnerEvalHasSelection = appliedFilters.partnerEval && appliedFilters.partnerEval !== 'all';
+        const aiEvalHasSelection = appliedFilters.aiEval && appliedFilters.aiEval !== 'all';
+        if (partnerEvalHasSelection) {
+          appliedFilters.partnerEval.split(',').forEach(val => {
+            const opt = partnerEvalOptions.find(o => o.value === val);
+            pills.push({ key: 'partnerEval', value: val, label: formatPillLabel(t('admin.filters.partnerEval'), opt ? opt.label : val) });
+          });
+        } else {
+          pills.push({ key: 'partnerEvalAll', label: formatPillLabel(t('admin.filters.partnerEval'), t('admin.filters.allPartnerEvals')), info: true });
+        }
+        // AND/OR connector pill — only meaningful once both partnerEval and
+        // aiEval have a real selection (evalLogic is a no-op otherwise: an
+        // 'all' side imposes no match condition for either logic to combine
+        // with), and only where evalLogic is actually wired up (see
+        // showEvalLogic prop comment). Always sits between the two groups'
+        // pills so the combining logic reads in place, not just in the
+        // "More filters" radio toggle that set it.
+        if (showEvalLogic && partnerEvalHasSelection && aiEvalHasSelection) {
+          const logicLabel = appliedFilters.evalLogic === 'or' ? t('admin.filters.evalLogicPillOr') : t('admin.filters.evalLogicPillAnd');
+          // Own pill style (white, light grey outline) — distinct from both
+          // the blue "info" pills (which mean "at default") and the grey
+          // closable ones (an active filter), since this is neither: it's an
+          // operator relating the two eval pills, not a filter state itself.
+          pills.push({ key: 'evalLogic', label: logicLabel, info: true, connector: true });
+        }
+        if (aiEvalHasSelection) {
+          appliedFilters.aiEval.split(',').forEach(val => {
+            const opt = aiEvalOptions.find(o => o.value === val);
+            pills.push({ key: 'aiEval', value: val, label: formatPillLabel(t('admin.filters.aiEval'), opt ? opt.label : val) });
+          });
+        } else {
+          pills.push({ key: 'aiEvalAll', label: formatPillLabel(t('admin.filters.aiEval'), t('admin.filters.allAiEvals')), info: true });
+        }
       }
     }
 
@@ -921,24 +1071,72 @@ const FilterPanel = ({
 
   const pills = buildPills();
 
+  // Consumes pendingClearFocusRef (armed in handleClear) - appliedFilters is
+  // guaranteed to change to null whenever the pills row's own "Clear all"
+  // button fires (that button can't exist unless appliedFilters was already
+  // non-null with pills.length > 0), so this reliably fires in the same
+  // commit that unmounts it, landing focus on the reopened panel's summary
+  // instead of losing it to <body>.
+  useEffect(() => {
+    if (pendingClearFocusRef.current) {
+      pendingClearFocusRef.current = false;
+      panelSummaryRef.current?.focus();
+    }
+  }, [appliedFilters]);
+
+  // Consumes pendingPillFocusIndexRef (armed by each closable pill's own
+  // onClick, below) - see the ref's own comment above for why index-then-
+  // index-1 always resolves to something real.
+  useEffect(() => {
+    const idx = pendingPillFocusIndexRef.current;
+    if (idx === null) return;
+    pendingPillFocusIndexRef.current = null;
+    const row = pillsRowRef.current;
+    if (!row) return;
+    // The pills are <li>s inside the row's <ul>; the focusable element is
+    // the <li>'s single child (a pill button, or a tabIndex={-1} info span).
+    const items = row.querySelectorAll('.filter-pills-list > li');
+    const slot = (idx < pills.length ? items[idx] : null) || items[Math.max(0, idx - 1)];
+    slot?.firstElementChild?.focus();
+  }, [appliedFilters]);
+
   if (!isVisible) return null;
 
   return (
     <div className="filter-panel-wrapper">
     <details className="filter-panel" open={isOpen} onToggle={(e) => setIsOpen(e.target.open)}>
-      <summary className="filter-panel-summary">
+      <summary className="filter-panel-summary" ref={panelSummaryRef}>
         <SlidersHorizontal className="filter-panel-summary__icon" aria-hidden="true" />
         {t('admin.filters.title')}
+        {/* The badge is decorative for AT; the sr-only phrase says what the
+            number means ("Filters, Applied filters: 4"). aria-label on a
+            <span> isn't reliably exposed, so hidden text instead. */}
         {appliedFilters && pills.length > 0 && (
-          <span className="filter-panel-summary__count">{pills.length}</span>
+          <>
+            <span className="filter-panel-summary__count" aria-hidden="true">{pills.length}</span>
+            <span className="sr-only">{t('admin.filters.appliedCount').replace('{count}', () => pills.length)}</span>
+          </>
         )}
       </summary>
       <div className="filter-panel-content">
+        {/* Group scope from the account preference, shown where someone
+            looks to change filters - the group has no control of its own
+            here. Reads the live `group` value, not appliedFilters: the
+            pill's x is the only thing that clears it, and Clear restores
+            it, so it shows whenever the scope is in effect (unlike the pill
+            row, which Clear empties until the next Apply). Same classes as
+            HomePage.js's admin-view pill (chat.css), reused rather than
+            restyled. */}
+        {group && (
+          <p className="referring-url-label admin-view-label mb-300">
+            {formatPillLabel(t('admin.filters.group'), getPartnerGroupLabel(group, lang))}
+          </p>
+        )}
         {/* Row 1: date range, partner institution, users */}
         <div className="filter-main-row">
           <div className="filter-row">
             <label htmlFor="dateRangePicker" className="filter-label">
-              {t('admin.filters.dateRange') || 'Date Range'}
+              {t('admin.filters.dateRange')}
             </label>
             <input
               ref={dateRangePickerRef}
@@ -954,7 +1152,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="department" className="filter-label">
-              {t('admin.filters.department') || 'Department'}
+              {t('admin.filters.department')}
             </label>
             <select
               id="department"
@@ -972,7 +1170,7 @@ const FilterPanel = ({
 
           <div className="filter-row">
             <label htmlFor="user-type" className="filter-label">
-              {t('admin.filters.users') || 'User Type'}
+              {t('admin.filters.users')}
             </label>
             <select
               id="user-type"
@@ -1006,31 +1204,34 @@ const FilterPanel = ({
             <div className="filter-column">
               <div className="filter-row">
                 <label htmlFor="url-en" className="filter-label">
-                  {t('admin.filters.urlEn') || 'URL (EN)'}
+                  {t('admin.filters.urlEn')}
                 </label>
                 <input
                   type="text"
                   id="url-en"
                   value={urlEn}
                   onChange={(e) => setUrlEn(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
               <div className="filter-row">
                 <label htmlFor="url-fr" className="filter-label">
-                  {t('admin.filters.urlFr') || 'URL (FR)'}
+                  {t('admin.filters.urlFr')}
                 </label>
                 <input
                   type="text"
                   id="url-fr"
                   value={urlFr}
                   onChange={(e) => setUrlFr(e.target.value)}
-                  placeholder={t('admin.filters.urlPlaceholder') || 'Filter by partial URL'}
+                  placeholder={t('admin.filters.urlPlaceholder')}
                   className="filter-input"
                 />
               </div>
-              {showEvalLogic && (
+              {/* Also gated on showCategoryFilters: this toggle combines
+                  partnerEval/aiEval, so it's meaningless once those columns
+                  are hidden. */}
+              {showEvalLogic && showCategoryFilters && (
                 <>
                 <p className="filter-advanced-title">{t('admin.filters.evalPairTitle')}</p>
                 <div className="gc-chckbxrdio sm filter-eval-logic" role="radiogroup" aria-label={t('admin.filters.evalLogicGroupLabel')}>
@@ -1048,15 +1249,22 @@ const FilterPanel = ({
             </div>
 
             {/* Answer type column */}
+            {showCategoryFilters && (
+            <>
             <details className="filter-checkbox-details details-form" open onToggle={(e) => e.stopPropagation()}>
               <summary className="filter-label">
-                {t('admin.filters.answerType') || 'Answer Type'}
-                {answerType.length > 0 && <span className="filter-count"> ({answerType.length})</span>}
+                {t('admin.filters.answerType')}
+                {answerType.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({answerType.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => answerType.length)}</span>
+                  </>
+                )}
               </summary>
               <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.answerType')}>
                 <div className="checkbox">
                   <input type="checkbox" id="answerType-all" checked={answerType.length === 0} onChange={(e) => handleAnswerTypeAll(e.target.checked)} />
-                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes') || 'All'}</label>
+                  <label htmlFor="answerType-all">{t('admin.filters.allAnswerTypes')}</label>
                 </div>
                 {answerTypeOptions.filter(o => o.value !== 'all').map(option => (
                   <div className="checkbox" key={option.value}>
@@ -1074,13 +1282,18 @@ const FilterPanel = ({
               <div className="filter-eval-pair">
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.partnerEval') || 'Partner Evaluation'}
-                    {partnerEval.length > 0 && <span className="filter-count"> ({partnerEval.length})</span>}
+                    {t('admin.filters.partnerEval')}
+                    {partnerEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({partnerEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => partnerEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.partnerEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="partnerEval-all" checked={partnerEval.length === 0} onChange={(e) => handlePartnerEvalAll(e.target.checked)} />
-                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals') || 'All'}</label>
+                      <label htmlFor="partnerEval-all">{t('admin.filters.allPartnerEvals')}</label>
                     </div>
                     {partnerEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>
@@ -1093,13 +1306,18 @@ const FilterPanel = ({
 
                 <details className="filter-checkbox-details details-form filter-eval-box" open onToggle={(e) => e.stopPropagation()}>
                   <summary className="filter-label">
-                    {t('admin.filters.aiEval') || 'AI Evaluation'}
-                    {aiEval.length > 0 && <span className="filter-count"> ({aiEval.length})</span>}
+                    {t('admin.filters.aiEval')}
+                    {aiEval.length > 0 && (
+                  <>
+                    <span className="filter-count" aria-hidden="true"> ({aiEval.length})</span>
+                    <span className="sr-only">{t('admin.filters.selectedCount').replace('{count}', () => aiEval.length)}</span>
+                  </>
+                )}
                   </summary>
                   <fieldset className="gc-chckbxrdio sm filter-checkbox-group" aria-label={t('admin.filters.aiEval')}>
                     <div className="checkbox">
                       <input type="checkbox" id="aiEval-all" checked={aiEval.length === 0} onChange={(e) => handleAiEvalAll(e.target.checked)} />
-                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals') || 'All'}</label>
+                      <label htmlFor="aiEval-all">{t('admin.filters.allAiEvals')}</label>
                     </div>
                     {aiEvalOptions.filter(o => o.value !== 'all').map(option => (
                       <div className="checkbox" key={option.value}>
@@ -1111,16 +1329,21 @@ const FilterPanel = ({
                 </details>
               </div>
             </div>
+            </>
+            )}
           </div>
         </details>
         </>
         )}
+
+        {children}
 
         <div className="filter-actions">
           <button
             type="button"
             onClick={handleClear}
             className="filter-button filter-button-secondary"
+            aria-disabled={busy || undefined}
           >
             {t('admin.filters.clearAll')}
           </button>
@@ -1129,7 +1352,7 @@ const FilterPanel = ({
             type="button"
             onClick={handleApply}
             className="filter-button filter-button-primary"
-            disabled={applyDisabled}
+            aria-disabled={busy || undefined}
           >
             {applyButtonText || t('admin.filters.apply')}
           </button>
@@ -1138,30 +1361,75 @@ const FilterPanel = ({
     </details>
 
     {pills.length > 0 && (
-      <div className="filter-bar__pills-row">
-        {pills.map(pill => (
-          <span
-            key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}
-            className={`filter-pill${pill.connector ? ' filter-pill--connector' : pill.info ? ' filter-pill--info' : ' filter-pill--closable'}`}
-          >
-            {pill.label}
-            {!pill.info && (
-              <button
-                type="button"
-                className="filter-pill__close"
-                onClick={() => removeFilter(pill.key, pill.value)}
-                aria-label={`${t('dashboardFilter.removeFilter')} - ${pill.label}`}
-              >
-                ×
-              </button>
-            )}
-          </span>
+      // role="group" + name: what the row is (the applied filters) and what
+      // the pills do (remove one to change the results). Without it a
+      // screen reader arriving on the first pill just hears "Remove filter
+      // - Last 30 days, button".
+      <div className="filter-bar__pills-row" ref={pillsRowRef} role="group" aria-label={t('admin.filters.appliedFiltersGroup')}>
+        {/* A real list, fixed and removable pills alike: fixed ones are
+            plain text (not in the tab order), so list navigation is the
+            only way a screen-reader user reads the whole applied set and
+            gets its count. role="list" explicitly - see .filter-pills-list. */}
+        <ul className="filter-pills-list" role="list">
+        {pills.map((pill, index) => (
+          <li key={pill.value != null ? `${pill.key}-${pill.value}` : pill.key}>
+          {pill.connector || pill.info ? (
+            // tabIndex={-1}: not in the tab order (it's not interactive),
+            // but still a valid target for the removeFilter effect above to
+            // land on programmatically when this info pill is what now
+            // occupies a just-cleared pill's old slot.
+            <span
+              className={`filter-pill${pill.connector ? ' filter-pill--connector' : ' filter-pill--info'}`}
+              tabIndex={-1}
+            >
+              {pill.label}
+            </span>
+          ) : (
+            // Whole pill is the close target, not just the small × - a
+            // real <button> (not a span wrapping one) so the entire
+            // label area shares one bigger click/tap target and one tab
+            // stop, instead of requiring the × specifically. The × itself
+            // is now purely visual (aria-hidden span, not its own nested
+            // button - a button inside a button is invalid HTML anyway),
+            // carried entirely by this button's own aria-label.
+            <button
+              type="button"
+              className="filter-pill filter-pill--closable"
+              aria-disabled={busy || undefined}
+              onClick={() => {
+                // Same stale-index hazard as the 'date' case below:
+                // removeFilter no-ops while busy, so arming first would
+                // leave the slot primed for the next unrelated change.
+                if (busy) return;
+                // The 'date' pill has its own separate, already-working
+                // focus mechanism (reopens the calendar - see removeFilter's
+                // 'date' branch) and returns before ever touching
+                // appliedFilters, so this effect's [appliedFilters]
+                // dependency would never fire for it - leaving a stale
+                // index armed for whatever *next* legitimately changes
+                // appliedFilters. Don't arm it for that key.
+                if (pill.key !== 'date') {
+                  pendingPillFocusIndexRef.current = index;
+                }
+                removeFilter(pill.key, pill.value);
+              }}
+              // Value first, action second: someone reading the row to
+              // learn what's applied hears the filter before "remove".
+              aria-label={`${pill.label} - ${t('dashboardFilter.removeFilter')}`}
+            >
+              {pill.label}
+              <span className="filter-pill__close" aria-hidden="true">×</span>
+            </button>
+          )}
+          </li>
         ))}
+        </ul>
         {pills.some(p => !p.info) && (
           <button
             type="button"
             className="filter-pills__clear-all"
             onClick={handleClear}
+            aria-disabled={busy || undefined}
           >
             {t('admin.filters.clearAll')}
           </button>

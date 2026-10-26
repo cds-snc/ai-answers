@@ -25,9 +25,21 @@ export const COLOURS = {
   // User-feedback sentiment (helpful / not helpful), classified by score
   feedbackPositive: '#1f7a40', // green-700 — kept for fallback / non-breakdown uses
   feedbackNegative: '#c62828', // red  — kept for fallback / non-breakdown uses
-  // Satisfaction donut — lightest scale green (with border) + mid-scale red
-  satisfactionPositive: '#1f7a40',                              // matches COLOURS.correct
-  satisfactionNegative: '#d3080c',                              // matches COLOURS.hasError
+  // Used adjacent to each other in the satisfaction stacked bar (no gap
+  // between segments). Vivid green and red at matched saturation are always
+  // close in luminance regardless of exact shade (WCAG contrast is
+  // luminance-only) — e.g. these two are only ~1.65:1 against each other —
+  // so instead of hunting for a fill pair that clears 3:1 unaided, both
+  // segments carry chartStrokeOnColour (white) between them, same idea as a
+  // donut's paddingAngle gap. Picked straight from the breakdown-by-reason
+  // scale rather than new values: green-650 (feedbackPositiveScale[2],
+  // "I don't need to visit an office"'s colour) and red-600
+  // (feedbackNegativeScale[1], "Irrelevant or off topic"'s colour). Both
+  // clear white on their own (4.11:1, 6.78:1), so the white stroke is only
+  // visible at the shared internal boundary, not the outer edges.
+  satisfactionPositive: '#248f4b', // --gcds-color-green-650 = feedbackPositiveScale[2]
+  satisfactionNegative: '#b3192e', // --gcds-color-red-600 = feedbackNegativeScale[1]
+  chartStrokeOnColour: '#ffffff',
   // Per-reason colour scales for the satisfaction breakdown bar. Each group uses
   // five accessible shades (WCAG non-text contrast ≥ 3:1 against white) so
   // individual reasons are visually distinct while staying within their family.
@@ -43,6 +55,20 @@ export const COLOURS = {
   ],
   // Reds: red-700 → red-600 → red-500 → red-400 → red-350
   feedbackNegativeScale: ['#861322', '#b3192e', '#df2039', '#e64d61', '#e96375'],
+  // Conversation-length breakdown (single/two/three+ questions) — segments in
+  // a 100%-stacked bar sit flush against each other with no gap or stroke, so
+  // every adjacent pair (not just each colour against white) needs to clear
+  // 3:1. --gcds-color-blue-150/550/900: light-mid 3.53:1, mid-dark 3.44:1,
+  // light-dark 12.14:1.
+  sessionDepthScale: ['#c2d7f0', '#2e6eb8', '#0a1829'],
+  // Stroke for sessionDepthScale's outer (white-facing) segments — its
+  // lightest stop is only ~1.47:1 against white at the bar's outer edge (it's
+  // only guaranteed 3:1 against its *neighbour* segment, not the page). Same
+  // role as qualityBorder above. Reuses sessionDepthScale's own mid blue
+  // rather than an unrelated grey — verified ≥3:1 against both white (5.20:1)
+  // and the lightest fill (3.53:1). If reused for a different fill set, verify
+  // it still clears 3:1 against those before reusing this value as-is.
+  chartStroke: '#2e6eb8', // = sessionDepthScale[1] / --gcds-color-blue-550
   // Neutral fill for empty / no-data states
   empty: '#e0e0e0',
 };

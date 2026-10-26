@@ -1,22 +1,26 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { formatNumber } from '../../../utils/numberFormat.js';
+import { detectUrlLanguage } from '../../../utils/dashboard/urlLanguage.js';
 
 // Plain two-column "label / count" table shared by the dashboard's collapsible
 // list cards (top referral pages, top citation pages, answer-type breakdown).
 // Row dividers keep the count readable across a full-width row. `rows` is
 // [{ key, label, count, href? }] — when `href` is set the label renders as a
-// new-tab link.
-const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en' }) => {
+// new-tab link via GcdsLink, which handles the icon, rel, and a localized
+// "(Opens destination in a new tab.)" accessible label on its own.
+const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en', captionLabel }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
   const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px' };
 
   return (
-    <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <table className="display" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
+      {captionLabel && <caption className="sr-only">{captionLabel}</caption>}
       <thead>
         <tr>
-          <th style={{ ...head, textAlign: 'left' }}>{labelColLabel}</th>
-          <th style={{ ...head, textAlign: 'right' }}>{countColLabel}</th>
+          <th scope="col" style={{ ...head, textAlign: 'left' }}>{labelColLabel}</th>
+          <th scope="col" style={{ ...head, textAlign: 'right' }}>{countColLabel}</th>
         </tr>
       </thead>
       <tbody>
@@ -24,7 +28,33 @@ const CountTable = ({ labelColLabel, countColLabel, rows = [], lang = 'en' }) =>
           <tr key={row.key}>
             <td style={{ ...cell, wordBreak: 'break-all' }}>
               {row.href ? (
-                <a href={row.href} target="_blank" rel="noopener noreferrer">{row.label}</a>
+                // TODO: GcdsLink's own shadow-DOM template renders a literal
+                // non-breaking space inside the <a> before its external-link
+                // icon (`h("span", ..., " ", this.getIcon())` in
+                // gcds-link.js) — reads visually as an underlined space
+                // after the link text. Real shadow DOM, no exposed `part`
+                // on that span, so nothing in our own CSS can reach it. Not
+                // fixable here — let GC DS know upstream.
+                //
+                // GcdsLink's own `lang` prop does two unrelated jobs at once:
+                // native HTML lang inheritance (how a screen reader
+                // pronounces slotted text) AND a plain JS property read
+                // (gcds-link.js's assignLanguage/i18n[lang]) that picks which
+                // language string labels the icon it renders - here, the
+                // "(Opens destination in a new tab.)" accessible text. Those
+                // need different values: the host keeps the admin's own
+                // `lang` so that hint announces in the admin's language, and
+                // an inner span carries the row's own URL language
+                // (detectUrlLanguage) so the citation/referral title text
+                // itself is still pronounced correctly (WCAG 3.1.2) - a
+                // fixed-language Canada.ca URL, unrelated to whatever
+                // language the admin dashboard is set to. Putting
+                // detectUrlLanguage's result directly on GcdsLink instead
+                // would fix the text's pronunciation but wrongly flip the
+                // icon hint into the citation's language too.
+                <GcdsLink href={row.href} target="_blank" lang={lang}>
+                  <span lang={detectUrlLanguage(row.href, lang)}>{row.label}</span>
+                </GcdsLink>
               ) : (
                 row.label
               )}

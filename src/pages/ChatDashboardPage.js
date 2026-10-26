@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@gcds-core/components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -6,19 +6,24 @@ import { useTranslations } from '../hooks/useTranslations.js';
 import { dataTableLanguage } from '../utils/dataTableLanguage.js';
 import FilterPanel from '../components/admin/FilterPanel.js';
 import DashboardService from '../services/DashboardService.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import LoadingOverlay from '../components/admin/LoadingOverlay.js';
+import { escapeHtmlAttribute, buildChatReviewLinkHtml, chatLangFromPageLanguage } from '../utils/reviewLink.js';
+import { detectUrlLanguage } from '../utils/dashboard/urlLanguage.js';
+import { normalizeAnswerText } from '../utils/answerText.js';
+import { formatNumber } from '../utils/numberFormat.js';
+import { wireTableAccessibility } from '../utils/admin/dataTableAccessibility.js';
+import { buildChatGroupCallbacks, createChatGroupState } from '../utils/admin/chatGroupedTable.js';
+import { useSearchAnnouncement } from '../hooks/admin/useSearchAnnouncement.js';
+import { resolveDisplayContent } from '../utils/answerLanguage.js';
+import { useChatAssignBar } from '../hooks/admin/useChatAssignBar.js';
+import { ASSIGN_NOTE_MAX_LENGTH } from '../constants/chatAssign.js';
+import { QA_GROUP, getPartnerGroupLabel } from '../constants/partnerGroups.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { useAuth } from '../contexts/AuthContext.js';
 
 DataTable.use(DT);
-
-const escapeHtmlAttribute = (value) => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
 
 const formatDateForApi = (value) => {
   if (!value) return undefined;
@@ -40,27 +45,79 @@ const getTimezoneOffsetMinutes = (value) => {
   return Number.isFinite(offset) ? offset : undefined;
 };
 
-const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
+const TABLE_STORAGE_KEY = `chatDashboard_tableState_v2_`;
+
+// One assignStatus shape covers assign, unassign, and the assignable-list
+// load failure - this just picks the right message/key for whichever
+// outcome it actually is.
+function resolveAssignStatusMessage(status, t) {
+  if (status.loadFailed) return t('admin.chatDashboard.assign.loadError');
+  if (status.unassignFailed) return t('admin.chatDashboard.assign.unassignError');
+  if (status.unassigned) return t('admin.chatDashboard.assign.unassigned');
+  if (status.isError) {
+    const byCode = {
+      already_assigned: 'admin.chatDashboard.assign.assignErrorAlreadyAssigned',
+      note_too_long: 'admin.chatDashboard.assign.assignErrorNoteTooLong',
+      not_allowed: 'admin.chatDashboard.assign.assignErrorNotAllowed',
+    };
+    return t(byCode[status.code] || 'admin.chatDashboard.assign.assignError').replace('{count}', () => status.count);
+  }
+  const key = status.hadNote ? 'admin.chatDashboard.assign.assignSuccessWithNote' : 'admin.chatDashboard.assign.assignSuccess';
+  return t(key).replace('{count}', () => status.count);
+}
+
+// The Assign button's own label is the note confirmation - no separate
+// "Save note" step (see useChatAssignBar.js's clearNote).
+function resolveAssignButtonLabel(assignBar, t) {
+  if (assignBar.assigning) return t('admin.chatDashboard.assign.assigning');
+  const key = assignBar.noteText.trim() ? 'admin.chatDashboard.assign.assignChatsWithNote' : 'admin.chatDashboard.assign.assignChats';
+  return t(key).replace('{count}', () => assignBar.selectedCount);
+}
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
   const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
-  const [recordsFiltered, setRecordsFiltered] = useState(0);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  // sr-only search-narrowing announcement + visible zero-result message
+  // (SC 4.1.3) - shared with MetricsDashboard.js.
+  const { zeroResultNonce, noteSearchResult, noteLoadResult, announce, reset: resetSearchAnnouncement } =
+    useSearchAnnouncement({ t, fmtN: (n) => formatNumber(n, lang) });
+  const assignBar = useChatAssignBar();
+  const assignErrorRef = useFocusOnChange(assignBar.validationErrorCount);
+  // After an assign (button disabled while it ran) or an unassign (pill
+  // destroyed by the reload), focus needs somewhere to land - see
+  // useChatAssignBar.js's outcomeFocusCount comment.
+  const outcomeRef = useFocusOnChange(assignBar.outcomeFocusCount);
+  // "Add a note" hides itself when the note opens, and "Clear note" hides
+  // the note again - both would drop focus to <body>, so hand it to the
+  // textarea on open and back to "Add a note" on close.
+  const noteTextareaRef = useRef(null);
+  const addNoteButtonRef = useRef(null);
+  const noteWasOpenRef = useRef(false);
+  useEffect(() => {
+    if (assignBar.noteOpen) noteTextareaRef.current?.focus();
+    else if (noteWasOpenRef.current) addNoteButtonRef.current?.focus();
+    noteWasOpenRef.current = assignBar.noteOpen;
+  }, [assignBar.noteOpen]);
 
   const tableApiRef = useRef(null);
   const filtersRef = useRef({});
+  // Tracks chat-group striping state across a single draw's rows (reset in
+  // preDrawCallback, mutated in createdRow as each row is built in order).
+  const chatGroupStateRef = useRef(createChatGroupState());
+  // Bumped by Clear all and by each ajax call, so a response that lands
+  // after the table was cleared (or superseded) can't set error/count/loading
+  // state on a table that's gone.
+  const ajaxSeqRef = useRef(0);
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
-
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
-    [lang]
-  );
 
   // Helper function to truncate URL to path only (max 3 segments)
   const truncateUrl = useCallback((url) => {
@@ -83,37 +140,72 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, []);
 
-  // Helper function to format date as YYYY/MM/DD (date only)
-  const formatDate = useCallback((dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}/${month}/${day}`;
-    } catch (err) {
-      console.error('Failed to format date', err);
-      return dateStr;
+  // Same EN/FR-official-languages display rule (shown as-is; non-EN/FR
+  // collapses to English) as ExpertFeedbackPanel.js (resolveDisplayContent) -
+  // questionLanguage drives
+  // both the Question and Answer columns, since the AI answers in whatever
+  // language was detected for the question (agenticBase.js), not a
+  // separately-tracked language per column. DataTables `render` returns a
+  // raw HTML string here, not JSX, so this can't reuse OriginalLanguagePill
+  // (React) directly.
+  //
+  // Wrapping div is position:relative + reserved bottom padding, icon is
+  // position:absolute within it, anchored to the wrapper's own bottom edge
+  // - a static position regardless of how many lines the text above it
+  // wraps to, instead of flowing inline right after text of varying length
+  // (which put it in a different spot every row, and inline-after-text
+  // also pushed translated rows' text down a line vs. untranslated rows'
+  // single-line cells, breaking the table's row-height rhythm).
+  //
+  // Icon font-size is on the <i> itself, not on the .eval-tooltip wrapper -
+  // .eval-tooltip::after (admin.css) has no font-size reset of its own, so
+  // it inherits whatever font-size sits on the element carrying the
+  // eval-tooltip class. Sizing the <i> instead of that wrapper keeps the
+  // tooltip text at its normal size and only enlarges the glyph. 1.3em -
+  // a modest bump over EvalDashboardPage.js's own 1.2em/1.4em icons: the
+  // icon + visible "AI text" label together carry this pill's meaning
+  // at a glance; the fuller "AI Answers' working text" explanation lives in
+  // the tooltip/accessible name below, not visibly on the pill itself -
+  // short label for scanning, full explanation on demand.
+  //
+  // .eval-tooltip/data-tooltip, not the native title attribute - same
+  // reasoning as EvalDashboardPage.js's own icon cells: title's hover
+  // delay is fixed by the browser and can't be shortened, this CSS
+  // mechanism controls it. Accessible name for the icon+"AI text" pair
+  // comes from the sibling .sr-only span carrying the fuller explanation,
+  // not aria-label, matching that same established pattern - the icon and
+  // the visible "AI text" label both stay aria-hidden so a screen
+  // reader gets the one, fuller phrase instead of "AI text" followed
+  // redundantly by "AI Answers' working text".
+  const renderLanguageAwareText = useCallback((original, english, questionLanguage) => {
+    const resolved = resolveDisplayContent({ language: questionLanguage, original, english });
+    if (!resolved.text) return '';
+    const langAttr = resolved.lang ? ` lang="${escapeHtmlAttribute(resolved.lang)}"` : '';
+    const text = escapeHtmlAttribute(normalizeAnswerText(resolved.text));
+    if (!resolved.isSource) {
+      return `<span${langAttr}>${text}</span>`;
     }
-  }, []);
-
-  // Map DataTables column index to API orderBy fields
-  const orderByForColumn = useCallback((colIdx) => {
-    switch (colIdx) {
-      case 0: return 'chatId';
-      case 1: return 'interactionCount';
-      case 2: return 'department';
-      case 3: return 'createdAt';
-      case 4: return 'userType';
-      case 5: return 'pageLanguage';
-      case 7: return 'referringUrl';
-      case 8: return 'answerType';
-      case 9: return 'partnerEval';
-      case 10: return 'aiEval';
-      default: return 'createdAt';
-    }
-  }, []);
+    const shortLabel = escapeHtmlAttribute(t('admin.common.sourceText'));
+    // "AI Answers' working text" - not "Originally asked in: {language}"
+    // (that's the question's language; this pill is about what the cell
+    // itself is showing - the English text AI Answers worked from/with,
+    // same framing as SourceViewComponent.js's own title).
+    const fullLabel = escapeHtmlAttribute(t('admin.common.workingTextTooltip'));
+    // The pill is a direct sibling here, not nested inside the text div -
+    // its position:absolute needs to resolve against the <td> itself
+    // (position:relative via this column's createdCell, so its box always
+    // matches the row's actual height), not this div, so Question's and
+    // Answer's pills land at the exact same Y position even when one
+    // column's text runs longer than the other's in the same row.
+    return `<div style="padding-bottom: 2.2em;">` +
+      `<span${langAttr}>${text}</span>` +
+      `</div>` +
+      `<span class="filter-pill eval-tooltip" data-tooltip="${fullLabel}" style="position: absolute; bottom: 0.5em; left: 0;">` +
+      `<i class="fa-solid fa-language" style="font-size: 1.3em;" aria-hidden="true"></i>` +
+      `<span aria-hidden="true">${shortLabel}</span>` +
+      `<span class="sr-only">${fullLabel}</span>` +
+      `</span>`;
+  }, [t]);
 
   useEffect(() => {
     setTimeout(() => setDataTableReady(true), 0);
@@ -126,6 +218,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       enrichedFilters.timezoneOffsetMinutes = tzOffset;
     }
     filtersRef.current = enrichedFilters;
+    // New filters, new rows: a selection made on the old rows would keep
+    // counting chats that are no longer on screen.
+    assignBar.resetSelection();
     setHasAppliedFilters(true);
     setLoading(true);
     try {
@@ -137,9 +232,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [assignBar]);
 
-  const handleClearFilters = useCallback((filtersFromPanel) => {
+  // Clear all is a restart, not a re-apply: unlike removing a single pill or
+  // reopening the panel to change one field (both of which keep the results
+  // area showing and re-fetch with the new selection - see FilterPanel's own
+  // removeFilter/handleApply), Clear all means "I haven't chosen anything
+  // yet". So this resets hasAppliedFilters to false - the exact same gate
+  // that hides the whole results block before the first-ever Apply - rather
+  // than silently auto-fetching the reset defaults and showing a result set
+  // the user never asked for. Nothing renders again until an explicit Apply.
+  const handleClearFilters = useCallback(() => {
     // Clear saved table state
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -149,154 +252,205 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     } catch (e) {
       void e;
     }
-    setTableKey((prev) => prev + 1);
-    if (filtersFromPanel) {
-      const enrichedFilters = { ...filtersFromPanel };
-      const tzOffset = getTimezoneOffsetMinutes(enrichedFilters.startDate || enrichedFilters.endDate);
-      if (tzOffset !== undefined) {
-        enrichedFilters.timezoneOffsetMinutes = tzOffset;
-      }
-      filtersRef.current = enrichedFilters;
-    }
-    try {
-      if (tableApiRef.current) tableApiRef.current.ajax.reload();
-    } catch (e) { void e; }
-  }, [LOCAL_TABLE_STORAGE_KEY]);
-
-  const resultsSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.resultsSummary', 'Total matching chats: {count}');
-    return template.replace('{count}', numberFormatter.format(recordsFiltered));
-  }, [numberFormatter, recordsFiltered, t]);
-
-  const totalSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.totalCount', 'Total chats in range: {total}');
-    return template.replace('{total}', numberFormatter.format(recordsTotal));
-  }, [numberFormatter, recordsTotal, t]);
+    filtersRef.current = {};
+    // Stale otherwise: the DataTable unmounts (hasAppliedFilters below gates
+    // it), but nothing else clears this ref, and a truthy leftover would
+    // fool the next handleApplyFilters' `if (tableApiRef.current)` check
+    // into calling .ajax.reload() on an already-destroyed table instead of
+    // mounting a fresh one.
+    tableApiRef.current = null;
+    ajaxSeqRef.current += 1;
+    // The results section (assign box included) unmounts; leave assign
+    // mode too, or the next Apply comes back with the mode on and the
+    // column hidden.
+    assignBar.setAssignMode(false);
+    setHasAppliedFilters(false);
+    setRecordsTotal(0);
+    setSearchTerm('');
+    // Clear all unmounts the whole results section (hasAppliedFilters
+    // gates it) with no other indication anything happened - the acting
+    // control (the Clear all button, inside FilterPanel) keeps focus, so
+    // this isn't a focus-loss issue like the chat ID search one, but a
+    // screen reader user still gets no confirmation the reset actually
+    // took effect.
+    announce(t('admin.common.filtersClearedAnnouncement'));
+    resetSearchAnnouncement();
+    setError(null);
+    setLoading(false);
+  }, [LOCAL_TABLE_STORAGE_KEY, t, announce, resetSearchAnnouncement, assignBar]);
 
   const columns = useMemo(() => ([
+    // Bulk-assign checkbox column. Always defined, hidden until assign mode
+    // is on - shown/hidden through the DataTables API rather than added and
+    // removed, so toggling the mode never rebuilds the table (which would
+    // refetch the rows and drop the saved page length). Plain HTML +
+    // delegated onchange in createdRow below, like UsersPage.js's row
+    // controls - not a React-mounted cell, since checked state only needs
+    // to survive redraws via the ref, not re-render reactively.
     {
-      title: t('admin.chatDashboard.columns.chatId', 'Chat ID'),
-      data: 'chatId',
+      name: 'assign',
+      visible: false,
+      title: t('admin.chatDashboard.assign.selectColumn'),
+      // Sorts on assignment state (null < any ObjectId ascending, per
+      // chat-dashboard.js's sortFieldMap), so someone can sort this column
+      // to find the unassigned rows. The cell itself needs the row's own
+      // question id (row._id, the Interaction), read via `row` below - not
+      // `value`. One control per row: assignment is per question.
+      data: 'assignedTo',
+      orderable: true,
+      searchable: false,
+      className: 'chat-assign-checkbox-col',
+      // GC DS checkbox styling (gc-chckbxrdio sm, see FilterPanel.js's own
+      // checkbox groups / global.css) needs a real sibling <label> - its
+      // custom box/checkmark is drawn on the label's own ::before, not the
+      // input. Putting sr-only on the <label> itself clips that pseudo-
+      // element away too, making the checkbox invisible - the label has to
+      // stay a normal, visible element; only its text goes in an sr-only
+      // span, so this column stays checkbox-only visually.
+      //
+      // An already-assigned question shows the assignee as a pill (same
+      // shape as FilterPanel's removable filter pills) instead of a checkbox
+      // - it can't be picked for a bulk assign (chat-assign-interaction.js rejects that,
+      // 409), and the pill's × is how to remove the assignment instead.
       render: (value, type, row) => {
-        if (!value) return '';
-        const safeId = escapeHtmlAttribute(value);
-        const chatLang = row.pageLanguage && (row.pageLanguage.toLowerCase().includes('fr')) ? 'fr' : 'en';
-        return `<a href="/${chatLang}?chat=${safeId}&review=1" target="_blank" rel="noopener noreferrer">${safeId}</a>`;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.interactionCount', 'Length'),
-      data: 'interactionCount',
-      render: (value) => {
-        return value != null ? String(value) : '0';
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.department', 'Department'),
-      data: 'department',
-      render: (value, type, row) => {
-        const primary = escapeHtmlAttribute(value || '');
-        const allDepts = row.allDepartments || [];
-        const otherCount = allDepts.length > 1 ? allDepts.length - 1 : 0;
-
-        if (otherCount > 0) {
-          const moreText = t('admin.chatDashboard.departmentMore', '+{count} more').replace('{count}', otherCount);
-          const allDeptsStr = escapeHtmlAttribute(allDepts.join(', '));
-          return `<span title="${allDeptsStr}" style="cursor: help; border-bottom: 1px dotted #999;">${primary} <span style="color: #666; font-size: 0.85em;">(${escapeHtmlAttribute(moreText)})</span></span>`;
+        const questionId = row?._id;
+        if (!questionId) return '';
+        const safeQuestionId = escapeHtmlAttribute(questionId);
+        // Keyed on assignedTo, not the email: the email lookup comes back
+        // empty for a deleted account, and that chat still needs its pill so
+        // the assignment can be removed.
+        if (row?.assignedTo) {
+          const safeEmail = escapeHtmlAttribute(row.assignedToEmail || t('admin.chatDashboard.assign.unknownAccount'));
+          const removeLabel = `${escapeHtmlAttribute(t('admin.chatDashboard.assign.removeAssignment'))} ${safeEmail}`;
+          return `<button type="button" class="filter-pill filter-pill--closable chat-assign-pill" data-question-id="${safeQuestionId}" aria-label="${removeLabel}">` +
+            `${safeEmail}<span class="filter-pill__close" aria-hidden="true">×</span>` +
+            `</button>`;
         }
-        return primary;
+        const safeId = escapeHtmlAttribute(`question-assign-${questionId}`);
+        const labelText = escapeHtmlAttribute(
+          t('admin.chatDashboard.assign.selectQuestion')
+            .replace('{number}', () => String(row?.questionNumber || ''))
+            .replace('{chatId}', () => String(row?.chatId || ''))
+        );
+        return `<div class="gc-chckbxrdio sm"><div class="checkbox">` +
+          `<input type="checkbox" class="chat-assign-checkbox" id="${safeId}" data-question-id="${safeQuestionId}">` +
+          `<label for="${safeId}"><span class="sr-only">${labelText}</span></label>` +
+          `</div></div>`;
       }
     },
     {
-      title: t('admin.chatDashboard.columns.date', 'Date'),
-      data: 'date',
-      render: (value) => formatDate(value)
-    },
-    {
-      title: t('admin.chatDashboard.columns.userType', 'User Type'),
-      data: 'userType',
-      render: (value) => {
-        const type = value || 'public';
-        const label = t(`admin.chatDashboard.labels.userType.${type}`, type);
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.pageLanguage', 'Page'),
-      data: 'pageLanguage',
-      render: (value) => {
+      title: t('admin.common.columns.chatId'),
+      data: 'chatId',
+      searchable: false,
+      orderable: false,
+      render: (value, type, row) => {
         if (!value) return '';
-        const normalized = value.toLowerCase().includes('fr') ? 'FR' : 'EN';
-        return escapeHtmlAttribute(normalized);
+        // Route to the chat's OWN pageLanguage, not the admin's current UI
+        // language - the reviewed transcript (answer bubbles, citation
+        // heading) must show what the end user actually saw
+        // (docs/coding-agent-docs/official-languages.md Rule 2), so the
+        // route itself has to land on that language. The admin's own
+        // language is carried separately as the `adminLang` query param
+        // (4th arg) for the review page's own chrome (ExpertFeedbackPanel,
+        // "How was this answer?", Chat ID/Date/Referring URL labels) to use
+        // instead - see reviewLink.js and HomePage.js's `adminLang`.
+        const chatLang = chatLangFromPageLanguage(row.pageLanguage);
+        return buildChatReviewLinkHtml(value, chatLang, row.interactionId, lang);
       }
     },
     {
-      title: t('admin.chatDashboard.columns.question', 'Question 1'),
+      title: t('admin.common.columns.department'),
+      data: 'department',
+      searchable: false,
+      orderable: true,
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
+      title: t('admin.common.columns.program'),
+      data: 'program',
+      searchable: false,
+      orderable: true,
+      render: (value, type, row) => {
+        const display = (lang === 'fr' && row && row.programFr) ? row.programFr : value;
+        return display ? escapeHtmlAttribute(display) : '';
+      }
+    },
+    {
+      title: t('admin.chatDashboard.columns.question'),
       data: 'redactedQuestion',
-      searchable: true,
+      searchable: false,
+      orderable: false,
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishQuestion, row && row.questionLanguage),
+      // position:relative belongs on the <td> itself, not a wrapper div
+      // inside it - the <td>'s own box stretches to match the row's
+      // tallest cell (normal table behaviour), a div inside it doesn't.
+      // The "Translated" pill's position:absolute needs to resolve
+      // against that actual row-height box to stay anchored to the row's
+      // real bottom edge, not just this cell's own shorter content height.
+      createdCell: (td) => { td.style.position = 'relative'; }
+    },
+    {
+      title: t('admin.chatDashboard.columns.answer'),
+      data: 'answerContent',
+      searchable: false,
+      orderable: false,
+      render: (value, type, row) => renderLanguageAwareText(value, row && row.englishAnswer, row && row.questionLanguage),
+      createdCell: (td) => { td.style.position = 'relative'; }
+    },
+    {
+      title: t('admin.chatDashboard.columns.citationUrl'),
+      data: 'citationUrl',
+      // Capped so Question/Answer (no fixed width - they auto-fill
+      // remaining space) don't get squeezed by this column growing to fit
+      // a long citation URL - the visible text is already shortened via
+      // truncateUrl() below, this just stops the column itself from
+      // stretching past what that short text actually needs.
+      width: '160px',
+      searchable: false,
       orderable: false,
       render: (value) => {
         if (!value) return '';
-        const safe = escapeHtmlAttribute(value);
-        if (value.length > 80) {
-          const truncated = escapeHtmlAttribute(value.substring(0, 80));
-          return `<span title="${safe}">${truncated}…</span>`;
-        }
-        return safe;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.referringUrl', 'Referring URL'),
-      data: 'referringUrl',
-      render: (value) => {
-        if (!value) return '<span style="font-style: italic; color: #666;">none</span>';
-        return escapeHtmlAttribute(truncateUrl(value));
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.answerType', 'Answer Type'),
-      data: 'answerType',
-      render: (value) => {
-        const type = value || 'normal';
-        const label = t(`admin.chatDashboard.labels.answerType.${type}`, type);
-        return `<span class="label ${escapeHtmlAttribute(type)}">${escapeHtmlAttribute(label)}</span>`;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.partnerEval', 'Partner Eval'),
-      data: 'partnerEval',
-      render: (value, type, row) => {
-        let html = '';
-        if (value) {
-          const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
-          html += `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
-        }
-        // Independent of the score category above — a chat can be "correct"
-        // and still have a content issue flagged, so this is a second badge
-        // rather than another branch of the same category.
-        if (row && row.partnerHasContentIssue) {
-          const contentIssueLabel = t('admin.chatDashboard.labels.contentIssue');
-          html += `<span class="label hasContentIssue">${escapeHtmlAttribute(contentIssueLabel)}</span>`;
-        }
-        return html;
-      }
-    },
-    {
-      title: t('admin.chatDashboard.columns.aiEval', 'AI Eval'),
-      data: 'aiEval',
-      render: (value) => {
-        if (!value) return '';
-        const label = t(`admin.chatDashboard.labels.evaluation.${value}`, value);
-        return `<span class="label ${escapeHtmlAttribute(value)}">${escapeHtmlAttribute(label)}</span>`;
+        // <gcds-link> (not a plain <a>) to match every other DataTables-
+        // rendered link in this app (see buildChatReviewLinkHtml in
+        // reviewLink.js) - the custom element auto-upgrades once inserted
+        // and handles the new-tab icon/rel/accessible text itself. href is
+        // the full citation URL; the visible text stays the shorthand
+        // truncated form.
+        //
+        // gcds-link's own `lang` attribute does two unrelated jobs at once:
+        // native HTML lang inheritance (how a screen reader pronounces the
+        // slotted text) AND a plain JS property read (gcds-link.js's
+        // assignLanguage/i18n[lang]) that picks which language string labels
+        // its own icon - here, the "(Opens destination in a new tab.)"
+        // accessible text. Those need different values: the outer element
+        // keeps the admin's own `lang` so that hint announces in the
+        // admin's language, and an inner span carries the citation URL's own
+        // language (detectUrlLanguage) so the truncated citation text itself
+        // is still pronounced correctly (WCAG 3.1.2) - same reasoning as
+        // CountTable.js's citation links, applied here to the raw HTML form.
+        const safeHref = escapeHtmlAttribute(value);
+        const safeDisplay = escapeHtmlAttribute(truncateUrl(value));
+        const citationLang = escapeHtmlAttribute(detectUrlLanguage(value, lang));
+        return `<gcds-link href="${safeHref}" target="_blank" lang="${lang}"><span lang="${citationLang}">${safeDisplay}</span></gcds-link>`;
       }
     }
-  ]), [formatDate, truncateUrl, t]);
+    // The "Page" language column (row.pageLanguage) used to live here as
+    // the admin's only advance warning of which language route the Chat ID
+    // link would drop them on - the review page used to switch its whole
+    // chrome to that language. Now that review mode is its own page
+    // (ChatReviewPage.js), the admin's own review chrome stays in their own
+    // language regardless of the reviewed chat's pageLanguage, so that
+    // warning no longer applies - removed rather than left as a now-
+    // pointless column. row.pageLanguage itself is still used internally by
+    // the Chat ID column's render() above (chatLangFromPageLanguage) to
+    // route the transcript correctly; only the visible column is gone.
+  ]), [renderLanguageAwareText, truncateUrl, t, lang]);
 
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('admin.chatDashboard.title', 'Chat dashboard')}</h1>
+      <h1 className="mb-400">{t('admin.chatDashboard.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>
             {t('common.backToAdmin')}
@@ -304,7 +458,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </GcdsText>
       </nav>
 
-      <h2 className="mt-400 mb-400">{t('admin.chatDashboard.timeRangeTitle')}</h2>
+      {/* Visually hidden: FilterPanel's own <summary> isn't heading-navigable
+          (it's a disclosure toggle, not a heading), so this gives
+          screen-reader users a heading/landmark entry point into the filter
+          section. Distinct text from FilterPanel's "Filters" summary label
+          so the two don't read as an identical back-to-back announcement. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -313,64 +472,253 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           isVisible={true}
           filterLoading={loading}
           filterError={error}
-          filterResultCount={recordsTotal}
+          // While a search term is active, a zero count means the search
+          // didn't match anything - not that the filters themselves are
+          // wrong, so don't feed it into FilterPanel's own "reopen on zero
+          // results" logic (see the effect in FilterPanel.js keyed off
+          // filterResultCount === 0). Passing null there is a no-op for
+          // that effect, leaving the panel's open/closed state alone; the
+          // search-specific StatusMessage below covers this case instead.
+          filterResultCount={searchTerm ? null : recordsTotal}
           hasAppliedFilters={hasAppliedFilters}
         />
       </div>
 
       {loading && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.chatDashboard.loading', 'Loading chats...')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={t('admin.chatDashboard.loading')} />
       )}
 
-      {error && (
-        <div className="mt-400 error" role="alert">
-          {t('admin.chatDashboard.error', 'Unable to load chat data.')} {String(error)}
-        </div>
+      <StatusMessage variant={error ? 'error' : undefined}>
+        {error && <>{t('admin.chatDashboard.error')} <code lang="en">{String(error)}</code></>}
+      </StatusMessage>
+
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && searchTerm && (
+        <StatusMessage variant="info" assertive message={t('admin.common.noSearchResults').replace('{term}', () => searchTerm)} nonce={zeroResultNonce} />
       )}
 
-      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+      {hasAppliedFilters && !loading && !error && recordsTotal === 0 && !searchTerm && (
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} nonce={zeroResultNonce} />
       )}
 
       {hasAppliedFilters && (
-        <div className="mt-200">
-          <div className="chat-dashboard-summary" role="status" aria-live="polite">
-            <output>{resultsSummary}</output>
-            <output>{totalSummary}</output>
-          </div>
+        <div>
+          {/* Stays mounted (hidden, not unmounted, at zero results) and reads
+              e.target.open rather than flipping: browsers fire toggle when the
+              open attribute is added on mount, so an unmount/remount with
+              open already true would otherwise flip the mode with no click.
+              Same set-to-what-the-box-says pattern as FilterPanel's own <details>. */}
+          <details
+            className="filter-panel chat-assign-panel"
+            open={assignBar.assignMode}
+            hidden={recordsTotal === 0}
+            onToggle={(e) => {
+              const open = e.target.open;
+              if (open === assignBar.assignMode) return;
+              assignBar.setAssignMode(open);
+              // Show/hide the column in place: no rebuild, no refetch.
+              tableApiRef.current?.column('assign:name').visible(open);
+            }}
+          >
+              <summary className="filter-panel-summary">
+                {t('admin.chatDashboard.assign.toggleOn')}
+              </summary>
+              <div className="filter-panel-content text-measure">
+              {assignBar.assignableReason === 'no_institution' && (
+                <StatusMessage variant="info" message={t('admin.chatDashboard.assign.noInstitution')} />
+              )}
+
+              <div className="filter-row">
+                <label htmlFor="chat-assign-expert" className="filter-label">{t('admin.chatDashboard.assign.expertLabel')}</label>
+                {assignBar.validationErrorCode && (
+                  <FeedbackInlineError
+                    id="chat-assign-validation-error"
+                    message={t(
+                      assignBar.validationErrorCode === 'no_expert'
+                        ? 'admin.chatDashboard.assign.errorNoExpert'
+                        : 'admin.chatDashboard.assign.errorNoQuestion'
+                    )}
+                    errorCount={assignBar.validationErrorCount}
+                    inputRef={assignErrorRef}
+                  />
+                )}
+                <select
+                  id="chat-assign-expert"
+                  className="filter-select"
+                  value={assignBar.selectedAssigneeId}
+                  onChange={(e) => assignBar.setSelectedAssigneeId(e.target.value)}
+                  disabled={assignBar.assignableLoading || assignBar.assignableUsers.length === 0}
+                  aria-describedby={assignBar.validationErrorCode === 'no_expert' ? 'chat-assign-validation-error' : undefined}
+                  aria-invalid={assignBar.validationErrorCode === 'no_expert' ? 'true' : undefined}
+                >
+                  <option value="">{t('admin.chatDashboard.assign.expertPlaceholder')}</option>
+                  {/* Grouped by the server's `relation` (UserService.listAssignable):
+                      self-assign, your group, your institution, the QA group,
+                      other accounts (admins only). Native optgroups, so the
+                      headings are read out with the list. A user whose
+                      relation is missing or not one of the five lands under "Other
+                      accounts" instead of silently vanishing - admins only,
+                      so a partner's list never widens past their scope. */}
+                  {[
+                    ['self', t('admin.chatDashboard.assign.pickerSelf')],
+                    ['group', t('admin.chatDashboard.assign.pickerGroup')],
+                    ['institution', t('admin.chatDashboard.assign.pickerInstitution')],
+                    ['qa', getPartnerGroupLabel(QA_GROUP, lang)],
+                    ['other', t('admin.chatDashboard.assign.pickerOthers')]
+                  ].map(([relation, label]) => {
+                    if (relation === 'other' && !isAdmin) return null;
+                    const users = assignBar.assignableUsers.filter((u) => (
+                      relation === 'other'
+                        ? !['self', 'group', 'institution', 'qa'].includes(u.relation)
+                        : u.relation === relation
+                    ));
+                    return users.length ? (
+                      <optgroup key={relation} label={label}>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>{u.email}</option>
+                        ))}
+                      </optgroup>
+                    ) : null;
+                  })}
+                </select>
+              </div>
+
+              {!assignBar.noteOpen && (
+                <div className="filter-actions chat-assign-actions">
+                  <button
+                    type="button"
+                    className="filter-button filter-button-primary"
+                    onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                    disabled={assignBar.assigning}
+                  >
+                    {resolveAssignButtonLabel(assignBar, t)}
+                  </button>
+                  <button
+                    type="button"
+                    className="filter-button filter-button-outline"
+                    ref={addNoteButtonRef}
+                    onClick={() => assignBar.setNoteOpen(true)}
+                  >
+                    {t('admin.chatDashboard.assign.addNote')}
+                  </button>
+                </div>
+              )}
+
+              {assignBar.noteOpen && (
+                <div className="chat-assign-note">
+                  <div className="filter-row">
+                    <label htmlFor="chat-assign-note" className="filter-label">{t('admin.chatDashboard.assign.noteLabel')}</label>
+                    <textarea
+                      id="chat-assign-note"
+                      ref={noteTextareaRef}
+                      className="filter-input chat-assign-note-textarea"
+                      value={assignBar.noteText}
+                      onChange={(e) => assignBar.setNoteText(e.target.value)}
+                      maxLength={ASSIGN_NOTE_MAX_LENGTH}
+                      aria-describedby="chat-assign-note-count"
+                    />
+                    {/* Plain visible text, not announce() - a per-keystroke
+                        live announcement would talk over typing. The
+                        textarea's own aria-describedby is enough for a
+                        screen-reader user to check the count on demand. */}
+                    <p id="chat-assign-note-count" className="font-size-text-xxs-nr chat-assign-note-count">
+                      {t('admin.chatDashboard.assign.noteCount').replace('{count}', () => assignBar.noteText.length).replace('{max}', () => ASSIGN_NOTE_MAX_LENGTH)}
+                    </p>
+                  </div>
+                  {/* No separate "Save note" - typing is enough, the Assign
+                      button's own label ("...with note") is the confirmation.
+                      Moves down here (bottom-left) while the note is open,
+                      rather than sitting in a now-empty row above. */}
+                  <div className="filter-actions chat-assign-actions">
+                    <button
+                      type="button"
+                      className="filter-button filter-button-primary"
+                      onClick={() => assignBar.submitAssign(() => tableApiRef.current?.ajax.reload())}
+                      disabled={assignBar.assigning}
+                    >
+                      {resolveAssignButtonLabel(assignBar, t)}
+                    </button>
+                    <button type="button" className="filter-button filter-button-secondary" onClick={assignBar.clearNote}>
+                      {t('admin.chatDashboard.assign.noteClear')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {assignBar.assignStatus && (() => {
+                // Outcomes that took focus away (assign done, unassign done)
+                // are read by focus landing on them; the two that didn't
+                // (list load failed, unassign failed) announce normally.
+                const movesFocus = !assignBar.assignStatus.loadFailed && !assignBar.assignStatus.unassignFailed;
+                return (
+                  <StatusMessage
+                    variant={assignBar.assignStatus.isError ? 'error' : 'success'}
+                    message={resolveAssignStatusMessage(assignBar.assignStatus, t)}
+                    ref={movesFocus ? outcomeRef : undefined}
+                    tabIndex={movesFocus ? -1 : undefined}
+                    announce={!movesFocus}
+                    announcedVia={movesFocus ? 'focus' : undefined}
+                  />
+                );
+              })()}
+              </div>
+            </details>
+
           {dataTableReady && (
-            <div className="chat-dashboard-table-container">
+            <div className="dashboard-table-container dashboard-table-container--grouped">
+              {/* Sibling of the Filters h2 above, not nested under it - matches
+                  EvalDashboardPage.js's resultsHeading. Previously nothing
+                  filled this role, so the table had no heading-navigation stop
+                  of its own at all. */}
+              <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
               <DataTable
                 key={tableKey}
                 columns={columns}
-                className="display chat-dashboard-table"
+                className="display dashboard-table dashboard-table--grouped"
                 options={{
-                  processing: true,
                   serverSide: true,
                   paging: true,
                   searching: true,
                   ordering: true,
-                  order: [[3, 'desc']], // default to date desc
-                  scrollX: true,
+                  order: [],
+                  // autoWidth (DataTables' default true) + scrollX together
+                  // pin each column to a fixed pixel width computed from a
+                  // separate header/body table pair - when a column's cell
+                  // content varies a lot in width across rows/redraws (e.g.
+                  // Question/Answer/Citation link, often empty), that pair
+                  // falls out of sync and the header drifts away from its
+                  // column's data. EvalDashboardPage.js already avoids this
+                  // (autoWidth: false, no scrollX) - matching that here.
+                  autoWidth: false,
                   stateSave: true,
+                  // Search, entries-per-page, and the results summary all
+                  // live together on the left (topStart, in that order),
+                  // replacing DataTables' default top-right search
+                  // placement (topEnd, left empty here) - single global
+                  // search now that the Service column's own per-column
+                  // filter box is gone; search covers every column server-
+                  // side (see the $or in api/chat/chat-dashboard.js), not
+                  // just Chat ID.
+                  // Search alone on top (the search-term pill is injected
+                  // beside it in initComplete). "Showing X to Y of Z" and
+                  // entries-per-page both sit bottom-left, above pagination -
+                  // a single native DataTables layout row, unlike stacking
+                  // it under search which never reliably worked via
+                  // DataTables' own numbered-row slots (e.g. top2Start).
+                  layout: {
+                    topStart: 'search',
+                    topEnd: {},
+                    bottomStart: { features: ['pageLength', 'info'] },
+                    bottomEnd: { paging: { firstLast: false } }
+                  },
                   language: {
                     ...dataTableLanguage(lang),
-                    search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
-                    searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+                    search: t('admin.common.searchLabel'),
+                    searchPlaceholder: t('admin.common.searchPlaceholder')
                   },
                   stateSaveCallback: function (settings, data) {
                     try {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
-                        console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
                       }
                     } catch (e) {
                       // ignore
@@ -381,7 +729,31 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       if (typeof window !== 'undefined' && window.localStorage) {
                         const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
                         const parsed = stored ? JSON.parse(stored) : null;
-                        console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                        // stateSave persists the whole DataTables state -
+                        // page length, sort, column order AND the search
+                        // term - across reloads. Page length carrying over
+                        // is expected/useful; the search term carrying over
+                        // silently re-applies a stale search on a fresh
+                        // page load, which reads as a bug (you refresh
+                        // expecting a clean table) - same for sort: a stale
+                        // sort column silently overrides the table's own
+                        // default display order (createdAt desc) on refresh,
+                        // which is confusing since nothing on screen
+                        // indicates a non-default sort is active. Clear
+                        // those two, keep the rest (page length/column
+                        // visibility).
+                        if (parsed && parsed.search) {
+                          parsed.search.search = '';
+                        }
+                        if (parsed && parsed.order) {
+                          delete parsed.order;
+                        }
+                        // Column visibility too: the Assign column is the only
+                        // one that ever toggles, and it must start hidden to
+                        // match assign mode being off on load.
+                        if (parsed && parsed.columns) {
+                          delete parsed.columns;
+                        }
                         return parsed;
                       }
                     } catch (e) {
@@ -389,14 +761,74 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     }
                     return null;
                   },
+                  // Striping and keep-chat-together cells - see
+                  // utils/admin/chatGroupedTable.js.
+                  ...buildChatGroupCallbacks({
+                    stateRef: chatGroupStateRef,
+                    columns,
+                    groupedColumns: [
+                      // The assign column is deliberately NOT grouped:
+                      // assignment is per question, so every row keeps
+                      // its own checkbox/pill.
+                      { data: 'program' },
+                      { data: 'department' },
+                      { data: 'chatId', boundByChatId: false, extraClass: 'chat-id-cell' },
+                    ],
+                  }),
+                  initComplete: function () {
+                    const api = this.api();
+                    tableApiRef.current = api;
+                    wireTableAccessibility(api, { t });
+                    // Assign checkboxes/pills are wired once here, by
+                    // delegation on the table body, not per row in
+                    // createdRow: the Assign column starts hidden, and
+                    // DataTables keeps a hidden column's cells out of the
+                    // row until it is shown - so at createdRow time the
+                    // checkbox isn't in the row to find. The listeners read
+                    // the question id off the control itself.
+                    const body = api.table().body();
+                    body.addEventListener('change', (e) => {
+                      const box = e.target.closest('input.chat-assign-checkbox');
+                      if (!box) return;
+                      assignBar.toggleQuestionChecked(box.dataset.questionId, box.checked);
+                      box.closest('tr')?.classList.toggle('chat-row--selected', box.checked);
+                    });
+                    body.addEventListener('click', (e) => {
+                      const pill = e.target.closest('button.chat-assign-pill');
+                      if (!pill) return;
+                      if (!window.confirm(t('admin.chatDashboard.assign.unassignConfirm'))) return;
+                      assignBar.unassignQuestion(pill.dataset.questionId, () => tableApiRef.current?.ajax.reload());
+                    });
+                    // Re-apply the ticked state after every draw and when
+                    // the column is shown (rows are rebuilt on each fetch;
+                    // the selection lives in the hook's ref). A row that
+                    // came back assigned can't stay selected.
+                    const syncAssignControls = () => {
+                      body.querySelectorAll('input.chat-assign-checkbox').forEach((box) => {
+                        const checked = assignBar.isQuestionChecked(box.dataset.questionId);
+                        box.checked = checked;
+                        box.closest('tr')?.classList.toggle('chat-row--selected', checked);
+                      });
+                      body.querySelectorAll('button.chat-assign-pill').forEach((pill) => assignBar.forgetQuestion(pill.dataset.questionId));
+                    };
+                    api.on('draw', syncAssignControls);
+                    api.on('column-visibility', syncAssignControls);
+                  },
                   ajax: async (dtParams, callback) => {
+                    const seq = ++ajaxSeqRef.current;
                     try {
                       setLoading(true);
                       setError(null);
-                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 3, dir: 'desc' };
-                      const orderBy = orderByForColumn(dtOrder.column);
-                      const orderDir = dtOrder.dir || 'desc';
+                      // Derived from `columns` (in scope above) rather than hand-listed, so
+                      // inserting/removing a column can't silently desync this mapping from
+                      // the actual column positions (same fix already applied in
+                      // EvalDashboardPage.js).
+                      const orderByMap = columns.map((c) => c.data);
+                      const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : null;
+                      const orderBy = dtOrder ? (orderByMap[dtOrder.column] || 'createdAt') : 'createdAt';
+                      const orderDir = dtOrder ? (dtOrder.dir || 'desc') : 'desc';
                       const searchValue = (dtParams.search && dtParams.search.value) || '';
+                      setSearchTerm(searchValue);
                       const currentFilters = filtersRef.current || {};
 
                       const normalizedFilters = { ...currentFilters };
@@ -409,6 +841,13 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
 
                       const query = {
                         ...normalizedFilters,
+                        // The Assign column's pills need the assignee email
+                        // whenever the column is shown, and showing it must
+                        // not refetch - so always ask for it. Trade-off: one
+                        // extra users $lookup on every page/sort/search for
+                        // everyone, chosen over a refetch (and loading
+                        // overlay) each time assign mode is toggled.
+                        includeAssignee: 'true',
                         start: dtParams.start || 0,
                         length: dtParams.length || 10,
                         orderBy,
@@ -419,8 +858,12 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         query.search = searchValue;
                       }
                       const result = await DashboardService.getChatDashboard(query);
-                      setRecordsTotal(result?.recordsTotal || 0);
-                      setRecordsFiltered(result?.recordsFiltered || 0);
+                      if (seq !== ajaxSeqRef.current) return;
+                      const total = result?.recordsTotal || 0;
+                      setRecordsTotal(total);
+
+                      if (!noteSearchResult(searchValue, total)) noteLoadResult(total);
+
                       callback({
                         draw: dtParams.draw || 0,
                         recordsTotal: result?.recordsTotal || 0,
@@ -429,27 +872,17 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                       });
                     } catch (err) {
                       console.error('Failed to load chat dashboard data', err);
+                      if (seq !== ajaxSeqRef.current) return;
                       setError(err.message || String(err));
                       callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
                     } finally {
-                      setLoading(false);
+                      if (seq === ajaxSeqRef.current) setLoading(false);
                     }
-                  },
-                  initComplete: function () {
-                    try {
-                      const api = this.api();
-                      tableApiRef.current = api;
-                      console.debug && console.debug('ChatDashboard: DataTable initComplete');
-                      api.on('xhr.dt', function (_e, _settings, json) {
-                        try {
-                          setRecordsTotal((json && json.recordsTotal) || 0);
-                          setRecordsFiltered((json && json.recordsFiltered) || 0);
-                        } catch (e) { /* ignore */ }
-                      });
-                    } catch (e) { /* ignore */ }
                   }
                 }}
-              />
+              >
+                <caption className="sr-only">{t('admin.chatDashboard.title')}</caption>
+              </DataTable>
             </div>
           )}
         </div>

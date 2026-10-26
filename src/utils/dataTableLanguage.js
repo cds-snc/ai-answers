@@ -1,3 +1,9 @@
+// TODO: every server-side DataTable in this app imports this helper, but most
+// still duplicate their own columns/options/ajax wiring rather than sharing
+// one component. components/admin/ServerDataTable.js (used by SettingsPage.js)
+// is meant to become that shared component for production pages — see its
+// own comment for the migration plan and why it's a separate, more stable
+// thing than components/experimental/ExperimentalServerDataTable.js.
 /**
  * Returns a DataTables `language` config object for the given lang.
  * English is the DataTables default so an empty object is returned.
@@ -26,11 +32,15 @@ export function dataTableLanguage(lang) {
       processing: 'Traitement\u2026',
       search: 'Rechercher\u00a0:',
       zeroRecords: 'Aucun enregistrement correspondant trouvé',
+      // Word labels like GC DS pagination (the chevrons are CSS, see
+      // .dt-paging-button in admin.css). first/last are turned off per table
+      // in the app's own tables; kept translated for any table still on
+      // DataTables' default layout (the experimental pages).
       paginate: {
-        first: '«',
-        previous: '‹',
-        next: '›',
-        last: '»',
+        first: 'Premier',
+        previous: 'Précédent',
+        next: 'Suivant',
+        last: 'Dernier',
       },
       aria: {
         paginate: {
@@ -44,5 +54,12 @@ export function dataTableLanguage(lang) {
       },
     };
   }
-  return {};
+  return {
+    paginate: {
+      first: 'First',
+      previous: 'Previous',
+      next: 'Next',
+      last: 'Last',
+    },
+  };
 }

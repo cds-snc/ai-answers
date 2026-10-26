@@ -1,0 +1,131 @@
+import React from 'react';
+import StatusMessage from './StatusMessage.js';
+import ChatIdLookupField from './ChatIdLookupField.js';
+import { useChatIdLookup } from '../../hooks/admin/useChatIdLookup.js';
+
+// "Delete something by chat ID" row: one <details>/summary/form/status
+// shell, used by DeleteChatSection.js (deletes the whole chat).
+// DeleteExpertEval.js has its own lookup-then-pick flow instead, but shares
+// the same useChatIdLookup.js checks and ChatIdLookupField.js field.
+// Both are rows in AdminPage.js's shared "View and delete chats by ID"
+// section (its own h2) - collapsed by default, summary text is this row's
+// only label, no separate heading here.
+//
+// The validate/existence-check logic itself (format check, getChat,
+// validateChat) lives in useChatIdLookup.js, shared with ViewChatByIdSection.js
+// too — that one doesn't go through this component because viewing isn't
+// destructive and shouldn't get a delete-style confirm() dialog; only the
+// pre-confirm checks are actually identical between the two.
+//
+// onDelete(chatId) contract: resolves to { isError: false, text } for a
+// plain success message, or { isError: true, prefix, detail, suffix } for
+// StatusMessage's split-template treatment (see AGENTS.md's
+// admin.common.fetchError pattern) - `detail` is a ReactNode the *caller*
+// has already decided whether to wrap in lang="en": raw exception text
+// needs it, an already-translated reason doesn't.
+const DeleteByChatIdSection = ({
+  lang = 'en',
+  titleKey,
+  idLabelKey,
+  buttonLabelKey,
+  loadingLabelKey,
+  fieldId,
+  onDelete,
+  // Action-specific "not found" wording — see useChatIdLookup's own note.
+  notFoundMessageKey,
+}) => {
+  const {
+    t,
+    chatId,
+    setChatId,
+    handleInputChange,
+    handleToggle,
+    loading,
+    setLoading,
+    status,
+    setStatus,
+    statusNonce,
+    hasError,
+    errorCount,
+    errorRef,
+    inlineErrorMessage,
+    checkChatExists,
+  } = useChatIdLookup({ lang, notFoundMessageKey });
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    const chat = await checkChatExists(chatId);
+    if (!chat) return;
+
+    // window.confirm() kept for now (native, blocking) - not part of this
+    // pass's scope, see AdminPage.js redesign discussion.
+    if (!window.confirm(t('common.confirmDelete'))) {
+      setLoading(false);
+      return;
+    }
+
+    // onDelete's current caller (DeleteChatSection.js) already catches
+    // everything internally and always resolve to a
+    // { isError, text } result rather than reject — but that's a convention,
+    // not something this shared component can enforce on a future caller.
+    // Guard it here too, so a consumer that doesn't follow it fails as a
+    // visible status message instead of leaving the row stuck in loading.
+    try {
+      const result = await onDelete(chatId.trim());
+      setStatus(result);
+      if (!result.isError) setChatId('');
+    } catch (err) {
+      setStatus({ variant: 'error', text: t('admin.common.fetchFailed') });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <details onToggle={handleToggle}>
+      <summary id={`${fieldId}-summary`}>{t(titleKey)}</summary>
+      <div className="mt-200 mb-200">
+        <form onSubmit={handleDelete}>
+          <ChatIdLookupField
+            fieldId={fieldId}
+            label={t(idLabelKey)}
+            placeholder={t('admin.common.chatIdPlaceholder')}
+            value={chatId}
+            onChange={handleInputChange}
+            disabled={loading}
+            hasError={hasError}
+            errorMessage={inlineErrorMessage}
+            errorCount={errorCount}
+            errorRef={errorRef}
+            buttonRole="danger"
+            buttonLabel={loading ? t(loadingLabelKey) : t(buttonLabelKey)}
+            describedById={`${fieldId}-summary`}
+          />
+        </form>
+        {status?.variant === 'info' ? (
+          // "Not found" — a genuine server-lookup outcome, not an error.
+          <StatusMessage variant="info" message={status.text} nonce={statusNonce} />
+        ) : status?.variant === 'error' ? (
+          // A plain, fully-translated failure message (the lookup/onDelete
+          // call itself failed) — no raw exception text to wrap, so this
+          // uses `message` directly rather than the prefix/detail/suffix
+          // children shape the isError branch below needs.
+          <StatusMessage variant="error" message={status.text} nonce={statusNonce} />
+        ) : status?.isError ? (
+          // variant="error" + children (not `message`): the <code lang="en">
+          // wrapper a raw exception detail needs (see onDelete's own
+          // comment) can't go inside a plain message string. StatusMessage
+          // adds its own icon automatically either way (see its own
+          // resolveLook comment) — this doesn't need to render one itself.
+          <StatusMessage variant="error" nonce={statusNonce}>
+            {status.prefix}{status.detail}{status.suffix}
+          </StatusMessage>
+        ) : (
+          <StatusMessage variant={status?.text ? 'success' : undefined} message={status?.text} nonce={statusNonce} />
+        )}
+      </div>
+    </details>
+  );
+};
+
+export default DeleteByChatIdSection;

@@ -68,7 +68,7 @@ locals {
 }
 
 module "ai_answers" {
-  source = "github.com/cds-snc/terraform-modules//ecs?ref=v11.4.3"
+  source = "github.com/cds-snc/terraform-modules//ecs?ref=v13.1.0"
 
   # Cluster and service
   cluster_name = "${var.product_name}-cluster"
@@ -130,9 +130,27 @@ module "ai_answers" {
   security_group_ids  = [aws_security_group.ecs_tasks.id]
   subnet_ids          = var.vpc_private_subnet_ids
 
-  # Forward logs to Sentinel
+  # Forward logs to Sentinel over the Logs Ingestion API. The forwarder's IAM
+  # role is the only credential: it assumes the Sentinel forwarder hub role in
+  # the Log Archive account (cds-snc/cds-aws-lz), which mints a token Entra
+  # accepts for the Azure identity that may write to the data collection rule.
+  # Nothing is set up in this account. customer_id/shared_key stay as the
+  # rollback. Layer 273 is the first version that reads the hub role.
   sentinel_forwarder           = true
-  sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:199"
+  sentinel_forwarder_layer_arn = "arn:aws:lambda:ca-central-1:283582579564:layer:aws-sentinel-connector-layer:273"
+  sentinel_customer_id         = var.sentinel_customer_id
+  sentinel_shared_key          = var.sentinel_shared_key
+
+  sentinel_dce_endpoint = "https://dce-sentinel-forwarder-v2-153n.canadacentral-1.ingest.monitor.azure.com"
+  sentinel_dcr_config = {
+    AWSCloudWatchLog = {
+      dcrImmutableId = "dcr-6eccfc9e7ef34cd293566d5073d551f6"
+      streamName     = "Custom-AWSCloudWatchLog_v2_Input"
+    }
+  }
+  sentinel_azure_client_id = "97057b1c-9b09-4dd3-a4f9-d9df6d181949"
+  sentinel_azure_tenant_id = "221ca1d3-b3f2-4346-8abc-88f802495c7d"
+  sentinel_hub_role_arn    = "arn:aws:iam::274536870005:role/sentinel-forwarder-hub"
 
   billing_tag_value = var.billing_code
 

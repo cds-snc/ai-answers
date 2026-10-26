@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ASSIGN_NOTE_MAX_LENGTH } from '../src/constants/chatAssign.js';
 
 const InteractionSchema = new mongoose.Schema({
   interactionId: {
@@ -49,6 +50,17 @@ const InteractionSchema = new mongoose.Schema({
     ref: 'ExpertFeedback',
     default: null
   },
+  // Question assignment (issue #1656): a partner/admin hands this question
+  // to one partner user for review. Per question, not per chat - the
+  // questions in one chat can belong to different departments and go to
+  // different reviewers. Single assignee at a time; assigning an already-
+  // assigned question is rejected (409 in chat-assign-interaction.js). No history kept.
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedOn: { type: Date, default: null },
+  // Length enforced in chat-assign-interaction.js (findOneAndUpdate skips validators);
+  // maxlength here is defense-in-depth for any other write path.
+  assignedNotes: { type: String, default: '', maxlength: ASSIGN_NOTE_MAX_LENGTH },
   publicFeedback: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PublicFeedback',
@@ -106,5 +118,7 @@ InteractionSchema.index({ context: 1 });
 InteractionSchema.index({ referringUrl: 1 });
 InteractionSchema.index({ createdAt: 1 });
 InteractionSchema.index({ question: 1 });
+// AccountPage's assigned-questions table looks this up per signed-in user.
+InteractionSchema.index({ assignedTo: 1 });
 
 export const Interaction = mongoose.models.Interaction || mongoose.model('Interaction', InteractionSchema);

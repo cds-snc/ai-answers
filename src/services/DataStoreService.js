@@ -25,7 +25,9 @@ class DataStoreService {
       const values = data.values || {};
 
       return keys.reduce((acc, key) => {
-        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined) {
+        // null = never saved (SettingsService.get) — use the default, same as
+        // the per-key fallback below.
+        if (Object.prototype.hasOwnProperty.call(values, key) && values[key] !== undefined && values[key] !== null) {
           acc[key] = values[key];
         } else if (Object.prototype.hasOwnProperty.call(defaults, key)) {
           acc[key] = defaults[key];
@@ -56,12 +58,18 @@ class DataStoreService {
       return defaultValue;
     }
   }
+  // Throws on failure, for callers that must not mistake a failed load for
+  // the default.
+  static async getSettingStrict(key, defaultValue = null) {
+    const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
+    if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
+    const data = await response.json();
+    return data.value !== undefined ? data.value : defaultValue;
+  }
+
   static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetch(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
-      if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
-      const data = await response.json();
-      return data.value !== undefined ? data.value : defaultValue;
+      return await this.getSettingStrict(key, defaultValue);
     } catch (error) {
       console.error(`Error getting setting '${key}':`, error);
       return defaultValue;
@@ -85,6 +93,30 @@ class DataStoreService {
     }
   }
 
+  // Batched write for a section's Save button: submits every changed
+  // key/value pair in one request instead of one round trip per field.
+  // Returns `{ values, errors }` — the write is best-effort per key, so a
+  // caller applies `values` and leaves any key in `errors` staged for retry.
+  static async setSettings(changes) {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-bulk-set-handler'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ changes })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to set settings');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error setting settings:', error);
+      throw error;
+    }
+  }
+
   static async refreshSettingsCache() {
     try {
       const response = await AuthService.fetch(getApiUrl('setting-refresh-cache'), {
@@ -97,6 +129,51 @@ class DataStoreService {
       return await response.json();
     } catch (error) {
       console.error('Error refreshing settings cache:', error);
+      throw error;
+    }
+  }
+
+  static async clearDownloadWebPageCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-clear-download-webpage-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clear cached web pages');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing cached web pages:', error);
+      throw error;
+    }
+  }
+
+  static async clearSearchCache() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('setting-clear-search-cache'), {
+        method: 'POST'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clear search cache');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error clearing search cache:', error);
+      throw error;
+    }
+  }
+
+  static async getSettingsAudit({ limit = 50, skip = 0, search = '' } = {}) {
+    try {
+      const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+      if (search) params.set('search', search);
+      const response = await AuthService.fetch(`${getApiUrl('setting-audit')}?${params}`);
+      if (!response.ok) throw new Error('Failed to get settings audit history');
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting settings audit history:', error);
       throw error;
     }
   }
@@ -176,8 +253,8 @@ class DataStoreService {
 
   static async createIndexes() {
     try {
-      const response = await AuthService.fetch(getApiUrl('db-database-management'), {
-        method: 'PUT'
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=createIndexes'), {
+        method: 'POST'
       });
       if (!response.ok) {
         const error = await response.json();
@@ -186,6 +263,22 @@ class DataStoreService {
       return await response.json();
     } catch (error) {
       console.error('Error creating indexes:', error);
+      throw error;
+    }
+  }
+
+  // The last "Rebuild all indexes" run, or null if none since the server started
+  static async getIndexRebuildStatus() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('db-database-management?action=indexRebuildStatus'));
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to check index rebuild');
+      }
+      const { rebuild } = await response.json();
+      return rebuild;
+    } catch (error) {
+      console.error('Error checking index rebuild:', error);
       throw error;
     }
   }
@@ -267,24 +360,36 @@ class DataStoreService {
     return await response.json();
   }
 
-  static async getPublicEvalList() {
-    try {
-      const response = await AuthService.fetch(getApiUrl('db-public-eval-list'));
-      if (!response.ok) throw new Error('Failed to fetch public evaluation list');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching public evaluation list:', error);
-      throw error;
-    }
-  }
-
   static async getChat(chatId) {
     try {
       const response = await AuthService.fetch(getApiUrl(`db-chat?chatId=${chatId}`));
+      // 404 (db-chat.js's own "Chat not found") is a real, expected outcome
+      // for this call's two admin-tool callers (existence pre-check before
+      // delete, direct lookup-by-ID) — return the same { chat: null } shape
+      // they already check for on success, rather than throwing. Any other
+      // non-ok status (500, auth failure, etc.) still throws below, so
+      // callers can tell "doesn't exist" apart from "the lookup itself
+      // failed" instead of both collapsing into one generic error.
+      if (response.status === 404) return { chat: null };
       if (!response.ok) throw new Error('Failed to fetch chat');
       return await response.json();
     } catch (error) {
       console.error('Error fetching chat:', error);
+      throw error;
+    }
+  }
+
+  // Partial-or-full chatId search, backing useChatIdLookup.js's multi-match
+  // picker (db-chat-search.js caps results server-side; see its own comment
+  // for why - this is a "narrow down to a short pick-list" search, not a
+  // paginated browse).
+  static async searchChats(query) {
+    try {
+      const response = await AuthService.fetch(getApiUrl(`db-chat-search?q=${encodeURIComponent(query)}`));
+      if (!response.ok) throw new Error('Failed to search chats');
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching chats:', error);
       throw error;
     }
   }
@@ -310,6 +415,23 @@ class DataStoreService {
 
   static async getSiteStatus() {
     return await this.getPublicSetting('siteStatus', 'available');
+  }
+
+  static async getChatSessionAvailability() {
+    try {
+      const response = await AuthService.fetch(getApiUrl('chat-session-availability'), {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error(`Failed to get chat session availability: ${response.status}`);
+      const data = await response.json();
+      return {
+        siteStatus: data.siteStatus === true,
+        sessionAvailable: data.sessionAvailable === true
+      };
+    } catch (error) {
+      console.error('Error getting chat session availability:', error);
+      return { siteStatus: false, sessionAvailable: false };
+    }
   }
 }
 

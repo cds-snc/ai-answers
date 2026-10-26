@@ -5,7 +5,13 @@
 // Portfolio scenarios (one partner, many matched abbrKeys):
 //   Defence portfolio → DND-MDN
 //   Crown-Indigenous / Indigenous Services → SAC-ISC
-//   Regional Development Agencies → ISED-ISDE
+//   ISED portfolio (ACOA, CED-QR, CanNor, CIPO, CRC, Competition Bureau,
+//     Measurement Canada, Superintendent of Bankruptcy, BizPaL) → ISED-ISDE
+//     Note: FedDev-Ontario, FedNor, PacifiCan and PrairiesCan are also ISED
+//     portfolio agencies but are NOT aliased — they are partners with their
+//     own scenario folders.
+//   Canada Tariff Finder → FIN (tariff questions land there; FIN owns the
+//     counter-tariff and trade content)
 //   Public Health Agency → HC-SC
 //   Agriculture portfolio → AAFC-AAC
 export const SCENARIO_ALIASES = {
@@ -18,13 +24,16 @@ export const SCENARIO_ALIASES = {
   'IRPDA-CIEAD': 'DND-MDN',
   'ONDCAF': 'DND-MDN',
   'RCAANC-CIRNAC': 'SAC-ISC',
+  'CIPO-OPIC': 'ISED-ISDE',
+  'CRC': 'ISED-ISDE',
+  'COBU-BUCO': 'ISED-ISDE',
+  'MC': 'ISED-ISDE',
+  'OSB-BSF': 'ISED-ISDE',
   'ACOA-APECA': 'ISED-ISDE',
   'CED-QR': 'ISED-ISDE',
   'CanNor': 'ISED-ISDE',
-  'FedDev Ontario': 'ISED-ISDE',
-  'FedNor': 'ISED-ISDE',
-  'PacifiCan': 'ISED-ISDE',
-  'PrairiesCan': 'ISED-ISDE',
+  'BIZPAL-PERLE': 'ISED-ISDE',
+  'TARIFF-TARIF': 'FIN',
 };
 
 export const resolveScenarioKey = (key) => SCENARIO_ALIASES[key] || key;

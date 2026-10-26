@@ -102,7 +102,7 @@ export const departments_FR = [
   {
     "name": "Agence fédérale de développement économique pour le Sud de l'Ontario",
     "url": "https://feddev-ontario.canada.ca/fr",
-    "abbrKey": "FedDev Ontario"
+    "abbrKey": "FedDev-Ontario"
   },
   {
     "name": "Agence spatiale canadienne",
@@ -218,11 +218,6 @@ export const departments_FR = [
     "name": "Bureau du vérificateur général du Canada",
     "url": "https://www.oag-bvg.gc.ca/internet/Francais/admin_f_41.html",
     "abbrKey": "OAG-BVG"
-  },
-  {
-    "name": "Radio Canada",
-    "url": "https://ici.radio-canada.ca/",
-    "abbrKey": "CBC-Radio-Canada"
   },
   {
     "name": "Centre canadien d'hygiène et de sécurité au travail",

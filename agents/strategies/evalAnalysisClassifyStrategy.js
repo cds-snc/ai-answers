@@ -7,11 +7,11 @@
 // The URL / account rules are shared with the per-question classifier via
 // programClassificationGuidance.js.
 
-import { URL_EVIDENCE_RULE, ACCOUNT_RULE, extractJson } from './programClassificationGuidance.js';
+import { URL_EVIDENCE_RULE, ACCOUNT_RULE, ACTION_SELECTION_RULE, extractJson } from './programClassificationGuidance.js';
 
 const CLASSIFY_PROMPT = `You are tagging questions asked to a Government of Canada AI assistant so evaluators can cross-tabulate expert scores by program and by what the user was trying to do.
 
-For each row, pick the best-fitting program group from the provided program list and the best-fitting action from the provided action list (synonyms show phrasing variants). ${URL_EVIDENCE_RULE} ${ACCOUNT_RULE} Use "Other" only when nothing fits — a loose fit beats an unclassified row.
+For each row, pick the best-fitting program group from the provided program list and the best-fitting action from the provided action list. ${ACTION_SELECTION_RULE} ${URL_EVIDENCE_RULE} ${ACCOUNT_RULE} Use "Other" only when nothing fits — a loose fit beats an unclassified row.
 
 Respond with ONLY a JSON array, one entry per input row, same order: [{"id": "...", "program": "...", "action": "..."}]. Values must come from the provided lists or be "Other".`;
 

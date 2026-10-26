@@ -12,7 +12,7 @@
 //
 // PER-DEPARTMENT MARKDOWN IS NOW THE SOURCE OF TRUTH: each department's programs
 // live in a curated, partner-editable EN/FR list at
-//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md
+//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-services.md
 // loaded via programSeedsLoader.js (getSeedPrograms). Every department that had
 // harvested programs has migrated to its .md, so this map is now empty; it is
 // kept only as the loader's fallback for any department that has neither a .md
@@ -37,16 +37,49 @@ export const ACTION_SEEDS = [
     { action: 'Find out payment due date', synonyms: [] },
     { action: 'How much I owe', synonyms: ['Balance owing', 'Fee', 'Fine'] },
     { action: 'Find options available', synonyms: ['Innovation', 'Immigration', 'Jobs'] },
+    { action: 'Get info', synonyms: ['What is', 'When', 'How does it work', 'Explain', 'Learn about'] },
     { action: 'Get help with', synonyms: ['Delays', 'Locked out account'] },
     { action: 'Recover account', synonyms: ['Forgot password', 'Reset password', 'Locked out'] },
-    { action: 'Use MFA', synonyms: ['Multi-factor authentication', 'Verification code', 'Authenticator'] },
+    { action: 'Use MFA', synonyms: ['Multi-factor authentication', 'Verification code', 'Authenticator', 'Change multi-factor authentication'] },
     { action: 'Pay', synonyms: ['Remit'] },
     { action: 'Register', synonyms: ['Open', 'Create', 'Set up'] },
     { action: 'Renew', synonyms: [] },
     { action: 'Send', synonyms: ['Submit', 'File'] },
     { action: 'Search', synonyms: ['Find'] },
-    { action: 'Sign-in', synonyms: ['Access', 'Log in'] },
-    { action: 'Use MFA', synonyms: ['Change multi-factor authentication'] }
+    { action: 'Sign-in', synonyms: ['Access', 'Log in'] }
 ];
+
+// French display labels for the action vocabulary, keyed by the canonical English
+// action (the value stored in Context.action). Display-only: actions are always
+// classified and stored in English; French admins/partners see these at render
+// time, English is the fallback for anything unmapped. Kept as a separate map so
+// ACTION_SEEDS stays English-only when passed to the classifier prompt. Every
+// ACTION_SEEDS action must have an entry here.
+export const ACTION_FR = {
+    'Apply': 'Présenter une demande',
+    'Change contact details': 'Modifier les coordonnées',
+    'Change direct deposit': 'Modifier le dépôt direct',
+    'Check status': "Vérifier l'état",
+    'Check eligibility': "Vérifier l'admissibilité",
+    'Check processing times': 'Vérifier les délais de traitement',
+    'Claim': 'Faire une réclamation',
+    'Complain': 'Porter plainte',
+    'Contact': 'Communiquer',
+    'How much can I receive': 'Combien puis-je recevoir',
+    'Find benefit payment date': 'Trouver la date de paiement de la prestation',
+    'Find out payment due date': "Trouver la date d'échéance du paiement",
+    'How much I owe': 'Combien je dois',
+    'Find options available': 'Trouver les options offertes',
+    'Get info': "Obtenir de l'information",
+    'Get help with': "Obtenir de l'aide",
+    'Recover account': "Récupérer l'accès au compte",
+    'Use MFA': "Utiliser l'authentification multifacteur",
+    'Pay': 'Payer',
+    'Register': "S'inscrire",
+    'Renew': 'Renouveler',
+    'Send': 'Envoyer',
+    'Search': 'Rechercher',
+    'Sign-in': 'Se connecter'
+};
 
 export const OTHER_LABEL = 'Other';

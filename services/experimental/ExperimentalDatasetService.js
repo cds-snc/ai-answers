@@ -897,16 +897,32 @@ class ExperimentalDatasetService {
     }
 
     async list(options = {}) {
-        const { page = 1, limit = 20 } = options;
-        const skip = (page - 1) * limit;
+        const { page = 1, limit = 20, start, length, search = '', orderBy = '', orderDir = 'desc' } = options;
+        const isDataTablesRequest = start !== undefined || length !== undefined;
+        const take = isDataTablesRequest ? Math.max(1, Number(length) || 10) : limit;
+        const skip = isDataTablesRequest ? Math.max(0, Number(start) || 0) : (page - 1) * limit;
+        const baseQuery = {};
+        const escapedSearch = escapeRegex(String(search || '').trim());
+        if (escapedSearch) {
+            baseQuery.$or = [
+                { name: { $regex: escapedSearch, $options: 'i' } },
+                { description: { $regex: escapedSearch, $options: 'i' } },
+                { type: { $regex: escapedSearch, $options: 'i' } },
+                { creationStatus: { $regex: escapedSearch, $options: 'i' } }
+            ];
+        }
+        const sortFields = new Set(['createdAt', 'name', 'type', 'rowCount', 'creationStatus']);
+        const sortField = sortFields.has(orderBy) ? orderBy : 'createdAt';
+        const sortDirection = orderDir === 'asc' ? 1 : -1;
 
-        const [data, total] = await Promise.all([
-            ExperimentalDataset.find()
+        const [data, total, recordsFiltered] = await Promise.all([
+            ExperimentalDataset.find(baseQuery)
                 .populate('createdBy', 'email')
-                .sort({ createdAt: -1 })
+                .sort({ [sortField]: sortDirection })
                 .skip(skip)
-                .limit(limit),
-            ExperimentalDataset.countDocuments()
+                .limit(take),
+            ExperimentalDataset.countDocuments(),
+            ExperimentalDataset.countDocuments(baseQuery)
         ]);
 
         // Analysis run counts per dataset, so the list can show which
@@ -927,9 +943,11 @@ class ExperimentalDatasetService {
                 return obj;
             }),
             total,
+            recordsTotal: total,
+            recordsFiltered,
             page,
-            limit,
-            totalPages: Math.ceil(total / limit),
+            limit: take,
+            totalPages: Math.ceil(recordsFiltered / take),
             executionMode: process.env.REDIS_URL ? 'queue' : 'lambda'
         };
     }

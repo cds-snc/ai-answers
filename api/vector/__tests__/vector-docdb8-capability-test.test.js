@@ -280,6 +280,12 @@ describe('vector docdb8 capability probe', () => {
     expect(result.test.metadata.candidateLimit).toBe(100);
   });
 
+  it('rejects unknown probe names before dispatching a probe', async () => {
+    await expect(module.buildCapabilityProbeResult('__proto__')).rejects.toThrow(
+      'Unknown DocumentDB 8 capability probe: __proto__'
+    );
+  });
+
   it('keeps going when a supporting count query fails', async () => {
     dbMock = createDbMock({ interactionsCountFails: true });
     Object.defineProperty(mongoose.connection, 'db', {

@@ -13,14 +13,14 @@ const MetricsPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('metrics.title')}</h1>
       
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
       <section id="metrics-dashboard" className="mb-600">
-        <h2 className="mt-400 mb-400">{t('metrics.timeRangeTitle')}</h2>
+        <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
         <MetricsDashboard lang={lang} />
       </section>
     </GcdsContainer>

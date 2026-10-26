@@ -1,10 +1,10 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { NON_NORMAL_ANSWER_TYPES } from '../util/answerTypes.js';
 import { getAllProgramNameMap } from '../data/programSeedsLoader.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { parseRequestFilters, executeWithRetry, remapEvalFilter } from './metrics-common.js';
 
 const MAX_PROGRAMS = 25;
 
@@ -100,11 +100,12 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
             },
             {
                 $addFields: {
-                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
+                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
                 }
             },
             { $match: partnerEvalFilter },
-            { $project: { ef_filter: 0, category: 0 } }
+            { $project: { ef_filter: 0, category: 0, hasCitationError: 0 } }
         );
     }
 
@@ -129,21 +130,18 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
             },
             {
                 $addFields: {
-                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    aiHasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             }
         );
 
         // Remap filter key
-        const remappedFilter = {};
-        for (const key in aiEvalFilter) {
-            if (key === 'category') remappedFilter['aiCategory'] = aiEvalFilter[key];
-            else remappedFilter[key] = aiEvalFilter[key];
-        }
+        const remappedFilter = remapEvalFilter(aiEvalFilter, 'ai');
 
         stages.push(
             { $match: remappedFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0 } }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0, aiHasCitationError: 0 } }
         );
     }
 
@@ -164,7 +162,7 @@ async function getProgramMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildProgramPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
@@ -189,4 +187,4 @@ async function getProgramMetrics(req, res) {
     }
 }
 
-export default withProtection(getProgramMetrics);
+export default withProtection(getProgramMetrics, authMiddleware, partnerOrAdminMiddleware);

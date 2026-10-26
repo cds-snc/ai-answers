@@ -1,15 +1,21 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { truncate } from '../../utils/experimental/batchItems.js';
 
-const VERDICT_CELL_STYLES = {
-    pass: { backgroundColor: '#d8eeca', color: '#1d4d27' },
-    mixed: { backgroundColor: '#fbe9c6', color: '#7a5a00' },
-    flagged: { backgroundColor: '#fdd7d9', color: '#a12622' },
-    error: { backgroundColor: '#f3c4c6', color: '#7a1b16' },
-    missing: { backgroundColor: '#f1f1f1', color: '#666' }
+// Colours live in admin.css (.verdict-cell--*) so pass/mixed/error stay in
+// sync with the shared .label good/caution/error tier instead of drifting
+// as a second hardcoded copy. flagged/missing are this table's own colours
+// — see admin.css. Exported so other verdict displays (e.g. the legend in
+// ExperimentalSuitePage.js) point at the same classes instead of a third copy.
+export const VERDICT_CELL_CLASSES = {
+    pass: 'verdict-cell--pass',
+    mixed: 'verdict-cell--mixed',
+    flagged: 'verdict-cell--flagged',
+    error: 'verdict-cell--error',
+    missing: 'verdict-cell--missing'
 };
 
 const VERDICT_SYMBOLS = {
@@ -24,7 +30,6 @@ const CELL_BASE = {
     padding: '0.5rem 0.75rem',
     textAlign: 'center',
     fontWeight: 'bold',
-    cursor: 'pointer',
     minWidth: '3.5rem'
 };
 
@@ -37,15 +42,17 @@ const displayVerdict = (cell) => {
 };
 
 // Cell body: single trial keeps the plain ✓/✗ symbol; multiple trials show
-// k/n with a per-trial mini strip underneath.
+// k/n with a per-trial mini strip underneath. Symbols are hidden from screen
+// readers (the cell's sr-only text says the verdict); k/n stays readable so
+// the spoken name starts with the visible text (WCAG 2.5.3).
 const renderCellContent = (cell, verdict) => {
     if (!cell || cell.total <= 1) {
-        return VERDICT_SYMBOLS[verdict] || VERDICT_SYMBOLS.missing;
+        return <span aria-hidden="true">{VERDICT_SYMBOLS[verdict] || VERDICT_SYMBOLS.missing}</span>;
     }
     return (
         <div>
             <div>{cell.passCount}/{cell.total}</div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>
+            <div aria-hidden="true" style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>
                 {cell.trials.map(t => VERDICT_SYMBOLS[t] || VERDICT_SYMBOLS.missing).join('')}
             </div>
         </div>
@@ -54,9 +61,10 @@ const renderCellContent = (cell, verdict) => {
 
 /**
  * The runs x tests grid: one row per analysis run (oldest first), one
- * column per test. Cells are click-through to the item drill-down.
+ * column per test. Each verdict cell is a link to the item drill-down;
+ * cellHref(run, test) supplies the URL.
  */
-export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCellClick }) {
+export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHref }) {
     const { t } = useTranslations(lang);
     const locale = String(lang || 'en').toLowerCase().startsWith('fr') ? 'fr-CA' : 'en-CA';
 
@@ -80,17 +88,21 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
             <table style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
-                        <th style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left' }}>
+                        <th scope="col" style={{ ...CELL_BASE, textAlign: 'left' }}>
                             {t('experimental.suite.runColumn')}
                         </th>
-                        <th style={{ ...CELL_BASE, cursor: 'default' }}>
+                        <th scope="col" style={{ ...CELL_BASE }}>
                             {t('experimental.suite.scoreColumn')}
                         </th>
-                        {tests.map(test => (
+                        {tests.map(test => {
+                            const fullTitle = `${test.testName} — ${test.question}`;
+                            return (
                             <th
                                 key={test.position}
-                                style={{ ...CELL_BASE, cursor: 'default', verticalAlign: 'bottom' }}
-                                title={`${test.testName} — ${test.question}`}
+                                scope="col"
+                                style={{ ...CELL_BASE, verticalAlign: 'bottom' }}
+                                title={fullTitle}
+                                aria-label={fullTitle}
                             >
                                 <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
@@ -99,13 +111,14 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                     </div>
                                 )}
                             </th>
-                        ))}
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>
                     {runs.map((run, index) => (
                         <tr key={run._id}>
-                            <td style={{ ...CELL_BASE, cursor: 'default', textAlign: 'left', fontWeight: 'normal' }}>
+                            <th scope="row" style={{ ...CELL_BASE, textAlign: 'left', fontWeight: 'normal' }}>
                                 <div><strong>{truncate(runLabel(run, index), 60)}</strong></div>
                                 {run.referenceCapture && (
                                     <div style={{ fontSize: '0.75rem', color: '#7a5a00', fontWeight: 'bold' }}>
@@ -118,8 +131,8 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                         new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(run.createdAt))
                                     ].filter(Boolean).join(' · ')}
                                 </div>
-                            </td>
-                            <td style={{ ...CELL_BASE, cursor: 'default' }}>
+                            </th>
+                            <td style={{ ...CELL_BASE }}>
                                 {(() => {
                                     if (run.referenceCapture) return '—';
                                     const scores = runScores(run);
@@ -140,26 +153,34 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', onCell
                                 // mean "nothing was compared", not success.
                                 const verdict = run.referenceCapture ? 'missing' : displayVerdict(cell);
                                 const clickable = run.referenceCapture ? Boolean(cell) : verdict !== 'missing';
-                                const label = run.referenceCapture && cell
-                                    ? `${test.testName} — ${t('experimental.suite.captureRun')}`
-                                    : `${test.testName} — ${t(`experimental.suite.verdict.${verdict}`)}`;
+                                // TODO: runLabel(run, index) only depends on run/index, which are
+                                // constant for the whole row (already computed once at line 119) —
+                                // hoist to row scope instead of recomputing per cell (O(R) not O(R×T)).
+                                const rowLabel = runLabel(run, index);
+                                const verdictText = run.referenceCapture && cell
+                                    ? t('experimental.suite.captureRun')
+                                    : t(`experimental.suite.verdict.${verdict}`);
+                                const label = `${rowLabel} — ${test.testName} — ${verdictText}`;
+                                const content = (
+                                    <>
+                                        {run.referenceCapture
+                                            ? <span aria-hidden="true">{VERDICT_SYMBOLS.missing}</span>
+                                            : renderCellContent(cell, verdict)}
+                                        <span className="sr-only">{` ${verdictText}, ${rowLabel}, ${test.testName}`}</span>
+                                    </>
+                                );
                                 return (
                                     <td
                                         key={test.position}
-                                        style={{ ...CELL_BASE, ...VERDICT_CELL_STYLES[verdict], cursor: clickable ? 'pointer' : 'default' }}
+                                        className={VERDICT_CELL_CLASSES[verdict]}
+                                        style={{ ...CELL_BASE, padding: clickable ? 0 : CELL_BASE.padding }}
                                         title={label}
-                                        role={clickable ? 'button' : undefined}
-                                        tabIndex={clickable ? 0 : undefined}
-                                        aria-label={label}
-                                        onClick={() => clickable && onCellClick(run, test)}
-                                        onKeyDown={(e) => {
-                                            if (clickable && (e.key === 'Enter' || e.key === ' ')) {
-                                                e.preventDefault();
-                                                onCellClick(run, test);
-                                            }
-                                        }}
                                     >
-                                        {run.referenceCapture ? VERDICT_SYMBOLS.missing : renderCellContent(cell, verdict)}
+                                        {clickable ? (
+                                            <Link to={cellHref(run, test)} className="verdict-cell__link">
+                                                {content}
+                                            </Link>
+                                        ) : content}
                                     </td>
                                 );
                             })}

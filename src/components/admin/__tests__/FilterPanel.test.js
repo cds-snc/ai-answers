@@ -11,12 +11,19 @@ import $ from 'jquery';
 // FilterPanel.js than a hand-rolled mock of the plugin's API surface would.
 import 'daterangepicker';
 
-vi.mock('../../hooks/useTranslations.js', () => ({
-  useTranslations: () => ({
-    t: (key, defaultValue) => defaultValue || key
-  })
-}));
-
+// No translation mock here on purpose. There used to be a
+// vi.mock('../../hooks/useTranslations.js') at this point, but from this file's
+// directory that specifier resolves to src/components/hooks/useTranslations.js,
+// which does not exist — the component's identical-looking specifier resolves
+// from src/components/admin/ to src/hooks/useTranslations.js. So the mock never
+// applied and these tests have always run against the real hook and the real
+// locale files. Keep it that way: the French punctuation test below is only
+// meaningful against real translations. The consequence is that display copy is
+// not a safe thing to query on, so element lookups below anchor on stable ids
+// and class names instead — see getDateRangeInput. Switching off label-text
+// queries drops the implicit "this control has a real accessible name" check
+// that getByLabelText used to provide, so 'keeps native label associations…'
+// below exists specifically to keep that coverage.
 import FilterPanel from '../FilterPanel.js';
 
 describe('FilterPanel', () => {
@@ -52,6 +59,19 @@ describe('FilterPanel', () => {
     return { ...utils, onApplyFilters, onClearFilters };
   };
 
+  // Most tests below need the date-range input, either as the element under
+  // test or just as a signal that the picker has finished initializing.
+  // Look it up by its stable id rather than its label text: these tests run
+  // against the real locale files, so matching display copy couples every one
+  // of them to en.json wording. That is exactly how this suite broke — the
+  // label was "Date range (24-hour)" until it was shortened to "Date range",
+  // and ten tests started failing on an unrelated copy change.
+  const getDateRangeInput = (container) => {
+    const input = container.querySelector('#dateRangePicker');
+    if (!input) throw new Error('#dateRangePicker has not rendered yet');
+    return input;
+  };
+
   it('initializes the date range picker with a shared Moment instance', async () => {
     renderPanel();
 
@@ -73,17 +93,33 @@ describe('FilterPanel', () => {
     expect(window.moment.localeData).toBeTypeOf('function');
   });
 
+  it('keeps native label associations for the date-range trigger and department select', async () => {
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
+    const departmentSelect = container.querySelector('#department');
+
+    // The tests below match these controls by id, not label text, so a
+    // broken <label htmlFor> association wouldn't fail any of them — this
+    // is the one assertion that still catches that regression. `.labels`
+    // reflects the live for/id association regardless of what the label
+    // text says, so it stays valid across copy changes.
+    expect(input.labels).toHaveLength(1);
+    expect(input.labels[0].textContent.trim().length).toBeGreaterThan(0);
+    expect(departmentSelect.labels).toHaveLength(1);
+    expect(departmentSelect.labels[0].textContent.trim().length).toBeGreaterThan(0);
+  });
+
   it('marks the date-range trigger as a collapsed popup by default', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
 
     expect(input.getAttribute('aria-haspopup')).toBe('dialog');
     expect(input.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('does not let the plugin close the popup on Tab (the bug this PR fixes)', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
 
     fireEvent.focus(input);
 
@@ -99,9 +135,9 @@ describe('FilterPanel', () => {
   });
 
   it('closes when focus actually moves to the next field (real Tab)', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
-    const departmentSelect = getByLabelText('Partner institution');
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
+    const departmentSelect = container.querySelector('#department');
 
     fireEvent.focus(input);
     const instance = $(input).data('daterangepicker');
@@ -116,8 +152,8 @@ describe('FilterPanel', () => {
   });
 
   it('makes preset ranges and calendar cells keyboard-focusable with labels', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
 
     fireEvent.focus(input);
 
@@ -145,8 +181,8 @@ describe('FilterPanel', () => {
   });
 
   it('selects a preset range via Enter on the list item', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
 
     fireEvent.focus(input);
     const instance = $(input).data('daterangepicker');
@@ -164,8 +200,8 @@ describe('FilterPanel', () => {
   });
 
   it('closes on Escape and returns focus to the trigger input', async () => {
-    const { getByLabelText } = renderPanel();
-    const input = await waitFor(() => getByLabelText('Date range (24-hour)'));
+    const { container } = renderPanel();
+    const input = await waitFor(() => getDateRangeInput(container));
 
     fireEvent.focus(input);
     const instance = $(input).data('daterangepicker');
@@ -179,53 +215,371 @@ describe('FilterPanel', () => {
   });
 
   it('gives each pill remove button a distinct accessible name', async () => {
-    const { getByLabelText, findByLabelText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
+    const { container, findAllByLabelText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
 
-    await waitFor(() => getByLabelText('Date range (24-hour)'));
+    await waitFor(() => getDateRangeInput(container));
 
-    // Wait for the applied-filters pill row to render, then check that the
-    // pill removal button includes the pill's own label, not a generic
-    // "Remove filter" name shared by every pill.
-    const removeButton = await findByLabelText(/Remove filter - /);
-    expect(removeButton.getAttribute('aria-label')).not.toBe('Remove filter');
+    // Wait for the applied-filters pill row to render, then check that each
+    // pill removal button includes that pill's own label, not a generic
+    // "Remove filter" name shared by every pill. defaultUserType 'public'
+    // means two closable pills exist here: the date range, and the
+    // "Public" user-type pill (see effectiveUserType in FilterPanel.js —
+    // 'public' isn't the universal 'all', so it's a real, removable filter).
+    const removeButtons = await findAllByLabelText(/ - Remove filter$/);
+    expect(removeButtons.length).toBeGreaterThanOrEqual(2);
+    const labels = removeButtons.map((b) => b.getAttribute('aria-label'));
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels).not.toContain('Remove filter');
+    expect(labels.some((l) => l.includes('Public'))).toBe(true);
+  });
+
+  it('renders children inside the panel after "More filters" and before the action buttons, and nothing extra when none are passed', async () => {
+    const { container, unmount } = renderPanel({
+      children: <fieldset data-testid="extra"><legend>Export options</legend></fieldset>,
+    });
+    await waitFor(() => getDateRangeInput(container));
+    const content = container.querySelector('.filter-panel-content');
+    const extra = content.querySelector('[data-testid="extra"]');
+    const advanced = content.querySelector('.filter-advanced-details');
+    const actions = content.querySelector('.filter-actions');
+    expect(extra).not.toBeNull();
+    expect(advanced.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(extra.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    unmount();
+
+    const bare = renderPanel();
+    await waitFor(() => getDateRangeInput(bare.container));
+    const bareContent = bare.container.querySelector('.filter-panel-content');
+    const bareActions = bareContent.querySelector('.filter-actions');
+    expect(bareActions.previousElementSibling.classList.contains('filter-advanced-details')).toBe(true);
+  });
+
+  it('makes Apply and Clear all aria-disabled and inert while filterLoading, keeping focus in place', async () => {
+    const { container, onApplyFilters, onClearFilters } = renderPanel({ filterLoading: true });
+    await waitFor(() => getDateRangeInput(container));
+    const apply = container.querySelector('#filter-apply-button');
+    const clear = container.querySelector('.filter-button-secondary');
+    expect(apply.getAttribute('aria-disabled')).toBe('true');
+    expect(clear.getAttribute('aria-disabled')).toBe('true');
+    expect(apply.disabled).toBe(false);
+    apply.focus();
+    fireEvent.click(apply);
+    fireEvent.click(clear);
+    expect(onApplyFilters).not.toHaveBeenCalled();
+    expect(onClearFilters).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('keeps an applied pill inert while filterLoading', async () => {
+    const { container, rerender, onApplyFilters, onClearFilters } = renderPanel({ defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+    fireEvent.click(container.querySelector('#filter-apply-button'));
+    expect(onApplyFilters).toHaveBeenCalledTimes(1);
+    rerender(
+      <FilterPanel lang="en" onApplyFilters={onApplyFilters} onClearFilters={onClearFilters} isVisible={true} defaultUserType="public" filterLoading={true} />
+    );
+    // The last closable pill is the "Public" user-type pill - not the date
+    // pill, which never arms the refocus index by design.
+    const closable = container.querySelectorAll('.filter-pill--closable');
+    const pill = closable[closable.length - 1];
+    expect(pill.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(pill);
+    expect(onApplyFilters).toHaveBeenCalledTimes(1);
+
+    // The inert click must not leave a refocus-this-slot index armed: once
+    // loading ends and filters change for an unrelated reason (Apply), focus
+    // stays where it is instead of jumping onto a pill.
+    rerender(
+      <FilterPanel lang="en" onApplyFilters={onApplyFilters} onClearFilters={onClearFilters} isVisible={true} defaultUserType="public" filterLoading={false} />
+    );
+    const apply = container.querySelector('#filter-apply-button');
+    apply.focus();
+    fireEvent.click(apply);
+    expect(onApplyFilters).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('focuses the panel summary on mount only when focusSummaryOnMount is set', async () => {
+    const first = renderPanel({ focusSummaryOnMount: true });
+    await waitFor(() => getDateRangeInput(first.container));
+    expect(document.activeElement).toBe(first.container.querySelector('.filter-panel-summary'));
+    first.unmount();
+
+    const second = renderPanel();
+    await waitFor(() => getDateRangeInput(second.container));
+    expect(document.activeElement).toBe(document.body);
   });
 
   it('shows the AND/OR eval-logic toggle and its label by default, hides both when showEvalLogic is false', async () => {
-    const { getByLabelText, queryByLabelText, queryByText, unmount } = renderPanel();
-    await waitFor(() => getByLabelText('Date range (24-hour)'));
-    expect(queryByLabelText('Combine partner and AI evaluation filters')).not.toBeNull();
-    expect(queryByText('Partner eval and AI eval match')).not.toBeNull();
+    const { container, unmount } = renderPanel();
+    await waitFor(() => getDateRangeInput(container));
+    expect(container.querySelector('.filter-eval-logic')).not.toBeNull();
+    // The eval-pair title used to render outside the showEvalLogic conditional,
+    // so it stayed on screen with the radios hidden. Counting the section
+    // titles states that regression without depending on their wording: two
+    // when the toggle shows, one ("More filters"'s own title) when it doesn't.
+    expect(container.querySelectorAll('.filter-advanced-title')).toHaveLength(2);
     unmount();
 
-    const { getByLabelText: getByLabelText2, queryByLabelText: queryByLabelText2, queryByText: queryByText2 } = renderPanel({ showEvalLogic: false });
-    await waitFor(() => getByLabelText2('Date range (24-hour)'));
-    expect(queryByLabelText2('Combine partner and AI evaluation filters')).toBeNull();
-    // The label used to render unconditionally even with the radios hidden.
-    expect(queryByText2('Partner eval and AI eval match')).toBeNull();
+    const { container: container2 } = renderPanel({ showEvalLogic: false });
+    await waitFor(() => getDateRangeInput(container2));
+    expect(container2.querySelector('.filter-eval-logic')).toBeNull();
+    expect(container2.querySelectorAll('.filter-advanced-title')).toHaveLength(1);
   });
 
   it('shows the whole "More filters" section by default, hides it when showAdvancedSection is false', async () => {
     // "Answer Type" etc. live inside the (collapsed-by-default) "More
-    // filters" <details>, so only its always-visible summary text is
-    // checked here — jsdom doesn't surface a closed <details>'s content to
-    // text queries, same as a real browser.
-    const { getByLabelText, queryByText, unmount } = renderPanel();
-    await waitFor(() => getByLabelText('Date range (24-hour)'));
-    expect(queryByText('More filters')).not.toBeNull();
+    // filters" <details>, and jsdom doesn't surface a closed <details>'s
+    // content to queries — same as a real browser. So this checks for the
+    // <details> element itself rather than reaching inside it.
+    const { container, unmount } = renderPanel();
+    await waitFor(() => getDateRangeInput(container));
+    expect(container.querySelector('.filter-advanced-details')).not.toBeNull();
     unmount();
 
-    const { getByLabelText: getByLabelText2, queryByText: queryByText2 } = renderPanel({ showAdvancedSection: false });
-    await waitFor(() => getByLabelText2('Date range (24-hour)'));
-    expect(queryByText2('More filters')).toBeNull();
+    const { container: container2 } = renderPanel({ showAdvancedSection: false });
+    await waitFor(() => getDateRangeInput(container2));
+    expect(container2.querySelector('.filter-advanced-details')).toBeNull();
+  });
+
+  it('never shows the "Advanced: All" info pill when showAdvancedSection is false', async () => {
+    // Regression test: this pill used to render unconditionally whenever
+    // answerType/partnerEval/aiEval/urlEn/urlFr were all at their default —
+    // which is always true when showAdvancedSection={false}, since there's
+    // no UI to change them. It referenced a "More filters" section that
+    // wasn't on the page at all.
+    const { container, queryByText } = renderPanel({ autoApply: true, showAdvancedSection: false });
+    await waitFor(() => getDateRangeInput(container));
+    expect(container.querySelector('.filter-advanced-details')).toBeNull();
+    expect(queryByText('Advanced: All')).toBeNull();
+  });
+
+  it('hides the AND/OR evalLogic toggle when showCategoryFilters is false, even though showEvalLogic defaults to true', async () => {
+    // Regression test: the toggle controls how partnerEval/aiEval combine,
+    // so it's meaningless once those columns are hidden. Without this, the
+    // documented "re-enable later with showAdvancedSection={true}
+    // showCategoryFilters={false}" recipe would leave a combinator with
+    // nothing left to combine.
+    const { container } = renderPanel({ showCategoryFilters: false });
+    await waitFor(() => getDateRangeInput(container));
+    expect(container.querySelector('.filter-eval-logic')).toBeNull();
+  });
+
+  it('hides just the answer type / partner eval / AI eval columns when showCategoryFilters is false, keeping URL fields', async () => {
+    // For MetricsDashboard.js / TechnicalMetricsDashboard.js: those three
+    // columns are each a hard $match applied before the aggregation that
+    // builds their own breakdown chart, so filtering by one is self-
+    // defeating there (see the dashboards' showCategoryFilters comment) —
+    // but urlEn/urlFr are a real, independent filter worth keeping.
+    const { container, unmount } = renderPanel();
+    await waitFor(() => getDateRangeInput(container));
+    expect(container.querySelector('#url-en')).not.toBeNull();
+    expect(container.querySelectorAll('.filter-checkbox-details')).toHaveLength(3);
+    unmount();
+
+    const { container: container2 } = renderPanel({ showCategoryFilters: false });
+    await waitFor(() => getDateRangeInput(container2));
+    // "More filters" itself still renders (unlike showAdvancedSection: false)
+    expect(container2.querySelector('.filter-advanced-details')).not.toBeNull();
+    expect(container2.querySelector('#url-en')).not.toBeNull();
+    expect(container2.querySelector('#url-fr')).not.toBeNull();
+    expect(container2.querySelectorAll('.filter-checkbox-details')).toHaveLength(0);
   });
 
   it('adds a space before the colon in "Label: value" pills for French, not English', async () => {
-    const { getByLabelText, queryByText } = renderPanel({ lang: 'fr', autoApply: true, defaultUserType: 'public' });
-    await waitFor(() => getByLabelText('Plage de dates (24 heures)'));
-    // autoApply's default filters set userType to defaultUserType, so this
-    // renders the "usersAll" pill via formatPillLabel — French needs
-    // "Utilisateurs : Tous" (space before ':'), not "Utilisateurs: Tous".
+    // The "usersAll" info pill (built via formatPillLabel, the thing this
+    // test is actually about) only renders when the effective user type is
+    // genuinely 'all' — see effectiveUserType in FilterPanel.js. A non-'all'
+    // default (e.g. 'public') renders a plain closable pill instead, which
+    // doesn't go through formatPillLabel at all (see the tests below), so
+    // this needs defaultUserType: 'all' to exercise the colon-spacing rule.
+    const { container, queryByText } = renderPanel({ lang: 'fr', autoApply: true, defaultUserType: 'all' });
+    await waitFor(() => getDateRangeInput(container));
     expect(queryByText('Utilisateurs : Tous')).not.toBeNull();
     expect(queryByText('Utilisateurs: Tous')).toBeNull();
+  });
+
+  it('renders a closable "Public" pill (not an info "Users: All" pill) when defaultUserType is "public"', async () => {
+    // Regression test: MetricsDashboard.js / TechnicalMetricsDashboard.js set
+    // defaultUserType="public". Before the fix, applying with the dropdown
+    // left on its own default rendered a non-closable pill claiming
+    // "Users: All" even though the query itself correctly stayed scoped to
+    // public users — the pill was both mislabeled AND not removable. Now:
+    // 'public' isn't the universal 'all', so it's treated as a real, active
+    // filter — a closable pill showing the bare value "Public" (same
+    // convention as every other closable pill, e.g. department), with a ×
+    // that resets it to 'all' (see removeFilter's 'userType' branch).
+    const { container, queryByText, findByLabelText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+    expect(queryByText('Users: All')).toBeNull();
+    const removeButton = await findByLabelText('Public - Remove filter');
+    expect(removeButton.closest('.filter-pill')?.className).toContain('filter-pill--closable');
+  });
+
+  it('still labels the at-rest user-type pill "All" when the default really is all', async () => {
+    const { container, queryByText } = renderPanel({ autoApply: true, defaultUserType: 'all' });
+    await waitFor(() => getDateRangeInput(container));
+    expect(queryByText('Users: All')).not.toBeNull();
+  });
+
+  it('moves focus to the panel summary when Clear all is clicked from the pills row, instead of dropping it to <body>', async () => {
+    // Regression test: the pills row's own inline "Clear all" button (only
+    // rendered once there's a real, non-info pill - defaultUserType: 'public'
+    // gets one for free, see the test above) unmounts along with the whole
+    // row once handleClear resets appliedFilters to null. Before the fix,
+    // the just-clicked button (and everything around it) disappeared from
+    // the DOM with no focus redirect, silently dropping focus to <body>.
+    const { container } = renderPanel({ autoApply: true, defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+
+    const clearAllPillButton = await waitFor(() => {
+      const btn = container.querySelector('.filter-pills__clear-all');
+      if (!btn) throw new Error('pills row Clear all button not rendered yet');
+      return btn;
+    });
+
+    clearAllPillButton.focus();
+    expect(document.activeElement).toBe(clearAllPillButton);
+
+    fireEvent.click(clearAllPillButton);
+
+    expect(document.activeElement).toBe(container.querySelector('.filter-panel-summary'));
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('moves focus to the new "Users: All" pill when the userType pill is removed - it replaces it in the same slot', async () => {
+    // Regression test: buildPills() always pushes exactly one userType pill
+    // (real "Public" button or info "Users: All" span) at the same array
+    // index, so whichever one now occupies that slot after removal is the
+    // right thing to land on - not <body>.
+    const { container, findByLabelText, queryByText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+
+    const removeButton = await findByLabelText('Public - Remove filter');
+    removeButton.focus();
+    expect(document.activeElement).toBe(removeButton);
+
+    fireEvent.click(removeButton);
+
+    await waitFor(() => expect(queryByText('Users: All')).not.toBeNull());
+    expect(document.activeElement).toBe(queryByText('Users: All'));
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('does not let a stale index from clicking the date pill corrupt a later pill removal', async () => {
+    // Regression test: the date pill's own removeFilter branch never
+    // updates appliedFilters (it reopens the calendar via a separate,
+    // already-working mechanism instead), so this effect's [appliedFilters]
+    // dependency never fires for it. If its index were armed anyway, it
+    // would sit stale until the *next* real appliedFilters change (e.g.
+    // removing a different pill) incorrectly consumed it.
+    const { container, findByLabelText, queryByText } = renderPanel({ autoApply: true, defaultUserType: 'public' });
+    await waitFor(() => getDateRangeInput(container));
+
+    // Date is always pushed first in buildPills(), so it's the first
+    // closable pill button in the row.
+    const dateRemoveButton = container.querySelector('.filter-bar__pills-row button.filter-pill--closable');
+    expect(dateRemoveButton).not.toBeNull();
+    fireEvent.click(dateRemoveButton);
+
+    const userTypeRemoveButton = await findByLabelText('Public - Remove filter');
+    fireEvent.click(userTypeRemoveButton);
+
+    await waitFor(() => expect(queryByText('Users: All')).not.toBeNull());
+    expect(document.activeElement).toBe(queryByText('Users: All'));
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('falls back to a remaining pill when a pill with no replacement (urlEn) is removed from the end of the row', async () => {
+    // Regression test: unlike department/userType/partnerEval/aiEval, urlEn
+    // has no "at default" fallback pill - removing it (when it's the last
+    // pill in the row, via showCategoryFilters: false so partnerEval/aiEval's
+    // own always-present info pills aren't there to shift into its slot)
+    // means its array index no longer exists at all afterward. Falls back
+    // to index-1 (department or userType, both always-present) rather than
+    // losing focus to <body>.
+    const { container, findByLabelText } = renderPanel({ autoApply: true, showCategoryFilters: false });
+    await waitFor(() => getDateRangeInput(container));
+
+    const urlEnInput = container.querySelector('#url-en');
+    fireEvent.change(urlEnInput, { target: { value: 'canada.ca/test' } });
+    fireEvent.click(container.querySelector('#filter-apply-button'));
+
+    const removeButton = await findByLabelText(/canada\.ca\/test/);
+    removeButton.focus();
+    expect(document.activeElement).toBe(removeButton);
+
+    fireEvent.click(removeButton);
+
+    expect(document.activeElement).not.toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+    expect(container.querySelector('.filter-bar__pills-row').contains(document.activeElement)).toBe(true);
+  });
+
+  it('moves focus to the panel summary when the panel auto-closes after a successful Apply, instead of dropping it to <body>', async () => {
+    // Regression test: a successful Apply flips hasAppliedFilters/filterResultCount
+    // (owned by the parent dashboard), which the auto-close effect consumes to
+    // collapse the panel. Collapsing a native <details> hides everything except
+    // its <summary> - before the fix, a keyboard/screen-reader user who had just
+    // pressed the (now-hidden) Apply button lost focus to <body> with no
+    // indication where it went.
+    //
+    // Mirrors PartnerDashboard.js's real wiring (filterLoading={loading})
+    // rather than jumping straight to the resolved state - see the two
+    // rerenders below.
+    const { container, rerender, onApplyFilters, onClearFilters } = renderPanel({
+      hasAppliedFilters: false,
+      filterLoading: false,
+      filterResultCount: null,
+    });
+    await waitFor(() => getDateRangeInput(container));
+
+    const applyButton = container.querySelector('#filter-apply-button');
+    applyButton.focus();
+    expect(document.activeElement).toBe(applyButton);
+
+    fireEvent.click(applyButton);
+    expect(onApplyFilters).toHaveBeenCalled();
+
+    // Apply is aria-disabled while loading, never natively disabled, so
+    // focus stays on it through the fetch; the collapse is what would drop it.
+    expect(document.activeElement).toBe(applyButton);
+
+    // Simulate the loading render frame: Apply is aria-disabled while the
+    // fetch is in flight. This is the render that must not depend on re-reading
+    // document.activeElement live to decide whether to restore focus later.
+    // hasAppliedFilters flips true in the same batch as filterLoading here -
+    // PartnerDashboard.js's handleApplyFilters calls setHasUserApplied(true)
+    // and fetchMetrics (which sets loading true) together, synchronously -
+    // not after the fetch resolves.
+    rerender(
+      <FilterPanel
+        lang="en"
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+        isVisible={true}
+        hasAppliedFilters={true}
+        filterLoading={true}
+        filterResultCount={null}
+      />
+    );
+    expect(applyButton.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(applyButton);
+
+    // Simulate the parent's fetch resolving with results.
+    rerender(
+      <FilterPanel
+        lang="en"
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+        isVisible={true}
+        hasAppliedFilters={true}
+        filterLoading={false}
+        filterResultCount={5}
+      />
+    );
+
+    expect(document.activeElement).toBe(container.querySelector('.filter-panel-summary'));
+    expect(document.activeElement).not.toBe(document.body);
   });
 });

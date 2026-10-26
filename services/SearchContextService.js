@@ -1,14 +1,82 @@
 import { getSearchProvider } from '../agents/tools/searchProvider.js';
 import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { queryRewriteStrategy } from '../agents/strategies/queryRewriteStrategy.js';
+import { SettingsService } from './SettingsService.js';
+import { readSearchResultCache, writeSearchResultCache } from './SearchResultCacheService.js';
+import { getSearchResultCacheGeneration } from './CacheCoordinator.js';
+import { getSearchLanguage } from '../src/utils/searchLanguage.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const searchFunction = getSearchProvider(searchService);
 
-    return await exponentialBackoff(() => searchFunction(query, lang));
+    const cacheEnabled = SettingsService.get('searchContext.cache.enabled') === 'true';
+    let cacheGeneration;
+    if (cacheEnabled) {
+        try {
+            cacheGeneration = await getSearchResultCacheGeneration();
+            const cached = await readSearchResultCache(cacheInput, cacheGeneration);
+            if (cached !== null) {
+                ServerLoggingService.debug('Search cache hit.', chatId, { ...cacheInput, cacheStatus: 'hit' });
+                ServiceCallMetricsService.recordCacheHit({ service: 'search', type: provider });
+                return { ...cached, cacheStatus: 'hit' };
+            }
+            ServiceCallMetricsService.recordCacheMiss({ service: 'search', type: provider });
+        } catch (error) {
+            ServerLoggingService.warn('Search cache read failed; using provider.', chatId, {
+                ...cacheInput,
+                error: error.message,
+            });
+        }
+    }
+
+    // Retry lives inside each search tool, not here: only the tool can tell a
+    // dropped socket or a 5xx from a 404 or a bad API key, and a wrapper at this
+    // level would retry all four — spending seconds of an interactive answer to
+    // return the same permanent error. The tools call back here on each attempt
+    // so the retry metric still gets recorded.
+    try {
+        ServiceCallMetricsService.recordProviderCall({ service: 'search', type: provider });
+        const result = await searchFunction(query, lang, {
+            // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+            onRetry: () => ServiceCallMetricsService.recordRetry({ service: 'search', type: provider }),
+        });
+        // Both providers return `failed` with the error as their result text when
+        // retries are exhausted, so the answer agent can still say the search failed.
+        // Both are errors for metrics purposes — the dashboard's own note defines
+        // this count as "calls that still failed after all retries".
+        if (result?.failed) {
+            ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        }
+        if (!result?.failed && cacheGeneration) {
+            try {
+                const cacheWrite = writeSearchResultCache(cacheInput, result, cacheGeneration);
+                // Vercel runs in Lambda, which can freeze unfinished work after responding.
+                if (SettingsService.get('deploymentMode') === 'Vercel') {
+                    await cacheWrite;
+                } else {
+                    void cacheWrite.catch((error) => {
+                        ServerLoggingService.warn('Search cache write failed.', chatId, {
+                            ...cacheInput,
+                            error: error.message,
+                        });
+                    });
+                }
+            } catch (error) {
+                ServerLoggingService.warn('Search cache write failed.', chatId, {
+                    ...cacheInput,
+                    error: error.message,
+                });
+            }
+        }
+        return { ...result, cacheStatus: 'downloaded' };
+    } catch (error) {
+        ServiceCallMetricsService.recordError({ service: 'search', type: provider });
+        throw error;
+    }
 }
 
 function countSearchResults(resultsString) {
@@ -24,9 +92,7 @@ export const SearchContextService = {
     async search({ chatId = 'system', searchService = 'canadaca', agentType = 'openai-gpt51', referringUrl = '', translationData = null, pageLanguage = '' }) {
         ServerLoggingService.info('Received request to search.', chatId, { searchService, referringUrl });
 
-        const pageLang = (pageLanguage || '').toLowerCase();
-        const originalLang = (translationData && translationData.originalLanguage) ? String(translationData.originalLanguage).toLowerCase() : '';
-        const lang = (pageLang.includes('fr') || originalLang.includes('fr')) ? 'fr' : 'en';
+        const lang = getSearchLanguage(pageLanguage || '', translationData?.originalLanguage || '');
 
         const orchestratorRequest = { translationData, referringUrl, pageLanguage: lang };
         const rewriteResult = await AgentOrchestratorService.invokeWithStrategy({
@@ -42,9 +108,13 @@ export const SearchContextService = {
         let searchResults = await performSearch(searchQuery, lang, searchService, chatId);
         ServerLoggingService.debug('Search results:', chatId, searchResults);
 
-        // Retry with a simplified query if search returned 0 or 1 results
+        // Retry with a simplified query if search returned 0 or 1 results.
+        // A failed search is excluded: its result text ("Search failed: ...")
+        // counts as 0, which would otherwise spend an LLM rewrite plus a second
+        // full search on an outage that is certain to fail again — and record a
+        // second error for the same outage.
         const resultCount = countSearchResults(searchResults?.results);
-        if (resultCount <= 1) {
+        if (!searchResults?.failed && resultCount <= 1) {
             try {
                 ServerLoggingService.info('Search returned too few results, retrying with simplified query', chatId, {
                     failedQuery: searchQuery,

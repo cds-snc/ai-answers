@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 
 /**
@@ -120,11 +120,12 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef', 0] })
+                    category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef', 0] })
                 }
             },
             { $match: partnerEvalFilter },
-            { $project: { ef: 0, category: 0 } }
+            { $project: { ef: 0, category: 0, hasCitationError: 0 } }
         );
     }
 
@@ -149,11 +150,12 @@ function buildSessionStatsPipeline(dateFilter, extraFilters = [], departmentFilt
             },
             {
                 $addFields: {
-                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef', 0] })
+                    category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef', 0] }),
+                    hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef', 0] })
                 }
             },
             { $match: aiEvalFilter },
-            { $project: { ae: 0, ae_ef: 0, category: 0 } }
+            { $project: { ae: 0, ae_ef: 0, category: 0, hasCitationError: 0 } }
         );
     }
 
@@ -193,7 +195,7 @@ async function getSessionMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildSessionStatsPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
@@ -216,4 +218,4 @@ async function getSessionMetrics(req, res) {
     }
 }
 
-export default withProtection(getSessionMetrics);
+export default withProtection(getSessionMetrics, authMiddleware, partnerOrAdminMiddleware);

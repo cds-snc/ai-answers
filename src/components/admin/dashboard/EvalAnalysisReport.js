@@ -1,6 +1,9 @@
 import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
+import { buildChatReviewHref } from '../../../utils/reviewLink.js';
+import StatusMessage from '../StatusMessage.js';
 
 const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
 const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
@@ -30,18 +33,18 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   const rowTable = Array.isArray(analysis.rows) && analysis.rows.length > 0 && (
     <div className="dashboard-section">
-      <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
+      <h3 id="eval-analysis-rows-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
       <div style={{ overflowX: 'auto' }}>
-        <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="display" aria-labelledby="eval-analysis-rows-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-              <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-              <th style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
+              <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
+              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
             </tr>
           </thead>
           <tbody>
@@ -67,46 +70,54 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
     </div>
   );
 
-  // Same review-mode deep link the eval/chat dashboards use for chatIds, in
-  // the conversation's own language. Older stored reports have no example.
+  // Older stored reports have no example.
   const exampleLink = (example) => {
     if (!example?.chatId) return '—';
+    // Route to the example's own (EN/FR breakdown row) language, not the
+    // admin's current UI language - see the note in ChatDashboardPage.js.
+    // The admin's own language rides along separately as the `adminLang`
+    // query param (4th arg) for the review page's own chrome to use. The
+    // visible text is just the opaque chatId though, not real content -
+    // its `lang` attribute (driving GcdsLink's own "opens in a new tab"
+    // hint) is admin-facing chrome, so it follows the admin's own `lang`
+    // instead of `chatLang`, same reasoning as ContentIssueChatsCard.js.
     const chatLang = example.lang === 'fr' ? 'fr' : 'en';
-    const hash = example.interactionId ? `#interaction=${encodeURIComponent(`interactionId${example.interactionId}`)}` : '';
     return (
-      <a
-        href={`/${chatLang}?chat=${encodeURIComponent(example.chatId)}&review=1${hash}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId, lang)} target="_blank" lang={lang}>
         {example.chatId}
-      </a>
+      </GcdsLink>
     );
   };
 
-  const crossTabTable = (rows, labelColLabel) => (
+  // This table has headers on both axes (col headers here + a row header for
+  // each label below) — scope is what disambiguates which axis each <th>
+  // labels in that mixed case (WCAG 1.3.1, technique H63). The other tables
+  // in this file only have column headers, where <th> alone is normally
+  // enough, but scope="col" is kept on those too since it's harmless and
+  // keeps the pattern consistent across the file.
+  const crossTabTable = (rows, labelColLabel, headingId) => (
     <div style={{ overflowX: 'auto' }}>
-      <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="display" aria-labelledby={headingId} style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th style={head}>{labelColLabel}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
-            <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
-            <th style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
+            <th scope="col" style={head}>{labelColLabel}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
+            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
+            <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.label}>
-              <td style={cell}>
-                {row.label}
+              <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 'normal' }}>
+                {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
-                  <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#2e8540' }}>
+                  <span className="font-size-text-xsm-nr text-status--positive" style={{ marginLeft: 8 }}>
                     {t('partnerDashboard.evalAnalysis.report.allPerfect')}
                   </span>
                 )}
-              </td>
+              </th>
               <td style={numCell}>{fmtN(row.count)}</td>
               <td style={numCell}>{fmtN(row.nonPerfectCount)}</td>
               <td style={numCell}>{pctOrDash(row.pctNonPerfect)}</td>
@@ -123,10 +134,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   return (
     <div>
       {analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))}
-        </div>
+        <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))} />
       )}
       {/* Header: what was analyzed. Plain sections with dashboard-style
           headings — the card border/box chrome is reserved for the stat and
@@ -153,18 +161,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </p>
         )}
         {analysis.status === 'error' && (
-          <div className="dashboard-warning">
-            <span className="dashboard-warning__icon" aria-hidden="true" />
-            {t('partnerDashboard.evalAnalysis.report.partial')}
-          </div>
+          <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.report.partial')} />
         )}
       </div>
 
       {/* Scores by combined program — action group (Tier 2 cross-tab) */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
-          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'))}
+          <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
+          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
               {t('partnerDashboard.evalAnalysis.report.singlesSkipped')
@@ -193,7 +198,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               {Array.isArray(theme.examples) && theme.examples.length > 0 && (
                 <ul className="font-size-text-xsm-nr" style={{ marginTop: 0 }}>
                   {theme.examples.map((ex, j) => (
-                    <li key={j}><em>{ex}</em></li>
+                    <li key={j}><strong>{ex}</strong></li>
                   ))}
                 </ul>
               )}
@@ -216,15 +221,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* EN vs FR */}
       {stats && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
+          <h3 id="eval-analysis-language-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
-            <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="display" aria-labelledby="eval-analysis-language-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,15 +257,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           (which uses the same delta internally) stays. */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
+          <h3 id="eval-analysis-evaluators-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
-            <table className="display" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="display" aria-labelledby="eval-analysis-evaluators-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>

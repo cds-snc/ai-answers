@@ -1,4 +1,5 @@
 import passport from 'passport';
+import bcrypt from 'bcryptjs';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { User } from '../models/user.js';
 import dbConnect from '../api/db/db-connect.js';
@@ -27,6 +28,21 @@ passport.deserializeUser(async (sessionUser, done) => {
   }
 });
 
+// Password sign-in lockout: after MAX_LOGIN_ATTEMPTS wrong passwords the account
+// rejects every sign-in (even the right password) until the lockout ends. The
+// counter lives on the user document, so changing session or IP does not help.
+// The sign-in error (login.invalidCredentials, EN and FR) states both numbers;
+// update it if they change.
+export const MAX_LOGIN_ATTEMPTS = 10;
+export const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+// Failures only add up while they keep coming: after this long with no failed
+// sign-in, the count starts again. Mistyped passwords spread over weeks never lock anyone out.
+export const LOGIN_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+
+// Compared against when the email is unknown, so an unknown account takes as
+// long to reject as a known one.
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', 10);
+
 // Local strategy for email/password authentication
 passport.use(new LocalStrategy({
   usernameField: 'email',
@@ -35,20 +51,53 @@ passport.use(new LocalStrategy({
   try {
     await dbConnect();
     const user = await User.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!user) {
+      await bcrypt.compare(String(password), DUMMY_HASH);
       return done(null, false, { message: 'Invalid credentials' });
     }
-    
+
+    // Same message as a wrong password, so a lockout does not reveal anything.
+    if (user.loginLockedUntil && user.loginLockedUntil.getTime() > Date.now()) {
+      await bcrypt.compare(String(password), DUMMY_HASH); // match the timing of a real check
+      return done(null, false, { message: 'Invalid credentials' });
+    }
+
+    const isValid = await user.comparePassword(password);
+    if (!isValid) {
+      const windowStart = new Date(Date.now() - LOGIN_ATTEMPT_WINDOW_MS);
+      const lastFailed = user.loginLastFailedAt?.getTime?.() ?? 0;
+      if (user.loginAttempts > 0 && lastFailed <= windowStart.getTime()) {
+        // The previous failure is too old to count. The filter re-checks it, so a
+        // parallel failure that has just been recorded is not wiped out.
+        await User.updateOne(
+          { _id: user._id, $or: [{ loginLastFailedAt: null }, { loginLastFailedAt: { $lte: windowStart } }] },
+          { $set: { loginAttempts: 0 } }
+        );
+      }
+      const updated = await User.findOneAndUpdate(
+        { _id: user._id },
+        { $inc: { loginAttempts: 1 }, $set: { loginLastFailedAt: new Date() } },
+        { new: true }
+      );
+      if (updated && updated.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        await User.updateOne({ _id: user._id }, {
+          $set: { loginAttempts: 0, loginLockedUntil: new Date(Date.now() + LOGIN_LOCKOUT_MS) }
+        });
+      }
+      return done(null, false, { message: 'Invalid credentials' });
+    }
+
+    // Checked after the password so an unauthenticated caller cannot use the
+    // message to learn which emails belong to deactivated accounts.
     if (!user.active) {
       return done(null, false, { message: 'Account is deactivated' });
     }
-    
-    const isValid = await user.comparePassword(password);
-    if (!isValid) {
-      return done(null, false, { message: 'Invalid credentials' });
+
+    if (user.loginAttempts > 0 || user.loginLockedUntil) {
+      await User.updateOne({ _id: user._id }, { $set: { loginAttempts: 0, loginLockedUntil: null } });
     }
-    
+
     return done(null, user);
   } catch (err) {
     return done(err);

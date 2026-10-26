@@ -1,7 +1,9 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
+import { renderIndexHtml } from './renderIndexHtml.js';
+import { normalizePathname } from '../src/utils/normalizePathname.js';
 
-import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
@@ -61,6 +63,8 @@ import meHandler from '../api/auth/auth-me.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/user/user-users.js';
 import userStatsHandler from '../api/user/user-stats.js';
+import userMeHandler from '../api/user/user-me.js';
+import userAssignableHandler from '../api/user/user-assignable.js';
 import deleteChatHandler from '../api/chat/chat-delete.js';
 import generateEmbeddingsHandler from '../api/db/db-generate-embeddings.js';
 import generateEvalsHandler from '../api/db/db-generate-evals.js';
@@ -69,9 +73,12 @@ import dbDeleteSystemLogsHandler from '../api/db/db-delete-system-logs.js';
 import dbIntegrityChecksHandler from '../api/db/db-integrity-checks.js';
 import settingHandler from '../api/setting/setting-handler.js';
 import settingBulkHandler from '../api/setting/setting-bulk-handler.js';
+import settingBulkSetHandler from '../api/setting/setting-bulk-set-handler.js';
 import settingPublicHandler from '../api/setting/setting-public-handler.js';
 import settingRefreshCacheHandler from '../api/setting/setting-refresh-cache.js';
-import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
+import settingClearDownloadWebPageCacheHandler from '../api/setting/setting-clear-download-webpage-cache.js';
+import settingClearSearchCacheHandler from '../api/setting/setting-clear-search-cache.js';
+import settingAuditHandler from '../api/setting/setting-audit.js';
 import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
 import evalRunHandler from '../api/eval/eval-run.js';
@@ -82,6 +89,7 @@ import evalAnalysisAdvanceHandler from '../api/eval/eval-analysis-advance.js';
 import evalAnalysisGetHandler from '../api/eval/eval-analysis-get.js';
 import evalAnalysisListHandler from '../api/eval/eval-analysis-list.js';
 import dbChatHandler from '../api/db/db-chat.js';
+import dbChatSearchHandler from '../api/db/db-chat-search.js';
 import dbExpertFeedbackCountHandler from '../api/db/db-expert-feedback-count.js';
 import dbEvalNonEmptyCountHandler from '../api/db/db-eval-non-empty-count.js';
 import dbEvalMetricsHandler from '../api/db/db-eval-metrics.js';
@@ -96,12 +104,16 @@ import blockedMetricsHandler from '../api/metrics/metrics-blocked.js';
 import referralMetricsHandler from '../api/metrics/metrics-referrals.js';
 import citationMetricsHandler from '../api/metrics/metrics-citations.js';
 import programMetricsHandler from '../api/metrics/metrics-programs.js';
+import contentIssueChatsMetricsHandler from '../api/metrics/metrics-content-issue-chats.js';
+import evalInformedChatsMetricsHandler from '../api/metrics/metrics-eval-informed-chats.js';
+import harmfulChatsMetricsHandler from '../api/metrics/metrics-harmful-chats.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbRepairQaMatchScoresHandler from '../api/db/db-repair-qa-match-scores.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
+import chatAssignInteractionHandler from '../api/chat/chat-assign-interaction.js';
 import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
 import { SettingsService } from '../services/SettingsService.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
@@ -134,7 +146,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 
-const normalizePath = (pathName) => pathName.replace(/\/+$/, '') || '/';
+const normalizePath = normalizePathname;
 
 const UI_ROUTE_PATTERNS = [
   /^\/$/,
@@ -142,6 +154,37 @@ const UI_ROUTE_PATTERNS = [
 ];
 
 const isUiRoutePath = (pathName) => UI_ROUTE_PATTERNS.some((pattern) => pattern.test(normalizePath(pathName)));
+
+const BUILD_DIR = path.join(__dirname, "../build");
+const INDEX_HTML_PATH = path.join(BUILD_DIR, "index.html");
+// Cached once - build output doesn't change at runtime. Read lazily, not at
+// module load, so a server started with no build present (e.g. standalone
+// against npm run dev's Vite dev server, which never hits this) doesn't crash.
+let cachedIndexHtmlTemplate = null;
+
+// Sends build/index.html with its <title>/lang/meta tags patched for
+// req.path - see renderIndexHtml.js for why this has to happen server-side
+// rather than left to App.js's client-side title effect.
+const sendIndexHtml = (req, res) => {
+  try {
+    if (cachedIndexHtmlTemplate === null) {
+      cachedIndexHtmlTemplate = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
+    }
+    // res.sendFile() set charset automatically; res.send() with a string
+    // doesn't - needed explicitly since the page ships accented French content.
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    // res.sendFile() also sent this by default; res.send() doesn't. Without
+    // it a CDN/proxy can keep serving a stale index.html (old asset hashes)
+    // after a deploy.
+    res.set('Cache-Control', 'public, max-age=0');
+    res.send(renderIndexHtml(cachedIndexHtmlTemplate, req.path, { contentRoot: BUILD_DIR, hostname: req.hostname }));
+  } catch (err) {
+    // Build missing/unreadable, or a bug in the transform - fall back to the
+    // untouched file rather than breaking the whole app over a title tag.
+    console.error('Failed to render index.html, falling back to the raw file:', err);
+    res.sendFile(INDEX_HTML_PATH);
+  }
+};
 
 const sendLightweightNotFound = (res) => {
   res.status(404).end();
@@ -201,7 +244,8 @@ app.use(express.static(path.join(__dirname, "../build"), { index: false }));
 app.get("/config.js", (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const requireAuthForChat = process.env.REQUIRE_AUTH_FOR_CHAT === 'true';
-  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)}};`);
+  const isLambda = Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_LAMBDA_RUNTIME_API);
+  res.send(`window.RUNTIME_CONFIG={ADOBE_ANALYTICS_URL:${JSON.stringify(process.env.REACT_APP_ADOBE_ANALYTICS_URL || '')},REQUIRE_AUTH_FOR_CHAT:${JSON.stringify(requireAuthForChat)},IS_LAMBDA:${JSON.stringify(isLambda)}};`);
 });
 
 // Ensure `/api` never caches anything
@@ -276,7 +320,7 @@ app.get(/.*/, (req, res, next) => {
     sendLightweightNotFound(res);
     return;
   }
-  res.sendFile(path.join(__dirname, "../build", "index.html"));
+  sendIndexHtml(req, res);
 });
 
 
@@ -291,7 +335,6 @@ app.delete('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJob
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/vector/vector-docdb8-capability-test', vectorDocdb8CapabilityTestHandler);
-app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
 app.post('/api/eval/eval-run', evalRunHandler);
@@ -302,6 +345,7 @@ app.post('/api/eval/eval-analysis-advance', evalAnalysisAdvanceHandler);
 app.get('/api/eval/eval-analysis-get', evalAnalysisGetHandler);
 app.get('/api/eval/eval-analysis-list', evalAnalysisListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
+app.get('/api/db/db-chat-search', dbChatSearchHandler);
 app.post('/api/feedback/feedback-persist-expert', feedbackPersistExpertHandler);
 app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
 app.post('/api/feedback/feedback-get-expert', feedbackGetExpertHandler);
@@ -344,7 +388,6 @@ app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
-app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
 app.post('/api/auth/auth-logout', logoutHandler);
@@ -355,8 +398,11 @@ app.post('/api/auth/auth-send-reset', sendResetHandler);
 app.post('/api/auth/auth-reset-password', resetPasswordHandler);
 app.all('/api/user/user-users', dbUsersHandler);
 app.get('/api/user/user-stats', userStatsHandler);
+app.all('/api/user/user-me', userMeHandler);
+app.get('/api/user/user-assignable', userAssignableHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);
+app.all('/api/chat/chat-assign-interaction', chatAssignInteractionHandler);
 app.get('/api/chat/chat-export-logs', chatExportLogsHandler);
 app.post('/api/db/db-generate-embeddings', generateEmbeddingsHandler);
 app.post('/api/db/db-generate-evals', generateEvalsHandler);
@@ -365,7 +411,11 @@ app.delete('/api/db/db-delete-system-logs', dbDeleteSystemLogsHandler);
 app.all('/api/db/db-integrity-checks', dbIntegrityChecksHandler);
 app.all('/api/setting/setting-handler', settingHandler);
 app.post('/api/setting/setting-bulk-handler', settingBulkHandler);
+app.post('/api/setting/setting-bulk-set-handler', settingBulkSetHandler);
 app.post('/api/setting/setting-refresh-cache', settingRefreshCacheHandler);
+app.post('/api/setting/setting-clear-download-webpage-cache', settingClearDownloadWebPageCacheHandler);
+app.post('/api/setting/setting-clear-search-cache', settingClearSearchCacheHandler);
+app.get('/api/setting/setting-audit', settingAuditHandler);
 app.get('/api/setting/setting-public-handler', settingPublicHandler);
 app.get('/api/db/db-expert-feedback-count', dbExpertFeedbackCountHandler);
 app.get('/api/db/db-eval-metrics', dbEvalMetricsHandler);
@@ -380,6 +430,9 @@ app.get('/api/metrics/metrics-blocked', blockedMetricsHandler);
 app.get('/api/metrics/metrics-referrals', referralMetricsHandler);
 app.get('/api/metrics/metrics-citations', citationMetricsHandler);
 app.get('/api/metrics/metrics-programs', programMetricsHandler);
+app.get('/api/metrics/metrics-content-issue-chats', contentIssueChatsMetricsHandler);
+app.get('/api/metrics/metrics-eval-informed-chats', evalInformedChatsMetricsHandler);
+app.get('/api/metrics/metrics-harmful-chats', harmfulChatsMetricsHandler);
 app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
 app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);

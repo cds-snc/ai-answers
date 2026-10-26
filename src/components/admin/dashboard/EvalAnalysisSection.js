@@ -5,6 +5,7 @@ import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
 import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
+import StatusMessage from '../StatusMessage.js';
 
 // "Run eval analysis" section at the bottom of the partner dashboard.
 // Disabled until an institution filter is applied; the precheck endpoint
@@ -52,6 +53,26 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
   const tooFew = count !== null && count < (precheck?.min ?? 0);
   const tooMany = count !== null && count > (precheck?.max ?? Infinity);
   const canRun = Boolean(appliedDepartment) && !running && !precheckLoading && count !== null && !tooFew && !tooMany;
+
+  // Ties the (possibly disabled) Run analysis button to whichever
+  // explanatory text is currently showing above it, so screen reader users
+  // hear *why* it's disabled instead of just "dimmed". Mirrors the same
+  // condition order as the JSX below — only one of these is ever rendered
+  // at a time. `running` and `precheckLoading` each need their own id here
+  // too: they're async gaps where the button is aria-disabled (GcdsButton
+  // doesn't use native `disabled`, so it stays focusable) but no
+  // explanatory text was previously mounted.
+  const runButtonDescribedBy = !appliedDepartment
+    ? 'eval-analysis-select-institution'
+    : running
+      ? 'eval-analysis-running'
+      : precheckLoading
+        ? 'eval-analysis-checking'
+        : tooFew
+          ? 'eval-analysis-too-few'
+          : tooMany
+            ? 'eval-analysis-too-many'
+            : (count !== null ? 'eval-analysis-precheck-count' : undefined);
 
   const progressLabel = () => {
     if (!analysis) return t('partnerDashboard.evalAnalysis.running.preparing');
@@ -122,38 +143,59 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         <p className="font-size-text-xsm-nr">{t('partnerDashboard.evalAnalysis.description')}</p>
 
         {!appliedDepartment && (
-          <p className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
+          <p id="eval-analysis-select-institution" className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
         )}
 
-        {appliedDepartment && count !== null && !running && (
+        {appliedDepartment && precheckLoading && (
+          <StatusMessage
+            loading
+            id="eval-analysis-checking"
+            className="font-size-text-small"
+            message={t('partnerDashboard.evalAnalysis.checkingEligibility')}
+          />
+        )}
+
+        {appliedDepartment && !precheckLoading && count !== null && !running && (
           <>
             {tooFew && (
-              <div className="dashboard-warning">
-                <span className="dashboard-warning__icon" aria-hidden="true" />
-                {t('partnerDashboard.evalAnalysis.tooFew')
+              <StatusMessage
+                id="eval-analysis-too-few"
+                variant="info"
+                message={t('partnerDashboard.evalAnalysis.tooFew')
                   .replace('{min}', fmtN(precheck.min))
                   .replace('{count}', fmtN(count))}
-              </div>
+              />
             )}
             {tooMany && (
-              <div className="dashboard-warning">
-                <span className="dashboard-warning__icon" aria-hidden="true" />
-                {t('partnerDashboard.evalAnalysis.tooMany')
+              <StatusMessage
+                id="eval-analysis-too-many"
+                variant="info"
+                message={t('partnerDashboard.evalAnalysis.tooMany')
                   .replace('{max}', fmtN(precheck.max))
                   .replace('{count}', fmtN(count))}
-              </div>
+              />
             )}
             {!tooFew && !tooMany && (
-              <p className="font-size-text-small">
+              <p id="eval-analysis-precheck-count" className="font-size-text-small">
                 {t('partnerDashboard.evalAnalysis.precheckCount').replace('{count}', fmtN(count))}
               </p>
             )}
           </>
         )}
 
+        {running && (
+          <StatusMessage
+            loading
+            id="eval-analysis-running"
+            className="font-size-text-small"
+            message={progressLabel()}
+          />
+        )}
+
         <GcdsButton
           onClick={() => runAnalysis(appliedFilters)}
           disabled={!canRun || undefined}
+          aria-describedby={runButtonDescribedBy}
           className="hydrated"
         >
           {t('partnerDashboard.evalAnalysis.runButton')}
@@ -161,7 +203,6 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
         {analysis && analysis.status !== 'complete' && analysis.status !== 'error' && (
           <div style={{ marginTop: 12 }}>
-            {running && <p className="font-size-text-small" role="status">{progressLabel()}</p>}
             <GcdsButton onClick={loadFullAnalysis} className="hydrated">
               {t('partnerDashboard.evalAnalysis.viewRunning')}
             </GcdsButton>
@@ -172,9 +213,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
 
         {runError && (
-          <div className="dashboard-error" style={{ marginTop: 12 }}>
-            {runErrorLabel()}
-          </div>
+          <StatusMessage variant="error" message={runErrorLabel()} />
         )}
       </div>
 
@@ -195,7 +234,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
                       <th style={{ ...headStyle, textAlign: 'right' }}>{t('partnerDashboard.evalAnalysis.pastRuns.colCount')}</th>
                       <th style={headStyle}>{t('partnerDashboard.evalAnalysis.pastRuns.colStatus')}</th>
                       <th style={headStyle}>{t('partnerDashboard.evalAnalysis.pastRuns.colBy')}</th>
-                      <th style={headStyle}></th>
+                      <th style={headStyle}><span className="sr-only">{t('partnerDashboard.evalAnalysis.pastRuns.colActions')}</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -237,13 +276,13 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
       {/* A past run loaded in a non-terminal state (interrupted mid-run —
           e.g. the tab was closed) has no report to show; say so instead of
-          rendering nothing. */}
+          rendering nothing. variant="warning", not "info" — unlike the
+          precheck messages above (an objective fact about the dataset the
+          user can't act on), this represents a genuinely broken/failed run
+          with only one way forward (re-run it), which is warning-shaped. */}
       {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
         <div className="dashboard-section">
-          <div className="dashboard-warning">
-            <span className="dashboard-warning__icon" aria-hidden="true" />
-            {t('partnerDashboard.evalAnalysis.report.incomplete')}
-          </div>
+          <StatusMessage variant="warning" message={t('partnerDashboard.evalAnalysis.report.incomplete')} />
         </div>
       )}
     </div>

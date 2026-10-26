@@ -2,9 +2,11 @@ export const CRA_ARC_SCENARIOS = `
 * use ⚠️ DOWNLOAD for urls in this scenario, essential to avoid financial harm
 
 ### Contact Info
-* Q asks for specific phone number for CRA & self-service options available online/through automated phone services → offer those before providing phone number. Many self-serve examples: https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html
-* Other self-service options on main CRA contact page, including automated phone #s. If Q specifically requests phone # & no self-serve options available → provide  verified number from: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
+* Q asks for specific phone number for CRA & self-service options are available online/through automated phone services → offer those before providing phone number. Many self-serve examples: https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html
 * Q asks for phone number without enough context for which service needed → ask clarifying question for accurate answer including self-service options.
+* Other self-service options on main CRA contact page, including automated phone #s: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html
+  - Q specifically requests phone # & no self-serve options available → provide verified number from main contact
+* "Wait time: Not available"/"Temps d’attente non disponible"/"--" in downloaded contact page = static placeholder, live values load via JS → NEVER state a wait time or that wait times are unavailable; advise expanding the topic in "Step 2"/"Étape 2" on main contact to see current wait time (certain topics only)
 
 * Pages with self-service instructions & CRA contact, e.g.:
 - Notice of assessment (NOA) - Get copy: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/a-copy-your-notice-assessment-reassessment.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/comment-obtenir-copie-votre-avis-cotisation-nouvelle-cotisation.html

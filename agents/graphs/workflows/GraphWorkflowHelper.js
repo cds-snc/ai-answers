@@ -19,7 +19,9 @@ import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js'
 import { UrlValidationService } from '../../../services/UrlValidationService.js';
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
+import ServiceCallMetricsService from '../../../services/ServiceCallMetricsService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
+import { referringUrlTag } from '../../../api/util/prompt-tags.js';
 
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
@@ -116,10 +118,23 @@ export class GraphWorkflowHelper {
       searchResults: searchResult.results || searchResult.searchResults || [],
       provider: selectedAI,
       language: lang,
+      referringUrl,
     };
 
     // Invoke Context Agent via Service directly
-    const contextResponse = await exponentialBackoff(() => invokeContextAgent(selectedAI, contextPayload));
+    let contextResponse;
+    try {
+      contextResponse = await exponentialBackoff(
+        () => invokeContextAgent(selectedAI, contextPayload),
+        3,
+        1000,
+        // Fire-and-forget — not awaited, see ServiceCallMetricsService's contract.
+        () => ServiceCallMetricsService.recordRetry({ service: 'ai', type: 'context' })
+      );
+    } catch (error) {
+      ServiceCallMetricsService.recordError({ service: 'ai', type: 'context' });
+      throw error;
+    }
 
     // Use the service to parse the context response
     const parsed = parseContextMessage({
@@ -135,6 +150,7 @@ export class GraphWorkflowHelper {
       ...parsed,
       systemPrompt: contextPayload.systemPrompt || '',
       searchQuery: searchResult.query || searchResult.searchQuery || contextPayload.searchResults?.query || '',
+      searchCacheStatus: searchResult.cacheStatus,
       translatedQuestion: translationData?.translatedText || baseMessage,
       lang,
       outputLang: this.determineOutputLang(translationData),
@@ -332,7 +348,7 @@ export class GraphWorkflowHelper {
     const outputLangToken = normalizeOutputLang(context.outputLang || context.originalLang || lang);
     const header = `\n<output-lang>${outputLangToken}</output-lang>`;
     let message = `${baseMessage}${header}`;
-    message = `${message}${referringUrl && String(referringUrl).trim() ? `\n<referring-url>${String(referringUrl).trim()}</referring-url>` : ''}`;
+    message = `${message}${referringUrlTag(referringUrl)}`;
 
     const maxTurns = 3;
     const currentTurn = (conversationHistory || []).length + 1;
@@ -346,8 +362,6 @@ export class GraphWorkflowHelper {
       conversationHistory,
       lang,
       department: context.department,
-      topic: context.topic,
-      topicUrl: context.topicUrl,
       departmentUrl: context.departmentUrl,
       searchResults: context.searchResults || [],
       scenarioOverrideText: context.systemPrompt || '',

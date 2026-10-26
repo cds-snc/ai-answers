@@ -5,8 +5,10 @@ import {
 } from '../api/metrics/metrics-common.js';
 import {
   getPartnerEvalAggregationExpression,
-  getAiEvalAggregationExpression
+  getAiEvalAggregationExpression,
+  getHasCitationErrorAggregationExpression
 } from '../api/util/chat-filters.js';
+import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 
 const MAX_DOWNLOAD_POSITIONS = 5;
 
@@ -54,11 +56,12 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
       },
       {
         $addFields: {
-          category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
+          category: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] }),
+          hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ef_filter', 0] })
         }
       },
       { $match: partnerEvalFilter },
-      { $project: { ef_filter: 0, category: 0 } }
+      { $project: { ef_filter: 0, category: 0, hasCitationError: 0 } }
     );
   }
 
@@ -82,11 +85,12 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
       },
       {
         $addFields: {
-          category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+          category: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+          hasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
         }
       },
       { $match: aiEvalFilter },
-      { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0 } }
+      { $project: { ae_filter_doc: 0, ae_ef_filter: 0, category: 0, hasCitationError: 0 } }
     );
   }
 
@@ -131,7 +135,7 @@ function buildTechnicalBaseStages(dateFilter, extraFilters, departmentFilter, an
               }
             },
             as: 'c',
-            in: { duration: '$$c.duration', status: '$$c.status' }
+            in: { duration: '$$c.duration', status: '$$c.status', cacheStatus: '$$c.cacheStatus' }
           }
         }
       }
@@ -171,6 +175,8 @@ function computeDownloadStats(rows) {
   const buckets = Array.from({ length: MAX_DOWNLOAD_POSITIONS }, () => ({
     totalCount: 0,
     errorCount: 0,
+    cacheHitCount: 0,
+    originCount: 0,
     completedDurations: []
   }));
 
@@ -180,6 +186,9 @@ function computeDownloadStats(rows) {
       const call = calls[i];
       const bucket = buckets[i];
       bucket.totalCount++;
+
+      if (call.cacheStatus === 'hit') bucket.cacheHitCount++;
+      else if (call.status === 'completed') bucket.originCount++;
 
       if (call.status === 'error') {
         bucket.errorCount++;
@@ -197,6 +206,8 @@ function computeDownloadStats(rows) {
         callNumber: index + 1,
         totalCount: bucket.totalCount,
         errorCount: bucket.errorCount,
+        cacheHitCount: bucket.cacheHitCount,
+        originCount: bucket.originCount,
         completedCount: sorted.length,
         median: percentile(sorted, 0.5),
         p95: percentile(sorted, 0.95)
@@ -223,10 +234,23 @@ class MetricsService {
       aiEvalFilter
     );
 
-    const rows = await executeWithRetry(() => Chat.aggregate(stages).allowDiskUse(true));
+    // Search/AI-call errors aren't part of the Chat aggregation below — a
+    // hard failure aborts the graph before an interaction is persisted, so
+    // they're recorded independently (ServiceCallMetricsService). The two
+    // queries are independent, so run them concurrently.
+    const [rows, serviceCallMetrics] = await Promise.all([
+      executeWithRetry(() => Chat.aggregate(stages).allowDiskUse(true)),
+      ServiceCallMetricsService.getMetrics({
+        start: dateFilter.createdAt.$gte,
+        end: dateFilter.createdAt.$lte
+      })
+    ]);
+
     return {
       responseTime: computeResponseTimeStats(rows),
-      downloadWebPage: computeDownloadStats(rows)
+      downloadWebPage: computeDownloadStats(rows),
+      searchCalls: serviceCallMetrics.search,
+      aiServiceCalls: serviceCallMetrics.ai
     };
   }
 }

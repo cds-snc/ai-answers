@@ -13,7 +13,7 @@ describe('ExpertScorerAnalyzer', () => {
         invoke.mockReset();
     });
 
-    it('uses the golden answer for the main verdict and includes previous-run drift context', async () => {
+    it('evaluates both runs against the golden answer and includes comparison context', async () => {
         invoke.mockResolvedValue({
             content: JSON.stringify({
                 verdict: 'pass',
@@ -33,8 +33,10 @@ describe('ExpertScorerAnalyzer', () => {
         });
 
         const prompt = invoke.mock.calls[0][0][0].content;
-        expect(prompt).toContain('Golden Answer: The program provides support and explains eligibility.');
-        expect(prompt).toContain('Previous Run Answer:\nThe program provides support.');
+        expect(prompt).toContain('Reference Answer: The program provides support and explains eligibility.');
+        expect(prompt).toContain('Baseline Answer:\nThe program provides support.');
+        expect(prompt).toContain('Evaluate BOTH answers against the same Reference Answer above');
+        expect(prompt).toContain('"comparisonWinner": "new" | "previous" | "tie" | "needs-review"');
         expect(result.verdict).toBe('pass');
         expect(result.driftStatus).toBe('improved');
     });
@@ -54,5 +56,30 @@ describe('ExpertScorerAnalyzer', () => {
         const prompt = invoke.mock.calls[0][0][0].content;
         expect(prompt).not.toContain('### DRIFT COMPARISON');
         expect(result.driftStatus).toBeUndefined();
+    });
+
+    it('uses batch-comparison instructions when run identifiers are present', async () => {
+        invoke.mockResolvedValue({
+            content: JSON.stringify({
+                verdict: 'pass',
+                baselineVerdict: 'fail',
+                comparisonWinner: 'new'
+            })
+        });
+
+        await new ExpertScorerAnalyzer({ aiProvider: 'azure' }).analyze({
+            question: 'What is the program?',
+            answer: 'The program provides support and explains eligibility.',
+            referenceAnswer: 'The program provides support.',
+            originalData: {
+                baselineRunId: 'baseline-run',
+                candidateRunId: 'candidate-run'
+            }
+        });
+
+        const prompt = invoke.mock.calls[0][0][0].content;
+        expect(prompt).toContain('### BATCH RUN COMPARISON');
+        expect(prompt).toContain('Baseline Answer:');
+        expect(prompt).toContain('Compared Against Answer');
     });
 });

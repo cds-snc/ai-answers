@@ -3,10 +3,15 @@ import { authMiddleware, adminMiddleware, withProtection } from '../../middlewar
 
 async function handler(req, res) {
     try {
-        const { page, limit } = req.query;
+        const { page, limit, start, length, search, orderBy, orderDir } = req.query;
         const result = await ExperimentalDatasetService.list({
             page: parseInt(page) || 1,
-            limit: parseInt(limit) || 20
+            limit: parseInt(limit) || 20,
+            start: start === undefined ? undefined : parseInt(start),
+            length: length === undefined ? undefined : parseInt(length),
+            search,
+            orderBy,
+            orderDir
         });
         return res.json(result);
     } catch (err) {

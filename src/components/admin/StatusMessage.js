@@ -1,0 +1,316 @@
+import React, { useRef, useState, useCallback } from 'react';
+import { GcdsIcon } from '@gcds-core/components-react';
+import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
+
+// Shared outcome message for an async admin action (save/delete/import/
+// export/test-run/upload results, autosave failures, etc.). Several admin
+// tools had this outcome rendered as plain DOM text with nothing telling a
+// screen reader it happened; this component is the one place that gets
+// wired up. See BatchPage.js's statusMessage state for the reference usage
+// this was extracted from.
+//
+// How it's announced: NOT by being a live region itself. This element is
+// plain markup for sighted users; the announcement goes through the shared
+// always-mounted announcer (src/utils/liveAnnouncer.js) via
+// useAnnounceOnChange, which reads this element's rendered text whenever it
+// changes. Errors go assertive (role="alert" region), everything else
+// polite. That used to be role/aria-live on this element, and it was
+// silent nearly everywhere: a live region inserted into the DOM with its
+// text already in it is dropped by VoiceOver, and this component was almost
+// always conditionally rendered — see liveAnnouncer.js's header for the
+// full story, including why the old `persistent`/`nonce`-as-key workaround
+// didn't work either.
+//
+// `announce={false}` is for two cases:
+// - The caller moves focus onto this message (ScenarioOverridesPage's save
+//   outcome, ResetCompletePage's invalid link, LoginPage's session-expired
+//   notice): focus landing on it already reads it, so a live announcement
+//   on top is a double read. Pick one, never both.
+// - The page shows it on its own, not in answer to anything the user just
+//   did (DatabasePage's last index rebuild result on page load).
+//
+// `assertive`: interrupt instead of queueing, for a non-error outcome the
+// user is actively waiting on (a dashboard's "no data" completion). Errors
+// are always assertive; leave this off for everything else.
+//
+// `nonce`: re-announce even though the text is identical to last time
+// (saving twice in a row, a search landing on zero results twice). Pass
+// any value that changes per trigger (a counter); its content is never
+// read. Omit for the common case of a fresh one-off outcome.
+//
+// `loading` is a distinct sub-type, not just isError=false: it marks an
+// in-progress state (as opposed to a completed success/info/error result),
+// so it gets its own className hook (`status-message--loading`) for a
+// spinner instead of overloading `isError` or having each call site
+// hand-roll its own loading markup. `id` is exposed so a loading or error
+// message can be the target of another element's aria-describedby (e.g. a
+// disabled button explaining why).
+//
+// `variant` is the box-styled outcome family: 'error' | 'warning' | 'info' |
+// 'success'. It wires up the box className (the GC DS red/yellow/blue/green
+// -100/500/700 token triads in admin.css), assertive-vs-polite (error is the
+// only assertive variant), and a leading icon, all from one prop — this is
+// what SettingsPage.js's several near-identical call sites used to
+// hand-roll individually. Pass `message` as a plain string with `variant`
+// and this component builds the icon+text content; `isError`/manual
+// `className` box modifiers are only still needed for callers that haven't
+// migrated. `success` uses a raw FA checkmark span (`fa-solid
+// fa-check-circle`) instead of GcdsIcon. A caller that
+// passes `children` alongside `variant` gets the box treatment AND the same
+// icon `message` would have gotten — `children` is only an escape hatch for
+// content richer than one string (e.g. a raw exception detail that needs
+// its own <code lang="en">), not a way to opt out of the icon. (It used to
+// be — see resolveLook's own comment for why that shipped 5 icon-less error
+// boxes before this fixed it at the root.)
+//
+// TODO (design review): the four variant boxes lay out icon + content as
+// plain inline flow (unlike .status-message--loading, which is already
+// display:flex) — fine for a one-line `message` string, but `children` with
+// a block element (e.g. RegisterPage.js's two-<p> pending-approval message)
+// forces a line break right after the icon, stranding it above the text
+// instead of beside it. Needs a content wrapper (icon + wrapper as two flex
+// items, wrapper holding however many paragraphs) to fix properly, not a
+// CSS-only patch — bundling into the design pass below rather than doing
+// it ad hoc.
+//
+// TODO (design review): none of this component's CSS — the four variant
+// boxes, the loading box, the plain isError/tag styling — has had an actual
+// design refinement pass yet; it was built code-first-accessibility-led to
+// close a11y gaps. Treat every class here as functional but provisional
+// until design signs off.
+//
+// Scope, deliberately: this component owns announcement wiring + focus
+// hooks + styling for outcomes (error/warning/info/success) and the
+// general-purpose "still working" inline state (`loading`) — any page might
+// need either of these, so both live here. What's NOT here, on purpose:
+//   - The full-page loading overlay (`LoadingOverlay.js`) — that's not
+//     general-purpose the way `loading` is; it's specific to pages where
+//     nothing else is actionable until the operation finishes. Narrow
+//     enough to earn its own file rather than another prop here.
+//   - Determinate progress (a known total, e.g. "chunk 3 of 10") — a third,
+//     different thing again, and doesn't belong here as a `progress`
+//     variant. See ExperimentalAnalysisPage.js's renderProgressCards for the
+//     established pattern (a real role="progressbar" + a plain text line,
+//     as its own small component).
+//   - Screen-reader-only announcements with no visible box at all — call
+//     `announce()` from src/utils/liveAnnouncer.js directly. There's no
+//     longer a reason to render an invisible StatusMessage for that.
+//
+// `loading` and `variant` are resolved through one lookup (resolveLook,
+// below) rather than three separate hand-synced conditionals — that used to
+// be the failure mode here: `loading` shipped with its content/className
+// branches correct but its tag-forcing conditional not updated at the same
+// time, so its spinner <div> ended up nested inside the default <p>, invalid
+// HTML. One lookup makes that specific bug structurally hard to reintroduce.
+//
+// forwardRef + tabIndex exist for callers that have to move focus to the
+// message itself — e.g. SettingsPage's history count, which becomes the
+// landing spot when the "Load more" button unmounts on the last page and
+// would otherwise drop focus to <body>. Both are optional; existing callers
+// are unaffected. A caller that does move focus here should also pass
+// `announce={false}` (see above) — and should drive that focus from an
+// effect (useFocusOnChange with a counter), not by calling .focus() in the
+// same tick as the state update, since this element doesn't exist in the
+// DOM until the outcome has rendered.
+const VARIANTS = {
+  error: { className: 'status-message--error-box', isError: true, icon: 'warning-triangle' },
+  warning: { className: 'status-message--warning-box', isError: false, icon: 'warning-triangle' },
+  info: { className: 'status-message--info-box', isError: false, icon: 'info-circle' },
+  success: { className: 'status-message--success-box', isError: false, icon: 'fa-check-circle' },
+};
+
+const VariantIcon = ({ name }) =>
+  name === 'fa-check-circle' ? (
+    <span className="gcds-icon fa fa-solid fa-check-circle" aria-hidden="true"></span>
+  ) : (
+    <GcdsIcon name={name} marginRight="50" />
+  );
+
+// Every "look" this component can render — a plain message, the loading
+// spinner, or one of the four variant boxes — resolves to a single object
+// bundling everything that look needs: whether it requires block-level
+// content (forcing Tag to 'div'), its CSS class, and its content (icon/
+// spinner + message, or the caller's own `children`). See the file-level
+// comment above for why this one lookup (rather than three separate
+// conditionals) is what makes combining `loading` and `variant` safe.
+function resolveLook({ variant, loading, message, isError, children }) {
+  const variantConfig = variant ? VARIANTS[variant] : null;
+  if (variantConfig) {
+    return {
+      isError: variantConfig.isError,
+      isBlock: true,
+      className: variantConfig.className,
+      // Icon is unconditional — every real `children` caller in this
+      // codebase only reaches for `children` to wrap part of the text in
+      // e.g. <code lang="en">, never for a genuinely icon-less shape, and
+      // the old `children || (icon + message)` short-circuited the icon
+      // out entirely whenever `children` was passed. That was the actual
+      // cause behind 5 separate call sites shipping error boxes with no
+      // icon (found by inspection, not by design) - fixed at the root
+      // instead of leaving it as a footgun every future caller can still
+      // hit. `children` still exists for richer content than one string;
+      // it just no longer implies "and also drop the icon."
+      content: (
+        <>
+          <VariantIcon name={variantConfig.icon} />
+          {children || message}
+        </>
+      ),
+    };
+  }
+  if (loading) {
+    return {
+      isError,
+      isBlock: true,
+      className: 'status-message--loading',
+      // Same fix as the variant branch above, same reasoning: the spinner
+      // shouldn't be conditional on whether the caller used `message` or
+      // `children` for the text.
+      content: (
+        <>
+          <div className="loading-animation" aria-hidden="true"></div>
+          {children || message}
+        </>
+      ),
+    };
+  }
+  return {
+    isError,
+    isBlock: false,
+    className: undefined,
+    content: children || message,
+  };
+}
+
+// The only values data-announced-via may take: the two announcer region ids
+// (src/utils/liveAnnouncer.js) or "focus". Anything else would be a pointer
+// to nothing — the one thing the signpost exists to avoid.
+const ANNOUNCED_VIA = new Set(['focus', 'live-announcer-polite', 'live-announcer-assertive']);
+
+const StatusMessage = React.forwardRef((
+  { message, isError = false, loading = false, id, className, style, tag = 'p', tabIndex, variant, children, nonce, announce = true, assertive, announcedVia },
+  ref
+) => {
+  const look = resolveLook({ variant, loading, message, isError, children });
+  // Box variants and `loading` both render block-level content (icon/spinner
+  // + text side by side) — a caller-supplied `tag` only applies when the
+  // resolved look doesn't need block content.
+  const Tag = look.isBlock ? 'div' : tag;
+
+  // Own ref for reading rendered text, merged with the caller's forwarded
+  // one (which some callers use to move focus here).
+  const nodeRef = useRef(null);
+  const setRefs = (el) => {
+    nodeRef.current = el;
+    if (typeof ref === 'function') ref(el);
+    else if (ref) ref.current = el;
+  };
+  // `loading` is skippable: a fast operation reads just its outcome, not
+  // "Loading…" too (see liveAnnouncer.js). Errors interrupt; anything else
+  // queues politely unless the caller passes `assertive` — the dashboards'
+  // "no data" outcome does, so the empty case lands as immediately as
+  // "Results loaded." does.
+  // One value drives both the announcement and the DOM signpost below, so
+  // the signpost can't drift from what actually happens.
+  const assertiveAnnounce = assertive ?? look.isError;
+  // TODO(a11y): unconditional (every render, production too) on purpose
+  // while the site-wide announcer is under external accessibility review —
+  // a pointer to nothing is exactly what an auditor inspecting prod would
+  // trip on. Once that review is done, consider gating on
+  // import.meta.env.DEV or reporting each bad value once.
+  // The bad value is still written to the DOM below, deliberately: dropping
+  // it would make the mistake look exactly like a legitimate announce={false}
+  // box (no attribute), hiding it from the auditor the signpost is for —
+  // the "silent, nothing fails" shape this component exists to get rid of.
+  if (announcedVia !== undefined && !ANNOUNCED_VIA.has(announcedVia)) {
+    console.error(`StatusMessage: unknown announcedVia "${announcedVia}" — expected one of ${[...ANNOUNCED_VIA].join(', ')}`);
+  }
+  useAnnounceOnChange(nodeRef, { enabled: announce, assertive: assertiveAnnounce, skippable: loading, nonce });
+
+  if (!message && !children) return null;
+
+  return (
+    <Tag
+      ref={setRefs}
+      id={id}
+      className={[className, look.className].filter(Boolean).join(' ') || undefined}
+      style={style}
+      tabIndex={tabIndex}
+      // Signpost for anyone inspecting the DOM: this box carries no
+      // role/aria-live on purpose. The value is the id of the always-mounted
+      // region (src/utils/liveAnnouncer.js) its text is announced in, so an
+      // auditor can jump to the element that does have role="status"/"alert"
+      // and read its data-purpose. With announce={false} this component
+      // doesn't know how the box reaches a screen reader, so it claims
+      // nothing — the caller says: announcedVia="focus" where focus is
+      // moved onto it, or a region id where the caller announces it itself
+      // (SettingsPage's delayed unsaved-changes warning). data-* is not in
+      // the accessibility tree — nothing is read differently.
+      data-announced-via={announcedVia ?? (announce ? (assertiveAnnounce ? 'live-announcer-assertive' : 'live-announcer-polite') : undefined)}
+    >
+      {look.content}
+    </Tag>
+  );
+});
+
+StatusMessage.displayName = 'StatusMessage';
+
+export default StatusMessage;
+
+// message + nonce bookkeeping for a *visible* StatusMessage that has to
+// re-announce a repeat of the identical outcome (Apply the same URL twice,
+// two consecutive "Refresh failed"s). Colocated here rather than under
+// src/hooks/ — same precedent as RoleBasedUI.js's useHasRole living
+// alongside RoleBasedContent — so a caller gets the component and its
+// bookkeeping from one import. For an announcement with no visible box at
+// all, don't use this: call announce() from src/utils/liveAnnouncer.js.
+//
+// `announce` takes an already-resolved string, not a locale key, so this
+// stays translation-agnostic — callers do `announce(t('some.key'))`.
+// `clear` resets the message without bumping `nonce` — clearing to empty
+// isn't itself an outcome worth (re-)announcing, it's a caller resetting a
+// stale value before starting a new action.
+//
+// `isError` is optional, passed as `announce(text, { isError })`, for a page
+// whose box swaps between error and success/info text (unlike ChatOptions.js/
+// ChatViewer.js, which only ever announce one variant and never read this
+// field). Generalizes what pages used to hand-roll as `useState(null)` +
+// `{ text, isError }` with no nonce — two identical consecutive outcomes
+// (two failed saves, same text) went silent on the second one. Does NOT also
+// carry focus-move state — that's a separate counter (useFocusOnChange), see
+// UsersPage.js's saveFocusCount.
+//
+// `quiet` (`announce(text, { quiet: true })`) shows the message without
+// reading it out — pass `announce={!status.quiet}` to StatusMessage. For a
+// result the page finds on its own, which nobody just asked for
+// (VectorPage.js's last backfill job on page load). Same switch as
+// useErrorStatus.js's `announce: false`, copied rather than shared until
+// the helpers merge (TODO below).
+//
+// Other nonce fixes: SettingsPage.js/DatabasePage.js via useErrorStatus.js's
+// own tracking; useChatIdLookup.js via a nonce bolted onto its own setStatus
+// (its status shape is a multi-caller union, doesn't fit this hook's).
+//
+// TODO(follow-up PR): these shapes only diverged because `announce` only
+// takes a plain string. Letting it take a ReactNode too would let
+// useErrorStatus.js's renderStatusMessage, useChatIdLookup.js's bolted-on
+// nonce, and DeleteByChatIdSection.js's own statusNonce (needs children for
+// wrapErrorDetail's <code lang="en"> output, not just message) all collapse
+// onto this hook. Touches ~20 call sites — own PR.
+export function useRepeatableStatus() {
+  const [status, setStatusState] = useState(null); // { message, isError, variant, quiet } | null
+  const [nonce, setNonce] = useState(0);
+
+  // `variant` overrides the error/success pick, for outcomes that are
+  // neither (e.g. 'info': nothing to do).
+  const announce = useCallback((text, { isError, variant, quiet = false } = {}) => {
+    setStatusState({ message: text, isError, variant, quiet });
+    setNonce((n) => n + 1);
+  }, []);
+
+  const clear = useCallback(() => {
+    setStatusState(null);
+  }, []);
+
+  return { message: status?.message ?? null, isError: status?.isError, variant: status?.variant, quiet: status?.quiet ?? false, nonce, announce, clear };
+}

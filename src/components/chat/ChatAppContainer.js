@@ -7,7 +7,9 @@ import { ChatWorkflowService, RedactionError, ShortQueryValidation, ChatRunInPro
 
 import DataStoreService from '../../services/DataStoreService.js';
 import AuthService from '../../services/AuthService.js';
-import { AVAILABLE_MODELS } from '../../config/workflows.js';
+import { AVAILABLE_MODELS, MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../config/workflows.js';
+import { chatOptionStorageKey } from '../../utils/chat/chatOptionsStorage.js';
+import { SEARCH_PROVIDER_VALUES } from '../../config/searchProviders.js';
 import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
@@ -53,9 +55,22 @@ const extractSentences = (paragraph) => {
   return sentences.length > 0 ? sentences : [paragraph];
 };
 
-const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, targetInteractionId = null, onSessionError = null, onChatIdUpdate = null }) => {
+const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessages = [], initialReferringUrl = null, clientReferrer = null, chatCreatedAt = null, adminLang = null, targetInteractionId = null, onSessionError = null, onChatIdUpdate = null }) => {
   const MAX_CONVERSATION_TURNS = 3;
   const MAX_CHAR_LIMIT = 400;
+  // `lang` is always the language the transcript itself was actually in -
+  // for a live chat it's the current user's own page; in review mode
+  // HomePage.js/ChatDashboardPage.js route review links using the reviewed
+  // chat's own pageLanguage, not the admin's. So `t`/`safeT` below - used for
+  // the transcript's own fixed labels, e.g. the citation heading
+  // (agents/prompts/citationInstructions.js's history - it used to be
+  // LLM-generated per-response, deliberately made a fixed programmatic label
+  // instead for consistent wording/punctuation) - can key off `lang` directly
+  // without a separate override (official-languages.md Rule 2: never
+  // collapsed to a different language than what the end user actually saw).
+  // `adminLang` (the reviewing admin's own current UI language, only set in
+  // review mode) is for the admin-only chrome around that transcript instead
+  // - see the components that receive it below.
   const { t } = useTranslations(lang);
 
   // Add safeT helper function
@@ -63,6 +78,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     const result = t(key);
     return typeof result === 'object' && result !== null ? result.text : result;
   }, [t]);
+
+  // Mirrors ChatInterface.js's effectiveAdminLang/safeAdminT split (see that
+  // file's comment for the full rationale). Only needed here for the
+  // expert-feedback-deleted live-region announcement below, which - like the
+  // rest of the review-mode admin chrome - should read in the reviewing
+  // admin's own UI language, not the transcript's `lang`.
+  const effectiveAdminLang = adminLang || lang;
+  const { t: adminT } = useTranslations(effectiveAdminLang);
+  const safeAdminT = useCallback((key) => {
+    const result = adminT(key);
+    return typeof result === 'object' && result !== null ? result.text : result;
+  }, [adminT]);
 
   const { url: pageUrl, department: urlDepartment } = usePageContext();
   const [messages, setMessages] = useState([]);
@@ -72,35 +99,47 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
-  const storageKey = (k) => `aiAnswers.${k}`;
-  // selectedAI: always start null so we fetch the current model.default from Settings.
-  // Only persist to localStorage when the admin explicitly picks a model in the UI.
-  const [selectedAI, setSelectedAI] = useState(null);
-  const userSetModel = useRef(false);
-  const [selectedSearch, setSelectedSearch] = useState(() => {
+  const storageKey = chatOptionStorageKey;
+  // A stored value is an *override*: this admin has deliberately chosen
+  // something other than what Settings says, and it sticks until they pick
+  // "use system settings" again. Without a stored value we follow the
+  // configured default, and the dropdown says so rather than naming a
+  // workflow/model that only looks like a deliberate choice.
+  const readStoredOverride = (key, allowed) => {
     try {
-      return localStorage.getItem(storageKey('selectedSearch')) || 'google';
-    } catch (e) {
-      return 'google';
-    }
-  });
-  // workflow: prefer a user-set value in localStorage; if none exists, leave null
-  // so we can fetch the public default setting and avoid persisting it unless
-  // the user explicitly chooses a workflow in the UI.
-  const [workflow, setWorkflow] = useState(() => {
-    try {
-      const val = localStorage.getItem(storageKey('workflow'));
-      return val !== null ? val : null;
+      const val = localStorage.getItem(storageKey(key));
+      return allowed.includes(val) ? val : null;
     } catch (e) {
       return null;
     }
+  };
+  const clearStoredOverride = (key) => {
+    try {
+      localStorage.removeItem(storageKey(key));
+    } catch (e) {
+      // ignore storage errors
+    }
+  };
+
+  // TODO(follow-up, PR #1684 review): modelIsOverride/workflowIsOverride (below)
+  // are separate state from selectedAI/workflow rather than derived from them.
+  // The invariant "isOverride === (value came from localStorage, not the
+  // fetched default)" is only maintained by convention across every call site
+  // that touches these — handleAIToggle/handleWorkflowChange, the persist
+  // effects, the fetch-default effects. Fine today since all of it is in this
+  // one file, but fragile for the next edit; consider deriving isOverride from
+  // whether the stored key exists rather than tracking it as parallel state.
+  const [selectedAI, setSelectedAI] = useState(() => readStoredOverride('selectedAI', MODEL_VALUES));
+  const [modelIsOverride, setModelIsOverride] = useState(
+    () => readStoredOverride('selectedAI', MODEL_VALUES) !== null
+  );
+  const [selectedSearch, setSelectedSearch] = useState(() => {
+    return readStoredOverride('selectedSearch', SEARCH_PROVIDER_VALUES) || '';
   });
-  // Track whether an initial value existed in localStorage and whether the user
-  // explicitly set the workflow during this session. We only persist when one
-  // of these is true so we don't overwrite the user's future changes to the
-  // public default unintentionally.
-  const initialWorkflowFromLocalStorage = useRef(false);
-  const userSetWorkflow = useRef(false);
+  const [workflow, setWorkflow] = useState(() => readStoredOverride('workflow', WORKFLOW_VALUES));
+  const [workflowIsOverride, setWorkflowIsOverride] = useState(
+    () => readStoredOverride('workflow', WORKFLOW_VALUES) !== null
+  );
   // Precedence for initial referring URL:
   // 1) saved review value (initialReferringUrl)
   // 2) pageUrl (from usePageContext)
@@ -108,6 +147,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [referringUrl, setReferringUrl] = useState(() => {
     return initialReferringUrl || pageUrl || clientReferrer || '';
   });
+  // Set once the user explicitly applies or clears a referring URL via
+  // ChatOptions (both go through handleReferringUrlChange below). Once true,
+  // the pageUrl-backfill effect further down must never override it again —
+  // otherwise clearing snaps straight back to pageUrl on the very next
+  // render, since that effect also runs on every referringUrl change. If the
+  // chat opened with a ?ref= URL, it should still populate initially (this
+  // flag starts false); the admin just needs to be able to change or clear
+  // it afterward and have that stick.
+  const userSetReferringUrlRef = useRef(false);
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
@@ -342,28 +390,41 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     }, 100);
   };
 
+  // An empty value is the "use system settings" entry: drop the stored
+  // override and null the state so the fetch effect below reloads whatever
+  // Settings currently says.
   const handleAIToggle = (e) => {
-    userSetModel.current = true;
-    setSelectedAI(e.target.value);
-    console.log('AI toggled to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('selectedAI');
+      setModelIsOverride(false);
+      setSelectedAI(null);
+      return;
+    }
+    setModelIsOverride(true);
+    setSelectedAI(value);
   };
 
   const handleSearchToggle = (e) => {
-    setSelectedSearch(e.target.value);
-    console.log('Search toggled to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('selectedSearch');
+    }
+    setSelectedSearch(value);
   };
 
-  // Persist selection changes to localStorage
+  // Persist selection changes to localStorage. Only the admin's own choice is
+  // stored — never the fetched model.default, which must keep following the
+  // Settings value.
   useEffect(() => {
     try {
-      // Only persist when the admin explicitly changed the model in the UI
-      if (userSetModel.current && selectedAI !== null && selectedAI !== undefined) {
+      if (modelIsOverride && selectedAI !== null && selectedAI !== undefined) {
         localStorage.setItem(storageKey('selectedAI'), selectedAI);
       }
     } catch (e) {
       // ignore storage errors
     }
-  }, [selectedAI]);
+  }, [modelIsOverride, selectedAI]);
 
   // Fetch the configured default model family from Settings on mount.
   // AVAILABLE_MODELS[0] is the canonical fallback when model.default has never
@@ -375,7 +436,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         try {
           const model = await DataStoreService.getPublicSetting('model.default', null);
           if (mounted) {
-            setSelectedAI(model || AVAILABLE_MODELS[0].value);
+            setSelectedAI(MODEL_VALUES.includes(model) ? model : AVAILABLE_MODELS[0].value);
           }
         } catch (err) {
           if (mounted) setSelectedAI(AVAILABLE_MODELS[0].value);
@@ -388,41 +449,70 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+      if (selectedSearch) {
+        localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+      }
     } catch (e) {
       // ignore storage errors
     }
   }, [selectedSearch]);
 
-  // Record whether a workflow value existed in localStorage at mount. This
-  // helps us decide whether to persist later changes.
+  // With no local override, load the configured default workflow so the Options
+  // dropdown shows the workflow the server will actually run. Without this the
+  // select falls back to rendering its first option, which misreports the
+  // workflow whenever workflow.default is set to anything else. Does not mark
+  // the value as user-set, so it isn't persisted to localStorage.
+  //
+  // TODO(follow-up, PR #1684 review): fetched once per mount and cached for the
+  // tab's lifetime — an admin changing workflow.default in Settings won't reach
+  // an already-open tab until reload. This mirrors model.default's existing,
+  // pre-PR fetch-once behavior below, so it's consistent rather than a new
+  // regression, but the underlying "no live update" tradeoff for both is worth
+  // a deliberate decision (e.g. re-fetch on window focus, or a settings-changed
+  // event) rather than being carried forward implicitly.
+  useEffect(() => {
+    let mounted = true;
+    const loadDefaultWorkflow = async () => {
+      if (workflow === null) {
+        try {
+          const defaultWorkflow = await DataStoreService.getPublicSetting('workflow.default', null);
+          if (mounted) {
+            setWorkflow(WORKFLOW_VALUES.includes(defaultWorkflow) ? defaultWorkflow : DEFAULT_WORKFLOW);
+          }
+        } catch (err) {
+          if (mounted) setWorkflow(DEFAULT_WORKFLOW);
+        }
+      }
+    };
+    loadDefaultWorkflow();
+    return () => { mounted = false; };
+  }, [workflow]);
+
   useEffect(() => {
     try {
-      const val = localStorage.getItem(storageKey('workflow'));
-      if (val !== null) initialWorkflowFromLocalStorage.current = true;
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-
-
-  useEffect(() => {
-    try {
-      // Only persist workflow when it came from localStorage initially or the
-      // user explicitly changed it during this session.
-      if (workflow !== null && (initialWorkflowFromLocalStorage.current || userSetWorkflow.current)) {
+      // Only the admin's own choice is stored — never the fetched
+      // workflow.default, which must keep following the Settings value.
+      if (workflowIsOverride && workflow !== null) {
         localStorage.setItem(storageKey('workflow'), workflow);
       }
     } catch (e) {
       // ignore storage errors
     }
-  }, [workflow]);
+  }, [workflowIsOverride, workflow]);
 
+  // An empty value is the "use system settings" entry: drop the stored
+  // override and null the state so the fetch effect above reloads whatever
+  // Settings currently says.
   const handleWorkflowChange = (e) => {
-    userSetWorkflow.current = true;
-    setWorkflow(e.target.value);
-    console.log('Workflow changed to:', e.target.value);
+    const value = e.target.value;
+    if (!value) {
+      clearStoredOverride('workflow');
+      setWorkflowIsOverride(false);
+      setWorkflow(null);
+      return;
+    }
+    setWorkflowIsOverride(true);
+    setWorkflow(value);
   };
 
   const clearInput = useCallback(() => {
@@ -433,6 +523,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const handleReferringUrlChange = (e) => {
     const url = e.target.value.trim();
     console.log('Referring URL changed:', url);
+    userSetReferringUrlRef.current = true;
     setReferringUrl(url);
 
     // Parse department from manually entered URL
@@ -531,13 +622,37 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
         clearInput();
 
-        // Add the AI response to messages
-        setMessages(prevMessages => [...prevMessages, {
-          id: aiMessageId,
-          interaction: interaction,
-          sender: 'ai',
-          aiService: selectedAI,
-        }]);
+        // Add the AI response to messages, and retroactively give this
+        // turn's user message the detected question language too - it was
+        // pushed before the response came back, with nothing to tag itself
+        // with (ChatInterface.js's lang={toLangAttr(message.questionLanguage)}
+        // was silently reading undefined).
+        //
+        // Deliberately NOT `{ ...m, interaction }` (attaching the whole AI
+        // interaction object to the user bubble) - `.interaction` presence
+        // is a signal several *other*, unrelated pieces of server-side code
+        // (ContextAgentService.js, AnswerGenerationService.js) already use
+        // to mean "this is the AI's real turn, safe to read a full Q&A pair
+        // from" when building conversationHistory for the next request. This
+        // client `messages` array *is* that conversationHistory (sent
+        // verbatim in GraphClient.js's payload) - a user message also
+        // carrying `.interaction` broke that assumption for both files
+        // without their knowledge (each historical turn's Q&A got pushed
+        // twice, since both the user and AI message of that turn satisfied
+        // their `if (entry.interaction)` check). Passing only the resolved
+        // language string keeps `.interaction` truthiness reliably meaning
+        // "the AI's turn" everywhere, current and future - see the same
+        // reasoning applied to HomePage.js's review-mode message-building
+        // loop.
+        setMessages(prevMessages => [
+          ...prevMessages.map(m => (m.id === userMessageId ? { ...m, questionLanguage: getAnswerLanguage(interaction) } : m)),
+          {
+            id: aiMessageId,
+            interaction: interaction,
+            sender: 'ai',
+            aiService: selectedAI,
+          }
+        ]);
 
         setTurnCount(prev => prev + 1);
 
@@ -711,12 +826,18 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 
   // If a pageUrl becomes available later and there was no saved review value,
   // prefer pageUrl over a clientReferrer. Do not override an explicit saved
-  // initialReferringUrl.
+  // initialReferringUrl, or a value the user has since applied/cleared
+  // themselves via ChatOptions (userSetReferringUrlRef) — without that guard,
+  // this effect also fires on every referringUrl change, including the one
+  // Clear itself just made, and immediately repopulates from pageUrl before
+  // the user ever sees it cleared.
   useEffect(() => {
-    // If pageUrl becomes available later and there was no saved review value,
-    // prefer pageUrl over a clientReferrer — but don't override an explicit
-    // initialReferringUrl or a user-edited referringUrl.
-    if (pageUrl && !initialReferringUrl && (!referringUrl || referringUrl === '')) {
+    if (
+      pageUrl &&
+      !initialReferringUrl &&
+      !userSetReferringUrlRef.current &&
+      (!referringUrl || referringUrl === '')
+    ) {
       setReferringUrl(pageUrl);
     }
     if (urlDepartment && !selectedDepartment) {
@@ -767,9 +888,15 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           <>
             <hr className="citation-divider" aria-hidden="true" />
             <div className="citation-container">
-              <p key={`${messageId}-head`} className="citation-head">{safeT('homepage.chat.citation.heading')}</p>
+              <p key={`${messageId}-head`} className="citation-head" lang={answerLang}>{safeT('homepage.chat.citation.heading')}</p>
               <ul key={`${messageId}-link`} className="citation-link list-disc">
                   <li>
+                    {/* Intentionally a raw <a>, not <GcdsLink>: the Adobe
+                        Analytics onClick tracker doesn't fire reliably
+                        through GcdsLink (tested), and this link needs a
+                        custom URL-based aria-label plus its own icon/URL-
+                        wrap layout — neither tried on GcdsLink.
+                        Not part of the "align to GcdsLink" TODOs elsewhere. */}
                     <a
                       href={safeHttpHref(displayUrl)}
                       target="_blank"
@@ -942,7 +1069,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           </>
         )}
         <div className="disclaimer">
-          <p className="font-size-text-xsm-nr">
+          <p className="font-size-text-xsm-nr" lang={answerLang}>
             {safeT('homepage.chat.input.disclaimer')}
           </p>
         </div>
@@ -950,8 +1077,47 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     );
   }, [safeT, chatId, isMobile]);
 
+  // Keeps `messages` (the actual source ChatInterface/FeedbackComponent/
+  // ExpertFeedbackPanel all render from) in sync after an expert eval is
+  // submitted or deleted, without a page refresh. Both
+  // FeedbackComponent.js's handleExpertFeedback and
+  // ExpertFeedbackPanel.js's handleDelete used to only update the shared
+  // `message` object in place (a direct mutation, not a state update) -
+  // React never learns that mutation happened, so ChatInterface.js's own
+  // `!message.interaction.expertFeedback` check (deciding whether to show
+  // the eval form or the read-only summary panel) kept evaluating against
+  // its last render and never flipped until something else (e.g. a full
+  // page reload) forced ChatInterface to re-render from fresh data. Pass
+  // `undefined` for `expertFeedback` on delete, the persisted feedback
+  // object on submit.
+  //
+  // On delete specifically, ExpertFeedbackPanel.js's own "Delete" button -
+  // which had focus - is removed from the DOM in this same update, and
+  // FeedbackComponent reappears in its place. A sighted admin sees the eval
+  // prompt come back; nothing else signals that to a screen-reader user, so
+  // this both moves focus into the reappeared FeedbackComponent
+  // (reappearedFeedback, matched by messageId+nonce so ChatInterface can
+  // route it to the right instance) and announces the change via the
+  // existing ariaLiveMessage region below (reused rather than adding a
+  // second live-region mechanism).
+  const [reappearedFeedback, setReappearedFeedback] = useState(null);
+  const handleExpertFeedbackChange = useCallback((messageId, expertFeedback) => {
+    setMessages(prevMessages => prevMessages.map(m =>
+      (m.id === messageId && m.interaction)
+        ? { ...m, interaction: { ...m.interaction, expertFeedback } }
+        : m
+    ));
+    if (!expertFeedback) {
+      setReappearedFeedback({ messageId, nonce: Date.now() });
+      announceToLiveRegion(safeAdminT('homepage.feedback.expertFeedbackDeletedAnnouncement'));
+    }
+  }, [announceToLiveRegion, safeAdminT]);
+
   // Add handler for department changes
 
+  // The Options dropdowns below are passed an explicit override, or '' — the
+  // "use system settings" entry — when we are following Settings, so an admin
+  // can always tell which of the two they are looking at.
   return (
     <>
       <ChatInterface
@@ -963,13 +1129,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleSendMessage={handleSendMessage}
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
-        handleSearchToggle={handleSearchToggle}
-        workflow={workflow}
+        workflowSelection={workflowIsOverride ? workflow : ''}
         handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
-        selectedAI={selectedAI}
+        modelSelection={modelIsOverride ? selectedAI : ''}
         selectedSearch={selectedSearch}
+        handleSearchToggle={handleSearchToggle}
         referringUrl={referringUrl}
         chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}
@@ -978,10 +1144,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         MAX_CONVERSATION_TURNS={MAX_CONVERSATION_TURNS}
         t={t}
         lang={lang}
+        adminLang={adminLang || lang}
         extractSentences={extractSentences}
         chatId={chatId}
         readOnly={readOnly}
         userLeftChatRef={userLeftChatRef}
+        onExpertFeedbackChange={handleExpertFeedbackChange}
+        reappearedFeedback={reappearedFeedback}
       />
       {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div

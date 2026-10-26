@@ -225,7 +225,10 @@ describe('SystemHealthMonitor', () => {
       count: 2,
     });
     expect(settingsService.cache.siteStatus).toBe('unavailable');
-    expect(settingsService.set).toHaveBeenCalledWith('siteStatus', 'unavailable');
+    expect(settingsService.set).toHaveBeenCalledWith('siteStatus', 'unavailable', expect.objectContaining({
+      actorEmail: 'System health monitor',
+      source: 'system',
+    }));
   });
 
   it('sends outage emails without disabling the site when auto-disable is off', async () => {
@@ -307,7 +310,10 @@ describe('SystemHealthMonitor', () => {
     });
 
     expect(settingsService.cache.siteStatus).toBe('unavailable');
-    expect(settingsService.set).toHaveBeenCalledWith('siteStatus', 'unavailable');
+    expect(settingsService.set).toHaveBeenCalledWith('siteStatus', 'unavailable', expect.objectContaining({
+      actorEmail: 'System health monitor',
+      source: 'system',
+    }));
   });
 
   it('updates the cache even when siteStatus persistence fails', async () => {

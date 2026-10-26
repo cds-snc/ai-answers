@@ -37,7 +37,28 @@ The core philosophy is **Iterative Improvement**:
 > **App Version Tracking**: Each batch persists `appVersion` (from `process.env.APP_VERSION` or `package.json` version) at creation time, stored on both `ExperimentalBatch` and individual `ExperimentalBatchItem` records for audit and regression testing.
 
 > [!IMPORTANT]
-> **Graph Integration**: Batch processing MUST use the LangGraph pipeline directly via `getGraphApp()` and `graphRequestContext`, NOT `AnswerGenerationService`. Using `AnswerGenerationService` bypasses critical pipeline stages (PII redaction, translation, context matching, citation verification, persistence).
+> **Graph Integration**: Batch processing MUST use the LangGraph pipeline directly via `getGraphApp()` and `graphRequestContext`, NOT `AnswerGenerationService`. Using `AnswerGenerationService` bypasses critical pipeline stages (PII redaction, translation, context matching, eval-informed answering, citation verification, persistence).
+
+> [!IMPORTANT]
+> **Eval-informed answering in batch runs**: batches resolve their graph through the same
+> `agents/graphs/registry.js` as live chat, so a batch whose `config.workflow` is
+> `GenericWithQAGraph` — the graph in production since August 2026 — runs the
+> `similarQuestions` node and injects expert-rated past Q/A into the answer prompt. Three
+> consequences for batch work:
+> - **Match the workflow to what you are measuring.** A batch on `GenericGraph` is not
+>   comparable to production answers; it is the no-evals control.
+> - **Results are not reproducible over time.** The injected examples come from the live
+>   `ExpertFeedback` corpus, so the same dataset re-run after new evaluations are entered
+>   can produce different answers. Record `appVersion` *and* the run date when comparing.
+> - **Watch for leakage in regression sets.** If a dataset's questions are themselves
+>   expert-evaluated interactions, the graph can retrieve the very evaluation for the
+>   question being asked. Scores from such a run measure recall of a known answer, not
+>   generalization.
+>
+> The batch item records only `workflowDebugPayload` (short-circuit outcome). The
+> `qaMatches` written to `context` by the `similarQuestions` node are **not** captured on
+> the item today, so which evaluations were injected is not visible in batch results — see
+> [Using Evals for Answers](../architecture/using-evals-for-answers.md).
 
 ## Finalized Decisions (Locked for Implementation)
 

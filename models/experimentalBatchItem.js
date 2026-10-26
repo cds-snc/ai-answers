@@ -32,6 +32,9 @@ const ExperimentalBatchItemSchema = new mongoose.Schema({
 
     // For comparison inputs
     referenceAnswer: { type: String },
+    // Canonical answer from the source dataset, when one was supplied.
+    // This remains separate from referenceAnswer, which may be another run's answer.
+    datasetReferenceAnswer: { type: String },
     // For expert-scorer runs with a selected baseline, retain the dataset's
     // canonical answer separately from the previous run's answer.
     goldenReferenceAnswer: { type: String },

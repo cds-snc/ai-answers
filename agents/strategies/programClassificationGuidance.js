@@ -19,6 +19,10 @@ export const URL_EVIDENCE_RULE = `Citation and referring URLs are strong evidenc
 // Accounts are a program only when the task is *using* the account itself.
 export const ACCOUNT_RULE = `Treat an account (CRA Account, My Service Canada Account, IRCC account…) as the program only when the task is using the account itself — signing in, registering, recovering access, multi-factor authentication, being locked out. A question about a program seen inside an account gets the program itself.`;
 
+// Keep informational questions out of the transactional actions — "Get info" is
+// the fallback for pure information requests, not a catch-all.
+export const ACTION_SELECTION_RULE = `Pick the single best fit (synonyms show phrasing variants). Prefer a specific action; use "Get info" only when the question is purely a request for information — a fact, date, rate, definition, or how something works — with no transactional intent.`;
+
 // Shared JSON extraction: strip code fences, then take the outermost JSON
 // object/array so stray prose around the payload doesn't break parsing.
 // Defaults to an object ('{'..'}'); pass '[' / ']' for an array payload.

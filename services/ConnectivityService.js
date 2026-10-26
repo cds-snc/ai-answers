@@ -300,77 +300,73 @@ async function testAzureOpenAI() {
     }
 }
 
-// Canada.ca/Coveo search is not currently available in this environment.
-// Keep this probe disabled until the endpoint is ready, otherwise the
-// connectivity dashboard reports a known unavailable dependency as an outage.
-// async function testCanadaCaSearch() {
-//     const startTime = Date.now();
-//     const searchUri = process.env.CANADA_CA_SEARCH_URI;
-//     const searchApiKey = process.env.CANADA_CA_SEARCH_API_KEY;
-//
-//     if (!searchUri || !searchApiKey) {
-//         return {
-//             service: 'Canada.ca search',
-//             status: 'not_configured',
-//             message: 'CANADA_CA_SEARCH_URI or CANADA_CA_SEARCH_API_KEY not set',
-//             latencyMs: Date.now() - startTime,
-//             configured: false
-//         };
-//     }
-//
-//     try {
-//         const controller = new AbortController();
-//         const timeout = setTimeout(() => controller.abort(), CONNECTIVITY_TIMEOUT_MS);
-//         const response = await (async () => {
-//             try {
-//                 return await fetch(searchUri, {
-//                     method: 'POST',
-//                     signal: controller.signal,
-//                     headers: {
-//                         Authorization: `Bearer ${searchApiKey}`,
-//                         'Content-Type': 'application/json',
-//                         Accept: 'application/json',
-//                     },
-//                     body: JSON.stringify({
-//                         q: 'passport',
-//                         searchHub: 'canada-gouv-public-websites',
-//                         originLevel3: '/en/sr/srb.html',
-//                     }),
-//                 });
-//             } finally {
-//                 clearTimeout(timeout);
-//             }
-//         })();
-//
-//         const responseText = await response.text();
-//         if (!response.ok) {
-//             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-//         }
-//
-//         const body = JSON.parse(responseText);
-//         const resultCount = Array.isArray(body?.results) ? body.results.length : 0;
-//
-//         return {
-//             service: 'Canada.ca search',
-//             status: 'connected',
-//             message: 'Connection successful',
-//             latencyMs: Date.now() - startTime,
-//             configured: true,
-//             details: {
-//                 resultCount,
-//                 endpoint: searchUri
-//             }
-//         };
-//     } catch (error) {
-//         return {
-//             service: 'Canada.ca search',
-//             status: 'error',
-//             message: error.message,
-//             latencyMs: Date.now() - startTime,
-//             configured: true
-//         };
-//     }
-// }
+/**
+ * Test Canada.ca/Coveo search connection.
+ */
+async function testCanadaCaSearch() {
+    const startTime = Date.now();
+    const searchUri = process.env.CANADA_CA_SEARCH_URI;
+    const searchApiKey = process.env.CANADA_CA_SEARCH_API_KEY;
+
+    if (isSimulationEnabled(SIMULATION_KEYS.search)) {
+        return simulatedFailure('Canada.ca search', startTime);
+    }
+
+    if (!searchUri || !searchApiKey) {
+        return {
+            service: 'Canada.ca search',
+            status: 'not_configured',
+            message: 'CANADA_CA_SEARCH_URI or CANADA_CA_SEARCH_API_KEY not set',
+            latencyMs: Date.now() - startTime,
+            configured: false,
+        };
+    }
+
+    try {
+        const response = await fetch(searchUri, {
+            method: 'POST',
+            signal: AbortSignal.timeout(CONNECTIVITY_TIMEOUT_MS),
+            headers: {
+                Authorization: `Bearer ${searchApiKey}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'User-Agent': process.env.USER_AGENT || 'ai-answers',
+            },
+            body: JSON.stringify({
+                q: '@language=English passport',
+                locale: 'en-CA',
+                forwardLanguageToCoveoIndex: true,
+            }),
+        });
+        const responseText = await response.text();
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const body = JSON.parse(responseText);
+        const resultCount = Array.isArray(body?.results) ? body.results.length : 0;
+
+        return {
+            service: 'Canada.ca search',
+            status: 'connected',
+            message: 'Connection successful',
+            latencyMs: Date.now() - startTime,
+            configured: true,
+            details: {
+                resultCount,
+                endpoint: searchUri,
+            },
+        };
+    } catch (error) {
+        return {
+            service: 'Canada.ca search',
+            status: 'error',
+            message: error.message,
+            latencyMs: Date.now() - startTime,
+            configured: true,
+        };
+    }
+}
 
 /**
  * Test Google Custom Search connection
@@ -431,6 +427,13 @@ async function testGoogleSearch() {
     }
 }
 
+async function testSearchProviders() {
+    const results = await Promise.all([testGoogleSearch(), testCanadaCaSearch()]);
+    return results.find((result) => result.status === 'error')
+        || results.find((result) => result.status === 'connected')
+        || results[0];
+}
+
 /**
  * Run all connectivity tests
  */
@@ -440,7 +443,8 @@ async function testAllConnections() {
         testRedis(),
         testS3(),
         testAzureOpenAI(),
-        testGoogleSearch()
+        testGoogleSearch(),
+        testCanadaCaSearch(),
     ]);
 
     return {
@@ -462,5 +466,7 @@ export {
     testS3,
     testAzureOpenAI,
     testGoogleSearch,
+    testCanadaCaSearch,
+    testSearchProviders,
     testAllConnections
 };

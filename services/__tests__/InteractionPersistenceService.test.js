@@ -222,6 +222,7 @@ describe('InteractionPersistenceService', () => {
     it('should persist context.searchQuery to the database', async () => {
         initialPayload.context.searchQuery = 'benefits for seniors';
         initialPayload.context.searchResults = '[{"title":"Benefits"}]';
+        initialPayload.context.searchCacheStatus = 'hit';
 
         await InteractionPersistenceService.persistInteraction(initialPayload, user);
 
@@ -236,6 +237,7 @@ describe('InteractionPersistenceService', () => {
         expect(ctx).toBeTruthy();
         expect(ctx.searchQuery).toBe('benefits for seniors');
         expect(ctx.searchResults).toBe('[{"title":"Benefits"}]');
+        expect(ctx.searchCacheStatus).toBe('hit');
     });
 
     it('persists Q&A matches without generated subdocument ids', async () => {

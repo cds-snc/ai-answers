@@ -1,21 +1,31 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import DashboardFilterBar from './DashboardFilterBar.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import StackedBarCard from './dashboard/StackedBarCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
+import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 const PublicDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
+  // StackedBarCard) — renders each chart's data as a real, always-visible
+  // table alongside the hover-only Recharts tooltip. Required on new charts.
+  const chartA11y = buildChartA11y(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
   const { metrics, loading, error, fetchMetrics } = useDashboardMetrics();
+  useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
 
   const [appliedStartDate, setAppliedStartDate] = useState('');
   const [appliedEndDate, setAppliedEndDate] = useState('');
@@ -98,8 +108,8 @@ const PublicDashboard = ({ lang = 'en' }) => {
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip__title">{row.name}</div>
-        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
-        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+        <div>{t('blockedQueries.colTotal')} {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')} {fmtN(row.en)} · {t('blockedQueries.colFr')} {fmtN(row.fr)}</div>
       </div>
     );
   };
@@ -121,9 +131,9 @@ const PublicDashboard = ({ lang = 'en' }) => {
   const totalConversations = metrics.totalConversations || 0;
   const sq = metrics.sessionsByQuestionCount || {};
   const sessionDepthData = totalConversations > 0 ? [
-    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
-    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
-    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+    { name: t('publicDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0, colour: COLOURS.sessionDepthScale[0], stroke: COLOURS.chartStroke },
+    { name: t('publicDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0,   colour: COLOURS.sessionDepthScale[1] },
+    { name: t('publicDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0, colour: COLOURS.sessionDepthScale[2] },
   ].filter(d => d.value > 0) : [];
 
   const responseTime = metrics.responseTime || {};
@@ -137,28 +147,43 @@ const PublicDashboard = ({ lang = 'en' }) => {
 
       <DashboardFilterBar lang={lang} loading={loading} onInitialLoad={handleInitialLoad} onApply={handleApply} minDate={minDate} />
 
-      <h2 className="dashboard-section-title">
-        {formatDateRange(appliedStartDate, appliedEndDate)}
-      </h2>
+      {/* "Overview" above owns the filter bar (this page has just the two
+          sections - Overview, Safety metrics - so it doubles as that
+          section's own intro rather than needing a separate Filters
+          heading). This h2 is the real sibling heading for the results
+          that follow - visually hidden since the visible date-range text
+          right below it already makes the section's purpose clear on
+          screen (same reasoning as the Filters/Results headings elsewhere
+          in this app), kept as a real heading so screen-reader users
+          navigating by heading/landmark still get it announced. Was
+          previously a second *visible* <h2> whose text was the computed
+          date range itself - not descriptive heading text (SC 2.4.6), and
+          genuinely empty before the first fetch resolves. A heading also
+          needs to stay the same across interactions to work as a reliable
+          landmark (a user re-navigating by heading expects "Results" to
+          mean the same thing every time) - a heading whose text is a
+          computed value that changes with every filter apply defeats that,
+          independent of the emptiness bug. The date range is a data value,
+          not a heading - shown as a prominent styled <p> instead, only
+          once there's something to show. */}
+      <h2 className="sr-only">{t('admin.common.resultsHeading')}</h2>
+      {appliedStartDate && appliedEndDate && (
+        <p className="dashboard-section-title">
+          {formatDateRange(appliedStartDate, appliedEndDate)}
+        </p>
+      )}
 
       {loading ? (
-        <div className="dashboard-loading">
-          {t('common.loading')}
-        </div>
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 
       {error && (
-        <div className="dashboard-error">
-          {t('publicDashboard.error')}
-        </div>
+        <StatusMessage variant="error" message={t('publicDashboard.error')} />
       )}
 
       {hasFetched.current && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('publicDashboard.noData')}
-        </div>
+        <StatusMessage variant="info" assertive message={t('publicDashboard.noData')} />
       )}
 
       {/* KPI row: accuracy donut on the left, stat cards on the right — questions
@@ -177,6 +202,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
               centreClass={accuracyPct === null ? undefined : accuracyPct >= 80 ? 'green' : accuracyPct > 50 ? 'orange' : 'red'}
               footer={accuracyByLangFooter}
               lang={lang}
+              a11y={chartA11y}
             />
           ) : (
             <NoDataCard
@@ -230,25 +256,34 @@ const PublicDashboard = ({ lang = 'en' }) => {
               yAxisWidth={240}
               yAxisTextAlign="right"
               marginLeft={32}
+              a11y={chartA11y}
             />
           </div>
         </div>
       )}
 
-      {/* Conversation length donut + median response time beside it.
-          Below 10 conversations the donut becomes a placeholder. */}
+      {/* Conversation length (75% width) + median response time beside it
+          (25%, height matched to conversation length via dashboard-row's
+          default flex stretch). Below 10 conversations the chart becomes a
+          placeholder. */}
       <div className="dashboard-row">
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-three-quarter">
           {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('publicDashboard.charts.engagementTitle')}
-              subtitle={t('publicDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('publicDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('publicDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('publicDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('publicDashboard.charts.conversations')}`}
+            <StackedBarCard
+              data={sessionDepthData}
               lang={lang}
+              noDataLabel={t('publicDashboard.charts.noData')}
+              a11y={chartA11y}
+              a11yTitle={t('publicDashboard.charts.engagementTitle')}
+              leftContent={(
+                <div>
+                  <h3 className="card-title card-title--has-subtitle">{t('publicDashboard.charts.engagementTitle')}</h3>
+                  <p className="card-subtitle font-size-text-xsm-nr">
+                    {`${t('publicDashboard.charts.engagementSubtitle')} · ${t('publicDashboard.charts.totalQuestionsLabel').replace('{n}', fmtN(totalQuestions))}`}
+                  </p>
+                  <p className="stat-card__value stacked-bar-card__inset">{fmtN(totalConversations)} {t('publicDashboard.charts.conversations')}</p>
+                </div>
+              )}
             />
           ) : (
             <NoDataCard
@@ -257,7 +292,7 @@ const PublicDashboard = ({ lang = 'en' }) => {
             />
           )}
         </div>
-        <div className="dashboard-col-half">
+        <div className="dashboard-col-quarter">
           <StatCard
             label={t('publicDashboard.ops.medianResponseTime')}
             value={hasResponseTime
@@ -269,7 +304,6 @@ const PublicDashboard = ({ lang = 'en' }) => {
           />
         </div>
       </div>
-
 
       {/* Safety metrics */}
       <h2 className="dashboard-section-title">
@@ -296,35 +330,17 @@ const PublicDashboard = ({ lang = 'en' }) => {
             lang={lang}
             tooltipContent={BlockedBarTooltip}
             noDataLabel={t('blockedQueries.noData')}
+            a11y={chartA11y}
           />
         </div>
       </div>
       </>
       )}
 
-      {/* Referenced by the footnote marker in PublicDashboardPage's h1 —
-          states the userType=public restriction baked into fetchPublicMetrics
-          above. Always rendered (not gated on loading/error) since the link
-          that points here is always present too.
-          WET-BOEW's standard footnote pattern (GCWeb's wb-fnote, not shipped
-          by GC DS — reproduced in admin.css): the marker box doubles as the
-          "return to referrer" link, so there's no separate visible number. */}
-      <aside className="wb-fnote" role="note">
-        <h2>{t('dashboardFilter.footnotesHeading')}</h2>
-        <dl>
-          <dt className="wb-inv">{t('dashboardFilter.footnotesHeading')} 1</dt>
-          <dd id="public-dashboard-footnote">
-            <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
-            <p className="fn-rtn">
-              <a href="#public-dashboard-fnref">
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrPrefix')}</span>
-                1
-                <span className="wb-inv">{t('dashboardFilter.footnoteReturnSrSuffix')}</span>
-              </a>
-            </p>
-          </dd>
-        </dl>
-      </aside>
+      {/* States the userType=public restriction baked into fetchPublicMetrics
+          above. Always rendered (not gated on loading/error). */}
+      <hr className="mt-600 mb-200" />
+      <p className="font-size-text-xsm-nr">{t('publicDashboard.footnote')}</p>
     </div>
   );
 };

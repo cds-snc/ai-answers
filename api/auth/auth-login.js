@@ -1,6 +1,7 @@
 import TwoFAService from '../../services/TwoFAService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import passport from '../../config/passport.js';
+import { getSessionTtlMs } from '../../middleware/express-session.js';
 
 const loginHandler = (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
@@ -37,13 +38,8 @@ const loginHandler = (req, res, next) => {
           if (visitorId) req.session.visitorId = visitorId;
 
           // Set authenticated session TTL
-          const sessionTTLSetting = SettingsService.get('session.defaultTTLMinutes') || process.env.SESSION_TTL_MINUTES || '60';
-          const authTTLSetting = SettingsService.get('session.authenticatedTTLMinutes') || process.env.SESSION_AUTH_TTL_MINUTES || sessionTTLSetting;
-          const parsedAuthMinutes = Number(authTTLSetting);
-          const authMinutes = Number.isFinite(parsedAuthMinutes) && parsedAuthMinutes > 0 ? parsedAuthMinutes : 60;
-
           if (req.session && req.session.cookie) {
-            req.session.cookie.maxAge = authMinutes * 60 * 1000;
+            req.session.cookie.maxAge = getSessionTtlMs(req);
           }
         } catch (e) {
           console.warn('Failed to restore visitorId or set TTL after login', e);
@@ -62,22 +58,36 @@ const loginHandler = (req, res, next) => {
         });
       });
     } else {
-      // Store user temporarily for 2FA verification (don't log in yet)
-      req.session.pendingUser = {
+      // Password is correct but the user is not logged in yet. The session
+      // remembers who passed the password step; auth-verify-2fa and
+      // auth-send-2fa act only on this, never on a client-supplied email.
+      req.session.pending2FA = {
         userId: user._id.toString(),
-        email: user.email,
-        role: user.role
+        createdAt: Date.now()
       };
 
       try {
-        const templateId = SettingsService.get('twoFA.templateId');
-        const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
+        const sendResult = await TwoFAService.sendChallenge({ user });
+
+        // Only reachable after a correct password, which the 2FA screen would
+        // confirm anyway, so naming the lockout here reveals nothing new.
+        if (sendResult.reason === 'locked') {
+          delete req.session.pending2FA;
+          return res.status(429).json({
+            success: false,
+            message: 'Too many attempts. Try again later.',
+            reason: 'locked'
+          });
+        }
 
         if (!sendResult.success) {
           console.error('TwoFAService failed to send code', sendResult);
+          delete req.session.pending2FA;
           return res.status(500).json({
             success: false,
-            message: 'Error during login'
+            message: 'Error during login',
+            reason: 'send_failed',
+            detail: sendResult.reason
           });
         }
 
@@ -93,10 +103,17 @@ const loginHandler = (req, res, next) => {
           }
         });
       } catch (error) {
-        console.error('2FA send error:', error);
+        // `detail` shows the cause in the browser's Network tab (there is no log
+        // viewer). Only TwoFAService's own fixed `twofa_*` codes go there; database
+        // and driver codes stay in the server log.
+        console.error('2FA send error:', error?.code, error);
+        delete req.session.pending2FA;
+        const ownCode = typeof error?.code === 'string' && error.code.startsWith('twofa_');
         return res.status(500).json({
           success: false,
-          message: 'Error during login'
+          message: 'Error during login',
+          reason: 'send_failed',
+          detail: ownCode ? error.code : 'twofa_send_error'
         });
       }
     }

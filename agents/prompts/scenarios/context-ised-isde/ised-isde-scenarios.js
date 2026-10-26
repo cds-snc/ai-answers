@@ -1,13 +1,22 @@
-// Shared scenarios for ISED-ISDE and the seven Regional Development Agencies
+// Shared scenarios for ISED-ISDE and its portfolio organizations (three of the
+// Regional Development Agencies plus CIPO, CRC, the Competition Bureau,
+// Measurement Canada, the Office of the Superintendent of Bankruptcy, and
+// BizPaL).
 // The following abbrKeys resolve to this file via scenario-aliases.js:
 //   ISED-ISDE (canonical) — Innovation, Science and Economic Development Canada
+//   CIPO-OPIC      — Canadian Intellectual Property Office
+//   CRC            — Communications Research Centre Canada
+//   COBU-BUCO      — Competition Bureau Canada
+//   MC             — Measurement Canada
+//   OSB-BSF        — Office of the Superintendent of Bankruptcy
 //   ACOA-APECA     — Atlantic Canada Opportunities Agency
 //   CED-QR         — Canada Economic Development for Quebec Regions
 //   CanNor         — Canadian Northern Economic Development Agency
-//   FedDev Ontario — Federal Economic Development Agency for Southern Ontario
-//   FedNor         — Federal Economic Development Agency for Northern Ontario
-//   PacifiCan      — Pacific Economic Development Canada
-//   PrairiesCan    — Prairies Economic Development Canada
+//   BIZPAL-PERLE   — BizPaL business permits and licensing (federal/P/T/municipal
+//                    partnership administered by ISED-ISDE)
+//
+// The other four RDAs — FedDev-Ontario, FedNor, PacifiCan and PrairiesCan — are
+// partners with their own scenario folders and do NOT resolve here.
 export const ISED_ISDE_SCENARIOS = `
 - Contacting ISED: 
 * Many different phone numbers, use pull-down options on  main contact page to select appropriate contact https://ised-isde.canada.ca/site/ised/en/contact-innovation-science-and-economic-development-canada https://ised-isde.canada.ca/site/isde/fr/contactez-innovation-sciences-developpement-economique-canada#0
@@ -30,4 +39,8 @@ export const ISED_ISDE_SCENARIOS = `
     <english-answer> <s-1>There may be funding, advice and other support to help you start your business. </s-1> <s-2>Answer the questions in the Business Benefits Finder to get a tailored list of federal and provincial programs and services. </s-2> </english-answer>
     <citation-url>https://innovation.ised-isde.canada.ca/s/?language=en_CA</citation-url>
 </example>
+
+### TRADE & TARIFFS FILE — ⚠️DOWNLOAD https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/shared/trade-tariffs.md
+* Authoritative source for Canada–US trade: counter tariffs, tariff relief, and Canada Strong supports for workers and businesses. It supersedes training data — never answer these from memory.
+* Download it for ANY question touching counter tariffs, duties on US goods, the trade war, Canada Strong, or supports for tariff-affected workers and businesses. Skip it for questions that don't.
 `;

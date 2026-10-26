@@ -1,19 +1,30 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useDashboardMetrics } from '../../hooks/admin/useDashboardMetrics.js';
+import { useResultsLoadedAnnouncement } from '../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { buildQualityBarData, buildFeedbackSplitData, buildFeedbackReasonsData } from '../../utils/dashboard/feedbackBreakdown.js';
 import FilterPanel from './FilterPanel.js';
 import StatCard from './dashboard/StatCard.js';
 import DonutCard from './dashboard/DonutCard.js';
 import HBarCard from './dashboard/HBarCard.js';
+import StackedBarCard from './dashboard/StackedBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
 import CitationPagesCard from './dashboard/CitationPagesCard.js';
+import AnswerTypesCard from './dashboard/AnswerTypesCard.js';
+import ContentIssueChatsCard from './dashboard/ContentIssueChatsCard.js';
+import CollapsibleCard from './dashboard/CollapsibleCard.js';
 import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
+import { buildChartA11y } from '../../utils/dashboard/chartA11y.js';
+import { formatEvalInformedRate, getEvalInformedFromDate } from '../../utils/dashboard/evalInformedRate.js';
+import { formatLocaleDate } from '../../utils/formatLocaleDate.js';
 import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { EVAL_INFORMED_CHATS_LIMIT } from '../../config/workflows.js';
+import StatusMessage from './StatusMessage.js';
+import LoadingOverlay from './LoadingOverlay.js';
 
 // Bars shown in the "question volume by program" chart. Capped client-side so
 // the API's larger MAX_PROGRAMS response stays available to other views.
@@ -21,10 +32,15 @@ const TOP_PROGRAMS_LIMIT = 10;
 
 const PartnerDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Passed as `a11y` to every chart card (DonutCard/HBarCard/DivergingBarCard/
+  // StackedBarCard) — renders each chart's data as a real, always-visible
+  // table alongside the hover-only Recharts tooltip. Required on new charts.
+  const chartA11y = buildChartA11y(t);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true });
+  useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
@@ -112,8 +128,8 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     return (
       <div className="chart-tooltip">
         <div className="chart-tooltip__title">{row.name}</div>
-        <div>{t('blockedQueries.colTotal')}: {fmtN(row.value)}</div>
-        <div>{t('blockedQueries.colEn')}: {fmtN(row.en)} · {t('blockedQueries.colFr')}: {fmtN(row.fr)}</div>
+        <div>{t('blockedQueries.colTotal')} {fmtN(row.value)}</div>
+        <div>{t('blockedQueries.colEn')} {fmtN(row.en)} · {t('blockedQueries.colFr')} {fmtN(row.fr)}</div>
       </div>
     );
   };
@@ -127,19 +143,17 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   );
   const satisfactionPct = pfTotal > 0 ? Math.round(((feedbackData[0]?.value || 0) / pfTotal) * 100) : null;
 
-  // Helpful/not-helpful donut — shared between the "donut only" (10–39 responses)
-  // and "donut + breakdown bar" (40+) layouts so its props don't drift.
-  const satisfactionDonut = (
-    <DonutCard
-      title={t('partnerDashboard.charts.feedbackSplitTitle')}
-      data={feedbackData.length > 0 ? feedbackData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-      colours={feedbackData.length > 0 ? [COLOURS.satisfactionPositive, COLOURS.satisfactionNegative] : [COLOURS.empty]}
-      centreValue={satisfactionPct !== null ? fmtPct(satisfactionPct) : '—'}
-      centreLabel={t('partnerDashboard.charts.satisfactionCentre').replace('{total}', fmtN(pfTotal))}
-      centreMultiLine
-      lang={lang}
-    />
-  );
+  // Helpful/not-helpful as a 100%-stacked bar (StackedBarCard), same chart
+  // type as conversation length — bar length compares two values more
+  // precisely than a donut's arc angle. Green vs red is only ~1.47:1 against
+  // each other regardless of shade (see dashboardColours.js), so both
+  // segments carry the white chartStrokeOnColour to define the boundary
+  // between them, rather than relying on the fills to contrast each other.
+  const satisfactionBarData = feedbackData.map((d, i) => ({
+    ...d,
+    colour: i === 0 ? COLOURS.satisfactionPositive : COLOURS.satisfactionNegative,
+    stroke: COLOURS.chartStrokeOnColour,
+  }));
 
   const feedbackReasonsData = useMemo(() => buildFeedbackReasonsData(metrics.publicFeedbackReasons, t), [metrics.publicFeedbackReasons, t]);
 
@@ -148,9 +162,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const totalQuestions = metrics.totalQuestions || 0;
   const sq = metrics.sessionsByQuestionCount || {};
   const sessionDepthData = totalConversations > 0 ? [
-    { name: t('partnerDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0 },
-    { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0 },
-    { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0 },
+    { name: t('partnerDashboard.charts.singleQuestion'), value: sq.singleQuestion?.total || 0, colour: COLOURS.sessionDepthScale[0], stroke: COLOURS.chartStroke },
+    { name: t('partnerDashboard.charts.twoQuestions'),   value: sq.twoQuestions?.total || 0,   colour: COLOURS.sessionDepthScale[1] },
+    { name: t('partnerDashboard.charts.threeQuestions'), value: sq.threeQuestions?.total || 0, colour: COLOURS.sessionDepthScale[2] },
   ].filter(d => d.value > 0) : [];
 
   // Question volume by program (per-question task classification). Values stored
@@ -223,6 +237,28 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // Already normalized, merged and ranked server-side; scoped to the selected
   // department when a partner is applied, otherwise the global top pages.
   const topReferrals = metrics.topReferrals || [];
+  const contentIssueChats = metrics.contentIssueChats || [];
+  // Anchors the KPI stat cards' "View" links jump to — landing inside the
+  // collapsed <details> auto-opens it (see CollapsibleCard.js's anchorId).
+  const CONTENT_ISSUE_ANCHOR = 'content-issue-chats-section';
+  const HARMFUL_CHATS_ANCHOR = 'harmful-chats-section';
+  // Every row here is harmful by definition (the endpoint only ever returns
+  // harmful-flagged chats) — status is set client-side so the table can still
+  // show the red "Harmful" pill via ContentIssueChatsCard's optional status
+  // column, without the server needing to compute a value that's always the
+  // same for this list.
+  const harmfulChats = useMemo(
+    () => (metrics.harmfulChats || []).map((c) => ({ ...c, status: 'harmful' })),
+    [metrics.harmfulChats],
+  );
+
+  // Eval-informed answers: share of questions where past expert evaluations
+  // were added to the AI's context. The denominator is questions answered by
+  // the eval-informed workflow (metrics-usage.js), not all questions, so
+  // pre-launch data doesn't drag the rate down.
+  const evalInformed = metrics.evalInformed || {};
+  const evalInformedChats = metrics.evalInformedChats || [];
+  const evalInformedFromDate = getEvalInformedFromDate(evalInformed.firstDate, metrics.firstDataDate);
 
   // Top citation pages (GC pages AI Answers cited, by question) + the answer-type
   // breakdown (how many questions got a citation vs. a non-citation answer type).
@@ -238,6 +274,19 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     ].map(({ key, type }) => ({ key, label: t(`partnerDashboard.citations.types.${type}`), count: bd[key] || 0 }));
   }, [metrics.answerTypeBreakdown, t]);
 
+  // "#1: <label>" subtext for the trio — rows are already sorted desc by
+  // count for referrals/citations; answerTypeRows isn't (fixed display
+  // order), so its top row is found via reduce instead. Plain text — not a
+  // pill, since it isn't really a label/status like the satisfaction one.
+  // TODO: revisit visual styling for this later.
+  const topRankSubtext = (label) => (label
+    ? t('partnerDashboard.charts.topRankSubtext').replace('{label}', label)
+    : '');
+  const topReferralSubtext = topRankSubtext(topReferrals[0]?.url);
+  const topCitationSubtext = topRankSubtext(topCitations[0]?.url);
+  const topAnswerType = answerTypeRows.reduce((top, row) => (row.count > (top?.count || 0) ? row : top), null);
+  const topAnswerTypeSubtext = topAnswerType?.count > 0 ? topRankSubtext(topAnswerType.label) : '';
+
   // Operations metrics. Median response time comes from the technical metrics
   // endpoint (milliseconds, shown in seconds); token totals come from usage.
   const responseTime = metrics.responseTime || {};
@@ -245,6 +294,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
 
   return (
     <div>
+      {/* Visually hidden - same pattern as Chat/Eval/Metrics/AutoEval
+          dashboards' matching heading: FilterPanel's own <summary> isn't
+          heading-navigable, so this gives screen-reader users a
+          heading/landmark entry point into the filter section. Distinct
+          text from FilterPanel's "Filters" summary label. Previously
+          missing here entirely - every sibling dashboard using FilterPanel
+          had this, this one didn't. */}
+      <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
       <div className="mb-100">
         <FilterPanel
           lang={lang}
@@ -252,47 +309,42 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           onClearFilters={handleClearFilters}
           isVisible={true}
           autoApply={true}
-          applyDisabled={loading}
           defaultUserType="all"
           defaultOpen={false}
           filterLoading={loading}
           filterError={error}
           filterResultCount={metrics.totalQuestions || 0}
           hasAppliedFilters={hasUserApplied}
-          // The "More filters" section (URL, answer type, partner eval, AI
-          // eval, and — since they live inside it — the AND/OR toggle and
-          // Content issue checkbox) is hidden entirely: this dashboard has
-          // no charts that break results down by those categories, so
-          // applying one would just silently shrink every number with no
-          // visible way to tell why. See the former TODO this replaced
-          // (commit 32ff2262) and FilterPanel's own prop comments.
-          showAdvancedSection={false}
+          // "More filters" is shown for URL (EN/FR) lookup only — partners
+          // want to filter down to a specific referring page. answerType/
+          // partnerEval/aiEval (and, since it's gated on those, the AND/OR
+          // toggle) stay hidden: this dashboard has no charts that break
+          // results down by those categories, so applying one would just
+          // silently shrink every number with no visible way to tell why.
+          // See the former TODO this replaced (commit 32ff2262),
+          // TechnicalMetricsDashboard.js's matching comment, and
+          // FilterPanel's own showAdvancedSection/showCategoryFilters prop
+          // comments.
+          showCategoryFilters={false}
         />
       </div>
 
       {loading ? (
-        <div className="dashboard-loading">
-          {t('common.loading')}
-        </div>
+        <LoadingOverlay message={t('common.loading')} />
       ) : (
       <>
 
       {error && (
-        <div className="dashboard-error">
-          {t('partnerDashboard.error')}
-        </div>
+        <StatusMessage variant="error" message={t('partnerDashboard.error')} />
       )}
 
       {hasUserApplied && metrics.totalQuestions === 0 && !error && (
-        <div className="dashboard-warning">
-          <span className="dashboard-warning__icon" aria-hidden="true" />
-          {t('common.noDataForFilters')}
-        </div>
+        <StatusMessage variant="info" assertive message={t('common.noDataForFilters')} />
       )}
 
       <h2 className="dashboard-section-title">{t('partnerDashboard.overviewTitle')}</h2>
 
-      {/* KPI cards — 4 columns: questions, expert eval, accuracy, content issues */}
+      {/* KPI cards — 3 columns: questions, expert eval, content issues */}
       <div className="dashboard-row">
         <StatCard
           label={t('partnerDashboard.kpi.questionsAsked')}
@@ -310,9 +362,14 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         <StatCard
           label={t('partnerDashboard.kpi.contentIssues')}
           value={fmtN(contentIssue.total)}
-          sub={t('partnerDashboard.kpi.contentIssuesSub')
-            .replace('{ni}', fmtN(contentIssue.needsImprovement))
-            .replace('{error}', fmtN(contentIssue.hasError))}
+          href={contentIssueChats.length > 0 ? `#${CONTENT_ISSUE_ANCHOR}` : null}
+          sub={(
+            <>
+              {t('partnerDashboard.kpi.contentIssuesSub')
+                .replace('{ni}', fmtN(contentIssue.needsImprovement))
+                .replace('{error}', fmtN(contentIssue.hasError))}
+            </>
+          )}
         />
       </div>
 
@@ -320,23 +377,27 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           evals both are replaced by placeholders rather than dropped, so the
           reason stays on the page. */}
       <div className="dashboard-row">
-        {evalTotal >= 10 ? (
-          <DonutCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-            colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
-            centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
-            centreLabel={t('partnerDashboard.charts.accuracyCentre')}
-            centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
-            footer={accuracyByLangFooter}
-            lang={lang}
-          />
-        ) : (
-          <NoDataCard
-            title={t('partnerDashboard.charts.accuracyDonutTitle')}
-            message={t('common.notEnoughData')}
-          />
-        )}
+        {/* Third-width column so the donut lines up with the KPI cards above. */}
+        <div className="dashboard-col-third">
+          {evalTotal >= 10 ? (
+            <DonutCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              data={accuracyDonutData.length > 0 ? accuracyDonutData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
+              colours={accuracyDonutData.length > 0 ? [COLOURS.correct, COLOURS.hasError] : [COLOURS.empty]}
+              centreValue={totalAccuracy !== null ? fmtPct(totalAccuracy) : '—'}
+              centreLabel={t('partnerDashboard.charts.accuracyCentre')}
+              centreClass={totalAccuracy === null ? undefined : totalAccuracy >= 80 ? 'green' : totalAccuracy > 50 ? 'orange' : 'red'}
+              footer={accuracyByLangFooter}
+              lang={lang}
+              a11y={chartA11y}
+            />
+          ) : (
+            <NoDataCard
+              title={t('partnerDashboard.charts.accuracyDonutTitle')}
+              message={t('common.notEnoughData')}
+            />
+          )}
+        </div>
         <div className="dashboard-chart-wide">
           {evalTotal >= 10 ? (
             <HBarCard
@@ -351,6 +412,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               noDataLabel={t('partnerDashboard.charts.noData')}
               tooltipContent={QualityBarTooltip}
               lang={lang}
+              a11y={chartA11y}
             />
           ) : (
             <NoDataCard
@@ -376,54 +438,72 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             percent
             tooltipContent={ProgramBarTooltip}
             noDataLabel={t('partnerDashboard.charts.noData')}
-            yAxisWidth={220}
+            yAxisWidth={260}
             lang={lang}
+            a11y={chartA11y}
           />
         </div>
       )}
 
-      {/* Conversation length donut. Below 10 conversations, a placeholder. */}
-      <div className="dashboard-row">
-        <div className="dashboard-col-half">
-          {totalConversations >= 10 ? (
-            <DonutCard
-              title={t('partnerDashboard.charts.engagementTitle')}
-              subtitle={t('partnerDashboard.charts.engagementSubtitle')}
-              data={sessionDepthData.length > 0 ? sessionDepthData : [{ name: t('partnerDashboard.charts.noData'), value: 1 }]}
-              colours={sessionDepthData.length > 0 ? [COLOURS.no, COLOURS.brand, COLOURS.brandDark] : [COLOURS.empty]}
-              centreValue={totalConversations > 0 ? fmtN(totalConversations) : '—'}
-              centreLabel={t('partnerDashboard.charts.conversations')}
-              footer={`${fmtN(totalQuestions)} ${t('partnerDashboard.charts.questions')} · ${fmtN(totalConversations)} ${t('partnerDashboard.charts.conversations')}`}
-              lang={lang}
-            />
-          ) : (
-            <NoDataCard
-              title={t('partnerDashboard.charts.engagementTitle')}
-              message={t('common.notEnoughData')}
-            />
-          )}
-        </div>
+      {/* Conversation length: title/subtitle/counts above a single full-width
+          100%-stacked bar (single/two/three+ questions), both inside one
+          card. Bar length reads more precisely than a donut's arc angle for
+          comparing 3 values. Below 10 conversations, a placeholder replaces
+          the whole card. */}
+      <div className="dashboard-section">
+        {totalConversations >= 10 ? (
+          <StackedBarCard
+            data={sessionDepthData}
+            lang={lang}
+            noDataLabel={t('partnerDashboard.charts.noData')}
+            a11y={chartA11y}
+            a11yTitle={t('partnerDashboard.charts.engagementTitle')}
+            leftContent={(
+              <div>
+                <h3 className="card-title card-title--has-subtitle">{t('partnerDashboard.charts.engagementTitle')}</h3>
+                <p className="card-subtitle font-size-text-xsm-nr">
+                  {`${t('partnerDashboard.charts.engagementSubtitle')} · ${t('partnerDashboard.charts.totalQuestionsLabel').replace('{n}', fmtN(totalQuestions))}`}
+                </p>
+                <p className="stat-card__value stacked-bar-card__inset">{fmtN(totalConversations)} {t('partnerDashboard.charts.conversations')}</p>
+              </div>
+            )}
+          />
+        ) : (
+          <NoDataCard
+            title={t('partnerDashboard.charts.engagementTitle')}
+            message={t('common.notEnoughData')}
+          />
+        )}
       </div>
 
 
-      {/* Satisfaction — collapsible (defaults closed; the summary carries the
-          headline so the key number shows without expanding). The helpful/not
-          donut shows from 10 responses, but the per-reason breakdown bar only
-          renders at 40+ — its percentages read as noise on a handful of
-          responses. Below 10, a placeholder in place of the whole section. */}
+      {/* Satisfaction — heading + headline stat always visible; the donut
+          (and, at 40+ responses, the per-reason breakdown bar) sit behind the
+          collapse trigger, each running full width inside the reveal — not
+          split side by side. Below 10 responses, a NoDataCard placeholder. */}
       {pfTotal >= 10 ? (
-        <details className="dashboard-collapse dashboard-section">
-          <summary className="dashboard-section-title dashboard-collapse__summary">
-            {t('partnerDashboard.charts.satisfactionSummary')
-              .replace('{pct}', fmtPct(satisfactionPct))
-              .replace('{total}', fmtN(pfTotal))}
-          </summary>
-          {/* At 40+ the donut sits bare beside the wide breakdown bar; below 40
-              it stands alone in a half column so it doesn't stretch full width. */}
-          {pfTotal >= 40 ? (
-            <div className="dashboard-row">
-              {satisfactionDonut}
-              <div className="dashboard-chart-wide">
+        <div className="dashboard-section">
+          <CollapsibleCard
+            heading={t('partnerDashboard.charts.feedbackSectionTitle')}
+            subtext={(
+              <span className="label normal">
+                {t('partnerDashboard.charts.satisfactionSubtext')
+                  .replace('{pct}', fmtPct(satisfactionPct))
+                  .replace('{total}', fmtN(pfTotal))}
+              </span>
+            )}
+            triggerLabel={t('partnerDashboard.charts.satisfactionTrigger')}
+          >
+            <StackedBarCard
+              title={t('partnerDashboard.charts.feedbackSplitTitle')}
+              subtitle={t('partnerDashboard.charts.feedbackSplitSubtitle').replace('{total}', fmtN(pfTotal))}
+              data={satisfactionBarData}
+              lang={lang}
+              noDataLabel={t('partnerDashboard.charts.noData')}
+              a11y={chartA11y}
+            />
+            {pfTotal >= 40 && (
+              <div className="mt-200 mb-200">
                 <DivergingBarCard
                   title={t('partnerDashboard.charts.feedbackReasonsTitle')}
                   subtitle={t('partnerDashboard.charts.feedbackBreakdownSubtitle')
@@ -431,17 +511,12 @@ const PartnerDashboard = ({ lang = 'en' }) => {
                   data={feedbackReasonsData}
                   noDataLabel={t('partnerDashboard.charts.noData')}
                   lang={lang}
+                  a11y={chartA11y}
                 />
               </div>
-            </div>
-          ) : (
-            <div className="dashboard-row">
-              <div className="dashboard-col-half">
-                {satisfactionDonut}
-              </div>
-            </div>
-          )}
-        </details>
+            )}
+          </CollapsibleCard>
+        </div>
       ) : (
         <div className="dashboard-section">
           <NoDataCard
@@ -451,42 +526,145 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Top referral pages — collapsible list of the partner site pages that
-          drove the most click-throughs (conversations) to AI Answers. Hidden
-          when there are no referrals to show. */}
-      {topReferrals.length > 0 && (
+      {/* Answer types + top referral pages + top citation pages, 3-way split.
+          Each is independently hidden when it has no data (answer types is
+          presence-gated on counts, not a minimum-sample threshold), so any
+          one/two of the three can end up alone in the row — still a third
+          width each, not expanded to fill it. */}
+      {(answerTypeRows.some((r) => r.count > 0) || topReferrals.length > 0 || topCitations.length > 0) && (
+        <div className="dashboard-row">
+          {topReferrals.length > 0 && (
+            <div className="dashboard-col-third">
+              <ReferralUrlsCard
+                title={t('partnerDashboard.referrals.title')}
+                subtitle={topReferralSubtext}
+                triggerLabel={t('partnerDashboard.referrals.trigger')}
+                data={topReferrals}
+                urlColLabel={t('partnerDashboard.referrals.colUrl')}
+                countColLabel={t('partnerDashboard.referrals.colCount')}
+                noDataLabel={t('partnerDashboard.charts.noData')}
+                lang={lang}
+              />
+            </div>
+          )}
+          {topCitations.length > 0 && (
+            <div className="dashboard-col-third">
+              <CitationPagesCard
+                title={t('partnerDashboard.citations.title')}
+                subtitle={topCitationSubtext}
+                triggerLabel={t('partnerDashboard.citations.trigger')}
+                citations={topCitations}
+                urlColLabel={t('partnerDashboard.citations.colUrl')}
+                countColLabel={t('partnerDashboard.citations.colCount')}
+                noDataLabel={t('partnerDashboard.citations.noCitations')}
+                lang={lang}
+              />
+            </div>
+          )}
+          {answerTypeRows.some((r) => r.count > 0) && (
+            <div className="dashboard-col-third">
+              <AnswerTypesCard
+                title={t('partnerDashboard.citations.answerTypesTitle')}
+                subtitle={topAnswerTypeSubtext}
+                triggerLabel={t('partnerDashboard.answerTypes.trigger')}
+                rows={answerTypeRows}
+                typeColLabel={t('partnerDashboard.citations.answerTypeColLabel')}
+                countColLabel={t('partnerDashboard.citations.colCount')}
+                noDataLabel={t('partnerDashboard.charts.noData')}
+                lang={lang}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Content issue chats — collapsible list of chats with at least one
+          expert-flagged content issue in the current filter scope, most
+          recent first. Hidden entirely when there are none (presence-gated,
+          like referrals/citations) — the KPI "Content issues" count above
+          still shows 0 rather than hiding, only this list does. */}
+      {contentIssueChats.length > 0 && (
         <div className="dashboard-section">
-          <ReferralUrlsCard
-            title={t('partnerDashboard.referrals.title')}
-            subtitle={t('partnerDashboard.referrals.subtitle')}
-            data={topReferrals}
-            urlColLabel={t('partnerDashboard.referrals.colUrl')}
-            countColLabel={t('partnerDashboard.referrals.colCount')}
-            noDataLabel={t('partnerDashboard.charts.noData')}
+          <ContentIssueChatsCard
+            title={t('partnerDashboard.contentIssueChats.title')}
+            triggerLabel={t('partnerDashboard.contentIssueChats.trigger')}
+            chats={contentIssueChats}
+            chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+            dateColLabel={t('admin.chatDashboard.columns.date')}
+            statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
+            statusLabels={{
+              hasError: t('partnerDashboard.charts.hasError'),
+              needsImprovement: t('metrics.dashboard.expertScored.needsImprovement'),
+            }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
+            noDataLabel={t('partnerDashboard.contentIssueChats.noData')}
             lang={lang}
+            anchorId={CONTENT_ISSUE_ANCHOR}
           />
         </div>
       )}
 
-      {/* Top citation pages — collapsible list of the GC pages AI Answers cited
-          most (by question), plus an answer-type breakdown. Hidden when there
-          are no citations and no answer-type counts to show. */}
-      {(topCitations.length > 0 || answerTypeRows.some((r) => r.count > 0)) && (
-        <div className="dashboard-section">
-          <CitationPagesCard
-            title={t('partnerDashboard.citations.title')}
-            subtitle={t('partnerDashboard.citations.subtitle')}
-            citations={topCitations}
-            urlColLabel={t('partnerDashboard.citations.colUrl')}
-            countColLabel={t('partnerDashboard.citations.colCount')}
-            answerTypesTitle={t('partnerDashboard.citations.answerTypesTitle')}
-            answerTypeColLabel={t('partnerDashboard.citations.answerTypeColLabel')}
-            answerTypeRows={answerTypeRows}
-            noDataLabel={t('partnerDashboard.citations.noCitations')}
-            lang={lang}
+      {/* Eval-informed answers card (left third) + its chats list (right two
+          thirds). The card always shows; the list is presence-gated like the
+          lists above. */}
+      <h2 className="dashboard-section-title">{t('partnerDashboard.evalInformedTitle')}</h2>
+      <div className="dashboard-row">
+        <div className="dashboard-col-third">
+          <StatCard
+            // The asterisks are visual only (aria-hidden): the footnote text
+            // is read straight after the count anyway. Not a link — the list
+            // it would jump to sits right beside it.
+            label={(
+              <>
+                {t('admin.common.evalInformedAnswers')}
+                {evalInformedFromDate && <span aria-hidden="true">*</span>}
+              </>
+            )}
+            value={formatEvalInformedRate(evalInformed.informed?.total, evalInformed.eligible?.total, fmtPct)}
+            sub={evalInformed.eligible?.total > 0
+              ? t('partnerDashboard.kpi.evalInformedSub')
+                .replace('{n}', fmtN(evalInformed.informed.total))
+                .replace('{total}', fmtN(evalInformed.eligible.total))
+              : undefined}
+            footnote={evalInformedFromDate ? (
+              <>
+                <span aria-hidden="true">* </span>
+                {t('admin.common.evalInformedFrom')
+                  .replace('{date}', formatLocaleDate(evalInformedFromDate, lang, '', { year: 'numeric', month: 'short', day: 'numeric' }))}
+              </>
+            ) : undefined}
           />
         </div>
-      )}
+
+        {/* Eval-informed chats — a recent sample (server caps it) for
+            spot-checking, beside its card. Review mode's
+            "Past evaluations used" panel shows which evaluations each answer
+            used, so this list needs no extra columns. */}
+        {evalInformedChats.length > 0 && (
+          <div className="dashboard-chart-wide">
+            <ContentIssueChatsCard
+              title={t('partnerDashboard.evalInformedChats.title')}
+              subtitle={t('partnerDashboard.evalInformedChats.subtitle').replace('{n}', fmtN(EVAL_INFORMED_CHATS_LIMIT))}
+              triggerLabel={t('partnerDashboard.evalInformedChats.trigger')}
+              chats={evalInformedChats}
+              chatIdColLabel={t('reviewPanels.chatId')}
+              questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+              questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+              questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+              dateColLabel={t('admin.chatDashboard.columns.date')}
+              // Never shown: the list is hidden when empty and the card
+              // beside it shows 0%. Kept for now.
+              noDataLabel={t('partnerDashboard.evalInformedChats.noData')}
+              lang={lang}
+              collapsible={evalInformedChats.length >= 3}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
@@ -539,6 +717,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               <StatCard
                 label={t('partnerDashboard.kpi.harmful')}
                 value={fmtN(harmful.total)}
+                href={harmfulChats.length > 0 ? `#${HARMFUL_CHATS_ANCHOR}` : null}
                 sub={t('partnerDashboard.kpi.harmfulSub')
                   .replace('{en}', fmtN(harmful.en))
                   .replace('{fr}', fmtN(harmful.fr))}
@@ -559,6 +738,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
             <StatCard
               label={t('partnerDashboard.kpi.harmful')}
               value={fmtN(harmful.total)}
+              href={harmfulChats.length > 0 ? `#${HARMFUL_CHATS_ANCHOR}` : null}
               sub={t('partnerDashboard.kpi.harmfulSub')
                 .replace('{en}', fmtN(harmful.en))
                 .replace('{fr}', fmtN(harmful.fr))}
@@ -572,8 +752,42 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               lang={lang}
               tooltipContent={BlockedBarTooltip}
               noDataLabel={t('blockedQueries.noData')}
+              a11y={chartA11y}
             />
           </div>
+        </div>
+      )}
+
+      {/* Harmful chats — collapsible list of chats with at least one
+          expert-flagged harmful sentence in the current filter scope, most
+          recent first. Same model as content issue chats above, under Safety
+          rather than the overview since harmful is a safety signal, not a
+          content-quality one. Hidden entirely when there are none
+          (presence-gated) — the KPI "Harmful" count above still shows 0
+          rather than hiding, only this list does. Under 3 chats, skips the
+          collapse entirely (collapsible={false}) — a list that short doesn't
+          need an extra click to reveal it; content issues stays collapsible
+          regardless of count. */}
+      {harmfulChats.length > 0 && (
+        <div className="dashboard-section">
+          <ContentIssueChatsCard
+            title={t('partnerDashboard.harmfulChats.title')}
+            triggerLabel={t('partnerDashboard.harmfulChats.trigger')}
+            chats={harmfulChats}
+            chatIdColLabel={t('reviewPanels.chatId')}
+            questionColLabel={t('admin.evalDashboard.columns.questionNumber')}
+            questionColAriaLabel={t('admin.evalDashboard.columns.questionNumberAriaLabel')}
+            questionLinkLabel={t('account.assignedChats.chatIdQuestion')}
+            dateColLabel={t('admin.chatDashboard.columns.date')}
+            statusColLabel={t('partnerDashboard.contentIssueChats.issueTypeCol')}
+            statusLabels={{ harmful: t('partnerDashboard.kpi.harmful') }}
+            // Never shown: the list is hidden when empty and the card
+            // above shows 0. Kept for now.
+            noDataLabel={t('partnerDashboard.harmfulChats.noData')}
+            lang={lang}
+            anchorId={HARMFUL_CHATS_ANCHOR}
+            collapsible={harmfulChats.length >= 3}
+          />
         </div>
       )}
 

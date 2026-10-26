@@ -20,11 +20,20 @@
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useMarkdownWithFrontmatter } from '../hooks/useMarkdownWithFrontmatter.js';
+import { useTranslations } from '../hooks/useTranslations.js';
 import { DCTERMS } from '../config/metadata.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 const AboutPage = ({ lang = 'en' }) => {
+  const { t } = useTranslations(lang);
   const filename = lang === 'fr' ? 'about-fr.md' : 'about-en.md';
   const { frontmatter, sections, loading, error } = useMarkdownWithFrontmatter(filename);
+  // Explicit focus-move on error - language toggle is a full page reload
+  // (GcdsHeader's langHref is a plain <a>), so error can only go
+  // false->true once per mount. Plain value is fine here (EvalPanel.js's
+  // justDeleted), no counter needed.
+  const errorRef = useFocusOnChange(error);
 
   // Update page metadata from frontmatter
   useEffect(() => {
@@ -113,7 +122,7 @@ const AboutPage = ({ lang = 'en' }) => {
   if (loading) {
     return (
       <div className="mb-600 container-custom">
-        <p>{lang === 'fr' ? 'Chargement...' : 'Loading...'}</p>
+        <StatusMessage loading message={t('aboutPage.loading')} />
       </div>
     );
   }
@@ -122,12 +131,16 @@ const AboutPage = ({ lang = 'en' }) => {
   if (error) {
     return (
       <div className="mb-600 container-custom">
-        <h1>{lang === 'fr' ? 'À propos' : 'About'}</h1>
-        <p>
-          {lang === 'fr'
-            ? 'Impossible de charger le contenu.'
-            : 'Unable to load content.'}
-        </p>
+        <h1>{t('aboutPage.title')}</h1>
+        <StatusMessage
+          variant="error"
+          message={t('aboutPage.loadError')}
+          ref={errorRef}
+          tabIndex={-1}
+          announce={false}
+          announcedVia="focus"
+          className="focus-target"
+        />
       </div>
     );
   }
@@ -137,8 +150,8 @@ const AboutPage = ({ lang = 'en' }) => {
     overview: lang === 'fr' ? 'aperu' : 'overview',
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
+    blogPosts: lang === 'fr' ? 'billets-de-blogue-portant-sur-rponses-ia' : 'ai-answers-blog-posts',
     systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
-    blogPosts: lang === 'fr' ? 'billets-de-blogue-sur-rponses-ia' : 'ai-answers-blog-posts',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
 
@@ -165,7 +178,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Accessibility and Usability Section */}
     {sections[sectionKeys.accessibility] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.accessibility].heading}</summary>
         <ReactMarkdown
           components={{
@@ -180,7 +193,7 @@ const AboutPage = ({ lang = 'en' }) => {
 
     {/* Privacy & Terms Section */}
     {sections[sectionKeys.privacy] && (
-      <details tabIndex={0}>
+      <details>
         <summary>{sections[sectionKeys.privacy].heading}</summary>
         <ReactMarkdown
           components={{
@@ -211,17 +224,14 @@ const AboutPage = ({ lang = 'en' }) => {
       </section>
     )}
 
-    {/* System Card Documentation Section */}
+    {/* System Card Section */}
     {sections[sectionKeys.systemCard] && (
       <section className="mb-400">
         <h2 className="mb-300">{sections[sectionKeys.systemCard].heading}</h2>
         <ReactMarkdown
           components={{
-            p: ({ children }) => <p className="mb-300">{children}</p>,
+            p: ({ children }) => <p>{children}</p>,
             a: ({ href, children }) => <a href={href}>{children}</a>,
-            h3: ({ children }) => <h3 className="mb-200">{children}</h3>,
-            ul: ({ children }) => <ul className="mb-400">{children}</ul>,
-            li: ({ children }) => <li>{children}</li>,
           }}
         >
           {sections[sectionKeys.systemCard].content}

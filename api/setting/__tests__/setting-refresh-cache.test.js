@@ -1,12 +1,34 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import handler from '../setting-refresh-cache.js';
 
 const mockRefreshCache = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockRecordAction = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockLogError = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('../../../services/SettingsService.js', () => ({
   SettingsService: {
     refreshCache: mockRefreshCache,
   },
+}));
+
+vi.mock('../../../services/SettingsAuditService.js', () => ({
+  default: {
+    recordAction: mockRecordAction,
+    // Mirrors the real recordAuditSafely: run recordFn, log-and-swallow on
+    // failure — "still reports success when the audit write fails" below
+    // relies on this to exercise that non-fatal-audit-failure contract.
+    recordAuditSafely: async (recordFn, failureMessage) => {
+      try {
+        return await recordFn();
+      } catch (error) {
+        await mockLogError(failureMessage, 'system', error);
+      }
+    },
+  },
+}));
+
+vi.mock('../../../services/ServerLoggingService.js', () => ({
+  default: { error: mockLogError, info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
 function createReq() {
@@ -38,6 +60,27 @@ function createRes() {
 }
 
 describe('setting-refresh-cache handler', () => {
+  beforeEach(() => {
+    mockRefreshCache.mockClear();
+    mockRecordAction.mockReset();
+    mockRecordAction.mockResolvedValue(undefined);
+    mockLogError.mockClear();
+  });
+
+  it('still reports success when the audit write fails', async () => {
+    const res = createRes();
+    mockRecordAction.mockRejectedValue(new Error('audit collection unavailable'));
+
+    // The cache has already been refreshed at this point — failing the request
+    // would tell the admin the refresh did not happen when it did.
+    await handler(createReq(), res);
+
+    expect(mockRefreshCache).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual({ message: 'Settings cache refreshed' });
+    expect(mockLogError).toHaveBeenCalled();
+  });
+
   it('refreshes the settings cache for admin users', async () => {
     const res = createRes();
 

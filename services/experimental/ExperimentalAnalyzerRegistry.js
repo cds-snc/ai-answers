@@ -17,6 +17,9 @@ class ExperimentalAnalyzerRegistry {
                         nameKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.name`,
                         descriptionKey: `experimental.analysis.analyzers.${AnalyzerClass.id}.description`,
                         inputType: AnalyzerClass.inputType,
+                        requiresReference: AnalyzerClass.requiresReference === true,
+                        supportsBatchComparison: AnalyzerClass.supportsBatchComparison !== false,
+                        supportedWorkflows: AnalyzerClass.supportedWorkflows,
                         outputColumns: [...new Set([
                             ...AnalyzerBase.standardOutputColumns,
                             ...(AnalyzerClass.outputColumns || [])
@@ -25,7 +28,20 @@ class ExperimentalAnalyzerRegistry {
                         concurrency: AnalyzerClass.concurrency, // Optional hint
                         processor: async (input) => {
                             const instance = new AnalyzerClass(input.config);
-                            return instance.normalizeResult(await instance.analyze(input));
+                            const rawResult = await instance.analyze(input);
+                            const normalizedResult = instance.normalizeResult(rawResult);
+                            const isBatchComparison = Boolean(
+                                input.originalData?.baselineRunId && input.originalData?.candidateRunId
+                            );
+
+                            return {
+                                ...normalizedResult,
+                                ...(isBatchComparison && {
+                                    comparisonExplanation: normalizedResult.comparisonExplanation
+                                        || rawResult.comparisonExplanation
+                                        || normalizedResult.explanation
+                                })
+                            };
                         }
                     });
                     console.log(`Registered analyzer: ${AnalyzerClass.id}`);

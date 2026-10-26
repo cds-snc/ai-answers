@@ -41,22 +41,27 @@ ${departmentsString}
 ## Matching Algorithm:
 1. Extract key topics and entities from the user's question and context
 - <searchResults> contains Title/Link/Summary entries from a search query run before your turn. Use them as supporting signal.
-- Prioritize your analysis of the question and <referring-url>  (the page the user was on when they launched AI Answers) over <searchResults>
-- <referring-url> often helps identify the department or topic. It occasionally may betray a misunderstanding. For example, the user was on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through the CRA account. 
+- Prioritize your analysis of the question and <referring-url> (url of page user was on when they launched AI Answers) over <searchResults> as search results can be unreliable
+- <referring-url> often identifies the department or topic with some exceptions: 
+    1. Occasionally <referring-url> may betray a misunderstanding. E.g. user was on MSCA sign in page but question is how to sign in to get their Notice of Assessment, which is done through CRA account (department would be CRA-ARC). Or the user is on a jobs or tax page for Canada but is asking about immigrating or work permits (department would be IRCC)
+    2. <referring-url> is a top-level canada.ca page managed by CEO-BEC (e.g. home,all services, contact, sign-in etc) that is a cross-dept page - your analysis of the key topics and entities should be prioritized. Eg. user is asking about calling for CPP or EI on the contact page (department is ESDC, not CEO-BEC) or citizenship on the sign-in page (IRCC not CEO-BEC) etc.
 
-2. Compare and select an organization from <departments_list> or from the list of CEO-BEC cross-department canada.ca pages below
+2. Compare and select the best matching organization from <departments_list>: 
 - You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
 - You MUST output BOTH the department abbreviation AND the matching URL from the same entry
 - You CANNOT use program names, service names, or benefit names as department codes unless they are listed in the <departments_list>
 - Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
 
 3a. If multiple organizations could be responsible, select the one that most likely directly administers and delivers web content for the program/service.
+      - Exception for programs delivered regionally by several organizations (e.g. the regional development agencies deliver the Regional Tariff Response Initiative, Business Scale-up and Productivity): match the national administering department (Regional Tariff Response Initiative → ISED-ISDE) unless the question or <referring-url> names a region, province or agency. <searchResults> surface an arbitrary region, and matching it sends the user to an office that isn't theirs.
 
-3b. If the question doesn't mention a specific service/dept (e.g., CPP, EI, passport, MSCA, CRA account) AND is about one of these cross-department services → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
+3b. If the question doesn't mention a specific service/dept/program or benefit (e.g., CPP, EI, passport, MSCA, CRA account, immigration) AND is about or on one of these cross-department services managed by CEO-BEC → set department to CEO-BEC (Canada.ca Experience Office) and select URL matching <page-language>:
       - Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       - All Government of Canada contacts: https://www.canada.ca/en/contact.html or fr: https://www.canada.ca/fr/contact.html
       - All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr: https://www.canada.ca/fr/gouvernement/min.html
       - All Government of Canada services: https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
+      - Home page: https://www.canada.ca/en.html https://www.canada.ca/fr.html
+      - Sign in to Government of Canada online accounts: https://www.canada.ca/en/government/sign-in-online-account.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html
       - This AI Answers service for Canada.ca, Canada.ca design guidance for pages, alerts, AI help applications, Canada.ca blog posts (e.g. AI trust study,AI Answers trial results), top pages, analytics https://www.canada.ca/en/government/about-canada-ca.html or fr: https://www.canada.ca/fr/gouvernement/a-propos-canada-ca.html
 
 3c. If steps 3a and 3b produce no match but <referring-url> is a Government of Canada page whose administering organization could plausibly own the question's topic, select that organization's Bilingual Abbr Key and URL from <departments_list>. Prefer this over returning empty values.
@@ -90,11 +95,12 @@ ${departmentsString}
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
-- "CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- Digital Transformation Canada,"CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
 - Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
+- Original census data pre-1931 → BAC-LAC versus compiled census data after 1931 → STATCAN
 
 ## Response Format:
 <analysis>
@@ -157,6 +163,13 @@ ${departmentsString}
 <analysis>
 <department>DND-MDN</department>
 <departmentUrl>https://www.canada.ca/en/department-national-defence.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds pre-1931 census & resources for many other departments)
+<analysis>
+<department>BAC-LAC</department>
+<departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
 </analysis>
 </example>
 </examples>

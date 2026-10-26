@@ -1,21 +1,86 @@
-import React, { useEffect, useState } from 'react';
-import { GcdsButton, GcdsContainer, GcdsDetails } from '@gcds-core/components-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GcdsButton, GcdsContainer } from '@gcds-core/components-react';
 import DataStoreService from '../services/DataStoreService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
-import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES } from '../config/workflows.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { useErrorStatus } from '../hooks/useErrorStatus.js';
+import { WORKFLOWS, AVAILABLE_MODELS, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../config/workflows.js';
+import { SEARCH_PROVIDERS, SEARCH_PROVIDER_VALUES, DEFAULT_SEARCH_PROVIDER } from '../config/searchProviders.js';
+import StatusMessage from '../components/admin/StatusMessage.js';
+import { announce } from '../utils/liveAnnouncer.js';
+import { AUDIT_VALUE_PREVIEW_LENGTH } from '../components/settings/SettingsAuditValue.js';
+import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
+import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.js';
+// ServerDataTable (components/admin/) is the first step toward consolidating
+// this app's several duplicated DataTables setups — see the longer note in
+// that file for why it's not components/experimental/ExperimentalServerData
+// Table.js (used by the two experimental pages) that Settings depends on,
+// and why ChatDashboardPage/EvalDashboardPage/etc. aren't migrated onto it
+// in this same change.
+import ServerDataTable from '../components/admin/ServerDataTable.js';
+import { escapeHtmlAttribute } from '../utils/reviewLink.js';
+import { formatLocaleDate } from '../utils/formatLocaleDate.js';
 
-const normalizeChatTransport = (value) => (
-  ['sse', 'ndjson'].includes(value) ? value : 'sse'
-);
+const UNSAVED_WARNING_ANNOUNCE_DELAY_MS = 4000;
+
+// Same truncate-behind-a-disclosure treatment as the React SettingsAuditValue
+// component (previousValue/newValue can be as long as SettingsAuditService's
+// own 2000-char cap), but building a raw HTML string instead of JSX —
+// DataTables column `render` functions insert HTML directly, not React
+// elements, so the two can't share the same component.
+const renderAuditValueHtml = (value, emptyLabel) => {
+  if (value === null || value === undefined) return escapeHtmlAttribute(emptyLabel);
+  const text = String(value);
+  if (text.length <= AUDIT_VALUE_PREVIEW_LENGTH) {
+    return `<span class="settings-audit-value">${escapeHtmlAttribute(text)}</span>`;
+  }
+  const preview = escapeHtmlAttribute(text.slice(0, AUDIT_VALUE_PREVIEW_LENGTH));
+  return `<details class="settings-audit-value settings-audit-value--long"><summary>${preview}…</summary><span>${escapeHtmlAttribute(text)}</span></details>`;
+};
+
+// setMany()'s `errors` map holds either a plain (untranslated) string — for
+// errors SettingsService doesn't yet localize, e.g. a DB write failure — or
+// a { i18nKey, i18nValues } pair for field validators, which compose no
+// prose themselves since they run server-side with no access to the
+// admin's UI language. This resolves either shape to display text in the
+// admin's actual language.
+const resolveFieldError = (error, t) => {
+  // The plain-string branch is the rare case (a requireString/requireLiteralString
+  // validation failure, or a DB write throwing inside setMany's
+  // Promise.allSettled) — SettingsService.setMany has no translation for these,
+  // by its own comment, so `error` here is a raw driver/exception message.
+  // FeedbackInlineError renders `message` directly, so returning a fragment
+  // instead of a string works with no change to that component — same
+  // translated-prefix + <code lang="en"> wrap as buildErrorStatus uses for
+  // DatabasePage.js's raw details, just field-scoped instead of page-scoped.
+  if (typeof error === 'string') {
+    const [prefix, suffix] = t('settings.fieldError.unexpected').split('{error}');
+    return <>{prefix}<code lang="en">{error}</code>{suffix}</>;
+  }
+  if (error && error.i18nKey) {
+    let message = t(error.i18nKey);
+    Object.entries(error.i18nValues || {}).forEach(([placeholder, value]) => {
+      message = message.replace(`{${placeholder}}`, () => value);
+    });
+    return message;
+  }
+  return String(error);
+};
+
 
 const SETTINGS_LOAD_DEFAULTS = {
   siteStatus: 'available',
   deploymentMode: 'CDS',
   vectorServiceType: 'imvectordb',
   'site.baseUrl': '',
-  'workflow.default': 'GenericGraph',
+  'workflow.default': DEFAULT_WORKFLOW,
   'model.default': 'openai-gpt51',
+  'search.default': DEFAULT_SEARCH_PROVIDER,
+  'searchContext.cache.enabled': 'false',
+  'searchContext.cache.durationHours': '12',
   'chat.transport': 'sse',
+  'downloadWebPage.cache.enabled': 'false',
+  'downloadWebPage.cache.durationHours': '12',
   'guardrail.indigenousLanguageBlocking': 'true',
   'systemHealth.enabled': 'false',
   'systemHealth.checks.database.enabled': 'true',
@@ -54,98 +119,191 @@ const SETTINGS_LOAD_DEFAULTS = {
 
 const SETTINGS_LOAD_KEYS = Object.keys(SETTINGS_LOAD_DEFAULTS);
 
+// Which setting keys belong to which section's Save button. Drives both
+// per-section dirty-checking (is anything in `pendingChanges` one of this
+// section's keys?) and what gets sent when that section's Save is clicked.
+const SECTION_KEYS = {
+  general: [
+    'siteStatus', 'deploymentMode', 'vectorServiceType', 'workflow.default',
+    'chat.transport', 'model.default', 'search.default', 'guardrail.indigenousLanguageBlocking', 'site.baseUrl',
+  ],
+  cache: ['searchContext.cache.enabled', 'searchContext.cache.durationHours', 'downloadWebPage.cache.enabled', 'downloadWebPage.cache.durationHours'],
+  health: [
+    'systemHealth.enabled', 'systemHealth.checks.database.enabled', 'systemHealth.checks.search.enabled',
+    'systemHealth.checks.llm.enabled', 'systemHealth.autoDisableOnError', 'systemHealth.errorTemplateId',
+    'systemHealth.alertTemplateId', 'systemHealth.failureThreshold', 'systemHealth.failureWindowMinutes',
+    'systemHealth.intervalMinutes', 'systemHealth.fastIntervalSeconds', 'systemHealth.alertRecipients',
+  ],
+  twoFA: ['twoFA.enabled', 'twoFA.templateId', 'notify.resetTemplateId'],
+  session: [
+    'session.managementEnabled', 'session.type', 'metrics.type',
+    'session.defaultTTLMinutes', 'session.authenticatedTTLMinutes', 'session.maxActiveSessions',
+  ],
+  rateLimiting: [
+    'session.rateLimitPersistence', 'session.singleAnonymousChatRunEnabled', 'session.rateLimitCapacity',
+    'session.rateLimitRefillPerSec', 'session.authenticatedRateLimitCapacity', 'session.authenticatedRateLimitRefillPerSec',
+  ],
+  redaction: [
+    'redaction.profanity.en', 'redaction.threat.en', 'redaction.manipulation.en',
+    'redaction.profanity.fr', 'redaction.threat.fr', 'redaction.manipulation.fr',
+  ],
+};
+
+// Reverse of SECTION_KEYS — which section a given setting key belongs to.
+// Lets stageChange clear that section's stale save-outcome message without
+// every field's onChange having to know its own section name.
+const KEY_TO_SECTION = Object.fromEntries(
+  Object.entries(SECTION_KEYS).flatMap(([section, keys]) => keys.map((key) => [key, section]))
+);
+
+// Same section keys, mapped to the locale key for that section's own title —
+// lets the page-level unsaved-changes banner name which section(s) without
+// duplicating the title strings each SectionSaveControls already carries.
+const SECTION_TITLE_KEYS = {
+  general: 'settings.general.title',
+  cache: 'settings.cache.title',
+  health: 'settings.health.title',
+  twoFA: 'settings.twoFA.title',
+  session: 'settings.session.title',
+  rateLimiting: 'settings.rateLimiting.title',
+  redaction: 'settings.redaction.title',
+};
+
+// Every setting key's own field id + label locale key — drives the inline
+// FeedbackInlineError under each field (id) and the jump-link text in a
+// section's ExplanationErrorSummary (labelKey), from the single per-key
+// `errors` map setMany() returns, without hand-maintaining a second copy of
+// every field's id/label next to its JSX.
+const FIELD_META = {
+  siteStatus: { fieldId: 'site-status', labelKey: 'settings.statusLabel' },
+  'site.baseUrl': { fieldId: 'base-url', labelKey: 'settings.baseUrlLabel' },
+  deploymentMode: { fieldId: 'deployment-mode', labelKey: 'settings.deploymentModeLabel' },
+  vectorServiceType: { fieldId: 'vector-service-type', labelKey: 'settings.vectorServiceTypeLabel' },
+  'workflow.default': { fieldId: 'default-workflow', labelKey: 'settings.defaultWorkflow.label' },
+  'chat.transport': { fieldId: 'chat-transport', labelKey: 'settings.chatTransport.label' },
+  'downloadWebPage.cache.enabled': { fieldId: 'download-web-page-cache-enabled', labelKey: 'settings.downloadWebPageCache.enabledLabel' },
+  'downloadWebPage.cache.durationHours': { fieldId: 'download-web-page-cache-duration-hours', labelKey: 'settings.downloadWebPageCache.durationHoursLabel' },
+  'model.default': { fieldId: 'default-model', labelKey: 'settings.defaultModel.label' },
+  'search.default': { fieldId: 'default-search-provider', labelKey: 'settings.defaultSearchProvider.label' },
+  'searchContext.cache.enabled': { fieldId: 'search-context-cache-enabled', labelKey: 'settings.searchContextCache.enabledLabel' },
+  'searchContext.cache.durationHours': { fieldId: 'search-context-cache-duration-hours', labelKey: 'settings.searchContextCache.durationHoursLabel' },
+  'guardrail.indigenousLanguageBlocking': { fieldId: 'indigenous-language-blocking', labelKey: 'settings.indigenousLanguageBlocking.label' },
+  'systemHealth.enabled': { fieldId: 'health-enabled', labelKey: 'settings.health.enabledLabel' },
+  'systemHealth.checks.database.enabled': { fieldId: 'health-database-enabled', labelKey: 'settings.health.databaseEnabledLabel' },
+  'systemHealth.checks.search.enabled': { fieldId: 'health-search-enabled', labelKey: 'settings.health.searchEnabledLabel' },
+  'systemHealth.checks.llm.enabled': { fieldId: 'health-llm-enabled', labelKey: 'settings.health.llmEnabledLabel' },
+  'systemHealth.autoDisableOnError': { fieldId: 'health-auto-disable', labelKey: 'settings.health.autoDisableOnErrorLabel' },
+  'systemHealth.errorTemplateId': { fieldId: 'health-error-template', labelKey: 'settings.health.errorTemplateId' },
+  'systemHealth.alertTemplateId': { fieldId: 'health-alert-template', labelKey: 'settings.health.alertTemplateId' },
+  'systemHealth.failureThreshold': { fieldId: 'health-failure-threshold', labelKey: 'settings.health.failureThreshold' },
+  'systemHealth.failureWindowMinutes': { fieldId: 'health-failure-window', labelKey: 'settings.health.failureWindowMinutes' },
+  'systemHealth.intervalMinutes': { fieldId: 'health-interval', labelKey: 'settings.health.intervalMinutes' },
+  'systemHealth.fastIntervalSeconds': { fieldId: 'health-fast-interval', labelKey: 'settings.health.fastIntervalSeconds' },
+  'systemHealth.alertRecipients': { fieldId: 'health-alert-recipients', labelKey: 'settings.health.alertRecipients' },
+  'twoFA.enabled': { fieldId: 'twofa-enabled', labelKey: 'settings.twoFA.enabledLabel' },
+  'twoFA.templateId': { fieldId: 'twofa-template', labelKey: 'settings.twoFA.templateLabel' },
+  'notify.resetTemplateId': { fieldId: 'reset-template', labelKey: 'settings.notify.resetTemplateLabel' },
+  'session.managementEnabled': { fieldId: 'session-management-enabled', labelKey: 'settings.session.managementEnabled' },
+  'session.type': { fieldId: 'session-store-type', labelKey: 'settings.session.storeType' },
+  'metrics.type': { fieldId: 'metrics-store-type', labelKey: 'settings.metrics.storeType' },
+  'session.defaultTTLMinutes': { fieldId: 'session-ttl', labelKey: 'settings.session.ttlMinutes' },
+  'session.authenticatedTTLMinutes': { fieldId: 'session-auth-ttl', labelKey: 'settings.session.authTtlMinutes' },
+  'session.maxActiveSessions': { fieldId: 'session-max-sessions', labelKey: 'settings.session.maxActiveSessions' },
+  'session.rateLimitPersistence': { fieldId: 'session-rate-persistence', labelKey: 'settings.rateLimiting.persistence.label' },
+  'session.singleAnonymousChatRunEnabled': { fieldId: 'session-single-anonymous-chat-run', labelKey: 'settings.rateLimiting.singleAnonymousChatRunEnabled' },
+  'session.rateLimitCapacity': { fieldId: 'session-rate-capacity', labelKey: 'settings.rateLimiting.rateLimitCapacity' },
+  'session.rateLimitRefillPerSec': { fieldId: 'session-rate-refill', labelKey: 'settings.rateLimiting.rateLimitRefill' },
+  'session.authenticatedRateLimitCapacity': { fieldId: 'session-authenticated-rate-capacity', labelKey: 'settings.rateLimiting.authenticatedRateLimitCapacity' },
+  'session.authenticatedRateLimitRefillPerSec': { fieldId: 'session-authenticated-rate-refill', labelKey: 'settings.rateLimiting.authenticatedRateLimitRefill' },
+  'redaction.profanity.en': { fieldId: 'redaction.profanity.en', labelKey: 'settings.redaction.profanity' },
+  'redaction.threat.en': { fieldId: 'redaction.threat.en', labelKey: 'settings.redaction.threat' },
+  'redaction.manipulation.en': { fieldId: 'redaction.manipulation.en', labelKey: 'settings.redaction.manipulation' },
+  'redaction.profanity.fr': { fieldId: 'redaction.profanity.fr', labelKey: 'settings.redaction.profanity' },
+  'redaction.threat.fr': { fieldId: 'redaction.threat.fr', labelKey: 'settings.redaction.threat' },
+  'redaction.manipulation.fr': { fieldId: 'redaction.manipulation.fr', labelKey: 'settings.redaction.manipulation' },
+};
+
 const SettingsPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  // Shared with DatabasePage.js's own ~13 uses of the same shape - see
+  // useErrorStatus.js. The settings-cache refresh below renders success as
+  // 'info' (a neutral confirmation, not a completed mutation); the web page
+  // cache clear and audit history load use the 'success' default.
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
   const [status, setStatus] = useState('available');
-  const [saving, setSaving] = useState(false);
   const [deploymentMode, setDeploymentMode] = useState('CDS');
-  const [savingDeployment, setSavingDeployment] = useState(false);
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
-  const [savingVectorType, setSavingVectorType] = useState(false);
   const [refreshingSettingsCache, setRefreshingSettingsCache] = useState(false);
-  const [settingsCacheMessage, setSettingsCacheMessage] = useState('');
+  const [settingsCacheStatus, setSettingsCacheStatus] = useState(null); // { text, isError }
+  // Imperative handle onto the audit history table (see ServerDataTable.js)
+  // — after a section save or a cache refresh writes new audit rows,
+  // auditTableRef.current.reload() re-fetches the current page in place
+  // without resetting whatever the admin had typed into the search box or
+  // paged to, unlike forcing a full remount via a `tableKey` bump.
+  const auditTableRef = useRef(null);
+  // Set from ServerDataTable's onError — a genuine fetch failure used to be
+  // silently indistinguishable from "no audit rows exist" (both rendered
+  // emptyTableText). buildErrorStatus/renderStatusMessage below is the same
+  // shape/rendering this page's settingsCacheStatus and DatabasePage.js's
+  // ~13 operations already use.
+  const [auditLoadStatus, setAuditLoadStatus] = useState(null);
   const [baseUrl, setBaseUrl] = useState('');
-  const [savingBaseUrl, setSavingBaseUrl] = useState(false);
 
   // Global default workflow setting (Default | DefaultWithVector | DefaultWithVectorGraph)
-  const [defaultWorkflow, setDefaultWorkflow] = useState('GenericGraph');
-  const [savingDefaultWorkflow, setSavingDefaultWorkflow] = useState(false);
+  const [defaultWorkflow, setDefaultWorkflow] = useState(DEFAULT_WORKFLOW);
 
   // Default model setting — decoupled from workflow so model upgrades are a Settings change
   const [defaultModel, setDefaultModel] = useState('openai-gpt51');
-  const [savingDefaultModel, setSavingDefaultModel] = useState(false);
+  const [defaultSearchProvider, setDefaultSearchProvider] = useState(DEFAULT_SEARCH_PROVIDER);
+  const [searchContextCacheEnabled, setSearchContextCacheEnabled] = useState('false');
+  const [searchContextCacheDurationHours, setSearchContextCacheDurationHours] = useState('12');
+  const [clearingSearchCache, setClearingSearchCache] = useState(false);
+  const [clearSearchCacheStatus, setClearSearchCacheStatus] = useState(null); // { text, isError }
   const [chatTransport, setChatTransport] = useState('sse');
-  const [savingChatTransport, setSavingChatTransport] = useState(false);
+  const [downloadWebPageCacheEnabled, setDownloadWebPageCacheEnabled] = useState('false');
+  const [downloadWebPageCacheDurationHours, setDownloadWebPageCacheDurationHours] = useState('12');
+  const [clearingDownloadWebPageCache, setClearingDownloadWebPageCache] = useState(false);
+  const [clearDownloadWebPageCacheStatus, setClearDownloadWebPageCacheStatus] = useState(null); // { text, isError }
 
   // Canadian Indigenous language blocking guardrail (on by default)
   const [indigenousLanguageBlocking, setIndigenousLanguageBlocking] = useState('true');
-  const [savingIndigenousLanguageBlocking, setSavingIndigenousLanguageBlocking] = useState(false);
 
   // Health monitoring settings
   const [healthEnabled, setHealthEnabled] = useState('false');
-  const [savingHealthEnabled, setSavingHealthEnabled] = useState(false);
   const [healthDatabaseEnabled, setHealthDatabaseEnabled] = useState('true');
-  const [savingHealthDatabaseEnabled, setSavingHealthDatabaseEnabled] = useState(false);
   const [healthSearchEnabled, setHealthSearchEnabled] = useState('true');
-  const [savingHealthSearchEnabled, setSavingHealthSearchEnabled] = useState(false);
   const [healthLlmEnabled, setHealthLlmEnabled] = useState('true');
-  const [savingHealthLlmEnabled, setSavingHealthLlmEnabled] = useState(false);
   const [healthAutoDisableOnError, setHealthAutoDisableOnError] = useState('true');
-  const [savingHealthAutoDisableOnError, setSavingHealthAutoDisableOnError] = useState(false);
   const [healthErrorTemplateId, setHealthErrorTemplateId] = useState('');
-  const [savingHealthErrorTemplateId, setSavingHealthErrorTemplateId] = useState(false);
   const [healthFailureThreshold, setHealthFailureThreshold] = useState(5);
-  const [savingHealthFailureThreshold, setSavingHealthFailureThreshold] = useState(false);
   const [healthFailureWindowSeconds, setHealthFailureWindowSeconds] = useState(5);
-  const [savingHealthFailureWindowSeconds, setSavingHealthFailureWindowSeconds] = useState(false);
   const [healthIntervalSeconds, setHealthIntervalSeconds] = useState(1);
-  const [savingHealthIntervalSeconds, setSavingHealthIntervalSeconds] = useState(false);
   const [healthFastIntervalSeconds, setHealthFastIntervalSeconds] = useState(30);
-  const [savingHealthFastIntervalSeconds, setSavingHealthFastIntervalSeconds] = useState(false);
   const [healthAlertRecipients, setHealthAlertRecipients] = useState('');
-  const [savingHealthAlertRecipients, setSavingHealthAlertRecipients] = useState(false);
   const [healthAlertTemplateId, setHealthAlertTemplateId] = useState('');
-  const [savingHealthAlertTemplateId, setSavingHealthAlertTemplateId] = useState(false);
-
-
 
   // Two-factor authentication settings
   const [twoFAEnabled, setTwoFAEnabled] = useState('false');
-  const [savingTwoFAEnabled, setSavingTwoFAEnabled] = useState(false);
   const [twoFATemplateId, setTwoFATemplateId] = useState('');
-  const [savingTwoFATemplateId, setSavingTwoFATemplateId] = useState(false);
   // GC Notify template ID for password reset link emails
   const [resetTemplateId, setResetTemplateId] = useState('');
-  const [savingResetTemplateId, setSavingResetTemplateId] = useState(false);
 
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
-  const [savingSessionTTL, setSavingSessionTTL] = useState(false);
   const [sessionAuthTTL, setSessionAuthTTL] = useState(60); // minutes for authenticated users
-  const [savingSessionAuthTTL, setSavingSessionAuthTTL] = useState(false);
   const [rateLimitCapacity, setRateLimitCapacity] = useState(60);
-  const [savingRateLimitCapacity, setSavingRateLimitCapacity] = useState(false);
   const [rateLimitRefill, setRateLimitRefill] = useState(1);
-  const [savingRateLimitRefill, setSavingRateLimitRefill] = useState(false);
   const [authenticatedRateLimitCapacity, setAuthenticatedRateLimitCapacity] = useState(300);
-  const [savingAuthenticatedRateLimitCapacity, setSavingAuthenticatedRateLimitCapacity] = useState(false);
   const [authenticatedRateLimitRefill, setAuthenticatedRateLimitRefill] = useState(300);
-  const [savingAuthenticatedRateLimitRefill, setSavingAuthenticatedRateLimitRefill] = useState(false);
   // Rate-limiter persistence mode.
   const [rateLimitPersistence, setRateLimitPersistence] = useState('memory');
-  const [savingRateLimitPersistence, setSavingRateLimitPersistence] = useState(false);
   const [singleAnonymousChatRunEnabled, setSingleAnonymousChatRunEnabled] = useState('true');
-  const [savingSingleAnonymousChatRunEnabled, setSavingSingleAnonymousChatRunEnabled] = useState(false);
   const [maxActiveSessions, setMaxActiveSessions] = useState('');
-  const [savingMaxActiveSessions, setSavingMaxActiveSessions] = useState(false);
   const [sessionManagementEnabled, setSessionManagementEnabled] = useState('true');
-  const [savingSessionManagementEnabled, setSavingSessionManagementEnabled] = useState(false);
   // Session store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [sessionStoreType, setSessionStoreType] = useState('memory');
-  const [savingSessionStoreType, setSavingSessionStoreType] = useState(false);
   // Metrics store type. UI says DocumentDB; persisted value remains 'mongo'.
   const [metricsStoreType, setMetricsStoreType] = useState('memory');
-  const [savingMetricsStoreType, setSavingMetricsStoreType] = useState(false);
   const [redactionValues, setRedactionValues] = useState({
     'redaction.profanity.en': '',
     'redaction.threat.en': '',
@@ -155,18 +313,132 @@ const SettingsPage = ({ lang = 'en' }) => {
     'redaction.manipulation.fr': '',
   });
 
+  // Fields staged by a change but not yet persisted, keyed by setting key —
+  // one flat map for the whole page. SECTION_KEYS turns it into a per-section
+  // dirty check. Cleared per-key as each field's save actually succeeds.
+  const [pendingChanges, setPendingChanges] = useState({});
+  // Raw settings values as last loaded from the server, keyed by setting
+  // key — a ref (not state) since nothing renders it directly, only
+  // stageChange reads it. Lets an edit that lands back on the original value
+  // (e.g. bump a number up then back down) drop out of pendingChanges
+  // instead of leaving the section dirty for a net-zero change. Compared
+  // against the raw loaded string rather than each field's own
+  // display-normalized state (Number()/allowlist-clamped/etc.), so this can
+  // miss a revert on the handful of fields with non-trivial normalization
+  // (e.g. session store type) if the stored value itself is in an unusual
+  // form — acceptable for the common case this fixes (typing a number back
+  // to what it was) without needing to duplicate every field's own
+  // load-time transform here too.
+  const originalValuesRef = useRef({});
+  const [sectionSaving, setSectionSaving] = useState({
+    general: false, cache: false, health: false, twoFA: false, session: false, rateLimiting: false, redaction: false,
+  });
+  // { [section]: { text, isError } } — one save-outcome message per section,
+  // replacing a single page-wide status shared by every field.
+  const [sectionStatus, setSectionStatus] = useState({});
+  // { [settingKey]: message } — per-field validation errors from the last
+  // setMany() response, surfaced inline via FeedbackInlineError next to the
+  // field itself rather than only in the section's generic StatusMessage.
+  const [fieldErrors, setFieldErrors] = useState({});
+  // { [section]: number } — bumped on every save that comes back with 1+
+  // field errors, even if the same field fails again with the same message.
+  // ExplanationErrorSummary needs a change, not just a truthy value, to
+  // re-focus/re-announce on a second failed attempt (see useFocusOnChange).
+  const [sectionErrorAttempt, setSectionErrorAttempt] = useState({});
+  // Bumped on every save attempt (success or failure) for a section, so
+  // SectionSaveControls' StatusMessage re-announces even when the
+  // outcome text is identical to the previous attempt (e.g. two saves in a
+  // row that both succeed, or a retry that hits the same error).
+  const [sectionSaveNonce, setSectionSaveNonce] = useState({});
+
+  const stageChange = (key, value) => {
+    const original = originalValuesRef.current[key];
+    const isReverted = original !== undefined && String(original) === value;
+    setPendingChanges((prev) => {
+      if (isReverted) {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
+    // A fresh edit supersedes whatever the last save attempt said was wrong
+    // with this field.
+    setFieldErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    // The section's last save-outcome message describes a state the admin
+    // has now changed again — "Changes to X saved" would otherwise keep
+    // showing next to a field edited since that save.
+    const section = KEY_TO_SECTION[key];
+    setSectionStatus((prev) => {
+      if (!section || !prev[section]) return prev;
+      const next = { ...prev };
+      delete next[section];
+      return next;
+    });
+  };
+
+  // A number input cleared to empty is invalid server-side (requireString
+  // rejects '' for any key not in EMPTY_ALLOWED_SETTINGS, aborting the whole
+  // section's batch save, not just this field) — snap it to '0' once the
+  // admin leaves the field, instead of letting an empty value ever reach
+  // Save. Only fires on blur, not onChange, so mid-edit clearing (e.g.
+  // select-all + delete before typing a new number) isn't fought.
+  const defaultEmptyNumberOnBlur = (currentValue, setDisplay, key) => {
+    if (currentValue === '') {
+      setDisplay('0');
+      stageChange(key, '0');
+    }
+  };
+
+  const isSectionDirty = (section) => SECTION_KEYS[section].some((key) => key in pendingChanges);
+
+  const clearDownloadWebPageCache = async () => {
+    if (!window.confirm(t('settings.downloadWebPageCache.clearConfirm'))) return;
+    setClearingDownloadWebPageCache(true);
+    setClearDownloadWebPageCacheStatus(null);
+    try {
+      await DataStoreService.clearDownloadWebPageCache();
+      setClearDownloadWebPageCacheStatus({ text: t('settings.downloadWebPageCache.clearSuccess'), isError: false });
+      auditTableRef.current?.reload();
+    } catch (_error) {
+      setClearDownloadWebPageCacheStatus({ text: t('settings.downloadWebPageCache.clearError'), isError: true });
+    } finally {
+      setClearingDownloadWebPageCache(false);
+    }
+  };
+
+  // TODO(follow-up, pre-existing): this mount-time load and a field's own
+  // onChange (below, e.g. setDefaultWorkflow(v) via stageChange) both call
+  // setDefaultWorkflow with no sequencing between them. A slow initial GET
+  // that resolves after the user has already started editing overwrites the
+  // dropdown's displayed value with the stale loaded one, while
+  // pendingChanges still holds what they typed — display and staged value
+  // go out of sync. Same class of race as before the section-Save rework,
+  // just a different symptom (stale display instead of stale save).
   useEffect(() => {
     async function loadSettings() {
       const settings = await DataStoreService.getSettings(SETTINGS_LOAD_KEYS, SETTINGS_LOAD_DEFAULTS);
+      originalValuesRef.current = settings;
       setStatus(settings.siteStatus);
       setDeploymentMode(settings.deploymentMode);
       setVectorServiceType(settings.vectorServiceType);
       setBaseUrl(settings['site.baseUrl'] ?? '');
       const allowedWorkflows = WORKFLOW_VALUES;
       const defaultWorkflowSetting = settings['workflow.default'];
-      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : 'GenericGraph');
+      setDefaultWorkflow(allowedWorkflows.includes(defaultWorkflowSetting) ? defaultWorkflowSetting : DEFAULT_WORKFLOW);
       setDefaultModel(settings['model.default'] || AVAILABLE_MODELS[0].value);
-      setChatTransport(normalizeChatTransport(settings['chat.transport']));
+      setDefaultSearchProvider(SEARCH_PROVIDER_VALUES.includes(settings['search.default']) ? settings['search.default'] : DEFAULT_SEARCH_PROVIDER);
+      setSearchContextCacheEnabled(String(settings['searchContext.cache.enabled'] ?? 'false'));
+      setSearchContextCacheDurationHours(String(settings['searchContext.cache.durationHours'] ?? '12'));
+      setChatTransport(['sse', 'ndjson'].includes(settings['chat.transport']) ? settings['chat.transport'] : 'sse');
+      setDownloadWebPageCacheEnabled(String(settings['downloadWebPage.cache.enabled'] ?? 'false'));
+      setDownloadWebPageCacheDurationHours(String(settings['downloadWebPage.cache.durationHours'] ?? '12'));
       setIndigenousLanguageBlocking(String(settings['guardrail.indigenousLanguageBlocking'] ?? 'true'));
       setHealthEnabled(String(settings['systemHealth.enabled'] ?? 'false'));
       setHealthDatabaseEnabled(String(settings['systemHealth.checks.database.enabled'] ?? 'true'));
@@ -210,406 +482,198 @@ const SettingsPage = ({ lang = 'en' }) => {
     loadSettings();
   }, []);
 
-  // Helper to save a setting and read it back to confirm persistence.
-  const saveAndVerify = async (key, value, readTransform = (v) => v) => {
-    await DataStoreService.setSetting(key, value);
-    const current = await DataStoreService.getSetting(key, value);
-    return readTransform(current);
-  };
-
-  const saveHealthSetting = async ({ key, value, setValue, setSaving, readTransform = (v) => v }) => {
-    setValue(value);
-    setSaving(true);
+  const clearSearchCache = async () => {
+    if (!window.confirm(t('settings.searchContextCache.clearConfirm'))) return;
+    setClearingSearchCache(true);
+    setClearSearchCacheStatus(null);
     try {
-      const current = await saveAndVerify(key, value, readTransform);
-      setValue(current);
-      return current;
+      await DataStoreService.clearSearchCache();
+      setClearSearchCacheStatus({ text: t('settings.searchContextCache.clearSuccess'), isError: false });
+      auditTableRef.current?.reload();
+    } catch (_error) {
+      setClearSearchCacheStatus({ text: t('settings.searchContextCache.clearError'), isError: true });
     } finally {
-      setSaving(false);
+      setClearingSearchCache(false);
     }
   };
 
-  // Session handlers
-  const handleSessionTTLChange = async (e) => {
-    const val = Number(e.target.value);
-    setSessionTTL(val);
-    setSavingSessionTTL(true);
-    try {
-      const current = await saveAndVerify('session.defaultTTLMinutes', String(val), (v) => Number(v));
-      setSessionTTL(Number(current));
-    } finally {
-      setSavingSessionTTL(false);
-    }
-  };
+  // fetchData contract for ServerDataTable: called with
+  // DataTables' own server-side params (start/length/search), returns the
+  // recordsTotal/recordsFiltered/data shape its ajax callback expects.
+  // Sorting is disabled on this table (see the `ordering={false}` prop
+  // below), so no orderBy/orderDir mapping is needed — the server always
+  // sorts newest-first.
+  const fetchAuditHistory = useCallback(async ({ start, length, search }) => {
+    const result = await DataStoreService.getSettingsAudit({
+      skip: start || 0,
+      limit: length || 10,
+      search: search || '',
+    });
+    return {
+      data: result.entries || [],
+      recordsTotal: result.total || 0,
+      recordsFiltered: result.filteredTotal || 0,
+    };
+  }, []);
 
-  const handleSessionAuthTTLChange = async (e) => {
-    const val = Number(e.target.value);
-    setSessionAuthTTL(val);
-    setSavingSessionAuthTTL(true);
-    try {
-      const current = await saveAndVerify('session.authenticatedTTLMinutes', String(val), (v) => Number(v));
-      setSessionAuthTTL(Number(current));
-    } finally {
-      setSavingSessionAuthTTL(false);
-    }
-  };
+  const auditColumns = useMemo(() => [
+    {
+      data: 'actorEmail',
+      title: t('settings.auditHistory.user'),
+      render: (value) => escapeHtmlAttribute(value || ''),
+    },
+    {
+      data: 'action',
+      title: t('settings.auditHistory.action'),
+      render: (value) => escapeHtmlAttribute(
+        value === 'settings.cache_refreshed'
+          ? t('settings.auditHistory.actions.cacheRefreshed')
+          : value === 'download_web_page.cache_cleared'
+            ? t('settings.auditHistory.actions.downloadWebPageCacheCleared')
+          : value === 'search_context.cache_cleared'
+            ? t('settings.auditHistory.actions.searchCacheCleared')
+          : t('settings.auditHistory.actions.settingUpdated')
+      ),
+    },
+    {
+      data: 'settingKey',
+      title: t('settings.auditHistory.setting'),
+      render: (value) => escapeHtmlAttribute(value || t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'previousValue',
+      title: t('settings.auditHistory.previousValue'),
+      render: (value) => renderAuditValueHtml(value, t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'newValue',
+      title: t('settings.auditHistory.newValue'),
+      render: (value) => renderAuditValueHtml(value, t('settings.auditHistory.notApplicable')),
+    },
+    {
+      data: 'createdAt',
+      title: t('settings.auditHistory.date'),
+      render: (value) => escapeHtmlAttribute(formatLocaleDate(value, lang, t('settings.auditHistory.notApplicable'))),
+    },
+  ], [lang, t]);
 
-  const handleRateLimitCapacityChange = async (e) => {
-    const val = Number(e.target.value);
-    setRateLimitCapacity(val);
-    setSavingRateLimitCapacity(true);
-    try {
-      const current = await saveAndVerify('session.rateLimitCapacity', String(val), (v) => Number(v));
-      setRateLimitCapacity(Number(current));
-    } finally {
-      setSavingRateLimitCapacity(false);
-    }
-  };
+  // Warn on tab close/refresh/URL navigation while a section has unsaved
+  // changes. Attached once on mount (not re-attached on every keystroke) —
+  // the handler reads current dirty-state through a ref a separate cheap
+  // effect keeps in sync. Note: this only covers actual browser-level
+  // navigation; it does not fire for in-app route changes, and this codebase
+  // has no navigation-guard pattern to hook into for that case.
+  //
+  // TODO (edge case, low priority): the browser Back/Forward buttons can
+  // restore this page from the bfcache instead of re-mounting it, so an
+  // unsaved edit can still show as dirty after navigating away and back. Fix
+  // would listen for `pageshow`/`event.persisted`; needs real cross-browser
+  // testing before landing, not just reasoning about it — out of scope for
+  // MVP.
+  const pendingChangesRef = useRef(pendingChanges);
+  useEffect(() => {
+    pendingChangesRef.current = pendingChanges;
+  }, [pendingChanges]);
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (Object.keys(pendingChangesRef.current).length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
-  const handleRateLimitRefillChange = async (e) => {
-    const val = Number(e.target.value);
-    setRateLimitRefill(val);
-    setSavingRateLimitRefill(true);
+  // Submits every changed field in one section as a single request. Fields
+  // that fail stay in pendingChanges so the admin can retry; fields that
+  // succeed are cleared and the audit table (which now has new rows) refreshes.
+  const handleSectionSave = async (section) => {
+    const keys = SECTION_KEYS[section].filter((key) => key in pendingChanges);
+    if (keys.length === 0) return;
+    const changes = keys.map((key) => ({ key, value: pendingChanges[key] }));
+    setSectionSaving((prev) => ({ ...prev, [section]: true }));
     try {
-      await DataStoreService.setSetting('session.rateLimitRefillPerSec', String(val));
-      const saved = await DataStoreService.getSetting('session.rateLimitRefillPerSec', String(val));
-      setRateLimitRefill(Number(saved));
-    } finally {
-      setSavingRateLimitRefill(false);
-    }
-  };
-
-  const handleAuthenticatedRateLimitCapacityChange = async (e) => {
-    const val = Number(e.target.value);
-    setAuthenticatedRateLimitCapacity(val);
-    setSavingAuthenticatedRateLimitCapacity(true);
-    try {
-      const current = await saveAndVerify('session.authenticatedRateLimitCapacity', String(val), (v) => Number(v));
-      setAuthenticatedRateLimitCapacity(current);
-    } finally {
-      setSavingAuthenticatedRateLimitCapacity(false);
-    }
-  };
-
-  const handleAuthenticatedRateLimitRefillChange = async (e) => {
-    const val = Number(e.target.value);
-    setAuthenticatedRateLimitRefill(val);
-    setSavingAuthenticatedRateLimitRefill(true);
-    try {
-      const current = await saveAndVerify('session.authenticatedRateLimitRefillPerSec', String(val), (v) => Number(v));
-      setAuthenticatedRateLimitRefill(current);
-    } finally {
-      setSavingAuthenticatedRateLimitRefill(false);
-    }
-  };
-
-  const handleMaxActiveSessionsChange = async (e) => {
-    const val = e.target.value;
-    setMaxActiveSessions(val);
-    setSavingMaxActiveSessions(true);
-    try {
-      const current = await saveAndVerify('session.maxActiveSessions', val, (v) => (v === 'undefined' ? '' : v));
-      setMaxActiveSessions(current);
-    } finally {
-      setSavingMaxActiveSessions(false);
-    }
-  };
-
-  const handleRateLimitPersistenceChange = async (e) => {
-    const val = e.target.value;
-    setRateLimitPersistence(val);
-    setSavingRateLimitPersistence(true);
-    try {
-      // Store as one of the supported rate-limiter backends.
-      const current = await saveAndVerify('session.rateLimitPersistence', val, (v) => {
-        const norm = (v || '').toString().trim().toLowerCase();
-        return norm === 'redis' ? 'redis' : 'memory';
+      const { values = {}, errors = {} } = await DataStoreService.setSettings(changes);
+      setPendingChanges((prev) => {
+        const next = { ...prev };
+        Object.keys(values).forEach((key) => { delete next[key]; });
+        return next;
       });
-      setRateLimitPersistence(current);
-    } catch (error) {
-      console.error('Failed to save rate-limiter persistence:', error);
-    } finally {
-      setSavingRateLimitPersistence(false);
-    }
-  };
-
-  const handleSingleAnonymousChatRunEnabledChange = async (e) => {
-    const val = e.target.value;
-    setSingleAnonymousChatRunEnabled(val);
-    setSavingSingleAnonymousChatRunEnabled(true);
-    try {
-      const current = await saveAndVerify('session.singleAnonymousChatRunEnabled', val, (v) => String(v ?? 'true'));
-      setSingleAnonymousChatRunEnabled(String(current));
-    } finally {
-      setSavingSingleAnonymousChatRunEnabled(false);
-    }
-  };
-
-  const handleSessionManagementEnabledChange = async (e) => {
-    const val = e.target.value;
-    setSessionManagementEnabled(val);
-    setSavingSessionManagementEnabled(true);
-    try {
-      const current = await saveAndVerify('session.managementEnabled', val, (v) => String(v ?? 'true'));
-      setSessionManagementEnabled(String(current));
-    } finally {
-      setSavingSessionManagementEnabled(false);
-    }
-  };
-
-  const handleSessionStoreTypeChange = async (e) => {
-    const val = e.target.value;
-    setSessionStoreType(val);
-    setSavingSessionStoreType(true);
-    try {
-      const current = await saveAndVerify('session.type', val, (v) => {
-        const n = (v || '').toString().trim().toLowerCase();
-        return ['mongo', 'mongodb', 'redis'].includes(n) ? n : 'memory';
+      // A saved value is the new "reverting to this counts as no change"
+      // baseline — otherwise editing a just-saved field back to its (older,
+      // pre-save) original would wrongly stay flagged as a pending change.
+      Object.entries(values).forEach(([key, value]) => {
+        originalValuesRef.current[key] = value;
       });
-      setSessionStoreType(current);
-    } finally {
-      setSavingSessionStoreType(false);
-    }
-  };
-
-  const handleMetricsStoreTypeChange = async (e) => {
-    const val = e.target.value;
-    setMetricsStoreType(val);
-    setSavingMetricsStoreType(true);
-    try {
-      const current = await saveAndVerify('metrics.type', val, (v) => {
-        const n = (v || '').toString().trim().toLowerCase();
-        return n === 'mongo' || n === 'mongodb' ? 'mongo' : 'memory';
+      const hasErrors = Object.keys(errors).length > 0;
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        Object.keys(values).forEach((key) => { delete next[key]; });
+        Object.entries(errors).forEach(([key, error]) => { next[key] = resolveFieldError(error, t); });
+        return next;
       });
-      setMetricsStoreType(current);
+      if (hasErrors) {
+        setSectionErrorAttempt((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
+      }
+      const statusText = hasErrors
+        ? t('settings.saveError')
+        : t('settings.saveSuccessIn').replace('{section}', () => t(SECTION_TITLE_KEYS[section]));
+      setSectionStatus((prev) => ({
+        ...prev,
+        [section]: { text: statusText, isError: hasErrors },
+      }));
+      setSectionSaveNonce((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
+      // Every save is audited, so the table below is stale the moment a
+      // section saves — reload it in place.
+      auditTableRef.current?.reload();
+    } catch (err) {
+      setSectionStatus((prev) => ({ ...prev, [section]: { text: t('settings.saveError'), isError: true } }));
+      setSectionSaveNonce((prev) => ({ ...prev, [section]: (prev[section] || 0) + 1 }));
     } finally {
-      setSavingMetricsStoreType(false);
-    }
-  };
-
-  const handleChange = async (e) => {
-    const newStatus = e.target.value;
-    setStatus(newStatus);
-    setSaving(true);
-    try {
-      const current = await saveAndVerify('siteStatus', newStatus);
-      setStatus(current);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeploymentModeChange = async (e) => {
-    const newMode = e.target.value;
-    setDeploymentMode(newMode);
-    setSavingDeployment(true);
-    try {
-      const current = await saveAndVerify('deploymentMode', newMode);
-      setDeploymentMode(current);
-    } finally {
-      setSavingDeployment(false);
+      setSectionSaving((prev) => ({ ...prev, [section]: false }));
     }
   };
 
   const handleRefreshSettingsCache = async () => {
     setRefreshingSettingsCache(true);
-    setSettingsCacheMessage('');
+    setSettingsCacheStatus(null);
     try {
       await DataStoreService.refreshSettingsCache();
-      setSettingsCacheMessage(t('settings.refreshCache.success'));
+      setSettingsCacheStatus({ text: t('settings.refreshCache.success'), isError: false });
+      auditTableRef.current?.reload();
     } catch (error) {
-      setSettingsCacheMessage(t('settings.refreshCache.error').replace('{error}', error.message));
+      setSettingsCacheStatus(buildErrorStatus('settings.refreshCache.error', error));
     } finally {
       setRefreshingSettingsCache(false);
     }
   };
 
-
-
-  const handleBaseUrlChange = (e) => {
-    setBaseUrl(e.target.value);
+  const handleRedactionChange = (key, value) => {
+    setRedactionValues((prev) => ({ ...prev, [key]: value }));
+    stageChange(key, value);
   };
 
-  const handleBaseUrlBlur = async () => {
-    setSavingBaseUrl(true);
-    try {
-      const current = await saveAndVerify('site.baseUrl', baseUrl, (v) => v ?? '');
-      setBaseUrl(current);
-    } finally {
-      setSavingBaseUrl(false);
-    }
-  };
-
-  const handleTwoFAEnabledChange = async (e) => {
-    const newValue = e.target.value;
-    setTwoFAEnabled(newValue);
-    setSavingTwoFAEnabled(true);
-    try {
-      const current = await saveAndVerify('twoFA.enabled', newValue);
-      setTwoFAEnabled(String(current ?? 'false'));
-    } finally {
-      setSavingTwoFAEnabled(false);
-    }
-  };
-
-  const handleTwoFATemplateIdChange = (e) => {
-    setTwoFATemplateId(e.target.value);
-  };
-
-  const handleTwoFATemplateIdBlur = async () => {
-    setSavingTwoFATemplateId(true);
-    try {
-      const current = await saveAndVerify('twoFA.templateId', twoFATemplateId, (v) => v ?? '');
-      setTwoFATemplateId(current);
-    } finally {
-      setSavingTwoFATemplateId(false);
-    }
-  };
-
-  const handleIndigenousLanguageBlockingChange = async (e) => {
-    const newValue = e.target.value;
-    setIndigenousLanguageBlocking(newValue);
-    setSavingIndigenousLanguageBlocking(true);
-    try {
-      const current = await saveAndVerify('guardrail.indigenousLanguageBlocking', newValue);
-      setIndigenousLanguageBlocking(String(current ?? 'true'));
-    } finally {
-      setSavingIndigenousLanguageBlocking(false);
-    }
-  };
-
-  const handleHealthEnabledChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.enabled',
-    value: e.target.value,
-    setValue: setHealthEnabled,
-    setSaving: setSavingHealthEnabled,
-    readTransform: (v) => String(v ?? 'true'),
-  });
-
-  const handleHealthDatabaseEnabledChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.checks.database.enabled',
-    value: e.target.value,
-    setValue: setHealthDatabaseEnabled,
-    setSaving: setSavingHealthDatabaseEnabled,
-    readTransform: (v) => String(v ?? 'true'),
-  });
-
-  const handleHealthSearchEnabledChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.checks.search.enabled',
-    value: e.target.value,
-    setValue: setHealthSearchEnabled,
-    setSaving: setSavingHealthSearchEnabled,
-    readTransform: (v) => String(v ?? 'true'),
-  });
-
-  const handleHealthLlmEnabledChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.checks.llm.enabled',
-    value: e.target.value,
-    setValue: setHealthLlmEnabled,
-    setSaving: setSavingHealthLlmEnabled,
-    readTransform: (v) => String(v ?? 'true'),
-  });
-
-  const handleHealthAutoDisableOnErrorChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.autoDisableOnError',
-    value: e.target.value,
-    setValue: setHealthAutoDisableOnError,
-    setSaving: setSavingHealthAutoDisableOnError,
-    readTransform: (v) => String(v ?? 'true'),
-  });
-
-  const handleHealthErrorTemplateIdChange = (e) => {
-    setHealthErrorTemplateId(e.target.value);
-  };
-
-  const handleHealthErrorTemplateIdBlur = async () => {
-    setSavingHealthErrorTemplateId(true);
-    try {
-      const current = await saveAndVerify('systemHealth.errorTemplateId', healthErrorTemplateId, (v) => v ?? '');
-      setHealthErrorTemplateId(current);
-    } finally {
-      setSavingHealthErrorTemplateId(false);
-    }
-  };
-
-  const handleHealthFailureThresholdChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.failureThreshold',
-    value: String(Number(e.target.value)),
-    setValue: setHealthFailureThreshold,
-    setSaving: setSavingHealthFailureThreshold,
-    readTransform: (v) => Number(v),
-  });
-
-  const handleHealthFailureWindowSecondsChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.failureWindowMinutes',
-    value: String(Number(e.target.value)),
-    setValue: setHealthFailureWindowSeconds,
-    setSaving: setSavingHealthFailureWindowSeconds,
-    readTransform: (v) => Number(v),
-  });
-
-  const handleHealthIntervalSecondsChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.intervalMinutes',
-    value: String(Number(e.target.value)),
-    setValue: setHealthIntervalSeconds,
-    setSaving: setSavingHealthIntervalSeconds,
-    readTransform: (v) => Number(v),
-  });
-
-  const handleHealthFastIntervalSecondsChange = async (e) => saveHealthSetting({
-    key: 'systemHealth.fastIntervalSeconds',
-    value: String(Number(e.target.value)),
-    setValue: setHealthFastIntervalSeconds,
-    setSaving: setSavingHealthFastIntervalSeconds,
-    readTransform: (v) => Number(v),
-  });
-
-  const handleHealthAlertRecipientsChange = (e) => {
-    setHealthAlertRecipients(e.target.value);
-  };
-
-  const handleHealthAlertRecipientsBlur = async () => {
-    setSavingHealthAlertRecipients(true);
-    try {
-      const current = await saveAndVerify('systemHealth.alertRecipients', healthAlertRecipients, (v) => v ?? '');
-      setHealthAlertRecipients(current);
-    } finally {
-      setSavingHealthAlertRecipients(false);
-    }
-  };
-
-  const handleHealthAlertTemplateIdChange = (e) => {
-    setHealthAlertTemplateId(e.target.value);
-  };
-
-  const handleHealthAlertTemplateIdBlur = async () => {
-    setSavingHealthAlertTemplateId(true);
-    try {
-      const current = await saveAndVerify('systemHealth.alertTemplateId', healthAlertTemplateId, (v) => v ?? '');
-      setHealthAlertTemplateId(current);
-    } finally {
-      setSavingHealthAlertTemplateId(false);
-    }
-  };
-
-  const handleResetTemplateIdChange = (e) => {
-    setResetTemplateId(e.target.value);
-  };
-
-  const handleResetTemplateIdBlur = async () => {
-    setSavingResetTemplateId(true);
-    try {
-      const current = await saveAndVerify('notify.resetTemplateId', resetTemplateId, (v) => v ?? '');
-      setResetTemplateId(current);
-    } finally {
-      setSavingResetTemplateId(false);
-    }
-  };
+  const dirtySectionNames = Object.keys(SECTION_KEYS)
+    .filter((section) => isSectionDirty(section))
+    .map((section) => t(SECTION_TITLE_KEYS[section]))
+    .join(', ');
+  const unsavedWarning = dirtySectionNames
+    ? t('settings.unsavedChangesIn').replace('{sections}', () => dirtySectionNames)
+    : undefined;
+  // Announced only if still unsaved a few seconds after it appears —
+  // announcing on the first keystroke talks over the field being typed in.
+  // Re-arms whenever the set of dirty sections changes.
+  useEffect(() => {
+    if (!unsavedWarning) return undefined;
+    const timer = setTimeout(() => announce(unsavedWarning), UNSAVED_WARNING_ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [unsavedWarning]);
 
   return (
-    <GcdsContainer layout="page" className="mb-600">
+    <GcdsContainer layout="page" className="mb-600 filter-fields-full-size">
       <h1 className="mb-400">{t('settings.title')}</h1>
-      <nav className="mb-400">
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <a href={`/${lang}/admin`}>{t('common.backToAdmin')}</a>
       </nav>
       <div className="mb-400">
@@ -621,213 +685,406 @@ const SettingsPage = ({ lang = 'en' }) => {
         >
           {refreshingSettingsCache ? t('settings.refreshCache.loading') : t('settings.refreshCache.label')}
         </GcdsButton>
-        {settingsCacheMessage ? <p className="mt-200">{settingsCacheMessage}</p> : null}
+        {renderStatusMessage(settingsCacheStatus, 'info', 'settingsCache')}
       </div>
-      <GcdsDetails detailsTitle={t('settings.general.title')} className="mb-400" tabIndex="0">
-        <div>
-          <label htmlFor="site-status" className="mb-200 display-block">
+      {/* Per-section "Unsaved changes" only shows while that section's
+          <details> is open — a page-level one stays visible regardless of
+          which sections are collapsed, and names which section(s) so it's
+          useful even when several are dirty at once. Gives advance notice
+          before the beforeunload prompt would. */}
+      {/* announce={false} + the delayed announce() above: this appears on
+          the first keystroke, and announcing it right then talks over the
+          field being typed in, so it's easy to miss. It's announced only if
+          still unsaved a few seconds later. */}
+      <StatusMessage
+        variant={unsavedWarning ? 'warning' : undefined}
+        message={unsavedWarning}
+        announce={false}
+        announcedVia="live-announcer-polite"
+        className="mb-400"
+      />
+      <details>
+        <summary>{t('settings.general.title')}</summary>
+        <div className="settings-form-width">
+            {fieldErrors['siteStatus'] && (
+              <FeedbackInlineError id="site-status-error" message={fieldErrors['siteStatus']} announce={false} />
+            )}
+          <label htmlFor="site-status" className="filter-label display-block">
             {t('settings.statusLabel')}
           </label>
-          <select id="site-status" value={status} onChange={handleChange} disabled={saving}>
+          <select
+            id="site-status"
+            className="filter-select"
+            value={status}
+            onChange={(e) => { const v = e.target.value; setStatus(v); stageChange('siteStatus', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['siteStatus'] ? 'site-status-error' : undefined}
+          >
             <option value="available">{t('settings.statuses.available')}</option>
             <option value="unavailable">{t('settings.statuses.unavailable')}</option>
           </select>
 
-          <label htmlFor="base-url" className="mb-200 display-block mt-400">
+          {fieldErrors['site.baseUrl'] && (
+            <FeedbackInlineError id="base-url-error" message={fieldErrors['site.baseUrl']} announce={false} />
+          )}
+          <label htmlFor="base-url" className="filter-label display-block mt-200">
             {t('settings.baseUrlLabel')}
           </label>
           <input
             id="base-url"
             type="text"
             value={baseUrl}
-            onChange={handleBaseUrlChange}
-            onBlur={handleBaseUrlBlur}
-            disabled={savingBaseUrl}
-            className="w-full"
+            onChange={(e) => { const v = e.target.value; setBaseUrl(v); stageChange('site.baseUrl', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['site.baseUrl'] ? 'base-url-error' : undefined}
+            className="filter-input"
           />
 
-          <label htmlFor="deployment-mode" className="mb-200 display-block mt-400">
+            {fieldErrors['deploymentMode'] && (
+              <FeedbackInlineError id="deployment-mode-error" message={fieldErrors['deploymentMode']} announce={false} />
+            )}
+          <label htmlFor="deployment-mode" className="filter-label display-block mt-200">
             {t('settings.deploymentModeLabel')}
           </label>
-          <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
+          <select
+            id="deployment-mode"
+            className="filter-select"
+            value={deploymentMode}
+            onChange={(e) => { const v = e.target.value; setDeploymentMode(v); stageChange('deploymentMode', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['deploymentMode'] ? 'deployment-mode-error' : undefined}
+          >
             <option value="CDS">{t('settings.deploymentMode.cds')}</option>
             <option value="Vercel">{t('settings.deploymentMode.serverless')}</option>
           </select>
 
-          <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
+            {fieldErrors['vectorServiceType'] && (
+              <FeedbackInlineError id="vector-service-type-error" message={fieldErrors['vectorServiceType']} announce={false} />
+            )}
+          <label htmlFor="vector-service-type" className="filter-label display-block mt-200">
             {t('settings.vectorServiceTypeLabel')}
           </label>
           <select
             id="vector-service-type"
+            className="filter-select"
             value={vectorServiceType}
-            onChange={async (e) => {
-              const newType = e.target.value;
-              setSavingVectorType(true);
-              setVectorServiceType(newType);
-              try {
-                const current = await saveAndVerify('vectorServiceType', newType);
-                setVectorServiceType(current);
-              } finally {
-                setSavingVectorType(false);
-              }
-            }}
-            disabled={savingVectorType}
+            onChange={(e) => { const v = e.target.value; setVectorServiceType(v); stageChange('vectorServiceType', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['vectorServiceType'] ? 'vector-service-type-error' : undefined}
           >
             <option value="imvectordb">{t('settings.vectorServiceType.imvectordb')}</option>
             <option value="documentdb">{t('settings.vectorServiceType.documentdb')}</option>
           </select>
 
-          <label htmlFor="default-workflow" className="mb-200 display-block mt-400">
+            {fieldErrors['workflow.default'] && (
+              <FeedbackInlineError id="default-workflow-error" message={fieldErrors['workflow.default']} announce={false} />
+            )}
+          <label htmlFor="default-workflow" className="filter-label display-block mt-200">
             {t('settings.defaultWorkflow.label')}
           </label>
           <select
             id="default-workflow"
+            className="filter-select"
             value={defaultWorkflow}
-            onChange={async (e) => {
-              const v = e.target.value;
-              setDefaultWorkflow(v);
-              setSavingDefaultWorkflow(true);
-              try {
-                const allowedWorkflows = WORKFLOW_VALUES;
-                const current = await saveAndVerify('workflow.default', v);
-                setDefaultWorkflow(allowedWorkflows.includes(current) ? current : 'GenericGraph');
-              } finally {
-                setSavingDefaultWorkflow(false);
-              }
-            }}
-            disabled={savingDefaultWorkflow}
+            onChange={(e) => { const v = e.target.value; setDefaultWorkflow(v); stageChange('workflow.default', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['workflow.default'] ? 'default-workflow-error' : undefined}
           >
             {WORKFLOWS.map(w => (
               <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
             ))}
           </select>
 
-          <label htmlFor="chat-transport" className="mb-200 display-block mt-400">
+            {fieldErrors['chat.transport'] && (
+              <FeedbackInlineError id="chat-transport-error" message={fieldErrors['chat.transport']} announce={false} />
+            )}
+          <label htmlFor="chat-transport" className="filter-label display-block mt-200">
             {t('settings.chatTransport.label')}
           </label>
           <select
             id="chat-transport"
+            className="filter-select"
             value={chatTransport}
-            onChange={async (e) => {
-              const v = e.target.value;
-              setChatTransport(v);
-              setSavingChatTransport(true);
-              try {
-                const current = await saveAndVerify('chat.transport', v);
-                setChatTransport(normalizeChatTransport(current));
-              } finally {
-                setSavingChatTransport(false);
-              }
-            }}
-            disabled={savingChatTransport}
+            onChange={(e) => { const v = e.target.value; setChatTransport(v); stageChange('chat.transport', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['chat.transport'] ? 'chat-transport-error' : undefined}
           >
             <option value="sse">{t('settings.chatTransport.options.sse')}</option>
             <option value="ndjson">{t('settings.chatTransport.options.ndjson')}</option>
           </select>
 
-          <label htmlFor="default-model" className="mb-200 display-block mt-400">
+            {fieldErrors['model.default'] && (
+              <FeedbackInlineError id="default-model-error" message={fieldErrors['model.default']} announce={false} />
+            )}
+          <label htmlFor="default-model" className="filter-label display-block mt-200">
             {t('settings.defaultModel.label')}
           </label>
           <select
             id="default-model"
+            className="filter-select"
             value={defaultModel}
-            onChange={async (e) => {
-              const v = e.target.value;
-              setDefaultModel(v);
-              setSavingDefaultModel(true);
-              try {
-                const current = await saveAndVerify('model.default', v);
-                setDefaultModel(current || 'openai-gpt51');
-              } finally {
-                setSavingDefaultModel(false);
-              }
-            }}
-            disabled={savingDefaultModel}
+            onChange={(e) => { const v = e.target.value; setDefaultModel(v); stageChange('model.default', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['model.default'] ? 'default-model-error' : undefined}
           >
             {AVAILABLE_MODELS.map(m => (
               <option key={m.value} value={m.value}>{t(m.labelKey)}</option>
             ))}
           </select>
 
-          <label htmlFor="indigenous-language-blocking" className="mb-200 display-block mt-400">
+            {fieldErrors['search.default'] && (
+              <FeedbackInlineError id="default-search-provider-error" message={fieldErrors['search.default']} announce={false} />
+            )}
+          <label htmlFor="default-search-provider" className="filter-label display-block mt-200">
+            {t('settings.defaultSearchProvider.label')}
+          </label>
+          <select
+            id="default-search-provider"
+            className="filter-select"
+            value={defaultSearchProvider}
+            onChange={(e) => { const v = e.target.value; setDefaultSearchProvider(v); stageChange('search.default', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['search.default'] ? 'default-search-provider-error' : undefined}
+          >
+            {SEARCH_PROVIDERS.map((provider) => (
+              <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
+            ))}
+          </select>
+
+            {fieldErrors['guardrail.indigenousLanguageBlocking'] && (
+              <FeedbackInlineError id="indigenous-language-blocking-error" message={fieldErrors['guardrail.indigenousLanguageBlocking']} announce={false} />
+            )}
+          <label htmlFor="indigenous-language-blocking" className="filter-label display-block mt-200">
             {t('settings.indigenousLanguageBlocking.label')}
           </label>
           <select
             id="indigenous-language-blocking"
+            className="filter-select"
             value={indigenousLanguageBlocking}
-            onChange={handleIndigenousLanguageBlockingChange}
-            disabled={savingIndigenousLanguageBlocking}
+            onChange={(e) => { const v = e.target.value; setIndigenousLanguageBlocking(v); stageChange('guardrail.indigenousLanguageBlocking', v); }}
+            disabled={sectionSaving.general}
+            aria-describedby={fieldErrors['guardrail.indigenousLanguageBlocking'] ? 'indigenous-language-blocking-error' : undefined}
           >
             <option value="true">{t('common.on')}</option>
             <option value="false">{t('common.off')}</option>
           </select>
 
+          <SectionSaveControls
+            section="general"
+            saveLabel={t('settings.general.saveLabel')}
+            dirty={isSectionDirty('general')}
+            saving={sectionSaving.general}
+            status={sectionStatus.general}
+            onSave={handleSectionSave}
+            t={t}
+            fieldErrors={fieldErrors}
+            errorAttempt={sectionErrorAttempt.general || 0}
+            saveNonce={sectionSaveNonce.general || 0}
+          />
         </div>
-      </GcdsDetails>
+      </details>
 
-      <GcdsDetails detailsTitle={t('settings.health.title')} className="mt-600 mb-200" tabIndex="0">
+      <details>
+        <summary>{t('settings.cache.title')}</summary>
+        <div className="settings-form-width">
+          <fieldset className="canada-ca-choice-fieldset">
+            <legend className="heading-size-h3 mt-400 mb-100">{t('settings.searchContextCache.title')}</legend>
+          {fieldErrors['searchContext.cache.enabled'] && (
+            <FeedbackInlineError id="search-context-cache-enabled-error" message={fieldErrors['searchContext.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="search-context-cache-enabled" className="filter-label display-block mt-100">
+            {t('settings.searchContextCache.enabledLabel')}
+          </label>
+          <p id="search-context-cache-description" className="field-hint">{t('settings.searchContextCache.description')}</p>
+          <select
+            id="search-context-cache-enabled"
+            className="filter-select"
+            value={searchContextCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setSearchContextCacheEnabled(v); stageChange('searchContext.cache.enabled', v); }}
+            disabled={sectionSaving.cache || clearingSearchCache}
+            aria-describedby={fieldErrors['searchContext.cache.enabled']
+              ? 'search-context-cache-description search-context-cache-enabled-error'
+              : 'search-context-cache-description'}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          {fieldErrors['searchContext.cache.durationHours'] && (
+            <FeedbackInlineError id="search-context-cache-duration-hours-error" message={fieldErrors['searchContext.cache.durationHours']} announce={false} />
+          )}
+          <label htmlFor="search-context-cache-duration-hours" className="filter-label display-block mt-200">
+            {t('settings.searchContextCache.durationHoursLabel')}
+          </label>
+          <input
+            id="search-context-cache-duration-hours"
+            className="filter-input"
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={searchContextCacheDurationHours}
+            onChange={(e) => { const v = e.target.value; setSearchContextCacheDurationHours(v); stageChange('searchContext.cache.durationHours', v); }}
+            onBlur={() => defaultEmptyNumberOnBlur(searchContextCacheDurationHours, setSearchContextCacheDurationHours, 'searchContext.cache.durationHours')}
+            disabled={sectionSaving.cache || clearingSearchCache}
+            aria-describedby={fieldErrors['searchContext.cache.durationHours'] ? 'search-context-cache-duration-hours-error' : undefined}
+          />
+          </fieldset>
+          {/* TODO(a11y): SC 1.3.1 — field errors render above the label on
+              every field on this page; GC DS order is label, hint, error,
+              field. Move them page-wide in a separate PR. */}
+          <fieldset className="canada-ca-choice-fieldset">
+            <legend className="heading-size-h3 mt-400 mb-100">{t('settings.downloadWebPageCache.title')}</legend>
+          {fieldErrors['downloadWebPage.cache.enabled'] && (
+            <FeedbackInlineError id="download-web-page-cache-enabled-error" message={fieldErrors['downloadWebPage.cache.enabled']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-enabled" className="filter-label display-block mt-100">
+            {t('settings.downloadWebPageCache.enabledLabel')}
+          </label>
+          <p id="download-web-page-cache-description" className="field-hint">{t('settings.downloadWebPageCache.description')}</p>
+          <select
+            id="download-web-page-cache-enabled"
+            className="filter-select"
+            value={downloadWebPageCacheEnabled}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheEnabled(v); stageChange('downloadWebPage.cache.enabled', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.enabled']
+              ? 'download-web-page-cache-description download-web-page-cache-enabled-error'
+              : 'download-web-page-cache-description'}
+          >
+            <option value="false">{t('common.off')}</option>
+            <option value="true">{t('common.on')}</option>
+          </select>
+          {fieldErrors['downloadWebPage.cache.durationHours'] && (
+            <FeedbackInlineError id="download-web-page-cache-duration-hours-error" message={fieldErrors['downloadWebPage.cache.durationHours']} announce={false} />
+          )}
+          <label htmlFor="download-web-page-cache-duration-hours" className="filter-label display-block mt-200">
+            {t('settings.downloadWebPageCache.durationHoursLabel')}
+          </label>
+          <input
+            id="download-web-page-cache-duration-hours"
+            className="filter-input"
+            type="number"
+            min="1"
+            max="24"
+            step="1"
+            value={downloadWebPageCacheDurationHours}
+            onChange={(e) => { const v = e.target.value; setDownloadWebPageCacheDurationHours(v); stageChange('downloadWebPage.cache.durationHours', v); }}
+            disabled={sectionSaving.cache || clearingDownloadWebPageCache}
+            aria-describedby={fieldErrors['downloadWebPage.cache.durationHours'] ? 'download-web-page-cache-duration-hours-error' : undefined}
+          />
+          </fieldset>
+          <SectionSaveControls
+            section="cache" saveLabel={t('settings.cache.saveLabel')} dirty={isSectionDirty('cache')}
+            saving={sectionSaving.cache} status={sectionStatus.cache} onSave={handleSectionSave} t={t}
+            fieldErrors={fieldErrors} errorAttempt={sectionErrorAttempt.cache || 0} saveNonce={sectionSaveNonce.cache || 0}
+          />
+          <hr className="section-divider mb-400" />
+          {/* These actions take effect immediately, separately from Save. */}
+          <div className="mb-400">
+            <div className="canada-ca-button-stack">
+              <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingSearchCache} onClick={clearSearchCache}>
+                {clearingSearchCache ? t('settings.searchContextCache.clearing') : t('settings.searchContextCache.clear')}
+              </GcdsButton>
+              <GcdsButton type="button" buttonRole="secondary" disabled={sectionSaving.cache || clearingDownloadWebPageCache} onClick={clearDownloadWebPageCache}>
+                {clearingDownloadWebPageCache ? t('settings.downloadWebPageCache.clearing') : t('settings.downloadWebPageCache.clear')}
+              </GcdsButton>
+            </div>
+            {renderStatusMessage(clearSearchCacheStatus, 'success', 'searchCacheClear')}
+            {renderStatusMessage(clearDownloadWebPageCacheStatus, 'success', 'downloadWebPageCacheClear')}
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>{t('settings.health.title')}</summary>
+        <div className="settings-form-width">
         <p className="mb-400">{t('settings.health.description')}</p>
 
-        <label htmlFor="health-enabled" className="mb-200 display-block mt-200">
+          {fieldErrors['systemHealth.enabled'] && (
+            <FeedbackInlineError id="health-enabled-error" message={fieldErrors['systemHealth.enabled']} announce={false} />
+          )}
+        <label htmlFor="health-enabled" className="filter-label display-block mt-200">
           {t('settings.health.enabledLabel')}
         </label>
         <select
           id="health-enabled"
+          className="filter-select"
           value={healthEnabled}
-          onChange={handleHealthEnabledChange}
-          disabled={savingHealthEnabled}
+          onChange={(e) => { const v = e.target.value; setHealthEnabled(v); stageChange('systemHealth.enabled', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.enabled'] ? 'health-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="health-database-enabled" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.checks.database.enabled'] && (
+            <FeedbackInlineError id="health-database-enabled-error" message={fieldErrors['systemHealth.checks.database.enabled']} announce={false} />
+          )}
+        <label htmlFor="health-database-enabled" className="filter-label display-block mt-200">
           {t('settings.health.databaseEnabledLabel')}
         </label>
         <select
           id="health-database-enabled"
+          className="filter-select"
           value={healthDatabaseEnabled}
-          onChange={handleHealthDatabaseEnabledChange}
-          disabled={savingHealthDatabaseEnabled}
+          onChange={(e) => { const v = e.target.value; setHealthDatabaseEnabled(v); stageChange('systemHealth.checks.database.enabled', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.database.enabled'] ? 'health-database-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="health-search-enabled" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.checks.search.enabled'] && (
+            <FeedbackInlineError id="health-search-enabled-error" message={fieldErrors['systemHealth.checks.search.enabled']} announce={false} />
+          )}
+        <label htmlFor="health-search-enabled" className="filter-label display-block mt-200">
           {t('settings.health.searchEnabledLabel')}
         </label>
         <select
           id="health-search-enabled"
+          className="filter-select"
           value={healthSearchEnabled}
-          onChange={handleHealthSearchEnabledChange}
-          disabled={savingHealthSearchEnabled}
+          onChange={(e) => { const v = e.target.value; setHealthSearchEnabled(v); stageChange('systemHealth.checks.search.enabled', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.search.enabled'] ? 'health-search-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="health-llm-enabled" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.checks.llm.enabled'] && (
+            <FeedbackInlineError id="health-llm-enabled-error" message={fieldErrors['systemHealth.checks.llm.enabled']} announce={false} />
+          )}
+        <label htmlFor="health-llm-enabled" className="filter-label display-block mt-200">
           {t('settings.health.llmEnabledLabel')}
         </label>
         <select
           id="health-llm-enabled"
+          className="filter-select"
           value={healthLlmEnabled}
-          onChange={handleHealthLlmEnabledChange}
-          disabled={savingHealthLlmEnabled}
+          onChange={(e) => { const v = e.target.value; setHealthLlmEnabled(v); stageChange('systemHealth.checks.llm.enabled', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.checks.llm.enabled'] ? 'health-llm-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="health-auto-disable" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.autoDisableOnError'] && (
+            <FeedbackInlineError id="health-auto-disable-error" message={fieldErrors['systemHealth.autoDisableOnError']} announce={false} />
+          )}
+        <label htmlFor="health-auto-disable" className="filter-label display-block mt-200">
           {t('settings.health.autoDisableOnErrorLabel')}
         </label>
         <select
           id="health-auto-disable"
+          className="filter-select"
           value={healthAutoDisableOnError}
-          onChange={handleHealthAutoDisableOnErrorChange}
-          disabled={savingHealthAutoDisableOnError}
+          onChange={(e) => { const v = e.target.value; setHealthAutoDisableOnError(v); stageChange('systemHealth.autoDisableOnError', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.autoDisableOnError'] ? 'health-auto-disable-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
@@ -835,322 +1092,677 @@ const SettingsPage = ({ lang = 'en' }) => {
 
         <div className="health-template-grid mt-400">
           <div className="health-template-column">
-            <label htmlFor="health-error-template" className="mb-200 display-block">
+            {fieldErrors['systemHealth.errorTemplateId'] && (
+              <FeedbackInlineError id="health-error-template-error" message={fieldErrors['systemHealth.errorTemplateId']} announce={false} />
+            )}
+            <label htmlFor="health-error-template" className="filter-label display-block">
               {t('settings.health.errorTemplateId')}
             </label>
             <input
               id="health-error-template"
               type="text"
               value={healthErrorTemplateId}
-              onChange={handleHealthErrorTemplateIdChange}
-              onBlur={handleHealthErrorTemplateIdBlur}
-              disabled={savingHealthErrorTemplateId}
-              className="w-full"
+              onChange={(e) => { const v = e.target.value; setHealthErrorTemplateId(v); stageChange('systemHealth.errorTemplateId', v); }}
+              disabled={sectionSaving.health}
+              aria-describedby={fieldErrors['systemHealth.errorTemplateId'] ? 'health-error-template-error' : undefined}
+              className="filter-input"
             />
           </div>
 
           <div className="health-template-column">
-            <label htmlFor="health-alert-template" className="mb-200 display-block">
+            {fieldErrors['systemHealth.alertTemplateId'] && (
+              <FeedbackInlineError id="health-alert-template-error" message={fieldErrors['systemHealth.alertTemplateId']} announce={false} />
+            )}
+            <label htmlFor="health-alert-template" className="filter-label display-block">
               {t('settings.health.alertTemplateId')}
             </label>
             <input
               id="health-alert-template"
               type="text"
               value={healthAlertTemplateId}
-              onChange={handleHealthAlertTemplateIdChange}
-              onBlur={handleHealthAlertTemplateIdBlur}
-              disabled={savingHealthAlertTemplateId}
-              className="w-full"
+              onChange={(e) => { const v = e.target.value; setHealthAlertTemplateId(v); stageChange('systemHealth.alertTemplateId', v); }}
+              disabled={sectionSaving.health}
+              aria-describedby={fieldErrors['systemHealth.alertTemplateId'] ? 'health-alert-template-error' : undefined}
+              className="filter-input"
             />
           </div>
         </div>
 
-        <label htmlFor="health-failure-threshold" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.failureThreshold'] && (
+            <FeedbackInlineError id="health-failure-threshold-error" message={fieldErrors['systemHealth.failureThreshold']} announce={false} />
+          )}
+        <label htmlFor="health-failure-threshold" className="filter-label display-block mt-200">
           {t('settings.health.failureThreshold')}
         </label>
         <input
           id="health-failure-threshold"
+          className="filter-input"
           type="number"
           min="1"
           value={healthFailureThreshold}
-          onChange={handleHealthFailureThresholdChange}
-          disabled={savingHealthFailureThreshold}
+          onChange={(e) => { const v = e.target.value; setHealthFailureThreshold(v); stageChange('systemHealth.failureThreshold', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFailureThreshold, setHealthFailureThreshold, 'systemHealth.failureThreshold')}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.failureThreshold'] ? 'health-failure-threshold-error' : undefined}
         />
 
-        <label htmlFor="health-failure-window" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.failureWindowMinutes'] && (
+            <FeedbackInlineError id="health-failure-window-error" message={fieldErrors['systemHealth.failureWindowMinutes']} announce={false} />
+          )}
+        <label htmlFor="health-failure-window" className="filter-label display-block mt-200">
           {t('settings.health.failureWindowMinutes')}
         </label>
         <input
           id="health-failure-window"
+          className="filter-input"
           type="number"
           min="1"
           value={healthFailureWindowSeconds}
-          onChange={handleHealthFailureWindowSecondsChange}
-          disabled={savingHealthFailureWindowSeconds}
+          onChange={(e) => { const v = e.target.value; setHealthFailureWindowSeconds(v); stageChange('systemHealth.failureWindowMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFailureWindowSeconds, setHealthFailureWindowSeconds, 'systemHealth.failureWindowMinutes')}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.failureWindowMinutes'] ? 'health-failure-window-error' : undefined}
         />
 
-        <label htmlFor="health-interval" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.intervalMinutes'] && (
+            <FeedbackInlineError id="health-interval-error" message={fieldErrors['systemHealth.intervalMinutes']} announce={false} />
+          )}
+        <label htmlFor="health-interval" className="filter-label display-block mt-200">
           {t('settings.health.intervalMinutes')}
         </label>
         <input
           id="health-interval"
+          className="filter-input"
           type="number"
           min="1"
           value={healthIntervalSeconds}
-          onChange={handleHealthIntervalSecondsChange}
-          disabled={savingHealthIntervalSeconds}
+          onChange={(e) => { const v = e.target.value; setHealthIntervalSeconds(v); stageChange('systemHealth.intervalMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthIntervalSeconds, setHealthIntervalSeconds, 'systemHealth.intervalMinutes')}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.intervalMinutes'] ? 'health-interval-error' : undefined}
         />
 
-        <label htmlFor="health-fast-interval" className="mb-200 display-block mt-400">
+          {fieldErrors['systemHealth.fastIntervalSeconds'] && (
+            <FeedbackInlineError id="health-fast-interval-error" message={fieldErrors['systemHealth.fastIntervalSeconds']} announce={false} />
+          )}
+        <label htmlFor="health-fast-interval" className="filter-label display-block mt-200">
           {t('settings.health.fastIntervalSeconds')}
         </label>
         <input
           id="health-fast-interval"
+          className="filter-input"
           type="number"
           min="1"
           value={healthFastIntervalSeconds}
-          onChange={handleHealthFastIntervalSecondsChange}
-          disabled={savingHealthFastIntervalSeconds}
+          onChange={(e) => { const v = e.target.value; setHealthFastIntervalSeconds(v); stageChange('systemHealth.fastIntervalSeconds', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(healthFastIntervalSeconds, setHealthFastIntervalSeconds, 'systemHealth.fastIntervalSeconds')}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.fastIntervalSeconds'] ? 'health-fast-interval-error' : undefined}
         />
 
-        <label htmlFor="health-alert-recipients" className="mb-200 display-block mt-400">
+        {fieldErrors['systemHealth.alertRecipients'] && (
+          <FeedbackInlineError id="health-alert-recipients-error" message={fieldErrors['systemHealth.alertRecipients']} announce={false} />
+        )}
+        <label htmlFor="health-alert-recipients" className="filter-label display-block mt-200">
           {t('settings.health.alertRecipients')}
         </label>
         <input
           id="health-alert-recipients"
           type="text"
           value={healthAlertRecipients}
-          onChange={handleHealthAlertRecipientsChange}
-          onBlur={handleHealthAlertRecipientsBlur}
-          disabled={savingHealthAlertRecipients}
-          className="w-full"
+          onChange={(e) => { const v = e.target.value; setHealthAlertRecipients(v); stageChange('systemHealth.alertRecipients', v); }}
+          disabled={sectionSaving.health}
+          aria-describedby={fieldErrors['systemHealth.alertRecipients'] ? 'health-alert-recipients-error' : undefined}
+          className="filter-input"
         />
-      </GcdsDetails>
 
+        <SectionSaveControls
+          section="health"
+          saveLabel={t('settings.health.saveLabel')}
+          dirty={isSectionDirty('health')}
+          saving={sectionSaving.health}
+          status={sectionStatus.health}
+          onSave={handleSectionSave}
+          t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.health || 0}
+          saveNonce={sectionSaveNonce.health || 0}
+        />
+        </div>
+      </details>
 
-
-      <GcdsDetails detailsTitle={t('settings.twoFA.title')} className="mt-600 mb-200" tabIndex="0">
-        <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
+      <details>
+        <summary>{t('settings.twoFA.title')}</summary>
+        <div className="settings-form-width">
+          {fieldErrors['twoFA.enabled'] && (
+            <FeedbackInlineError id="twofa-enabled-error" message={fieldErrors['twoFA.enabled']} announce={false} />
+          )}
+        <label htmlFor="twofa-enabled" className="filter-label display-block mt-200">
           {t('settings.twoFA.enabledLabel')}
         </label>
         <select
           id="twofa-enabled"
+          className="filter-select"
           value={twoFAEnabled}
-          onChange={handleTwoFAEnabledChange}
-          disabled={savingTwoFAEnabled}
+          onChange={(e) => { const v = e.target.value; setTwoFAEnabled(v); stageChange('twoFA.enabled', v); }}
+          disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['twoFA.enabled'] ? 'twofa-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="twofa-template" className="mb-200 display-block mt-400">
+          {fieldErrors['twoFA.templateId'] && (
+            <FeedbackInlineError id="twofa-template-error" message={fieldErrors['twoFA.templateId']} announce={false} />
+          )}
+        <label htmlFor="twofa-template" className="filter-label display-block mt-200">
           {t('settings.twoFA.templateLabel')}
         </label>
         <input
           id="twofa-template"
+          className="filter-input"
           type="text"
           value={twoFATemplateId}
-          onChange={handleTwoFATemplateIdChange}
-          onBlur={handleTwoFATemplateIdBlur}
-          disabled={savingTwoFATemplateId}
+          onChange={(e) => { const v = e.target.value; setTwoFATemplateId(v); stageChange('twoFA.templateId', v); }}
+          disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['twoFA.templateId'] ? 'twofa-template-error' : undefined}
         />
 
-        <label htmlFor="reset-template" className="mb-200 display-block mt-400">
+          {fieldErrors['notify.resetTemplateId'] && (
+            <FeedbackInlineError id="reset-template-error" message={fieldErrors['notify.resetTemplateId']} announce={false} />
+          )}
+        <label htmlFor="reset-template" className="filter-label display-block mt-200">
           {t('settings.notify.resetTemplateLabel')}
         </label>
         <input
           id="reset-template"
+          className="filter-input"
           type="text"
           value={resetTemplateId}
-          onChange={handleResetTemplateIdChange}
-          onBlur={handleResetTemplateIdBlur}
-          disabled={savingResetTemplateId}
+          onChange={(e) => { const v = e.target.value; setResetTemplateId(v); stageChange('notify.resetTemplateId', v); }}
+          disabled={sectionSaving.twoFA}
+          aria-describedby={fieldErrors['notify.resetTemplateId'] ? 'reset-template-error' : undefined}
         />
-      </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.session.title')} className="mt-600 mb-200" tabIndex="0">
-        <label htmlFor="session-management-enabled" className="mb-200 display-block mt-200">
+        <SectionSaveControls
+          section="twoFA"
+          saveLabel={t('settings.twoFA.saveLabel')}
+          dirty={isSectionDirty('twoFA')}
+          saving={sectionSaving.twoFA}
+          status={sectionStatus.twoFA}
+          onSave={handleSectionSave}
+          t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.twoFA || 0}
+          saveNonce={sectionSaveNonce.twoFA || 0}
+        />
+        </div>
+      </details>
+
+      <details>
+        <summary>{t('settings.session.title')}</summary>
+        <div className="settings-form-width">
+          {fieldErrors['session.managementEnabled'] && (
+            <FeedbackInlineError id="session-management-enabled-error" message={fieldErrors['session.managementEnabled']} announce={false} />
+          )}
+        <label htmlFor="session-management-enabled" className="filter-label display-block mt-200">
           {t('settings.session.managementEnabled')}
         </label>
         <select
           id="session-management-enabled"
+          className="filter-select"
           value={sessionManagementEnabled}
-          onChange={handleSessionManagementEnabledChange}
-          disabled={savingSessionManagementEnabled}
+          onChange={(e) => { const v = e.target.value; setSessionManagementEnabled(v); stageChange('session.managementEnabled', v); }}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.managementEnabled'] ? 'session-management-enabled-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="session-store-type" className="mb-200 display-block mt-200">
+          {fieldErrors['session.type'] && (
+            <FeedbackInlineError id="session-store-type-error" message={fieldErrors['session.type']} announce={false} />
+          )}
+        <label htmlFor="session-store-type" className="filter-label display-block mt-200">
           {t('settings.session.storeType')}
         </label>
         <select
           id="session-store-type"
+          className="filter-select"
           value={sessionStoreType}
-          onChange={handleSessionStoreTypeChange}
-          disabled={savingSessionStoreType}
+          onChange={(e) => { const v = e.target.value; setSessionStoreType(v); stageChange('session.type', v); }}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.type'] ? 'session-store-type-error' : undefined}
         >
           <option value="memory">{t('settings.session.store.options.memory')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo')}</option>
           <option value="redis">{t('settings.session.store.options.redis')}</option>
         </select>
 
-        <label htmlFor="metrics-store-type" className="mb-200 display-block mt-200">
+          {fieldErrors['metrics.type'] && (
+            <FeedbackInlineError id="metrics-store-type-error" message={fieldErrors['metrics.type']} announce={false} />
+          )}
+        <label htmlFor="metrics-store-type" className="filter-label display-block mt-200">
           {t('settings.metrics.storeType')}
         </label>
         <select
           id="metrics-store-type"
+          className="filter-select"
           value={metricsStoreType}
-          onChange={handleMetricsStoreTypeChange}
-          disabled={savingMetricsStoreType}
+          onChange={(e) => { const v = e.target.value; setMetricsStoreType(v); stageChange('metrics.type', v); }}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['metrics.type'] ? 'metrics-store-type-error' : undefined}
         >
           <option value="memory">{t('settings.session.store.options.memory')}</option>
           <option value="mongo">{t('settings.session.store.options.mongo')}</option>
         </select>
 
-        <label htmlFor="session-ttl" className="mb-200 display-block mt-200">
+          {fieldErrors['session.defaultTTLMinutes'] && (
+            <FeedbackInlineError id="session-ttl-error" message={fieldErrors['session.defaultTTLMinutes']} announce={false} />
+          )}
+        <label htmlFor="session-ttl" className="filter-label display-block mt-200">
           {t('settings.session.ttlMinutes')}
         </label>
-        <input id="session-ttl" type="number" min="1" value={sessionTTL} onChange={handleSessionTTLChange} disabled={savingSessionTTL} />
+        <input
+          id="session-ttl"
+          className="filter-input"
+          type="number"
+          min="1"
+          value={sessionTTL}
+          onChange={(e) => { const v = e.target.value; setSessionTTL(v); stageChange('session.defaultTTLMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(sessionTTL, setSessionTTL, 'session.defaultTTLMinutes')}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.defaultTTLMinutes'] ? 'session-ttl-error' : undefined}
+        />
 
-        <label htmlFor="session-auth-ttl" className="mb-200 display-block mt-200">
+          {fieldErrors['session.authenticatedTTLMinutes'] && (
+            <FeedbackInlineError id="session-auth-ttl-error" message={fieldErrors['session.authenticatedTTLMinutes']} announce={false} />
+          )}
+        <label htmlFor="session-auth-ttl" className="filter-label display-block mt-200">
           {t('settings.session.authTtlMinutes')}
         </label>
-        <input id="session-auth-ttl" type="number" min="1" value={sessionAuthTTL} onChange={handleSessionAuthTTLChange} disabled={savingSessionAuthTTL} />
+        <input
+          id="session-auth-ttl"
+          className="filter-input"
+          type="number"
+          min="1"
+          value={sessionAuthTTL}
+          onChange={(e) => { const v = e.target.value; setSessionAuthTTL(v); stageChange('session.authenticatedTTLMinutes', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(sessionAuthTTL, setSessionAuthTTL, 'session.authenticatedTTLMinutes')}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.authenticatedTTLMinutes'] ? 'session-auth-ttl-error' : undefined}
+        />
 
         {/* Rate limiting moved to its own section for clarity (localized below) */}
 
-        <label htmlFor="session-max-sessions" className="mb-200 display-block mt-400">
+          {fieldErrors['session.maxActiveSessions'] && (
+            <FeedbackInlineError id="session-max-sessions-error" message={fieldErrors['session.maxActiveSessions']} announce={false} />
+          )}
+        <label htmlFor="session-max-sessions" className="filter-label display-block mt-200">
           {t('settings.session.maxActiveSessions')}
         </label>
-        <input id="session-max-sessions" type="number" min="0" value={maxActiveSessions} onChange={handleMaxActiveSessionsChange} disabled={savingMaxActiveSessions} />
+        <input
+          id="session-max-sessions"
+          className="filter-input"
+          type="number"
+          min="0"
+          value={maxActiveSessions}
+          onChange={(e) => { const v = e.target.value; setMaxActiveSessions(v); stageChange('session.maxActiveSessions', v); }}
+          disabled={sectionSaving.session}
+          aria-describedby={fieldErrors['session.maxActiveSessions'] ? 'session-max-sessions-error' : undefined}
+        />
 
         {/* session.persistence moved to rate-limiting section (stored as session.rateLimitPersistence) */}
-      </GcdsDetails>
 
-      <GcdsDetails detailsTitle={t('settings.rateLimiting.title')} className="mt-600 mb-200" tabIndex="0">
-        <label htmlFor="session-rate-persistence" className="mb-200 display-block mt-200">
+        <SectionSaveControls
+          section="session"
+          saveLabel={t('settings.session.saveLabel')}
+          dirty={isSectionDirty('session')}
+          saving={sectionSaving.session}
+          status={sectionStatus.session}
+          onSave={handleSectionSave}
+          t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.session || 0}
+          saveNonce={sectionSaveNonce.session || 0}
+        />
+        </div>
+      </details>
+
+      <details>
+        <summary>{t('settings.rateLimiting.title')}</summary>
+        <div className="settings-form-width">
+          {fieldErrors['session.rateLimitPersistence'] && (
+            <FeedbackInlineError id="session-rate-persistence-error" message={fieldErrors['session.rateLimitPersistence']} announce={false} />
+          )}
+        <label htmlFor="session-rate-persistence" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.persistence.label')}
         </label>
-        <select id="session-rate-persistence" value={rateLimitPersistence} onChange={handleRateLimitPersistenceChange} disabled={savingRateLimitPersistence}>
+        <select
+          id="session-rate-persistence"
+          className="filter-select"
+          value={rateLimitPersistence}
+          onChange={(e) => { const v = e.target.value; setRateLimitPersistence(v); stageChange('session.rateLimitPersistence', v); }}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitPersistence'] ? 'session-rate-persistence-error' : undefined}
+        >
           <option value="memory">{t('settings.session.persistence.options.memory')}</option>
           <option value="redis">{t('settings.session.persistence.options.redis')}</option>
         </select>
 
-        <label htmlFor="session-single-anonymous-chat-run" className="mb-200 display-block mt-400">
+          {fieldErrors['session.singleAnonymousChatRunEnabled'] && (
+            <FeedbackInlineError id="session-single-anonymous-chat-run-error" message={fieldErrors['session.singleAnonymousChatRunEnabled']} announce={false} />
+          )}
+        <label htmlFor="session-single-anonymous-chat-run" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.singleAnonymousChatRunEnabled')}
         </label>
         <select
           id="session-single-anonymous-chat-run"
+          className="filter-select"
           value={singleAnonymousChatRunEnabled}
-          onChange={handleSingleAnonymousChatRunEnabledChange}
-          disabled={savingSingleAnonymousChatRunEnabled}
+          onChange={(e) => { const v = e.target.value; setSingleAnonymousChatRunEnabled(v); stageChange('session.singleAnonymousChatRunEnabled', v); }}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.singleAnonymousChatRunEnabled'] ? 'session-single-anonymous-chat-run-error' : undefined}
         >
           <option value="true">{t('common.yes')}</option>
           <option value="false">{t('common.no')}</option>
         </select>
 
-        <label htmlFor="session-rate-capacity" className="mb-200 display-block mt-200">
+          {fieldErrors['session.rateLimitCapacity'] && (
+            <FeedbackInlineError id="session-rate-capacity-error" message={fieldErrors['session.rateLimitCapacity']} announce={false} />
+          )}
+        <label htmlFor="session-rate-capacity" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.rateLimitCapacity')}
         </label>
-        <input id="session-rate-capacity" type="number" min="1" value={rateLimitCapacity} onChange={handleRateLimitCapacityChange} disabled={savingRateLimitCapacity} />
+        <input
+          id="session-rate-capacity"
+          className="filter-input"
+          type="number"
+          min="1"
+          value={rateLimitCapacity}
+          onChange={(e) => { const v = e.target.value; setRateLimitCapacity(v); stageChange('session.rateLimitCapacity', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(rateLimitCapacity, setRateLimitCapacity, 'session.rateLimitCapacity')}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitCapacity'] ? 'session-rate-capacity-error' : undefined}
+        />
 
-        <label htmlFor="session-rate-refill" className="mb-200 display-block mt-400">
+          {fieldErrors['session.rateLimitRefillPerSec'] && (
+            <FeedbackInlineError id="session-rate-refill-error" message={fieldErrors['session.rateLimitRefillPerSec']} announce={false} />
+          )}
+        <label htmlFor="session-rate-refill" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.rateLimitRefill')}
         </label>
-        <input id="session-rate-refill" type="number" min="0" step="0.1" value={rateLimitRefill} onChange={handleRateLimitRefillChange} disabled={savingRateLimitRefill} />
+        <input
+          id="session-rate-refill"
+          className="filter-input"
+          type="number"
+          min="0"
+          step="0.1"
+          value={rateLimitRefill}
+          onChange={(e) => { const v = e.target.value; setRateLimitRefill(v); stageChange('session.rateLimitRefillPerSec', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(rateLimitRefill, setRateLimitRefill, 'session.rateLimitRefillPerSec')}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.rateLimitRefillPerSec'] ? 'session-rate-refill-error' : undefined}
+        />
 
-        <label htmlFor="session-authenticated-rate-capacity" className="mb-200 display-block mt-400">
+          {fieldErrors['session.authenticatedRateLimitCapacity'] && (
+            <FeedbackInlineError id="session-authenticated-rate-capacity-error" message={fieldErrors['session.authenticatedRateLimitCapacity']} announce={false} />
+          )}
+        <label htmlFor="session-authenticated-rate-capacity" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.authenticatedRateLimitCapacity')}
         </label>
-        <input id="session-authenticated-rate-capacity" type="number" min="1" value={authenticatedRateLimitCapacity} onChange={handleAuthenticatedRateLimitCapacityChange} disabled={savingAuthenticatedRateLimitCapacity} />
+        <input
+          id="session-authenticated-rate-capacity"
+          className="filter-input"
+          type="number"
+          min="1"
+          value={authenticatedRateLimitCapacity}
+          onChange={(e) => { const v = e.target.value; setAuthenticatedRateLimitCapacity(v); stageChange('session.authenticatedRateLimitCapacity', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(authenticatedRateLimitCapacity, setAuthenticatedRateLimitCapacity, 'session.authenticatedRateLimitCapacity')}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.authenticatedRateLimitCapacity'] ? 'session-authenticated-rate-capacity-error' : undefined}
+        />
 
-        <label htmlFor="session-authenticated-rate-refill" className="mb-200 display-block mt-400">
+          {fieldErrors['session.authenticatedRateLimitRefillPerSec'] && (
+            <FeedbackInlineError id="session-authenticated-rate-refill-error" message={fieldErrors['session.authenticatedRateLimitRefillPerSec']} announce={false} />
+          )}
+        <label htmlFor="session-authenticated-rate-refill" className="filter-label display-block mt-200">
           {t('settings.rateLimiting.authenticatedRateLimitRefill')}
         </label>
-        <input id="session-authenticated-rate-refill" type="number" min="0" step="0.1" value={authenticatedRateLimitRefill} onChange={handleAuthenticatedRateLimitRefillChange} disabled={savingAuthenticatedRateLimitRefill} />
-      </GcdsDetails>
-      <GcdsDetails detailsTitle={t('settings.redaction.title')} className="mt-600 mb-200" tabIndex="0">
-        <p className="mb-400">{t('settings.redaction.description')}</p>
+        <input
+          id="session-authenticated-rate-refill"
+          className="filter-input"
+          type="number"
+          min="0"
+          step="0.1"
+          value={authenticatedRateLimitRefill}
+          onChange={(e) => { const v = e.target.value; setAuthenticatedRateLimitRefill(v); stageChange('session.authenticatedRateLimitRefillPerSec', v); }}
+          onBlur={() => defaultEmptyNumberOnBlur(authenticatedRateLimitRefill, setAuthenticatedRateLimitRefill, 'session.authenticatedRateLimitRefillPerSec')}
+          disabled={sectionSaving.rateLimiting}
+          aria-describedby={fieldErrors['session.authenticatedRateLimitRefillPerSec'] ? 'session-authenticated-rate-refill-error' : undefined}
+        />
+
+        <SectionSaveControls
+          section="rateLimiting"
+          saveLabel={t('settings.rateLimiting.saveLabel')}
+          dirty={isSectionDirty('rateLimiting')}
+          saving={sectionSaving.rateLimiting}
+          status={sectionStatus.rateLimiting}
+          onSave={handleSectionSave}
+          t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.rateLimiting || 0}
+          saveNonce={sectionSaveNonce.rateLimiting || 0}
+        />
+        </div>
+      </details>
+      <details>
+        <summary>{t('settings.redaction.title')}</summary>
+        <div>
+        <p id="redaction-description">{t('settings.redaction.description')}</p>
 
         <div className="grid grid-cols-2 gap-400 mb-400" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h3 className="mb-200">{t('settings.redaction.langEnglish')}</h3>
+            <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langEnglish')}</h2>
 
-            <label htmlFor="profanity-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.profanity')} (EN)
+            <label htmlFor="redaction.profanity.en" className="filter-label display-block mt-200">
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixEn')}
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.en" initialValue={redactionValues['redaction.profanity.en']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.profanity.en"
+              value={redactionValues['redaction.profanity.en']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.profanity.en']}
+            />
 
-            <label htmlFor="threat-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.threat')} (EN)
+            <label htmlFor="redaction.threat.en" className="filter-label display-block mt-200">
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixEn')}
             </label>
-            <SettingsTextArea settingKey="redaction.threat.en" initialValue={redactionValues['redaction.threat.en']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.threat.en"
+              value={redactionValues['redaction.threat.en']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.threat.en']}
+            />
 
-            <label htmlFor="manipulation-en" className="mb-200 display-block mt-400">
-              {t('settings.redaction.manipulation')} (EN)
+            <label htmlFor="redaction.manipulation.en" className="filter-label display-block mt-200">
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixEn')}
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.en" initialValue={redactionValues['redaction.manipulation.en']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.manipulation.en"
+              value={redactionValues['redaction.manipulation.en']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.manipulation.en']}
+            />
           </div>
 
           <div>
-            <h3 className="mb-200">{t('settings.redaction.langFrench')}</h3>
+            <h2 className="heading-size-h3 mb-200 mt-200">{t('settings.redaction.langFrench')}</h2>
 
-            <label htmlFor="profanity-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.profanity')} (FR)
+            <label htmlFor="redaction.profanity.fr" className="filter-label display-block mt-200">
+              {t('settings.redaction.profanity')} {t('settings.redaction.langSuffixFr')}
             </label>
-            <SettingsTextArea settingKey="redaction.profanity.fr" initialValue={redactionValues['redaction.profanity.fr']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.profanity.fr"
+              value={redactionValues['redaction.profanity.fr']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.profanity.fr']}
+            />
 
-            <label htmlFor="threat-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.threat')} (FR)
+            <label htmlFor="redaction.threat.fr" className="filter-label display-block mt-200">
+              {t('settings.redaction.threat')} {t('settings.redaction.langSuffixFr')}
             </label>
-            <SettingsTextArea settingKey="redaction.threat.fr" initialValue={redactionValues['redaction.threat.fr']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.threat.fr"
+              value={redactionValues['redaction.threat.fr']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.threat.fr']}
+            />
 
-            <label htmlFor="manipulation-fr" className="mb-200 display-block mt-400">
-              {t('settings.redaction.manipulation')} (FR)
+            <label htmlFor="redaction.manipulation.fr" className="filter-label display-block mt-200">
+              {t('settings.redaction.manipulation')} {t('settings.redaction.langSuffixFr')}
             </label>
-            <SettingsTextArea settingKey="redaction.manipulation.fr" initialValue={redactionValues['redaction.manipulation.fr']} saveAndVerify={saveAndVerify} lang={lang} />
+            <SettingsTextArea
+              settingKey="redaction.manipulation.fr"
+              value={redactionValues['redaction.manipulation.fr']}
+              onChange={handleRedactionChange}
+              disabled={sectionSaving.redaction}
+              describedBy="redaction-description"
+              error={fieldErrors['redaction.manipulation.fr']}
+            />
           </div>
         </div>
-      </GcdsDetails>
+
+        <SectionSaveControls
+          section="redaction"
+          saveLabel={t('settings.redaction.saveLabel')}
+          dirty={isSectionDirty('redaction')}
+          saving={sectionSaving.redaction}
+          status={sectionStatus.redaction}
+          onSave={handleSectionSave}
+          t={t}
+          fieldErrors={fieldErrors}
+          errorAttempt={sectionErrorAttempt.redaction || 0}
+          saveNonce={sectionSaveNonce.redaction || 0}
+        />
+        </div>
+      </details>
+
+      <section className="mt-600" aria-labelledby="settings-audit-title">
+        <h2 id="settings-audit-title">{t('settings.auditHistory.title')}</h2>
+        <p>{t('settings.auditHistory.description')}</p>
+        {/* TODO (design review): this always-visible full table is a lot of
+            page real estate for something most admins only check
+            occasionally. Worth a design pass on whether settings history
+            belongs in its own tab on this page, or behind a details/summary
+            disclosure — either would let a lighter "recent changes" view
+            replace this full search/paginate table for the common case. */}
+        {renderStatusMessage(auditLoadStatus, 'success', 'auditLoad')}
+        <ServerDataTable
+          ref={auditTableRef}
+          tableKey="settings-audit-history"
+          columns={auditColumns}
+          fetchData={fetchAuditHistory}
+          lang={lang}
+          order={[]}
+          ordering={false}
+          pageLength={10}
+          lengthChange={false}
+          layout={{ topStart: 'search', topEnd: null }}
+          // metrics-table-container: same filter-box styling as the chat
+          // viewer's log entries table (admin.css).
+          containerClassName="metrics-table-container table-scroll mt-200"
+          emptyTableText={t('settings.auditHistory.empty')}
+          caption={t('settings.auditHistory.title')}
+          searchLabelSrOnly={t('settings.auditHistory.filterLabel')}
+          searchPlaceholder={t('admin.common.filterPlaceholder')}
+          onError={(error) => setAuditLoadStatus(error ? buildErrorStatus('settings.auditHistory.loadError', error) : null)}
+        />
+      </section>
 
     </GcdsContainer>
   );
 };
 
-// Helper component for text areas to manage their own state and saving
-const SettingsTextArea = ({ settingKey, initialValue = '', saveAndVerify, lang = 'en' }) => {
-  const { t } = useTranslations(lang);
-  const [value, setValue] = useState(initialValue);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  const handleBlur = async () => {
-    setSaving(true);
-    try {
-      const current = await saveAndVerify(settingKey, value, (v) => v ?? '');
-      setValue(current);
-    } finally {
-      setSaving(false);
-    }
-  };
+// Renders a section's Save button, "unsaved changes" indicator, and
+// save-outcome message — the same three elements at the end of every
+// details/summary block above. Defined at module scope (not inside SettingsPage)
+// so React treats it as a stable component type across renders instead of
+// remounting it — declaring it inside the parent's render body would give it
+// a new function identity every render, forcing a full unmount/remount of
+// every Save button on every keystroke.
+// It's the last element inside its <details> (except the cache section,
+// whose Clear button follows it with its own mb-400), so its own
+// bottom margin is what keeps it off the border when the section is open —
+// fixing the gap here (rather than on <details> itself) avoids double
+// spacing wherever a section's last child is something like a <p> that
+// already carries its own margin-bottom.
+const SectionSaveControls = ({ section, saveLabel, dirty, saving, status, onSave, t, fieldErrors, errorAttempt, saveNonce }) => {
+  // Every field in this section that came back with a per-field error on the
+  // last save — feeds both the jump-link list below and, via errorAttempt,
+  // when to re-focus/re-announce it (a second failed attempt with the exact
+  // same single field wrong wouldn't otherwise re-trigger the effect).
+  const sectionErrorLinks = SECTION_KEYS[section]
+    .filter((key) => fieldErrors[key])
+    .map((key) => ({ fieldId: FIELD_META[key].fieldId, label: t(FIELD_META[key].labelKey) }));
+  const summaryRef = useFocusOnChange(errorAttempt);
 
   return (
+    <div className="mt-400 mb-400">
+      {sectionErrorLinks.length > 0 && (
+        <ExplanationErrorSummary
+          id={`${section}-error-summary`}
+          heading={t('common.errorSummaryHeading')}
+          links={sectionErrorLinks}
+          errorCount={errorAttempt}
+          inputRef={summaryRef}
+        />
+      )}
+      <GcdsButton
+        type="button"
+        onClick={() => onSave(section)}
+        disabled={!dirty || saving}
+      >
+        {saving ? t('settings.saving') : saveLabel}
+      </GcdsButton>
+      <StatusMessage
+        variant={status ? (status.isError ? 'error' : 'success') : undefined}
+        message={status?.text}
+        nonce={saveNonce}
+      />
+    </div>
+  );
+};
+
+// Pure controlled textarea for a redaction field — nothing to save itself
+// anymore, staging into the parent's pendingChanges happens on every change
+// (not on blur: clicking the section's Save button before a field blurs must
+// not drop the just-typed text).
+const SettingsTextArea = ({ settingKey, value, onChange, disabled, describedBy, error }) => (
+  <>
+    {error && (
+      <FeedbackInlineError id={`${settingKey}-error`} message={error} announce={false} />
+    )}
     <textarea
       id={settingKey}
       value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={handleBlur}
-      disabled={saving}
-      className="w-full"
+      onChange={(e) => onChange(settingKey, e.target.value)}
+      disabled={disabled}
+      aria-describedby={error ? `${describedBy} ${settingKey}-error` : describedBy}
+      className="filter-input"
       rows={5}
-      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
     />
-  );
-};
+  </>
+);
 
 export default SettingsPage;

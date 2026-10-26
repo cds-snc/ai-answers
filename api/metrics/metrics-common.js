@@ -1,3 +1,4 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import { getChatFilterConditions } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
@@ -52,7 +53,32 @@ const buildDateRange = ({ startDate, endDate, timezoneOffsetMinutes }) => {
 const HOURS_IN_DAY = 24;
 const DEFAULT_DAYS = 7;
 
-export function parseRequestFilters(req) {
+// Eval filter for the metrics pipelines, matched against a 'category' field
+// (the bucket) and a 'hasCitationError' field (getHasCitationErrorAggregationExpression).
+// "Citation issue" matches the flag, so it catches every answer with a
+// citation problem, not just the hasCitationError bucket - same as
+// getChatFilterConditions. Pipelines compute both fields before matching.
+export function buildMetricsEvalFilter(rawValue) {
+    if (!rawValue || rawValue === 'all') return null;
+    const categories = rawValue.split(',').map(c => c.trim()).filter(Boolean);
+    const otherCategories = categories.filter(c => c !== 'hasCitationError');
+    const branches = [];
+    if (categories.includes('hasCitationError')) branches.push({ hasCitationError: true });
+    if (otherCategories.length === 1) branches.push({ category: otherCategories[0] });
+    else if (otherCategories.length > 1) branches.push({ category: { $in: otherCategories } });
+    if (branches.length === 0) return null;
+    return branches.length === 1 ? branches[0] : { $or: branches };
+}
+
+// For pipelines where 'category' already holds the other eval's value:
+// renames the fields to e.g. aiCategory / aiHasCitationError.
+export function remapEvalFilter(filter, prefix) {
+    if (filter.$or) return { $or: filter.$or.map(branch => remapEvalFilter(branch, prefix)) };
+    const fields = { category: `${prefix}Category`, hasCitationError: `${prefix}HasCitationError` };
+    return Object.fromEntries(Object.entries(filter).map(([key, value]) => [fields[key] || key, value]));
+}
+
+export async function parseRequestFilters(req) {
     const { startDate, endDate, timezoneOffsetMinutes } = req.query;
 
     // 1. Date Filter
@@ -76,10 +102,15 @@ export function parseRequestFilters(req) {
 
     // 2. Base Filters (exclude computed fields and context-based fields)
     const { answerType, partnerEval, aiEval, userType, department, urlEn, urlFr } = req.query;
-    const interactionFilters = { userType, urlEn, urlFr }; // department is context-based, handled separately
+    const reviewerMatch = await resolveReviewerMatch(req.query);
+    const interactionFilters = { userType, urlEn, urlFr, reviewerMatch }; // department is context-based, handled separately
     const extraFilterConditions = getChatFilterConditions(interactionFilters);
 
-    // 2b. Department filter (applied after context lookup, built inline)
+    // 2b. Department filter (applied after context lookup, built inline).
+    // Because it's built here rather than passed through
+    // getChatFilterConditions, department ANDs with the reviewer filter on
+    // these endpoints, while chat/eval OR them - see the TODO(design, parked)
+    // in api/util/chat-filters.js.
     const departmentFilter = [];
     if (department) {
         const escaped = department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -99,27 +130,8 @@ export function parseRequestFilters(req) {
         }
     }
 
-    // partnerEval (category)
-    let partnerEvalFilter = null;
-    if (partnerEval && partnerEval !== 'all') {
-        const categories = partnerEval.split(',').map(c => c.trim()).filter(Boolean);
-        if (categories.length === 1) {
-            partnerEvalFilter = { category: categories[0] };
-        } else if (categories.length > 1) {
-            partnerEvalFilter = { category: { $in: categories } };
-        }
-    }
-
-    // aiEval (category)
-    let aiEvalFilter = null;
-    if (aiEval && aiEval !== 'all') {
-        const categories = aiEval.split(',').map(c => c.trim()).filter(Boolean);
-        if (categories.length === 1) {
-            aiEvalFilter = { category: categories[0] };
-        } else if (categories.length > 1) {
-            aiEvalFilter = { category: { $in: categories } };
-        }
-    }
+    const partnerEvalFilter = buildMetricsEvalFilter(partnerEval);
+    const aiEvalFilter = buildMetricsEvalFilter(aiEval);
 
     return {
         dateFilter,
@@ -289,6 +301,84 @@ export function addAutoEvalLookup(pipeline) {
             }
         }
     ];
+}
+
+/**
+ * Interactions lookup + unwind for the dashboard chat lists, plus
+ * `questionNumber` (1-based position of the interaction in its chat). Same
+ * approach as chat-dashboard.js: keep the raw id array, since $lookup's
+ * output order isn't the array's order. The lists show it so links that
+ * share a chat ID can be told apart (WCAG 2.4.4).
+ */
+export function questionNumberLookupStages() {
+    return [
+        { $addFields: { interactionIds: '$interactions' } },
+        {
+            $lookup: {
+                from: 'interactions',
+                localField: 'interactionIds',
+                foreignField: '_id',
+                as: 'interactions'
+            }
+        },
+        { $unwind: '$interactions' },
+        { $addFields: { questionNumber: { $add: [{ $indexOfArray: ['$interactionIds', '$interactions._id'] }, 1] } } },
+    ];
+}
+
+/**
+ * Shared prefix for the expert-feedback-flagged-chat list pipelines
+ * (metrics-content-issue-chats.js, metrics-harmful-chats.js): Chat →
+ * interactions → optional department filter → expertFeedback lookup,
+ * excluding blank ExpertFeedback records created solely by the neverStale
+ * flag (totalScore: null means no human scored the interaction). Callers
+ * append their own flag $match, $project (with whatever status shape they
+ * need), $sort, and $limit — those differ per list, so they stay inline
+ * rather than being folded into this helper.
+ *
+ * @param {Object} dateFilter - MongoDB date filter for createdAt
+ * @param {Array} extraFilters - Additional filter conditions to apply after unwind
+ * @param {Array} departmentFilter - Department filter conditions (context-based)
+ * @returns {Array} MongoDB aggregation pipeline stages
+ */
+export function buildFlaggedChatsBasePipeline(dateFilter, extraFilters = [], departmentFilter = []) {
+    const stages = [
+        { $match: dateFilter },
+        ...questionNumberLookupStages(),
+        ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
+    ];
+
+    if (departmentFilter.length > 0) {
+        stages.push(
+            {
+                $lookup: {
+                    from: 'contexts',
+                    localField: 'interactions.context',
+                    foreignField: '_id',
+                    as: 'ctx'
+                }
+            },
+            { $addFields: { department: { $ifNull: [{ $arrayElemAt: ['$ctx.department', 0] }, 'Unknown'] } } },
+            { $match: { $and: departmentFilter } },
+        );
+    }
+
+    stages.push(
+        {
+            $lookup: {
+                from: 'expertfeedbacks',
+                localField: 'interactions.expertFeedback',
+                foreignField: '_id',
+                as: 'ef'
+            }
+        },
+        { $addFields: { expertFeedback: { $arrayElemAt: ['$ef', 0] } } },
+        // Exclude blank ExpertFeedback records created solely by the neverStale
+        // flag (totalScore: null means no human scored the interaction).
+        { $match: { expertFeedback: { $ne: null }, 'expertFeedback.totalScore': { $ne: null } } },
+    );
+
+    return stages;
 }
 
 /**

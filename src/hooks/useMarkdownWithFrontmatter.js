@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react';
-import matter from 'gray-matter';
-import { Buffer } from 'buffer';
-
-/**
- * Default frontmatter structure
- */
-const DEFAULT_FRONTMATTER = {
-  title: '',
-  description: '',
-  ogImage: null
-};
+import { DEFAULT_FRONTMATTER, parseFrontmatter } from '../utils/markdownFrontmatter.js';
 
 /**
  * Generic hook to fetch and parse markdown content with YAML frontmatter
@@ -32,11 +22,6 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // gray-matter expects Buffer to exist; polyfill for browsers
-  if (typeof window !== 'undefined' && !window.Buffer) {
-    window.Buffer = Buffer;
-  }
-
   // Signal to the shell (App.js) that this page manages its own metadata
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -47,6 +32,13 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
   }, []);
 
   useEffect(() => {
+    // No filename means the caller has nothing to load (e.g. an unknown guide id);
+    // skip the fetch rather than requesting a bogus path.
+    if (!filename) {
+      setLoading(false);
+      return;
+    }
+
     const fetchAndParseContent = async () => {
       setLoading(true);
       setError(null);
@@ -84,37 +76,6 @@ export const useMarkdownWithFrontmatter = (filename, contentDir = '/content') =>
 
   return { frontmatter, content, sections, loading, error };
 };
-
-/**
- * Parse YAML frontmatter from markdown content using gray-matter
- * Expects YAML block between --- delimiters at the top of file
- *
- * @param {string} markdown - Raw markdown content
- * @returns {Object} - { frontmatter, contentBody }
- */
-function parseFrontmatter(markdown) {
-  try {
-    const { data, content } = matter(markdown);
-    
-    // Merge with defaults to ensure all expected fields exist
-    const frontmatter = {
-      ...DEFAULT_FRONTMATTER,
-      ...data
-    };
-    
-    return {
-      frontmatter,
-      contentBody: content.trim()
-    };
-  } catch (err) {
-    console.warn(`Failed to parse YAML frontmatter in markdown:`, err.message);
-    // Return defaults on parse error
-    return {
-      frontmatter: DEFAULT_FRONTMATTER,
-      contentBody: markdown
-    };
-  }
-}
 
 /**
  * Parse markdown content into sections by h2 headings

@@ -43,18 +43,6 @@ class EvaluationService {
     }
     return response.json();
   }
-  static async deleteExpertEval(chatId) {
-    const response = await AuthService.fetch(getApiUrl('db-delete-expert-eval'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chatId })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete expert feedback.');
-    }
-    return data;
-  }
   static async generateEvals({ lastProcessedId = null, startTime, endTime } = {}) {
     try {
       const payload = { action: 'generate' };
@@ -102,7 +90,7 @@ class EvaluationService {
       return data.count;
     } catch (error) {
       console.error('Error getting non-empty eval count:', error);
-      return 0;
+      throw error;
     }
   }
 
@@ -125,7 +113,7 @@ class EvaluationService {
       return await response.json();
     } catch (error) {
       console.error('Error getting eval metrics:', error);
-      return { total: 0, processed: 0, hasMatches: 0, noMatchByReason: {}, fallbackByType: {} };
+      throw error;
     }
   }
 

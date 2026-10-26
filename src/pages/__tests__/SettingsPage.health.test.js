@@ -3,10 +3,20 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import SettingsPage from '../SettingsPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
 
-const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted(() => {
+const {
+  mockGetSettings,
+  mockGetSetting,
+  mockSetSetting,
+  mockSetSettings,
+  mockRefreshSettingsCache,
+  mockClearDownloadWebPageCache,
+  mockClearSearchCache,
+  mockGetSettingsAudit,
+} = vi.hoisted(() => {
   const healthSettings = {
     'siteStatus': 'available',
     'deploymentMode': 'CDS',
@@ -58,16 +68,33 @@ const { mockGetSettings, mockSetSetting, mockRefreshSettingsCache } = vi.hoisted
       }
       return values;
     }),
+    mockGetSetting: vi.fn(async (key, defaultValue = null) => (
+      Object.prototype.hasOwnProperty.call(healthSettings, key) ? healthSettings[key] : defaultValue
+    )),
     mockSetSetting: vi.fn(async () => ({ message: 'Setting updated' })),
+    // Mirrors the real handler's shape: every submitted key/value succeeds
+    // and comes back in `values`, `errors` empty.
+    mockSetSettings: vi.fn(async (changes) => ({
+      values: Object.fromEntries(changes.map(({ key, value }) => [key, value])),
+      errors: {},
+    })),
     mockRefreshSettingsCache: vi.fn(async () => ({ message: 'Settings cache refreshed' })),
+    mockClearDownloadWebPageCache: vi.fn(async () => ({ success: true })),
+    mockClearSearchCache: vi.fn(async () => ({ success: true })),
+    mockGetSettingsAudit: vi.fn(async () => ({ entries: [], total: 0, filteredTotal: 0 })),
   };
 });
 
 vi.mock('../../services/DataStoreService.js', () => ({
   default: {
     getSettings: mockGetSettings,
+    getSetting: mockGetSetting,
     setSetting: mockSetSetting,
+    setSettings: mockSetSettings,
     refreshSettingsCache: mockRefreshSettingsCache,
+    clearDownloadWebPageCache: mockClearDownloadWebPageCache,
+    clearSearchCache: mockClearSearchCache,
+    getSettingsAudit: mockGetSettingsAudit,
   },
 }));
 
@@ -80,13 +107,33 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, ...props }) => React.createElement('button', props, children),
   GcdsContainer: ({ children }) => React.createElement('div', null, children),
-  GcdsDetails: ({ children, detailsTitle }) => React.createElement(
-    'section',
-    null,
-    React.createElement('h2', null, detailsTitle),
-    children
-  ),
+  GcdsIcon: (props) => React.createElement('span', { ...props, 'aria-hidden': 'true' }),
 }));
+
+// The audit history table is an ExperimentalServerDataTable (see
+// src/pages/__tests__/ChatDashboardPage.test.js / EvalDashboardPages.test.js
+// for the same convention) — mocked shallowly rather than letting the real
+// jQuery DataTables library run under jsdom. Capturing the props each render
+// passes to the mock lets a test inspect the columns/options config and
+// manually drive `options.ajax` the same way the real library would.
+let lastDataTableProps = null;
+const auditTableReloadMock = vi.fn();
+
+vi.mock('datatables.net-react', () => {
+  const MockDataTable = (props) => {
+    lastDataTableProps = props;
+    React.useEffect(() => {
+      props.options?.initComplete?.call({
+        api: () => ({ ajax: { reload: auditTableReloadMock } }),
+      });
+    }, [props.options]);
+    return React.createElement('div', { 'data-testid': 'audit-data-table' });
+  };
+  MockDataTable.use = vi.fn();
+  return { default: MockDataTable };
+});
+
+vi.mock('datatables.net-dt', () => ({ default: () => null }));
 
 describe('SettingsPage health section', () => {
   beforeEach(() => {
@@ -125,5 +172,403 @@ describe('SettingsPage health section', () => {
       expect(mockGetSettings.mock.calls[0][0]).toContain('session.rateLimitPersistence');
       expect(mockGetSettings.mock.calls[0][0]).toContain('redaction.profanity.en');
     });
+  });
+
+  it('renders one search-cache control in the Cache section and groups its fields', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('settings.searchContextCache.enabledLabel')).toBeTruthy();
+    });
+
+    expect(screen.getAllByLabelText('settings.searchContextCache.enabledLabel')).toHaveLength(1);
+    expect(screen.getByText('settings.searchContextCache.title').closest('fieldset')).toBeTruthy();
+    expect(screen.getByText('settings.downloadWebPageCache.title').closest('fieldset')).toBeTruthy();
+  });
+});
+
+describe('SettingsPage audit history', () => {
+  beforeEach(() => {
+    mockGetSettings.mockClear();
+    mockGetSetting.mockClear();
+    mockSetSetting.mockClear();
+    mockSetSettings.mockClear();
+    mockRefreshSettingsCache.mockClear();
+    mockClearDownloadWebPageCache.mockClear();
+    mockClearSearchCache.mockClear();
+    mockGetSettingsAudit.mockClear();
+    auditTableReloadMock.mockClear();
+    lastDataTableProps = null;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('does not save on change — only when the section Save button is clicked', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
+      target: { value: 'true' },
+    });
+
+    // Nothing persists until the section's Save button is clicked — this is
+    // the whole point of moving off auto-save-on-change.
+    expect(mockSetSettings).not.toHaveBeenCalled();
+  });
+
+  it('reloads audit history after clearing the downloaded web page cache', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'settings.downloadWebPageCache.clear' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'settings.downloadWebPageCache.clear' }));
+
+    await waitFor(() => {
+      expect(mockClearDownloadWebPageCache).toHaveBeenCalledTimes(1);
+      expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
+    });
+    expect(confirmSpy).toHaveBeenCalledWith('settings.downloadWebPageCache.clearConfirm');
+    confirmSpy.mockRestore();
+  });
+
+  it('does not clear the web page cache when the confirm is cancelled', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'settings.downloadWebPageCache.clear' }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(mockClearDownloadWebPageCache).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it('shows the web page cache clear outcome under Clear, after Save and the cache fields', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const clearButton = await screen.findByRole('button', { name: 'settings.downloadWebPageCache.clear' });
+    const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
+    const toggle = screen.getByLabelText('settings.downloadWebPageCache.enabledLabel');
+    expect(toggle.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(saveButton.compareDocumentPosition(clearButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(clearButton);
+
+    const message = await screen.findByText('settings.downloadWebPageCache.clearSuccess');
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
+    expect(saveButton.parentElement.contains(message)).toBe(false);
+    await waitForAnnouncement('settings.downloadWebPageCache.clearSuccess');
+    confirmSpy.mockRestore();
+  });
+
+  it('shows the web page cache hint between the toggle label and the toggle, linked to it', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const toggle = await screen.findByLabelText('settings.downloadWebPageCache.enabledLabel');
+    const label = document.querySelector('label[for="download-web-page-cache-enabled"]');
+    const hint = screen.getByText('settings.downloadWebPageCache.description');
+    expect(label.nextElementSibling).toBe(hint);
+    expect(hint.nextElementSibling).toBe(toggle);
+    expect(toggle.getAttribute('aria-describedby').split(' ')).toContain(hint.id);
+  });
+
+  it('links the redaction help text to every redaction field', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+    await screen.findByText('settings.redaction.description');
+
+    for (const id of ['profanity', 'threat', 'manipulation'].flatMap((f) => [`redaction.${f}.en`, `redaction.${f}.fr`])) {
+      const describedBy = document.getElementById(id).getAttribute('aria-describedby').split(' ');
+      expect(describedBy.map((ref) => document.getElementById(ref)?.textContent))
+        .toContain('settings.redaction.description');
+    }
+  });
+
+  it('confirms before clearing the search cache and shows its outcome beside Clear', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'settings.searchContextCache.clear' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'settings.searchContextCache.clear' }));
+
+    await waitFor(() => {
+      expect(mockClearSearchCache).toHaveBeenCalledTimes(1);
+      expect(auditTableReloadMock).toHaveBeenCalledTimes(1);
+    });
+    expect(confirmSpy).toHaveBeenCalledWith('settings.searchContextCache.clearConfirm');
+    const clearButton = screen.getByRole('button', { name: 'settings.searchContextCache.clear' });
+    const saveButton = screen.getByRole('button', { name: 'settings.cache.saveLabel' });
+    expect(saveButton.compareDocumentPosition(clearButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const message = await screen.findByText('settings.searchContextCache.clearSuccess');
+    expect(clearButton.closest('.canada-ca-button-stack').parentElement.contains(message)).toBe(true);
+    expect(saveButton.parentElement.contains(message)).toBe(false);
+    await waitForAnnouncement('settings.searchContextCache.clearSuccess');
+    confirmSpy.mockRestore();
+  });
+
+  it('links the search cache hint between the toggle label and the toggle', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    const toggle = await screen.findByLabelText('settings.searchContextCache.enabledLabel');
+    const label = document.querySelector('label[for="search-context-cache-enabled"]');
+    const hint = screen.getByText('settings.searchContextCache.description');
+    expect(label.nextElementSibling).toBe(hint);
+    expect(hint.nextElementSibling).toBe(toggle);
+    expect(toggle.getAttribute('aria-describedby').split(' ')).toContain(hint.id);
+  });
+
+  it('enables the health Save button only while a change is pending, and disables it again once saved', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
+    expect(saveButton.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('settings.health.enabledLabel'), {
+      target: { value: 'true' },
+    });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockSetSettings).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(saveButton.hasAttribute('disabled')).toBe(true);
+    });
+  });
+
+  it('clears the save-outcome message once the field is edited again', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.saveSuccessIn')).toBeTruthy();
+    });
+
+    // A save-outcome message describing a state the admin has since changed
+    // again would be misleading left on screen.
+    fireEvent.change(field, { target: { value: 'false' } });
+    expect(screen.queryByText('settings.saveSuccessIn')).toBeNull();
+  });
+
+  it('drops a field from pendingChanges (and re-disables Save) once it is edited back to its original value', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+
+    // Loaded value is 'false' (see healthSettings above).
+    fireEvent.change(field, { target: { value: 'true' } });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'false' } });
+    expect(saveButton.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(saveButton);
+    expect(mockSetSettings).not.toHaveBeenCalled();
+  });
+
+  it('renders a search/paginate table with sorting disabled and 10 rows per page', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(lastDataTableProps).toBeTruthy();
+    });
+
+    expect(lastDataTableProps.options.ordering).toBe(false);
+    expect(lastDataTableProps.options.pageLength).toBe(10);
+    expect(lastDataTableProps.options.lengthChange).toBe(false);
+    expect(lastDataTableProps.options.searching).toBe(true);
+    expect(lastDataTableProps.options.serverSide).toBe(true);
+
+    const columnFields = lastDataTableProps.columns.map((column) => column.data);
+    expect(columnFields).toEqual([
+      'actorEmail', 'action', 'settingKey', 'previousValue', 'newValue', 'createdAt',
+    ]);
+  });
+
+  it('fetches a page through DataStoreService and hands back the recordsTotal/recordsFiltered shape DataTables expects', async () => {
+    mockGetSettingsAudit.mockResolvedValueOnce({
+      entries: [{
+        id: '1',
+        actorEmail: 'admin@example.com',
+        action: 'setting.updated',
+        settingKey: 'siteStatus',
+        previousValue: 'available',
+        newValue: 'unavailable',
+        createdAt: '2026-08-11T12:00:00.000Z',
+      }],
+      total: 5,
+      filteredTotal: 1,
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(lastDataTableProps?.options?.ajax).toBeTruthy();
+    });
+
+    const callback = vi.fn();
+    await lastDataTableProps.options.ajax(
+      { start: 10, length: 10, search: { value: 'unavailable' }, draw: 2 },
+      callback
+    );
+
+    expect(mockGetSettingsAudit).toHaveBeenCalledWith({ skip: 10, limit: 10, search: 'unavailable' });
+    expect(callback).toHaveBeenCalledWith({
+      draw: 2,
+      recordsTotal: 5,
+      recordsFiltered: 1,
+      data: expect.any(Array),
+    });
+  });
+
+  it('escapes and formats each column, and truncates long values behind a disclosure', async () => {
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(lastDataTableProps).toBeTruthy();
+    });
+
+    const columns = Object.fromEntries(lastDataTableProps.columns.map((c) => [c.data, c]));
+    expect(columns.actorEmail.render('<b>admin@example.com</b>')).toBe('&lt;b&gt;admin@example.com&lt;/b&gt;');
+    expect(columns.action.render('settings.cache_refreshed')).toBe('settings.auditHistory.actions.cacheRefreshed');
+    expect(columns.action.render('setting.updated')).toBe('settings.auditHistory.actions.settingUpdated');
+    expect(columns.settingKey.render(null)).toBe('settings.auditHistory.notApplicable');
+    expect(columns.previousValue.render('short')).toBe('<span class="settings-audit-value">short</span>');
+
+    const longValue = 'x'.repeat(150);
+    const longHtml = columns.newValue.render(longValue);
+    expect(longHtml).toContain('<details class="settings-audit-value settings-audit-value--long">');
+    expect(longHtml).toContain('x'.repeat(120));
+  });
+});
+
+describe('SettingsPage field errors', () => {
+  beforeEach(() => {
+    mockGetSettings.mockClear();
+    mockSetSettings.mockClear();
+    mockGetSettingsAudit.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows the field-level error next to the field when a save partially fails', async () => {
+    // Mirrors what setMany() actually returns for a batch where one field
+    // failed validation/write and the rest succeeded — see
+    // services/__tests__/SettingsService.test.js for that contract.
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: { 'systemHealth.enabled': 'Not a valid value' },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Not a valid value')).toBeTruthy();
+    });
+
+    // The field is wired to its own error via aria-describedby, not just a
+    // generic section-level message.
+    expect(field.getAttribute('aria-describedby')).toBe('health-enabled-error');
+
+    // A field that failed stays dirty so the admin can fix and retry — a
+    // partial failure must not silently discard the edit.
+    const saveButton = screen.getByRole('button', { name: 'settings.health.saveLabel' });
+    expect(saveButton.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('resolves a structured { i18nKey } error (e.g. alertRecipients validation) through t()', async () => {
+    // SettingsService's field validators run server-side with no access to
+    // the admin's UI language, so they return a translation key instead of
+    // a formatted sentence — see services/SettingsService.js's
+    // FIELD_VALIDATORS comment. SettingsPage resolves it via t() before
+    // display.
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: {
+        'systemHealth.alertRecipients': { i18nKey: 'settings.validation.invalidEmail' },
+      },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('settings.health.alertRecipients'), {
+      target: { value: 'not-an-email' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
+
+    // The mocked t() is an identity function, so the resolved text is the
+    // translation key itself — proving the i18nKey was actually passed
+    // through t() rather than some raw/untranslated string leaking through.
+    await waitFor(() => {
+      expect(screen.getByText('settings.validation.invalidEmail')).toBeTruthy();
+    });
+  });
+
+  it('clears the field error as soon as the field is edited again', async () => {
+    mockSetSettings.mockResolvedValueOnce({
+      values: {},
+      errors: { 'systemHealth.enabled': 'Not a valid value' },
+    });
+
+    render(React.createElement(SettingsPage, { lang: 'en' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.health.title')).toBeTruthy();
+    });
+
+    const field = screen.getByLabelText('settings.health.enabledLabel');
+    fireEvent.change(field, { target: { value: 'true' } });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.health.saveLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Not a valid value')).toBeTruthy();
+    });
+
+    fireEvent.change(field, { target: { value: 'false' } });
+
+    expect(screen.queryByText('Not a valid value')).toBeNull();
+    expect(field.getAttribute('aria-describedby')).toBeNull();
   });
 });

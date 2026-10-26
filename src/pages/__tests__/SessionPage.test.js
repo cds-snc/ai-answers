@@ -1,0 +1,115 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import SessionPage from '../SessionPage.js';
+import { waitForAnnouncement } from '../../../test/liveAnnouncer.js';
+
+const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
+
+const { mockGetSessionMetrics, lastColumns } = vi.hoisted(() => ({
+  mockGetSessionMetrics: vi.fn(),
+  lastColumns: { current: null },
+}));
+
+vi.mock('../../services/SessionService.js', () => ({
+  default: { getSessionMetrics: mockGetSessionMetrics },
+}));
+
+// A stable `t` reference matters here: SessionPage's fetchSessions is a
+// useCallback keyed on [buildErrorStatus] (from useErrorStatus, itself keyed
+// on [t]), and the mocked usePausablePolling below re-fires its effect
+// whenever that callback's identity changes — a fresh arrow function per
+// render would cause an infinite refetch loop instead of settling on the
+// error/loading state under test.
+const mockT = (key) => key;
+vi.mock('../../hooks/useTranslations.js', () => ({
+  useTranslations: () => ({ t: mockT }),
+}));
+
+vi.mock('../../hooks/usePauseToggle.js', () => ({
+  // Run the fetch once, immediately, with no real polling interval — keeps
+  // the test deterministic and fast.
+  usePausablePolling: (fetchFn) => {
+    React.useEffect(() => { fetchFn(); }, [fetchFn]);
+    return { isPaused: false, togglePause: () => {} };
+  },
+}));
+
+vi.mock('../../components/admin/PauseToggleButton.js', () => ({
+  default: () => null,
+}));
+
+vi.mock('datatables.net-react', () => {
+  const MockDataTable = ({ children, columns }) => {
+    lastColumns.current = columns;
+    return <div>{children}</div>;
+  };
+  MockDataTable.use = vi.fn();
+  return { default: MockDataTable };
+});
+
+vi.mock('datatables.net-dt', () => ({ default: () => null }));
+
+vi.mock('@gcds-core/components-react', () => ({
+  GcdsContainer: ({ children }) => <div>{children}</div>,
+  GcdsIcon: ({ name }) => <span data-icon={name} />,
+  GcdsText: ({ children }) => <div>{children}</div>,
+  GcdsLink: ({ children, href }) => <a href={href}>{children}</a>,
+}));
+
+describe('SessionPage StatusMessage roles', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetSessionMetrics.mockReset();
+  });
+
+  it('announces a fetch error as role="alert"', async () => {
+    mockGetSessionMetrics.mockRejectedValue(new Error('network down'));
+
+    renderWithRouter(<SessionPage lang="en" />);
+
+    await waitForAnnouncement('admin.session.errorLoading', 'assertive');
+  });
+
+  it('announces the loading state as role="status" with the loading spinner box', async () => {
+    // Never resolves during the assertion window, so `loading` stays true.
+    mockGetSessionMetrics.mockReturnValue(new Promise(() => {}));
+
+    renderWithRouter(<SessionPage lang="en" />);
+
+    await waitFor(() => {
+      const status = screen.getByText('admin.filters.loading', { selector: '[class*="status-message--"]' });
+      expect(status).toBeTruthy();
+      expect(status.className).toContain('status-message--loading');
+    });
+  });
+});
+
+describe('SessionPage last seen column', () => {
+  afterEach(() => {
+    cleanup();
+    mockGetSessionMetrics.mockReset();
+  });
+
+  // lastSeen arrives as an ISO string for sessions saved to the database and
+  // as epoch ms for ones still only in memory - both can share one table.
+  it('sorts saved and in-memory sessions together by time', async () => {
+    mockGetSessionMetrics.mockResolvedValue([]);
+    renderWithRouter(<SessionPage lang="en" />);
+    await waitFor(() => expect(lastColumns.current).toBeTruthy());
+
+    const col = lastColumns.current.find((c) => c.data === 'lastSeen');
+    const savedOlder = '2026-09-28T10:00:00.000Z';
+    const inMemoryNewer = Date.parse('2026-09-28T11:00:00.000Z');
+
+    expect(col.render(savedOlder, 'sort')).toBe(Date.parse(savedOlder));
+    expect(col.render(inMemoryNewer, 'sort')).toBe(inMemoryNewer);
+    expect(col.render(inMemoryNewer, 'sort')).toBeGreaterThan(col.render(savedOlder, 'sort'));
+    expect(col.render(savedOlder, 'type')).toBe(Date.parse(savedOlder));
+    expect(col.render(savedOlder, 'display')).toBe(new Date(savedOlder).toLocaleString());
+  });
+});

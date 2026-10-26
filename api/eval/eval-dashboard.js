@@ -1,7 +1,10 @@
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpressionWithoutCitation, getAiEvalAggregationExpressionWithoutCitation, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getFeedbackDataProjection, getEvalInformedAggregationExpression } from '../util/chat-filters.js';
+import { frForProgram, frForAction } from '../util/programActionFr.js';
+import { escapeRegex } from '../util/db-query.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -30,8 +33,6 @@ const getDateRange = (query) => {
   const start = new Date(now.getTime() - HOURS_IN_DAY * 60 * 60 * 1000);
   return { $gte: start, $lte: now };
 };
-
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 async function evalDashboardHandler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
@@ -79,7 +80,13 @@ async function evalDashboardHandler(req, res) {
         chatId: 1,
         user: 1,
         pageLanguage: 1,
-        interactionIds: '$interactions'
+        interactionIds: '$interactions',
+        // Carried through to the sort stage below as a chat-clustering
+        // tiebreaker, mirroring chat-dashboard.js - kept distinct from the
+        // per-interaction `createdAt` projected later (from
+        // interactions.createdAt), which is what the UI's Date column and
+        // per-row display actually show.
+        chatCreatedAt: '$createdAt'
       }
     });
 
@@ -124,30 +131,78 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Extract answerType and first tool ID immediately
+    // Extract answerType and the full tool ID list for this answer
     pipeline.push({
       $addFields: {
         'interactions.answerType': { $ifNull: [{ $arrayElemAt: ['$answerDoc.answerType', 0] }, ''] },
-        firstToolId: { $arrayElemAt: [{ $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }, 0] }
+        answerToolIds: { $ifNull: [{ $arrayElemAt: ['$answerDoc.tools', 0] }, []] }
       }
     });
 
-    // Lookup the first tool document to check for downloadWebPage
+    // Lookup every tool call for the answer, not just the first. Plain
+    // localField/foreignField array $lookup - the same shape already
+    // proven above (interactionIds -> interactions), not the newer
+    // combined pipeline form, so this introduces no new DocumentDB
+    // compatibility risk. Trade-off: joins full tool docs (including
+    // input/output) before filtering to downloadWebPage below, rather
+    // than filtering/projecting in the join itself.
+    // TODO: a `pipeline: [{ $project: { tool: 1, error: 1 } }]` form of this
+    // $lookup would avoid shipping full tool payloads per row. Deliberately
+    // deferred - the leaner sub-pipeline $lookup form was tried and reverted
+    // earlier because it couldn't be validated against real DocumentDB;
+    // don't re-open this without running explain("executionStats") against
+    // an actual DocumentDB cluster first.
     pipeline.push({
       $lookup: {
         from: 'tools',
-        localField: 'firstToolId',
+        localField: 'answerToolIds',
         foreignField: '_id',
-        as: 'firstToolDoc'
+        as: 'answerToolDocs'
       }
     });
     pipeline.push({
       $addFields: {
+        downloadTools: {
+          $filter: {
+            input: '$answerToolDocs',
+            as: 'tool',
+            cond: { $eq: ['$$tool.tool', 'downloadWebPage'] }
+          }
+        }
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        downloadSucceededCount: {
+          $size: { $filter: { input: '$downloadTools', as: 't', cond: { $eq: ['$$t.error', 'none'] } } }
+        },
+        downloadTotalCount: { $size: '$downloadTools' }
+      }
+    });
+    // hasDownload: 'success' | 'partial' | 'failed' | '' (no downloads)
+    // 'failed', not 'fail' - so the free-text search's plain substring match
+    // on this field (see the orClauses below) catches both "fail" and
+    // "failed" as search terms without a separate special case: "fail" is
+    // already a prefix of "failed".
+    // TODO: this classification is duplicated 3x (this $switch, plain JS in
+    // DownloadPanel.js, hardcoded again in EvalDashboardPage.js's render) -
+    // consider sharing it across the api/src boundary like getItemVerdict
+    // in batchItems.js does. Deliberately deferred rather than consolidated
+    // now: the planned "show all matching pills" work changes the
+    // classification shape itself (single winner -> set of applicable
+    // states), so a shared module should be designed once that scope is
+    // defined, not built twice.
+    pipeline.push({
+      $addFields: {
         hasDownload: {
-          $and: [
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.tool', 0] }, 'downloadWebPage'] },
-            { $eq: [{ $arrayElemAt: ['$firstToolDoc.error', 0] }, 'none'] }
-          ]
+          $switch: {
+            branches: [
+              { case: { $eq: ['$downloadTotalCount', 0] }, then: '' },
+              { case: { $eq: ['$downloadSucceededCount', '$downloadTotalCount'] }, then: 'success' },
+              { case: { $eq: ['$downloadSucceededCount', 0] }, then: 'failed' }
+            ],
+            default: 'partial'
+          }
         }
       }
     });
@@ -200,12 +255,15 @@ async function evalDashboardHandler(req, res) {
         as: 'contextDoc'
       }
     });
-    // Extract only department + program/action classification immediately
+    // Extract only department + program/action classification immediately,
+    // plus whether eval-informed answering injected any expert-rated
+    // examples (see getEvalInformedAggregationExpression).
     pipeline.push({
       $addFields: {
         'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] },
         'interactions.program': { $ifNull: [{ $arrayElemAt: ['$contextDoc.program', 0] }, ''] },
-        'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] }
+        'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] },
+        'interactions.evalInformed': getEvalInformedAggregationExpression({ $arrayElemAt: ['$contextDoc.qaMatches', 0] })
       }
     });
 
@@ -226,18 +284,7 @@ async function evalDashboardHandler(req, res) {
           overallRating: { $arrayElemAt: ['$interactionExpertDocs.overallRating', 0] }
         },
         hasInteractionExpert: { $gt: [{ $size: '$interactionExpertDocs' }, 0] },
-        expertFeedbackData: {
-          totalScore: { $arrayElemAt: ['$interactionExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$interactionExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$interactionExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$interactionExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$interactionExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$interactionExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$interactionExpertDocs.sentence4Harmful', 0] }
-        }
+        expertFeedbackData: getFeedbackDataProjection('$interactionExpertDocs', { includeContentIssue: true })
       }
     });
 
@@ -256,18 +303,7 @@ async function evalDashboardHandler(req, res) {
         evalExpert: {
           expertEmail: { $arrayElemAt: ['$evalExpertDocs.expertEmail', 0] }
         },
-        autoEvalFeedbackData: {
-          totalScore: { $arrayElemAt: ['$evalExpertDocs.totalScore', 0] },
-          sentence1Score: { $arrayElemAt: ['$evalExpertDocs.sentence1Score', 0] },
-          sentence2Score: { $arrayElemAt: ['$evalExpertDocs.sentence2Score', 0] },
-          sentence3Score: { $arrayElemAt: ['$evalExpertDocs.sentence3Score', 0] },
-          sentence4Score: { $arrayElemAt: ['$evalExpertDocs.sentence4Score', 0] },
-          citationScore: { $arrayElemAt: ['$evalExpertDocs.citationScore', 0] },
-          sentence1Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence1Harmful', 0] },
-          sentence2Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence2Harmful', 0] },
-          sentence3Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence3Harmful', 0] },
-          sentence4Harmful: { $arrayElemAt: ['$evalExpertDocs.sentence4Harmful', 0] }
-        }
+        autoEvalFeedbackData: getFeedbackDataProjection('$evalExpertDocs')
       }
     });
 
@@ -295,18 +331,32 @@ async function evalDashboardHandler(req, res) {
         contextDoc: 0,
         interactionExpertDocs: 0,
         evalExpertDocs: 0,
-        firstToolId: 0,
-        firstToolDoc: 0,
+        answerToolIds: 0,
+        answerToolDocs: 0,
+        downloadTools: 0,
+        downloadSucceededCount: 0,
+        downloadTotalCount: 0,
         publicFeedbackDoc: 0
       }
     });
 
-    // Compute partnerEval and aiEval using the same shared helpers as ChatDashboard
+    // Compute partnerEval and aiEval - the *WithoutCitation variants, not
+    // the plain shared helpers ChatDashboard/metrics/exports/eval-analysis
+    // use, since Eval Dashboard shows citation as its own stacking pill
+    // (below) instead of folding it into this base value. See the long
+    // comment on getHasCitationErrorAggregationExpression in chat-filters.js
+    // for why this dashboard gets a dedicated, non-shared variant rather
+    // than changing what everyone else sees.
     pipeline.push({
       $addFields: {
-        'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackData'),
-        'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackData'),
-        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$expertFeedbackData')
+        'interactions.partnerEval': getPartnerEvalAggregationExpressionWithoutCitation('$expertFeedbackData'),
+        'interactions.aiEval': getAiEvalAggregationExpressionWithoutCitation('$autoEvalFeedbackData'),
+        'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression('$expertFeedbackData'),
+        // Citation correctness stacks alongside partnerEval/aiEval's own
+        // correct/needsImprovement/hasError value rather than being folded
+        // into it - see getHasCitationErrorAggregationExpression.
+        'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression('$expertFeedbackData'),
+        'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$autoEvalFeedbackData')
       }
     });
 
@@ -338,7 +388,9 @@ async function evalDashboardHandler(req, res) {
       andFilters.push({ 'eval.fallbackType': { $regex: `^${escaped}$`, $options: 'i' } });
     }
 
+    const reviewerMatch = await resolveReviewerMatch(req.query);
     const sharedFilters = getChatFilterConditions({
+      reviewerMatch,
       department,
       referringUrl,
       urlEn,
@@ -366,6 +418,7 @@ async function evalDashboardHandler(req, res) {
         interactionId: { $ifNull: ['$interactions.interactionId', ''] },
         _id: '$interactions._id',
         createdAt: '$interactions.createdAt',
+        chatCreatedAt: 1,  // Sort-stability tiebreaker only - see the first $project above
         chatId: 1,  // Already extracted at top level
         pageLanguage: 1,  // Already extracted at top level
         department: '$interactions.department',
@@ -377,7 +430,10 @@ async function evalDashboardHandler(req, res) {
         hasAutoEval: { $cond: [{ $ifNull: ['$eval', false] }, true, false] },
         partnerEval: '$interactions.partnerEval',
         aiEval: '$interactions.aiEval',
+        evalInformed: { $ifNull: ['$interactions.evalInformed', false] },
         partnerHasContentIssue: { $ifNull: ['$interactions.partnerHasContentIssue', false] },
+        partnerHasCitationError: { $ifNull: ['$interactions.partnerHasCitationError', false] },
+        aiHasCitationError: { $ifNull: ['$interactions.aiHasCitationError', false] },
         // Only consider expert feedback attached directly to the interaction
         hasExpertEval: '$hasInteractionExpert',
         // Take the expert email from the interaction's expert feedback only
@@ -387,19 +443,30 @@ async function evalDashboardHandler(req, res) {
         hasMatches: '$eval.hasMatches',
         fallbackType: { $ifNull: ['$eval.fallbackType', ''] },
         noMatchReasonType: { $ifNull: ['$eval.noMatchReasonType', ''] },
-        hasDownload: { $ifNull: ['$hasDownload', false] },
+        hasDownload: { $ifNull: ['$hasDownload', ''] },
         feedback: { $ifNull: ['$feedbackValue', ''] }
       }
     });
 
     // Apply search on the projected, top-level fields (so column names align)
+    //
+    // TODO: this OR-across-every-field substring match works well for the
+    // free-text fields (department, program, emails, referringUrl, ...) but
+    // is the wrong tool for feedback/hasDownload specifically - they're
+    // short categorical values ('yes'/'no', 'success'/'partial'/'failed'),
+    // and terms that short/common collide constantly with unrelated matches
+    // in the other 11 fields (e.g. searching "yes" or "no" for the Public
+    // column also matches "no" inside referring URLs, department/program
+    // names, emails, etc., burying the rows you actually wanted). Splitting
+    // the input on commas/spaces into multiple AND'd terms would NOT fix
+    // this - "yes" would still match broadly everywhere else, you'd just be
+    // narrowing around the noise with a second lucky term instead of
+    // eliminating it. The real fix is giving feedback/hasDownload their own
+    // exact-match dropdown filters in FilterPanel and dropping them out of
+    // this free-text OR list entirely - categorical fields belong in
+    // structured filters, not substring search. Not yet built.
     if (searchParam) {
       const esc = escapeRegex(searchParam);
-      const norm = String(searchParam).trim().toLowerCase();
-      // Interpret common boolean search terms
-      let boolSearch = null;
-      if (['yes', 'true', '1', 'y'].includes(norm)) boolSearch = true;
-      else if (['no', 'false', '0', 'n'].includes(norm)) boolSearch = false;
 
       const orClauses = [
         { chatId: { $regex: esc, $options: 'i' } },
@@ -408,22 +475,31 @@ async function evalDashboardHandler(req, res) {
         { program: { $regex: esc, $options: 'i' } },
         { action: { $regex: esc, $options: 'i' } },
         { pageLanguage: { $regex: esc, $options: 'i' } },
+        { referringUrl: { $regex: esc, $options: 'i' } },
         { expertEmail: { $regex: esc, $options: 'i' } },
         { creatorEmail: { $regex: esc, $options: 'i' } },
         { fallbackType: { $regex: esc, $options: 'i' } },
         { noMatchReasonType: { $regex: esc, $options: 'i' } },
-        { feedback: { $regex: esc, $options: 'i' } }
+        // feedback (Public column) stores the literal string 'yes'/'no', so
+        // this text match alone already finds exactly those rows - no
+        // separate boolean interpretation needed for it.
+        { feedback: { $regex: esc, $options: 'i' } },
+        // hasDownload is a status string now, not a boolean, so it's a text match
+        { hasDownload: { $regex: esc, $options: 'i' } }
       ];
 
-      // If the user searched a boolean-like term, also match boolean columns directly
-      if (boolSearch !== null) {
-        orClauses.push({ hasAutoEval: boolSearch });
-        orClauses.push({ hasExpertEval: boolSearch });
-        orClauses.push({ processed: boolSearch });
-        orClauses.push({ hasMatches: boolSearch });
-        orClauses.push({ hasDownload: boolSearch });
-      }
-
+      // A previous version of this also OR'd in a literal-boolean
+      // interpretation of "yes"/"no"/"true"/"false" against hasAutoEval,
+      // hasExpertEval, processed, hasMatches, and hasDownload (mapped to
+      // {$in:['fail','']}). That looked like a convenience ("let 'no' find
+      // download failures too"), but those fields are false/blank for most
+      // rows (most questions aren't expert-reviewed, most have no download
+      // attempt at all), so OR-ing any of them in matched nearly every row
+      // in the table - typing "no" to find Public feedback = No returned
+      // almost all chats instead. Removed: those four fields already have
+      // their own dedicated filter dropdowns in the filter panel, and the
+      // plain text clauses above already match feedback/hasDownload's own
+      // literal stored values precisely.
       pipeline.push({ $match: { $or: orClauses } });
     }
 
@@ -437,13 +513,17 @@ async function evalDashboardHandler(req, res) {
         columnSearch = null;
       }
     }
+    // Columns that hold a status string rather than a real boolean - never
+    // coerce their search value to true/false, always fall through to the
+    // regex/text branch below.
+    const stringStatusColumns = new Set(['hasDownload']);
     if (columnSearch && typeof columnSearch === 'object' && Object.keys(columnSearch).length) {
       const andClauses = [];
       for (const [col, val] of Object.entries(columnSearch)) {
         const v = String(val || '').trim();
         if (!v) continue;
         const low = v.toLowerCase();
-        if (['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
+        if (!stringStatusColumns.has(col) && ['true', 'false', '1', '0', 'yes', 'no', 'y', 'n'].includes(low)) {
           const boolVal = ['true', '1', 'yes', 'y'].includes(low);
           andClauses.push({ [col]: boolVal });
         } else {
@@ -465,26 +545,113 @@ async function evalDashboardHandler(req, res) {
       pageLanguage: 'pageLanguage',
       partnerEval: 'partnerEval',
       aiEval: 'aiEval',
+      evalInformed: 'evalInformed',
       fallbackType: 'fallbackType',
       noMatchReasonType: 'noMatchReasonType',
       creatorEmail: 'creatorEmail',
+      expertEmail: 'expertEmail',
       hasDownload: 'hasDownload',
       feedback: 'feedback'
     };
     const sortField = sortFieldMap[orderBy] || 'createdAt';
-    const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
+    // Same chat-clustering tiebreaker as chat-dashboard.js's sortStage (see
+    // its comment for the full reasoning) - the UI groups a multi-turn
+    // chat's rows together visually (rowspan'd Chat ID/Department/Program
+    // cells), which only looks right if those rows are actually adjacent in
+    // whatever order the table is currently sorted by. `_id` (the
+    // interaction's own id) as the sole tiebreaker doesn't guarantee that:
+    // two interactions from different chats can easily land next to each
+    // other. `chatCreatedAt` (the chat's own constant createdAt, not the
+    // per-interaction one used for the Date column) plus chatId plus
+    // questionNumber together always cluster a chat's rows adjacent, in
+    // question order, regardless of which column is the primary sort - the
+    // 'createdAt'/Date case additionally swaps the *primary* key to the
+    // chat-level date for the same reason (each question in a chat has its
+    // own distinct timestamp, so sorting by the interaction's own date would
+    // scatter a chat's rows even with these as secondary tiebreakers).
+    const sortStage = sortField === 'createdAt'
+      ? { $sort: { chatCreatedAt: orderDir, chatId: orderDir, questionNumber: 1 } }
+      : { $sort: { [sortField]: orderDir, chatCreatedAt: -1, chatId: -1, questionNumber: 1 } };
     pipeline.push(sortStage);
 
     const pageSize = isDataTablesMode ? Math.min(Math.max(length, 1), 2000) : null;
 
-    if (isDataTablesMode) {
+    // Group-based pagination only applies to the default date sort;
+    // explicit column sorts intentionally fall back to row-based
+    // pagination (see below) - not a bug if a chat's rows end up apart
+    // from each other in that mode.
+    //
+    // Group-based (never-split-a-chat) pagination only applies to the
+    // default view (no explicit column sort - date order, where a chat
+    // really is one unit worth keeping together). An explicit sort by a
+    // per-question field (Department/Program/Action/Feedback/Download) is
+    // deliberately scoped to individual interactions, not whole chats -
+    // "sort by Download = failed" means show me the failed downloads, not
+    // every other question in the same conversation dragged along with
+    // them, same as how a search match doesn't pull in its chat's
+    // unrelated siblings either. So those sorts fall back to plain
+    // row-based pagination below, and a chat's rows can end up apart from
+    // each other (or split across a page) in that mode - that's correct
+    // there, not the bug this feature exists to prevent.
+    const useChatGroupedPagination = isDataTablesMode && sortField === 'createdAt';
+
+    if (useChatGroupedPagination) {
+      // Deliberately ONE continuous aggregation (group -> sort -> skip/
+      // limit AT THE GROUP LEVEL -> unwind back to rows) instead of a
+      // separate windowing query + a second fetch for that page's chatIds:
+      // this endpoint's $lookup joins (answers/tools/evals/users/contexts/
+      // publicfeedbacks - see above) are the expensive part, and a
+      // two-query version would have run all of them twice per page load.
+      // This way they still run exactly once, same as before this feature
+      // (see the "calls aggregate exactly once, not twice" test) -
+      // grouping/sorting/windowing then happens in-memory (allowDiskUse if
+      // needed) on the already-joined, already-filtered stream instead of
+      // hitting the DB again. No $setWindowFields (row_number/rank) to
+      // derive each chat's sort position either - see
+      // project_eval_dashboard_perf.md's history with that operator on
+      // DocumentDB - $first after the row-level $sort above captures the
+      // correct group-representative value instead.
+      //
+      // TODO: if this turns out to cost more than expected in practice
+      // (real DocumentDB, not local dev) - the $group/$push holds every
+      // matching row for the WHOLE filtered result set in memory/disk-
+      // spill before it can skip/limit at the group level, not just one
+      // page's worth, which is a real cost this environment may not have
+      // headroom for - it's fine to strip this back out for Eval Dashboard
+      // specifically (revert to the plain row-based $skip/$limit below)
+      // and revisit later rather than live with a slow dashboard. Chat
+      // Dashboard has the equivalent TODO in api/chat/chat-dashboard.js.
+      pipeline.push({ $group: { _id: '$chatId', sortKeyValue: { $first: '$chatCreatedAt' }, rows: { $push: '$$ROOT' } } });
+      pipeline.push({ $sort: { sortKeyValue: orderDir, _id: orderDir } });
+      if (start > 0) pipeline.push({ $skip: start });
+      // +1 group (not +1 row) so JS below can detect hasMore and trim the
+      // lookahead chat's rows back off, without a second query.
+      pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
+      pipeline.push({ $unwind: '$rows' });
+      pipeline.push({ $replaceRoot: { newRoot: '$rows' } });
+    } else if (isDataTablesMode) {
       if (start > 0) pipeline.push({ $skip: start });
       pipeline.push({ $limit: Math.min(pageSize + 1, 2001) });
     }
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
-    const hasMore = isDataTablesMode && pageSize !== null && results.length > pageSize;
-    const rows = isDataTablesMode && pageSize !== null ? results.slice(0, pageSize) : results;
+    const flatRows = await Chat.aggregate(pipeline).allowDiskUse(true);
+
+    let rows = flatRows;
+    let hasMore = false;
+    if (useChatGroupedPagination) {
+      const seenChatIds = [];
+      for (const r of flatRows) {
+        if (seenChatIds[seenChatIds.length - 1] !== r.chatId) seenChatIds.push(r.chatId);
+      }
+      if (seenChatIds.length > pageSize) {
+        hasMore = true;
+        const lookaheadChatId = seenChatIds[pageSize];
+        rows = flatRows.filter((r) => r.chatId !== lookaheadChatId);
+      }
+    } else if (isDataTablesMode && pageSize !== null) {
+      hasMore = flatRows.length > pageSize;
+      rows = flatRows.slice(0, pageSize);
+    }
 
     const mappedRows = rows.map((r) => ({
       _id: r._id ? String(r._id) : '',
@@ -494,20 +661,27 @@ async function evalDashboardHandler(req, res) {
       department: r.department || '',
       program: r.program || '',
       action: r.action || '',
+      // Display-only French labels; program/action stay canonical English for
+      // search/sort. UI picks by lang, falling back to English when unmapped.
+      programFr: frForProgram(r.program),
+      actionFr: frForAction(r.action),
       referringUrl: r.referringUrl || '',
       pageLanguage: r.pageLanguage || '',
       hasAutoEval: !!r.hasAutoEval,
       hasExpertEval: !!r.hasExpertEval,
       partnerEval: r.partnerEval || '',
       aiEval: r.aiEval || '',
+      evalInformed: !!r.evalInformed,
       partnerHasContentIssue: !!r.partnerHasContentIssue,
+      partnerHasCitationError: !!r.partnerHasCitationError,
+      aiHasCitationError: !!r.aiHasCitationError,
       expertEmail: r.expertEmail || '',
       creatorEmail: r.creatorEmail || '',
       processed: typeof r.processed === 'boolean' ? r.processed : false,
       hasMatches: typeof r.hasMatches === 'boolean' ? r.hasMatches : false,
       fallbackType: r.fallbackType || '',
       noMatchReasonType: r.noMatchReasonType || '',
-      hasDownload: r.hasDownload || false,
+      hasDownload: r.hasDownload || '',
       feedback: r.feedback || '',
       date: r.createdAt ? r.createdAt.toISOString() : null
     }));

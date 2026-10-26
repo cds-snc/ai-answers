@@ -33,6 +33,7 @@ describe('googleContextSearch', () => {
 
     const result = await contextSearch('SCIS definition', 'en');
 
+    expect(result.failed).toBe(true);
     expect(result.results).toContain('Search failed:');
     expect(result.results).toContain('key=[REDACTED]');
     expect(result.results).not.toContain('secret123');
@@ -66,6 +67,7 @@ describe('googleContextSearch', () => {
     expect(result.provider).toBe('google');
     expect(result.results).toContain('https://canada.ca/a');
     expect(result.results).not.toContain('Search failed:');
+    expect(result.failed).toBeUndefined();
   });
 
   it('does not retry on a non-transient error', async () => {
@@ -77,5 +79,32 @@ describe('googleContextSearch', () => {
 
     expect(listMock).toHaveBeenCalledTimes(1);
     expect(result.results).toContain('Search failed:');
+  });
+
+  // This tool swallows its errors on purpose, so nothing throws when a Google
+  // search fails — the technical metrics dashboard can only count the failure if
+  // the result says so. A missing key is the case that most needs to show up
+  // there, since it fails every single search silently.
+  it('flags a missing API key as a failure rather than throwing', async () => {
+    delete process.env.GOOGLE_API_KEY;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await contextSearch('anything', 'en');
+
+    expect(result.failed).toBe(true);
+    expect(result.provider).toBe('google');
+    expect(listMock).not.toHaveBeenCalled();
+  });
+
+  it('flags a failure after every retry is spent', async () => {
+    const transientError = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+    listMock.mockRejectedValue(transientError);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await contextSearch('anything', 'en');
+
+    expect(listMock).toHaveBeenCalledTimes(3);
+    expect(result.failed).toBe(true);
   });
 });

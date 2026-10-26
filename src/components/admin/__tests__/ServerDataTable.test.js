@@ -1,0 +1,239 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { act, cleanup, render } from '@testing-library/react';
+import ServerDataTable from '../ServerDataTable.js';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
+import { getAnnouncedTexts } from '../../../utils/liveAnnouncer.js';
+
+// Mimics real DataTables closely enough to exercise ServerDataTable's own
+// wiring: captures the `options` it's given and, like the real
+// datatables.net-react component, invokes `options.initComplete` (bound to
+// an object exposing `.api()`) once "initialized" — this is what lets
+// ServerDataTable's initComplete callback capture a live table API instance.
+// `fireInitComplete` is controlled per-test so the pre-init window (ref
+// exists, but the underlying table API doesn't yet) can be exercised too.
+let lastOptions = null;
+let fireInitComplete = true;
+const mockAjaxReload = vi.fn();
+let mockHeaders = [];
+
+vi.mock('datatables.net-react', () => {
+  const MockDataTable = (props) => {
+    lastOptions = props.options;
+    if (fireInitComplete) {
+      // Real DataTables calls initComplete with `this` bound to its
+      // internal settings object, which exposes the actual API via a
+      // `.api()` method — not the API object itself.
+      const settings = { api: () => ({ ajax: { reload: mockAjaxReload }, column: (i) => ({ header: () => mockHeaders[i] }) }) };
+      props.options?.initComplete?.call(settings);
+    }
+    return React.createElement('div', { 'data-testid': 'mock-data-table' });
+  };
+  MockDataTable.use = vi.fn();
+  return { default: MockDataTable };
+});
+
+vi.mock('datatables.net-dt', () => ({ default: () => null }));
+
+describe('ServerDataTable', () => {
+  afterEach(() => {
+    cleanup();
+    lastOptions = null;
+    fireInitComplete = true;
+    mockAjaxReload.mockClear();
+    mockHeaders = [];
+  });
+
+  it('gives a column header its headerAriaLabel', () => {
+    mockHeaders = [document.createElement('th'), document.createElement('th')];
+    render(
+      React.createElement(ServerDataTable, {
+        columns: [{ data: 'name', title: 'Name' }, { data: 'n', title: '#', headerAriaLabel: 'Question number' }],
+        fetchData: vi.fn(),
+        tableKey: 'test-table',
+      })
+    );
+    expect(mockHeaders[0].hasAttribute('aria-label')).toBe(false);
+    expect(mockHeaders[1].getAttribute('aria-label')).toBe('Question number');
+  });
+
+  it('reload() calls the underlying DataTables API without resetting paging', () => {
+    const ref = React.createRef();
+    render(
+      React.createElement(ServerDataTable, {
+        ref,
+        columns: [{ data: 'name' }],
+        fetchData: vi.fn(),
+        tableKey: 'test-table',
+      })
+    );
+
+    expect(ref.current.reload).toBeTypeOf('function');
+    ref.current.reload();
+
+    // `false` (second arg) preserves the current page instead of resetting
+    // to page 1 — this is the whole point of reload() over a tableKey bump.
+    expect(mockAjaxReload).toHaveBeenCalledWith(null, false);
+  });
+
+  it('reload() is a safe no-op before the table has finished initializing', () => {
+    // A caller can hold a ref before the DataTables API instance exists yet
+    // (e.g. a save that resolves before the table's own async init fires) —
+    // useImperativeHandle exposes reload() immediately, but the underlying
+    // tableApiRef is only populated once initComplete has actually run.
+    fireInitComplete = false;
+    const ref = React.createRef();
+    render(
+      React.createElement(ServerDataTable, {
+        ref,
+        columns: [{ data: 'name' }],
+        fetchData: vi.fn(),
+        tableKey: 'test-table',
+      })
+    );
+
+    expect(() => ref.current.reload()).not.toThrow();
+    expect(mockAjaxReload).not.toHaveBeenCalled();
+  });
+
+  it('renders an sr-only search label and a placeholder when asked', () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+        searchLabelSrOnly="Filter <things>"
+        searchPlaceholder="Filter"
+      />
+    );
+    expect(lastOptions.language.search).toBe('<span class="sr-only">Filter &lt;things&gt;</span>');
+    expect(lastOptions.language.searchPlaceholder).toBe('Filter');
+  });
+
+  it('passes ordering/pageLength/lengthChange/layout through to DataTables options', () => {
+    render(
+      React.createElement(ServerDataTable, {
+        columns: [{ data: 'name' }],
+        fetchData: vi.fn(),
+        tableKey: 'test-table',
+        ordering: false,
+        pageLength: 10,
+        lengthChange: false,
+        layout: { topStart: 'search', topEnd: null },
+      })
+    );
+
+    expect(lastOptions.ordering).toBe(false);
+    expect(lastOptions.pageLength).toBe(10);
+    expect(lastOptions.lengthChange).toBe(false);
+    // The component always turns off the first/last paging buttons (GC DS
+    // pagination has none); a caller's own slots merge on top.
+    expect(lastOptions.layout).toEqual({ bottomEnd: { paging: { firstLast: false } }, topStart: 'search', topEnd: null });
+  });
+
+  // DataTables' own `processing` node only toggles CSS display and is never
+  // announced by screen readers (see dashboards.md) — ServerDataTable tracks
+  // its own `loading` state and renders a scoped LoadingOverlay instead.
+  it('does not set DataTables\' own processing flag', () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+    expect(lastOptions.processing).toBeUndefined();
+  });
+
+  it('shows a scoped LoadingOverlay before the first fetch resolves, in a wrapper of its own', () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+    const overlay = container.querySelector('.loading-overlay--scoped');
+    expect(overlay).not.toBeNull();
+    expect(overlay.closest('.server-data-table-loading-wrapper')).not.toBeNull();
+  });
+
+  it('hides the LoadingOverlay once a fetch resolves, and re-shows it on the next fetch', async () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).toBeNull();
+
+    // A later reload (e.g. via ref.reload()) goes through the same ajax
+    // function DataTables calls internally — it should show the overlay
+    // again, not just on first mount.
+    act(() => {
+      lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 2 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).not.toBeNull();
+  });
+
+  it('hides the LoadingOverlay after a failed fetch too, not just a successful one', async () => {
+    const { container } = render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockRejectedValue(new Error('boom'))}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    expect(container.querySelector('.loading-overlay--scoped')).toBeNull();
+  });
+
+  // The overlay's "Loading…" is skippable — liveAnnouncer.js only drops it
+  // if a newer announcement lands first. Without a completion announcement
+  // a fast load still read "Loading…" ~500ms after the rows had appeared.
+  it('announces "Results loaded." after a fetch with rows, which drops the pending "Loading…"', async () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [{ a: 1 }] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    await waitForAnnouncement('Results loaded.', 'assertive', { exact: true });
+
+    // Past liveAnnouncer.js's SKIPPABLE_GRACE_MS (500ms): a "Loading…" that
+    // had not been dropped would have been spoken by now.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(getAnnouncedTexts('polite').filter((text) => /loading/i.test(text))).toEqual([]);
+  });
+
+  it('announces "No data." after a fetch with zero rows', async () => {
+    render(
+      <ServerDataTable
+        tableKey="t"
+        columns={[{ title: 'A', data: 'a' }]}
+        fetchData={vi.fn().mockResolvedValue({ data: [] })}
+      />
+    );
+
+    await act(async () => {
+      await lastOptions.ajax({ start: 0, length: 10, search: {}, draw: 1 }, vi.fn());
+    });
+    await waitForAnnouncement('No data.', 'assertive', { exact: true });
+  });
+});

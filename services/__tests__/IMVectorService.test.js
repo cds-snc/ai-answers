@@ -66,6 +66,22 @@ describe('IMVectorService', () => {
     expect(mapped.map(m => m.id)).toEqual(['p', 'q', 'r']);
   });
 
+  it('breaks equal similarity ties with the latest expert feedback', async () => {
+    svc.questionsDB = {
+      size: () => 2,
+      query: async () => [
+        { document: { id: 'older' }, similarity: 0.9 },
+        { document: { id: 'newer' }, similarity: 0.9 },
+      ],
+    };
+    svc.qaMeta.set('older', { interactionId: 'i1', expertFeedbackId: 'ef-1', expertFeedbackCreatedAt: new Date('2026-01-01') });
+    svc.qaMeta.set('newer', { interactionId: 'i2', expertFeedbackId: 'ef-2', expertFeedbackCreatedAt: new Date('2026-02-01') });
+
+    const [matches] = await svc.matchQuestions(['why is x'], { provider: 'openai', k: 2 });
+
+    expect(matches.map((match) => match.id)).toEqual(['newer', 'older']);
+  });
+
   it('matchQuestions() drops candidates below the similarity threshold', async () => {
     svc.questionsDB = {
       size: () => 1,

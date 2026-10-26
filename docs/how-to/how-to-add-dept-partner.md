@@ -21,14 +21,18 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 | `DND-MDN` | National Defence (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Défense nationale |
 | `ECCC` | Environment and Climate Change Canada | Environnement et Changement climatique Canada |
 | `EDSC-ESDC` | Employment and Social Development Canada | Emploi et Développement social Canada |
+| `FedDev-Ontario` | Federal Economic Development Agency for Southern Ontario | Agence fédérale de développement économique pour le Sud de l'Ontario |
+| `FedNor` | Federal Economic Development Agency for Northern Ontario | Agence fédérale de développement économique pour le Nord de l'Ontario |
 | `FIN` | Finance Canada | Finances Canada |
 | `HC-SC` | Health Canada | Santé Canada |
 | `IRCC` | Immigration, Refugees and Citizenship Canada | (bilingual name) |
 | `ISED-ISDE` | Innovation, Science and Economic Development Canada | Innovation, Sciences et Développement économique Canada |
 | `JUS` | Justice Canada (Department of) | Justice Canada, Ministère de la |
 | `NRCan-RNCan` | Natural Resources Canada | Ressources naturelles Canada |
-| `PHAC-ASPC` | Public Health Agency of Canada | Agence de la santé publique du Canada |
-| `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada | Relations Couronne-Autochtones et Affaires du Nord Canada |
+| `PacifiCan` | Pacific Economic Development Canada | Développement économique Canada pour le Pacifique |
+| `PHAC-ASPC` | Public Health Agency of Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Agence de la santé publique du Canada |
+| `PrairiesCan` | Prairies Economic Development Canada | Développement économique Canada pour les Prairies |
+| `RCAANC-CIRNAC` | Crown-Indigenous Relations and Northern Affairs Canada (shared — see [Shared scenarios](#shared-scenarios-one-file-for-a-portfolio-of-departments)) | Relations Couronne-Autochtones et Affaires du Nord Canada |
 | `SAC-ISC` | Indigenous Services Canada | Services aux Autochtones Canada |
 | `StatCan` | Statistics Canada | Statistique Canada |
 | `TC` | Transport Canada | Transports Canada |
@@ -51,6 +55,8 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 **Note:** `departments_EN.js` and `departments_FR.js` already contain the `abbrKey`—do NOT add entries there. Use the existing `abbrKey` from those files in all other locations.
 
 **Note:** `systemPrompt.js` no longer requires manual updates—it uses dynamic imports to automatically load scenarios based on the department name.
+
+**Note:** If you *do* change `departments_EN.js` / `departments_FR.js` (a new department, a changed URL, or a removed one), the live search engine's site list needs a manual update too — see [Updating the search engine site list](#updating-the-search-engine-site-list-when-the-department-lists-change). Adding a partner for an existing `abbrKey` does not change that list.
 
 ---
 
@@ -167,8 +173,9 @@ When a partner covers a portfolio of related `abbrKey`s (e.g. National Defence a
 Current aliases:
 - **Defence portfolio → `DND-MDN`:** `CFHA-ALFC`, `DCC-CDC`, `DIA-AID`, `DRDC-RDDC`, `IRPDA-CIEAD`, `ONDCAF`
 - **Crown-Indigenous / Indigenous Services → `SAC-ISC`:** `RCAANC-CIRNAC`
-- **Regional Development Agencies → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `FedDev Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan`
+- **ISED portfolio → `ISED-ISDE`:** `ACOA-APECA`, `CED-QR`, `CanNor`, `CIPO-OPIC`, `CRC`, `COBU-BUCO`, `MC`, `OSB-BSF`, `BIZPAL-PERLE` (the other four Regional Development Agencies — `FedDev-Ontario`, `FedNor`, `PacifiCan`, `PrairiesCan` — are partners with their own scenario files)
 - **Public Health Agency → `HC-SC`:** `PHAC-ASPC`
+- **Canada Tariff Finder → `FIN`:** `TARIFF-TARIF` (tariff questions match there; FIN owns the counter-tariff and trade content)
 - **Agriculture portfolio → `AAFC-AAC`:** `AGPAL`
 
 ### Steps to add a new shared-scenario group
@@ -177,11 +184,62 @@ Current aliases:
 2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
-5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add only the canonical `abbrKey` — do NOT add the alias keys. Logs from all portfolio entities are filterable via the single canonical entry.
-6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry. The partner manages one override that covers the whole portfolio.
+5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add the canonical `abbrKey`, plus any alias member that is itself an official partner. Sharing a scenario file is a *prompt* decision; being in `PARTNER_DEPARTMENTS` is a *filtering* decision, and the two are independent. Add an alias member here when its own logs need to be filterable separately in the admin dashboards (as with `RCAANC-CIRNAC` and `PHAC-ASPC`); leave it out when the portfolio only ever needs the one canonical entry.
+6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry, even for alias members that appear in `PARTNER_DEPARTMENTS`. The scenario override is per scenario file, so the partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
 ---
+
+## Shared instruction files (downloaded on demand by several departments)
+
+An alias makes several `abbrKey`s load *the same whole scenario file*. That is the
+wrong tool when a **topic** is shared by departments that otherwise need their own
+scenarios — cross-cutting subjects like Canada–US trade, which FIN, ISED-ISDE, the
+regional development agencies and CBSA-ASFC all field questions about.
+
+For those, put the content in one markdown file and have each scenario tell the
+agent to download it *when the question calls for it*.
+
+### How it works
+
+The markdown file lives in the repo and is fetched at answer time over
+`raw.githubusercontent.com` — there is no import, and **nothing loads until the
+branch is merged to `main`**. `agenticBase.js` exempts these URLs from the
+three-download budget, so a shared file never costs a department its research
+downloads.
+
+Current shared files:
+- `agents/prompts/scenarios/shared/trade-tariffs.md` — Canada–US trade, counter
+  tariffs and Canada Strong supports. `grep "TRADE & TARIFFS FILE"` in
+  `agents/prompts/scenarios/` for the current consumers.
+
+Single-department files use the same mechanism but stay in the department folder
+(`context-sac-isc/sac-isc-contacts.md`, `context-dnd-mdn/dnd-mdn-transition-scenarios.md`).
+
+### Steps to add one
+
+1. **Create the markdown file** under `agents/prompts/scenarios/shared/` (or the
+   department folder if only one department will ever load it).
+2. **Add an identical pointer block** to each scenario file that should load it —
+   the raw `main` URL, what the file is authoritative for, and *when to download it*.
+   The trigger sentence matters more than the content list: the agent only fetches
+   the file if it recognises the question as in scope.
+3. **Keep the block identical across files** so `grep` finds every consumer when the
+   path or triggers change.
+4. **Don't tell the agent to cite the raw URL** — `citationInstructions.js` already
+   restricts citations to canada.ca/gc.ca. Cite the pages the file names.
+5. **Keep department-specific links in that department's own scenario, not here.**
+   A shared file is loaded by departments that have no way of knowing which one
+   applies — a per-department list in it is both duplication and mostly noise at
+   the point of use. Name the national/entry page and let the department's own
+   scenario carry its page.
+6. `agents/__tests__/scenario-instruction-files.test.js` asserts every
+   `raw.githubusercontent.com/cds-snc/ai-answers/...` URL in `agents/prompts/`
+   resolves to a file that exists — a renamed or mistyped file fails there instead
+   of 404ing silently at answer time.
+
+> **Pin to `main`, not a branch.** A branch-pinned URL keeps working until the branch
+> is deleted, then 404s in production with no error and no failing test.
 
 ## Checklist for Adding a Department as a Partner
 
@@ -191,7 +249,9 @@ Current aliases:
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Update "Current Departments" table in this document (alphabetically)
+- [ ] Check the shared instruction files — does this department field questions on a shared topic? If so, paste the pointer block into its scenario file (a new RDA, for example, needs the `TRADE & TARIFFS FILE` block). This doesn't follow from `PARTNER_DEPARTMENTS` or the alias map.
 - [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
+- [ ] Only if `departments_EN.js` / `departments_FR.js` changed: update the search engine site list ([steps](#updating-the-search-engine-site-list-when-the-department-lists-change))
 - [ ] Test scenario loading in chat
 - [ ] Test admin filtering by department
 - [ ] Test scenario override for department
@@ -236,7 +296,29 @@ If the partner is part of a shared-scenario group (see [Shared scenarios](#share
 - [ ] Remove the row from the "Current Departments" table in this document
 - [ ] Remove the `getDepartmentDisplayName` entry in the generator script (if present)
 - [ ] Handle `scenario-aliases.js` if the partner is part of a shared-scenario group
+- [ ] Check `agents/prompts/scenarios/shared/` for anything naming this department (deleting `context-{slug}/` takes its pointer block with it, but a shared file that names the department is orphaned and stays)
 - [ ] Run `node scripts/generate-system-prompt-documentation.js` to update system prompt docs
 - [ ] Confirm no dangling references: `grep -rn "context-{slug}\|{UPPER_KEY}_SCENARIOS" --include="*.js" --include="*.md" .`
 - [ ] Leave `departments_EN.js`, `departments_FR.js`, and `contextSystemPrompt.js` routing intact
 - [ ] Note: any per-department scenario overrides stored in the database (keyed by `departmentKey`) become orphaned but harmless
+
+---
+
+## Updating the search engine site list when the department lists change
+
+The answer pipeline's web search runs on a Google Programmable Search Engine (`GOOGLE_SEARCH_ENGINE_ID`). Its scope is the **site list configured in the Google console**, not anything in this repo. Editing `departments_EN.js` / `departments_FR.js` does **not** update it, and nothing in the code syncs the two.
+
+Do this whenever a department entry is **added, removed, or has its URL changed** in `departments_EN.js` / `departments_FR.js` (including removing an institution from Government of Canada scope entirely, which is different from removing a partner):
+
+1. Generate the current list from the department files:
+   ```bash
+   node scripts/extract_domains.js
+   ```
+   This writes `scripts/domains_for_programmable_search.csv`. It is not committed — don't add it to the PR.
+2. Open the site list in the Programmable Search Engine console and compare it with the CSV.
+3. Add domains that are in the CSV but not in the engine; remove domains that are in the engine but no longer in the CSV.
+4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}`, and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
+
+A removed department's domain stays searchable until step 3 is done. A new department's domain is never searched until it is added.
+
+A partner add that only uses an existing `abbrKey` doesn't change the department files, so this step doesn't apply.

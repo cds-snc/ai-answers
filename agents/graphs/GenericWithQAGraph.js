@@ -4,6 +4,7 @@ import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
+import { EVAL_INFORMED_WORKFLOW } from '../../src/config/workflows.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -171,10 +172,11 @@ graph.addNode('similarQuestions', async (state) => {
 
   const preThresholdRecords = Array.isArray(similarQuestionsDebug?.preThresholdRecords) ? similarQuestionsDebug.preThresholdRecords : [];
   const matchedRecords = Array.isArray(similarQuestionsDebug?.matchedRecords) ? similarQuestionsDebug.matchedRecords : [];
-  const qaMatches = matchedRecords.map(({ chatId, interactionId, similarity, totalScore, questionText, answerText }) => ({
+  const qaMatches = matchedRecords.map(({ chatId, interactionId, similarity, expertFeedbackCreatedAt, totalScore, questionText, answerText }) => ({
     chatId,
     interactionId,
     similarity,
+    expertFeedbackCreatedAt,
     totalScore,
     questionText,
     answerText,
@@ -282,7 +284,7 @@ graph.addNode('persistNode', async (state) => {
     finalCitationUrl,
     context: contextData,
     chatId: state.chatId,
-    workflow: 'GenericWithQAGraph',
+    workflow: EVAL_INFORMED_WORKFLOW,
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,

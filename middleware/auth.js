@@ -50,6 +50,10 @@ const verifyPartnerOrAdmin = (req, res) => {
 };
 
 export const withProtection = (handler, ...middleware) => {
+  if (middleware.length === 0) {
+    throw new Error('withProtection requires at least one authentication or authorization middleware');
+  }
+
   return async (req, res) => {
     console.log('withProtection wrapper called for:', {
       path: req.path,

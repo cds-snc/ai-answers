@@ -1,5 +1,5 @@
-# Use Node.js 24.18.0 as the base image
-FROM node:24.18.0 AS build
+# Use Node.js 24.22.1 as the base image
+FROM node:24.22.1 AS build
 
 # Set working directory
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY . .
 RUN GENERATE_SOURCEMAP=false npm run build
 
 # Use Node.js for the backend
-FROM node:24.18.0
+FROM node:24.22.1
 
 # Set working directory
 WORKDIR /app

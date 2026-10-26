@@ -58,6 +58,18 @@ class MetricsService {
     return this._fetchMetric('metrics-citations', filters, signal);
   }
 
+  static async getContentIssueChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-content-issue-chats', filters, signal);
+  }
+
+  static async getHarmfulChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-harmful-chats', filters, signal);
+  }
+
+  static async getEvalInformedChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-informed-chats', filters, signal);
+  }
+
   static async _fetchMetric(endpoint, filters, signal) {
     try {
       const queryParams = new URLSearchParams(filters).toString();
@@ -109,6 +121,8 @@ class MetricsService {
 
 
 
+  // TODO: unused - only its own test calls it; dashboards use the
+  // server-side metrics endpoints instead. Candidate for deletion.
   static calculateMetrics = (logs) => {
     // Use a local Set to track unique chatIds
     const uniqueChatIds = new Set();
@@ -288,7 +302,7 @@ class MetricsService {
           if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
           metrics.byDepartment[department].expertScored.total++;
 
-          // Check for citation errors first (separate category)
+          // Citation error (separate category, ranked below sentence scores)
           let hasCitationError = false;
           if (interaction.expertFeedback.citationScore !== null && interaction.expertFeedback.citationScore === 0) {
             hasCitationError = true;
@@ -323,15 +337,11 @@ class MetricsService {
             }
           }
 
-          // Categorize based on priority: harmful > hasCitationError > hasError > needsImprovement > correct
+          // Categorize based on priority: harmful > hasError > needsImprovement > hasCitationError > correct
           if (highestCategory === 'harmful') {
             metrics.expertScored.harmful.total++;
             if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
             if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
-          } else if (hasCitationError) {
-            metrics.expertScored.hasCitationError.total++;
-            if (pageLanguage === 'en') metrics.expertScored.hasCitationError.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.hasCitationError.fr++;
           } else if (highestCategory === 'hasError') {
             metrics.expertScored.hasError.total++;
             if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
@@ -342,6 +352,10 @@ class MetricsService {
             if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
             if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
             metrics.byDepartment[department].expertScored.needsImprovement++;
+          } else if (hasCitationError) {
+            metrics.expertScored.hasCitationError.total++;
+            if (pageLanguage === 'en') metrics.expertScored.hasCitationError.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.hasCitationError.fr++;
           } else {
             metrics.expertScored.correct.total++;
             if (pageLanguage === 'en') metrics.expertScored.correct.en++;
@@ -385,7 +399,7 @@ class MetricsService {
           if (pageLanguage === 'en') metrics.aiScored.total.en++;
           if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
 
-          // Check for citation errors first (separate category)
+          // Citation error (separate category, ranked below sentence scores)
           let hasCitationError = false;
           if (interaction.autoEval.expertFeedback.citationScore !== null && interaction.autoEval.expertFeedback.citationScore === 0) {
             hasCitationError = true;
@@ -420,15 +434,11 @@ class MetricsService {
             }
           }
 
-          // Categorize based on priority: harmful > hasCitationError > hasError > needsImprovement > correct
+          // Categorize based on priority: harmful > hasError > needsImprovement > hasCitationError > correct
           if (highestCategory === 'harmful') {
             metrics.aiScored.harmful.total++;
             if (pageLanguage === 'en') metrics.aiScored.harmful.en++;
             if (pageLanguage === 'fr') metrics.aiScored.harmful.fr++;
-          } else if (hasCitationError) {
-            metrics.aiScored.hasCitationError.total++;
-            if (pageLanguage === 'en') metrics.aiScored.hasCitationError.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.hasCitationError.fr++;
           } else if (highestCategory === 'hasError') {
             metrics.aiScored.hasError.total++;
             if (pageLanguage === 'en') metrics.aiScored.hasError.en++;
@@ -437,6 +447,10 @@ class MetricsService {
             metrics.aiScored.needsImprovement.total++;
             if (pageLanguage === 'en') metrics.aiScored.needsImprovement.en++;
             if (pageLanguage === 'fr') metrics.aiScored.needsImprovement.fr++;
+          } else if (hasCitationError) {
+            metrics.aiScored.hasCitationError.total++;
+            if (pageLanguage === 'en') metrics.aiScored.hasCitationError.en++;
+            if (pageLanguage === 'fr') metrics.aiScored.hasCitationError.fr++;
           } else {
             metrics.aiScored.correct.total++;
             if (pageLanguage === 'en') metrics.aiScored.correct.en++;

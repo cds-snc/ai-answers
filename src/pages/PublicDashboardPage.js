@@ -9,18 +9,15 @@ const PublicDashboardPage = ({ lang = 'en' }) => {
 
   return (
     <GcdsContainer layout="page" className="mb-600">
+      {/* Split/"stacked" title — see admin.css's .canada-ca-h1-stacked__eyebrow
+          comment for the full explanation of this Canada.ca Specifications/
+          GCWeb pattern. Reuses homepage.title (the site's own brand name)
+          rather than a new key — publicDashboard.title used to repeat "AI
+          Answers" itself, redundant once it's the eyebrow above it, so that
+          key was trimmed down to just the page's own name. */}
       <h1 className="mb-400">
-        {t('publicDashboard.title')}
-        {/* WET-BOEW's standard footnote-reference pattern (GCWeb's
-            wb-fnote/fn-lnk, not shipped by GC DS — reproduced in admin.css).
-            Scoped to the h1 rather than a section heading since the caveat
-            it links to (public-users-only data) applies to the whole page,
-            not just one section below it. */}
-        <sup id="public-dashboard-fnref">
-          <a className="fn-lnk" href="#public-dashboard-footnote">
-            <span className="wb-inv">{t('dashboardFilter.footnoteRefSrPrefix')}</span>1
-          </a>
-        </sup>
+        <span className="canada-ca-h1-stacked__eyebrow">{t('homepage.title')}</span>
+        <span className="canada-ca-h1-stacked__title">{t('publicDashboard.title')}</span>
       </h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>

@@ -52,13 +52,11 @@ vi.mock('../../hooks/useTranslations.js', () => ({
 }));
 
 vi.mock('@gcds-core/components-react', () => ({
-  GcdsNotice: ({ children, noticeRole, noticeTitle }) => (
-    <section data-notice-role={noticeRole}>
-      <h2>{noticeTitle}</h2>
-      {children}
-    </section>
-  ),
-  GcdsText: ({ children }) => <div>{children}</div>,
+  // LoginPage's session-expired notice renders a real StatusMessage now
+  // (was GcdsNotice - see status-and-error-messaging.md), which renders a
+  // GcdsIcon internally for variant="warning" - stub it the same way
+  // StatusMessage.test.js does.
+  GcdsIcon: (props) => React.createElement('span', { ...props, 'data-gcds-icon': true, 'aria-hidden': 'true' }),
 }));
 
 vi.mock('../../components/auth/PasswordInput.js', () => ({

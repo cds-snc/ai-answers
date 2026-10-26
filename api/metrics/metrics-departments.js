@@ -1,8 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
+import { parseRequestFilters, executeWithRetry, remapEvalFilter } from './metrics-common.js';
 
 function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
@@ -43,7 +43,8 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
         {
             $addFields: {
-                category: getPartnerEvalAggregationExpression('$expertFeedback')
+                category: getPartnerEvalAggregationExpression('$expertFeedback'),
+                hasCitationError: getHasCitationErrorAggregationExpression('$expertFeedback')
             }
         },
         {
@@ -57,6 +58,7 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
                 department: 1,
                 hasExpertFeedback: 1,
                 category: 1,
+                hasCitationError: 1,
                 // Keep IDs for potential cross-filter lookups
                 answerId: '$interactions.answer',
                 autoEvalId: '$interactions.autoEval'
@@ -114,21 +116,18 @@ function buildDepartmentPipeline(dateFilter, extraFilters = [], departmentFilter
             },
             {
                 $addFields: {
-                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    aiHasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             },
         );
 
         // Remap filter key
-        const remappedFilter = {};
-        for (const key in aiEvalFilter) {
-            if (key === 'category') remappedFilter['aiCategory'] = aiEvalFilter[key];
-            else remappedFilter[key] = aiEvalFilter[key];
-        }
+        const remappedFilter = remapEvalFilter(aiEvalFilter, 'ai');
 
         stages.push(
             { $match: remappedFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0 } }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0, aiHasCitationError: 0 } }
         );
     }
 
@@ -150,7 +149,7 @@ async function getDepartmentMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildDepartmentPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
@@ -188,4 +187,4 @@ async function getDepartmentMetrics(req, res) {
     }
 }
 
-export default withProtection(getDepartmentMetrics);
+export default withProtection(getDepartmentMetrics, authMiddleware, partnerOrAdminMiddleware);

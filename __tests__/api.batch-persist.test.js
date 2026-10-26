@@ -13,6 +13,9 @@ vi.mock('../api/db/db-connect.js', () => ({
 const batchModelMock = vi.hoisted(() => ({
   findOneAndUpdate: vi.fn(),
 }));
+const settingsServiceMock = vi.hoisted(() => ({
+  get: vi.fn(() => null),
+}));
 
 vi.mock('../models/batch.js', () => ({
   Batch: batchModelMock,
@@ -22,6 +25,10 @@ vi.mock('../models/batchItem.js', () => ({
   BatchItem: {
     insertMany: vi.fn(),
   },
+}));
+
+vi.mock('../services/SettingsService.js', () => ({
+  SettingsService: settingsServiceMock,
 }));
 
 import handler from '../api/batch/batch-persist.js';
@@ -37,6 +44,8 @@ function makeRes() {
 describe('api/batch/batch-persist handler', () => {
   beforeEach(() => {
     batchModelMock.findOneAndUpdate.mockReset();
+    settingsServiceMock.get.mockReset();
+    settingsServiceMock.get.mockReturnValue(null);
   });
 
   it('uses a normalized batch id in the update query', async () => {
@@ -88,5 +97,32 @@ describe('api/batch/batch-persist handler', () => {
       message: 'Failed to persist batch',
       error: 'Invalid batch ID',
     });
+  });
+
+  it('normalizes an unsupported search provider to the configured default', async () => {
+    settingsServiceMock.get.mockReturnValue('canadaca');
+    batchModelMock.findOneAndUpdate.mockResolvedValue({
+      _id: '64fec1000000000000000001',
+    });
+
+    const req = {
+      method: 'POST',
+      body: {
+        _id: '64fec1000000000000000001',
+        searchProvider: 'unsupported-provider',
+      },
+      path: '/api/batch/batch-persist',
+      isAuthenticated: vi.fn(() => true),
+      user: { role: 'partner', userId: 'test-partner' },
+    };
+    const res = makeRes();
+
+    await handler(req, res);
+
+    expect(batchModelMock.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: '64fec1000000000000000001' },
+      { $set: { searchProvider: 'canadaca' } },
+      { new: true, upsert: true }
+    );
   });
 });

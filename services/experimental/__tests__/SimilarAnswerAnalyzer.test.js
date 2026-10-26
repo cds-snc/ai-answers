@@ -59,7 +59,7 @@ describe('SimilarAnswerAnalyzer', () => {
     it('uses the judge to flag meaningful answer drift', async () => {
         const mockLLM = {
             invoke: vi.fn().mockResolvedValue({
-                content: '```json\n{"status":"flagged","label":"meaning-drift","differenceFound":true,"confidence":0.97,"differenceExplanation":"The deadline changed.","changedFacts":[{"type":"date","baseline":"June 1, 2026","current":"July 1, 2026","impact":"Different filing deadline."}],"baselineOnlyFacts":[],"currentOnlyFacts":[],"ignoredDifferences":[]}\n```'
+                content: '```json\n{"status":"flagged","label":"meaning-drift","differenceFound":true,"confidence":0.97,"comparisonExplanation":"The deadline changed.","changedFacts":[{"type":"date","baseline":"June 1, 2026","current":"July 1, 2026","impact":"Different filing deadline."}],"baselineOnlyFacts":[],"currentOnlyFacts":[],"ignoredDifferences":[]}\n```'
             })
         };
         createJudgeLLM.mockResolvedValue(mockLLM);
@@ -87,7 +87,7 @@ describe('SimilarAnswerAnalyzer', () => {
     it('maps openai-gpt51 to a supported judge model token', async () => {
         const mockLLM = {
             invoke: vi.fn().mockResolvedValue({
-                content: '{"status":"pass","label":"same-meaning","differenceFound":false,"confidence":0.9,"differenceExplanation":"Same meaning."}'
+                content: '{"status":"pass","label":"same-meaning","differenceFound":false,"confidence":0.9,"comparisonExplanation":"Same meaning."}'
             })
         };
         createJudgeLLM.mockResolvedValue(mockLLM);

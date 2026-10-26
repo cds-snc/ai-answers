@@ -1,6 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 import { normalizeReferralUrl } from '../util/normalizeReferralUrl.js';
 
@@ -93,7 +93,7 @@ async function getCitationMetrics(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
   try {
     await dbConnect();
-    const { dateFilter, extraFilterConditions, departmentFilter } = parseRequestFilters(req);
+    const { dateFilter, extraFilterConditions, departmentFilter } = await parseRequestFilters(req);
     if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
     const rows = await executeWithRetry(() =>
@@ -127,4 +127,4 @@ async function getCitationMetrics(req, res) {
   }
 }
 
-export default withProtection(getCitationMetrics);
+export default withProtection(getCitationMetrics, authMiddleware, partnerOrAdminMiddleware);

@@ -101,4 +101,31 @@ describe('AuthService', () => {
 
     clearSpy.mockRestore();
   });
+
+  // A session can end without logout() running (expired while the browser
+  // was closed), so sign-in also drops Options choices left from before.
+  const savedChoices = { 'aiAnswers.selectedAI': 'azure', 'aiAnswers.workflow': 'GenericWithQAGraph', 'aiAnswers.selectedSearch': 'canadaca' };
+  const signedIn = { ok: true, status: 200, json: async () => ({ user: { userId: 'u1', role: 'admin' } }) };
+
+  it('login clears saved chat Options choices and keeps other storage', async () => {
+    Object.entries(savedChoices).forEach(([k, v]) => fakeLocal.setItem(k, v));
+    global.fetch = vi.fn().mockResolvedValue(signedIn);
+
+    await AuthService.login('admin@example.com', 'pw');
+
+    Object.keys(savedChoices).forEach((k) => expect(fakeLocal.getItem(k)).toBeNull());
+    expect(fakeLocal.getItem('token')).toBe('abc');
+  });
+
+  it('login keeps saved choices while waiting for the 2FA code, then verify2FA clears them', async () => {
+    Object.entries(savedChoices).forEach(([k, v]) => fakeLocal.setItem(k, v));
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ twoFA: true }) });
+
+    await AuthService.login('admin@example.com', 'pw');
+    expect(fakeLocal.getItem('aiAnswers.selectedAI')).toBe('azure');
+
+    global.fetch = vi.fn().mockResolvedValue(signedIn);
+    await AuthService.verify2FA('123456');
+    Object.keys(savedChoices).forEach((k) => expect(fakeLocal.getItem(k)).toBeNull());
+  });
 });

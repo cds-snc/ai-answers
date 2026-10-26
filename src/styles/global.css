@@ -42,13 +42,6 @@
   margin: 0 auto;
   padding-left: 1.5rem;
 }
-/* QA: cleanup — 0 usages found in JSX; confirm whether this class is still needed */
-.referring-url-container {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 0 20px;
-}
-
 .container-custom:first-of-type {
   margin-bottom: 0px !important;
 }
@@ -64,30 +57,27 @@
   margin-left: auto;
 }
 
-/* QA: cleanup — content is commented out so these rules only set display:table, which does nothing without content; verify if these :after/:before rules are needed at all */
-.container-custom :after,
-.container-custom :before {
-  display: table;
-}
-
-.container-custom :after {
-  clear: both;
+/* Wraps GcdsHeader + the Beta banner (App.js) so the banner's `order: -1`
+   below can put it first visually while staying after GcdsHeader in the
+   DOM - see the comment at that JSX for why the DOM order matters. */
+.header-chrome {
+  display: flex;
+  flex-direction: column;
 }
 
 /* top banner for alpha/beta warning */
-/* QA: cleanup — .alpha and .alpha-fill have 0 usages in JSX; only .alpha-top and .alpha-label are used (App.js AppLayout). Safe to remove the unused two. */
 .alpha-top {
+  order: -1;
   padding-top: 2px !important;
   padding-bottom: 2px !important;
   top: 0;
   background-color: #f2f2f2;
-  z-index: 100;
-}
-.alpha {
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: white;
-  z-index: 100;
+  /* Was z-index: 100 - harmless pre-.header-chrome (non-flex elements ignore
+     z-index), but flex items (for `order` above) honor it for paint order
+     even with no `position` set. That put this ahead of GcdsHeader's
+     shadow-DOM skip link (z-index: 3), hiding it on focus. auto restores the
+     original, correct behaviour. */
+  z-index: auto;
 }
 .alpha-label {
   background-color: black;
@@ -102,10 +92,6 @@
   border-radius: 0px;
   font-size: 14px !important;
 }
-.alpha-fill {
-  background-color: #f2f2f2;
-  padding: 0.6em 1em 0.6em 0.6em;
-}
 
 /* index.css */
 body {
@@ -116,44 +102,6 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
-}
-
-.wb-inv {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-  white-space: nowrap;
-  font-size: 1em;
-}
-
-/* When focused, make it visible for keyboard users */
-.wb-inv:focus,
-.wb-inv:active {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-  background-color: var(--gcds-link-focus-background);
-  color: var(--gcds-link-focus-text);
-  border-radius: var(--gcds-link-focus-border-radius);
-  box-shadow: var(--gcds-link-focus-box-shadow);
-  outline: var(--gcds-link-focus-outline-width) solid
-    var(--gcds-link-focus-background);
-  outline-offset: var(--gcds-link-focus-outline-offset);
-  text-decoration: none;
-  padding: 10px;
-  display: inline-block;
-  z-index: 9999;
-  transition: none;
-  animation: none;
 }
 
 /* modifications of GCDS-tokens to Canada.ca design where appropriate */
@@ -226,6 +174,16 @@ gcds-details {
    --gcds-spacing-text-1-25x: 1.25em) alongside the fixed rem scale. */
 .canada-ca-list-spcd-2 li {
   margin-bottom: 1.25em;
+}
+
+/* -2 above: long/bulleted-paragraph items. -1 here: short-sentence items. */
+.canada-ca-list-spcd-1 li {
+  margin-bottom: 0.625em;
+}
+
+/* -0: link-only lists, e.g. a page's "On this page" contents list. */
+.canada-ca-list-spcd-0 li {
+  margin-bottom: 0.2em;
 }
 
 .flex-center {
@@ -313,6 +271,14 @@ gcds-container:first-of-type {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .loading-animation,
+  .loading-animation:before,
+  .loading-animation:after {
+    animation: none;
+  }
+}
+
 /* detail/summary styling */
 details {
   padding-left: 1.1em;
@@ -389,15 +355,45 @@ summary::-webkit-details-marker {
 }
 
 details > summary::before {
-  content: '►';
+  content: '';
   display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
   margin-right: 0.5rem;
-  font-size: 0.75em;
-  line-height: 1;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='1,0 9,5 1,10' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 details[open] > summary::before {
-  content: '▼';
+  transform: rotate(90deg);
+}
+
+/* The chevron's fill comes from background-color (masked to a triangle).
+   Forced-colors mode (Windows High Contrast Mode) maps background-color to
+   Canvas (the page background), not CanvasText like it does for color/text —
+   so the mask would be forced to match the page background and disappear.
+   Repaint it explicitly with the CanvasText system color so it stays visible. */
+@media (forced-colors: active) {
+  details > summary::before {
+    background-color: CanvasText;
+  }
+}
+
+/* A focused, open summary's outline (outline-offset 0.125rem + outline
+   0.25rem, see summary:focus below) bleeds ~0.375rem past its own box —
+   without breathing room after it, that blue ring touches the revealed
+   content directly below. Applies to every <details> on the site, not just
+   one component's — same generic-styling approach as the rest of this
+   block (no per-component override). */
+details[open] > summary {
+  margin-bottom: var(--gcds-spacing-100);
 }
 
 /* buttons */
@@ -411,6 +407,8 @@ details[open] > summary::before {
   cursor: pointer;
 }
 
+/* The small-size pair to .btn-secondary below, for a native <button> beside
+   small GcdsButtons or .btn-primary-sm (LoginPage's resend code). */
 .btn-secondary-sm {
   padding: var(--gcds-button-small-padding);
   background: white;
@@ -418,6 +416,19 @@ details[open] > summary::before {
   border: var(--gcds-button-border-width) solid var(--gcds-color-blue-900);
   border-radius: var(--gcds-button-border-radius);
   font: var(--gcds-button-small-font-desktop);
+  cursor: pointer;
+}
+
+/* No current usages - keep it, for future use. GcdsButton
+   buttonRole="secondary" at its regular size, for a native <button> beside
+   regular GcdsButtons. */
+.btn-secondary {
+  padding: var(--gcds-button-padding);
+  background: var(--gcds-button-secondary-default-background);
+  color: var(--gcds-button-secondary-default-text);
+  border: var(--gcds-button-border-width) solid var(--gcds-button-secondary-default-text);
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-font-desktop);
   cursor: pointer;
 }
 
@@ -441,14 +452,27 @@ details[open] > summary::before {
   background: var(--gcds-button-primary-hover-background);
 }
 
-.btn-secondary-sm:hover {
+.btn-secondary-sm:hover:not(:disabled) {
   background: var(--gcds-color-blue-100);
+}
+
+.btn-secondary-sm:disabled {
+  opacity: var(--gcds-button-shared-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gcds-button-secondary-hover-background);
 }
 
 .btn-primary-sm:focus,
 .btn-primary-sm:focus:hover,
+.btn-secondary-sm:focus,
+.btn-secondary-sm:focus:hover,
 .btn-primary:focus,
 .btn-primary:focus:hover,
+.btn-secondary:focus,
+.btn-secondary:focus:hover,
 summary:focus,
 .close-icon:focus {
   background-color: var(--gcds-details-focus-background);
@@ -465,14 +489,263 @@ summary:focus,
   border-radius: var(--gcds-border-radius-md);
 }
 
-
-.hr {
-  padding-top: 30px;
-  margin-top: 60px;
-  border-top: 1px solid #ccc;
+/* Holds every label a control can show in one grid cell; only the current
+   one is visible, so the control keeps the width of the longest. */
+.canada-ca-stable-label {
+  display: inline-grid;
 }
 
-/* Screen reader only class */
+.canada-ca-stable-label > * {
+  grid-area: 1 / 1;
+}
+
+.canada-ca-stable-label > [aria-hidden="true"] {
+  visibility: hidden;
+}
+
+/* Stacked GcdsButtons sharing the width of the widest. Full width on
+   phones, same as GcdsButton on its own. */
+.canada-ca-button-stack {
+  display: grid;
+  justify-content: start;
+  row-gap: var(--gcds-spacing-200);
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.canada-ca-button-stack > gcds-button {
+  --gcds-button-width: 100%;
+  --gcds-button-mobile-margin: 0;
+}
+
+@media screen and (max-width: 30rem) {
+  .canada-ca-button-stack {
+    justify-content: stretch;
+  }
+}
+
+/* Connected row of GcdsButtons for one set of controls: only the outer
+   corners are rounded and neighbours share one border. Stacks on phones,
+   where GcdsButton goes full width.
+
+   TOKEN SUGGESTION for GC DS: there's no button group component, so this
+   overrides --gcds-button-border-radius per button. A gcds-button-group (or
+   a per-corner radius token) would make this pattern first-class. */
+.canada-ca-button-group {
+  /* Equal-width columns, all as wide as the widest button. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-bottom: var(--gcds-spacing-200);
+}
+
+.canada-ca-button-group > gcds-button {
+  --gcds-button-border-radius: 0;
+  --gcds-button-mobile-margin: 0;
+  --gcds-button-width: 100%;
+}
+
+.canada-ca-button-group > gcds-button:first-child {
+  --gcds-button-border-radius: var(--gcds-border-radius-md) 0 0 var(--gcds-border-radius-md);
+}
+
+.canada-ca-button-group > gcds-button:last-child {
+  --gcds-button-border-radius: 0 var(--gcds-border-radius-md) var(--gcds-border-radius-md) 0;
+}
+
+.canada-ca-button-group > gcds-button + gcds-button {
+  margin-left: calc(-1 * var(--gcds-button-border-width));
+}
+
+/* Keep the focus ring above the overlapping neighbour. */
+.canada-ca-button-group > gcds-button:focus-within {
+  position: relative;
+  z-index: 1;
+}
+
+/* Same breakpoint as GcdsButton's own full-width switch. */
+@media screen and (max-width: 30rem) {
+  .canada-ca-button-group {
+    display: grid;
+    grid-auto-flow: row;
+  }
+
+  .canada-ca-button-group > gcds-button:first-child {
+    --gcds-button-border-radius: var(--gcds-border-radius-md) var(--gcds-border-radius-md) 0 0;
+  }
+
+  .canada-ca-button-group > gcds-button:last-child {
+    --gcds-button-border-radius: 0 0 var(--gcds-border-radius-md) var(--gcds-border-radius-md);
+  }
+
+  .canada-ca-button-group > gcds-button + gcds-button {
+    margin-left: 0;
+    margin-top: calc(-1 * var(--gcds-button-border-width));
+  }
+}
+
+
+/* Native twin of GcdsButton's secondary role, for buttons whose content
+   must reach the accessible name (e.g. an sr-only suffix). Disable with
+   aria-disabled, not disabled, so focus stays put. */
+.btn-secondary {
+  box-sizing: border-box;
+  padding: var(--gcds-button-padding);
+  background-color: var(--gcds-button-secondary-default-background);
+  color: var(--gcds-button-secondary-default-text);
+  border: var(--gcds-button-border-width) solid;
+  border-radius: var(--gcds-button-border-radius);
+  font: var(--gcds-button-font-desktop);
+  text-align: center;
+  cursor: pointer;
+  /* Not `all` - pops on first paint inside <details> (see admin.css) */
+  transition: background-color .15s ease-in-out, color .15s ease-in-out,
+    border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+@media (hover: hover) {
+  .btn-secondary:hover {
+    background-color: var(--gcds-button-secondary-hover-background);
+  }
+}
+
+.btn-secondary:focus {
+  background-color: var(--gcds-button-shared-focus-background);
+  border-color: var(--gcds-button-shared-focus-background);
+  box-shadow: var(--gcds-button-shared-focus-box-shadow);
+  color: var(--gcds-button-shared-focus-text);
+  outline: var(--gcds-button-shared-focus-outline-width) solid var(--gcds-button-shared-focus-background);
+  outline-offset: var(--gcds-button-border-width);
+}
+
+/* Toggle on: GcdsButton primary's colours. */
+.btn-secondary[aria-pressed="true"] {
+  background-color: var(--gcds-button-primary-default-background);
+  border-color: var(--gcds-button-primary-default-background);
+  color: var(--gcds-button-primary-default-text);
+}
+
+@media (hover: hover) {
+  .btn-secondary[aria-pressed="true"]:hover {
+    background-color: var(--gcds-button-primary-hover-background);
+    border-color: var(--gcds-button-primary-hover-background);
+  }
+}
+
+/* Focus wins over on and hover, as on GcdsButton primary. */
+.btn-secondary[aria-pressed="true"]:focus {
+  background-color: var(--gcds-button-shared-focus-background);
+  border-color: var(--gcds-button-shared-focus-background);
+  color: var(--gcds-button-shared-focus-text);
+}
+
+.btn-secondary[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: var(--gcds-button-shared-disabled-opacity);
+}
+
+@media only screen and (width < 48em) {
+  .btn-secondary {
+    font: var(--gcds-button-font-mobile);
+  }
+}
+
+@media screen and (max-width: 30rem) {
+  .btn-secondary {
+    display: block;
+    margin: var(--gcds-button-mobile-margin);
+    width: var(--gcds-button-mobile-width);
+  }
+}
+
+/* Compact name | toggle rows. Each row's cells share the outer grid's
+   columns (subgrid), so the names line up and the toggles line up. */
+.canada-ca-toggle-rows {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: var(--gcds-spacing-200) var(--gcds-spacing-400);
+  align-items: center;
+}
+
+.canada-ca-toggle-rows > * {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+/* Joined pair (or row) of native .btn-secondary toggles, one pressed at a
+   time: only the outer corners are rounded, neighbours share one border,
+   and every button is as wide as the widest. Stacks on phones.
+
+   TODO: fold into .canada-ca-button-group (fix/vector-page-forms-a11y, the
+   same layout for GcdsButton children) once that branch merges: one class,
+   shared layout, per-child corner rules for gcds-button and .btn-secondary. */
+.canada-ca-toggle-group {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.canada-ca-toggle-group > .btn-secondary {
+  border-radius: 0;
+}
+
+.canada-ca-toggle-group > .btn-secondary:first-child {
+  border-radius: var(--gcds-button-border-radius) 0 0 var(--gcds-button-border-radius);
+}
+
+.canada-ca-toggle-group > .btn-secondary:last-child {
+  border-radius: 0 var(--gcds-button-border-radius) var(--gcds-button-border-radius) 0;
+}
+
+.canada-ca-toggle-group > .btn-secondary + .btn-secondary {
+  margin-left: calc(-1 * var(--gcds-button-border-width));
+}
+
+/* Small size, same as the filter buttons (GC DS small button). */
+.canada-ca-toggle-group--sm > .btn-secondary {
+  padding: var(--gcds-button-small-padding);
+  font: var(--gcds-button-small-font-desktop);
+}
+
+@media only screen and (width < 48em) {
+  .canada-ca-toggle-group--sm > .btn-secondary {
+    font: var(--gcds-button-small-font-mobile);
+  }
+}
+
+/* Keep the focus ring above the overlapping neighbour. */
+.canada-ca-toggle-group > .btn-secondary:focus {
+  position: relative;
+  z-index: 1;
+}
+
+@media screen and (max-width: 30rem) {
+  .canada-ca-toggle-group {
+    display: grid;
+    grid-auto-flow: row;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary {
+    margin: 0;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary:first-child {
+    border-radius: var(--gcds-button-border-radius) var(--gcds-button-border-radius) 0 0;
+  }
+
+  .canada-ca-toggle-group > .btn-secondary:last-child {
+    border-radius: 0 0 var(--gcds-button-border-radius) var(--gcds-button-border-radius);
+  }
+
+  .canada-ca-toggle-group > .btn-secondary + .btn-secondary {
+    margin-left: 0;
+    margin-top: calc(-1 * var(--gcds-button-border-width));
+  }
+}
+
+/* Screen reader only class. Also used by the two site-wide live regions
+   src/utils/liveAnnouncer.js appends to <body>. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -566,124 +839,6 @@ output {
   color: rgb(85.425, 85.425, 85.425);
 }
 
-.form-control {
-  display: block;
-  width: 100%;
-  height: 37px;
-  padding: 10px 14px;
-  font-size: 16px;
-  line-height: 1.4375;
-  color: rgb(85.425, 85.425, 85.425);
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border-color ease-in-out 0.15s,
-    box-shadow ease-in-out 0.15s;
-  -webkit-transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
-    -webkit-box-shadow ease-in-out 0.15s;
-}
-
-.form-control:focus {
-  border-color: #66afe9;
-  outline: 0;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
-}
-
-.form-control::-moz-placeholder {
-  color: #5c5c5c !important;
-  opacity: 1;
-}
-
-.form-control:-ms-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-webkit-input-placeholder {
-  color: #5c5c5c !important;
-}
-
-.form-control::-ms-expand {
-  background-color: transparent;
-  border: 0;
-}
-
-.form-control[disabled],
-.form-control[readonly],
-fieldset[disabled] .form-control {
-  background-color: rgb(238.425, 238.425, 238.425);
-  opacity: 1;
-}
-
-.form-control[disabled],
-fieldset[disabled] .form-control {
-  cursor: not-allowed;
-}
-
-textarea.form-control {
-  height: auto;
-}
-
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  input[type="date"].form-control,
-  input[type="datetime-local"].form-control,
-  input[type="month"].form-control,
-  input[type="time"].form-control {
-    line-height: 37px;
-  }
-
-  .input-group-sm input[type="date"],
-  .input-group-sm input[type="datetime-local"],
-  .input-group-sm input[type="month"],
-  .input-group-sm input[type="time"],
-  .input-group-sm > .input-group-btn > input[type="date"].btn,
-  .input-group-sm > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-sm > .input-group-btn > input[type="month"].btn,
-  .input-group-sm > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-sm,
-  input[type="datetime-local"].input-sm,
-  input[type="month"].input-sm,
-  input[type="time"].input-sm {
-    line-height: 33px;
-  }
-
-  .input-group-lg input[type="date"],
-  .input-group-lg input[type="datetime-local"],
-  .input-group-lg input[type="month"],
-  .input-group-lg input[type="time"],
-  .input-group-lg > .input-group-btn > input[type="date"].btn,
-  .input-group-lg > .input-group-btn > input[type="datetime-local"].btn,
-  .input-group-lg > .input-group-btn > input[type="month"].btn,
-  .input-group-lg > .input-group-btn > input[type="time"].btn,
-  input[type="date"].input-lg,
-  input[type="datetime-local"].input-lg,
-  input[type="month"].input-lg,
-  input[type="time"].input-lg {
-    line-height: 46px;
-  }
-}
-
-.gc-chckbxrdio fieldset {
-  min-width: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-}
-
-.answer-improvement label,
-label.expert-citation-url {
-  font-weight: 500 !important;
-}
 .gc-chckbxrdio .checkbox,
 .gc-chckbxrdio .radio {
   position: relative;
@@ -728,9 +883,7 @@ fieldset[disabled] .radio label {
 }
 
 .checkbox input[type="checkbox"],
-.checkbox-inline input[type="checkbox"],
-.radio input[type="radio"],
-.radio-inline input[type="radio"] {
+.radio input[type="radio"] {
   position: absolute;
   margin-left: -20px;
 }
@@ -738,30 +891,6 @@ fieldset[disabled] .radio label {
 .checkbox + .checkbox,
 .radio + .radio {
   margin-top: -5px;
-}
-
-.checkbox-inline,
-.radio-inline {
-  position: relative;
-  display: inline-block;
-  padding-left: 20px;
-  margin-bottom: 0;
-  font-weight: 400;
-  vertical-align: middle;
-  cursor: pointer;
-}
-
-.checkbox-inline.disabled,
-.radio-inline.disabled,
-fieldset[disabled] .checkbox-inline,
-fieldset[disabled] .radio-inline {
-  cursor: not-allowed;
-}
-
-.checkbox-inline + .checkbox-inline,
-.radio-inline + .radio-inline {
-  margin-top: 0;
-  margin-left: 10px;
 }
 
 fieldset.gc-chckbxrdio {
@@ -987,4 +1116,55 @@ fieldset.gc-chckbxrdio {
 .experimental-results-table {
   width: 100%;
   margin-inline: auto;
+}
+
+/* System card page: the Version/Date/Organization/Contact <dl> under the
+   title, as label/value rows. */
+.system-card-content dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--gcds-spacing-300);
+  row-gap: var(--gcds-spacing-100);
+  margin: 0 0 var(--gcds-spacing-400);
+}
+
+.system-card-content dt {
+  font-weight: 700;
+}
+
+.system-card-content dd {
+  margin: 0;
+  /* Safety net at large zoom: the contact email is one unbreakable word. */
+  overflow-wrap: anywhere;
+}
+
+/* GC DS mobile breakpoint: label above value, so the email never forces a
+   sideways scroll (WCAG 1.4.10 reflow). */
+@media only screen and (width < 48em) {
+  .system-card-content dl {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .system-card-content dd {
+    margin-bottom: var(--gcds-spacing-100);
+  }
+}
+
+/* System card nested lists: same gap as the card's canada-ca-list-spcd-1
+   items, above the first sub-bullet and after the last. Overrides the mb-400
+   every list gets, which is for top-level lists; the parent item's own
+   margin-bottom supplies the gap after the sub-list. */
+.system-card-content li > :is(ul, ol) {
+  margin-block: 0.625em 0;
+}
+
+.system-card-content li > :is(ul, ol) > li:last-child {
+  margin-bottom: 0;
+}
+
+/* System card page (SystemCardPage.js): images shrink to the column. */
+.system-card-content .system-card-image {
+  max-width: 100%;
+  height: auto;
 }

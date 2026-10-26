@@ -99,6 +99,58 @@ describe('UrlValidationService', () => {
         });
     });
 
+    describe('validateUrlFormatting (public)', () => {
+        it('falls back to a search URL when no URL is supplied', async () => {
+            const result = await UrlValidationService.validateUrlFormatting('', 'en', 'feed licence', 'cfia');
+
+            expect(result.isValid).toBe(false);
+            expect(result.fallbackUrl).toContain('/sr/srb.html?q=feed%20licence');
+        });
+
+        it('uses the department search page for a known department', async () => {
+            const result = await UrlValidationService.validateUrlFormatting('', 'en', 'benefits', 'cra');
+
+            expect(result.fallbackUrl).toContain('/revenue-agency/search.html');
+        });
+
+        // Pass-through is the intended behaviour of a non-networking validator,
+        // not an accident of the tautology this replaced. Non-www.canada.ca GC
+        // hosts must keep their own URL rather than being sent to a search page.
+        it('passes any supplied URL through unchanged', async () => {
+            for (const url of [
+                'https://www.canada.ca/en/services/benefits.html',
+                'https://inspection.canada.ca/en/animal-health/livestock-feeds',
+                'https://ised-isde.canada.ca/site/ised/en',
+            ]) {
+                expect(await UrlValidationService.validateUrlFormatting(url)).toEqual({
+                    isValid: true,
+                    url,
+                });
+            }
+        });
+
+        it('makes no network request', async () => {
+            await UrlValidationService.validateUrlFormatting('https://www.canada.ca/en');
+
+            expect(axios).not.toHaveBeenCalled();
+        });
+
+        // Unlike api/util/normalizeFetchUrl.js (used by the outbound fetch
+        // tools), this validator has no http->https upgrade — see the comment
+        // above the return in UrlValidationService.js. A model can fetch a page
+        // over https and still cite it as http: here; this test locks in that
+        // known, accepted gap so a future change doesn't silently alter it
+        // either way without the test noticing.
+        it('does not upgrade an http:// URL to https', async () => {
+            const url = 'http://inspection.canada.ca/en/animal-health/livestock-feeds';
+
+            expect(await UrlValidationService.validateUrlFormatting(url)).toEqual({
+                isValid: true,
+                url,
+            });
+        });
+    });
+
     describe('Utils', () => {
         it('isKnown404 should detect known 404 URLs', () => {
             expect(isKnown404('https://www.canada.ca/errors/404.html')).toBe(true);

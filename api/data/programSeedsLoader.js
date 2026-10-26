@@ -1,6 +1,6 @@
 // Loads a department's curated program vocabulary. Source of truth is a
 // partner-editable Markdown table at
-//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-programs.md
+//   agents/prompts/scenarios/context-<dept-dashed>/<dept-dashed>-services.md
 // (English | Français), matching the scenario-file naming convention. When a
 // department has no such file yet, we fall back to the legacy hardcoded arrays
 // in programActionSeeds.js. English names anchor the classifier; the English→
@@ -49,7 +49,7 @@ function load(abbrKey) {
   if (cache.has(abbrKey)) return cache.get(abbrKey);
 
   const dashed = deptDashed(abbrKey);
-  const file = path.join(SCENARIOS_DIR, `context-${dashed}`, `${dashed}-programs.md`);
+  const file = path.join(SCENARIOS_DIR, `context-${dashed}`, `${dashed}-services.md`);
 
   let programs = null;
   try {
@@ -104,7 +104,7 @@ export function getAllProgramNameMap() {
 
   for (const dir of entries) {
     const dashed = dir.replace(/^context-/, '');
-    const file = path.join(SCENARIOS_DIR, dir, `${dashed}-programs.md`);
+    const file = path.join(SCENARIOS_DIR, dir, `${dashed}-services.md`);
     try {
       for (const { en, fr } of parseProgramsMarkdown(readFileSync(file, 'utf8'))) {
         if (en && fr) merged.set(en, fr);

@@ -1,8 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getAiEvalAggregationExpression, getPartnerEvalAggregationExpression } from '../util/chat-filters.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getAiEvalAggregationExpression, getPartnerEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
+import { parseRequestFilters, executeWithRetry, remapEvalFilter } from './metrics-common.js';
 
 function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
@@ -71,7 +71,8 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
         { $match: { 'autoEval.expertFeedback': { $ne: null } } },
         {
             $addFields: {
-                category: getAiEvalAggregationExpression('$autoEval.expertFeedback')
+                category: getAiEvalAggregationExpression('$autoEval.expertFeedback'),
+                hasCitationError: getHasCitationErrorAggregationExpression('$autoEval.expertFeedback')
             }
         },
         // Exclude questions that have a human expert eval — expert takes precedence
@@ -82,6 +83,7 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
                 pageLanguage: 1,
                 department: 1,
                 category: 1,
+                hasCitationError: 1,
                 // Keep IDs for potential cross-filter lookups
                 answerId: '$interactions.answer',
                 expertFeedbackId: '$interactions.expertFeedback'
@@ -123,19 +125,16 @@ function buildAiEvalPipeline(dateFilter, extraFilters = [], departmentFilter = [
             },
             {
                 $addFields: {
-                    partnerCategory: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$pe_filter', 0] })
+                    partnerCategory: getPartnerEvalAggregationExpression({ $arrayElemAt: ['$pe_filter', 0] }),
+                    partnerHasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$pe_filter', 0] })
                 }
             }
         );
         // Remap filter key from 'category' to 'partnerCategory'
-        const remappedFilter = {};
-        for (const key in partnerEvalFilter) {
-            if (key === 'category') remappedFilter['partnerCategory'] = partnerEvalFilter[key];
-            else remappedFilter[key] = partnerEvalFilter[key];
-        }
+        const remappedFilter = remapEvalFilter(partnerEvalFilter, 'partner');
         stages.push(
             { $match: remappedFilter },
-            { $project: { pe_filter: 0, partnerCategory: 0 } }
+            { $project: { pe_filter: 0, partnerCategory: 0, partnerHasCitationError: 0 } }
         );
     }
 
@@ -175,7 +174,7 @@ async function getAiEvalMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildAiEvalPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
@@ -198,4 +197,4 @@ async function getAiEvalMetrics(req, res) {
     }
 }
 
-export default withProtection(getAiEvalMetrics);
+export default withProtection(getAiEvalMetrics, authMiddleware, partnerOrAdminMiddleware);

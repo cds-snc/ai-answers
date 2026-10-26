@@ -1,95 +1,54 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsButton } from '@gcds-core/components-react';
 import DataStoreService from '../../services/DataStoreService.js';
+import DeleteByChatIdSection from './DeleteByChatIdSection.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 const DeleteChatSection = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [chatId, setChatId] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const { wrapErrorDetail } = useErrorStatus(t);
 
-  const handleInputChange = (event) => {
-    const value = event?.target?.value || '';
-    setChatId(value);
-  };
-
-  const handleInitialDelete = (e) => {
-    e.preventDefault();
-    if (!chatId.trim()) return;
-    setShowConfirm(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!chatId.trim()) return;
-
-    setLoading(true);
+  const handleDelete = async (chatId) => {
     try {
       await DataStoreService.deleteChat(chatId);
-      alert(t('admin.deleteChat.success'));
-      setChatId('');
-      setShowConfirm(false);
+      // chatId is already validated against the UUID-style format
+      // (isValidChatIdFormat, upstream in DeleteByChatIdSection) before this
+      // runs, so plain replace is safe — it can't contain a `$` sequence the
+      // way raw exception text below can.
+      return { isError: false, text: t('admin.deleteChat.success').replace('{chatId}', chatId) };
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert(t('admin.deleteChat.error') + error.message);
-    } finally {
-      setLoading(false);
+      // TODO (for Official Languages review): the wrapped detail below is
+      // still only a pronunciation fix (WCAG 3.1.2), not a translation.
+      // Most of what lands here really is unbounded (network drop, an
+      // unexpected 500, "Failed to fetch") with no fixed set of values to
+      // put behind a t() key — but at least one case IS bounded: the 404
+      // race (pre-check passed, then the chat was deleted before this call
+      // completed — api/chat/chat-delete.js throws 'Chat not found.' for
+      // that) is a known, known-value outcome, same reasoning as
+      // admin.deleteExpertEval.notEvaluated.
+      // Genuinely localizing this needs DataStoreService.deleteChat (and
+      // the API route it calls) to return a stable error CODE instead of
+      // just message text, so this catch block can route the bounded case
+      // to a real t() key and leave lang="en" only for the genuinely
+      // unbounded remainder. Flagging for a maintainer decision on whether
+      // that's worth doing — touches both layers plus a test rewrite, not
+      // just this file.
+      return wrapErrorDetail('admin.deleteChat.error', error);
     }
   };
 
-  const handleCancel = () => {
-    setShowConfirm(false);
-  };
-
   return (
-    <div className="bg-white shadow rounded-lg p-4">
-      <h2 className="mt-400 mb-400">{t('admin.deleteChat.title')}</h2>
-      <div className="flex gap-400">
-        <input
-          type="text"
-          id="chatId"
-          className="form-control"
-          value={chatId}
-          onChange={handleInputChange}
-          placeholder={t('admin.deleteChat.idLabel')}
-          disabled={loading}
-          required
-        />
-        {!showConfirm ? (
-          <GcdsButton 
-            onClick={handleInitialDelete}
-            buttonRole="danger"
-            disabled={loading || !chatId.trim()}
-            className="me-400 hydrated mrgn-tp-1r"
-          >
-            {loading 
-              ? t('admin.deleteChat.loading')
-              : t('admin.deleteChat.button')}
-          </GcdsButton>
-        ) : (
-          <div className="flex gap-400">
-            <GcdsButton 
-              onClick={handleConfirmDelete}
-              buttonRole="danger"
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              {loading 
-                ? t('admin.deleteChat.loading')
-                : t('admin.deleteChat.confirm')}
-            </GcdsButton>
-            <GcdsButton 
-              onClick={handleCancel}
-              buttonRole="secondary"
-              disabled={loading}
-              className="hydrated mrgn-tp-1r"
-            >
-              {t('admin.deleteChat.cancel')}
-            </GcdsButton>
-          </div>
-        )}
-      </div>
-    </div>
+    <DeleteByChatIdSection
+      lang={lang}
+      titleKey="admin.deleteChat.title"
+      idLabelKey="admin.deleteChat.idLabel"
+      buttonLabelKey="admin.deleteChat.button"
+      loadingLabelKey="admin.deleteChat.loading"
+      notFoundMessageKey="admin.deleteChat.notFound"
+      fieldId="chatId"
+      onDelete={handleDelete}
+    />
   );
 };
 

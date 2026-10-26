@@ -1,8 +1,8 @@
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
-import { withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression } from '../util/chat-filters.js';
-import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
+import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
+import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
+import { parseRequestFilters, executeWithRetry, remapEvalFilter } from './metrics-common.js';
 
 function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
     const stages = [
@@ -47,6 +47,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
         {
             $addFields: {
                 category: getPartnerEvalAggregationExpression('$expertFeedback'),
+                hasCitationError: getHasCitationErrorAggregationExpression('$expertFeedback'),
                 hasContentIssue: {
                     $cond: [{
                         $or: [
@@ -59,9 +60,9 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 },
                 // Raw "answer error" signal (a sentence/total scored 0). Used to
                 // attribute content issues to error vs needs-improvement: harmful
-                // and citation-with-error answers are categorized away from
-                // 'hasError', but their underlying selection was Error, so they
-                // belong in the Error bucket. Content issues can only be flagged
+                // answers are categorized away from 'hasError', but their
+                // underlying selection was Error, so they belong in the Error
+                // bucket. Content issues can only be flagged
                 // after selecting needs improvement or error, so "not an error
                 // signal" implies needs improvement.
                 hasErrorSignal: {
@@ -81,6 +82,7 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
                 pageLanguage: 1,
                 department: 1,
                 category: 1,
+                hasCitationError: 1,
                 hasContentIssue: 1,
                 hasErrorSignal: 1,
                 // Keep IDs for potential cross-filter lookups
@@ -137,22 +139,23 @@ function buildExpertFeedbackPipeline(dateFilter, extraFilters = [], departmentFi
             },
             {
                 $addFields: {
-                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
+                    aiCategory: getAiEvalAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] }),
+                    aiHasCitationError: getHasCitationErrorAggregationExpression({ $arrayElemAt: ['$ae_ef_filter', 0] })
                 }
             }
         );
         // Remap filter key from 'category' to 'aiCategory'
-        const remappedFilter = {};
-        for (const key in aiEvalFilter) {
-            if (key === 'category') remappedFilter['aiCategory'] = aiEvalFilter[key];
-            else remappedFilter[key] = aiEvalFilter[key];
-        }
+        const remappedFilter = remapEvalFilter(aiEvalFilter, 'ai');
         stages.push(
             { $match: remappedFilter },
-            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0 } }
+            { $project: { ae_filter_doc: 0, ae_ef_filter: 0, aiCategory: 0, aiHasCitationError: 0 } }
         );
     }
 
+    // correct/needsImprovement/hasError/hasCitationError/harmful below
+    // count '$category', a single priority-ordered value (harmful > hasError
+    // > needsImprovement > hasCitationError > correct): a citation issue only
+    // counts when every sentence is correct.
     stages.push({
         $group: {
             _id: null,
@@ -193,7 +196,7 @@ async function getExpertMetrics(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
     try {
         await dbConnect();
-        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = parseRequestFilters(req);
+        const { dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter } = await parseRequestFilters(req);
         if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
         const result = await executeWithRetry(() => Chat.aggregate(buildExpertFeedbackPipeline(dateFilter, extraFilterConditions, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter)).allowDiskUse(true));
@@ -221,4 +224,4 @@ async function getExpertMetrics(req, res) {
     }
 }
 
-export default withProtection(getExpertMetrics);
+export default withProtection(getExpertMetrics, authMiddleware, partnerOrAdminMiddleware);

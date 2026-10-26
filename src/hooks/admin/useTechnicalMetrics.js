@@ -13,6 +13,8 @@ const getDefaultDateRange = () => {
 const initialState = {
   responseTime: { count: 0, median: 0, p90: 0, p95: 0, max: 0, maxChatId: '' },
   downloadWebPage: [],
+  searchCalls: {},
+  aiServiceCalls: {},
   totalInputTokens: 0,
   totalInputTokensEn: 0,
   totalInputTokensFr: 0,
@@ -41,6 +43,12 @@ export function useTechnicalMetrics() {
   const [loadingState, setLoadingState] = useState({ technical: false, usage: false, blocked: false });
   const [errorState, setErrorState] = useState({ technical: null, usage: null, blocked: null });
   const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  // True once any one section has settled (success or error) for the
+  // current fetch cycle - drives the page-level LoadingOverlay-then-
+  // incremental-reveal handoff in TechnicalMetricsDashboard.js. Reset to
+  // false at the top of each fetchAll, flipped true in fetchSection's own
+  // finally (which runs for every section, success or error alike).
+  const [hasAnySectionSettled, setHasAnySectionSettled] = useState(false);
   const abortControllerRef = useRef(null);
 
   const updateLoading = useCallback((key, isLoading) => {
@@ -62,6 +70,7 @@ export function useTechnicalMetrics() {
       const resolvedFilters = filters || getDefaultDateRange();
 
       setHasStartedLoading(true);
+      setHasAnySectionSettled(false);
       setErrorState({ technical: null, usage: null, blocked: null });
 
       const fetchSection = async (key, fetchFn) => {
@@ -76,11 +85,18 @@ export function useTechnicalMetrics() {
         } catch (err) {
           if (!signal.aborted) {
             console.error(`${key} fetch error`, err);
-            updateError(key, err.message || 'Failed to load data');
+            // Store the raw exception text as-is (no hardcoded English
+            // fallback) — it's untranslated and must not be run through a
+            // t() template as a plain string substitution. The component
+            // wraps it in its own lang="en" span around a translated
+            // template, same pattern as DeleteChatSection.js /
+            // ChatLogsDashboard.js / MetricsDashboard.js.
+            updateError(key, err.message || String(err));
           }
         } finally {
           if (!signal.aborted) {
             updateLoading(key, false);
+            setHasAnySectionSettled(true);
           }
         }
       };
@@ -113,6 +129,7 @@ export function useTechnicalMetrics() {
     handleApplyFilters,
     handleClearFilters,
     hasStartedLoading,
+    hasAnySectionSettled,
     loadingState,
   };
 }

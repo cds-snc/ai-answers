@@ -375,11 +375,6 @@ export const departments_EN = [
     "abbrKey": "CWM"
   },
   {
-    "name": "CBC/Radio-Canada",
-    "url": "https://www.cbc.radio-canada.ca/en/",
-    "abbrKey": "CBC-Radio-Canada"
-  },
-  {
     "name": "Civilian Review and Complaints Commission for the RCMP",
     "url": "https://www.crcc-ccetp.gc.ca/en",
     "abbrKey": "CRCC-CCETP"
@@ -557,7 +552,7 @@ export const departments_EN = [
   {
     "name": "Federal Economic Development Agency for Southern Ontario",
     "url": "https://feddev-ontario.canada.ca/en",
-    "abbrKey": "FedDev Ontario"
+    "abbrKey": "FedDev-Ontario"
   },
   {
     "name": "Federal Ombudsperson for Victims Of Crime (Office of the)",

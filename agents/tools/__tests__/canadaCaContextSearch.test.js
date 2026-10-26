@@ -1,0 +1,271 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { contextSearch } from '../canadaCaContextSearch.js';
+
+// Retry lives inside this tool now (SearchContextService no longer wraps it in
+// exponentialBackoff), so these tests are what keep a transient Coveo failure
+// from silently becoming a hard search failure.
+describe('canadaCaContextSearch retry', () => {
+    let fetchMock;
+
+    const okResponse = () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+            executionReport: { children: [{ name: 'MockPipelineStep' }] },
+            results: [{
+            clickUri: 'https://sac-isc.gc.ca/ised',
+            title: 'T',
+            excerpt: 'E',
+            isRecommendation: true,
+            raw: {
+                sysauthor: ['Example organization', '', 'Second organization'],
+                department: 'Example department',
+            },
+            }],
+        }),
+    });
+
+    const errorResponse = (status) => ({
+        ok: false,
+        status,
+        statusText: 'Err',
+        text: async () => 'body',
+    });
+
+    // The shape native fetch actually throws: undici reports every transport
+    // failure as a bare `TypeError: fetch failed` with no `.code` of its own, and
+    // nests the real socket error in `.cause`. An earlier version of these tests
+    // rejected with a hand-rolled `Error` carrying a top-level `code` — a shape
+    // fetch never produces — so they passed while the retry path was dead.
+    const undiciFailure = (code) =>
+        Object.assign(new TypeError('fetch failed'), {
+            cause: Object.assign(new Error(`connect ${code} 127.0.0.1:443`), { code }),
+        });
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.spyOn(console, 'log').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        process.env.CANADA_CA_SEARCH_URI = 'https://search.test';
+        process.env.CANADA_CA_SEARCH_API_KEY = 'api-key';
+        process.env.USER_AGENT = 'test-agent';
+        fetchMock = vi.fn();
+        globalThis.fetch = fetchMock;
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    // Drives a call that has to sleep between attempts to completion.
+    async function runWithRetries(promise) {
+        const settled = promise.then(
+            (value) => ({ value }),
+            (error) => ({ error })
+        );
+        await vi.advanceTimersByTimeAsync(5000);
+        return settled;
+    }
+
+    it('retries a dropped socket and succeeds on the second attempt', async () => {
+        const reset = undiciFailure('ECONNRESET');
+        fetchMock.mockRejectedValueOnce(reset).mockResolvedValueOnce(okResponse());
+
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
+
+        expect(error).toBeUndefined();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(value.provider).toBe('canadaca');
+        expect(value.results).toContain('Title: T');
+        expect(value.results).toContain('Organization: Example organization, Second organization');
+        expect(value.results).toContain('Department: Example department');
+        expect(value.results).toContain('Summary: E');
+
+        const [, request] = fetchMock.mock.calls[1];
+        expect(request).toMatchObject({
+            method: 'POST',
+            signal: expect.any(AbortSignal),
+            headers: expect.objectContaining({
+                Authorization: 'Bearer api-key',
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'User-Agent': 'test-agent',
+            }),
+        });
+        expect(JSON.parse(request.body)).toEqual({
+            q: 'q',
+            cq: '',
+            locale: 'en',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/en/sr/srb.html',
+                searchPageRelativeUrl: '/en/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 5,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/en/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/en/sr/srb.html',
+                },
+            },
+        });
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', true);
+    });
+
+    it('adds the French language qualifier for French searches', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('terme de recherche', 'fr');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toEqual({
+            q: 'terme de recherche',
+            cq: '',
+            locale: 'fr',
+            context: {
+                searchPageUrl: 'https://www.canada.ca/fr/sr/srb.html',
+                searchPageRelativeUrl: '/fr/sr/srb.html',
+            },
+            pipeline: 'Canada public websites - Generic',
+            enableQuerySyntax: false,
+            searchHub: 'canada-gouv-public-websites',
+            numberOfResults: 5,
+            firstResult: 0,
+            mlParameters: {
+                filters: {
+                    c_context_searchpageurl: 'https://www.canada.ca/fr/sr/srb.html',
+                    c_context_searchpagerelativeurl: '/fr/sr/srb.html',
+                },
+            },
+        });
+    });
+
+    it('moves generated inurl restrictions from q into Coveo advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('permit application inurl:ised', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'permit application',
+            cq: '@uri=ised',
+        });
+    });
+
+    it('moves generated site restrictions into Coveo hostname advanced query', async () => {
+        fetchMock.mockResolvedValueOnce(okResponse());
+
+        await contextSearch('forms site:sac-isc.gc.ca', 'en');
+
+        const [, request] = fetchMock.mock.calls[0];
+        expect(JSON.parse(request.body)).toMatchObject({
+            q: 'forms',
+            cq: '@hostname=="sac-isc.gc.ca"',
+        });
+    });
+
+    it('uses safe fallbacks when a result omits citation fields', async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ results: [{ raw: {} }] }),
+        });
+
+        const result = await contextSearch('q', 'en');
+
+        expect(result.results).toContain('Title: No title available');
+        expect(result.results).toContain('Link: No link available');
+        expect(result.results).toContain('Summary: No summary available');
+        expect(result.results).not.toContain('undefined');
+        expect(console.log).toHaveBeenCalledWith('Coveo ART used:', false);
+    });
+
+    it('keeps all 5 results returned by Coveo', async () => {
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({ results: Array.from({ length: 5 }, (_, index) => ({
+                title: `Result ${index + 1}`,
+                clickUri: `https://example.ca/${index + 1}`,
+                excerpt: 'Summary',
+                raw: {},
+            })) }),
+        });
+
+        const result = await contextSearch('q', 'en');
+
+        expect((result.results.match(/^Title: /gm) || [])).toHaveLength(5);
+        expect(result.results).toContain('Title: Result 5');
+    });
+
+    // Guards the `error.status = response.status` line: fetch reports the status
+    // on the response, so without it a 503 arrives as a bare Error and is
+    // misread as permanent.
+    it('retries a 5xx', async () => {
+        fetchMock.mockResolvedValueOnce(errorResponse(503)).mockResolvedValueOnce(okResponse());
+
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
+
+        expect(error).toBeUndefined();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(value.results).toContain('Title: T');
+        expect(value.results).toContain('Summary: E');
+    });
+
+    it('does not retry a 4xx and returns the standard failure contract', async () => {
+        fetchMock.mockResolvedValue(errorResponse(404));
+
+        const result = await contextSearch('q', 'en');
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(result).toEqual(expect.objectContaining({
+            failed: true,
+            provider: 'canadaca',
+            results: expect.stringContaining('Search failed: HTTP error! Status: 404'),
+        }));
+    });
+
+    it('returns the standard failure contract after 3 attempts', async () => {
+        const reset = undiciFailure('ECONNRESET');
+        fetchMock.mockRejectedValue(reset);
+
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
+
+        expect(error).toBeUndefined();
+        expect(value).toEqual(expect.objectContaining({
+            failed: true,
+            provider: 'canadaca',
+            results: 'Search failed: fetch failed',
+        }));
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('reports each retry to the caller-supplied onRetry', async () => {
+        const reset = undiciFailure('ECONNRESET');
+        fetchMock.mockRejectedValueOnce(reset).mockResolvedValueOnce(okResponse());
+        const onRetry = vi.fn();
+
+        await runWithRetries(contextSearch('q', 'en', { onRetry }));
+
+        expect(onRetry).toHaveBeenCalledTimes(1);
+        expect(onRetry).toHaveBeenCalledWith(expect.objectContaining({ attempt: 1, error: reset }));
+    });
+
+    // Pins the classification rather than the retry count, so this fails loudly
+    // if isTransientNetworkError ever stops reading the cause chain: a
+    // top-level-only check sees a codeless TypeError and gives up after one try.
+    it('reads the nested cause when deciding to retry', async () => {
+        fetchMock.mockRejectedValue(undiciFailure('EAI_AGAIN'));
+
+        const { value, error } = await runWithRetries(contextSearch('q', 'en'));
+
+        expect(error).toBeUndefined();
+        expect(value.failed).toBe(true);
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+});

@@ -1,5 +1,6 @@
 // chat-logs-docdb.js
 
+import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
@@ -9,7 +10,7 @@ import {
 
   withProtection
 } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -122,6 +123,8 @@ async function chatLogsHandler(req, res) {
       dateFilter.createdAt = { $gte: start, $lte: now };
     }
 
+    const reviewerMatch = await resolveReviewerMatch(req.query);
+
     if (lastId && lastId !== 'null' && lastId !== null) {
       dateFilter._id = { $gt: lastId };
     }
@@ -168,8 +171,8 @@ async function chatLogsHandler(req, res) {
     let chats;
     let totalCount = 0;
 
-    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval filters are used, we use an aggregation pipeline
-    if (department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
+    // If department or referringUrl/urlEn/urlFr/answerType/partnerEval/aiEval/group filters are used, we use an aggregation pipeline
+    if (reviewerMatch || department || referringUrl || urlEn || urlFr || answerType || partnerEval || aiEval || userType === 'referredPublic') {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
 
@@ -312,12 +315,15 @@ async function chatLogsHandler(req, res) {
         $addFields: {
           'interactions.partnerEval': getPartnerEvalAggregationExpression(),
           'interactions.aiEval': getAiEvalAggregationExpression(),
-          'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression()
+          'interactions.partnerHasContentIssue': getPartnerContentIssueAggregationExpression(),
+          'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression(),
+          'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$interactions.autoEval.expertFeedback')
         }
       });
 
       // Build AND filters - now includes all conditions including partnerEval and aiEval
       const allConditions = getChatFilterConditions({
+        reviewerMatch,
         department,
         referringUrl,
         urlEn,

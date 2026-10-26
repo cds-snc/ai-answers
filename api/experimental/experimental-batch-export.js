@@ -48,6 +48,23 @@ const normalizeExcelValue = (value) => {
 
 const CORE_HEADERS = ['appVersion', 'question', 'answer', 'redactedAnswer', 'referenceAnswer', 'flagged'];
 const ANALYZER_DEBUG_COLUMNS = new Set(['flagged', 'differenceFound']);
+const COMPARISON_EXPORT_LABELS = {
+    en: {
+        answer: 'Compared answer',
+        referenceAnswer: 'Baseline answer'
+    },
+    fr: {
+        answer: 'Réponse comparée',
+        referenceAnswer: 'Réponse de référence'
+    }
+};
+
+const getExportLanguage = (value) => String(value || '').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+
+const getExportHeader = (header, isComparison, lang) => {
+    if (!isComparison) return header;
+    return COMPARISON_EXPORT_LABELS[lang]?.[header] || header;
+};
 
 const resolveAnalyzerId = (config = {}) => {
     if (typeof config.analyzerId === 'string' && config.analyzerId.trim()) {
@@ -127,9 +144,10 @@ async function handler(req, res) {
     try {
         const { id } = req.params;
         const { format } = req.query;
+        const lang = getExportLanguage(req.query.lang);
 
         const batch = await ExperimentalBatch.findById(id)
-            .select('appVersion config.analyzerId config.analyzerIds')
+            .select('type appVersion config.analyzerId config.analyzerIds')
             .lean();
         const appVersion = batch?.appVersion || '';
 
@@ -183,7 +201,10 @@ async function handler(req, res) {
 
                 const orderedHeaders = buildOrderedHeaders(flattenedItems, analyzerId, analyzerOutputColumns);
 
-                const columnConfigs = orderedHeaders.map(h => ({ header: h, key: h }));
+                const columnConfigs = orderedHeaders.map(h => ({
+                    header: getExportHeader(h, batch?.type === 'comparison', lang),
+                    key: h
+                }));
                 worksheet.columns = columnConfigs;
                 worksheet.addRows(flattenedItems);
 

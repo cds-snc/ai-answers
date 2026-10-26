@@ -18,6 +18,7 @@ const contextSchema = new Schema({
     model: { type: String, required: false, default: '' },
     searchProvider: { type: String, required: false, default: '' },
     searchQuery: { type: String, required: false, default: '' },
+    searchCacheStatus: { type: String, required: false, default: '' },
     translatedQuestion: { type: String, required: false, default: '' },
     originalLang: { type: String, required: false, default: '' },
     qaMatches: {

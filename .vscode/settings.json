@@ -1,4 +1,5 @@
 {
+    "eslint.nodeEnv": "development",
     "chat.tools.terminal.autoApprove": {
         "git checkout": true,
         "git add": true,

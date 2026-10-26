@@ -1,4 +1,4 @@
-{
+﻿{
   "locale": "en",
   "homepage": {
     "title": "AI Answers",
@@ -27,8 +27,10 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
+      "viewSource": "Review the English source text",
       "thankYou": "Thank you for your feedback!",
-      "error": "Error submitting feedback, contact admin."
+      "error": "Error submitting feedback, contact admin.",
+      "expertFeedbackDeletedAnnouncement": "Expert feedback deleted. You can evaluate this answer again."
     },
     "publicFeedback": {
       "send": "Send feedback",
@@ -78,6 +80,10 @@
     },
     "chat": {
       "chatId": "Chat ID",
+      "scenarioOverride": {
+        "banner": "Testing {department} scenario",
+        "manageLink": "Return to edit, view or disable scenario"
+      },
       "input": {
         "heading": "Question area",
         "initial": "Ask a Canada.ca question",
@@ -86,6 +92,7 @@
         "loadingHint": "AI can make mistakes, always check your answer.",
         "referringPage": "Page you were on:",
         "referringURL": "Referring URL:",
+        "adminViewLabel": "Admin view with evaluation options",
         "disclaimer": "AI can make mistakes, check the answer or ask a follow-up question below."
       },
       "textarea": {
@@ -102,7 +109,7 @@
         "reloadSessionAriaLabel": "Reload page - session expired"
       },
       "options": {
-        "title": "Options",
+        "title": "Evaluation options",
         "aiSelection": {
           "label": "AI:",
           "anthropic": "Anthropic",
@@ -121,8 +128,19 @@
         "model": {
           "label": "Model family:"
         },
+        "useSystemSettings": "Use system settings",
+        "saveLabel": "Save options",
+        "savedAnnouncement": "Options saved.",
+        "unsavedWarning": "Unsaved options. Select Save options to apply them.",
         "referringUrl": {
-          "label": "Referring Canada.ca URL (optional)"
+          "label": "Referring Canada.ca URL (optional)",
+          "error": "Enter a full URL, starting with https:// or http://",
+          "emptyError": "Please include a URL",
+          "noUrlToClearError": "No URL to clear",
+          "applyLabel": "Apply URL",
+          "clearLabel": "Clear URL",
+          "removedAnnouncement": "Referring URL cleared.",
+          "appliedAnnouncement": "Referring URL applied."
         }
       },
       "messages": {
@@ -169,6 +187,7 @@
         "heading": "Continue with this link:"
       },
       "review": {
+        "eyebrow": "Admin view",
         "chatDate": "Date (YYYY-MM-DD):",
         "referringUrl": "Referring URL:",
         "noDepartment": "None"
@@ -180,6 +199,8 @@
     "expertRating": {
       "title": "Answer rating",
       "selectionRequired": "Please select at least one rating.",
+      "explanationRequired": "Explanation is required.",
+      "explanationRequiredField": "Explanation is required: {field}",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -192,7 +213,7 @@
         "incorrect": "Incorrect",
         "harmful": "Harmful",
         "contentIssue": "Content issue",
-        "explanation": "Please explain your rating (optional):",
+        "explanation": "Please explain your rating:",
         "betterCitation": "Better canada.ca or gc.ca citation URL (optional):",
         "harmfulDetails": {
           "summary": "When to code as harmful",
@@ -209,7 +230,10 @@
       "submit": "Submit evaluation",
       "intro": "Rate the answer sentences and/or citation",
       "answerNumberLabel": "Answer {number}",
-      "labelWithAnswer": "{label}: {answer}"
+      "labelWithAnswer": "{label}: {answer}",
+      "sourceView": {
+        "title": "AI Answers' source text"
+      }
     }
   },
   "batch": {
@@ -244,7 +268,6 @@
         "step3a": "Select the language of the batch file.",
         "step3b": "(i.e. the language of the page the batch is simulating)",
         "reviewIncomplete": "After a successful upload, initiate processing and/or check on your batch's progress below.",
-        "incompleteLinkText": "Go to the Incomplete batches section",
         "step6": "When it's done (if it gets interrupted and didn't finish, click the Process button again), it will move to the Completed batches section. You can download the file from there.",
         "step7": "All of the chats run in the batch will be available to evaluate in the Evaluation dashboard and Chat viewer with the email address of the person who submitted the batch."
       },
@@ -290,6 +313,7 @@
       }
     },
     "list": {
+      "filterLabel": "Filter batches by name or ID",
       "columns": {
         "batchId": "Batch ID",
         "totals": "Totals",
@@ -307,10 +331,28 @@
         "process": "Process",
         "delete": "Delete",
         "confirmDelete": "Are you sure you want to delete this batch?",
-        "cancel": "Cancel"
+        "confirmDeleteNamed": "Are you sure you want to delete \"{name}\"?",
+        "cancel": "Cancel",
+        "deleteSuccess": "Batch deleted.",
+        "deleteError": "Failed to delete batch.",
+        "deleteErrorNamed": "Failed to delete \"{name}\".",
+        "exportSuccess": "Batch exported.",
+        "exportEmpty": "No chats found to export for this batch.",
+        "exportEmptyNamed": "No chats found to export for \"{name}\".",
+        "exportError": "Failed to export batch.",
+        "exportErrorNamed": "Failed to export \"{name}\".",
+        "processError": "Failed to process batch.",
+        "processErrorNamed": "Failed to process \"{name}\".",
+        "processSuccess": "Batch processing finished.",
+        "cancelSuccess": "Batch cancelled.",
+        "cancelError": "Failed to cancel batch.",
+        "cancelErrorNamed": "Failed to cancel \"{name}\"."
       },
+      "completedAnnouncement": "Completed: {names}.",
+      "deletedAnnouncement": "Deleted: {name}.",
       "types": {
-        "client": "Client"
+        "client": "Client",
+        "chat": "Chat"
       },
       "statuses": {
         "in_progress": "In progress",
@@ -328,9 +370,12 @@
     }
   },
   "logging": {
-    "title": "Chat viewer",
-    "refresh": "Refresh",
+    "title": "Trace a chat",
+    "chatIdSectionHeading": "Chat ID",
+    "refreshResults": "Refresh results",
     "refreshPending": "Please wait...",
+    "refreshComplete": "Logs refreshed. {count} entries loaded.",
+    "refreshFailed": "Refresh failed. Logs were not updated.",
     "download": "Download logs (JSON)",
     "backToAdmin": "Back to admin",
     "createdAt": "Created at",
@@ -338,19 +383,23 @@
     "message": "Message",
     "metadata": "Metadata",
     "enterChatId": "Enter Chat ID:",
+    "traceFor": "Trace for:",
     "filterByLevel": "Filter by level:",
+    "filterEntriesLabel": "Filter log entries",
     "all": "All",
     "info": "Info",
     "debug": "Debug",
     "warn": "Warning",
     "error": "Error",
+    "levelFilterAnnouncement": "Showing {count} entries for level: {level}",
+    "levelFilterAnnouncementAll": "Showing {count} entries",
     "noLogs": "No logs available",
-    "metadataDetails": "Metadata details",
-    "expand": "Expand",
-    "close": "Close",
+    "entriesHeading": "Log entries",
+    "metadataSeeFullField": "View {key}",
+    "metadataSeeFullValue": "View value",
     "timeline": {
       "title": "Pipeline step timeline",
-      "graph": "Graph",
+      "graph": "Graph:",
       "step": "Step",
       "start": "Start (ms)",
       "end": "End (ms)",
@@ -361,17 +410,17 @@
       "noTimeline": "No pipeline events found in these logs.",
       "downloads": "downloads",
       "generation": "generation",
-      "userPerceived": "User-perceived response time"
+      "userPerceived": "User-perceived response time:"
     }
   },
   "admin": {
-    "title": "AI Answers Admin",
-    "partnerTitle": "AI Answers Partner dashboard",
-    "backToAdmin": "Back to admin",
+    "title": "AI Answers admin home",
+    "partnerTitle": "AI Answers partner home",
     "navigation": {
       "ariaLabel": "Admin navigation",
       "title": "Admin menu",
       "partnerMenu": "Partner menu",
+      "account": "Manage your account",
       "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -385,7 +434,6 @@
       "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
       "technicalMetrics": "View technical metrics",
-      "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
       "logout": "Sign out",
@@ -400,8 +448,16 @@
       "createIndexesDescription": "Ensure that all defined indexes exist in the database. This is useful if indexes were dropped or new schemas were deployed.",
       "createIndexesButton": "Rebuild all indexes",
       "createIndexesConfirm": "This will ensure all Mongoose indexes exist in the database. Are you sure you want to continue?",
-      "createIndexesSuccess": "Indexes created/rebuilt successfully. Success: {successCount}, Failed: {failCount}",
       "createIndexesError": "Create indexes failed: {error}",
+      "createIndexesStarted": "Index rebuild started. Select \"Check index status\" to follow its progress.",
+      "createIndexesAlreadyRunning": "An index rebuild is already running. Select \"Check index status\" to follow its progress.",
+      "createIndexesFinished": "Index rebuild finished ({time}).",
+      "createIndexesFailed": "Index rebuild failed for {failCount} of {total} collections ({time}).",
+      "createIndexesCounts": "Success: {successCount}, Failed: {failCount}.",
+      "createIndexesStillBuilding": "Indexes for {count} collections are still being built. Select \"Check index status\" later to confirm they're complete.",
+      "indexStillBuilding": "Indexes are still being built for the following collections:",
+      "createIndexesLost": "The index rebuild stopped before it finished. Select \"Rebuild all indexes\" to try again.",
+      "indexRebuildStatusError": "Index rebuild check failed: {error}",
       "dropIndexesConfirm": "This will drop all database indexes. Database operations may be slower until indexes are rebuilt automatically. Are you sure you want to continue?",
       "dropIndexesSuccess": "Indexes dropped successfully for {count} collections",
       "dropIndexesError": "Drop indexes failed: {error}",
@@ -443,17 +499,30 @@
         "setting": "Setting",
         "batchitem": "Batch item",
         "sentenceembedding": "Sentence embedding",
-        "sessionstate": "Session state"
+        "sessionstate": "Session state",
+        "auditlog": "Audit log",
+        "blockedquerycounter": "Blocked query counter",
+        "embeddingmetadatabackfilljob": "Embedding metadata backfill job",
+        "evalanalysis": "Evaluation analysis",
+        "experimentalbatch": "Experimental batch",
+        "experimentalbatchitem": "Experimental batch item",
+        "experimentaldataset": "Experimental dataset",
+        "experimentaldatasetrow": "Experimental dataset row",
+        "servicecallerrorcounter": "Service call error counter"
       },
       "tableRecordCounts": "Table record counts",
-      "tableColumn": "Table",
-      "countColumn": "Count",
-      "tableLabel": "Table:",
-      "startDate": "Start date:",
-      "endDate": "End date:",
-      "limitLabel": "Limit:",
+      "exportTitle": "Export database",
+      "tableLabel": "Table",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "dateRangeLegend": "Date range (optional)",
+      "dateRangeHint": "Leave blank to export all dates.",
+      "datesNotApplicableTable": "Dates don't apply to this table. It doesn't record update dates, so the whole table is exported.",
+      "limitLabel": "Limit (records per request)",
       "exporting": "Exporting...",
-      "exportButton": "Export database",
+      "exportButton": "Export database (.jsonl)",
+      "exportSuccess": "Database exported successfully.",
+      "exportError": "Export failed: {error}.",
       "dropIndexesTitle": "Drop all indexes",
       "dropIndexesDescription": "Remove all database indexes. This can be useful to fix database performance issues. Indexes will be automatically rebuilt by the database as needed.",
       "dropIndexesButton": "Drop all indexes",
@@ -463,6 +532,10 @@
       "checkIndexStatusButton": "Check index status",
       "checkingLabel": "Checking...",
       "indexStatusError": "Index status check failed: {error}",
+      "indexStatusBuilding": "Some indexes are currently building.",
+      "indexStatusComplete": "All indexes are complete.",
+      "indexStatusIncomplete": "Some indexes may be incomplete.",
+      "countsError": "Table counts failed: {error}",
       "indexCreationFailed": "Index creation failed for the following collections:",
       "collectionColumn": "Collection",
       "currentColumn": "Current",
@@ -496,19 +569,32 @@
       "migratePublicFeedbackButton": "Migrate public feedback",
       "migratingLabel": "Migrating...",
       "importTitle": "Import database",
-      "importDescription": "Restore the database from a backup file. Warning: This will replace all existing data.",
-      "chunkSizeLabel": "Chunk size (MB):",
-      "throttleLabel": "Throttle (ms):",
-      "tableSelectLabel": "Table (hold Ctrl/Cmd to multi-select):",
+      "importDescription": "Restore records from a backup file. Records that match one in the file are overwritten. Other records stay as they are.",
+      "chunkSizeLabel": "Chunk size (MB)",
+      "throttleLabel": "Throttle (ms)",
+      "importTablesLegend": "Tables to import",
+      "importScopeChosen": "Only the tables I choose",
+      "importChosenLegend": "Choose tables",
+      "importTablesError": "Choose at least one table to import.",
+      "importConfirm": "Importing overwrites existing records that match one in the file. This cannot be undone. Are you sure you want to continue?",
+      "importFileLabel": "Import file (.jsonl)",
       "importingLabel": "Importing...",
       "importButton": "Import database",
+      "fileSelectError": "Please select a file to import.",
+      "importStarting": "Starting import...",
+      "importChunkProgress": "Processed chunk {chunk} of {total}. Current totals - Inserted: {inserted}, Failed: {failed}, Skipped: {skipped}.",
+      "importComplete": "Database import completed. Total Inserted: {inserted}, Total Failed: {failed}.",
+      "importCompleteWithSkipped": "Database import completed. Total Inserted: {inserted}, Total Failed: {failed}, Skipped: {skipped}.",
+      "importSkippedExamplesHeader": "Skipped examples:",
+      "importError": "Import failed: {error}.",
       "integrityTitle": "Integrity checks",
       "integrityDescription": "Run read-only checks to find orphaned documents and parent records that reference missing children.",
       "coreChecksLabel": "Core orphan & parent-reference checks",
       "runningLabel": "Running...",
       "runCheckButton": "Run check",
+      "checkFailed": "Check {check} failed: {error}.",
       "countLabel": "Count:",
-      "noResultsLabel": "No results",
+      "notRunLabel": "Not run",
       "breakdownMissing": "Missing — Chat: {chat}, Interaction: {interaction}, Question: {question}, Answer: {answer}",
       "breakdownSamples": "Samples: {samples}",
       "indexCodeLabel": "Code {code}",
@@ -539,31 +625,50 @@
       "totalInactive": "total inactive user(s)",
       "viewUsers": "View and manage users"
     },
+    "footer": {
+      "heading": "Admin and partner resources",
+      "contactTeam": "Contact AI Answers",
+      "termsAndConditions": "Terms and conditions",
+      "privacy": "Privacy"
+    },
+    "howTo": {
+      "title": "How to guides",
+      "trigger": "See all partner how tos",
+      "evalInformedAnswers": "Evaluation-informed answers",
+      "evaluateAnswers": "Evaluate answers",
+      "partnerOnboarding": "Partner onboarding",
+      "loading": "Loading...",
+      "loadError": "Unable to load this guide.",
+      "notFoundTitle": "Guide not found",
+      "notFound": "That how-to guide does not exist."
+    },
+    "chatTools": {
+      "title": "View and delete chats by ID"
+    },
     "viewChat": {
-      "title": "View chat by ID",
       "label": "Chat ID",
-      "placeholder": "Enter chat id",
-      "button": "View chat"
+      "loading": "Looking up...",
+      "invalidFormat": "Invalid chat ID format"
     },
     "evalPage": {
       "similarityTitle": "Similarity-based expert feedback transfer",
       "similarityDescription": "This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.",
       "label": {
-        "expertEvaluations": "Expert Evaluations in System:",
-        "nonEmptyEvaluations": "Non-Empty Evaluations in System:"
+        "expertEvaluations": "Expert evaluations in system",
+        "nonEmptyEvaluations": "Non-empty evaluations in system"
       },
-      "detailsTitle": "Detailed Evaluation Process",
+      "detailsTitle": "Detailed evaluation process",
       "step": {
         "initialValidation": {
-          "title": "Initial Validation",
+          "title": "Initial validation:",
           "description": "Validate the interaction has question and answer content and check whether an evaluation already exists."
         },
         "embeddingRetrieval": {
-          "title": "Embedding Retrieval",
+          "title": "Embedding retrieval:",
           "description": "Retrieve vector embeddings for question+answer, answer-only, and sentence-level embeddings."
         },
         "findingSimilar": {
-          "title": "Finding Similar Content",
+          "title": "Finding similar content:",
           "description": "Search for interactions with existing expert feedback and strong QA similarity; filter out same-chat results and ensure sentence embeddings exist for candidates.",
           "item": {
             "expertFeedback": "Existing expert feedback",
@@ -572,7 +677,7 @@
           }
         },
         "sentenceMatching": {
-          "title": "Sentence-level matching",
+          "title": "Sentence-level matching:",
           "item": {
             "findMostSimilar": "For each sentence in the new interaction, find the most similar sentence in each potential match (vector search with per-sentence threshold)",
             "threshold": "Keep matches above the sentence similarity threshold and prefer highest-similarity neighbors",
@@ -581,7 +686,7 @@
           }
         },
         "citationMatch": {
-          "title": "Citation matching",
+          "title": "Citation matching:",
           "item": {
             "compare": "Compare the source citation URL with candidate interactions to find an exact or high-confidence citation match",
             "score": "Score and record a citation match (score, explanation, matched interaction/chat ids)",
@@ -589,7 +694,7 @@
           }
         },
         "qaFallback": {
-          "title": "QA high score fallback",
+          "title": "QA high score fallback:",
           "item": {
             "checkTop": "If sentence-level matching fails, check the top QA matches (configurable top-N) for those with high expert feedback scores",
             "citationCheck": "For candidates, perform a citation match and optionally run a fallback compare agent to ensure the candidate answer sufficiently covers the source",
@@ -597,30 +702,31 @@
           }
         },
         "fallbackCompare": {
-          "title": "Fallback compare checks",
+          "title": "Fallback compare checks:",
           "item": {
             "agent": "A small compare agent can be invoked to verify that a fallback candidate sufficiently matches the source answer; results, raw output and parsed checks are recorded",
             "record": "Whether compare was used and its meta (provider/model/latency/tokens) are stored on the evaluation for traceability"
           }
         },
         "creation": {
-          "title": "Evaluation creation & scoring",
+          "title": "Evaluation creation & scoring:",
           "item": {
             "createFeedback": "Create a new expert feedback object based on the matched interaction's feedback or generated fallback feedback (type 'ai')",
             "computeScore": "Compute total score from per-sentence scores and citation score (default weights applied). If no ratings exist, totalScore may be null.",
             "mapFeedback": "Map feedback to the new interaction (sentence-level or QA-only) and save sentence match trace and similarity scores",
-            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing"
+            "recordSimilarities": "Record similarity scores, matched citation interaction/chat ids, fallback metadata, and a detailed stage timeline for auditing",
+            "updateInteraction": "Update the interaction with the new evaluation reference (autoEval)"
           }
         },
         "noMatch": {
-          "title": "No match / rejection cases",
+          "title": "No match / rejection cases:",
           "item": {
             "recordNoMatch": "If neither sentence-level nor QA fallback matches are accepted, create a no-match evaluation recording reason types and per-sentence rejection causes",
             "trace": "No-match evaluations include a sentence-trace and timeline so operators can inspect why candidates were rejected"
           }
         },
         "timeline": {
-          "title": "Stage timeline & telemetry",
+          "title": "Stage timeline & telemetry:",
           "item": {
             "record": "The worker records a stage-by-stage timeline (stage, status, code, message, timestamp) to the evaluation for diagnostics",
             "telemetry": "Agent and VectorService telemetry (latency, tokens, model) are captured where applicable"
@@ -633,17 +739,17 @@
         "processed": "Processed evaluations",
         "hasMatches": "Evaluations with matches",
         "noMatchReasons": "No-match reasons",
-        "reasonLabel": "Reason",
-        "countLabel": "Count",
-        "unknown": "unknown",
         "noMatchNone": "No no-match reason data available.",
         "fallbackTypes": "Fallback types",
-        "fallbackLabel": "Fallback",
         "fallbackNone": "No fallback usage data available.",
         "refresh": "Refresh metrics",
-        "loading": "Loading metrics..."
+        "refreshing": "Refreshing metrics...",
+        "refreshed": "Metrics refreshed."
       },
+      "actionsTitle": "Generate or delete evaluations",
       "date": {
+        "legend": "Date range (optional)",
+        "hint": "Leave blank to use all dates.",
         "startLabel": "Start date",
         "endLabel": "End date"
       },
@@ -654,20 +760,20 @@
         "deleteEmpty": "Delete empty evaluations"
       },
       "progress": {
-        "processed": "Processed",
-        "failed": "Failed",
-        "remaining": "Remaining",
-        "duration": "Duration",
-        "autoProcessing": "Auto-processing active",
-        "regeneratingAll": "Regenerating all evaluations"
+        "starting": "Generating evaluations...",
+        "summary": "Generating evaluations: {processed} successful, {failed} failed, {remaining} left."
       }
     },
     "filters": {
       "title": "Filters",
+      "appliedCount": "{count} applied filters, listed below",
+      "appliedFiltersGroup": "Applied filters. Remove one to change the results.",
+      "selectedCount": "Selected: {count}",
+      "sectionHeading": "Choose filter options",
       "clearAll": "Clear all",
       "apply": "Apply",
       "loading": "Loading...",
-      "dateRange": "Date range (24-hour)",
+      "dateRange": "Date range",
       "dateRangePickerDialog": "Date range calendar",
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
@@ -677,6 +783,7 @@
       "urlPlaceholder": "Filter by full or partial URL",
       "department": "Partner institution",
       "allDepartments": "All institutions",
+      "group": "Group",
       "users": "Users",
       "allUsers": "All",
       "publicUsers": "Public",
@@ -708,14 +815,9 @@
       "advancedAll": "Advanced: All",
       "showAdvanced": "More filters"
     },
-    "publicEval": {
-      "title": "Public evaluation",
-      "chatId": "Chat ID",
-      "department": "Department",
-      "date": "Date"
-    },
     "session": {
       "title": "Sessions",
+      "filterLabel": "Filter sessions",
       "sessionId": "Session ID",
       "sessionType": "Session type",
       "sessionTypes": {
@@ -739,50 +841,62 @@
       "lastLatency": "Last latency (ms)",
       "avgLatency": "Avg latency (ms)",
       "rpm": "Requests / minute",
-      "errorLoading": "Failed to load sessions: {status} {text}",
-      "errorGeneric": "Error: {message}"
+      "errorLoading": "Failed to load sessions: {error}"
+    },
+    "common": {
+      "searchLabel": "Search:",
+      "searchPlaceholder": "e.g. tax, contact, account",
+      "filterPlaceholder": "Filter",
+      "searchTermPillLabel": "Search: {term}",
+      "noSearchResults": "No results for {term}.",
+      "filtersClearedAnnouncement": "Filters cleared.",
+      "resultsLoaded": "Results loaded.",
+      "noData": "No data.",
+      "viewChatById": "View chat by ID",
+      "originallyAskedIn": "Originally asked in: {language}",
+      "sourceText": "Source",
+      "workingTextTooltip": "AI Answers' source text",
+      "aiAnswersSource": "Source text only in English",
+      "chatIdRequired": "Please enter a chat ID.",
+      "chatIdPlaceholder": "Enter full chat ID",
+      "chatIdSearchPlaceholder": "Enter chat ID (partial or full)",
+      "chatIdSearchButton": "Search for chat ID",
+      "chatIdSearchTooShort": "Enter at least 4 characters.",
+      "chatFound": "Chat found.",
+      "chatIdMatchesFound": "{count} matching chats found. Select one to continue.",
+      "chatIdMatchesMoreFound": "More than {count} matches. Select one or enter more of the ID.",
+      "chatNotFound": "No chat found with that ID.",
+      "chatNoLongerFound": "This chat can no longer be found.",
+      "fetchFailed": "Failed to load data. Please try again.",
+      "fetchError": "Failed to load data: {error}",
+      "evalInformedAnswers": "Eval-informed answers",
+      "evalInformedFrom": "From {date} only",
+      "searchResultsAnnouncement": "{count} results found.",
+      "searchResultsUpdatedAnnouncement": "Search results updated.",
+      "metricsLoading": "Loading metrics...",
+      "resultsHeading": "Results",
+      "columns": {
+        "chatId": "Chat ID",
+        "department": "Department",
+        "program": "Service",
+        "pageLanguage": "Page",
+        "pageLanguageAriaLabel": "Page language"
+      }
     },
     "chatDashboard": {
       "title": "Chat dashboard",
-      "description": "Filter chat interactions and explore details in the table below.",
-      "timeRangeTitle": "Get chat interactions for the selected period",
       "loading": "Loading chats...",
       "error": "Unable to load chat data.",
-      "noResults": "Apply filters to load chat interactions.",
-      "resultsSummary": "Showing {count} chats",
-      "totalCount": "Total matching chats: {total}",
-      "searchLabel": "Search by Chat or Interaction ID:",
-      "searchPlaceholder": "Enter id...",
-      "columnFilterPlaceholder": "Filter",
       "columns": {
-        "chatId": "Chat ID",
-        "interactionCount": "Length",
-        "department": "Department",
-        "pageLanguage": "Page",
-        "expertEmail": "Expert email",
-        "creatorEmail": "Creator email",
-        "language": "Language",
-        "questionCount": "Questions",
-        "question": "Question 1",
-        "createdAt": "Created",
+        "question": "Question",
+        "answer": "Answer",
+        "citationUrl": "Citation link",
         "referringUrl": "Referring URL",
         "date": "Date",
-        "userType": "User type",
-        "answerType": "Answer type",
         "partnerEval": "Partner eval",
         "aiEval": "AI eval"
       },
       "labels": {
-        "userType": {
-          "public": "public",
-          "admin": "admin"
-        },
-        "answerType": {
-          "normal": "normal",
-          "clarifying-question": "clarifying",
-          "pt-muni": "pt-muni",
-          "not-gc": "not-GC"
-        },
         "evaluation": {
           "correct": "correct",
           "needsImprovement": "needs improvement",
@@ -798,36 +912,56 @@
         },
         "contentIssue": "content issue"
       },
-      "departmentMore": "+{count} more"
+      "assign": {
+        "toggleOn": "Assign question(s) to a reviewer",
+        "selectColumn": "Assign",
+        "selectQuestion": "Select question {number} of chat {chatId}",
+        "expertLabel": "Reviewer account",
+        "expertPlaceholder": "Choose an account",
+        "pickerSelf": "Self-assign",
+        "pickerGroup": "Your group",
+        "pickerInstitution": "Your institution",
+        "pickerOthers": "Other accounts",
+        "noInstitution": "You can only assign questions to yourself and the AI Answers QA group. Pick an institution or group on your account page to also assign questions to teammates.",
+        "addNote": "Add a note",
+        "noteLabel": "Note",
+        "noteCount": "{count} / {max} characters",
+        "noteClear": "Clear note",
+        "assignChats": "Assign ({count}) to reviewer",
+        "assignChatsWithNote": "Assign ({count}) to reviewer with note",
+        "assigning": "Assigning…",
+        "errorNoExpert": "Choose a reviewer to assign to.",
+        "errorNoQuestion": "Choose at least one question in the Assign column.",
+        "assignSuccess": "Assigned {count} question(s).",
+        "assignSuccessWithNote": "Assigned {count} question(s) with a note.",
+        "assignError": "Failed to assign {count} question(s).",
+        "assignErrorAlreadyAssigned": "{count} question(s) were already assigned to someone else.",
+        "assignErrorNoteTooLong": "The note is too long.",
+        "assignErrorNotAllowed": "You can't assign questions to that reviewer.",
+        "loadError": "Failed to load the list of people you can assign to.",
+        "removeAssignment": "Remove assignment from",
+        "unknownAccount": "Unknown account",
+        "unassignConfirm": "Are you sure you want to remove this assignment?",
+        "unassigned": "Assignment removed.",
+        "unassignError": "Failed to remove the assignment."
+      }
     },
     "evalDashboard": {
       "title": "Evaluation dashboard",
-      "description": "Filter evaluations and explore details in the table below.",
-      "timeRangeTitle": "Get evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
-      "resultsSummary": "Total matching evaluations: {count}",
-      "totalCount": "Total eval rows in range: {total}",
-      "searchLabel": "Search by Chat or Interaction ID:",
-      "searchPlaceholder": "Enter id...",
-      "columnFilterPlaceholder": "Filter",
+      "searchChatIdInputLabel": "Chat ID",
       "columns": {
-        "chatId": "Chat ID",
-        "questionNumber": "Q #",
-        "department": "Department",
-        "program": "Program",
+        "questionNumber": "#",
+        "questionNumberAriaLabel": "Question number",
+        "partnerEval": "Partner",
+        "aiEval": "AI",
+        "evalInformed": "Informed",
+        "evalInformedAriaLabel": "Eval-informed answer",
         "action": "Action",
-        "pageLanguage": "Page",
-        "autoEval": "AutoEval",
-        "expertEval": "ExpertEval",
-        "creatorEmail": "Creator email",
-        "expertEmail": "Expert email",
-        "processed": "Processed",
-        "matches": "Has matches",
-        "fallback": "Fallback",
-        "any": "Any",
-        "reason": "No-match reason",
-        "feedback": "Feedback",
+        "creatorEmail": "Creator",
+        "expertEmail": "Expert",
+        "feedback": "Public",
         "download": "Download",
         "date": "Date"
       }
@@ -835,22 +969,17 @@
     "autoEvalDashboard": {
       "title": "Auto-evaluation dashboard",
       "description": "Filter auto-evaluations and explore details in the table below.",
-      "timeRangeTitle": "Get auto-evaluations for the selected period",
       "loading": "Loading evaluations...",
       "error": "Unable to load evaluation data.",
+      "noColumnFilterResults": "No results for the column filters: {term}.",
       "resultsSummary": "Total matching evaluations: {count}",
       "totalCount": "Total eval rows in range: {total}",
-      "searchLabel": "Search by Chat or Interaction ID:",
-      "searchPlaceholder": "Enter id...",
-      "columnFilterPlaceholder": "Filter",
       "columns": {
         "chatId": "Chat ID",
-        "questionNumber": "Q #",
-        "department": "Department",
         "pageLanguage": "Page",
         "autoEval": "AutoEval",
         "processed": "Processed",
-        "matches": "Has matches",
+        "matches": "Matches",
         "fallback": "Fallback",
         "any": "Any",
         "reason": "No-match reason",
@@ -860,12 +989,13 @@
     "chatLogs": {
       "title": "Download chat logs",
       "getLogs": "Get logs",
+      "exportOptions": "Export options",
       "exportView": "Export view",
       "exportFormat": "Format",
       "export": "Export",
       "exporting": "Exporting...",
       "exportingMessage": "Please wait while your file is being generated.",
-      "exportDescription": "Select export options, configure filters below, then click Export to download.",
+      "exportSuccess": "Export complete. Your file is downloading.",
       "exportError": "Export failed: {error}",
       "views": {
         "default": "Default",
@@ -882,21 +1012,26 @@
       "title": "Delete a chat from the logs",
       "idLabel": "Chat ID",
       "button": "Delete chat",
-      "confirm": "Confirm delete",
-      "cancel": "Cancel",
       "loading": "Deleting...",
-      "success": "Chat deleted successfully",
-      "error": "Failed to delete chat: "
+      "notFound": "Cannot delete chat: ID not found.",
+      "success": "{chatId} deleted successfully.",
+      "error": "Failed to delete chat: {error}"
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
       "idLabel": "Chat ID",
-      "button": "Delete expert evaluation",
-      "confirm": "Confirm delete",
-      "cancel": "Cancel",
-      "loading": "Deleting...",
-      "success": "Expert evaluation deleted successfully",
-      "error": "Failed to delete expert evaluation: "
+      "button": "Find expert evaluations to delete",
+      "notFound": "Cannot delete evaluation: ID not found.",
+      "pickerLegend": "Choose evaluations to delete",
+      "rowLabel": "Answer {number}, {department}, reviewed by {email}",
+      "noDepartment": "no department",
+      "unknownReviewer": "unknown reviewer",
+      "deleteSelected": "Delete selected evaluations ({count})",
+      "noneSelected": "Choose at least one evaluation to delete.",
+      "success": "Deleted {count} expert evaluation(s) for {chatId}.",
+      "failed": "Could not delete the expert evaluation(s). Try again.",
+      "partial": "Deleted {count} of {total} expert evaluations. The rest could not be deleted and are still listed.",
+      "notEvaluated": "Not evaluated."
     }
   },
   "login": {
@@ -904,7 +1039,9 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password.",
+    "invalidCredentials": "Invalid email or password. After 10 failed attempts, sign-in is paused for 15 minutes.",
+    "serverError": "We couldn't sign you in. Try again in a few minutes.",
+    "networkError": "We couldn't reach the server. Check your connection, then try again.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."
@@ -922,8 +1059,14 @@
       "resend": "Resend code",
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
-      "sendError": "Failed to send verification code.",
-      "invalidCode": "Invalid verification code."
+      "sendError": "We couldn't send your verification code. Try again in a few minutes.",
+      "invalidCode": "Invalid verification code.",
+      "codeFormat": "Enter the six-digit code from your email.",
+      "codeHint": "Six digits",
+      "resent": "New code sent.",
+      "cooldown": "Wait a minute before asking for a new code.",
+      "locked": "Too many incorrect codes. Wait 30 minutes, then sign in again.",
+      "expired": "Your sign-in timed out. Enter your email and password again to get a new code."
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
@@ -961,7 +1104,7 @@
       "confirm": "Confirm new password",
       "submit": "Set password",
       "submitting": "Submitting...",
-      "success": "Password updated. Redirecting to sign in...",
+      "success": "We've updated your password.",
       "error": "Failed to reset password.",
       "invalid": "Invalid reset link.",
       "passwordTooShort": "Password must be at least 8 characters.",
@@ -979,16 +1122,82 @@
     "passwordMismatch": "Passwords do not match.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "errorOccurred": "An error occurred creating your account.",
-    "submitting": "Creating account...wait for approval"
+    "submitting": "Creating account...",
+    "pendingReceived": "We've received your account request.",
+    "pendingActivation": "An administrator will contact you once your account is activated and you can sign in."
+  },
+  "account": {
+    "title": "Manage your account",
+    "profileHeading": "Account details",
+    "accountName": "Account name",
+    "activityHeading": "Your assigned questions",
+    "role": "Role",
+    "institution": "Institution",
+    "group": "Group",
+    "institutionLocked": "Contact an admin to change your institution.",
+    "groupLocked": "Contact an admin to change your group.",
+    "lockNotice": "Make sure you've chosen the right institution or group. After you save, only an admin can change it.",
+    "updated": "Account updated: {change}",
+    "changeInstitutionSet": "{value}",
+    "changeInstitutionCleared": "institution removed",
+    "changeGroupSet": "{value} group",
+    "changeGroupCleared": "group removed",
+    "profileSaveError": "Failed to update your account.",
+    "loadError": "Failed to load your account.",
+    "assignedChats": {
+      "heading": "Your assigned questions for review",
+      "filterLabel": "Filter assigned questions",
+      "loadError": "Failed to load your assigned questions.",
+      "chatIdQuestion": ", question {number}",
+      "columns": {
+        "assignedOn": "Assigned on",
+        "assignedBy": "Assigned by",
+        "partnerNotes": "Notes",
+        "evaluated": "Evaluated"
+      },
+      "evalStatus": {
+        "completed": "Completed",
+        "pending": "Pending"
+      }
+    },
+    "preferences": {
+      "heading": "Dashboard filter default preferences",
+      "prefilterDepartment": "Use your institution",
+      "prefilterGroup": "Use your group (chats created or reviewed by your group's members)",
+      "noInstitution": "Save your institution first.",
+      "savedChange": "Preference saved: {change}",
+      "changeInstitutionOn": "selected your institution",
+      "changeInstitutionOff": "unselected your institution",
+      "changeGroupOn": "selected your group",
+      "changeGroupOff": "unselected your group",
+      "saveError": "Failed to save preference.",
+      "filteredNoticeTitle": "How filter preferences work",
+      "filteredInstitution": "*Chat*, *evaluation*, *auto-evaluation*, *download chat logs*, *metrics*, *technical metrics* and *partner* dashboards open filtered to your institution by default.",
+      "filteredGroup": "*Chat*, *evaluation*, *auto-evaluation*, *download chat logs*, *metrics*, *technical metrics* and *partner* dashboards open filtered to your group by default. You'll only see questions and answers your group created or reviewed.",
+      "filteredBothChatEvalLabel": "*Chat*, *evaluation*, *auto-evaluation* and *download chat logs* dashboards:",
+      "filteredBothChatEvalEffect": "everything for your institution, plus anything your group created or reviewed.",
+      "filteredBothMetricsPartnerLabel": "*Metrics*, *technical metrics* and *partner* dashboards:",
+      "filteredBothMetricsPartnerEffect": "only chats that match both your institution and your group.",
+      "filteredPublicLabel": "*Public* dashboard:",
+      "filteredPublicEffect": "not affected.",
+      "filteredFooter": "You can still change these filter values anytime on each dashboard. Clear all will reset to your default preferences."
+    }
   },
   "users": {
     "title": "Manage user accounts",
+    "institutionNone": "None",
+    "groupNone": "None",
+    "groupClearedAnnouncement": "Group cleared.",
+    "groupRestoredAnnouncement": "Group set back to {group}.",
+    "filterLabel": "Filter users",
     "columns": {
       "email": "Email",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created at",
-      "actions": "Action"
+      "actions": "Action",
+      "institution": "Institution",
+      "group": "Group"
     },
     "roles": {
       "admin": "Admin",
@@ -999,9 +1208,16 @@
       "inactive": "Inactive"
     },
     "actions": {
+      "save": "Save",
       "delete": "Delete",
       "confirmDelete": "Are you sure you want to delete this user?",
-      "adminOnly": "Only administrators can delete users."
+      "adminOnly": "Only administrators can delete users.",
+      "saveSuccess": "{email} updated.",
+      "saveSuccessRole": "{email}'s role updated to {role}.",
+      "saveSuccessStatus": "{email}'s status updated to {status}.",
+      "saveError": "Failed to update {email}.",
+      "deleteSuccess": "{email} deleted.",
+      "deleteError": "Failed to delete {email}."
     }
   },
   "workflows": {
@@ -1009,7 +1225,7 @@
     "defaultWithVector": "Instant answer ON",
     "defaultWithLocalModel": "Local-model instant answer ON",
     "instantAndQA": "Instant answer with context ON",
-    "genericWithQA": "Past Q&A context ON"
+    "genericWithQA": "Past evals context ON"
   },
   "models": {
     "gpt51": "Azure GPT-5.1",
@@ -1017,14 +1233,43 @@
   },
   "settings": {
     "title": "Settings",
+    "saveSuccessIn": "Changes to {section} saved.",
+    "saveError": "Failed to save setting.",
+    "fieldError": {
+      "unexpected": "Unexpected error: {error}"
+    },
+    "saving": "Saving...",
+    "unsavedChangesIn": "Unsaved changes in {sections}",
+    "validation": {
+      "invalidEmail": "Invalid email or ; spacing",
+      "downloadWebPageCacheDurationHours": "Enter a whole number from 1 to 24.",
+      "searchContextCacheDurationHours": "Enter a whole number from 1 to 24.",
+      "invalidSearchProvider": "Select a valid search provider."
+    },
+    "cache": { "title": "Cache", "saveLabel": "Save cache settings" },
     "general": {
-      "title": "General settings"
+      "title": "General settings",
+      "saveLabel": "Save general settings"
     },
     "defaultWorkflow": {
       "label": "Generic workflow"
     },
     "defaultModel": {
       "label": "Default model family"
+    },
+    "defaultSearchProvider": {
+      "label": "Default public chat search provider"
+    },
+    "searchContextCache": {
+      "title": "Search results cache",
+      "enabledLabel": "Cache search results",
+      "description": "When enabled, Google and Canada.ca search results are cached for the duration set below.",
+      "durationHoursLabel": "Search results cache duration (hours)",
+      "clearConfirm": "Clear all cached search results?",
+      "clear": "Clear cached search results",
+      "clearing": "Clearing cached search results...",
+      "clearSuccess": "Cached search results cleared.",
+      "clearError": "Failed to clear cached search results."
     },
     "chatTransport": {
       "label": "Chat event transport",
@@ -1036,8 +1281,20 @@
     "indigenousLanguageBlocking": {
       "label": "Canadian Indigenous language blocking"
     },
+    "downloadWebPageCache": {
+      "title": "Downloaded web pages cache",
+      "enabledLabel": "Cache downloaded web pages",
+      "description": "When enabled, public web pages are cached for the duration set below. S3 removes cache files after one day.",
+      "durationHoursLabel": "Web page cache duration (hours)",
+      "clearConfirm": "Clear all cached web pages? They will be downloaded again the next time they're needed.",
+      "clear": "Clear cached web pages",
+      "clearing": "Clearing cached web pages...",
+      "clearSuccess": "Cached web pages cleared.",
+      "clearError": "Failed to clear cached web pages."
+    },
     "health": {
       "title": "Health checks",
+      "saveLabel": "Save health checks",
       "description": "Control the automated health monitor and its dependency checks.",
       "enabledLabel": "Enable health monitoring",
       "databaseEnabledLabel": "Check database health",
@@ -1074,9 +1331,30 @@
       "success": "Settings cache refreshed.",
       "error": "Failed to refresh settings cache: {error}"
     },
+    "auditHistory": {
+      "title": "Settings history",
+      "description": "Review who changed settings and when.",
+      "empty": "No settings changes have been recorded.",
+      "filterLabel": "Filter settings history",
+      "loadError": "Failed to load audit history: {error}",
+      "user": "User",
+      "action": "Action",
+      "setting": "Setting",
+      "previousValue": "Original value",
+      "newValue": "Changed value",
+      "date": "Date",
+      "notApplicable": "Not applicable",
+      "actions": {
+        "settingUpdated": "Setting updated",
+        "cacheRefreshed": "Settings cache refreshed",
+        "downloadWebPageCacheCleared": "Downloaded web page cache cleared",
+        "searchCacheCleared": "Search cache cleared"
+      }
+    },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
     "twoFA": {
       "title": "Two-factor authentication",
+      "saveLabel": "Save two-factor authentication",
       "enabledLabel": "Require two-factor authentication for login",
       "templateLabel": "GC Notify template ID for 2FA emails"
     },
@@ -1085,6 +1363,7 @@
     },
     "session": {
       "title": "Session settings",
+      "saveLabel": "Save session settings",
       "managementEnabled": "Enable session management",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "authTtlMinutes": "Authenticated session TTL (minutes — e.g. 60 = 1 hour)",
@@ -1106,6 +1385,7 @@
     },
     "rateLimiting": {
       "title": "Rate limiting",
+      "saveLabel": "Save rate limiting",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
@@ -1117,12 +1397,15 @@
     },
     "redaction": {
       "title": "Redaction settings",
+      "saveLabel": "Save redaction settings",
       "description": "Manage bad words, threats, and manipulation phrases. Enter words separated by commas.",
       "profanity": "Profanity",
       "threat": "Threats",
       "manipulation": "Manipulation",
       "langEnglish": "English",
-      "langFrench": "Français"
+      "langFrench": "Français",
+      "langSuffixEn": "(EN)",
+      "langSuffixFr": "(FR)"
     },
     "metrics": {
       "storeType": "Chat metrics store (memory | DocumentDB)"
@@ -1133,13 +1416,19 @@
     "message": "AI Answers has upgrades or capacity issues at the moment. Please come back later."
   },
   "common": {
+    "errorSummaryHeading": "Fix the following",
+    "chartCategoryColumn": "Category",
+    "chartValueColumn": "Value",
+    "chartPercentColumn": "Percent",
+    "chartDataTableCaption": "Data for {title}",
+    "chartDataTableSummary": "Table view",
     "backToAdmin": "Back to admin",
     "close": "Close",
     "confirmDelete": "Are you sure you want to delete this data?",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "processing": "Processing...",
-    "error": "Error",
+    "error": "Error:",
     "page": "Page",
     "yes": "Yes",
     "no": "No",
@@ -1147,24 +1436,19 @@
     "off": "Off",
     "na": "N/A",
     "noDataForFilters": "No data found for the selected filters.",
-    "notEnoughData": "Not enough data available for the filters selected."
+    "notEnoughData": "Not enough data available for the filters selected.",
+    "pauseUpdates": "Pause automatic updates",
+    "resumeUpdates": "Resume automatic updates",
+    "pausedIndicator": "Updates paused",
+    "resumedIndicator": "Automatic updates resumed"
   },
   "eval": {
-    "metric": "Metric",
-    "value": "Value",
     "metrics": {},
-    "sentenceTrace": "Sentence Trace",
-    "sourceSentence": "Source Sentence",
-    "matchStatus": "Match Status",
-    "matchedSentence": "Matched Sentence",
-    "similarity": "Similarity",
-    "explanation": "Explanation",
-    "eval": "Evaluation",
-    "details": "Details",
+    "eval": "Auto-evaluation results",
     "reRun": "Re-run",
     "reRunning": "Re-running...",
     "noMatch": "No match found for this interaction.",
-    "reason": "Reason",
+    "reason": "Reason:",
     "processed": "Processed",
     "hasMatches": "Has matches",
     "fallback": "Fallback",
@@ -1179,14 +1463,16 @@
     "totalScore": "Score",
     "referringUrl": "Referring URL",
     "interactionUpdatedAt": "Date of chat",
-    "allEvalsGenerated": "All evaluations have been generated! Final totals: {processed} successful, {failed} failed.",
-    "generateEvalsFailed": "Failed to generate evals. Check the console for details.",
+    "allEvalsGenerated": "Evaluations generated: {processed} successful, {failed} failed.",
+    "generateEvalsFailed": "Generating evaluations failed: {error}",
     "deleteEvalsConfirm": "This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEvalsSuccess": "Deleted {deleted} evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEvalsFailed": "Failed to delete evaluations. Check the console for details.",
+    "deleteEvalsFailed": "Deleting evaluations failed: {error}",
+    "deleteEvalsNone": "No evaluations to delete.",
     "deleteEmptyEvalsConfirm": "This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?",
     "deleteEmptyEvalsSuccess": "Deleted {deleted} empty evaluations and {expertFeedbackDeleted} expert feedback records.",
-    "deleteEmptyEvalsFailed": "Failed to delete empty evaluations. Check the console for details.",
+    "deleteEmptyEvalsFailed": "Deleting empty evaluations failed: {error}",
+    "deleteEmptyEvalsNone": "No empty evaluations to delete.",
     "noMatchReasonTypes": {
       "no_embeddings": "No embeddings found",
       "no_qa_match": "No similar embeddings found",
@@ -1198,32 +1484,29 @@
   },
   "reviewPanels": {
     "sentence": "Sentence",
-    "sentenceEnglish": "Sentence English",
-    "englishQuestion": "English question",
+    "question": "Question:",
     "expertScore": "Expert score",
     "feedback": "Feedback",
+    "helpfulYes": "Helpful - yes",
+    "helpfulNo": "Helpful - no",
     "notAvailable": "N/A",
     "expertFeedbackTitle": "Expert evaluation",
-    "expertEmail": "Expert email",
+    "expertEmail": "Expert email:",
     "deleteExpertFeedback": "Delete expert evaluation",
     "publicFeedbackTitle": "Public feedback",
     "autoEvalTitle": "Automated evaluation",
+    "autoEvalDeletedAnnouncement": "Automated evaluation deleted.",
     "explanation": "Explanation",
+    "explanationLabel": "Explanation:",
     "score": "Score",
+    "scoreSuffix": "Score: {score}",
     "reason": "Reason",
-    "publicComment": "Public comment",
     "evaluation": "Evaluation",
     "noEvaluation": "No evaluation available.",
-    "processed": "Processed",
-    "hasMatches": "Has matches",
-    "fallback": "Fallback",
     "none": "none",
-    "noMatchReason": "No-match reason",
-    "createdAt": "Created at",
-    "updatedAt": "Updated at",
     "sourceSentenceIndex": "Source sentence index",
     "stageTimeline": "Stage timeline",
-    "rawTimeline": "Raw timeline (JSON)",
+    "rawTimeline": "Raw timeline (JSON):",
     "noStageTimeline": "No stage timeline available.",
     "sourceText": "Source text",
     "matchedChatId": "Matched chatId",
@@ -1235,26 +1518,35 @@
     "noSentenceTraces": "No sentence match traces available.",
     "citation": "Citation",
     "totalScore": "Total score",
-    "suggestedCitation": "Suggested citation URL",
+    "totalScoreLabel": "Total score:",
+    "suggestedCitation": "Suggested citation URL:",
     "similarityScores": "Similarity scores",
     "sentenceMatchTrace": "Sentence match trace",
     "agentUsage": "Agent usage",
     "metric": "Metric",
     "sentenceCompare": "Sentence-compare",
-    "sentenceCompareUsed": "Sentence compare used",
+    "sentenceCompareLabel": "Sentence-compare:",
+    "sentenceCompareUsed": "Sentence compare used:",
     "fallbackCompare": "Fallback-compare",
+    "fallbackCompareLabel": "Fallback-compare:",
     "fallbackCompareUsed": "Fallback compare used",
+    "fallbackCompareUsedLabel": "Fallback compare used:",
     "field": "Field",
     "value": "Value",
     "fallbackCompareChecks": "Fallback compare checks",
     "check": "Check",
     "pass": "Pass",
+    "fail": "Failed",
+    "downloadSuccess": "Succeeded",
+    "downloadSuccessCached": "Succeeded (cached)",
+    "downloadSuccessDownloaded": "Succeeded (downloaded)",
+    "searchResultsTitle": "Search results",
+    "searchQuery": "Search query:",
+    "searchResultsCached": "Served from cache",
+    "searchResultsDownloaded": "Fetched from search",
+    "downloadPartial": "Partial",
     "details": "Details",
-    "fallbackCompareRaw": "Fallback compare raw",
-    "expertFeedbackId": "Expert evaluation id",
     "fallbackSourceChatId": "Fallback source chatId",
-    "matchedCitationInteractionId": "Matched citation interactionId",
-    "matchedCitationChatId": "Matched citation chatId",
     "agentCandidateChoices": "Agent candidate choices",
     "candidateIndex": "Candidate index",
     "text": "Text",
@@ -1266,7 +1558,6 @@
     "conditionals": "Conditionals",
     "connectives": "Connectives",
     "modifiers": "Modifiers",
-    "reEvaluate": "Re-evaluate",
     "deleteEvaluation": "Delete evaluation",
     "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
@@ -1279,12 +1570,9 @@
     "fallbackCandidateAnswer": "Fallback candidate answer",
     "fallbackCandidateCitation": "Candidate citation",
     "fallbackCompareMeta": "Fallback compare meta",
-    "agentSelections": "Agent selections",
-    "agentSelectedIndex": "Agent selected index",
-    "agentSelectionExplanation": "Agent selection explanation",
     "neverStale": "Never stale",
     "downloadedPagesTitle": "Downloaded pages",
-    "usedQaChatsTitle": "Past Q&A used",
+    "usedQaChatsTitle": "Past evaluations used",
     "chatId": "Chat ID"
   },
   "dashboardFilter": {
@@ -1296,13 +1584,8 @@
     "startDate": "Start date",
     "endDate": "End date",
     "showing": "Showing:",
-    "footnoteRefSrPrefix": "Footnote ",
-    "footnotesHeading": "Footnotes",
-    "footnoteReturnSrPrefix": "Return to footnote ",
-    "footnoteReturnSrSuffix": " referrer",
     "removeFilter": "Remove filter",
-    "apply": "Apply",
-    "loading": "Loading..."
+    "apply": "Apply"
   },
   "blockedQueries": {
     "title": "Blocked queries",
@@ -1313,9 +1596,9 @@
     "note": "Questions stopped by the safety and security guardrails before reaching the answer step. The question text is never stored — only the count per type. Reported across all institutions (blocks happen before the institution is identified).",
     "deptNote": "Blocked queries can't be broken down by institution — blocks happen before the institution is identified. Clear the institution filter to see blocked-query counts.",
     "colType": "Block type",
-    "colTotal": "Total",
-    "colEn": "EN",
-    "colFr": "FR",
+    "colTotal": "Total:",
+    "colEn": "EN:",
+    "colFr": "FR:",
     "totalRow": "Total blocked",
     "types": {
       "tooShort": "Too short (1–2 words)",
@@ -1330,7 +1613,7 @@
     }
   },
   "publicDashboard": {
-    "title": "AI Answers Public dashboard",
+    "title": "Public dashboard",
     "usersOnlyPill": "Public users only",
     "footnote": "Data includes questions from public users only. Questions from partner and admin accounts signed in to test and evaluate are excluded.",
     "overviewTitle": "Overview",
@@ -1346,13 +1629,14 @@
       "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
     },
     "charts": {
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
+      "totalQuestionsLabel": "Total: {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1373,6 +1657,7 @@
   "partnerDashboard": {
     "title": "Partner dashboard",
     "overviewTitle": "Overview",
+    "evalInformedTitle": "Evaluation informed metrics",
     "error": "Failed to load data. Please try again.",
     "kpi": {
       "questionsAsked": "Questions asked",
@@ -1382,24 +1667,28 @@
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
-      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}",
+      "evalInformedSub": "{n} of {total} eligible questions"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
-      "accuracyDonutTitle": "Answer accuracy",
+      "accuracyDonutTitle": "Answer accuracy (expert + AI)",
       "accuracyCentre": "accuracy",
       "accuracyByLang": "EN: {en} · FR: {fr}",
       "accurate": "Accurate",
       "hasError": "Has answer error",
       "accuracySubtitle": "{total} evaluations · Expert: {expert} · AI: {ai}",
-      "satisfactionCentre": "of {total} responses",
-      "satisfactionSummary": "Public feedback (satisfaction) – {pct} helpful of {total} responses",
+      "satisfactionSubtext": "{pct} helpful of {total} responses",
+      "satisfactionTrigger": "Breakdown of public satisfaction",
+      "topRankSubtext": "#1: {label}",
       "feedbackSectionTitle": "Public feedback (satisfaction)",
       "feedbackSplitTitle": "Helpful or not",
+      "feedbackSplitSubtitle": "Total responses: {total}",
       "feedbackReasonsTitle": "Breakdown by reason",
       "feedbackBreakdownSubtitle": "Based on {total} public feedback responses",
       "engagementTitle": "Conversation length",
       "engagementSubtitle": "How many questions users ask per conversation",
+      "totalQuestionsLabel": "Total: {n}",
       "questions": "questions",
       "conversations": "conversations",
       "singleQuestion": "1 question",
@@ -1420,7 +1709,7 @@
       "title": "Safety metrics"
     },
     "programs": {
-      "title": "Question volume by program",
+      "title": "Question volume by service",
       "subtitle": "{total} classified questions · EN: {en} · FR: {fr}",
       "unclassifiedNote": "{count} not yet classified",
       "tooltipCount": "{count} questions",
@@ -1428,13 +1717,13 @@
     },
     "referrals": {
       "title": "Top referral pages",
-      "subtitle": "Pages that sent the most visitors to AI Answers, counted by conversation.",
+      "trigger": "All top referral pages",
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     },
     "citations": {
       "title": "Top citation pages",
-      "subtitle": "Government of Canada pages AI Answers cited most often, counted by question.",
+      "trigger": "All top cited pages",
       "colUrl": "Cited page",
       "colCount": "Questions",
       "noCitations": "No citations in this period.",
@@ -1447,10 +1736,31 @@
         "notGc": "Not in GC scope answers"
       }
     },
+    "answerTypes": {
+      "trigger": "All question/answer types"
+    },
+    "contentIssueChats": {
+      "title": "Content issues by chat ID",
+      "trigger": "All chats by ID with a content issue",
+      "issueTypeCol": "Issue type",
+      "noData": "No content issues flagged in this period."
+    },
+    "harmfulChats": {
+      "title": "Harmful chats by chat ID",
+      "trigger": "See all harmful chats by ID",
+      "noData": "No harmful chats flagged in this period."
+    },
+    "evalInformedChats": {
+      "title": "Eval-informed answers by chat ID",
+      "subtitle": "Shows up to the {n} most recent",
+      "trigger": "Recent eval-informed chats by ID",
+      "noData": "No eval-informed answers in this period."
+    },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by program, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
+      "checkingEligibility": "Checking eligibility…",
       "precheckCount": "{count} expert evaluations match the current filters.",
       "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
       "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
@@ -1460,7 +1770,7 @@
       "error": "The analysis failed. Partial results may be shown below.",
       "running": {
         "preparing": "Preparing analysis…",
-        "classifying": "Classifying programs… {done} of {total}",
+        "classifying": "Classifying services… {done} of {total}",
         "synthesizing": "Writing findings…"
       },
       "status": {
@@ -1477,6 +1787,7 @@
         "colCount": "Evaluations",
         "colStatus": "Status",
         "colBy": "Run by",
+        "colActions": "Actions",
         "view": "View"
       },
       "report": {
@@ -1485,15 +1796,15 @@
         "runOn": "Run on {date}",
         "runBy": "by {email}",
         "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by program",
+        "unclassified": "{count} could not be classified by service",
         "partial": "This analysis did not finish — the results below are partial.",
         "running": "This analysis is still running ({status}). The results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
         "rowsTitle": "Evaluation details",
         "viewRowData": "View all row data",
         "noValue": "Not available",
-        "programActionsTitle": "Scores by program and action",
-        "colProgramAction": "Program — action",
+        "programActionsTitle": "Scores by service and action",
+        "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
         "colCount": "Evaluations",
         "colNonPerfect": "Non-perfect",
@@ -1516,7 +1827,7 @@
         "colEvaluator": "Evaluator",
         "colQuestion": "Question",
         "colScore": "Score",
-        "colProgram": "Program",
+        "colProgram": "Service",
         "colAction": "Action",
         "colDetails": "Details",
         "flagged": "Review"
@@ -1525,9 +1836,7 @@
   },
   "metrics": {
     "title": "Metrics dashboard",
-    "timeRangeTitle": "Get usage and evaluation metrics",
     "dashboard": {
-      "title": "Results",
       "totalSessions": "Total sessions",
       "totalQuestions": "Total questions",
       "answerTypes": {
@@ -1537,6 +1846,7 @@
         "notGc": "Not in GC scope answers"
       },
       "metric": "Metric",
+      "markedAs": "Marked as",
       "count": "Count",
       "percentage": "%",
       "enCount": "EN count",
@@ -1550,19 +1860,14 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has answer error",
-        "hasCitationError": "Citation issue",
-        "hasErrorPercent": "Has answer error (%)",
-        "harmful": "Coded as harmful",
-        "hasContentIssue": "Content issue flagged"
+        "flaggedTitle": "Flagged (already counted above)"
       },
       "aiScored": {
         "title": "AI evaluations",
         "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
-        "needsImprovement": "Needs improvement",
-        "hasError": "Has answer error",
-        "hasCitationError": "Citation issue"
+        "hasError": "Has answer error"
       },
       "qualityBar": {
         "correct": "Correct",
@@ -1595,16 +1900,25 @@
       "accuracy": {
         "title": "Accuracy summary",
         "allEvaluations": "Total evaluations",
-        "note": "If a question has both an expert and AI evaluation, only the expert evaluation is used.",
+        "note": "When both evaluation types exist, only the expert evaluation is counted",
         "expertEvaluations": "Expert evaluations",
         "aiEvaluations": "AI evaluations",
         "totalEvaluated": "Total evaluated",
+        "totalEvaluatedEn": "EN total evaluated",
+        "totalEvaluatedFr": "FR total evaluated",
         "pctOfQuestions": "% of questions",
         "hasAnswerError": "Has answer error",
-        "accuracyPct": "Accuracy %"
+        "accuracyPct": "Accuracy %",
+        "accuracyPctEn": "EN accuracy %",
+        "accuracyPctFr": "FR accuracy %"
       },
       "questionTypes": {
         "title": "Question types"
+      },
+      "evalInformed": {
+        "eligible": "Eligible questions",
+        "from": "Earliest eligible question found: {date}. Earlier questions aren't counted.",
+        "note": "Eligible questions are those answered by the eval-informed workflow. Older and other workflows don't look up past evaluations, so their questions aren't counted."
       },
       "tokens": {
         "title": "Tokens",
@@ -1619,6 +1933,7 @@
       },
       "byDepartment": {
         "title": "Institution breakdown of expert evaluations",
+        "filterLabel": "Filter institutions",
         "department": "Institution",
         "noContextDept": "No institution context",
         "pctEvaluated": "% evaluated"
@@ -1627,9 +1942,8 @@
   },
   "technicalMetrics": {
     "title": "Technical metrics",
-    "timeRangeTitle": "Get technical metrics for the selected period",
     "dashboard": {
-      "title": "Results",
+      "loading": "Loading technical metrics...",
       "metric": "Metric",
       "responseTime": {
         "title": "Total response time",
@@ -1649,9 +1963,31 @@
         "totalCount": "Questions with this call",
         "completedCount": "Completed",
         "errorCount": "Errors",
+        "cacheHitCount": "Pages served from cache",
+        "originCount": "Origin downloads",
         "errorPercent": "Error %",
         "median": "Completed median (ms)",
         "p95": "Completed P95 (ms)"
+      },
+      "searchCalls": {
+        "title": "Search calls",
+        "note": "Cache hit rates, errors and retries per search provider (Canada.ca/Coveo or Google). Error % is against all search requests. Failed calls retry automatically; errors are calls that still failed after all retries. Retries are a count, not a rate: one search can retry more than once.",
+        "provider": {
+          "title": "Provider",
+          "canadaca": "Canada.ca search (Coveo)",
+          "google": "Google"
+        },
+        "retryCount": "Retries",
+        "cacheHitPercent": "Cache hit rate"
+      },
+      "aiServiceCalls": {
+        "title": "AI service call errors",
+        "note": "Errors on the context and answer AI calls. Approximated against total questions since each question makes one of each call.",
+        "type": {
+          "title": "Call type",
+          "context": "Context call",
+          "answer": "Answer call"
+        }
       }
     }
   },
@@ -1660,13 +1996,22 @@
     "indexManagement": "Vector index management",
     "manageDescription": "Manage vector indexes and view vector database statistics.",
     "reinitializeIndex": "Reinitialize index",
-    "loading": "Loading...",
+    "reinitializingIndex": "Reinitializing...",
+    "fetchingStats": "Fetching...",
     "fetchStats": "Fetch vector stats",
+    "statsLoaded": "Vector stats loaded.",
+    "statsLoadError": "Failed to load vector stats: {error}",
     "createIndex": "Create vector index",
     "embeddingManagement": "Embedding management",
     "embeddingDescription": "Process interactions to generate embeddings.",
+    "embeddingProviderLabel": "Embedding provider",
     "generateEmbeddings": "Generate embeddings",
     "regenerateEmbeddings": "Regenerate embeddings",
+    "embeddingScope": {
+      "legend": "Embeddings to generate",
+      "missing": "Only missing embeddings",
+      "all": "All embeddings, replacing the existing ones"
+    },
     "regenerating": "Regenerating...",
     "processing": "Processing...",
     "remaining": "Remaining",
@@ -1674,20 +2019,31 @@
     "metadataBackfillTitle": "Embedding metadata backfill",
     "metadataBackfillDescription": "Populate embedding metadata in a background job that continues after you leave this page.",
     "metadataDelayLabel": "Delay between records in seconds",
-    "metadataDelayHelp": "The backend processes one record at a time. Use 0 to 300 seconds to reduce load on the database.",
+    "metadataDelayHelp": "The backend processes one record at a time. Use 0 to 300 seconds to reduce load on the database. The delay applies when you start, restart or resume a backfill.",
     "metadataDelayInvalid": "Delay must be between 0 and 300 seconds.",
-    "startMetadataBackfill": "Start metadata backfill",
-    "backfillEmptyMetadata": "Backfill empty metadata",
     "clearMetadata": "Clear metadata",
+    "clearingMetadata": "Clearing...",
+    "clearMetadataConfirm": "This removes the stored metadata from every embedding. Past expert-scored answers can't be reused until you run a backfill again. Do you want to continue?",
     "metadataClearSuccess": "Embedding metadata was cleared.",
+    "metadataClearNothing": "No metadata to clear.",
     "metadataClearFailed": "Failed to clear embedding metadata.",
-    "resumeMetadataBackfill": "Resume metadata backfill",
-    "restartMetadataBackfill": "Restart metadata backfill",
-    "stopMetadataBackfill": "Stop metadata backfill",
+    "backfillControls": {
+      "label": "Metadata backfill controls",
+      "start": "Start",
+      "restart": "Restart",
+      "resume": "Resume",
+      "stop": "Stop",
+      "running": "Running...",
+      "stopping": "Stopping..."
+    },
     "metadataBackfillStopped": "Stopped",
+    "metadataBackfillStoppedAnnouncement": "Embedding metadata backfill stopped.",
+    "metadataBackfillStopFailed": "Failed to stop embedding metadata backfill. Check the console for details.",
     "metadataProcessed": "Processed",
-    "metadataResumeFromId": "Saved resume ID: {id}",
+    "metadataResumeFromId": "Saved resume ID",
+    "progressStatus": "Status",
     "metadataBackfillFailed": "Failed to backfill embedding metadata. Check the console for details.",
+    "metadataBackfillCompleted": "Embedding metadata backfill complete.",
     "metadataBatchResultsTitle": "Last batch metadata diagnostics",
     "metadataBatchResultsDescription": "Each row shows what metadata backfill did for one processed embedding in the latest batch.",
     "metadataBatchSummary": "{updated} received metadata, {cleared} removed or altered",
@@ -1738,32 +2094,30 @@
     "metadataLookup": {
       "title": "Embedding metadata lookup",
       "description": "Look up the current embedding metadata for each interaction in a chat.",
-      "chatIdLabel": "Chat ID",
-      "chatIdRequired": "Please enter a chat ID.",
       "lookup": "Look up metadata",
       "loading": "Looking up metadata...",
       "failed": "Failed to look up embedding metadata.",
+      "mismatch": "Mismatch: attached",
+      "mismatchTo": "but metadata has",
+      "missingDisplayId": "(Missing ID)",
+      "ids": {
+        "interactionObject": "Interaction object",
+        "embedding": "Embedding"
+      },
       "chatSummary": {
         "chatId": "Chat ID",
-        "pageLanguage": "Page language",
         "interactions": "Interactions",
         "embeddings": "Embeddings"
       },
       "columns": {
         "row": "Row",
+        "displayId": "Display ID",
+        "ids": "IDs",
+        "expertFeedbackId": "Expert feedback ID",
+        "score": "Score",
+        "pageLanguage": "Page language",
         "status": "Status",
-        "interactionObjectId": "Interaction object ID",
-        "interactionDisplayId": "Interaction display ID",
-        "embeddingId": "Embedding ID",
-        "embeddingInteractionId": "Embedding interaction ID",
-        "attachedExpertFeedbackId": "Attached expert feedback ID",
-        "metadataExpertFeedbackId": "Metadata expert feedback ID",
-        "attachedScore": "Attached score",
-        "metadataScore": "Metadata score",
-        "chatPageLanguage": "Chat page language",
-        "metadataPageLanguage": "Metadata page language",
         "interactionLanguage": "Interaction language",
-        "metadataInteractionLanguage": "Metadata interaction language",
         "neverStale": "Never stale"
       },
       "statuses": {
@@ -1777,11 +2131,12 @@
     },
     "similarChats": "Find similar chats",
     "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
-    "chatIdPlaceholder": "Enter Chat ID",
+    "similarChatsFilterLabel": "Filter similar chats",
+    "chatIdLabel": "Chat ID",
     "getSimilarChats": "Get similar chats",
     "loadingSimilarChats": "Loading similar chats...",
-    "enterChatId": "Please enter a chat ID",
     "fetchError": "Failed to fetch similar chats",
+    "fetchErrorDetail": "Failed to fetch similar chats: {error}",
     "columns": {
       "chatId": "Chat ID",
       "similarity": "Similarity",
@@ -1790,14 +2145,18 @@
       "pageLanguage": "Page language",
       "user": "User"
     },
-    "allEmbeddingsGenerated": "All embeddings have been generated!",
+    "allEmbeddingsGenerated": "All embeddings have been generated.",
+    "allEmbeddingsRegenerated": "All embeddings have been regenerated.",
     "generateEmbeddingsFailed": "Failed to generate embeddings. Check the console for details.",
+    "regenerateEmbeddingsFailed": "Failed to regenerate embeddings. Check the console for details.",
     "regenerateConfirm": "This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?",
-    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully!",
+    "indexCreatedSuccess": "Vector index created and vector service reinitialized successfully.",
+    "indexCreateError": "Failed to reinitialize vector service: {error}",
     "docdb8Capability": {
       "title": "DocumentDB 8 vector search capability test",
       "description": "Run aggregation probes against DocumentDB 8 to see whether filters can reduce the candidate set before vector search.",
-      "singleProbeDescription": "Each button runs one probe once and stores only that result.",
+      "singleProbeDescription": "Runs the chosen probe once and keeps only its latest result.",
+      "probeLabel": "Capability test",
       "run": "Run capability test",
       "running": "Running capability test...",
       "pass": "Pass",
@@ -1805,6 +2164,8 @@
       "yes": "Yes",
       "no": "No",
       "noError": "No error",
+      "errorDetail": "Test failed: {error}",
+      "probeComplete": "{label}: {status}",
       "notAvailable": "Not available",
       "estimatedFeedbackSelectivity": "Estimated feedback selectivity",
       "recommendedStrategy": "Recommended strategy",
@@ -1829,11 +2190,11 @@
         "error": "Error"
       },
       "probes": {
-        "annAllThenFeedbackPostFilter": "Run ANN post-filter",
-        "exactAfterFeedbackLookupMatch": "Run lookup pre-filter",
-        "exactAfterDenormalizedMatch": "Run denormalized pre-filter",
-        "annFeedbackOnlyCollection": "Run feedback collection",
-        "nodeBruteforceFeedbackSubset": "Run brute-force baseline"
+        "annAllThenFeedbackPostFilter": "ANN post-filter",
+        "exactAfterFeedbackLookupMatch": "Lookup pre-filter",
+        "exactAfterDenormalizedMatch": "Denormalized pre-filter",
+        "annFeedbackOnlyCollection": "Feedback collection",
+        "nodeBruteforceFeedbackSubset": "Brute-force baseline"
       },
       "capabilities": {
         "vectorSearchBasicSupport": "$vectorSearch basic support",
@@ -1852,38 +2213,57 @@
   },
   "scenarioOverrides": {
     "title": "Edit and test scenarios",
-    "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. Make sure you haven't added ambiguity! Keep it terse to reduce cognitive load on the AI. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test. Test with multiple questions multiple times.",
-    "description2": "If you're happy with the changes, alert the AI Answers team, copy and paste the edited version for them, and they'll make and push the changes into the live AI Answers product.",
-    "sections": {
-      "editOverride": "Edit",
-      "visualDiff": "Visual diff (side-by-side)"
+    "intro": "Scenario testing lets you temporarily override a department's scenario instructions and try them out live in AI Answers, without changing what's on the live site now.",
+    "departmentSelect": {
+      "label": "Department or institution",
+      "placeholder": "Select a department, agency, institution, etc."
     },
-    "table": {
-      "department": "Department",
+    "editor": {
+      "label": "Scenario text"
+    },
+    "diff": {
+      "heading": "Differences side-by-side",
       "defaultLabel": "Original scenario text",
       "overrideLabel": "Edited text",
-      "enabled": "Apply edits",
-      "showDiff": "Show diff",
-      "hideDiff": "Hide diff",
-      "diffLabel": "Diff",
-      "lastUpdated": "Last updated"
+      "addedLabel": "Added",
+      "removedLabel": "Removed"
     },
-    "status": {
-      "saving": "Saving...",
-      "saveSuccess": "Edits saved.",
-      "saveError": "Unable to save edits.",
-      "loadError": "Unable to load edits."
+    "table": {
+      "enabled": "Use this scenario for testing",
+      "enabledError": "Please make a change to the scenario first.",
+      "lastUpdated": "Last updated:"
     },
     "buttons": {
-      "save": "Save edits",
-      "reset": "Reset"
+      "save": "Save",
+      "revert": "Revert to default",
+      "copy": "Copy scenario text"
     },
-    "error": {
-      "fallback": "An error occurred while loading this page."
+    "status": {
+      "saving": "Saving…",
+      "saveSuccess": "Scenario saved.",
+      "saveError": "Unable to save this scenario. Try again.",
+      "loadError": "Unable to load this department's scenario.",
+      "unsavedChangesConfirm": "You have unsaved changes. Switch departments and discard them?",
+      "reverting": "Reverting…",
+      "revertConfirm": "This will permanently delete your saved edits and revert to the original scenario. Continue?",
+      "revertSuccess": "Reverted to the original scenario.",
+      "revertError": "Unable to revert this scenario. Try again.",
+      "enabledSuccess": "This scenario is now active.",
+      "enabledSuccessOtherDisabled": "This scenario is now active. The previously active scenario is now disabled.",
+      "disabledSuccess": "This scenario is no longer active.",
+      "conflictError": "This scenario was changed in another tab or window. Reload this department to see the latest version before saving.",
+      "copied": "Copied to clipboard.",
+      "copyError": "Unable to copy. Try again."
+    },
+    "testLink": "Test your scenario in AI Answers",
+    "submit": {
+      "heading": "How to submit your scenario to the AI Answers team",
+      "intro": "If you're happy with the test results of this scenario:",
+      "step1": "Contact the AI Answers team at {email}, and include a copy of the edited text version in your email.",
+      "step2": "The AI Answers team will review and then apply the changes into the live AI Answers product."
     },
     "empty": {
-      "never": "Never",
-      "defaultMissing": "No default text available."
+      "never": "Never"
     }
   },
   "connectivity": {
@@ -1891,11 +2271,16 @@
     "description": "Test connectivity to all external services and AI providers used by AI Answers.",
     "runTests": "Run connectivity tests",
     "testing": "Testing connections...",
+    "testComplete": "Connectivity test complete: {connected} connected, {errors} error(s), {warnings} warning(s), {notConfigured} not configured.",
     "simulation": {
       "title": "Failure simulation",
       "description": "Flip a service into simulated outage mode to exercise the health monitor.",
-      "enable": "Simulate failure",
-      "disable": "Clear simulation",
+      "on": "On",
+      "off": "Off",
+      "loadFailed": "Couldn't load the failure simulation settings. Reload the page to try again.",
+      "saveFailed": "Couldn't save the {service} setting. Try again.",
+      "announceOn": "Simulating a failure: {service}.",
+      "announceOff": "{service} is operating normally.",
       "labels": {
         "database": "Database",
         "search": "Search",
@@ -1906,11 +2291,15 @@
     "errors": "Errors",
     "warnings": "Warnings",
     "notConfigured": "Not configured",
-    "lastRun": "Last run",
+    "statusError": "Error",
+    "statusWarning": "Warning",
+    "lastRun": "Last run:",
+    "summaryHeading": "Connectivity summary",
     "serviceDetails": "Service details",
-    "latency": "Latency",
+    "latency": "Latency:",
+    "millisecondsUnit": "ms",
     "details": "Details",
-    "error": "Error"
+    "error": "Error:"
   },
   "validation": {
     "required": "Please fill in this field.",
@@ -1921,6 +2310,15 @@
     "title": "Page not found",
     "message": "We can't find the page you're looking for.",
     "homeLink": "Return to AI Answers"
+  },
+  "aboutPage": {
+    "loading": "Loading...",
+    "title": "About",
+    "loadError": "Unable to load content."
+  },
+  "systemCard": {
+    "title": "AI Answers system card",
+    "loadError": "Unable to load the system card."
   },
   "experimental": {
     "datasets": {
@@ -1947,6 +2345,7 @@
       "creatingInstantAnswer": "Generating equivalent questions and creating dataset...",
       "goldenAnswerSuccess": "Golden answer dataset created successfully.",
       "goldenAnswerFailed": "Failed to create golden answer dataset.",
+      "goldenAnswerFailedDetail": "Failed to create golden answer dataset: {error}",
       "instantAnswerSuccess": "Instant answer test dataset created successfully.",
       "instantAnswerQueued": "Instant answer dataset creation has been queued. You can monitor its status on the datasets page.",
       "instantAnswerFailed": "Failed to create instant answer test dataset.",
@@ -1966,6 +2365,7 @@
       "errorLoadingRows": "Failed to load rows.",
       "confirmDelete": "Are you sure you want to delete this dataset? This action cannot be undone.",
       "inUse": "This dataset is in use by active batches and cannot be deleted.",
+      "deleteFailed": "Failed to delete dataset.",
       "nameLabel": "Dataset Name",
       "descLabel": "Description",
       "typeLabel": "Dataset Type",
@@ -1975,7 +2375,7 @@
       "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
-      "requiredColumns": "Columns",
+      "requiredColumns": "Columns:",
       "columnAliasHint": "Column names are matched without regard to case, spaces, hyphens or underscores. Extra columns are kept and ignored unless they conflict with the selected dataset type.",
       "uploadDescriptions": {
         "questionOnly": "Use this when you want the system to generate a fresh answer during analysis. Do not include an answer or reference answer column.",
@@ -2025,18 +2425,103 @@
       "configuration": "Configuration",
       "selectAnalyzers": "Select analyzer",
       "analyzerDetailsTitle": "Analyzer details",
-      "analyzerPrefix": "Analyzer",
+      "analyzerPrefix": "Analyzer:",
       "workflowLabel": "Workflow",
-      "selectBaseline": "Select reference run (comparison)",
-      "baselineHint": "Pick a previous analysis to act as the comparison reference. When selected, new runs are compared against that run's answers.",
-      "referenceHint": "If no reference run is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
-      "expertScorerDescription": "Judges the current answer against the dataset's canonical reference when one is available. It checks key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and answer quality. With a previous run selected, the main verdict still uses the dataset reference and a separate drift result describes whether the current answer improved, regressed, or stayed unchanged.",
-      "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison run. Use a question and answer dataset with a referenceAnswer column, or a comparison run.",
-      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare the current answer with the selected reference run for drift.",
-      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference run's answers will replace it as the comparison reference for this run. Results will measure drift from that run, not against the dataset reference answer. Choose \"No reference run\" to compare against the dataset reference answer.",
+      "analysisMode": {
+        "label": "Analysis mode",
+        "reference": "Compare a newly generated answer with the dataset reference answer",
+        "generated": "Analyze a newly generated answer without using the dataset answer",
+        "generatedOnly": "This dataset has no reference answer. A newly generated answer will be analyzed."
+      },
+      "tabs": {
+        "label": "Analysis views",
+        "batches": "Batches",
+        "comparison": "Compare batches"
+      },
+      "comparison": {
+        "title": "Compare completed batches",
+        "titlePrefix": "Compare completed batches:",
+        "hint": "Select a baseline batch, then choose a completed batch with the same analyzer. Trials are compared by index up to the smaller trial count.",
+        "analyzerDetailsTitle": "Comparison analyzer details",
+        "analyzers": {
+          "no-analyzer": "No scoring is performed. The comparison only confirms that paired rows and stored outputs are available.",
+          "expert-scorer": "Requires a reference answer for every comparison. Each run is evaluated against the dataset reference when available; otherwise, the selected baseline answer is used as the reference. The comparison explains which run has stronger correctness, completeness, and answer quality.",
+          "similar-answer": "The two answers are compared for meaningful factual drift. When a dataset reference exists, both answers are also compared with it and the result identifies which run is more similar. Harmless wording changes are ignored.",
+          "refusal": "The refusal state of both answers is compared. If a dataset reference exists, both runs are also checked against its refusal state. A change in refusal behavior is flagged.",
+          "safety": "Both questions and answers are evaluated for unsafe content. The comparison reports whether either run has a safety-status change and which answer is safer; harmless wording differences are not safety flags.",
+          "bias-detection": "Both answers are evaluated for harmful bias and their bias levels are compared. A change in bias level or a current bias concern is flagged; detail-only differences are ignored.",
+          "instant-answer": "The comparison checks whether the two instant-answer results remain identical to their expected references and identifies any validation difference."
+        },
+        "analyzerRules": {
+          "headers": {
+            "setup": "Compared inputs",
+            "comparison": "What the analyzer does",
+            "flagged": "What is flagged"
+          },
+          "expert-scorer": {
+            "title": "Expert scorer batch-comparison rules",
+            "rows": {
+              "canonicalReference": { "setup": "Baseline answer, candidate answer, and a required reference answer", "comparison": "The candidate and baseline are each assessed against the dataset reference when available. If it is unavailable, the selected baseline answer is used as the required reference.", "flagged": "The candidate can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules." },
+              "runToRun": { "setup": "Paired baseline and candidate answers with a required reference", "comparison": "The analyzer returns separate baseline and candidate assessments, then reports whether the candidate improved, regressed, was unchanged, or needs review.", "flagged": "A quality failure or a change in the candidate’s quality compared with the baseline can be flagged." }
+            }
+          },
+          "similar-answer": {
+            "title": "Similar answer batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Compares the two answers for material factual differences. Harmless wording, formatting, and equivalent reordered points are ignored.", "flagged": "A changed fact, date, number, eligibility rule, step, named item, scope, URL, or answer type that could change a user’s understanding or action." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Also compares both answers with the dataset reference and identifies which is more similar to it.", "flagged": "The same material differences; the result can also identify the answer closer to the dataset reference." }
+            }
+          },
+          "refusal": {
+            "title": "Refusal batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Detects prompt-tagged or error-driven refusal signals in both answers and compares their refusal states.", "flagged": "Any difference in refusal state between the baseline and candidate." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Also checks whether either answer differs from the dataset reference’s refusal state.", "flagged": "A baseline or candidate refusal state that differs from the dataset reference." }
+            }
+          },
+          "safety": {
+            "title": "Safety batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Evaluates both answers for unsafe content and asks which answer is safer, or whether they are equally safe.", "flagged": "Unsafe content in either answer or a reported safety difference between the runs." },
+              "datasetReference": { "setup": "Paired answers plus a dataset reference, when stored", "comparison": "Supplies the dataset reference as additional context while assessing the two run answers.", "flagged": "The same safety concerns or safety-status difference; the dataset reference is context, not a third scored result." }
+            }
+          },
+          "bias-detection": {
+            "title": "Bias batch-comparison rules",
+            "rows": {
+              "pairedAnswers": { "setup": "Paired baseline and candidate answers", "comparison": "Evaluates the candidate for harmful bias and compares only the labels unbiased, caution, and biased with the baseline.", "flagged": "A current bias concern or a change in bias level. Detail, tone, wording, factual, or completeness differences alone are ignored." },
+              "datasetReference": { "setup": "A dataset reference may be stored with the paired answers", "comparison": "Does not use the dataset reference in its comparison; it compares the candidate bias label with the baseline bias label.", "flagged": "Only the candidate’s bias concern or a baseline-to-candidate bias-level change." }
+            }
+          }
+        },
+        "baseline": "Baseline batch",
+        "baselinePrefix": "Baseline batch:",
+        "candidate": "Compare against",
+        "selectBaseline": "-- Select a baseline batch --",
+        "selectCandidate": "-- Select a batch to compare --",
+        "create": "Create comparison",
+        "columns": {
+          "name": "Comparison name",
+          "analyzer": "Analyzer",
+          "status": "Status",
+          "completed": "Completed",
+          "failed": "Failed",
+          "total": "Total items",
+          "date": "Date",
+          "actions": "Actions",
+          "previousComparisons": "Previous comparisons"
+        }
+      },
+      "selectBaseline": "Select reference batch (comparison)",
+      "baselineHint": "Pick a completed batch to act as the comparison reference. Comparisons use that batch's answers.",
+      "referenceHint": "If no reference batch is selected, the dataset reference is used automatically. For question and answer datasets, the answer column is used as the reference for comparison analyzers.",
+      "expertScorerDescription": "Requires a reference answer for every run. In analysis mode, it judges the newly generated answer against the dataset reference for key ideas, recommendations, answer type, Government of Canada source integrity, XML tagging, unsupported claims, and overall quality. In Compare batches, the dataset reference is used when available; otherwise, the selected baseline answer is the required reference.",
+      "expertScorerInfo": "Expert scorer requires a reference answer from the dataset or a comparison batch. Use a question and answer dataset with a referenceAnswer column, or a comparison batch.",
+      "expertScorerBaselineHint": "Expert scorer will use the dataset reference answer for the main quality score and compare answers with the selected reference batch for drift.",
+      "baselineOverridesReference": "Warning: this dataset has a reference answer column, but the selected reference batch's answers will replace it as the comparison reference. Results will measure drift from that batch, not against the dataset reference answer.",
       "analyzerRules": {
         "headers": {
-          "setup": "Run setup",
+          "setup": "Batch setup",
           "comparison": "What is compared",
           "flagged": "What can be flagged"
         },
@@ -2046,60 +2531,79 @@
             "always": {
               "setup": "Any setup",
               "comparison": "No comparison is performed.",
-              "flagged": "Nothing is flagged; the run only validates generation and storage."
+              "flagged": "Nothing is flagged; the batch only validates generation and storage."
             }
           }
         },
         "expert-scorer": {
-        "title": "Expert scorer comparison rules",
+          "title": "Expert scorer comparison rules",
         "rows": {
+          "referenceAnswer": {
+            "setup": "Dataset with a reference answer",
+            "comparison": "Analysis mode always compares the newly generated answer with the dataset reference answer.",
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules."
+          },
           "datasetOnly": {
-            "setup": "Dataset reference, no reference run",
+            "setup": "Dataset reference, no reference batch",
             "comparison": "Current answer against the dataset reference answer.",
-            "flagged": "Missing key ideas, changed recommendations, unsupported claims, answer-type regressions, invalid tagging, or materially weaker quality."
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules."
           },
           "datasetAndRun": {
-            "setup": "Dataset reference and reference run",
-            "comparison": "Main verdict against the dataset reference; separate drift result against the previous run.",
-            "flagged": "The main verdict can be flagged for quality issues. Drift is reported separately as improved, regressed, unchanged, or needs review."
+            "setup": "Dataset reference and reference batch",
+            "comparison": "Main verdict against the dataset reference; separate drift result against the previous batch.",
+            "flagged": "An answer can be flagged for missing key information, unsupported or fabricated information, an answer-type regression, invalid XML tags, or breaking the length rules. Drift is reported separately."
           }
         }
       },
         "similar-answer": {
           "title": "Similar answer comparison rules",
           "rows": {
-            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the run can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current answer against the supplied reference answer.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Compares the newly generated answer with the dataset reference for material factual differences.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, URLs, or answer type. Harmless wording and formatting changes are ignored." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Does not compare answers; it records a generated answer that can be used as a baseline in Compare batches.", "flagged": "Nothing is flagged for answer differences." },
+            "standalone": { "setup": "No reference", "comparison": "No answer comparison; the batch can become a future baseline.", "flagged": "Nothing is flagged for comparison." },
+            "withReference": { "setup": "Dataset or reference-batch answer", "comparison": "Current answer against the supplied reference answer; in a batch comparison, both runs are also compared with the dataset reference when available.", "flagged": "Material changes to facts, dates, numbers, eligibility, steps, named programs, scope, or URLs. Harmless wording changes are ignored." }
           }
         },
         "refusal": {
           "title": "Refusal comparison rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Compares the generated answer’s recognized refusal state with the dataset reference’s refusal state.", "flagged": "The reference is a refusal and the generated answer is not, or the refusal states differ." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Checks the generated answer for recognized prompt-tagged or error-driven refusal signals without a reference answer.", "flagged": "A generated answer without a recognized refusal signal." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is checked for recognized refusal signals.", "flagged": "The answer fails to refuse when the refusal evaluator expects a refusal." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior.", "flagged": "An expected refusal is missing or refusal behavior changes relative to the reference." }
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current refusal behavior against the reference refusal behavior; batch comparisons also check both runs against the dataset reference when available.", "flagged": "A refusal-state change or deviation from the dataset reference is flagged." }
           }
         },
         "safety": {
           "title": "Safety evaluation rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Evaluates the generated answer for safety and asks for any meaningful safety difference from the dataset reference answer.", "flagged": "Unsafe content in the generated answer or a reported safety difference from the reference." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Evaluates the generated answer for harmful, unsafe, privacy, or other restricted content without comparing a reference.", "flagged": "A safety concern requiring review." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful, unsafe, privacy, or other restricted content.", "flagged": "The answer contains a safety concern requiring review." },
-            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current safety status and, separately, change from the reference.", "flagged": "A current safety concern or a meaningful safety regression can be flagged." }
+            "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current question and answer safety, plus the safety difference between runs and which answer is safer.", "flagged": "An unsafe question or answer, or a genuine safety-status change between compared runs." }
           }
         },
         "bias-detection": {
           "title": "Bias evaluation rules",
           "rows": {
+            "withDatasetReference": { "setup": "Dataset with a reference answer", "comparison": "Evaluates the generated answer for harmful bias and compares its unbiased, caution, or biased label with the dataset reference.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." },
+            "withoutReference": { "setup": "Dataset without a reference answer", "comparison": "Evaluates the generated answer for harmful bias without comparing a reference.", "flagged": "A current bias concern." },
             "standalone": { "setup": "No reference", "comparison": "Current answer is evaluated for harmful bias.", "flagged": "The answer is classified as biased or caution-worthy." },
             "withReference": { "setup": "Dataset or reference-run answer", "comparison": "Current bias level and change from the reference bias level.", "flagged": "A current bias concern or a change in bias level; detail-only differences are ignored." }
           }
+        },
+        "instant-answer": {
+          "title": "Instant-answer validation rules",
+          "rows": {
+            "goldenReference": { "setup": "Instant-answer workflow and dataset with a reference answer", "comparison": "Checks that the workflow used its instant-answer short-circuit and that the generated answer exactly equals the dataset reference answer.", "flagged": "The short-circuit was not used or the generated answer is not identical to the reference answer." }
+          }
         }
       },
-      "runLabelLabel": "Run label (optional)",
+      "runLabelLabel": "Batch label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
       "suiteView": "Suite grid",
       "trialsLabel": "Trials per question",
-      "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline runs",
-      "noBaseline": "-- No reference run (standalone evaluation) --",
+      "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline executions",
+      "noBaseline": "-- No reference batch (standalone evaluation) --",
       "useExistingDatasetLabel": "Use existing dataset",
       "datasetSelectPlaceholder": "-- Select an existing dataset --",
       "datasetHelper": "Upload and manage datasets through the Datasets page, then select one here.",
@@ -2108,17 +2612,17 @@
       "orUpload": "Or upload new data:",
       "inputFile": "Input File (Excel/CSV)",
       "comparisonFile": "Comparison File (Optional)",
-      "run": "Run analysis",
+      "run": "Create batch",
       "starting": "Starting...",
-      "startingRun": "Starting analysis...",
+      "startingRun": "Starting batch...",
       "resume": "Resume",
-      "runningStatus": "Running status",
-      "noActiveRuns": "No active runs currently tracked.",
-      "previousRuns": "Previous runs",
+      "runningStatus": "Batch status",
+      "noActiveRuns": "No active batches currently tracked.",
+      "previousRuns": "Previous batches",
       "batchPrefix": "Batch",
       "progressSummary": "Completed: {completed} | Failed: {failed} | Total: {total}",
       "columns": {
-        "name": "Run name",
+        "name": "Batch name",
         "analyzer": "Analyzer",
         "workflow": "Workflow",
         "modelFamily": "Model family",
@@ -2140,7 +2644,7 @@
       "useAsBaseline": "Use as reference",
       "baselineSelected": "Reference selected",
       "delete": "Delete",
-      "empty": "No previous runs found for this dataset.",
+      "empty": "No previous batches found for this dataset.",
       "statuses": {
         "pending": "Pending",
         "processing": "Processing",
@@ -2152,9 +2656,12 @@
         "selectAnalyzer": "Please select an analyzer.",
         "selectData": "Please select a dataset or upload a file.",
         "selectDataset": "Please select an existing dataset before starting analysis.",
+        "selectComparisonRuns": "Please select both batches to compare.",
+        "comparisonStarted": "Batch comparison started.",
+        "comparisonFailed": "Failed to start comparison.",
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
-        "startingRun": "Starting your analysis run. Please wait a moment.",
-        "startedCount": "Started {count} analysis runs.",
+        "startingRun": "Starting your analysis batch. Please wait a moment.",
+        "startedCount": "Started {count} analysis batches.",
         "resumeStarted": "Resume requested.",
         "confirmDelete": "Are you sure you want to delete this batch?",
         "processingStarted": "Processing started.",
@@ -2169,6 +2676,9 @@
       "error.NO_REFERENCE": "This analyzer requires a reference answer: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_INSTANT_ANSWER": "Instant-answer validation requires a golden reference answer: use a dataset with an answer or referenceAnswer column.",
+      "error.REFERENCE_REQUIRED": "This analyzer or analysis mode requires a reference answer.",
+      "error.INVALID_ANALYSIS_MODE": "Choose a valid analysis mode.",
+      "error.BATCH_COMPARISON_NOT_SUPPORTED": "This analyzer does not support comparing completed batches.",
       "error.WORKFLOW_NO_INSTANT_ANSWER": "Instant-answer validation requires a workflow with an instant-answer step.",
         "error.NO_ITEMS": "Batch has no rows to process.",
         "error.BAD_REQUEST": "Invalid request. Please check your configuration.",
@@ -2185,23 +2695,23 @@
         },
         "bias-detection": {
           "name": "Bias",
-          "description": "This analyzer checks whether the answer introduces or reinforces harmful bias, for example bias tied to gender, race, age, disability, or other protected characteristics. It looks for language that stereotypes, excludes, or treats a group unfairly, and it can also compare the current run with a reference run to see if the bias got better, worse, or stayed the same. A flagged result means the answer contains a bias signal that deserves review, or that the current answer is materially more biased than the reference. If no reference exists, the analyzer behaves like a standalone safety review and reports the result of the current answer only. Use this when you need to watch for harmful framing, unfair assumptions, or subtle regressions in tone and wording."
+          "description": "Reviews a newly generated answer for harmful bias, including stereotypes, exclusion, or unfair treatment based on protected characteristics. Use it to identify harmful framing or assumptions in a single analysis batch."
         },
         "expert-scorer": {
           "name": "Expert scorer",
-          "description": "Judges answer quality against Government of Canada expectations. It can score a question and answer pair on its own, or compare that answer against a reference answer or reference run when you provide one. What each answer is judged against depends on how you set up the run:\n• Your dataset has a reference answer column — each answer is judged against the expert-approved reference: missing key ideas, changed recommendations, and answer-type regressions (for example, a normal answer becoming a refusal). A fail means the answer is wrong or weaker than the expert standard.\n• You selected a reference run — the same judgment, but the reference is that run's generated answers, so a fail means quality changed since that run, not that the answer is wrong. If the dataset also has a reference answer, the reference run's answers take precedence.\nUse this as the default scorer when you want a broad quality judgment, whether or not you have a comparison answer."
+          "description": "Requires a reference answer for every run. It judges answer quality against Government of Canada expectations, including missing key ideas, changed recommendations, answer-type regressions, unsupported claims, and overall quality. In analysis mode, the dataset reference is required. In Compare batches, the dataset reference is used when available; otherwise, the selected baseline answer is the required reference."
         },
         "refusal": {
           "name": "Refusal",
-          "description": "This analyzer checks whether an expected refusal is preserved, including prompt-tagged refusals such as <not-gc> and <pt-muni>, short-query blocks, safety blocks, and other error-driven refusal states. A flagged result means the reference refused but the current answer responded normally. In comparison mode, it checks whether refusal behaviour changed between the reference and the current run."
+          "description": "Checks a newly generated answer for expected refusals, including <not-gc> and <pt-muni> tags, short-query blocks, safety blocks, and other error-driven refusal states."
         },
         "safety": {
           "name": "Safety",
-          "description": "This analyzer reviews the answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is. A flagged result means the answer crossed a safety boundary or exposed content that should be examined before the run is considered acceptable. When a reference is provided, the analyzer compares the two runs and reports whether safety improved, regressed, or stayed stable. Use this analyzer to monitor moderation quality, catch risky outputs early, and confirm that changes to the system are making responses safer instead of less safe."
+          "description": "Reviews a newly generated answer for harmful content, hate speech, unsafe instructions, privacy leaks, and other content that should not be released as-is."
         },
         "similar-answer": {
           "name": "Similar answer",
-          "description": "A strict fact-by-fact difference detector: it compares two answers and flags changes in dates, numbers, eligibility rules, steps, named programs, scope, and URLs that would change what a user should do. Harmless rewording and formatting changes are ignored, and it returns needs-review when unsure. What it compares depends on how you set up the run:\n• You selected a reference run — each new answer is compared against that run's answer to the same question. A flag means the answer changed since that run — it may have changed for the better. This is the usual drift-monitoring setup.\n• Your dataset has a reference answer column — each generated answer is compared against the expert-approved reference, flagging factual deviations only. For a broader quality judgment against a reference answer, prefer the Expert scorer.\n• Neither — there is nothing to compare: the run only captures answers and is not scored (the suite grid marks it as a reference capture). Select it as the reference for a later drift run.\nUse this to catch subtle factual regressions that a general quality review might miss."
+          "description": "Detects material factual differences in a newly generated answer, including dates, numbers, eligibility rules, steps, named programs, scope, and URLs. Harmless rewording and formatting changes are ignored."
         },
         "instant-answer": {
           "name": "Instant-answer validation",
@@ -2211,7 +2721,7 @@
     },
     "results": {
       "title": "Batch results",
-      "backToRuns": "Back to analysis runs",
+      "backToRuns": "Back to analysis batches",
       "loading": "Loading results...",
       "loadError": "Failed to load batch results.",
       "summary": {
@@ -2235,6 +2745,7 @@
         "question": "Question",
         "verdict": "Verdict",
         "explanation": "Explanation",
+        "comparisonExplanation": "Comparison explanation",
         "actions": "Actions",
         "view": "View",
         "empty": "No items match this filter."
@@ -2263,9 +2774,13 @@
         "referringUrl": "Referring URL",
         "itemError": "Processing error",
         "referenceAnswer": "Reference answer",
+        "baselineAnswer": "Baseline answer",
         "noReferenceAnswer": "No reference answer was used.",
+        "noBaselineAnswer": "No baseline answer was available.",
         "currentAnswer": "Generated answer",
+        "comparedAnswer": "Compared answer",
         "noAnswer": "No answer was generated.",
+        "noComparedAnswer": "No compared answer was available.",
         "legendRemoved": "Missing from generated answer",
         "legendAdded": "Added in generated answer",
         "viewChatLogs": "View chat logs",
@@ -2283,14 +2798,14 @@
       "title": "Test suite",
       "loading": "Loading suite grid...",
       "loadError": "Failed to load suite grid.",
-      "noRuns": "No analysis runs yet for this dataset. Start one from the analysis page.",
-      "runColumn": "Run",
+      "noRuns": "No analysis batches yet for this dataset. Start one from the analysis page.",
+      "runColumn": "Batch",
       "scoreColumn": "Score",
       "scoreAll": "all trials",
       "scoreAny": "any trial",
-      "captureRun": "Reference capture — not scored against a reference",
-      "newRun": "New analysis run",
-      "categoryLabel": "Category",
+      "captureRun": "Reference batch — not scored against a reference",
+      "newRun": "New analysis batch",
+      "categoryLabel": "Category:",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {
         "control": "Control",

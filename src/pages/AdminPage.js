@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { getPath } from '../utils/routes.js';
-import { GcdsContainer, GcdsLink, GcdsButton } from '@gcds-core/components-react';
+import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
+import ViewChatByIdSection from '../components/admin/ViewChatByIdSection.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 import DeleteExpertEval from '../components/DeleteExpertEval.js';
 import { RoleBasedContent } from '../components/RoleBasedUI.js';
 import AdminNotifications from '../components/admin/AdminNotifications.js';
+import { HOW_TOS } from '../config/howTos.js';
 
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout, currentUser } = useAuth();
-  const navigate = useNavigate();
-  const [lookupChatId, setLookupChatId] = useState('');
 
-  const handleLogout = (e) => {
-    e.preventDefault();
+  const handleLogout = () => {
     logout();
     // Force a full page reload to the signin page so the app's
     // fingerprint initialization runs again and a new session is created.
@@ -32,12 +31,37 @@ const AdminPage = ({ lang = 'en' }) => {
   // Determine if user is partner only
   const isPartner = currentUser?.role === 'partner';
 
+  // TODO: replace with a how-to guides page, then drop this.
+  // Footer "How to guides" link: the section renders after the browser's own
+  // jump-to-#anchor on load, so focus it here (and open the list). Retries
+  // until focus sticks - GcdsContainer keeps its content hidden until it
+  // hydrates, and focus() on a hidden element silently does nothing.
+  // Runs once per arrival (location.key), not on currentUser: the session
+  // re-check on tab return replaces currentUser and would pull focus back.
+  const location = useLocation();
+  const linkedToHowTos = location.hash === '#how-to-guides';
+  useEffect(() => {
+    if (!linkedToHowTos) return undefined;
+    let frame;
+    let tries = 0;
+    const focusTarget = () => {
+      const target = document.getElementById('how-to-guides');
+      if (target) {
+        target.setAttribute('tabindex', '-1');
+        target.classList.add('focus-target');
+        target.focus();
+        if (document.activeElement === target) return;
+      }
+      if (tries++ < 120) frame = requestAnimationFrame(focusTarget);
+    };
+    focusTarget();
+    return () => cancelAnimationFrame(frame);
+  }, [linkedToHowTos, location.key]);
+
   return (
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">
-        {isPartner
-          ? t('admin.partnerTitle', 'AI Answers Partner Dashboard')
-          : t('admin.title', 'Admin Dashboard')}
+        {isPartner ? t('admin.partnerTitle') : t('admin.title')}
       </h1>
 
       {/* Admin notifications panel - only visible to admins */}
@@ -45,32 +69,41 @@ const AdminPage = ({ lang = 'en' }) => {
         <AdminNotifications lang={lang} />
       </RoleBasedContent>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', isPartner ? 'Partner Navigation' : 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
+
+        {/* The user's own account comes first, above both menus */}
+        <ul className="list-none p-0">
+          <li>
+            <GcdsLink href={getPath('account', lang)}>
+              {t('admin.navigation.account')}
+            </GcdsLink>
+          </li>
+        </ul>
 
         {/* Partner Menu - Visible to everyone (Partner & Admin) */}
         <section className="mb-400">
           <h2 className="mt-400 mb-400">
-            {t('admin.navigation.partnerMenu', 'Partner Menu')}
+            {t('admin.navigation.partnerMenu')}
           </h2>
           <ul className="list-none p-0">
             <li>
               <GcdsLink href={`/${lang}`} target="_blank" rel="noopener noreferrer">
-                {t('admin.navigation.aiAnswers', 'AI Answers')}
+                {t('admin.navigation.aiAnswers')}
               </GcdsLink>
             </li>
             <li>
               <GcdsLink href={getPath('eval-dashboard', lang)}>
-                {t('admin.navigation.evalDashboard', 'Evaluation dashboard')}
+                {t('admin.navigation.evalDashboard')}
               </GcdsLink>
             </li>
             <li>
               <GcdsLink href={getPath('chat-dashboard', lang)}>
-                {t('admin.navigation.chatDashboard', 'Chat dashboard')}
+                {t('admin.navigation.chatDashboard')}
               </GcdsLink>
             </li>
             <li>
               <GcdsLink href={getPath('metrics', lang)}>
-                {t('admin.navigation.metrics', 'View performance metrics')}
+                {t('admin.navigation.metrics')}
               </GcdsLink>
             </li>
             <li>
@@ -79,13 +112,8 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
             <li>
-              <GcdsLink href={getPath('technical-metrics', lang)}>
-                {t('admin.navigation.technicalMetrics')}
-              </GcdsLink>
-            </li>
-            <li>
               <GcdsLink href={getPath('scenario-overrides', lang)}>
-                {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
+                {t('admin.navigation.scenarioOverrides')}
               </GcdsLink>
             </li>
             <li>
@@ -95,7 +123,7 @@ const AdminPage = ({ lang = 'en' }) => {
             </li>
             <li>
               <GcdsLink href={getPath('batch', lang)}>
-                {t('admin.navigation.batches', 'View and manage batches')}
+                {t('admin.navigation.batches')}
               </GcdsLink>
             </li>
             <li>
@@ -110,56 +138,61 @@ const AdminPage = ({ lang = 'en' }) => {
         <RoleBasedContent roles={["admin"]}>
           <section className="mb-400">
             <h2 className="mt-400 mb-400">
-              {t('admin.navigation.title', 'Admin Menu')}
+              {t('admin.navigation.title')}
             </h2>
             <ul className="list-none p-0">
               <li>
                 <GcdsLink href={getPath('users', lang)}>
-                  {t('admin.navigation.users', 'Manage User Accounts')}
+                  {t('admin.navigation.users')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('database', lang)}>
-                  {t('admin.navigation.database', 'Manage the database')}
+                  {t('admin.navigation.database')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('eval', lang)}>
-                  {t('admin.navigation.eval', 'Evaluation Administration')}
+                  {t('admin.navigation.eval')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('auto-eval-dashboard', lang)}>
-                  {t('admin.navigation.autoEvalDashboard', 'Auto-Evaluation dashboard')}
+                  {t('admin.navigation.autoEvalDashboard')}
+                </GcdsLink>
+              </li>
+              <li>
+                <GcdsLink href={getPath('technical-metrics', lang)}>
+                  {t('admin.navigation.technicalMetrics')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('vector', lang)}>
-                  {t('admin.navigation.vector', 'Vector Administration')}
+                  {t('admin.navigation.vector')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('settings', lang)}>
-                  {t('settings.title', 'Settings')}
+                  {t('settings.title')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('sessions', lang)}>
-                  {t('admin.navigation.sessions', 'Active Sessions')}
+                  {t('admin.navigation.sessions')}
                 </GcdsLink>
               </li>
               <li>
                 <GcdsLink href={getPath('connectivity', lang)}>
-                  {t('admin.navigation.connectivity', 'Service Connectivity')}
+                  {t('admin.navigation.connectivity')}
                 </GcdsLink>
               </li>
               {/* Experimental Features */}
               <li className="mt-400">
-                <strong>{t('admin.navigation.experimental', 'Experimental')}</strong>
+                <strong>{t('admin.navigation.experimental')}</strong>
                 <ul className="list-none pl-400">
                   <li>
-                    <GcdsLink href={`/${lang}/experimental/datasets`}>
-                      {t('admin.navigation.dataAnalysis', 'Data Analysis')}
+                    <GcdsLink href={getPath('experimental-datasets', lang)}>
+                      {t('admin.navigation.dataAnalysis')}
                     </GcdsLink>
                   </li>
                 </ul>
@@ -168,56 +201,61 @@ const AdminPage = ({ lang = 'en' }) => {
             </ul>
           </section>
         </RoleBasedContent>
-        {/* Logout Link */}
+        {/* Logout performs an action, not navigation, so it's a real button.
+            TODO: give sign-out its own slot once this app has local nav. */}
         <section className="mt-400">
           <ul className="list-none p-0">
             <li>
-              <GcdsLink href="#" onClick={handleLogout}>
-                {t('admin.navigation.logout', 'Logout')}
-              </GcdsLink>
+              <button
+                type="button"
+                className="filter-button-secondary filter-button-secondary--inline"
+                onClick={handleLogout}
+              >
+                {t('admin.navigation.logout')}
+              </button>
             </li>
           </ul>
         </section>
       </nav>
 
-      {/* Quick chat lookup for admins and partners */}
+      {/* How-to guides, rendered in-app from public/content/admin/ */}
       <RoleBasedContent roles={["admin", "partner"]}>
         <section className="mb-400">
-          <h2 className="mt-400 mb-200">{t('admin.viewChat.title', 'View chat by ID')}</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!lookupChatId) return;
-              navigate(`/${lang}?chat=${encodeURIComponent(lookupChatId)}&review=1`);
-            }}
-          >
-            <label htmlFor="view-chat-id" className="sr-only">
-              {t('admin.viewChat.label', 'Chat ID')}
-            </label>
-            <div className="flex gap-400">
-              <input
-                id="view-chat-id"
-                name="view-chat-id"
-                type="text"
-                className="form-control"
-                value={lookupChatId}
-                onChange={(e) => setLookupChatId(e.target.value)}
-                placeholder={t('admin.viewChat.placeholder', 'Enter chat id')}
-              />
-              <GcdsButton type="submit" disabled={!lookupChatId.trim()}>
-                {t('admin.viewChat.button', 'View chat')}
-              </GcdsButton>
-            </div>
-          </form>
+          <h2 id="how-to-guides" className="mt-400 mb-200">{t('admin.howTo.title')}</h2>
+          <details open={linkedToHowTos}>
+            <summary>{t('admin.howTo.trigger')}</summary>
+            <ul className="list-disc canada-ca-list-spcd-1 mt-200">
+              {HOW_TOS.map((howTo) => (
+                <li key={howTo.id}>
+                  {/* New tab so the guide stays open alongside the page it describes */}
+                  <GcdsLink href={getPath(howTo.route, lang)} target="_blank" rel="noopener noreferrer">
+                    {t(howTo.titleKey)}
+                  </GcdsLink>
+                </li>
+              ))}
+            </ul>
+          </details>
         </section>
       </RoleBasedContent>
 
-      <DeleteChatSection lang={lang} />
-
-      <DeleteExpertEval lang={lang} />
+      {/* Chat ID utilities for admins and partners: one real heading (not
+          repeated per row - see SettingsPage.js's own accordion for the
+          "one visible label per row, no separate heading" look this
+          matches), three collapsed-by-default <details> rows underneath it,
+          each row's own <summary> text the row's only label. ViewChatByIdSection.js/
+          DeleteChatSection.js/DeleteExpertEval.js each render their own
+          <details> row the same way, as standalone reusable components. */}
+      <RoleBasedContent roles={["admin", "partner"]}>
+        <section className="mb-400">
+          <h2 className="mt-400 mb-200">{t('admin.chatTools.title')}</h2>
+          <ViewChatByIdSection lang={lang} />
+          <DeleteChatSection lang={lang} />
+          <DeleteExpertEval lang={lang} />
+        </section>
+      </RoleBasedContent>
 
       <section id="chat-logs" className="mb-600">
-        <h2 className="mt-400 mb-400">{t('admin.chatLogs.title', 'Recent Chat Interactions')}</h2>
+        <h2 className="mt-400 mb-400">{t('admin.chatLogs.title')}</h2>
         <ChatLogsDashboard lang={lang} />
       </section>
     </GcdsContainer >

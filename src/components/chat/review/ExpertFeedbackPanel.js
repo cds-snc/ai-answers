@@ -1,15 +1,22 @@
-import React, { useState, useCallback } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import React, { useState, useCallback, useId } from 'react';
+import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
+import { formatNumber } from '../../../utils/numberFormat.js';
+import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
+import OriginalLanguagePill from './OriginalLanguagePill.js';
+import StatusMessage from '../../admin/StatusMessage.js';
 
-const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => {
+const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, onDeleted }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [updatingNeverStale, setUpdatingNeverStale] = useState(false);
+    // Namespaces the "never stale" checkbox id so multiple panel instances
+    // (one per message) can render on one page without id collisions.
+    const uid = useId();
 
     const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
 
@@ -59,12 +66,21 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                 message.expertFeedback = undefined;
             }
             await ClientLoggingService.info(interactionId, 'Expert feedback deleted', {});
+            // The mutation above only updates this shared `message` object in
+            // place - it doesn't tell React anything changed, so
+            // ChatInterface.js's own `!message.interaction.expertFeedback`
+            // check (deciding whether to show the eval form again) would keep
+            // evaluating against its last render until something else forced
+            // a re-render. This tells the actual owner of `messages` state
+            // (ChatAppContainer.js) so the eval form reappears immediately,
+            // no page refresh needed.
+            onDeleted?.();
         } catch (err) {
             setError(err.message || String(err));
         } finally {
             setDeleting(false);
         }
-    }, [message, t]);
+    }, [message, t, onDeleted]);
 
     const handleNeverStaleToggle = useCallback(async () => {
         try {
@@ -158,28 +174,63 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
         englishQuestion = '';
     }
 
+    // The original-language question text, for the same EN/FR-official-
+    // languages display rule resolveDisplayContent applies below - the real
+    // original-language text only exists when interaction.question arrived
+    // here as the actual populated Question document (models/question.js),
+    // not just an id string. When it isn't populated, fall back to
+    // englishQuestion (which has its own broader fallback chain above,
+    // independent of interaction.question) rather than '' - matches what
+    // this panel showed unconditionally before the original-language
+    // display work (englishQuestion, no language distinction) instead of
+    // silently hiding the whole Question block. Only wrong in the narrow
+    // case of a genuinely French question arriving unpopulated (shows the
+    // English text tagged lang="fr"), which is exactly as imprecise as - not
+    // worse than - that prior behaviour.
+    const originalQuestion = (interaction.question && typeof interaction.question === 'object')
+        ? (interaction.question.redactedQuestion || '') : (englishQuestion || '');
+    // Question.language (models/question.js) - the AI answers in whatever
+    // language was detected here (agents/prompts/agenticBase.js), so this
+    // same value also drives the answer-sentence table below, not just the
+    // question header. getAnswerLanguage (answerLanguage.js) also checks
+    // interaction.answer.questionLanguage, which - unlike
+    // interaction.question.language - is always available once an answer
+    // exists, regardless of whether interaction.question got populated.
+    // Without this broader fallback, an unpopulated interaction.question
+    // resolved questionLanguage to '' here, which resolveDisplayContent
+    // treats as "already EN/FR, show original as-is" - silently hiding the
+    // whole Question block (originalQuestion was also '' in that case) and,
+    // worse, showing the untranslated original-language answer sentences
+    // below instead of falling back to their English text.
+    const questionLanguage = getAnswerLanguage(interaction);
+    const questionDisplay = resolveDisplayContent({
+        language: questionLanguage,
+        original: originalQuestion,
+        english: englishQuestion,
+    });
+
     const getExpertScore = (idx) => {
         // expert schema stores sentence scores as sentence1Score, sentence2Score...
         const key = `sentence${idx + 1}Score`;
-        return (expert && typeof expert[key] !== 'undefined' && expert[key] !== null) ? expert[key] : 'N/A';
+        return (expert && typeof expert[key] !== 'undefined' && expert[key] !== null) ? expert[key] : t('reviewPanels.notAvailable');
     };
 
     if (sentences.length === 0) return null;
 
-    // Build title with score indicator
-    const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert evaluation';
+    // No checkmark here \u2014 this panel never renders without expert feedback
+    // (see the hasExpert guard below), so a "has expert feedback" glyph
+    // would be redundant with the panel's own presence. The score itself
+    // (when set) does add information, shown as a pill \u2014 same treatment as
+    // DownloadPanel.js's Pass/Failed summary pill.
+    const baseTitle = t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title');
     const hasExpert = expert && (expert._id || expert.id || expert.totalScore !== undefined);
-    const expertTitleSuffix = hasExpert
-        ? (typeof expert.totalScore !== 'undefined' && expert.totalScore !== null
-            ? ` \u2714 ${expert.totalScore}`
-            : ' \u2714')
-        : '';
-    const expertTitle = withAnswerNumber(baseTitle + expertTitleSuffix);
+    const hasScore = hasExpert && typeof expert.totalScore !== 'undefined' && expert.totalScore !== null;
+    const expertTitle = withAnswerNumber(baseTitle);
 
     if (!hasExpert) return null;
 
     return (
-        <details className="review-details" onToggle={(e) => {
+        <details className="review-details" lang={lang} onToggle={(e) => {
             // e.target is the native <details> element; check its open property
             try {
                 // call load when panel is being opened
@@ -191,10 +242,21 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                 handleToggle(e);
             }
         }}>
-            <summary>{expertTitle}</summary>
+            <summary>
+                {expertTitle}
+                {hasScore && (
+                    <span className="label label--summary-status normal">
+                        {t('reviewPanels.scoreSuffix').replace('{score}', () => formatNumber(expert.totalScore, lang))}
+                    </span>
+                )}
+            </summary>
             <div className="review-panel expert-feedback-panel">
-                {loading && <div>{t('common.loading') || 'Loading...'}</div>}
-                {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
+                {loading && <StatusMessage loading message={t('common.loading')} />}
+                {error && (
+                  <StatusMessage variant="error">
+                    {t('common.error')} <code lang="en">{error}</code>
+                  </StatusMessage>
+                )}
                 {/* Summary: citation and total score */}
                 <div className="expert-feedback-summary">
                     {(() => {
@@ -215,14 +277,27 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                         const totalVal = (efSource && typeof efSource.totalScore !== 'undefined' && efSource.totalScore !== null) ? efSource.totalScore : computeTotal(efSource, sentenceCount);
                         return (
                             <div>
-                                {/* English question shown above total score when available */}
-                                {englishQuestion ? (
-                                    <div style={{ marginBottom: '6px' }}><strong>{t('reviewPanels.englishQuestion') || 'English question'}:</strong> {englishQuestion}</div>
+                                {/* Question shown above total score when available - EN/FR stay in
+                                    their original language (resolveDisplayContent), only a
+                                    genuinely non-EN/FR question falls back to englishQuestion, with
+                                    the pill flagging that it happened. */}
+                                {questionDisplay.text ? (
+                                    <>
+                                        {questionDisplay.isSource && (
+                                            <div style={{ marginBottom: '4px' }}>
+                                                <OriginalLanguagePill languageCode={toLangAttr(questionLanguage)} lang={lang} t={t} />
+                                            </div>
+                                        )}
+                                        <div style={{ marginBottom: '6px' }}>
+                                            <strong>{t('reviewPanels.question')}</strong>{' '}
+                                            <span lang={questionDisplay.lang}>{questionDisplay.text}</span>
+                                        </div>
+                                    </>
                                 ) : null}
-                                <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
+                                <div><strong>{t('reviewPanels.totalScoreLabel')}</strong> {totalVal !== null ? totalVal : t('reviewPanels.notAvailable')}</div>
                                 {/* Show expert email if available */}
                                 {efSource && (efSource.expertEmail || efSource.expert_email) ? (
-                                    <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
+                                    <div><strong>{t('reviewPanels.expertEmail')}</strong> {efSource.expertEmail || efSource.expert_email}</div>
                                 ) : null}
                                 {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>
@@ -230,21 +305,29 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                     })()}
                 </div>
                 <table className="review-table">
+                    <caption className="sr-only">{t('reviewPanels.expertFeedbackTitle')}</caption>
                     <thead>
                         <tr>
-                            <th>{t('reviewPanels.sentence') || 'Sentence'}</th>
-                            <th>{t('reviewPanels.sentenceEnglish') || 'Sentence English'}</th>
-                            <th>{t('reviewPanels.expertScore') || 'Expert score'}</th>
-                            <th>{t('homepage.expertRating.options.harmful') || 'Harmful'}</th>
-                            <th>{t('homepage.expertRating.options.contentIssue') || 'Content Issue'}</th>
-                            <th>{t('reviewPanels.explanation') || 'Explanation'}</th>
+                            {/* Column header names what's actually in it, not just always
+                                "Sentence" - the AI answers in whatever language was detected
+                                for the question (agenticBase.js), same questionDisplay signal
+                                driving the question header above, so this table is either all
+                                original-language or all English, never a mix. "Source text"
+                                (not "Sentence in English") since the English shown here is what
+                                AI Answers actually worked from, same framing as EvalPanel.js's
+                                reviewPanels.sourceText column, reused rather than duplicated. */}
+                            <th scope="col">{questionDisplay.isSource ? t('reviewPanels.sourceText') : t('reviewPanels.sentence')}</th>
+                            <th scope="col">{t('reviewPanels.expertScore')}</th>
+                            <th scope="col">{t('homepage.expertRating.options.harmful')}</th>
+                            <th scope="col">{t('homepage.expertRating.options.contentIssue')}</th>
+                            <th scope="col">{t('reviewPanels.explanation')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sentences.map((s, i) => {
                             const row = (data && data.sentences && data.sentences[i]) || {};
                             const scoreVal = (typeof row.score !== 'undefined' && row.score !== null) ? row.score : getExpertScore(i);
-                            const explVal = (row.explanation || (expert && expert[`sentence${i + 1}Explanation`])) || (t('reviewPanels.notAvailable') || 'N/A');
+                            const explVal = (row.explanation || (expert && expert[`sentence${i + 1}Explanation`])) || t('reviewPanels.notAvailable');
                             const harmfulVal = (typeof row.harmful !== 'undefined') ? row.harmful : (expert && expert[`sentence${i + 1}Harmful`]);
                             const contentIssueVal = (typeof row.contentIssue !== 'undefined') ? row.contentIssue : (expert && expert[`sentence${i + 1}ContentIssue`]);
 
@@ -257,34 +340,55 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                             } else {
                                 englishVal = null;
                             }
+                            // The answer is generated in whatever language was detected for the
+                            // question (agenticBase.js), so questionLanguage drives this same
+                            // EN/FR-official-languages display rule for each answer sentence too - not a
+                            // separately-tracked per-sentence language.
+                            const sentenceDisplay = resolveDisplayContent({
+                                language: questionLanguage,
+                                original: s,
+                                english: englishVal,
+                            });
 
                             return (
                                 <tr key={`s-${i}`}>
-                                    <td>{s || (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{englishVal ? englishVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : (t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{harmfulVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
-                                    <td>{contentIssueVal ? (t('common.yes') || 'Yes') : (t('common.no') || 'No')}</td>
+                                    <td lang={sentenceDisplay.lang}>{sentenceDisplay.text || t('reviewPanels.notAvailable')}</td>
+                                    <td>{typeof scoreVal !== 'undefined' && scoreVal !== null ? scoreVal : t('reviewPanels.notAvailable')}</td>
+                                    <td>{harmfulVal ? t('common.yes') : t('common.no')}</td>
+                                    <td>{contentIssueVal ? t('common.yes') : t('common.no')}</td>
                                     <td>{explVal}</td>
                                 </tr>
                             );
                         })}
-                        {/* Citation row - map citationScore -> expert score column, suggested URL -> explanation column */}
+                        {/* Citation row - map citationScore -> expert score column. The explanation
+                            column holds two distinct fields that used to silently overwrite each
+                            other (whichever was truthy "won"): citationExplanation (why the cited
+                            URL was wrong) and expertCitationUrl (what should have been cited
+                            instead). Both are shown, each labeled, so auto-eval matching and human
+                            reviewers can tell them apart. */}
                         {(() => {
                             const efSource = (data && data.expertFeedback) || expert || {};
                             const citationScore = (typeof efSource.citationScore !== 'undefined' && efSource.citationScore !== null) ? efSource.citationScore : null;
-                            const suggestedUrl = efSource.expertCitationUrl || efSource.citationExplanation || null;
-                            const scoreCell = citationScore !== null ? citationScore : (t('reviewPanels.notAvailable') || 'N/A');
-                            const explCell = suggestedUrl ? (
-                                <a href={suggestedUrl} target="_blank" rel="noopener noreferrer">{suggestedUrl}</a>
-                            ) : (t('reviewPanels.notAvailable') || 'N/A');
+                            const scoreCell = citationScore !== null ? citationScore : t('reviewPanels.notAvailable');
+                            const explCell = (efSource.citationExplanation || efSource.expertCitationUrl) ? (
+                                <>
+                                    {efSource.citationExplanation && (
+                                        <div><strong>{t('reviewPanels.explanationLabel')}</strong> {efSource.citationExplanation}</div>
+                                    )}
+                                    {efSource.expertCitationUrl && (
+                                        <div>
+                                            <strong>{t('reviewPanels.suggestedCitation')}</strong>{' '}
+                                            <GcdsLink href={efSource.expertCitationUrl} target="_blank" lang={lang}>{efSource.expertCitationUrl}</GcdsLink>
+                                        </div>
+                                    )}
+                                </>
+                            ) : t('reviewPanels.notAvailable');
                             return (
                                 <tr key="citation-row" className="citation-row">
-                                    <td>{t('reviewPanels.citation') || 'Citation'}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{t('reviewPanels.citation')}</td>
                                     <td>{scoreCell}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
-                                    <td>{(t('reviewPanels.notAvailable') || 'N/A')}</td>
+                                    <td>{t('reviewPanels.notAvailable')}</td>
+                                    <td>{t('reviewPanels.notAvailable')}</td>
                                     <td>{explCell}</td>
                                 </tr>
                             );
@@ -303,19 +407,27 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, answerNumber }) => 
                                     buttonRole="danger"
                                     disabled={deleting}
                                     className="hydrated"
-                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback'))}
+                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback')))}
                                 >
-                                    {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
+                                    {deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback'))}
                                 </GcdsButton>
-                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={!!(efSource && efSource.neverStale)}
-                                        onChange={handleNeverStaleToggle}
-                                        disabled={updatingNeverStale}
-                                    />
-                                    <span>{t('reviewPanels.neverStale') || 'Never Stale'}</span>
-                                </label>
+                                {/* .gc-chckbxrdio.md — same custom checkbox visual/size used by
+                                    ExpertFeedbackComponent's rating checkboxes, in place of the
+                                    plain unstyled native checkbox this had before. Needs the
+                                    input/label as siblings (input[type=checkbox] + label::before),
+                                    not label-wraps-input, for that CSS to apply. */}
+                                <div className="gc-chckbxrdio md never-stale-toggle">
+                                    <div className="checkbox">
+                                        <input
+                                            type="checkbox"
+                                            id={`${uid}-never-stale`}
+                                            checked={!!(efSource && efSource.neverStale)}
+                                            onChange={handleNeverStaleToggle}
+                                            disabled={updatingNeverStale}
+                                        />
+                                        <label htmlFor={`${uid}-never-stale`}>{t('reviewPanels.neverStale')}</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     );

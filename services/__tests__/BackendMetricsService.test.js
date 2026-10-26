@@ -14,6 +14,11 @@ vi.mock('../../api/metrics/metrics-common.js', () => ({
   executeWithRetry: async (aggregateFn) => aggregateFn()
 }));
 
+const getServiceCallMetricsMock = vi.fn();
+vi.mock('../ServiceCallMetricsService.js', () => ({
+  default: { getMetrics: getServiceCallMetricsMock }
+}));
+
 describe('Backend MetricsService.getTechnicalMetrics', () => {
   let MetricsService;
 
@@ -22,6 +27,10 @@ describe('Backend MetricsService.getTechnicalMetrics', () => {
     allowDiskUseMock.mockReset();
     aggregateMock.mockReturnValue({
       allowDiskUse: allowDiskUseMock
+    });
+    getServiceCallMetricsMock.mockResolvedValue({
+      search: { google: { errors: 2, retries: 1 } },
+      ai: { context: { errors: 0, retries: 3 } }
     });
     ({ default: MetricsService } = await import('../MetricsService.js'));
   });
@@ -80,6 +89,8 @@ describe('Backend MetricsService.getTechnicalMetrics', () => {
         callNumber: 1,
         totalCount: 3,
         errorCount: 1,
+        cacheHitCount: 0,
+        originCount: 2,
         completedCount: 2,
         median: 40,
         p95: 40
@@ -88,11 +99,22 @@ describe('Backend MetricsService.getTechnicalMetrics', () => {
         callNumber: 2,
         totalCount: 3,
         errorCount: 1,
+        cacheHitCount: 0,
+        originCount: 2,
         completedCount: 2,
         median: 120,
         p95: 120
       }
     ]);
+
+    // Search/AI-call error+retry counts come from ServiceCallMetricsService,
+    // not the Chat aggregation above — see MetricsService.getTechnicalMetrics.
+    expect(getServiceCallMetricsMock).toHaveBeenCalledWith({
+      start: new Date('2026-01-01'),
+      end: new Date('2026-01-08')
+    });
+    expect(metrics.searchCalls).toEqual({ google: { errors: 2, retries: 1 } });
+    expect(metrics.aiServiceCalls).toEqual({ context: { errors: 0, retries: 3 } });
   });
 
   it('returns default response-time metrics when no positive latencies exist', async () => {

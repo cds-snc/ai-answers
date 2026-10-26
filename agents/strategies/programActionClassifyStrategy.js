@@ -8,13 +8,13 @@
 // The program-naming / URL / account rules are shared with the eval-analysis
 // classifier via programClassificationGuidance.js.
 
-import { PROGRAM_NAMING_RULE, URL_EVIDENCE_RULE, ACCOUNT_RULE, extractJson } from './programClassificationGuidance.js';
+import { PROGRAM_NAMING_RULE, URL_EVIDENCE_RULE, ACCOUNT_RULE, ACTION_SELECTION_RULE, extractJson } from './programClassificationGuidance.js';
 
 const CLASSIFY_PROMPT = `You are tagging a question asked to a Government of Canada AI assistant with the task the user was trying to accomplish, so review teams can break volume and quality down by program area. Two independent tags:
 
 PROGRAM — which government program the task concerns. Name it using the official Government of Canada program name, in English, concise (max 6 words). When it matches an entry in seed_programs, reuse that exact name — consistent naming across questions is the point. ${PROGRAM_NAMING_RULE} ${URL_EVIDENCE_RULE} ${ACCOUNT_RULE}
 
-ACTION — what the user wanted to do. Pick the single best fit from the provided actions list (synonyms show phrasing variants).
+ACTION — what the user wanted to do, chosen from the provided actions list. ${ACTION_SELECTION_RULE}
 
 The tags are independent; answer "unknown" for either when nothing fits confidently — an expected state, not a failure.
 

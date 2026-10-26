@@ -18,6 +18,7 @@ const normalizeJudgeProvider = (aiProvider = 'azure') => {
 export class ExpertScorerAnalyzer extends AnalyzerBase {
     static id = 'expert-scorer';
     static inputType = 'comparison';
+    static requiresReference = true;
     static outputColumns = [
         'explanation', 'verdict', 'confidence', 'flags', 'keyIdeasFound',
         'keyIdeasMissing', 'extraInfoValid', 'answerTypeCheck',
@@ -102,20 +103,30 @@ export class ExpertScorerAnalyzer extends AnalyzerBase {
             .replace('{answerType}', answerType)
             .replace('{downloadedPages}', downloadedPages);
 
-        const hasRunBaseline = Boolean(goldenReferenceAnswer && referenceAnswer);
+        const isBatchComparison = Boolean(originalData?.baselineRunId && originalData?.candidateRunId);
+        const hasRunBaseline = Boolean(referenceAnswer && (goldenReferenceAnswer || isBatchComparison));
         if (hasRunBaseline) {
             prompt += `
 
-### DRIFT COMPARISON
-The Golden Answer above is the canonical dataset reference and must be used for the main verdict.
-The Previous Run Answer below is from the selected earlier system run. Separately assess whether the New Answer is better, worse, or unchanged compared with that previous answer.
-Do not let the previous-run comparison change the main verdict against the Golden Answer.
+### BATCH RUN COMPARISON
+This is a batch comparison between two previously scored runs. Evaluate BOTH answers against the same Reference Answer above:
+1. Assess the Baseline Answer against the Reference Answer.
+2. Assess the Compared Against Answer against the Reference Answer.
+3. Compare those two assessments and identify whether the Baseline Answer or Compared Against Answer is closer to, more complete against, and more accurate than the Reference Answer.
 
-Previous Run Answer:
+The Reference Answer is the canonical reference for correctness. Do not judge the Compared Against Answer only by whether it differs from the Baseline Answer.
+In the input fields above, the "Generated Answer" is the Compared Against Answer for this batch comparison.
+Do not let the run-to-run comparison change the individual correctness assessment of either answer.
+
+Baseline Answer:
 ${referenceAnswer}
 
-Add this field to the JSON response:
+Add these fields to the JSON response:
 {
+  "baselineVerdict": "pass" | "fail" | "needs-review",
+  "baselineConfidence": 0.0-1.0,
+  "comparisonWinner": "new" | "previous" | "tie" | "needs-review",
+  "comparisonExplanation": "Brief explanation comparing the Baseline Answer and Compared Against Answer against the Reference Answer",
   "driftStatus": "improved" | "regressed" | "unchanged" | "needs-review",
   "driftExplanation": "Brief explanation of the change from the previous run"
 }`;

@@ -6,7 +6,6 @@ on:
       - main
       - feature/*
     types:
-      - labeled
       - opened
       - reopened
       - synchronize
@@ -26,6 +25,9 @@ permissions:
 
 jobs:
   build-and-push-container:
+    # Skip closed PRs: release-please labels its PR after merge, which would
+    # redeploy a preview the remove workflow already deleted.
+    if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     steps:
       - name: Set envs
@@ -43,6 +45,8 @@ jobs:
       - name: Login to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
+        with:
+          mask-password: 'true'
 
       - name: Build Docker image
         run: |

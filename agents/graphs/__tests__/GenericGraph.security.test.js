@@ -11,7 +11,7 @@ vi.mock('../GraphEventLogger.js', () => ({
 
 vi.mock('../workflows/GraphWorkflowHelper.js', () => {
     return {
-        GraphWorkflowHelper: vi.fn().mockImplementation(() => ({
+        GraphWorkflowHelper: vi.fn().mockImplementation(function () { return {
             validateShortQuery: vi.fn(),
             processRedaction: vi.fn().mockResolvedValue({
                 redactedText: '[REDACTED]',
@@ -34,7 +34,7 @@ vi.mock('../workflows/GraphWorkflowHelper.js', () => {
                 url: 'http://citation.com'
             }),
             persistInteraction: vi.fn()
-        }))
+        }; })
     };
 });
 

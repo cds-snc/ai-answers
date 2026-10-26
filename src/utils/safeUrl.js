@@ -1,8 +1,14 @@
 // Defence-in-depth for URLs placed into an <a href>. React does not sanitize
 // href values, so a `javascript:` or `data:` scheme reaching an href executes
-// on click. Citation URLs are normally validated upstream (UrlValidationService
-// → www.canada.ca), but the render falls back to raw model-provided URLs, so we
-// gate the scheme here as a last line of defence.
+// on click.
+//
+// Treat this as the ONLY scheme gate on the citation path, not a backstop for
+// one upstream. The upstream validator citations actually flow through is
+// UrlValidationService.validateUrlFormatting (via GraphWorkflowHelper's
+// verifyCitation), which is formatting-only and non-networking: it returns the
+// model's URL unchanged for anything non-empty, with no domain or scheme check.
+// An earlier version of this comment claimed citations were validated against
+// www.canada.ca upstream — they are not.
 //
 // Returns the original URL when it is an http(s) (or protocol-relative/relative)
 // link, otherwise returns '' so the href is inert.

@@ -48,6 +48,19 @@ describe('ExperimentalBatchClientService', () => {
             expect(result).toBeInstanceOf(Blob);
         });
 
+        it('should include French when exporting localized comparison labels', async () => {
+            AuthService.fetch.mockResolvedValue({
+                ok: true,
+                blob: vi.fn().mockResolvedValue(new Blob(['test']))
+            });
+
+            await ExperimentalBatchClientService.exportBatch('batch-123', 'excel', 'fr');
+
+            expect(AuthService.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('experimental-batch-export/batch-123?format=excel&lang=fr')
+            );
+        });
+
         it('should throw error when fetch fails', async () => {
             AuthService.fetch.mockResolvedValue({
                 ok: false,
@@ -86,6 +99,27 @@ describe('ExperimentalBatchClientService', () => {
 
             await expect(ExperimentalBatchClientService.exportChatLogs('current-batch'))
                 .rejects.toThrow('Export failed');
+        });
+    });
+
+    describe('listDatasets', () => {
+        it('sends DataTables pagination, search, and sorting parameters to the API', async () => {
+            AuthService.fetch.mockResolvedValue({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ data: [], recordsTotal: 12, recordsFiltered: 1 })
+            });
+
+            await ExperimentalBatchClientService.listDatasets(1, 10, {
+                start: 10,
+                length: 10,
+                search: 'benefits',
+                orderBy: 'name',
+                orderDir: 'asc'
+            });
+
+            expect(AuthService.fetch).toHaveBeenCalledWith(
+                '/api/experimental/experimental-dataset-list?page=1&limit=10&start=10&length=10&search=benefits&orderBy=name&orderDir=asc'
+            );
         });
     });
 });

@@ -1,12 +1,15 @@
 import dbConnect from '../api/db/db-connect.js';
+import { resolveReviewerMatch } from '../api/util/reviewer-filter.js';
 import { Chat } from '../models/chat.js';
 import { EvalAnalysis } from '../models/evalAnalysis.js';
 import {
     getChatFilterConditions,
     getPartnerEvalAggregationExpression,
-    getAiEvalAggregationExpression
+    getAiEvalAggregationExpression,
+    getHasCitationErrorAggregationExpression
 } from '../api/util/chat-filters.js';
-import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification } from './evalAnalysisStats.js';
+import { toCompactRow, computeStats, buildCrossTab, rowNeedsClassification, combinedLabelFrom } from './evalAnalysisStats.js';
+import { frForProgram, frForAction } from '../api/util/programActionFr.js';
 import AgentOrchestratorService from '../agents/AgentOrchestratorService.js';
 import { createEvalAnalysisAgent } from '../agents/AgentFactory.js';
 import { evalAnalysisClassifyStrategy } from '../agents/strategies/evalAnalysisClassifyStrategy.js';
@@ -37,7 +40,7 @@ const parseDateRange = (filters = {}) => {
 // user/chat fields stay on the base document. Human evals only: the filter is
 // interactions.expertFeedback — AI auto-evals hang off interactions.autoEval
 // and never enter this pipeline.
-function buildPipeline(filters = {}, { countOnly = false } = {}) {
+async function buildPipeline(filters = {}, { countOnly = false } = {}) {
     const pipeline = [
         { $project: { chatId: 1, user: 1, pageLanguage: 1, interactions: 1 } },
         { $lookup: { from: 'interactions', localField: 'interactions', foreignField: '_id', as: 'interactions' } },
@@ -76,17 +79,28 @@ function buildPipeline(filters = {}, { countOnly = false } = {}) {
     // Category fields are only computed when the corresponding filter is set —
     // they exist purely so getChatFilterConditions has something to match.
     if (filters.partnerEval && filters.partnerEval !== 'all') {
-        pipeline.push({ $addFields: { 'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackDoc') } });
+        pipeline.push({
+            $addFields: {
+                'interactions.partnerEval': getPartnerEvalAggregationExpression('$expertFeedbackDoc'),
+                'interactions.partnerHasCitationError': getHasCitationErrorAggregationExpression('$expertFeedbackDoc')
+            }
+        });
     }
     if (filters.aiEval && filters.aiEval !== 'all') {
         pipeline.push({ $lookup: { from: 'evals', localField: 'interactions.autoEval', foreignField: '_id', as: 'autoEvalDocs' } });
         pipeline.push({ $addFields: { autoEvalExpertId: { $arrayElemAt: ['$autoEvalDocs.expertFeedback', 0] } } });
         pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'autoEvalExpertId', foreignField: '_id', as: 'autoEvalFeedbackDocs' } });
         pipeline.push({ $addFields: { autoEvalFeedbackDoc: { $arrayElemAt: ['$autoEvalFeedbackDocs', 0] } } });
-        pipeline.push({ $addFields: { 'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackDoc') } });
+        pipeline.push({
+            $addFields: {
+                'interactions.aiEval': getAiEvalAggregationExpression('$autoEvalFeedbackDoc'),
+                'interactions.aiHasCitationError': getHasCitationErrorAggregationExpression('$autoEvalFeedbackDoc')
+            }
+        });
     }
 
-    const shared = getChatFilterConditions(filters, { basePath: 'interactions', userField: 'user' });
+    const reviewerMatch = await resolveReviewerMatch(filters);
+    const shared = getChatFilterConditions({ ...filters, reviewerMatch }, { basePath: 'interactions', userField: 'user' });
     if (shared.length) pipeline.push({ $match: { $and: shared } });
 
     if (countOnly) {
@@ -147,16 +161,35 @@ const slimRowForInsights = (r) => ({
 
 // The rows snapshot never leaves the server (it repeats question text for up
 // to 200 interactions); clients get everything else.
+// French display label for a cross-tab group, built from the stored English
+// program/action parts (display-only; English stays canonical). Older reports
+// saved before the parts were stored keep only the English label.
+const withCrossTabFr = (crossTab) => {
+    if (!crossTab || !Array.isArray(crossTab.groups)) return crossTab;
+    return {
+        ...crossTab,
+        groups: crossTab.groups.map((g) =>
+            g.program || g.action
+                ? { ...g, labelFr: combinedLabelFrom(
+                      g.program ? (frForProgram(g.program) || g.program) : null,
+                      g.action ? (frForAction(g.action) || g.action) : null
+                  ) }
+                : g
+        )
+    };
+};
+
 const toClientDoc = (doc) => {
     const obj = doc.toObject ? doc.toObject() : doc;
     const { rows, ...rest } = obj;
+    if (rest.crossTab) rest.crossTab = withCrossTabFr(rest.crossTab);
     return rest;
 };
 
 class EvalAnalysisServiceClass {
     async countEvals(filters = {}) {
         await dbConnect();
-        const result = await Chat.aggregate(buildPipeline(filters, { countOnly: true }));
+        const result = await Chat.aggregate(await buildPipeline(filters, { countOnly: true }));
         return result.length ? result[0].count : 0;
     }
 
@@ -252,7 +285,7 @@ class EvalAnalysisServiceClass {
     }
 
     async #snapshotAndProposePrograms(doc) {
-        const aggRows = await Chat.aggregate(buildPipeline(doc.filters || {}));
+        const aggRows = await Chat.aggregate(await buildPipeline(doc.filters || {}));
         const rows = aggRows.map(toCompactRow);
         if (rows.length < MIN_EVALS) {
             const err = new Error(`Too few evaluations to analyze (${rows.length} < ${MIN_EVALS})`);

@@ -1,14 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { GcdsButton } from '@gcds-core/components-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { GcdsButton, GcdsIcon } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import FilterPanel from './FilterPanel.js';
 import AuthService from '../../services/AuthService.js';
 import { getApiUrl } from '../../utils/apiToUrl.js';
+import LoadingOverlay from './LoadingOverlay.js';
+import { announce } from '../../utils/liveAnnouncer.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 
 
 const ChatLogsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
+  const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);
 
   const VIEW_OPTIONS = useMemo(() => [
     { value: 'default', label: t('admin.chatLogs.views.default') },
@@ -22,11 +26,16 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     { value: 'json', label: t('admin.chatLogs.formats.json') },
   ], [t]);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
   const [showPanel, setShowPanel] = useState(false);
 
   // Export options
   const [selectedView, setSelectedView] = useState('default');
   const [selectedFormat, setSelectedFormat] = useState('xlsx');
+
+  // FilterPanel makes its own controls inert while filterLoading; this
+  // covers a second Export press before React has re-rendered that state.
+  const exportInFlightRef = useRef(false);
 
   const handleGetLogs = () => {
     // Show the export options and filter panel
@@ -35,7 +44,10 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
   const handleApplyFilters = async (filters) => {
     // When Apply is clicked, directly trigger the export
+    if (exportInFlightRef.current) return;
+    exportInFlightRef.current = true;
     setExporting(true);
+    setExportError(null);
     try {
       // Build query params from filters
       const params = new URLSearchParams();
@@ -44,6 +56,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (filters.startDate) params.append('startDate', filters.startDate);
         if (filters.endDate) params.append('endDate', filters.endDate);
         if (filters.department) params.append('department', filters.department);
+        if (filters.group) params.append('group', filters.group);
         if (filters.urlEn) params.append('urlEn', filters.urlEn);
         if (filters.urlFr) params.append('urlFr', filters.urlFr);
         if (filters.userType && filters.userType !== 'all') {
@@ -58,6 +71,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (filters.aiEval && filters.aiEval !== 'all') {
           params.append('aiEval', filters.aiEval);
         }
+        if (filters.evalLogic) params.append('evalLogic', filters.evalLogic);
       }
 
       params.append('view', selectedView);
@@ -91,27 +105,33 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(downloadUrl);
+      // Nothing visible changes on success (the browser's own download UI
+      // is outside the page), so announce it directly - assertive, like
+      // every dashboard's "Results loaded": a completion the user waited on.
+      announce(t('admin.chatLogs.exportSuccess'), { assertive: true });
     } catch (error) {
       console.error('Export error:', error);
-      alert(t('admin.chatLogs.exportError').replace('{error}', error.message));
+      setExportError(buildErrorStatus('admin.chatLogs.exportError', error));
+    } finally {
+      exportInFlightRef.current = false;
+      setExporting(false);
     }
-    setExporting(false);
   };
 
   const handleClearFilters = () => {
-    // No-op since we no longer persist filter state
+    // Export options sit inside the same panel as Clear all, so reset them too.
+    setSelectedView('default');
+    setSelectedFormat('xlsx');
+    setExportError(null);
   };
 
   return (
     <div className="space-y-6">
       {exporting && (
-        <div className="loading-overlay" role="status" aria-live="polite">
-          <div className="loading-overlay-content">
-            <div className="loading-animation" aria-hidden="true"></div>
-            <span>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</span>
-          </div>
-        </div>
+        <LoadingOverlay message={<>{t('admin.chatLogs.exporting')} {t('admin.chatLogs.exportingMessage')}</>} />
       )}
+
+      {renderStatusMessage(exportError, 'success', 'export')}
 
       {!showPanel && (
         <div className="bg-white shadow rounded-lg p-4">
@@ -127,20 +147,43 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
       {showPanel && (
         <>
-          {/* Export Options - Above Filter Panel */}
-          <div className="export-controls bg-white shadow rounded-lg p-4 mb-600">
-            <p className="mrgn-bttm-md">{t('admin.chatLogs.exportDescription')}</p>
-
-            <div className="flex items-center gap-4 flex-wrap">
-              {/* View Dropdown */}
-              <div className="export-control-group">
+          {/* TODO (design): this export table's controls need a design pass:
+              a custom calendar component for the date range (currently
+              FilterPanel's default date inputs) and resize/layout
+              improvements for this section. Export is still FilterPanel's
+              generic Apply button relabelled via applyButtonText. */}
+          {/* Export options render inside the panel, just above the
+              Export button they feed. "Get logs" unmounts itself to reveal
+              the panel, so the panel takes focus on mount; filterLoading
+              keeps the panel's controls inert during the export. */}
+          <FilterPanel
+            lang={lang}
+            onApplyFilters={handleApplyFilters}
+            onClearFilters={handleClearFilters}
+            isVisible={true}
+            focusSummaryOnMount
+            filterLoading={exporting}
+            applyButtonText={
+              // Decorative icon; the text is the whole accessible name.
+              <span className="export-button-label">
+                <GcdsIcon name="download" />
+                {exporting ? t('admin.chatLogs.exporting') : t('admin.chatLogs.export')}
+              </span>
+            }
+            autoApply={false}
+          >
+            <fieldset className="export-controls filter-main-row">
+              {/* Visually hidden: the two labels below say enough on
+                  screen; the legend gives screen readers the group name. */}
+              <legend className="sr-only">{t('admin.chatLogs.exportOptions')}</legend>
+              <div className="filter-row">
                 <label htmlFor="export-view" className="filter-label">
                   {t('admin.chatLogs.exportView')}
                 </label>
                 <select
                   id="export-view"
                   value={selectedView}
-                  onChange={(e) => setSelectedView(e.target.value)}
+                  onChange={(e) => { setSelectedView(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >
@@ -152,15 +195,14 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 </select>
               </div>
 
-              {/* Format Dropdown */}
-              <div className="export-control-group">
+              <div className="filter-row">
                 <label htmlFor="export-format" className="filter-label">
                   {t('admin.chatLogs.exportFormat')}
                 </label>
                 <select
                   id="export-format"
                   value={selectedFormat}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  onChange={(e) => { setSelectedFormat(e.target.value); setExportError(null); }}
                   className="filter-select"
                   disabled={exporting}
                 >
@@ -171,19 +213,8 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                   ))}
                 </select>
               </div>
-            </div>
-          </div>
-
-          {/* Filter Panel - Apply triggers export */}
-          <FilterPanel
-            lang={lang}
-            onApplyFilters={handleApplyFilters}
-            onClearFilters={handleClearFilters}
-            isVisible={true}
-            applyButtonText={exporting ? t('admin.chatLogs.exporting') : t('admin.chatLogs.export')}
-            applyDisabled={exporting}
-            autoApply={false}
-          />
+            </fieldset>
+          </FilterPanel>
         </>
       )}
     </div>

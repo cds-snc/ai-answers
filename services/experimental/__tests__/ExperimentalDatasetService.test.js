@@ -629,6 +629,27 @@ describe('ExperimentalDatasetService', () => {
             expect(result.totalPages).toBe(2);
         });
 
+        it('should return DataTables pagination counts and only the requested filtered rows', async () => {
+            await ExperimentalDataset.create([
+                { name: 'Alpha benefits', type: 'question-only' },
+                { name: 'Bravo benefits', type: 'question-only' },
+                { name: 'Charlie travel', type: 'question-only' }
+            ]);
+
+            const result = await ExperimentalDatasetService.list({
+                start: 1,
+                length: 1,
+                search: 'benefits',
+                orderBy: 'name',
+                orderDir: 'asc'
+            });
+
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].name).toBe('Bravo benefits');
+            expect(result.recordsTotal).toBe(3);
+            expect(result.recordsFiltered).toBe(2);
+        });
+
         it('should populate createdBy email on listed datasets', async () => {
             const user = await User.create({
                 email: 'uploader@example.com',

@@ -31,7 +31,6 @@ const signupHandler = async (req, res) => {
     const isFirstUser = userCount === 0;
 
     // Generate secrets immediately to avoid race conditions later
-    const twoFASecret = speakeasy.generateSecret({ length: 20 }).base32;
     const resetPasswordSecret = speakeasy.generateSecret({ length: 20 }).base32;
 
     // Create new user (automatically active if first user)
@@ -40,7 +39,6 @@ const signupHandler = async (req, res) => {
       password,
       role: isFirstUser ? "admin" : "partner",
       active: isFirstUser, // First user is automatically active
-      twoFASecret,
       resetPasswordSecret
     });
     await user.save();

@@ -74,8 +74,29 @@ class ConversationIntegrityService {
         const lines = [];
         for (let i = 0; i < filteredHistory.length; i++) {
             const m = filteredHistory[i];
+            const isUser = (m.sender === 'user' || m.role === 'user');
 
-            if (m.interaction) {
+            // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
+            // hand-duplicated in 2 other files - AnswerGenerationService.js
+            // and ContextAgentService.js (search for "ai-turn-check-sync" there). All
+            // three independently implement the same invariant (originally
+            // by the same author, Ryan Hyma, in commits a2c70182 and
+            // b585a348 - a2c70182 wrote AnswerGenerationService.js's own
+            // copy; b585a348, five weeks later, wrote this one and
+            // ContextAgentService.js's together, as a real bug fix after a
+            // conversation-integrity hash mismatch from them being out of
+            // sync). Keep this in sync with the other two if you touch it -
+            // consider a shared helper only if that becomes a recurring cost.
+            //
+            // Only an AI-sender message carrying `interaction` represents a full
+            // Q+A turn on its own. Client state also retroactively attaches the
+            // same `interaction` object onto the *user* bubble (ChatAppContainer.js,
+            // so the question bubble can read its own detected language) - without
+            // this sender check, that user message would hit this branch too and
+            // double up the user:/ai: lines below, changing the signature from
+            // what AnswerGenerationService originally computed over the plain
+            // [user, ai] pair.
+            if (m.interaction && !isUser) {
                 const qRaw = m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question;
                 const aRaw = m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer;
                 const q = this.normalizeText(qRaw);
@@ -85,8 +106,9 @@ class ConversationIntegrityService {
             } else {
                 // Check redundancy: If this is a user message and the NEXT message has an interaction,
                 // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
-                // This handles the [User, AI(with interaction)] pattern common in client state.
-                const isUser = (m.sender === 'user' || m.role === 'user');
+                // This handles the [User, AI(with interaction)] pattern common in client state - including a
+                // user message that now carries its own `interaction` (see comment above), since the check
+                // above only looks at the *next* message here, not this one's own `interaction`.
                 if (isUser && i + 1 < filteredHistory.length) {
                     const next = filteredHistory[i + 1];
                     if (next.interaction) {

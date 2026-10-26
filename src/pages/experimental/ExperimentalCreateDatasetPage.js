@@ -4,9 +4,12 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
 import { getPath } from '../../utils/routes.js';
+import StatusMessage from '../../components/admin/StatusMessage.js';
+import { useErrorStatus } from '../../hooks/useErrorStatus.js';
 
 export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     const { t } = useTranslations(lang);
+    const { wrapErrorDetail } = useErrorStatus(t);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [method, setMethod] = useState('golden-answer');
@@ -77,11 +80,21 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                     : t('experimental.datasets.goldenAnswerSuccess')
             });
         } catch (err) {
+            // The server occasionally returns a specific, genuinely useful
+            // validation reason (data.error) — kept, but wrapped in
+            // <code lang="en"> behind a translated prefix rather than shown
+            // raw, via wrapErrorDetail (useErrorStatus.js).
+            const detail = err.response?.data?.error;
+            let goldenAnswerText = t('experimental.datasets.goldenAnswerFailed');
+            if (detail) {
+                const wrapped = wrapErrorDetail('experimental.datasets.goldenAnswerFailedDetail', { message: detail });
+                goldenAnswerText = <>{wrapped.prefix}{wrapped.detail}{wrapped.suffix}</>;
+            }
             setMessage({
                 type: 'error',
                 text: method === 'instant-answer'
                     ? t('experimental.datasets.instantAnswerFailed')
-                    : err.response?.data?.error || t('experimental.datasets.goldenAnswerFailed')
+                    : goldenAnswerText
             });
         } finally {
             setCreating(false);
@@ -96,11 +109,11 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <GcdsHeading tag="h1">{t('experimental.datasets.createDatasetTitle')}</GcdsHeading>
-            <div className="mb-400">
+            <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
                 <GcdsLink href={getPath('experimental-datasets', lang)}>
                     {t('experimental.datasets.backToList')}
                 </GcdsLink>
-            </div>
+            </nav>
             <GcdsText className="mb-400">
                 {method === 'instant-answer'
                     ? t('experimental.datasets.instantAnswerDescription')
@@ -163,7 +176,9 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                             : t('experimental.datasets.creatingGoldenAnswer')
                         : t('experimental.datasets.createButton')}
                 </GcdsButton>
-                {message && <GcdsText>{message.text}</GcdsText>}
+                <StatusMessage variant={message?.type}>
+                    {message && <GcdsText>{message.text}</GcdsText>}
+                </StatusMessage>
             </div>
         </GcdsContainer>
     );

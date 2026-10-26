@@ -12,6 +12,9 @@ export const INSTANT_ANSWER_WORKFLOWS = [
 export class InstantAnswerAnalyzer extends AnalyzerBase {
     static id = 'instant-answer';
     static inputType = 'comparison';
+    static requiresReference = true;
+    static supportsBatchComparison = false;
+    static supportedWorkflows = INSTANT_ANSWER_WORKFLOWS;
     static outputColumns = [
         'explanation',
         'referenceAnswer',

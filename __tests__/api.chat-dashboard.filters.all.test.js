@@ -121,20 +121,13 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(pipelineStr).toContain('"interactions.partnerEval":"correct"');
   });
 
-  it('includes interactionCount in $group stage', async () => {
+  // Chat Dashboard now returns one row per interaction rather than one row
+  // per chat, so there's no $group stage at all anymore.
+  it('does not group interactions into a single row per chat', async () => {
     await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
     const groupStage = capturedPipeline.find(stage => stage && stage.$group);
-    expect(groupStage).toBeDefined();
-    expect(groupStage.$group.interactionCount).toEqual({ $sum: 1 });
-  });
-
-  it('includes redactedQuestion in $group stage', async () => {
-    await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
-    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    const groupStage = capturedPipeline.find(stage => stage && stage.$group);
-    expect(groupStage).toBeDefined();
-    expect(groupStage.$group.redactedQuestion).toEqual({ $first: '$interactions.redactedQuestion' });
+    expect(groupStage).toBeUndefined();
   });
 
   it('includes questions collection lookup in pipeline', async () => {
@@ -148,32 +141,66 @@ describe('api/chat/chat-dashboard - per-filter pipeline creation', () => {
     expect(questionLookup.$lookup.foreignField).toBe('_id');
   });
 
-  it('includes interactionCount and redactedQuestion in final $project', async () => {
+  it('includes redactedQuestion, answerContent and citationUrl in final $project', async () => {
     await runHandler({ startDate: new Date().toISOString(), endDate: new Date().toISOString() });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    // Find the $project stage that has interactionCount (the final projection)
     const projectStages = capturedPipeline.filter(stage => stage && stage.$project);
-    const finalProject = projectStages.find(stage => stage.$project.interactionCount);
+    const finalProject = projectStages.find(stage => stage.$project.redactedQuestion);
     expect(finalProject).toBeDefined();
-    expect(finalProject.$project.interactionCount).toBe(1);
-    expect(finalProject.$project.redactedQuestion).toBe(1);
+    expect(finalProject.$project.redactedQuestion).toBe('$interactions.redactedQuestion');
+    expect(finalProject.$project.answerContent).toBe('$interactions.answerContent');
+    expect(finalProject.$project.citationUrl).toBe('$interactions.citationUrl');
   });
 
-  it('includes interactionCount in sortFieldMap', async () => {
+  it('includes program (the Service column) in sortFieldMap', async () => {
     await runHandler({
       startDate: new Date().toISOString(),
       endDate: new Date().toISOString(),
-      orderBy: 'interactionCount',
+      orderBy: 'program',
       start: 0,
       length: 10
     });
     expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
-    // There is an earlier pre-group $sort for deterministic grouping.
-    // Assert on the later dynamic sort stage that includes interactionCount.
     const sortStage = capturedPipeline.find(
-      stage => stage && stage.$sort && Object.prototype.hasOwnProperty.call(stage.$sort, 'interactionCount')
+      stage => stage && stage.$sort && Object.prototype.hasOwnProperty.call(stage.$sort, 'program')
     );
     expect(sortStage).toBeDefined();
-    expect(sortStage.$sort.interactionCount).toBeDefined();
+    expect(sortStage.$sort.program).toBeDefined();
+  });
+
+  // The Service column's own per-column filter box was removed for MVP -
+  // there's now a single global search box covering every displayed
+  // column server-side, rather than per-column filters.
+  it('matches the global search term against program (Service), not just chatId', async () => {
+    await runHandler({
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      search: 'Passport'
+    });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const matchStage = capturedPipeline.find(
+      (stage) => stage && stage.$match && stage.$match.$or
+    );
+    expect(matchStage).toBeDefined();
+    const programClause = matchStage.$match.$or.find((c) => c.program);
+    expect(programClause).toBeDefined();
+    expect(programClause.program.$regex).toBe('Passport');
+  });
+
+  it('matches the global search term against answerContent and citationUrl too', async () => {
+    await runHandler({
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      search: 'renew'
+    });
+    expect(ChatModel.Chat.aggregate).toHaveBeenCalled();
+    const matchStage = capturedPipeline.find(
+      (stage) => stage && stage.$match && stage.$match.$or
+    );
+    expect(matchStage).toBeDefined();
+    const searchedFields = matchStage.$match.$or.map((c) => Object.keys(c)[0]);
+    expect(searchedFields).toEqual(
+      expect.arrayContaining(['chatId', 'interactionId', 'department', 'program', 'redactedQuestion', 'answerContent', 'citationUrl'])
+    );
   });
 });

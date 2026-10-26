@@ -31,10 +31,11 @@ const SessionService = {
     });
     if (!resp.ok) {
       const txt = await resp.text();
-      const err = new Error(`Failed to load sessions: ${resp.status} ${txt}`);
-      err.status = resp.status;
-      err.text = txt;
-      throw err;
+      // No page-facing prefix here: SessionPage wraps this in a translated
+      // "Failed to load sessions: {error}" template via useErrorStatus, so
+      // .message is just the raw diagnostic detail (rendered as
+      // <code lang="en">, never shown untranslated on its own).
+      throw new Error(`${resp.status} ${txt}`);
     }
     const json = await resp.json();
     return json.sessions || [];

@@ -3,6 +3,7 @@ import AuthService from '../services/AuthService.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getPath } from '../utils/routes.js';
 import { getPublicAuthExemptPaths } from '../config/appRoutePaths.js';
+import { normalizePathname } from '../utils/normalizePathname.js';
 
 const AuthContext = createContext();
 const SESSION_EXPIRED_REASON = 'session-expired';
@@ -29,8 +30,7 @@ export const AuthProvider = ({ children }) => {
   const publicAuthExemptPaths = useRef(getPublicAuthExemptPaths(requireAuthForChat)).current;
 
   const isPublicAuthExemptPath = useCallback((pathname) => {
-    const normalizedPathname = pathname && pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
-    return publicAuthExemptPaths.has(normalizedPathname || '/');
+    return publicAuthExemptPaths.has(normalizePathname(pathname || '/'));
   }, [publicAuthExemptPaths]);
 
   useEffect(() => {
@@ -215,6 +215,10 @@ export const AuthProvider = ({ children }) => {
     const lang = (typeof window !== 'undefined' && window.location.pathname.startsWith('/fr')) ? 'fr' : 'en';
     try {
       setLoading(true);
+      // A login from the session-expired page starts a fresh auth transition.
+      // This is important when expiry redirected within the SPA rather than
+      // through a full document reload.
+      redirectingRef.current = false;
       const data = await AuthService.login(email, password);
       setSessionExpiredRedirecting(false);
       // If twoFA is required, do not set currentUser yet -- caller should prompt for code
@@ -227,6 +231,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Update the user state for normal login
+      currentUserRef.current = data.user;
       setCurrentUser(data.user);
       const expiry = syncSessionExpiry();
       scheduleSessionExpiryState(expiry);

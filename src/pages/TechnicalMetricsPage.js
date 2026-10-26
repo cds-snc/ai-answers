@@ -11,14 +11,14 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
     <GcdsContainer layout="page" className="mb-600">
       <h1 className="mb-400">{t('technicalMetrics.title')}</h1>
 
-      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel', 'Admin Navigation')}>
+      <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
           <GcdsLink href={`/${lang}/admin`}>{t('common.backToAdmin')}</GcdsLink>
         </GcdsText>
       </nav>
 
       <section id="technical-metrics-dashboard" className="mb-600">
-        <h2 className="mt-400 mb-400">{t('technicalMetrics.timeRangeTitle')}</h2>
+        <h2 className="sr-only">{t('admin.filters.sectionHeading')}</h2>
         <TechnicalMetricsDashboard lang={lang} />
       </section>
     </GcdsContainer>
@@ -27,7 +27,7 @@ const TechnicalMetricsPage = ({ lang = 'en' }) => {
 
 export default function ProtectedTechnicalMetricsPage(props) {
   return (
-    <RoleProtectedRoute roles={["admin", "partner"]} lang={props.lang}>
+    <RoleProtectedRoute roles={["admin"]} lang={props.lang}>
       <TechnicalMetricsPage {...props} />
     </RoleProtectedRoute>
   );

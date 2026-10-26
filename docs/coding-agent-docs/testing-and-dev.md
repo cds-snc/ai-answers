@@ -8,15 +8,26 @@ Read this before writing tests, running tests, or doing local dev setup.
 |---------|-------------|
 | `npm test` | All unit/integration tests (Vitest) |
 | `npm run test:services` | Service tests only, verbose output |
-| `npm run test:e2e` | Playwright E2E tests (headless) |
-| `npm run test:e2e:headed` | Playwright E2E tests (browser visible) |
+| `npm run test:e2e` | Playwright E2E tests, headless (PowerShell only) |
+| `npm run test:e2e:headed` | Playwright E2E tests, browser visible (PowerShell only) |
 | `npm run lint` | ESLint on `src/**/*.{js,jsx}` |
 
 ## Test Frameworks
 
 - **Unit/integration:** Vitest (config in `vitest.config.js`)
-- **E2E:** Playwright (run via `scripts/run-e2e-tests.ps1`)
+- **E2E:** Playwright (config in `playwright.config.js`)
 - **React testing:** `@testing-library/react` + `@testing-library/jest-dom`
+
+### Running E2E on macOS or Linux
+
+The `test:e2e*` scripts need PowerShell — `scripts/run-e2e-tests.ps1` starts the server, then calls `npx playwright`. Without `pwsh`, do both steps yourself:
+
+```bash
+npm run dev:quick    # in one terminal
+npx playwright test  # in another; add --headed to watch
+```
+
+`playwright.config.js` defaults to `TEST_ENV=dev` (localhost:3001) and fills in E2E credentials. Set `TEST_ENV=sandbox` or `production` to point elsewhere.
 
 ## Vitest Config Highlights
 
@@ -26,33 +37,29 @@ Read this before writing tests, running tests, or doing local dev setup.
 | Environment for `src/**` | `jsdom` |
 | Test timeout | 20 seconds |
 | Hook timeout | 60 seconds |
-| Setup file | `test/setup.js` (MongoDB Memory Server) |
+| Setup files (per test file) | `test/vitest-hooks.js` |
+| Global setup (once per run) | `test/setup.js` — MongoDB Memory Server |
 | Mock handling | Cleared and restored between tests |
 | Isolation | Single-thread pool |
 | Excluded from Vitest | `tests/e2e/**`, node_modules, dist |
 
 ## Test File Locations
 
-| Location | What's tested |
-|----------|--------------|
-| `__tests__/` (root) | API handlers, auth, dashboard filters, redaction |
-| `services/__tests__/` | Backend services (Answer, Search, Vector, etc.) |
-| `agents/__tests__/` | Agent prompts |
-| `agents/graphs/__tests__/` | Graph workflows |
-| `agents/graphs/services/__tests__/` | Graph-internal services |
-| `agents/strategies/__tests__/` | Strategy implementations |
-| `api/chat/__tests__/` | Chat API handlers |
-| `api/util/__tests__/` | Utility API handlers |
-| `src/pages/__tests__/` | React page components |
-| `src/services/__tests__/` | Client-side services |
-| `src/components/chat/__tests__/` | Chat UI components |
-| `tests/e2e/` | Playwright E2E specs (5 spec files) |
+Tests go in a `__tests__/` folder beside the code they cover — `src/components/chat/__tests__/`, `services/__tests__/`, `agents/graphs/__tests__/` and so on. Put a new test where its subject lives; don't add it to a central folder.
 
-## Test Setup (`test/setup.js`)
+Two places break that rule:
+
+| Location | What's there |
+|----------|--------------|
+| `__tests__/` (root) | Tests spanning several modules — API handlers, auth, dashboard filters, redaction |
+| `tests/e2e/` | Playwright specs (not run by Vitest) |
+
+## Test Setup
 
 - Uses `mongodb-memory-server` for an in-memory MongoDB instance
 - Auto-creates and tears down DB per test run
 - Set `SKIP_MONGO_SETUP=true` to skip DB setup for isolated tests
+- `test/vitest-hooks.js` runs per test: resets the DB, unmounts React Testing Library renders
 
 ## Local Development
 
@@ -87,7 +94,7 @@ The referring URL will pre-populate in the chat input. This is how the real embe
 
 ### Docker (optional)
 
-`docker-compose.yml` provides MongoDB (27017) and Qdrant (6333).
+`docker-compose.yml` provides MongoDB (27017) and Redis (6379). The `qdrant_data` volume is a leftover — there is no Qdrant service.
 
 ## ESLint Rules
 

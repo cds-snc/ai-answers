@@ -58,7 +58,7 @@ const renderAnalyzerCell = (item, analyzerId, field) => {
     return formatAnalyzerValue(flattenAnalyzerValue(result)[field]);
 };
 
-const renderAnalyzerSummary = (item, analyzerId) => {
+const renderAnalyzerSummary = (item, analyzerId, comparisonMode = false) => {
     const error = item.analysisErrors?.[analyzerId];
     if (error) return formatAnalyzerValue(error);
 
@@ -67,7 +67,9 @@ const renderAnalyzerSummary = (item, analyzerId) => {
     if (typeof result !== 'object') return formatAnalyzerValue(result);
 
     const verdict = result.verdict || result.status || result.label;
-    const explanation = result.explanation || result.differenceExplanation;
+    const explanation = comparisonMode
+        ? result.comparisonExplanation || result.explanation || result.differenceExplanation
+        : result.explanation || result.differenceExplanation;
     const summary = [verdict, explanation].filter(Boolean).join(': ');
     return summary ? truncate(summary, 240) : formatAnalyzerValue(result);
 };
@@ -87,7 +89,9 @@ export default function BatchItemDetail({
     onPrev,
     onNext,
     onBack,
-    chatItems = []
+    chatItems = [],
+    comparisonMode = false,
+    backButtonRef
 }) {
     const { t } = useTranslations(lang);
     const [detailMode, setDetailMode] = useState(false);
@@ -102,11 +106,23 @@ export default function BatchItemDetail({
         : analyzerIds.map(analyzerId => ({ analyzerId, field: null }));
     const verdict = getItemVerdict(item);
     const verdictLabel = t(`experimental.results.verdict.${verdict}`);
+    const referenceAnswerLabel = comparisonMode
+        ? t('experimental.results.detail.baselineAnswer')
+        : t('experimental.results.detail.referenceAnswer');
+    const currentAnswerLabel = comparisonMode
+        ? t('experimental.results.detail.comparedAnswer')
+        : t('experimental.results.detail.currentAnswer');
+    const noReferenceAnswerLabel = comparisonMode
+        ? t('experimental.results.detail.noBaselineAnswer')
+        : t('experimental.results.detail.noReferenceAnswer');
+    const noAnswerLabel = comparisonMode
+        ? t('experimental.results.detail.noComparedAnswer')
+        : t('experimental.results.detail.noAnswer');
 
     return (
         <section>
             <div className="mb-300" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <GcdsButton size="small" buttonRole="secondary" onClick={onBack}>
+                <GcdsButton ref={backButtonRef} size="small" buttonRole="secondary" onClick={onBack}>
                     {t('experimental.results.detail.backToList')}
                 </GcdsButton>
                 <GcdsButton size="small" buttonRole="secondary" disabled={!hasPrev} onClick={onPrev}>
@@ -132,21 +148,32 @@ export default function BatchItemDetail({
                 <strong>{t('experimental.results.detail.chat')}</strong>: {item.chatId || t('experimental.results.table.noChatId')}
             </div>
 
+            {/* TODO(design): needs design review. Native <button>s (not
+                <GcdsButton>), same rationale as PauseToggleButton.js:
+                GcdsButton copies aria-* attributes onto its shadow-DOM button
+                inside its own click handler, before React's state update from
+                that same click commits, so aria-pressed was always one click
+                behind for screen readers. Styled via .filter-button-primary
+                (active) / .filter-button-outline (inactive) to reproduce
+                GcdsButton's buttonRole primary/secondary look for now; a
+                designer hasn't signed off on this specific treatment. */}
             <div className="mb-300" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <GcdsButton
-                    size="small"
-                    buttonRole={detailMode ? 'secondary' : 'primary'}
+                <button
+                    type="button"
+                    className={`filter-button ${detailMode ? 'filter-button-outline' : 'filter-button-primary'}`}
                     onClick={() => setDetailMode(false)}
+                    aria-pressed={!detailMode}
                 >
                     {t('experimental.results.detail.simpleView')}
-                </GcdsButton>
-                <GcdsButton
-                    size="small"
-                    buttonRole={detailMode ? 'primary' : 'secondary'}
+                </button>
+                <button
+                    type="button"
+                    className={`filter-button ${detailMode ? 'filter-button-primary' : 'filter-button-outline'}`}
                     onClick={() => setDetailMode(true)}
+                    aria-pressed={detailMode}
                 >
                     {t('experimental.results.detail.detailedView')}
-                </GcdsButton>
+                </button>
             </div>
 
             <div className="overflow-auto experimental-results-table-container">
@@ -155,12 +182,14 @@ export default function BatchItemDetail({
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
                             <th className="p-200">{t('experimental.results.detail.interaction')}</th>
                             <th className="p-200">{t('experimental.results.table.question')}</th>
-                            <th className="p-200">{t('experimental.results.detail.referenceAnswer')}</th>
-                            <th className="p-200">{t('experimental.results.detail.currentAnswer')}</th>
+                            <th className="p-200">{referenceAnswerLabel}</th>
+                            <th className="p-200">{currentAnswerLabel}</th>
                             <th className="p-200">{t('experimental.results.table.verdict')}</th>
                             {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
                                 <th key={`${analyzerId}-${field || 'summary'}`} className="p-200">
-                                    {humanizeFieldName(analyzerId)}{field ? `: ${humanizeFieldName(field)}` : ''}
+                                    {humanizeFieldName(analyzerId)}{field
+                                        ? `: ${humanizeFieldName(field)}`
+                                        : comparisonMode ? `: ${humanizeFieldName('comparisonExplanation')}` : ''}
                                 </th>
                             ))}
                             <th className="p-200">{t('experimental.results.table.actions')}</th>
@@ -173,19 +202,18 @@ export default function BatchItemDetail({
                                 <tr key={interaction._id || index} style={{ borderBottom: '1px solid #eee', verticalAlign: 'top' }}>
                                     <td className="p-200">{index + 1}</td>
                                     <td className="p-200">{interaction.question || '—'}</td>
-                                    <td className="p-200">
-                                        {truncate(
-                                            interaction.goldenReferenceAnswer || interaction.referenceAnswer || t('experimental.results.detail.noReferenceAnswer'),
-                                            180
-                                        )}
+                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                        {interaction.goldenReferenceAnswer || interaction.referenceAnswer || noReferenceAnswerLabel}
                                     </td>
-                                    <td className="p-200">{truncate(interaction.answer || t('experimental.results.detail.noAnswer'), 180)}</td>
+                                    <td className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                        {interaction.answer || noAnswerLabel}
+                                    </td>
                                     <td className="p-200">{t(`experimental.results.verdict.${interactionVerdict}`)}</td>
                                     {visibleAnalyzerColumns.map(({ analyzerId, field }) => (
-                                        <td key={`${analyzerId}-${field || 'summary'}`} className="p-200">
+                                        <td key={`${analyzerId}-${field || 'summary'}`} className="p-200" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                                             {field
                                                 ? renderAnalyzerCell(interaction, analyzerId, field)
-                                                : renderAnalyzerSummary(interaction, analyzerId)}
+                                                : renderAnalyzerSummary(interaction, analyzerId, comparisonMode)}
                                         </td>
                                     ))}
                                     <td className="p-200">

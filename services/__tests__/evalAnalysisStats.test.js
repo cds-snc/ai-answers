@@ -49,8 +49,9 @@ describe('deriveExpertFeedbackCategory (mirrors getPartnerEvalAggregationExpress
         expect(deriveCategory(feedback({ sentence2Harmful: true, sentence1Score: 0, citationScore: 0 }))).toBe('harmful');
     });
 
-    it('prioritizes citation error over answer error', () => {
-        expect(deriveCategory(feedback({ citationScore: 20, sentence1Score: 0 }))).toBe('hasCitationError');
+    it('prioritizes sentence scores over citation error', () => {
+        expect(deriveCategory(feedback({ citationScore: 20, sentence1Score: 0 }))).toBe('hasError');
+        expect(deriveCategory(feedback({ citationScore: 0, sentence1Score: 80 }))).toBe('needsImprovement');
         expect(deriveCategory(feedback({ citationScore: 0 }))).toBe('hasCitationError');
     });
 
