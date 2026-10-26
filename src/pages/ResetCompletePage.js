@@ -10,6 +10,7 @@ import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { resolveErrorMessage } from '../utils/errorCodeMessage.js';
 import { useAuthOutcomeMessages } from '../hooks/auth/useAuthOutcomeMessages.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
+import { meetsPasswordRule } from '../utils/auth/passwordRule.js';
 
 const ResetCompletePage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -48,7 +49,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     if (!validate({ password, confirm }, t)) {
       return;
     }
-    if (password.length < 8) {
+    if (!meetsPasswordRule(password)) {
       setError(t('reset.complete.passwordTooShort'), ['password']);
       return;
     }
@@ -62,6 +63,13 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       await AuthService.resetPassword({ email, code, password });
       setSuccessMessage(t('reset.complete.success'));
     } catch (err) {
+      // The server refused the password. The page checks the same rule first,
+      // so this only happens with a stale page bundle; it's still the
+      // password's fault, so it's a field error like the page's own check.
+      if (err.code === 'PASSWORD_RULE') {
+        setError(t('reset.complete.passwordTooShort'), ['password']);
+        return;
+      }
       // Rate-limiting and an invalid/expired reset link aren't things the
       // user can fix by editing password/confirm — system-level outcomes,
       // not field errors, so they go through StatusMessage, not AnnouncedError.
@@ -92,6 +100,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
             id="password"
             name="password"
             label={t('reset.complete.password')}
+            hint={t('auth.passwordHint')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

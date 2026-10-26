@@ -244,20 +244,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password) => {
-    try {
-      setLoading(true);
-      const data = await AuthService.signup(email, password);
-      setSessionExpiredRedirecting(false);
-      setCurrentUser(data.user);
-      const expiry = syncSessionExpiry();
-      scheduleSessionExpiryState(expiry);
-      return data;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const logout = () => {
     setLoading(true);
     AuthService.logout();
@@ -324,7 +310,6 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     refreshUser,
-    signup,
     logout,
     isAdmin,
     isPartner,

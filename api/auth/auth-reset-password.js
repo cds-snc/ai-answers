@@ -15,11 +15,16 @@
  * - Generic invalid-code/error responses where possible; lockout may return
  *   a distinct response to enforce reset throttling
  * - Secret cleared on successful reset (link becomes single-use)
+ * - Server-side password rule (src/utils/auth/passwordRule.js), checked
+ *   before the code so a refused password never uses up an attempt
  */
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import os from 'os';
 import speakeasy from 'speakeasy';
+import { meetsPasswordRule } from '../../src/utils/auth/passwordRule.js';
+import { normalizeEmail } from '../../src/utils/auth/validateEmail.js';
+import { requireString } from '../util/db-query.js';
 
 const MAX_RESET_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 30;
@@ -39,9 +44,13 @@ const resetPasswordHandler = async (req, res) => {
       return res.status(400).json({ success: false, code: 'RESET_INVALID_CODE', message: 'invalid or expired code' });
     }
 
+    if (!meetsPasswordRule(newPassword)) {
+      return res.status(400).json({ success: false, code: 'PASSWORD_RULE', message: 'password does not meet the rule' });
+    }
+
     await dbConnect();
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(requireString(email, 'email')).toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
 
     // Generic error for user-not-found and no-secret to prevent enumeration
