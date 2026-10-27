@@ -48,6 +48,15 @@ jobs:
         with:
           mask-password: 'true'
 
+      # Dockerfile.lambda pulls from public.ecr.aws. Anonymous pulls share a
+      # per-IP data limit with everyone else on GitHub's runners and fail with
+      # "toomanyrequests: Data limit exceeded"; authenticated pulls don't.
+      # ECR Public auth is only served from us-east-1.
+      - name: Login to Amazon ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin public.ecr.aws
+
       - name: Build Docker image
         run: |
           export DOCKER_BUILDKIT=0
@@ -67,7 +76,9 @@ jobs:
             --image-ids "$IMAGES_TO_DELETE" || true
 
       - name: Logout of Amazon ECR
-        run: docker logout $REGISTRY
+        run: |
+          docker logout $REGISTRY
+          docker logout public.ecr.aws
 
   deploy-lambda-function:
     runs-on: ubuntu-latest
