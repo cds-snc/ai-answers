@@ -357,10 +357,16 @@ Split into three PRs (decided 2026-10-26):
     as an inactive partner. (A first version promoted whoever had the oldest `_id` after saving.
     A code review showed that two sign-ups could both be promoted, and a failure between the
     two writes could leave no admin.)
-  - **Before merging:** confirm the `isFirstAdmin_1` unique sparse index exists on the staging
-    and production DocumentDB clusters (`db.users.getIndexes()`). Mongoose creates it at
-    startup only if `autoIndex` is on, and AGENTS.md asks for the deployed index to be checked,
-    not assumed.
+  - **Index on staging: done (2026-10-27).** Mongoose did not create `isFirstAdmin_1` at
+    startup on the preview, and nothing logged the failure. Running "Rebuild all indexes" on
+    the admin Database page built it, and the User row now shows `complete`. That also confirms
+    DocumentDB accepts the unique sparse index.
+  - **Release step for production:** after deploying, open the admin Database page, run
+    "Check index status", and if User shows `Missing: isFirstAdmin`, run "Rebuild all indexes"
+    and check again. The rebuild only adds missing indexes (`createIndexes`, not
+    `syncIndexes`), so it is safe to run. Until the index exists, two simultaneous first
+    sign-ups could both become admin. This only matters on an empty database, and production
+    already has admins.
   - **Item 5:** no common or breached password list for now.
   - **No maximum length:** bcrypt only uses the first 72 bytes, so a longer passphrase still
     works.
