@@ -464,7 +464,14 @@ and the code forever.
    Phase 2.6).
 7. **Tests:** a valid token skips the code; with the box unticked, no cookie is set; an expired
    token, another user's token, or a tampered token still sends a code; a token without the
-   correct password does nothing; password reset and deactivation revoke tokens.
+   correct password does nothing; password reset and deactivation revoke tokens. Also check by
+   hand in a real browser, because the unit tests mock both of the points that failed: after the
+   code, the `auth-verify-2fa` response sets `aianswers.device` (a string-only ID check threw on
+   the ObjectId, the error was caught, and no cookie was set). And when the session ends without
+   signing out (timeout, or delete `aianswers.sid`), the next sign-in still skips the code. The
+   client also calls `auth-logout` when the session ends on its own (a 401, or its expiry
+   timer), so that endpoint forgets the device only when the request says the user chose to sign
+   out (`forgetDevice: true`).
 
 ### Before turning 2FA on in production
 

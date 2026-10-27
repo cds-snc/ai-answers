@@ -99,6 +99,24 @@ describe('TrustedDeviceService', () => {
     expect(rows.filter((r) => r.userId === USER_B)).toHaveLength(1);
   });
 
+  it('still sets the cookie when pruning expired rows fails', async () => {
+    TrustedDevice.deleteMany.mockRejectedValueOnce(new Error('db timeout'));
+    const res = makeRes();
+    await TrustedDeviceService.remember(makeReq(), res, USER_A);
+    expect(res.cookie).toHaveBeenCalledWith(DEVICE_COOKIE, expect.any(String), expect.any(Object));
+    expect(rows).toHaveLength(1);
+  });
+
+  // A new token replaces the browser's cookie, so the old one's row could
+  // never be used again: delete it rather than leave it until it expires.
+  it("deletes the row of the token this browser already held", async () => {
+    const oldToken = await rememberedToken(USER_A);
+    const res = makeRes();
+    await TrustedDeviceService.remember(makeReq({ [DEVICE_COOKIE]: oldToken }), res, USER_B);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].userId).toBe(USER_B);
+  });
+
   it('revokeAll forgets every device for that user only', async () => {
     const tokenA1 = await rememberedToken(USER_A);
     const tokenA2 = await rememberedToken(USER_A);

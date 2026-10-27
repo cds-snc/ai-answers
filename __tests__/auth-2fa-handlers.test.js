@@ -282,6 +282,16 @@ describe('auth-login with 2FA on', () => {
     expect(res.json.mock.calls[0][0].twoFA).toBeUndefined();
   });
 
+  // Deliberate: the lockout stops code guessing, and a remembered device sends
+  // no code. Wrong codes from another browser must not lock out this one.
+  it('signs a remembered device in while 2FA codes are locked', async () => {
+    TwoFAService.sendChallenge.mockResolvedValue({ success: false, reason: 'locked' });
+    TrustedDeviceService.isRemembered.mockResolvedValueOnce(true);
+    const { req, res } = await login();
+    expect(res.statusCode).toBe(200);
+    expect(req.login).toHaveBeenCalledTimes(1);
+  });
+
   it('sends a code when the device is not remembered', async () => {
     TwoFAService.sendChallenge.mockResolvedValue({ success: true });
     TrustedDeviceService.isRemembered.mockResolvedValueOnce(false);

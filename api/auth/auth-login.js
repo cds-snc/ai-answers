@@ -26,6 +26,9 @@ const loginHandler = (req, res, next) => {
     // "Remember this device": checked only now, after the password passed, so
     // the token never replaces the password. isRemembered matches it to this
     // user only. If the check itself fails, send a code as usual.
+    // A remembered device also skips the 2FA lockout, on purpose: the lockout
+    // stops code guessing and this path sends no code, so wrong codes entered
+    // in another browser don't lock the user out of their own device.
     let remembered = false;
     if (twoFAEnabled && !isTest) {
       try {

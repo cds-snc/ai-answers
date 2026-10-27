@@ -5,9 +5,9 @@ vi.mock('../services/TrustedDeviceService.js', () => ({ default: { forget: vi.fn
 import logoutHandler from '../api/auth/auth-logout.js';
 import TrustedDeviceService from '../services/TrustedDeviceService.js';
 
-function makeReq({ signedIn = true } = {}) {
+function makeReq(body = { forgetDevice: true }) {
   return {
-    isAuthenticated: () => signedIn,
+    body,
     logout: vi.fn((cb) => cb(null)),
     session: { destroy: vi.fn((cb) => cb(null)) },
   };
@@ -23,7 +23,9 @@ function makeRes() {
 describe('auth-logout', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('forgets this browser, so the next sign-in here asks for a code', async () => {
+  // Whether or not the session is still alive: on a shared computer the user
+  // may click Sign out after it has already timed out.
+  it('forgets this browser when the user signs out, so the next sign-in here asks for a code', async () => {
     const req = makeReq();
     const res = makeRes();
     await logoutHandler(req, res);
@@ -32,10 +34,12 @@ describe('auth-logout', () => {
     expect(res.statusCode).toBe(200);
   });
 
-  // The client also calls auth-logout on any 401, e.g. when the session timed
-  // out. That must not forget the device, or it never skips the code.
-  it('keeps the device when the session has already ended', async () => {
-    const req = makeReq({ signedIn: false });
+  // The client also calls auth-logout when the session ends on its own (a 401,
+  // or its expiry timer). Those calls don't send forgetDevice, and must not
+  // forget the device, or it never skips the code.
+  it.each([[{}], [{ forgetDevice: false }], [{ forgetDevice: 'true' }], [null]])(
+    'keeps the device when the sign-out was not chosen by the user (%j)', async (body) => {
+    const req = makeReq(body);
     const res = makeRes();
     await logoutHandler(req, res);
     expect(TrustedDeviceService.forget).not.toHaveBeenCalled();

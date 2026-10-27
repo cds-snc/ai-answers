@@ -33,9 +33,21 @@ async function remember(req, res, userId) {
     userId,
     expiresAt: new Date(now + REMEMBER_DEVICE_MS),
   });
-  // Keeps the collection small until a TTL index is confirmed on DocumentDB.
-  await TrustedDevice.deleteMany({ userId, expiresAt: { $lte: new Date(now) } });
   res.cookie(DEVICE_COOKIE, token, getCookieOptions(req, REMEMBER_DEVICE_MS));
+
+  // Clean-up only, after the cookie is set so a failure here can't lose it.
+  // The new cookie replaces any token this browser held, so that row can
+  // never be used again. Expired rows are pruned to keep the collection small
+  // until a TTL index is confirmed on DocumentDB.
+  try {
+    const oldToken = req.cookies?.[DEVICE_COOKIE];
+    if (typeof oldToken === 'string' && oldToken) {
+      await TrustedDevice.deleteOne({ tokenHash: hashToken(oldToken) });
+    }
+    await TrustedDevice.deleteMany({ userId, expiresAt: { $lte: new Date(now) } });
+  } catch (e) {
+    console.warn('Failed to clean up old remembered devices', e);
+  }
 }
 
 // True only for an unexpired token that belongs to this same user: another
