@@ -63,7 +63,7 @@ const verify2FAHandler = async (req, res) => {
       // in; they get a code next time.
       if (req.body?.rememberDevice === true) {
         try {
-          await TrustedDeviceService.remember(req, res, user._id);
+          await TrustedDeviceService.remember(req, res, user._id.toString());
         } catch (e) {
           console.error('Failed to remember device after 2FA login', e);
         }

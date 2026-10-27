@@ -134,7 +134,8 @@ describe('auth-verify-2fa', () => {
 describe('auth-verify-2fa: remember this device', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser() });
+    // _id as Mongo returns it (an ObjectId), not a string: remember() only accepts strings.
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser({ _id: { toString: () => USER_ID } }) });
   });
 
   it('remembers the device after a correct code when the box is ticked', async () => {
