@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { GcdsLink } from '@gcds-core/components-react';
 import FeedbackComponent from "./FeedbackComponent.js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import ChatOptions from "./ChatOptions.js";
 import ExpertFeedbackPanel from "./review/ExpertFeedbackPanel.js";
 import PublicFeedbackPanel from "./review/PublicFeedbackPanel.js";
@@ -57,6 +58,7 @@ const ChatInterface = ({
   chatId,
   readOnly = false,
   userLeftChatRef,
+  announceToLiveRegion,
   onExpertFeedbackChange,
   reappearedFeedback,
 }) => {
@@ -480,6 +482,32 @@ const ChatInterface = ({
   };
 
   const inputCopy = getInputCopy();
+  const [copyStatusByMessageId, setCopyStatusByMessageId] = useState({});
+
+  const copyAnswerWithChatId = useCallback(async (message) => {
+    const answerElement = document.getElementById("chat-answer-" + message.id);
+    const answerText = Array.from(answerElement?.querySelectorAll(".ai-sentence") || [])
+      .map((sentence) => sentence.textContent?.trim())
+      .filter(Boolean)
+      .join("\n");
+
+    const setCopyStatus = (status, translationKey) => {
+      setCopyStatusByMessageId((current) => ({ ...current, [message.id]: status }));
+      announceToLiveRegion(safeT(translationKey));
+    };
+
+    try {
+      if (!answerText || !chatId || !navigator.clipboard?.writeText) {
+        throw new Error("Clipboard is unavailable or the answer is empty");
+      }
+      await navigator.clipboard.writeText(
+        answerText + "\n\n" + safeT("homepage.chat.chatId") + ": " + chatId
+      );
+      setCopyStatus("copied", "homepage.chat.copyAnswer.copied");
+    } catch (error) {
+      setCopyStatus("error", "homepage.chat.copyAnswer.error");
+    }
+  }, [announceToLiveRegion, chatId, safeT]);
 
   // Single source of truth for whether the conversation-log section/heading
   // pair renders — the <section>'s aria-labelledby and the <h2> it points at
@@ -785,13 +813,35 @@ const ChatInterface = ({
                     </div>
                   )
                 ) : (
-                  <div className="ai-message-bubble">
+                  <div className="ai-message-bubble" id={"chat-answer-" + message.id}>
                     {aiAnswerIndex !== null && (
                       <h3 className="sr-only">
                         {`${safeT("homepage.chat.messages.responseLabel")} ${formatNumber(aiAnswerIndex + 1, lang)}`}
                       </h3>
                     )}
                     {formatAIResponse(message.aiService, message)}
+                    {message.sender === "ai" && !message.error && chatId && message.interaction?.answer && (
+                      <div className="chat-answer-copy-controls">
+                        <button
+                          type="button"
+                          className="button-as-link chat-answer-copy-button"
+                          aria-label={safeT("homepage.chat.copyAnswer.label")}
+                          onClick={() => copyAnswerWithChatId(message)}
+                        >
+                          <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                          {safeT("homepage.chat.copyAnswer.label")}
+                        </button>
+                        {copyStatusByMessageId[message.id] && (
+                          <span className="chat-answer-copy-status" aria-hidden="true">
+                            {safeT(
+                              copyStatusByMessageId[message.id] === "copied"
+                                ? "homepage.chat.copyAnswer.copied"
+                                : "homepage.chat.copyAnswer.error"
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* Show which department(s) this turn was assigned to, in review mode, wrapping the "How was this answer?" feedback tool */}
                     {readOnly &&
