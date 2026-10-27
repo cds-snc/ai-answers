@@ -40,11 +40,31 @@ describe('Auth Reset Password Handler', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  it('refuses a password shorter than the rule before reading the user or counting an attempt', async () => {
+    const res = makeRes();
+    await resetPasswordHandler({
+      body: { email: 'a@b.com', code: '123456', newPassword: 'short' }
+    }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'PASSWORD_RULE' }));
+    expect(User.findOne).not.toHaveBeenCalled();
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('refuses an email that is not a string before reading the user', async () => {
+    const res = makeRes();
+    await resetPasswordHandler({
+      body: { email: ['a@b.com'], code: '123456', newPassword: 'newpass1' }
+    }, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
   it('returns generic 401 when user is not found (no enumeration)', async () => {
     User.findOne.mockResolvedValue(null);
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: 'no@user.com', code: '123456', newPassword: 'newpass' }
+      body: { email: 'no@user.com', code: '123456', newPassword: 'newpass1' }
     }, res);
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
@@ -56,7 +76,7 @@ describe('Auth Reset Password Handler', () => {
     User.findOne.mockResolvedValue({ resetPasswordSecret: null, resetPasswordAttempts: 0 });
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass' }
+      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass1' }
     }, res);
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
@@ -77,7 +97,7 @@ describe('Auth Reset Password Handler', () => {
 
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass' }
+      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass1' }
     }, res);
 
     expect(res.status).toHaveBeenCalledWith(429);
@@ -128,7 +148,7 @@ describe('Auth Reset Password Handler', () => {
 
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass' }
+      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass1' }
     }, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
@@ -156,7 +176,7 @@ describe('Auth Reset Password Handler', () => {
 
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass' }
+      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass1' }
     }, res);
 
     expect(res.status).toHaveBeenCalledWith(429);

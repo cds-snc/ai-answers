@@ -1084,6 +1084,7 @@
     "hidePassword": "Masquer le mot de passe"
   },
   "auth": {
+    "passwordHint": "Au moins 8 caractères",
     "sessionWarning": {
       "title": "Session sur le point d'expirer",
       "message": "Votre session expirera dans 1 minute. Vous serez automatiquement déconnecté si vous restez inactif."

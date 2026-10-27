@@ -9,6 +9,7 @@ import StatusMessage from '../components/admin/StatusMessage.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { useAuthOutcomeMessages } from '../hooks/auth/useAuthOutcomeMessages.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
+import { meetsPasswordRule } from '../utils/auth/passwordRule.js';
 
 const RegisterPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -35,7 +36,7 @@ const RegisterPage = ({ lang = 'en' }) => {
       return;
     }
 
-    if (password.length < 8) {
+    if (!meetsPasswordRule(password)) {
       setError(t('signup.passwordTooShort'), ['password']);
       return;
     }
@@ -52,6 +53,11 @@ const RegisterPage = ({ lang = 'en' }) => {
         setSuccessMessage(true);
       }
     } catch {
+      // TODO(a11y): SC 3.3.1. A server refusal of the email or password (only
+      // possible with a stale page bundle, since the page shares the server's
+      // rules) lands here as the generic message, not a field error. Give those
+      // 400s a `code` and route them to setError, as ResetCompletePage does for
+      // PASSWORD_RULE (plan Phase 2, PR B).
       // Never show err.message here — often just raw, always-English
       // browser/fetch error text (e.g. "Failed to fetch"), and showing the
       // specific reason (e.g. "email already exists") would double as an
@@ -97,6 +103,7 @@ const RegisterPage = ({ lang = 'en' }) => {
             id="password"
             name="password"
             label={t('signup.password')}
+            hint={t('auth.passwordHint')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
