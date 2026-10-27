@@ -80,6 +80,11 @@
     },
     "chat": {
       "chatId": "Chat ID",
+      "copyAnswer": {
+        "label": "Copy answer and chat ID",
+        "copied": "Answer and chat ID copied.",
+        "error": "Unable to copy answer and chat ID. Try again."
+      },
       "scenarioOverride": {
         "banner": "Testing {department} scenario",
         "manageLink": "Return to edit, view or disable scenario"
