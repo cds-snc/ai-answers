@@ -80,6 +80,11 @@
     },
     "chat": {
       "chatId": "ID de chat",
+      "copyAnswer": {
+        "label": "Copier la réponse et l’identifiant du clavardage",
+        "copied": "Réponse et identifiant du clavardage copiés.",
+        "error": "Impossible de copier la réponse et l’identifiant du clavardage. Réessayez."
+      },
       "scenarioOverride": {
         "banner": "Mise à l'essai d'un scénario {department}",
         "manageLink": "Retourner modifier, consulter ou désactiver le scénario"
