@@ -36,6 +36,26 @@
   margin-bottom: 0px;
 }
 
+.chat-answer-copy-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--gcds-spacing-100);
+  margin-top: var(--gcds-spacing-200);
+}
+
+.chat-answer-copy-button {
+  color: var(--gcds-link-default);
+  min-height: 44px;
+}
+
+.chat-answer-copy-button:hover {
+  color: var(--gcds-link-hover);
+}
+
+.chat-answer-copy-status {
+  color: var(--gcds-text-secondary);
+}
+
 /* QA: cleanup — "temp" label; this section is permanent, rename or remove the comment */
 .chat-container {
   width: 100%;
