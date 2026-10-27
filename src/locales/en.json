@@ -1544,6 +1544,13 @@
     "searchQuery": "Search query:",
     "searchResultsCached": "Served from cache",
     "searchResultsDownloaded": "Fetched from search",
+    "searchResultNumber": "Result {number}",
+    "searchResultFields": {
+      "title": "Title",
+      "organization": "Organization",
+      "link": "Link",
+      "summary": "Summary"
+    },
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
