@@ -1147,6 +1147,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         adminLang={adminLang || lang}
         extractSentences={extractSentences}
         chatId={chatId}
+        announceToLiveRegion={announceToLiveRegion}
         readOnly={readOnly}
         userLeftChatRef={userLeftChatRef}
         onExpertFeedbackChange={handleExpertFeedbackChange}
