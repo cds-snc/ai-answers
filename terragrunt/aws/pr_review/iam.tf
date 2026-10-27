@@ -216,6 +216,18 @@ data "aws_iam_policy_document" "lambda_management" {
     effect    = "Allow"
     resources = ["*"]
   }
+
+  # Authenticated pulls from public.ecr.aws, so the image build isn't subject
+  # to the shared per-IP anonymous data limit on GitHub runners.
+  statement {
+    sid = "EcrPublicPull"
+    actions = [
+      "ecr-public:GetAuthorizationToken",
+      "sts:GetServiceBearerToken"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "lambda_management" {
