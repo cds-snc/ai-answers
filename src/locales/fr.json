@@ -1553,6 +1553,13 @@
     "searchQuery": "Requête de recherche :",
     "searchResultsCached": "Servi depuis le cache",
     "searchResultsDownloaded": "Extrait du moteur de recherche",
+    "searchResultNumber": "Résultat {number}",
+    "searchResultFields": {
+      "title": "Titre",
+      "organization": "Organisation",
+      "link": "Lien",
+      "summary": "Résumé"
+    },
     "downloadSuccessCached": "Réussi depuis le cache",
     "downloadSuccessDownloaded": "Réussi après téléchargement",
     "downloadPartial": "Partiel",

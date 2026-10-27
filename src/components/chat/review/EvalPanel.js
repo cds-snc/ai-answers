@@ -3,6 +3,7 @@ import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import EvaluationService from '../../../services/EvaluationService.js';
 import { formatDecimal, formatNumber } from '../../../utils/numberFormat.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
+import { buildChatReviewHref } from '../../../utils/reviewLink.js';
 import { useFocusOnChange } from '../../../hooks/useFocusOnChange.js';
 import StatusMessage from '../../admin/StatusMessage.js';
 
@@ -14,7 +15,9 @@ const formatDate = (d) => {
   } catch (_) { return ''; }
 };
 
-const renderChatLink = (chatId) => {
+// The linked chat's language isn't stored, so the route stays /en; adminLang
+// keeps the review panels and the new-tab hint in the admin's language.
+const renderChatLink = (chatId, adminLang) => {
   if (chatId === null || typeof chatId === 'undefined') {
     return null;
   }
@@ -22,9 +25,8 @@ const renderChatLink = (chatId) => {
   if (!strId.length) {
     return null;
   }
-  const url = `/en?chat=${encodeURIComponent(strId)}&review=1`;
   return (
-    <GcdsLink href={url} target="_blank" lang="en">
+    <GcdsLink href={buildChatReviewHref(strId, 'en', null, adminLang)} target="_blank" lang={adminLang}>
       {strId}
     </GcdsLink>
   );
@@ -348,7 +350,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               {evalObj.fallbackSourceChatId ? (
                 <>
                   <dt>{t('eval.fallbackSourceChatId')}</dt>
-                  <dd>{renderChatLink(evalObj.fallbackSourceChatId)}</dd>
+                  <dd>{renderChatLink(evalObj.fallbackSourceChatId, lang)}</dd>
                 </>
               ) : null}
               {evalObj.matchedCitationInteractionId ? (
@@ -360,7 +362,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
               {evalObj.matchedCitationChatId ? (
                 <>
                   <dt>{t('eval.matchedCitationChatId')}</dt>
-                  <dd>{renderChatLink(evalObj.matchedCitationChatId)}</dd>
+                  <dd>{renderChatLink(evalObj.matchedCitationChatId, lang)}</dd>
                 </>
               ) : null}
               <dt>{t('eval.createdAt')}</dt>
@@ -397,7 +399,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                     <td>{s.code || ''}</td>
                     <td style={{ whiteSpace: 'pre-wrap' }}>{s.message || ''}</td>
                     <td style={{ whiteSpace: 'pre-wrap' }}>
-                      <pre style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
+                      <pre className="review-pre-wrap font-size-text-xsm-nr" style={{ margin: 0, maxHeight: '200px', overflow: 'auto', background: 'transparent', padding: 0 }}>{JSON.stringify(s.details || {}, null, 2)}</pre>
                     </td>
                   </tr>
                 ))}
@@ -405,7 +407,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
             </table>
             <div className="mt-100">
               <strong>{t('reviewPanels.rawTimeline')}</strong>
-              <pre style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
+              <pre className="review-pre-wrap font-size-text-xsm-nr" style={{ maxHeight: '240px', overflow: 'auto', background: '#f8f8f8', padding: '0.5rem' }}>{JSON.stringify(evalObj.stageTimeline, null, 2)}</pre>
             </div>
           </div>
         ) : (
@@ -456,7 +458,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                       <tr key={i}>
                         <td>{s.sourceIndex}</td>
                         <td>{s.sourceSentenceText || ''}</td>
-                        <td>{renderChatLink(s.matchedChatId) || ''}</td>
+                        <td>{renderChatLink(s.matchedChatId, lang) || ''}</td>
                         <td>{typeof s.matchedSentenceIndex !== 'undefined' ? s.matchedSentenceIndex : ''}</td>
                         <td>{s.matchedSentenceText || ''}</td>
                         <td>{typeof s.similarity !== 'undefined' ? fmt(s.similarity) : ''}</td>
@@ -479,7 +481,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                   <dt>{t('reviewPanels.fallbackType')}</dt>
                   <dd>{evalObj.fallbackType || ''}</dd>
                   <dt>{t('reviewPanels.fallbackSourceChatId')}</dt>
-                  <dd>{renderChatLink(evalObj.fallbackSourceChatId) || ''}</dd>
+                  <dd>{renderChatLink(evalObj.fallbackSourceChatId, lang) || ''}</dd>
                   <dt>{t('reviewPanels.fallbackCompareUsed')}</dt>
                   <dd>{evalObj.fallbackCompareUsed ? t('common.yes') : t('common.no')}</dd>
                 </dl>
@@ -589,7 +591,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
                           <tr key={`cand-${si}-${ci}`}>
                             <td>{s.sourceIndex}</td>
                             <td>{ci}</td>
-                            <td>{renderChatLink(c.matchedChatId) || ''}</td>
+                            <td>{renderChatLink(c.matchedChatId, lang) || ''}</td>
                             <td>{c.text || ''}</td>
                             <td>{typeof c.matchedSentenceIndex !== 'undefined' ? c.matchedSentenceIndex : ''}</td>
                             <td>{typeof c.similarity !== 'undefined' ? fmt(c.similarity) : ''}</td>
