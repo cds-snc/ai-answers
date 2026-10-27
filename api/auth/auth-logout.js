@@ -3,10 +3,14 @@ import TrustedDeviceService from '../../services/TrustedDeviceService.js';
 export default async function logoutHandler(req, res) {
   // Signing out also forgets this browser, so the next sign-in here asks for
   // a 2FA code. A failure here must not stop the sign-out.
-  try {
-    await TrustedDeviceService.forget(req, res);
-  } catch (e) {
-    console.error('Failed to forget device on logout', e);
+  // Only for a signed-in session: the client also calls this on any 401 (e.g.
+  // the session timed out), and forgetting then would defeat the feature.
+  if (req.isAuthenticated()) {
+    try {
+      await TrustedDeviceService.forget(req, res);
+    } catch (e) {
+      console.error('Failed to forget device on logout', e);
+    }
   }
 
   // Use Passport's logout method

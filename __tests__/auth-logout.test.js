@@ -5,8 +5,9 @@ vi.mock('../services/TrustedDeviceService.js', () => ({ default: { forget: vi.fn
 import logoutHandler from '../api/auth/auth-logout.js';
 import TrustedDeviceService from '../services/TrustedDeviceService.js';
 
-function makeReq() {
+function makeReq({ signedIn = true } = {}) {
   return {
+    isAuthenticated: () => signedIn,
     logout: vi.fn((cb) => cb(null)),
     session: { destroy: vi.fn((cb) => cb(null)) },
   };
@@ -28,6 +29,17 @@ describe('auth-logout', () => {
     await logoutHandler(req, res);
     expect(TrustedDeviceService.forget).toHaveBeenCalledWith(req, res);
     expect(req.logout).toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+  });
+
+  // The client also calls auth-logout on any 401, e.g. when the session timed
+  // out. That must not forget the device, or it never skips the code.
+  it('keeps the device when the session has already ended', async () => {
+    const req = makeReq({ signedIn: false });
+    const res = makeRes();
+    await logoutHandler(req, res);
+    expect(TrustedDeviceService.forget).not.toHaveBeenCalled();
+    expect(req.session.destroy).toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
   });
 
