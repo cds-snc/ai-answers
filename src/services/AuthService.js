@@ -202,9 +202,11 @@ class AuthService {
     return data;
   }
 
-  static async verify2FA(code) {
+  // rememberDevice: skip the code on this browser for 12 hours (the server
+  // sets its own cookie).
+  static async verify2FA(code, rememberDevice) {
     // reason: 'invalid' | 'locked' | 'expired' | 'server_error' | 'network'
-    const data = await postSignInStep('auth-verify-2fa', { code });
+    const data = await postSignInStep('auth-verify-2fa', { code, rememberDevice });
     // Cookies are set automatically by the server
     if (data.user) {
       this.currentUser = data.user;

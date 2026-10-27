@@ -1,10 +1,11 @@
 import dbConnect from '../db/db-connect.js';
 import TwoFAService, { CODE_TTL_MS } from '../../services/TwoFAService.js';
+import TrustedDeviceService from '../../services/TrustedDeviceService.js';
 import { getSessionTtlMs } from '../../middleware/express-session.js';
 
 // Second step of sign-in. The user is identified only by req.session.pending2FA,
 // which auth-login.js sets after a correct password. The request body supplies
-// the code and nothing else.
+// the code and the "remember this device" choice, nothing else.
 const verify2FAHandler = async (req, res) => {
   try {
     // 'expired' tells the client to restart at the password step. It reveals
@@ -41,7 +42,7 @@ const verify2FAHandler = async (req, res) => {
     // Preserve visitorId across session regeneration triggered by req.login
     const visitorId = req.session?.visitorId;
 
-    req.login(user, (err) => {
+    req.login(user, async (err) => {
       if (err) {
         console.error('Login after 2FA error:', err);
         return res.status(500).json({ success: false, message: 'Login failed', reason: 'server_error' });
@@ -56,6 +57,16 @@ const verify2FAHandler = async (req, res) => {
         delete req.session.pending2FA;
       } catch (e) {
         console.warn('Failed to restore visitorId or set TTL after 2FA login', e);
+      }
+
+      // Only when the box was ticked. If this fails the user is still signed
+      // in; they get a code next time.
+      if (req.body?.rememberDevice === true) {
+        try {
+          await TrustedDeviceService.remember(req, res, user._id);
+        } catch (e) {
+          console.error('Failed to remember device after 2FA login', e);
+        }
       }
 
       return res.status(200).json({

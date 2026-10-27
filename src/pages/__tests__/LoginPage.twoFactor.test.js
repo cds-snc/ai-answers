@@ -197,7 +197,7 @@ describe('LoginPage two-step messages', () => {
     mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
     typeCode(' 123 456 ');
     fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
-    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456'));
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456', true));
   });
 
   it('verifies on Enter in the code field, like the password step', async () => {
@@ -205,7 +205,7 @@ describe('LoginPage two-step messages', () => {
     mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
     typeCode('123456');
     fireEvent.submit(screen.getByRole('textbox', { name: 'login.2fa.code' }).closest('form'));
-    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456'));
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456', true));
   });
 
   it('lets the user try again after a failed check', async () => {
@@ -286,5 +286,17 @@ describe('LoginPage two-step messages', () => {
     expect(screen.queryByText('login.2fa.sentToEmail')).toBeNull();
     expect(screen.getByLabelText('login.password').value).toBe('');
     expect(document.activeElement.textContent).toContain('login.2fa.expired');
+  });
+
+  it('offers to remember the device, ticked by default, and sends the choice', async () => {
+    await reachTwoStep();
+    mockVerify2FA.mockResolvedValue({ user: { role: 'admin' } });
+    const box = screen.getByRole('checkbox', { name: 'login.2fa.rememberDevice' });
+    expect(box.checked).toBe(true);
+    fireEvent.click(box);
+    expect(box.checked).toBe(false);
+    typeCode('123456');
+    fireEvent.click(screen.getByRole('button', { name: 'login.2fa.verify' }));
+    await vi.waitFor(() => expect(mockVerify2FA).toHaveBeenCalledWith('123456', false));
   });
 });

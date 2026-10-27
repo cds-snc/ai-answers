@@ -1065,7 +1065,8 @@
       "resent": "New code sent.",
       "cooldown": "Wait a minute before asking for a new code.",
       "locked": "Too many incorrect codes. Wait 30 minutes, then sign in again.",
-      "expired": "Your sign-in timed out. Enter your email and password again to get a new code."
+      "expired": "Your sign-in timed out. Enter your email and password again to get a new code.",
+      "rememberDevice": "Remember this device for 12 hours"
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"

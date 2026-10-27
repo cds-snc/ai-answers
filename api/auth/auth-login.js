@@ -1,4 +1,5 @@
 import TwoFAService from '../../services/TwoFAService.js';
+import TrustedDeviceService from '../../services/TrustedDeviceService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import passport from '../../config/passport.js';
 import { getSessionTtlMs } from '../../middleware/express-session.js';
@@ -22,7 +23,19 @@ const loginHandler = (req, res, next) => {
     const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
     const isTest = process.env.NODE_ENV === 'test';
 
-    if (!twoFAEnabled || isTest) {
+    // "Remember this device": checked only now, after the password passed, so
+    // the token never replaces the password. isRemembered matches it to this
+    // user only. If the check itself fails, send a code as usual.
+    let remembered = false;
+    if (twoFAEnabled && !isTest) {
+      try {
+        remembered = await TrustedDeviceService.isRemembered(req, user._id.toString());
+      } catch (e) {
+        console.error('Remembered-device check failed; sending a code', e);
+      }
+    }
+
+    if (!twoFAEnabled || isTest || remembered) {
       // Preserve visitorId across session regeneration triggered by req.login
       const visitorId = req.session?.visitorId;
 

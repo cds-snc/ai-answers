@@ -445,7 +445,8 @@ and the code forever.
    its own cookie (httpOnly, Secure, SameSite=strict), scoped to the parent domain like the
    session cookie so moving between the EN and FR hosts doesn't ask for a new code. Store only
    its hash, with `userId` and `expiresAt`, in a small collection with one row per device.
-3. **Fixed 12 hours, hard-coded** as a constant beside the other 2FA constants. Don't make it a
+3. **Fixed 12 hours, hard-coded** as `REMEMBER_DEVICE_MS` in `services/TrustedDeviceService.js`
+   (not in `TwoFAService.js`, which would make `UserService` load GC Notify). Don't make it a
    setting: 12 hours is the NIST upper limit, so a setting would only allow going past it.
    Using the token doesn't extend it.
 4. **Check the token only after the password check succeeds**, in `auth-login.js`. If it is
@@ -455,7 +456,9 @@ and the code forever.
    user B in the same browser (the F1 lesson).
 5. **Revoke:** delete the user's device tokens on password reset, deactivation, role change and
    delete, the same events as Phase 3.1. Until Phase 3.1 ships, add this to the existing
-   password-reset and deactivate handlers.
+   password-reset and deactivate handlers. Revoke before the write it goes with, so a failed
+   revoke leaves the change undone and a retry still revokes. Signing out forgets that browser
+   only (cookie and row), so a borrowed computer doesn't keep the window open.
 6. **Clean-up:** expired rows are already ignored by the query. A TTL index on `expiresAt` can
    delete them, but **confirm TTL index behaviour on DocumentDB 8 first** (same caveat as
    Phase 2.6).
