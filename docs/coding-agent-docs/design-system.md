@@ -124,14 +124,14 @@ Greys and borders used only for structural layout (not data encoding) may stay l
 
 | State | How to render it | Class | Tokens | Icon | Use |
 |---|---|---|---|---|---|
-| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | `--gcds-color-grayscale-50/200/700` | `.loading-animation` pulsing-bars spinner (shared with `.section-loading-indicator`, `prefers-reduced-motion`-aware) | In-progress state, not a completed result |
-| Error | `<StatusMessage variant="error" message={...} />` | `status-message--error-box` | `--gcds-color-red-100/500/700` | `GcdsIcon warning-triangle` | Failures |
-| Warning | `<StatusMessage variant="warning" message={...} />` | `status-message--warning-box` | `--gcds-color-yellow-100/500/750` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
-| Info | `<StatusMessage variant="info" message={...} />` | `status-message--info-box` | `--gcds-color-blue-100/500/700` | `GcdsIcon info-circle` | Neutral confirmations |
-| Success | `<StatusMessage variant="success" message={...} />` | `status-message--success-box` | `--gcds-color-green-100/500/700` | raw `fa-solid fa-check-circle` span | Completed saves |
+| Loading | `<StatusMessage loading message={...} />` | `status-message--loading` | `--gcds-color-grayscale-50/700` | `.loading-animation` pulsing-bars spinner (shared with `.section-loading-indicator`, `prefers-reduced-motion`-aware) | In-progress state, not a completed result |
+| Error | `<StatusMessage variant="error" message={...} />` | `status-message--error-box` | `--gcds-color-red-100/700` | `GcdsIcon warning-triangle` | Failures |
+| Warning | `<StatusMessage variant="warning" message={...} />` | `status-message--warning-box` | `--gcds-color-yellow-100/750` | `GcdsIcon warning-triangle` | Cautions (e.g. unsaved changes) |
+| Info | `<StatusMessage variant="info" message={...} />` | `status-message--info-box` | `--gcds-color-blue-100/700` | `GcdsIcon info-circle` | Neutral confirmations |
+| Success | `<StatusMessage variant="success" message={...} />` | `status-message--success-box` | `--gcds-color-green-100/700` | raw `fa-solid fa-check-circle` span | Completed saves |
 
 - Use `variant` for anything new; `isError`/manual box-modifier `className` are the pre-`variant` convention. Pass `children` only when content is richer than icon + one string (you then supply the icon).
-- Boxes default to `width: fit-content; max-width: 65ch` — a standardized default, not a per-site opt-in.
+- Boxes default to `width: fit-content; max-width: 65ch` — a standardized default, not a per-site opt-in. No border: background and text colour only.
 - **Never pass a spacing utility (`mt-*`/`mb-*`) to `StatusMessage`** — the box rule already carries `--gcds-spacing-250` margins.
 - Plain `style`/`isError` with no `variant` is only for content that fits none of the five (e.g. a compact inline indicator beside a label).
 - The 5-state system was built accessibility-led without a design refinement pass — functional but provisional.

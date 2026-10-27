@@ -618,11 +618,15 @@
       }
     },
     "notifications": {
-      "title": "User notifications",
-      "ariaLabel": "User notifications",
-      "newInactive": "new user(s) awaiting activation (last 7 days)",
-      "totalInactive": "total inactive user(s)",
-      "viewUsers": "View and manage users"
+      "ariaLabel": "Notifications",
+      "assignedHeading": "Questions to review",
+      "accountsHeading": "Inactive user accounts",
+      "pendingAssignedOne": "{count} question is waiting for your review",
+      "pendingAssignedOther": "{count} questions are waiting for your review",
+      "newInactiveOne": "{count} new account request in the last 7 days",
+      "newInactiveOther": "{count} new account requests in the last 7 days",
+      "totalInactiveOne": "{count} inactive account in total",
+      "totalInactiveOther": "{count} inactive accounts in total"
     },
     "footer": {
       "heading": "Admin and partner resources",
@@ -1155,6 +1159,13 @@
         "partnerNotes": "Notes",
         "evaluated": "Evaluated"
       },
+      "filtered": {
+        "pendingOne": "Showing {count} question waiting for your review.",
+        "pendingOther": "Showing {count} questions waiting for your review.",
+        "pendingNoCount": "Showing questions waiting for your review.",
+        "showAll": "Show all assigned questions",
+        "showingAll": "Showing all assigned questions."
+      },
       "evalStatus": {
         "completed": "Completed",
         "pending": "Pending"
@@ -1190,6 +1201,14 @@
     "groupClearedAnnouncement": "Group cleared.",
     "groupRestoredAnnouncement": "Group set back to {group}.",
     "filterLabel": "Filter users",
+    "filtered": {
+      "newOne": "Showing {count} new account request from the last 7 days.",
+      "newOther": "Showing {count} new account requests from the last 7 days.",
+      "inactiveOne": "Showing {count} inactive account.",
+      "inactiveOther": "Showing {count} inactive accounts.",
+      "showAll": "Show all users",
+      "showingAll": "Showing all users."
+    },
     "columns": {
       "email": "Email",
       "role": "Role",

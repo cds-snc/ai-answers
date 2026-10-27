@@ -16,6 +16,9 @@ import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMe
 import { PARTNER_DEPARTMENTS } from '../constants/partnerDepartments.js';
 import { getPartnerGroupLabel, groupsForInstitution, groupFitsInstitution } from '../constants/partnerGroups.js';
 import { announce } from '../utils/liveAnnouncer.js';
+import { useSearchParams } from 'react-router-dom';
+import { formatNumber, isSingular } from '../utils/numberFormat.js';
+import { useFocusIdWhenReady } from '../hooks/useFocusIdWhenReady.js';
 
 DataTable.use(DT);
 
@@ -43,6 +46,27 @@ const toBooleanish = (value) => {
   return null;
 };
 
+// ?show= filters, linked from AdminNotifications.js. Same rules as the
+// counts in api/user/user-stats.js, so the link's number matches the rows.
+const SHOW_FILTERS = {
+  new: {
+    // TODO: one shared "last 7 days" helper for the whole app. Rolling 7 days
+    // back from now here, as on the eval/auto-eval/metrics dashboards;
+    // FilterPanel.js's default and its "Last 7 days" preset each use a
+    // different midnight-based range.
+    matches: (user) => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return user.active === false && new Date(user.createdAt) >= sevenDaysAgo;
+    },
+    text: (t, singular) => (singular ? t('users.filtered.newOne') : t('users.filtered.newOther')),
+  },
+  inactive: {
+    matches: (user) => user.active === false,
+    text: (t, singular) => (singular ? t('users.filtered.inactiveOne') : t('users.filtered.inactiveOther')),
+  },
+};
+
 const UsersPage = ({ lang }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
@@ -52,6 +76,27 @@ const UsersPage = ({ lang }) => {
   ], [t]);
   const naLabel = t('common.na');
   const [users, setUsers] = useState([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const show = Object.hasOwn(SHOW_FILTERS, searchParams.get('show')) ? searchParams.get('show') : null;
+  const filtered = Boolean(show && usersLoaded);
+  // Rows matching ?show=, live: activating a user on save removes their row
+  // and lowers the count. Memoized: a new array every render would redraw
+  // the whole DataTable.
+  const tableUsers = useMemo(
+    () => (filtered ? users.filter(SHOW_FILTERS[show].matches) : users),
+    [users, filtered, show]
+  );
+  useFocusIdWhenReady(filtered ? 'users-filter-summary' : null, filtered);
+  // Show all: the box (and this button) unmounts, so focus goes to the h1
+  // and the change is announced. replace: Back skips the filtered view.
+  const [showAllCount, setShowAllCount] = useState(0);
+  const headingRef = useFocusOnChange(showAllCount);
+  const handleShowAll = () => {
+    setSearchParams({}, { replace: true });
+    setShowAllCount((n) => n + 1);
+    announce(t('users.filtered.showingAll'));
+  };
   // Use a ref to store edit states persistently between DataTable renders
   const editStatesRef = useRef({});
   // This state is just used to trigger re-renders when editStatesRef changes
@@ -264,6 +309,7 @@ const UsersPage = ({ lang }) => {
             active: toBooleanish(user.active),
           }));
           setUsers(sanitized);
+          setUsersLoaded(true);
         }
       } catch (error) {
         if (!didCancel) {
@@ -407,7 +453,7 @@ const UsersPage = ({ lang }) => {
   ];
   return (
     <GcdsContainer layout="page" className="mb-600">
-      <h1 className="mb-400">{t('users.title')}</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="mb-400 focus-target">{t('users.title')}</h1>
 
       <nav className="mb-400" aria-label={t('admin.navigation.ariaLabel')}>
         <GcdsText>
@@ -428,9 +474,27 @@ const UsersPage = ({ lang }) => {
         nonce={statusNonce}
       />
 
+      {/* Focus moves here on arrival (useFocusIdWhenReady above), which reads it */}
+      {filtered && (
+        <StatusMessage
+          id="users-filter-summary"
+          tabIndex={-1}
+          variant="info"
+          announce={false}
+          announcedVia="focus"
+        >
+          <p className="m-0 font-size-text-sm-nr">{SHOW_FILTERS[show].text(t, isSingular(tableUsers.length, lang)).replace('{count}', () => formatNumber(tableUsers.length, lang))}</p>
+          <p className="mt-300 mb-100">
+            <button type="button" className="btn-secondary-sm" onClick={handleShowAll}>
+              {t('users.filtered.showAll')}
+            </button>
+          </p>
+        </StatusMessage>
+      )}
+
       <div className="dashboard-table-container">
       <DataTable
-        data={users}
+        data={tableUsers}
         className="display dashboard-table zebra-stable-on-hover"
         columns={columns}
         options={{

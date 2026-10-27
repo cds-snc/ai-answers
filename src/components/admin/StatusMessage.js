@@ -48,7 +48,7 @@ import { useAnnounceOnChange } from '../../hooks/useAnnounceOnChange.js';
 //
 // `variant` is the box-styled outcome family: 'error' | 'warning' | 'info' |
 // 'success'. It wires up the box className (the GC DS red/yellow/blue/green
-// -100/500/700 token triads in admin.css), assertive-vs-polite (error is the
+// -100 background / -700 text tokens in admin.css), assertive-vs-polite (error is the
 // only assertive variant), and a leading icon, all from one prop — this is
 // what SettingsPage.js's several near-identical call sites used to
 // hand-roll individually. Pass `message` as a plain string with `variant`
