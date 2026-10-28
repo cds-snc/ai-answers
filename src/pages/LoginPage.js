@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import AuthService from '../services/AuthService.js';
@@ -13,6 +13,7 @@ import { normalizeTwoFACode } from '../utils/auth/twoFACode.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
+import { buildPageTitle } from '../config/pageTitle.js';
 
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
@@ -144,6 +145,13 @@ const LoginPage = ({ lang = 'en' }) => {
   // setShowTwoStep(true) again, a no-op), so this effect won't refire then —
   // don't rely on it to announce resend-specific feedback.
   const twoStepIntroRef = useFocusOnChange(showTwoStep);
+
+  // Same URL as sign in, so App.js's route title can't tell the steps apart.
+  useEffect(() => {
+    if (!showTwoStep) return undefined;
+    document.title = buildPageTitle(t('login.2fa.pageTitle'), lang);
+    return () => { document.title = buildPageTitle(t('login.title'), lang); };
+  }, [showTwoStep, lang, t]);
 
   // The sign-in session behind the code screen has lapsed (or the account
   // changed). A new code can't help, so go back to the password form and say why.
