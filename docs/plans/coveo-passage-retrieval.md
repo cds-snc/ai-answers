@@ -417,6 +417,10 @@ write and approve it. **Drafted, awaiting maintainer review.**
   model still downloads after a good passage, strengthen the block before touching Step 3.
 - After trial 1 the download rule was reworded to judge the passage, not the topic, and to
   call passages even when a download looks likely (see [Trial 1 results](#trial-1-results)).
+- After admin chat pair 3, the download rule adds "it lacks the specific date, amount or
+  figure the question asks for", says passages often leave out expandable sections and
+  tables, and says not to answer around a missing fact (e.g. "sign in to check"). See
+  [Admin chat comparisons](#admin-chat-comparisons).
 
 ## Phase 4 — Metrics in batch results
 
@@ -595,6 +599,103 @@ added time and nothing new.
   to it.
 - Check `duration` on other cache-hit downloads in this run. If they're all about 5
   seconds, the delay is in the environment.
+
+### Admin chat comparisons
+
+Run 2026-10-28 with the admin chat's passage tool option ([Phase 2, item 8](#phase-2--retrievepassages-tool)),
+one question at a time on staging, with no batch running.
+
+**The 5-second passage calls were a batch artifact.** Outside a batch, a page-mode call took
+384 ms at Coveo (387 ms for the tool), close to Phase 1's 220–280 ms. A single-question
+batch also gave a 44 ms cache hit, against 5,042 ms for a cache hit during a multi-item
+batch. Judge passage latency here or on the test page, not from multi-item batch timings.
+
+**Forcing works.** GPT-5.1 on Azure accepted the forced first tool call.
+
+**Pair 1: CERB debt** ("Looking to talk to agents about my CERB owning amount"). Both runs
+answered from one tool call. The forced run sent the query "CERB owing amount talk to an
+agent phone number" with the page URL, and got 2 passages. It didn't download afterwards.
+
+| | Off (download) | Forced first (passages) |
+|---|---|---|
+| Tool | 2,244 ms, `origin` | 387 ms |
+| Generation (answer step minus tool) | 5,215 ms | ~5,620 ms |
+| Answer step | 7,459 ms | 6,008 ms |
+| Answer step started at | 2,884 ms | 4,141 ms |
+| User-perceived total | 10,430 ms | 10,257 ms |
+
+- **Passages saved about 1.45 seconds in the answer step.** The totals were nearly equal only
+  because the steps before the answer were slower in the passage run (redact 270 ms against
+  29, translate 1,151 against 464). Compare the answer step, not the total.
+- **Generation dominates either way**, at about 5–5.6 seconds. The tool choice changes about
+  2 seconds at most.
+- **The download missed the cache.** The cached copy had expired (`lookupStatus: expired`),
+  so it went to canada.ca. A cache hit (~40 ms) would have made the download run's answer
+  step about 5.3 seconds, faster than the passage run. How much passages save in production
+  depends on how often the agent's downloads miss the cache, which we haven't measured.
+- **Generation was about 400 ms slower with passages.** That's within one-sample noise, but
+  passage text plus the prompt block may be more for the model to read. More pairs will
+  tell.
+- **Answer quality not compared yet.**
+
+**Pair 2: spousal RRSP at 72** ("I am 72 years old and my spouse is 69 year old, can I
+deposit to spousal rrsp"). Off: chat `0a4a4bbd-d6ef-4f89-a433-b4591cf48cb0`. Forced first:
+chat `5972f71c-6174-4abd-9d0d-3e281397dbdb`. **Both answers were correct.**
+
+| | Off (download) | Forced first (passages) |
+|---|---|---|
+| Tool calls | 3 downloads, all `origin` (cache expired) | 2 passage calls, no download |
+| Tool time | 5,187 ms (795 + 460 + 3,932) | 684 ms (327 + 357) |
+| Generation (answer step minus tools) | 10,936 ms | ~7,258 ms |
+| Answer step | 16,123 ms | 7,942 ms |
+| User-perceived total | 19,232 ms | 10,173 ms |
+
+- **Passages roughly halved the answer step and cut the total by 9 seconds.** Here the
+  steps before the answer were similar in both runs (the answer step started at 3,020 ms and
+  2,129 ms), so the totals reflect the tool choice.
+- **Most of the saving was generation, not tool time.** Tools saved about 4.5 seconds and
+  generation about 3.7. The download run made three tool rounds and read three whole pages.
+  The passage run made two rounds and read 4 passages (1 from
+  `registered-retirement-savings-plan-rrsp.html`, 3 from the T4040 page). Fewer rounds means
+  fewer model calls, and less text means shorter ones.
+- **After the forced first call, the model chose passages again.** Only the first call is
+  forced. The second call (to the T4040 page, which the download run fetched in 3,932 ms) was
+  the model's own choice. So once it has used passages, it may keep using them.
+- **Even with every download a cache hit, passages would likely still win here.** Removing
+  the 5,187 ms of download time leaves the download run's answer step at about 11 seconds,
+  against 7.9 for passages, because of the extra generation.
+
+**Pair 3: child benefit payment date** ("When will I get my next child benefit payment?").
+Off: chat `641bc14a-b7bd-43c0-b4a6-be09f61689c9`. Forced first: chat
+`fd50d027-5e37-42fe-9e3a-06e8b8d2754e`. **The passage answer was wrong: it gave no date and
+told the user to sign in first.** The download answer gave the date.
+
+| | Off (download) | Forced first (passages) |
+|---|---|---|
+| Tool calls | 1 download, `origin` (cache miss) | 1 passage call (1 passage), no download |
+| Page | `child-family-benefits/benefit-payment-dates.html` | same |
+| Tool time | 641 ms | 250 ms |
+| Generation (answer step minus tool) | 3,791 ms | ~5,676 ms |
+| Answer step | 4,432 ms | 5,926 ms |
+| User-perceived total | 8,772 ms | 8,123 ms |
+
+- **This is the failure trial 1 predicted.** Trial 1 found the passage for `calendar.html`
+  had the year labels but none of the payment dates, which sit in expandable sections. This
+  is a different page, and its passage lacked the dates the same way.
+- **The model didn't download, though the prompt says to.** The Phase 3 block says to
+  download when the passage is "cut off" or leaves the answer open. Here the model answered
+  from a passage without the one fact the question asked for, and filled the gap with a
+  plausible "sign in to check" instead of the date. This is the risk with passages: a
+  wrong answer that doesn't look wrong. Confirmed: the passage had no dates. The download
+  rule in the Phase 3 block now names a missing date, amount or figure as a reason to
+  download (see [Phase 3](#phase-3--prompt-variant-maintainers-only)).
+- **Passages weren't faster here either.** The answer step was 1.5 seconds slower, all of it
+  generation, despite less text to read. The download was a fast cache miss (641 ms).
+- **Single-page date and amount questions are where passages are weakest**: the saving is
+  small and the risk of a missing fact is high.
+
+More pairs to follow. The ChatViewer timeline shows a "downloads" row under the answer step
+but no row for passage calls, so a passage run's tool time has to be read from the trace.
 
 ### Success criteria (agree before running)
 
