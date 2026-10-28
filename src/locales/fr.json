@@ -2852,11 +2852,11 @@
     },
     "passages": {
       "title": "Test de récupération de passages",
-      "description": "Testez l'API de récupération de passages de Coveo sur les pages de l'ARC avant d'en faire un outil de réponse. Les requêtes utilisent la clé de recherche Canada.ca sur le serveur.",
+      "description": "Testez l'API de récupération de passages de Coveo avant d'en faire un outil de réponse. Les requêtes utilisent la clé de recherche Canada.ca sur le serveur.",
       "singleHeading": "Requête unique",
       "queryLabel": "Question",
-      "urlLabel": "URL d'une page de l'ARC (facultatif)",
-      "urlHint": "Avec une URL, les passages proviennent de cette page seulement. Sans URL, ils peuvent provenir de n'importe quelle page. Seules les pages de l'ARC sur canada.ca sont acceptées.",
+      "urlLabel": "URL d'une page (facultatif)",
+      "urlHint": "Avec une URL, les passages proviennent de cette page seulement. Sans URL, ils peuvent provenir de n'importe quelle page. Une page absente de l'index des passages ne donne aucun passage.",
       "langLabel": "Langue",
       "maxLabel": "Nombre maximal de passages",
       "send": "Envoyer",
@@ -2902,7 +2902,7 @@
       },
       "outcomeOk": "OK",
       "reason": {
-        "out_of_scope": "Ce n'est pas une page de l'ARC. Aucune requête n'a été envoyée.",
+        "invalid_url": "Ce n'est pas une URL https valide. Aucune requête n'a été envoyée.",
         "http_error": "Coveo a renvoyé une erreur.",
         "timeout": "Le délai de la requête a expiré.",
         "network_error": "Impossible de joindre Coveo.",

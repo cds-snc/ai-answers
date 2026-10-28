@@ -14,15 +14,9 @@ const PASSAGES_ENDPOINT = 'https://employmentandsocialdevelopmentcanadaproductio
 const PASSAGES_REQUEST_TIMEOUT_MS = 15000;
 export const MAX_PASSAGES_LIMIT = 20;
 
-// The trial covers CRA only. Coveo scopes CRA content by its "legalname" metadata, not by
-// URL, and that includes the services-level tax pages (Coveo engineer, see the plan).
-const CRA_HOSTNAME = 'www.canada.ca';
-const CRA_PATH_PREFIXES = ['/en/revenue-agency/', '/fr/agence-revenu/', '/en/services/taxes/', '/fr/services/impots/'];
-// The top page of each folder sits outside it (taxes.html, not taxes/index.html).
-const CRA_TOP_PAGES = CRA_PATH_PREFIXES.map((prefix) => `${prefix.slice(0, -1)}.html`);
-
 // The site-wide canada.ca search page, as Coveo advised: it gave better results than the CRA
-// search page in testing. It doesn't scope to CRA, so open mode can return any canada.ca page.
+// search page in testing. It doesn't scope to a department, so open mode can return any page in
+// the passage index.
 const SEARCH_PAGES = {
     en: {
         searchPageUrl: 'https://www.canada.ca/en/sr/srb.html',
@@ -37,15 +31,14 @@ const SEARCH_PAGES = {
 const ADDITIONAL_FIELDS = ['clickableuri', 'title', 'datemodified', 'dateissued'];
 
 /**
+ * No department or site check: the passage index's scope is set on Coveo's side and keeps
+ * growing, so a page outside it just returns no passages.
  * @param {string} url
- * @returns {boolean} true for a canada.ca CRA page
+ * @returns {boolean} true for an https URL
  */
-export function isCraUrl(url) {
+export function isPageUrl(url) {
     try {
-        const { protocol, hostname, pathname } = new URL(url);
-        return protocol === 'https:'
-            && hostname === CRA_HOSTNAME
-            && (CRA_TOP_PAGES.includes(pathname) || CRA_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix)));
+        return new URL(url).protocol === 'https:';
     } catch {
         return false;
     }
@@ -163,13 +156,13 @@ export async function sendPassagesRequest(requestBody) {
 }
 
 /**
- * Passages for a question, optionally limited to one CRA page.
- * A non-CRA URL returns `reason: 'out_of_scope'` without calling Coveo.
+ * Passages for a question, optionally limited to one page.
+ * A URL that isn't https returns `reason: 'invalid_url'` without calling Coveo.
  * @param {{ query: string, url?: string, lang: 'en'|'fr', maxPassages: number }} params
  */
 export async function retrievePassages({ query, url, lang, maxPassages }) {
-    if (url && !isCraUrl(url)) {
-        return { ok: false, reason: 'out_of_scope', requestBody: null, status: null, latencyMs: null, response: null, passages: [] };
+    if (url && !isPageUrl(url)) {
+        return { ok: false, reason: 'invalid_url', requestBody: null, status: null, latencyMs: null, response: null, passages: [] };
     }
     return sendPassagesRequest(buildPassagesRequest({ query, url, lang, maxPassages }));
 }

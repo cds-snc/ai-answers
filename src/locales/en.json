@@ -2852,11 +2852,11 @@
     },
     "passages": {
       "title": "Passage retrieval test",
-      "description": "Test the Coveo passage retrieval API on CRA pages before it becomes an answer tool. Requests use the Canada.ca search key on the server.",
+      "description": "Test the Coveo passage retrieval API before it becomes an answer tool. Requests use the Canada.ca search key on the server.",
       "singleHeading": "Single query",
       "queryLabel": "Question",
-      "urlLabel": "CRA page URL (optional)",
-      "urlHint": "With a URL, passages come from that page only. Without one, passages can come from any page. Only canada.ca CRA pages are accepted.",
+      "urlLabel": "Page URL (optional)",
+      "urlHint": "With a URL, passages come from that page only. Without one, passages can come from any page. A page that isn't in the passage index returns no passages.",
       "langLabel": "Language",
       "maxLabel": "Maximum passages",
       "send": "Send",
@@ -2902,7 +2902,7 @@
       },
       "outcomeOk": "OK",
       "reason": {
-        "out_of_scope": "Not a CRA page. No request was sent.",
+        "invalid_url": "Not a valid https URL. No request was sent.",
         "http_error": "Coveo returned an error.",
         "timeout": "The request timed out.",
         "network_error": "Couldn't reach Coveo.",

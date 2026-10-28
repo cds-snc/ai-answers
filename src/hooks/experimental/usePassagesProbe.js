@@ -11,7 +11,7 @@ export const MIN_CALL_INTERVAL_MS = 1000;
 export const RATE_LIMIT_WAITS_MS = [2000, 5000, 10000];
 
 // Results the server returns without calling Coveo, so no pacing wait is needed.
-const NO_CALL_REASONS = ['out_of_scope', 'not_configured'];
+const NO_CALL_REASONS = ['invalid_url', 'not_configured'];
 
 const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 

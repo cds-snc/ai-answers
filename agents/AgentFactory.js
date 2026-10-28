@@ -36,7 +36,7 @@ const createTools = (chatId = 'system', agentType = 'openai', { passageTool = fa
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
       wrapToolWithCallbacks(searchOpenDataTool),
-      ...(passageTool ? [wrapToolWithCallbacks(createRetrievePassagesTool({ lang }))] : []),
+      ...(passageTool ? [wrapToolWithCallbacks(createRetrievePassagesTool({ lang, chatId }))] : []),
       // generateContext tool removed from answer agent — context is already
       // derived by the pipeline's contextNode before the answer agent runs.
       // Tool code kept in agents/tools/contextAgentTool.js for future use.

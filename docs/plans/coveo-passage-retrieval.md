@@ -1,12 +1,19 @@
 # Plan: Test Coveo passage retrieval as an answer-agent tool
 
 Status: Phase 1 done (see [Phase 1 findings](#phase-1-findings)). Phase 2 tool built. Phase 3
-prompt block drafted, awaiting maintainer review. Access to the Coveo Passage Retrieval (CPR) API comes through
+prompt block written. Trial 1 run on 2026-10-28 (see [Trial 1 results](#trial-1-results)); the
+prompt and tool were changed after it, and trial 2 is next. Access to the Coveo Passage Retrieval (CPR) API comes through
 the Canada.ca search API. The Canada.ca search team has confirmed the endpoint, that our
 existing search credentials work with it, and how to limit passages to one page (see
 [API notes](#api-notes)). Coveo's search engineer has advised on how to use it (see
 [Coveo's advice](#coveos-advice)) and answered our questions (see
 [Coveo's answers](#coveos-answers)).
+
+> **Not for merging.** This branch is a time-limited trial while we have access to the Coveo
+> Passage Retrieval API. Its PR stays in draft, and all testing runs in preview. It also
+> changes a production prompt for the trial: the CRA scenario's blanket "use ⚠️ DOWNLOAD for
+> urls in this scenario" line is removed (see [Trial 1 results](#trial-1-results)). Anything
+> worth keeping goes to `main` in its own PR, with its own evaluation.
 
 ## Goal
 
@@ -16,7 +23,9 @@ citation accuracy.
 
 **Trial scope: CRA only.** CRA, IRCC and GAC are scraped into the passage model, but the
 trial uses CRA alone to keep testing simple. The tool is offered only when the question is
-matched to CRA. Page mode only accepts CRA pages. Open mode uses the site-wide search context
+matched to CRA. Page mode first accepted only CRA pages; after trial 1 it accepts any page
+URL, because the passage index's scope has grown beyond CRA (see
+[Trial 1 results](#trial-1-results)). Open mode uses the site-wide search context
 on Coveo's advice, so it can return any canada.ca page; Phase 1 showed those non-CRA
 passages are often relevant (the CERB contact numbers are on an ESDC page). IRCC and GAC can
 follow if CRA works.
@@ -169,10 +178,11 @@ exercises the real code path and nothing is rewritten when it becomes a tool.
 
 - `retrievePassages({ query, url, lang, maxPassages })`. Builds the confirmed request body.
   With `url`, adds the `@clickableuri==` filter.
-- **Scope check.** A `url`, if given, must be a CRA page on `www.canada.ca`, under
+- **URL check.** A `url`, if given, must be an https URL; anything else returns
+  `invalid_url` with no call made. Until trial 1 it also had to be a CRA page (under
   `/en/revenue-agency/`, `/fr/agence-revenu/`, `/en/services/taxes/` or
-  `/fr/services/impots/`. Any other URL returns a clear "not available" result, with no call
-  made.
+  `/fr/services/impots/`). That check was removed after the passage index's scope was
+  expanded to many more pages. A page outside the index returns no passages.
 - Uses the site-wide Canada.ca search page context (`/en/sr/srb.html`, `/fr/sr/srb.html`)
   for the language, on Coveo's advice: it gave better results than the CRA search page in
   testing. It doesn't scope results to CRA, so open mode can return any canada.ca page; page
@@ -321,8 +331,8 @@ Built. To run an arm, tick **Offer the passage tool to CRA questions** on the ba
 page. That sets `config.passageTool` on the batch, and adds "Passage tool" to the run name.
 
 1. **Tool.** `agents/tools/retrievePassages.js`: a LangChain tool wrapping the Phase 1 client.
-   Inputs: `query` (a focused question in the user's words) and optional `url`. The schema
-   description says the URL must be a CRA page.
+   Inputs: `query` (a focused question in the user's words) and optional `url` (any page
+   URL; CRA pages only until trial 1).
    - Asks for 3 passages (see [Phase 1 findings](#phase-1-findings) on size).
    - Each passage comes back as title, URL, date modified and text.
    - In page mode the language comes from the URL (`/en/` or `/fr/`). In open mode it's the
@@ -334,8 +344,9 @@ page. That sets `config.passageTool` on the batch, and adds "Passage tool" to th
      `passageTool: true` to `createChatAgent` → `createTools` only when the batch flag is on
      **and** the department is `CRA-ARC`. Every other question, and all production traffic,
      gets today's tools.
-   - **Scope check in the client.** If the agent passes a non-CRA URL, the tool says
-     passages aren't available for that page and to use `downloadWebPage`.
+   - **No page check since trial 1.** The tool used to refuse non-CRA URLs. It now sends
+     any https URL to Coveo, so the question stays CRA-only but the pages it reads needn't
+     be.
 3. **Plumbing.** The flag travels in the graph request context (`graphRequestContext`, the
    `AsyncLocalStorage` that already carries the batch user into the run), not through graph
    state. `ExperimentalBatchService._processItem` sets `passageTool` from
@@ -349,6 +360,11 @@ page. That sets `config.passageTool` on the batch, and adds "Passage tool" to th
 6. **No passages for a page.** Page mode returns nothing both when the page doesn't answer
    the question and when the page isn't in the index. Phase 1 saw both. Coveo doesn't tell
    these apart, so the tool result says no passages were found and to use `downloadWebPage`.
+7. **Repeated text removed (added after trial 1).** Passages from one page overlap, so the
+   tool drops any paragraph an earlier passage of the same page already gave, and notes that
+   it did. A passage with nothing new left is dropped. Text shared by different pages is
+   kept. This cuts what the model reads but not the call time; chunk size is with Coveo
+   (still-open question 4).
 
 Without the Phase 3 prompt block the model sees the tool and its description, but
 `agenticBase.js` Step 3 still requires a download. So a run before Phase 3 measures
@@ -369,12 +385,13 @@ write and approve it. **Drafted, awaiting maintainer review.**
 - **Prompt:** `agents/prompts/passageToolPrompt.js`, appended after `BASE_SYSTEM_PROMPT` as
   "PASSAGE TOOL — amends Step 3". No shared prompt file changes, so production prompts and
   `docs/agents-prompts/system-prompt-documentation.md` are untouched. In short:
-  - try passages for a CRA candidate URL before downloading it; open mode only when no URL
-    fits
+  - try passages for a CRA candidate URL before downloading it, even when a download looks
+    likely; open mode only when no URL fits
   - a passage counts as reading the page for Step 3, and a passage that states the answer
     can be cited without a download
-  - download when the passage is partial, conditional or off-topic, or the answer turns on
-    eligibility, amounts, rates or deadlines (freshness and lost-context risks)
+  - download only when the passage leaves the answer open: off-topic, cut off, a rule,
+    amount or deadline without its conditions or exceptions, or a yearly amount or rate
+    without its year (lost-context and freshness risks)
   - scenario ⚠️DOWNLOAD URLs still get downloaded
   - at most one passage call per page, plus one open-mode call. These don't count toward
     the download limit, so a weak passage can always be checked with a download. Worst case
@@ -382,8 +399,8 @@ write and approve it. **Drafted, awaiting maintainer review.**
     happens.
 - Step 3's "REQUIRED" wording is left alone; the block amends it. If arm results show the
   model still downloads after a good passage, strengthen the block before touching Step 3.
-- The "amounts, rates or deadlines" condition covers many CRA answers. If almost every
-  answer still downloads, that line is the first thing to tune.
+- After trial 1 the download rule was reworded to judge the passage, not the topic, and to
+  call passages even when a download looks likely (see [Trial 1 results](#trial-1-results)).
 
 ## Phase 4 — Metrics in batch results
 
@@ -411,6 +428,60 @@ out model nondeterminism.
 Compare: downloads per answer, passage calls per answer (by mode), answer-step and total
 latency (p50/p95), expert score (`ExpertScorerAnalyzer` against reference answers), citation
 accuracy, and zero-download rate.
+
+### Trial 1 results
+
+**Run:** 2026-10-28. The same 14 CRA questions used in Phase 1, passage tool on, first
+draft of the Phase 3 prompt block. Two questions got clarifying questions, which leaves 12
+answers. A small trial to check behaviour before the full arms, not a measurement.
+
+**Few answers used the tool.** 3 of 12 answers called `retrievePassages`; the other 9 went
+straight to `downloadWebPage`.
+
+| | Answers | Notes |
+|---|---|---|
+| Passages, no download | 2 | Q5 (`noa-nor.html`, page mode) and Q13 (non-resident page, two passage calls) |
+| Passage call rejected, then download | 1 | Q14 passed `/en/services/benefits/calendar.html`, which isn't under the CRA paths the tool accepts. Rejected in 2 ms. |
+| Download only, scenario ⚠️DOWNLOAD | 2 | Q10 and Q12, `cra-login-services.html`. The CRA scenarios mark every URL they list as ⚠️DOWNLOAD and require one before giving in-account steps. Working as intended. |
+| Download only, other | 7 | Overpayments, RRSP at 71 (2), disability tax credit, T4040, RRIF beneficiary, information returns |
+
+**Why the model skipped passages.** The first draft said to download whenever the answer
+"turns on eligibility, amounts, rates or deadlines". Most CRA answers do, so the model
+reasonably skipped a passage call it expected to follow with a download anyway. The rule now
+judges what the passage shows (off-topic, cut off, a rule or amount without its conditions,
+a yearly amount without its year), and the block says to call passages even when a download
+looks likely.
+
+**Passage calls were slow.** Both page-mode calls took about 5 seconds (4,983 ms and
+4,981 ms). Phase 1 measured a p50 of about 220 ms per call. Downloads in the same trial took
+103–4,257 ms, most of them 300–1,200 ms. The two near-identical times fit the 429 retry path
+(three attempts plus the 1 s and 2 s waits), but the tool doesn't log retries, so this isn't
+confirmed. Q5's call did return passages, not the "unavailable" message. If the cause is the
+shared 5 QPS limit (risk 6), every passage call in a batch costs more time than the download
+it replaces.
+
+**Passages were no smaller than the page.** Q5 asked for 3 passages and got 2. Passage 1
+was essentially all of `noa-nor.html`, about 10,000 characters. Passage 2 repeated most of
+passage 1's second half, then added the rest of the page. The model read the page and a
+large duplicate, which is more than a download returns. This matches the Phase 1 findings on
+passage size. The page's processing-times content is an interactive widget, so the passage
+said to check processing times but gave no timeframe.
+
+**Changes made after trial 1:**
+- Prompt: the download rule reworded as above (Phase 3).
+- Tool: repeated text from the same page removed (Phase 2, item 7).
+- Coveo is investigating chunk size (still-open question 4).
+- Tool and test page: the CRA-only page check removed. The passage index's scope has been
+  expanded to many more pages, and Q14's rejection couldn't show whether
+  `calendar.html` was in it. A page outside the index now returns no passages instead.
+- CRA scenario: removed the opening line that marked every URL in the file ⚠️DOWNLOAD. Step 3
+  of `agenticBase.js` already requires a download, and the blanket line forced downloads of
+  scenario URLs such as `cra-login-services.html` that passages might cover. The line
+  requiring a ⚠️DOWNLOAD before giving in-account steps stays. This is a production prompt
+  file, which is one reason the branch isn't for merging.
+- Tool: each passage attempt is logged against the chat ("retrievePassages attempt", with
+  attempt number, page or open mode, URL, HTTP status, failure reason, Coveo latency and
+  passage count). A slow call now shows whether it was 429 retries or one slow response.
 
 ### Success criteria (agree before running)
 
@@ -463,7 +534,10 @@ The tool arm passes if, compared with the baseline:
    [Phase 1 findings](#phase-1-findings)), so a passage call doesn't cut what the model reads,
    and open mode can add up to ~30k tokens. If the agent calls passages and then downloads
    anyway, it reads the same text twice. Watch input tokens per answer in the arm, not just
-   tool time. Coveo's chunking settings may fix this (still-open question 4).
+   tool time. Coveo's chunking settings may fix this (still-open question 4). Trial 1
+   confirmed it in the tool (see [Trial 1 results](#trial-1-results)); the tool now removes
+   text repeated between passages of the same page, which helps but doesn't shrink the
+   first passage.
 
 ## Coveo's advice
 
@@ -545,7 +619,8 @@ Further reading:
 4. Which chunking strategy does our CPR model use, and do the sources have Markdown streams?
    **Most important now:** passages run 2k–80k characters, not ~400 tokens, and passages from
    the same page overlap (see [Phase 1 findings](#phase-1-findings)). Asked Coveo on
-   2026-10-22.
+   2026-10-22; Coveo is investigating as of 2026-10-28. Trial 1 saw the same overlap in the
+   tool.
 5. The 5 QPS limit looks shared with production canada.ca search (we got 429s at 2 calls
    per second). Can our key get its own limit, or a higher one, for the trial?
 6. Why is `.../compte-epargne-libre-impot/cotiser.html` missing from the passage index when

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     buildPassagesRequest,
-    isCraUrl,
+    isPageUrl,
     retrievePassages,
     sendPassagesRequest,
 } from '../canadaCaPassages.js';
@@ -37,23 +37,15 @@ describe('canadaCaPassages', () => {
         vi.restoreAllMocks();
     });
 
-    describe('isCraUrl', () => {
+    describe('isPageUrl', () => {
         it.each([
             [CRA_URL, true],
-            ['https://www.canada.ca/fr/agence-revenu/services/impot.html', true],
-            ['https://www.canada.ca/en/services/taxes/income-tax/personal-income-tax.html', true],
-            ['https://www.canada.ca/fr/services/impots/impot-sur-le-revenu.html', true],
-            ['https://www.canada.ca/en/services/benefits/ei.html', false],
-            ['https://www.canada.ca/en/immigration-refugees-citizenship/services.html', false],
-            ['https://www.canada.ca/en/revenue-agency.html', true],
-            ['https://www.canada.ca/en/services/taxes.html', true],
-            ['https://www.canada.ca/fr/services/impots.html', true],
-            ['https://www.canada.ca/en/services/taxes-other.html', false],
+            ['https://www.canada.ca/en/services/benefits/calendar.html', true],
+            ['https://ircc.canada.ca/english/helpcentre/index.html', true],
             ['http://www.canada.ca/en/revenue-agency/services.html', false],
-            ['https://evil.example/en/revenue-agency/x.html', false],
             ['not a url', false],
         ])('%s → %s', (url, expected) => {
-            expect(isCraUrl(url)).toBe(expected);
+            expect(isPageUrl(url)).toBe(expected);
         });
     });
 
@@ -116,11 +108,17 @@ describe('canadaCaPassages', () => {
             expect(init.headers.Authorization).toBe('Bearer secret-key');
         });
 
-        it('refuses a non-CRA URL without calling Coveo', async () => {
-            const result = await retrievePassages({
-                query: 'q', url: 'https://www.canada.ca/en/services/benefits.html', lang: 'en', maxPassages: 5,
-            });
-            expect(result).toMatchObject({ ok: false, reason: 'out_of_scope', passages: [] });
+        it('sends a non-CRA page URL to Coveo', async () => {
+            fetchMock.mockResolvedValue(okResponse());
+            const url = 'https://www.canada.ca/en/services/benefits/calendar.html';
+            const result = await retrievePassages({ query: 'q', url, lang: 'en', maxPassages: 5 });
+            expect(result.requestBody.filter).toBe(`@clickableuri=="${url}"`);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('refuses a URL that is not https without calling Coveo', async () => {
+            const result = await retrievePassages({ query: 'q', url: 'not a url', lang: 'en', maxPassages: 5 });
+            expect(result).toMatchObject({ ok: false, reason: 'invalid_url', passages: [] });
             expect(fetchMock).not.toHaveBeenCalled();
         });
     });

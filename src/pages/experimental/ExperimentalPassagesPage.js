@@ -14,7 +14,7 @@ import { formatNumber } from '../../utils/numberFormat.js';
 // docs/plans/coveo-passage-retrieval.md. Runs only in the PR preview.
 
 const MAX_PASSAGES_OPTIONS = [5, 10, 20];
-const REASONS = ['out_of_scope', 'http_error', 'timeout', 'network_error', 'unexpected_response', 'not_configured', 'request_failed'];
+const REASONS = ['invalid_url', 'http_error', 'timeout', 'network_error', 'unexpected_response', 'not_configured', 'request_failed'];
 
 function downloadText(text, fileName, type) {
     const url = window.URL.createObjectURL(new Blob([text], { type }));
