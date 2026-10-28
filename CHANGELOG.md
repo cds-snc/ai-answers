@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.210.2](https://github.com/cds-snc/ai-answers/compare/v1.210.1...v1.210.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* add lean for group ([2272cbc](https://github.com/cds-snc/ai-answers/commit/2272cbc30d1159fffb14c5df7506b5f87593a2ca))
+* auth hardening browser ([50102ae](https://github.com/cds-snc/ai-answers/commit/50102ae5be7a701caed9e79e573b3226faf97e77))
+* auth hardening browser ([5e6a63d](https://github.com/cds-snc/ai-answers/commit/5e6a63d65f9a60bb167cb98fdc2975b0619e1617))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump vite from 8.0.16 to 8.3.5 ([55f0842](https://github.com/cds-snc/ai-answers/commit/55f0842cc19ebd8771e6769bb2848bcaf35ae841))
+* **deps-dev:** bump vite from 8.0.16 to 8.3.5 ([c4ce25f](https://github.com/cds-snc/ai-answers/commit/c4ce25f74910836b57a1f33f983b6271f5c83c74))
+* **deps:** bump follow-redirects from 1.16.0 to 1.16.1 ([ed214b2](https://github.com/cds-snc/ai-answers/commit/ed214b259a7439ccf345851ecd41e38a37c9cb92))
+* **deps:** bump follow-redirects from 1.16.0 to 1.16.1 ([b37565d](https://github.com/cds-snc/ai-answers/commit/b37565da1f9ee3e167e4f78fc67fbb15e07a3d09))
+* **deps:** bump ip-address from 10.7.1 to 10.7.4 ([4379700](https://github.com/cds-snc/ai-answers/commit/4379700a7c1071a50dd7688387562c364af056d2))
+* **deps:** bump ip-address from 10.7.1 to 10.7.4 ([6edebe3](https://github.com/cds-snc/ai-answers/commit/6edebe38a7fef61f47bf2fd1864645089ece261c))
+* **deps:** bump proxy-addr from 2.0.7 to 2.0.8 ([8c975ef](https://github.com/cds-snc/ai-answers/commit/8c975effc1c93ef7422d77285f1a727026b80adc))
+* **deps:** bump proxy-addr from 2.0.7 to 2.0.8 ([c56445a](https://github.com/cds-snc/ai-answers/commit/c56445a9e4c95f077f2952a937428f017ea0a291))
+
+## [1.210.1](https://github.com/cds-snc/ai-answers/compare/v1.210.0...v1.210.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* non-admins always run default workflow, model and search ([f7c788a](https://github.com/cds-snc/ai-answers/commit/f7c788a1fdf60e004a227b6f6660a85ed7c7efb5))
+* non-admins always run default workflow, model and search ([76722d5](https://github.com/cds-snc/ai-answers/commit/76722d585164be6595133075362dfa0cb37c352f))
+* partner batches run the settings saved on the batch ([054edc0](https://github.com/cds-snc/ai-answers/commit/054edc064b753c9a36615a8adeb83ef6ac6015f4))
+* skip PR preview deploys for closed PRs ([6aa6a6d](https://github.com/cds-snc/ai-answers/commit/6aa6a6d4d9fa4f6604efd65377c75edfebdc0c41))
+* skip PR preview deploys for closed PRs ([ee20cd9](https://github.com/cds-snc/ai-answers/commit/ee20cd9acc703a21225e801a62f5d4f8b98687c6))
+
+
+### Documentation
+
+* partners run chat defaults; batches run their saved settings ([e729be1](https://github.com/cds-snc/ai-answers/commit/e729be1dc8bba18f715502aa71448b4b7920835a))
+
 ## [1.210.0](https://github.com/cds-snc/ai-answers/compare/v1.209.2...v1.210.0) (2026-10-22)
 
 

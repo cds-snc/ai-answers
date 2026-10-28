@@ -64,8 +64,8 @@ const AdminPage = ({ lang = 'en' }) => {
         {isPartner ? t('admin.partnerTitle') : t('admin.title')}
       </h1>
 
-      {/* Admin notifications panel - only visible to admins */}
-      <RoleBasedContent roles={["admin"]}>
+      {/* Notifications panel: assigned questions for everyone, account counts for admins */}
+      <RoleBasedContent roles={["admin", "partner"]}>
         <AdminNotifications lang={lang} />
       </RoleBasedContent>
 

@@ -360,7 +360,8 @@ class BatchService {
                 workflow,
                 perItemStatus,
                 searchProvider,
-                overrideUserId
+                overrideUserId,
+                batchId
               );
 
               // The Graph run returns the server-assigned chatId in the result payload

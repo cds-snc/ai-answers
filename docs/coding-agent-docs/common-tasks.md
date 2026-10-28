@@ -136,7 +136,7 @@ Model selection is decoupled from workflow: graphs define the pipeline, the
 
 **How it's wired:**
 - `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings on startup and seeds `SETTING_DEFAULTS` if missing. Add any new required setting there. Every consumer — public/authenticated settings APIs, `api/chat/chat-graph-run.js` (which injects the model into the graph input) — reads that cache. Never hardcode a model default in a UI component.
-- Unauthenticated users get the default; authenticated admins can override via the chat Options dropdown.
+- In chat, only admins can override the default (chat Options dropdown); everyone else, partners included, runs the defaults. Batch questions run the workflow, model and search service saved on their batch.
 - The family setting is routed per step by `AgentFactory.js`: translation and query-rewrite use a mini model, PII is pinned to `gpt-4o` so it stays in-region (Canada East), and context and answer use the full model. Evaluation/safety agents have their own model config there and are unaffected by the setting.
 
 ## Modifying the Pipeline

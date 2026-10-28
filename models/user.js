@@ -22,6 +22,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Set only on the first user ever (api/auth/auth-signup.js). The unique
+  // sparse index lets one document hold it, so two simultaneous sign-ups on an
+  // empty database can't both become admin. No default: a stored `false`
+  // would be indexed, and every later user would collide on it.
+  isFirstAdmin: {
+    type: Boolean,
+    unique: true,
+    sparse: true
+  },
   // Institution the user belongs to, as a partner department abbrKey from
   // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
   // (Manage user accounts page) or once by the user (Manage your account

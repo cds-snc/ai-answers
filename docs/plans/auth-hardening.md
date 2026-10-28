@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in and two-factor authentication
 
-Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) and Phases 2 and 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -81,6 +81,21 @@ secrets still sit in browser memory, devtools and any saved network trace.
 Fix in its own small PR, not tied to a phase: return only the fields the page uses (an allowlist,
 not an exclusion list) and test that no secret or counter field comes back. In the same file, stop
 sending `error.message` in the 500 responses.
+
+**Status (2026-10-23): built on branch `auth-hardening-emails`, not yet merged.** One allowlist
+(`ADMIN_USER_FIELDS` in `services/UserService.js`) covers both `listUsers` and the PATCH response
+from `adminUpdateUser`. PATCH had the same leak, because it also left out only `password`, and the
+page replaces the saved row with that response. The 500 responses no longer include
+`error.message`. Test: `api/user/__tests__/user-users-fields.test.js`.
+
+Follow-ups found in review, each its own PR:
+- **Hide secret fields by default.** Mark `resetPasswordSecret`, `twoFACode`, `twoFASecret` and
+  the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
+  asks. Then F5 can't come back through some other endpoint. The sign-in, 2FA and reset code
+  must then select them with `+field`.
+- **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
+  schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
+  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 
@@ -331,6 +346,40 @@ The original items, as planned:
 
 ### Phase 2: Sign-up controls (F3)
 
+Split into three PRs (decided 2026-10-26):
+
+- **PR A, built on branch `auth-hardening-phase2` (2026-10-26), not yet merged:** item 5
+  (length rule only), the server-side email format check from item 2, no login at sign-up
+  for inactive accounts (item 3), and item 7 as an atomic first-user-wins. Decisions:
+  - **Item 7:** keep first-user-wins rather than `ADMIN_BOOTSTRAP_EMAIL`. On an empty
+    database the first user is saved as an active admin with `isFirstAdmin: true`, in one
+    write. A unique sparse index on that field lets only one save win a race; the loser is saved
+    as an inactive partner. (A first version promoted whoever had the oldest `_id` after saving.
+    A code review showed that two sign-ups could both be promoted, and a failure between the
+    two writes could leave no admin.)
+  - **Index on staging: done (2026-10-27).** Mongoose did not create `isFirstAdmin_1` at
+    startup on the preview, and nothing logged the failure. Running "Rebuild all indexes" on
+    the admin Database page built it, and the User row now shows `complete`. That also confirms
+    DocumentDB accepts the unique sparse index.
+  - **Release step for production:** after deploying, open the admin Database page, run
+    "Check index status", and if User shows `Missing: isFirstAdmin`, run "Rebuild all indexes"
+    and check again. The rebuild only adds missing indexes (`createIndexes`, not
+    `syncIndexes`), so it is safe to run. Until the index exists, two simultaneous first
+    sign-ups could both become admin. This only matters on an empty database, and production
+    already has admins.
+  - **Item 5:** no common or breached password list for now.
+  - **No maximum length:** bcrypt only uses the first 72 bytes, so a longer passphrase still
+    works.
+  - The password field now has an "At least 8 characters" hint linked to it.
+- **PR B:** items 1 and 6, the per-email send limits from item 4, and the same response for an
+  existing email (rest of item 3). That response waits for verification so the real owner who
+  mistypes gets an email ("you already have an account") instead of a false "received". Needs
+  the GC Notify templates (decision 5). Also give the sign-up 400s for an invalid email or
+  password a `code`, and show them on the Register page as field errors (the `TODO(a11y)` in
+  `RegisterPage.js`, SC 3.3.1).
+- **PR C, optional while admin is VPN-only:** the domain allow-list (rest of item 2) and the
+  honeypot.
+
 1. **Verify the email before the account counts.**
    - Sign-up creates an unverified record and emails a single-use token link through GC Notify
      (hashed token, 24-hour expiry), reusing the pattern in `auth-send-reset.js`.
@@ -344,8 +393,11 @@ The original items, as planned:
 4. **Abuse controls.** Per-email limits on sign-up and on verification-email sends (a
    verification email is a free email cannon otherwise), plus a honeypot field. Per-IP limits
    have the same problem that got the Phase 1 limiter removed (Phase 1 status, item 8): verify
-   what `req.ip` is behind Akamai before keying anything on it, and put counters in Redis. Add a CAPTCHA
-   only if the first two don't hold; it costs accessibility and needs an approved provider.
+   what `req.ip` is behind Akamai before keying anything on it, and put counters in Redis. **No
+   CAPTCHA** (decided 2026-10-26): it is an accessibility barrier, and the sign-up flow must be
+   fully accessible. The honeypot must be invisible to everyone: `display: none` hides it from
+   screen readers and keyboard focus alike, with `autocomplete="off"` so autofill doesn't fill
+   it and turn a real person away.
 5. **Server-side password policy** (NIST 800-63B): minimum 8 enforced on the server, allow long
    passphrases, no composition rules, reject known-breached or very common passwords. Apply to
    sign-up and reset.
@@ -364,6 +416,7 @@ The original items, as planned:
 
 1. End all of a user's sessions on password reset, deactivation, role change and delete
    (delete from the session store by `passport.user.userId`; both mongo and redis stores).
+   Delete the user's "remember this device" tokens in the same place.
 2. Treat a session as signed in for the rate limiter only when `req.user` is set.
 3. Log auth events (failed password, failed 2FA, lockout, sign-up, verification) with account id
    rather than raw email, and alert on spikes. Fix the email-in-logs item from F4.
@@ -373,11 +426,49 @@ The original items, as planned:
 6. Log password lockouts. 2FA lockouts are already logged (`TwoFAService`); password lockouts in
    `config/passport.js` are not.
 
+### Remember this device for 12 hours (own PR, before 2FA goes on in production)
+
+Added 2026-10-26. Partners must not be slowed down by a code at every sign-in. After a correct
+code, the user can choose to skip the code on that browser for 12 hours. They still enter their
+password each time. This follows NIST SP 800-63B at AAL2: a full re-authentication at least
+every 12 hours, and within that window the password alone is enough.
+
+Why not a longer session instead: the session is `rolling: true`
+(`middleware/express-session.js`), so its TTL is an idle timeout. Raising
+`session.authenticatedTTLMinutes` would let someone who signs in every day skip both the password
+and the code forever.
+
+1. **Checkbox on the code screen:** "Remember this device for 12 hours". Ticked by default:
+   government staff rarely share a computer, and the user can untick it. Add new locale keys in
+   EN and FR.
+2. **Issue a token after a correct code, only when the box is ticked.** Use a random token in
+   its own cookie (httpOnly, Secure, SameSite=strict), scoped to the parent domain like the
+   session cookie so moving between the EN and FR hosts doesn't ask for a new code. Store only
+   its hash, with `userId` and `expiresAt`, in a small collection with one row per device.
+3. **Fixed 12 hours, hard-coded** as a constant beside the other 2FA constants. Don't make it a
+   setting: 12 hours is the NIST upper limit, so a setting would only allow going past it.
+   Using the token doesn't extend it.
+4. **Check the token only after the password check succeeds**, in `auth-login.js`. If it is
+   valid, unexpired and belongs to **the same user**, skip the challenge and call `req.login`
+   with the same session regeneration and TTL as `auth-verify-2fa.js`. Otherwise send a code as
+   today. The token must never replace the password, and a token for user A must do nothing for
+   user B in the same browser (the F1 lesson).
+5. **Revoke:** delete the user's device tokens on password reset, deactivation, role change and
+   delete, the same events as Phase 3.1. Until Phase 3.1 ships, add this to the existing
+   password-reset and deactivate handlers.
+6. **Clean-up:** expired rows are already ignored by the query. A TTL index on `expiresAt` can
+   delete them, but **confirm TTL index behaviour on DocumentDB 8 first** (same caveat as
+   Phase 2.6).
+7. **Tests:** a valid token skips the code; with the box unticked, no cookie is set; an expired
+   token, another user's token, or a tampered token still sends a code; a token without the
+   correct password does nothing; password reset and deactivation revoke tokens.
+
 ### Before turning 2FA on in production
 
 2FA stays off in production until all of these are done. It is on in staging for testing.
 
-1. Phases 1, 2 and 3, the Phase 1 clean-up PR and the F5 fix are merged.
+1. Phases 1, 2 and 3, the Phase 1 clean-up PR, the F5 fix and "Remember this device" are
+   merged.
 2. Settings reload across instances (Phase 1 status, item 2), so `twoFA.enabled` takes effect on
    every instance, not only the one that saved it.
 3. The production 2FA email template is set (`twoFA.templateId` or
@@ -385,7 +476,8 @@ The original items, as planned:
 4. A full pass on staging with 2FA on: the checks in Phase 1 status item 5, plus any added by
    later phases.
 5. `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` updated in the same release to say 2FA is on (and
-   whether it is required for admins, Phase 3 item 4), so the card matches production.
+   whether it is required for admins, Phase 3 item 4), so the card matches production. Also
+   say that a user can choose to skip the code on a device for up to 12 hours.
 
 ### Docs to update with each phase
 
@@ -420,7 +512,8 @@ Phase 1 as urgent.
 1. Which email domains may register? (Phase 2.2)
 2. Should 2FA become mandatory for admins? (Answered 2026-10-16: `twoFA.enabled` is off in
    production and on in staging; see "Before turning 2FA on in production".)
-3. Is a CAPTCHA acceptable for GC users, and is there an approved provider?
+3. Is a CAPTCHA acceptable for GC users, and is there an approved provider? (Answered
+   2026-10-26: no CAPTCHA, for accessibility. See Phase 2.4.)
 4. Existing unverified accounts: delete them all, or send a one-time verification email first?
 5. Who creates the new GC Notify templates (verification, and any 2FA wording change), in both
    languages?

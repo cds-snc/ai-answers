@@ -105,7 +105,6 @@
   align-items: center;
   gap: 16px;
   background-color: var(--gcds-color-grayscale-50);
-  border: 1px solid var(--gcds-color-grayscale-200);
   font-weight: 500;
   color: var(--gcds-color-grayscale-700);
 }
@@ -2172,26 +2171,23 @@ td:has(> .verdict-cell__link) {
   max-width: 65ch;
 }
 
-/* Now uses the shared red-100/red-500/red-700 pairing instead of its own
-   hardcoded red (#ffebee/#ef9a9a/#c62828). */
+/* Shared red-100 background / red-700 text pairing. No border on any of
+   the status boxes. */
 .status-message--error-box {
   background: var(--gcds-color-red-100);
-  border: 1px solid var(--gcds-color-red-500);
   color: var(--gcds-color-red-700);
 }
 
 /* Same box treatment as .status-message--error-box, for a caution rather than a
    failure (SettingsPage's page-level "Unsaved changes" banner) — GC DS has
-   no orange token family, so this uses the yellow/gold triad instead,
-   same 100/500 background/border pairing shape .status-message--error-box
-   uses. Text is yellow-750, not yellow-700 (unlike the red/blue/green
+   no orange token family, so this uses yellow instead, with the same
+   100 background .status-message--error-box uses. Text is yellow-750, not yellow-700 (unlike the red/blue/green
    triads): yellow-700 on yellow-100 only reaches 4.39:1, short of the
    4.5:1 minimum for normal-size text (SC 1.4.3); yellow-750 reaches ~5.79:1
    — enough margin above the minimum without overshooting to yellow-800's
    ~7.8:1, which reads noticeably darker than the other three triads. */
 .status-message--warning-box {
   background: var(--gcds-color-yellow-100);
-  border: 1px solid var(--gcds-color-yellow-500);
   color: var(--gcds-color-yellow-750);
 }
 
@@ -2199,8 +2195,19 @@ td:has(> .verdict-cell__link) {
    neutral success/info outcome (e.g. "Settings cache refreshed."). */
 .status-message--info-box {
   background: var(--gcds-color-blue-100);
-  border: 1px solid var(--gcds-color-blue-500);
   color: var(--gcds-color-blue-700);
+}
+
+/* Secondary button inside an info box (UsersPage.js's Show all users):
+   transparent so the box colour shows through. Hover steps one shade darker
+   than the box, since .btn-secondary-sm's own hover is the box's blue-100.
+   :not(:focus) leaves global.css's focus style in charge. */
+.status-message--info-box .btn-secondary-sm:not(:focus) {
+  background: transparent;
+}
+
+.status-message--info-box .btn-secondary-sm:hover:not(:disabled):not(:focus) {
+  background: var(--gcds-color-blue-200);
 }
 
 /* Same box treatment again, for a completed save (e.g. SettingsPage's
@@ -2210,12 +2217,26 @@ td:has(> .verdict-cell__link) {
    BatchUpload.js. */
 .status-message--success-box {
   background: var(--gcds-color-green-100);
-  border: 1px solid var(--gcds-color-green-500);
   color: var(--gcds-color-green-700);
 }
 
 .status-message--success-box .fa-check-circle {
   margin-right: var(--gcds-icon-margin-50);
+}
+
+/* Box icons 4px larger than the box text. Both icon types (GcdsIcon,
+   which defaults to size="inherit", and the success FA span) take
+   font-size from here. */
+.status-message--error-box gcds-icon,
+.status-message--warning-box gcds-icon,
+.status-message--info-box gcds-icon,
+.status-message--success-box .fa-check-circle {
+  font-size: calc(var(--gcds-font-sizes-text-small) + 0.25rem);
+}
+
+/* Info icon in GcdsNotice's info blue, same as AdminNotifications.js */
+.status-message--info-box gcds-icon {
+  color: var(--gcds-notice-info-text);
 }
 
 /* A list that belongs to the StatusMessage box above it (DatabasePage's
@@ -3271,17 +3292,11 @@ td:has(> .verdict-cell__link) {
    from its own AdminNotifications.css so all admin styling lives in this one
    stylesheet, consistent with the rest of the admin section.
    TODO (design review): worth another look at whether this should become a
-   StatusMessage variant, but it's not a drop-in fit today - it's not a
-   generic warning box. Its layout (a stat list + an action link) doesn't
-   match StatusMessage's single-message/children shape, and its content
-   isn't uniformly "warning" either: the two item types are deliberately
-   split blue (info, --gcds-color-blue-vivid) vs. grey
-   (--gcds-color-grayscale-700), not both yellow. A StatusMessage migration
-   would need to accommodate that shape and that two-tone split, not just
-   swap classes. For now it keeps this bespoke markup, reusing GC DS tokens
-   directly, with its own role="status" aria-live="polite" + role="list"
-   wiring (AdminNotifications.js) instead of StatusMessage's built-in
-   version of the same thing. See
+   StatusMessage variant. Not a drop-in fit today: its layout (one box per
+   group, each a heading + list of links) doesn't match StatusMessage's single-message/
+   children shape. It keeps this bespoke markup, reusing GC DS tokens
+   directly, with its own role="status" aria-live="polite" wiring
+   (AdminNotifications.js) instead of StatusMessage's version. See
    docs/coding-agent-docs/status-and-error-messaging.md. */
 .admin-notifications {
   margin-bottom: var(--gcds-spacing-400);
@@ -3296,100 +3311,48 @@ td:has(> .verdict-cell__link) {
 }
 
 .admin-notifications-panel {
-  background: var(--gcds-color-yellow-50);
-  /* Left bar only. --gcds-notice-border-width is GcdsNotice's own closest
-     real token (0.375rem/6px, used internally for its icon accents) -
-     GcdsNotice itself has no border-left at all, this is the nearest
-     equivalent. yellow-500 is the most saturated step in the yellow scale
-     (no dedicated -vivid token for yellow, unlike blue) - fine here since
-     it's a border, not held to the text-contrast rules the heading/icon
-     colour below is. */
-  border-left: var(--gcds-notice-border-width) solid var(--gcds-color-yellow-500);
-  padding: 0.85rem 1.5rem;
+  /* Light blue, GcdsNotice's info colour: these are to-dos, not problems */
+  background: var(--gcds-color-blue-50);
+  /* Same corner radius as the StatusMessage boxes */
+  border-radius: 6px;
+  padding: var(--gcds-spacing-100) 1.5rem var(--gcds-spacing-150);
 }
 
+/* One box per notification group (assigned questions, user accounts) */
+.admin-notifications-panel + .admin-notifications-panel {
+  margin-top: var(--gcds-spacing-300);
+}
+
+/* Icon on its own line above the heading */
 .admin-notifications-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.admin-notifications-icon {
-  /* No font-size set: this inherits the ambient text size on purpose (no
-     GC DS body font-size override exists to match against - forcing in a
-     text token here would change the rendered size, not preserve it). */
-  color: var(--gcds-color-yellow-700);
-  flex-shrink: 0;
-  padding-right: var(--gcds-spacing-50);
-}
-
-.admin-notifications-title {
-  font: var(--gcds-heading-h5-desktop);
-  color: var(--gcds-color-yellow-750);
-  margin: 0;
-}
-
-.admin-notifications-list {
-  list-style: none;
-  /* 50px has no exact GC DS spacing token - sits exactly between
-     --gcds-spacing-600 (48px) and --gcds-spacing-650 (52px), rounded down. */
-  padding-left: var(--gcds-spacing-600);
-  padding-right: var(--gcds-spacing-600);
-  margin: 0 0 var(--gcds-spacing-100) 0;
-  /* content-sized rows (not full list width), one per line */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-bottom: 0.5rem;
 }
 
-.admin-notifications-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0;
-  /* "total inactive" (the default/non-warning item) reads as neutral grey,
-     matching .label.normal/.uploaded's own grey text. */
-  color: var(--gcds-color-grayscale-700);
-}
-
-/* "new users" reads as info (blue) rather than warning (yellow) - blue-vivid
-   (GC DS's actual "vivid" blue token) rather than blue-700, which read too
-   close to the grey above to tell apart at this size/weight. The
-   "--warning" name is a holdover from when this tier really was yellow -
-   worth a rename once nothing else depends on it. */
-.admin-notifications-item--warning {
-  color: var(--gcds-color-blue-vivid);
-}
-
-/* Outline only, no fill - border: currentColor so it always matches
-   whichever colour (grey/blue-vivid) the row above sets, no separate
-   colour to keep in sync between the two item types. */
-.admin-notifications-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 999px;
-  border: 1px solid currentColor;
+.admin-notifications-title {
+  /* h2 for structure (heading navigation), bold body-text look */
+  font-family: var(--gcds-font-families-heading);
+  font-size: var(--gcds-font-sizes-text);
   font-weight: 700;
-  color: inherit;
+  line-height: 1.3;
+  margin: 0;
 }
 
-.admin-notifications-label {
-  /* font-size comes from .font-size-text-sm-nr on the element itself
-     (global.css) - our own existing 18px utility, not redeclared here. */
-  color: inherit;
+.admin-notifications-icon {
+  /* 4px larger than body text */
+  font-size: calc(var(--gcds-font-sizes-text) + 0.25rem);
+  color: var(--gcds-notice-info-text);
+  padding: var(--gcds-spacing-100) 0 var(--gcds-spacing-50);
 }
 
-.admin-notifications-action {
-  display: inline-flex;
-  align-items: center;
-  font-weight: 500;
-  /* font-size comes from .font-size-text-sm-nr on the element itself
-     (global.css) - our own existing 18px utility, not redeclared here. */
+/* One link per line, the count part of the link text. Indent is just
+   room for the bullets. */
+.admin-notifications-list {
+  list-style: disc;
+  padding-left: var(--gcds-spacing-300);
+  margin: 0;
 }
 
 /* BatchUpload.js's step-2 form card. Deliberately its own class, not built

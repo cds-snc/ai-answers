@@ -34,6 +34,17 @@ The role lives in three places that must agree when you add a page or endpoint:
 - **Signup** (`api/auth/auth-signup.js`): the **first user ever created becomes an active
   admin**. Everyone after is a `partner` with `active: false` and cannot use the system until
   an admin activates them on the Manage user accounts page (`/en/users`, admin only).
+  When the database has no users, sign-up saves the new user as an active admin with
+  `isFirstAdmin: true`, in one write. That field has a unique sparse index, so if two sign-ups
+  race on an empty database, the second save fails and is retried as an inactive partner. **The
+  index must exist on DocumentDB**; without it, both could become admin. Only that first admin is
+  logged in at sign-up; an inactive account gets no session login. A duplicate-email save (a
+  double submit) answers `User already exists`, not 500.
+- **Password and email rules** are checked on the server, not only on the page. The password
+  rule (`src/utils/auth/passwordRule.js`: at least 8 characters, no composition rules, no
+  maximum) is shared by the sign-up and reset pages and both handlers. Sign-up also refuses an
+  email that fails the shared `isValidEmail` (`src/utils/auth/validateEmail.js`, which includes
+  the 254-character limit).
 - **Inactive accounts** are blocked at login (`config/passport.js` local strategy) and on every
   request (`deserializeUser` returns no user if `active` is false), so deactivating an admin
   action takes effect on the user's next request, not at session expiry.
@@ -107,15 +118,16 @@ in production" in the plan):
   lockout still share one message. For the cause of a failed send, check `detail` in the
   `auth-login` response in the browser's Network tab.
 
-Remaining gap: sign-up does no email verification, domain check or server-side password rule, and
-logs the new (inactive) user in, which moves them to the signed-in rate-limit bucket. Plan:
-[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2). `twoFASecret` on the user is a legacy field that nothing reads or
+Remaining gap: sign-up does no email verification or domain check, and still answers
+`User already exists` to a direct API call. Plan:
+[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2, PRs B and C). `twoFASecret` on the user is a legacy field that nothing reads or
 writes; existing accounts still hold a value until a migration clears it.
 
-Open (F5 in the plan, own PR): `UserService.listUsers()` leaves out only `password`, so the
-admin users list sends every user's `resetPasswordSecret`, `twoFACode` and lockout fields to
-the browser. Don't add consumers of that response; the fix is an allowlist of the fields the
-Users page shows.
+The admin users endpoint (`user-users`, list and PATCH) returns only the fields in
+`ADMIN_USER_FIELDS` (`services/UserService.js`), never the whole user document, which holds
+`resetPasswordSecret`, `twoFACode` and lockout counters (F5 in the plan). To show a new column on
+the Users page, add its field to that allowlist, and keep secrets and counters out of it.
+`api/user/__tests__/user-users-fields.test.js` fails if anything else comes back.
 
 ## Password reset
 
