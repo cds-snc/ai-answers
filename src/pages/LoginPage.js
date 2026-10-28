@@ -283,7 +283,7 @@ const LoginPage = ({ lang = 'en' }) => {
                 aria-invalid={!!twoStepError}
               />
             </div>
-            <div className="gc-chckbxrdio md">
+            <div className="gc-chckbxrdio sm">
               <div className="checkbox">
                 <input
                   type="checkbox"
