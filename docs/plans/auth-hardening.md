@@ -1,6 +1,6 @@
-# Plan: Harden admin sign-up, sign-in and two-factor authentication
+# Plan: Harden admin sign-up, sign-in, password reset and two-factor authentication
 
-Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -96,6 +96,26 @@ Follow-ups found in review, each its own PR:
 - **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
   schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
   `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.
+
+### F6. Password reset links use a guessable 6-digit code (Medium, found 2026-10-28)
+
+The reset link carries a 6-digit TOTP code made from `resetPasswordSecret`. The code is checked
+when the new password is submitted, not when the link is opened.
+
+- With `window: 2`, links stopped working 60 to 90 seconds after they were sent, before people
+  could finish. PR #1978 sets `window: 20` (±10 minutes) as a quick fix.
+- That makes 41 codes valid at once. The 5-try lockout clears after 30 minutes, so someone who
+  keeps guessing gets about 240 guesses a day: about a 1% chance per day. Anyone can start this
+  with only an email address, and the secret stays until a reset succeeds.
+- The standard (OWASP Forgot Password cheat sheet) is a long random single-use token, stored
+  hashed, with an expiry. It can't be guessed, so the link lifetime doesn't trade off against
+  security.
+- History: reset used that standard design until 2026-01-06 (`4e0bbb151`). It was replaced the
+  day links failed with "invalid or expired token", and the cause wasn't found. Commits that day
+  suspected a stale save overwriting the token, then database copies out of sync across servers.
+  The first TOTP version reused one secret per user, which hid both. Secret rotation per request
+  came back in `84ad7ac93` (2026-04-08), so today's code would hit the same failure if it still
+  exists.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 
@@ -463,6 +483,26 @@ and the code forever.
    token, another user's token, or a tampered token still sends a code; a token without the
    correct password does nothing; password reset and deactivation revoke tokens.
 
+### Password reset token (F6, own PR, replaces the PR #1978 quick fix)
+
+1. **Check production logs first.** In CloudWatch Logs Insights (`/aws/ecs/ai-answers-cluster`,
+   30-day retention), look for "Reset rejected: user not found or no secret configured" shortly
+   after "Reset email sent successfully". If it shows, the 2026-01-06 failure is still live: find
+   its cause before switching.
+2. **`auth-send-reset.js`:** generate a token with `crypto.randomBytes(32)`, store its SHA-256
+   hash and an expiry on the user, and email the token. A new request replaces any earlier token.
+   Decide the lifetime (PR #1978 gives 10 minutes).
+3. **`auth-reset-password.js`:** hash the submitted token, compare with `crypto.timingSafeEqual`,
+   check the expiry, and clear the token on success. Keep the attempt counter and lockout; they
+   cost nothing.
+4. **Schema:** replace `resetPasswordSecret` with the hash and expiry fields. Update the F5
+   follow-up's `select: false` list to match. `speakeasy` may then be removable.
+5. **No change to the email or pages:** the link keeps its `code=` parameter, with a longer value.
+6. **Tests:** a token works once; an expired token fails; an older link fails after a new
+   request; a wrong token counts toward the lockout.
+7. **Test on staging before production.** The 2026-01-06 failure may only appear with more than
+   one server, so a local run can't rule it out.
+
 ### Before turning 2FA on in production
 
 2FA stays off in production until all of these are done. It is on in staging for testing.
@@ -522,5 +562,3 @@ Phase 1 as urgent.
 
 - Authenticator-app (TOTP) or WebAuthn 2FA. Stronger than email codes and the right long-term
   answer, but a separate project.
-- Changing the password-reset design, which is already sound (hashed-equivalent secret
-  rotation, atomic attempt counter, generic responses).

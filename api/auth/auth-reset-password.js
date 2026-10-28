@@ -83,14 +83,18 @@ const resetPasswordHandler = async (req, res) => {
     console.debug(`[auth-reset-password][${os.hostname()}] Validating TOTP code`);
 
     // Validate TOTP code
-    // window: 2 = ±1 minute — sufficient for GC Notify delivery times
-    // Tighter window reduces effective brute-force keyspace vs window: 20
+    // window: 20 = ±10 minutes, the same lifetime as the 2FA email code. The
+    // code is checked when the new password is submitted, not when the link
+    // is opened, so it has to cover delivery plus typing a new password.
+    // ±1 minute expired links before users could finish. The wider window
+    // makes guessing easier; F6 in docs/plans/auth-hardening.md plans the
+    // replacement.
     const isValid = speakeasy.totp.verify({
       secret: user.resetPasswordSecret,
       encoding: 'base32',
       token: code,
       step: 30,
-      window: 2,
+      window: 20,
     });
 
     if (!isValid) {
