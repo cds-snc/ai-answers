@@ -86,8 +86,9 @@ const resetPasswordHandler = async (req, res) => {
     // window: 20 = ±10 minutes, the same lifetime as the 2FA email code. The
     // code is checked when the new password is submitted, not when the link
     // is opened, so it has to cover delivery plus typing a new password.
-    // ±1 minute expired links before users could finish. The 5-try lockout
-    // above keeps guessing impractical with the wider window.
+    // ±1 minute expired links before users could finish. The wider window
+    // makes guessing easier; F6 in docs/plans/auth-hardening.md plans the
+    // replacement.
     const isValid = speakeasy.totp.verify({
       secret: user.resetPasswordSecret,
       encoding: 'base32',

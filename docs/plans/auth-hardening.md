@@ -1,4 +1,4 @@
-# Plan: Harden admin sign-up, sign-in and two-factor authentication
+# Plan: Harden admin sign-up, sign-in, password reset and two-factor authentication
 
 Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
