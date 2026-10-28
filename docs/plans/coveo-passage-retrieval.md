@@ -3,7 +3,10 @@
 Status: Phase 1 done (see [Phase 1 findings](#phase-1-findings)). Phase 2 tool built. Phase 3
 prompt block written. Trial 1 run on 2026-10-28 (see [Trial 1 results](#trial-1-results)); the
 prompt and tool were changed after it. Trials 2 and 3 run on 2026-10-28 (see
-[Trial 2 results](#trial-2-results) and [Trial 3 results](#trial-3-results)). Access to the Coveo Passage Retrieval (CPR) API comes through
+[Trial 2 results](#trial-2-results) and [Trial 3 results](#trial-3-results)). Then an admin
+chat option was added to force or offer the tool one question at a time, and three pairs were
+compared (see [Admin chat comparisons](#admin-chat-comparisons), which ends with where to
+pick up). Access to the Coveo Passage Retrieval (CPR) API comes through
 the Canada.ca search API. The Canada.ca search team has confirmed the endpoint, that our
 existing search credentials work with it, and how to limit passages to one page (see
 [API notes](#api-notes)). Coveo's search engineer has advised on how to use it (see
@@ -694,8 +697,27 @@ told the user to sign in first.** The download answer gave the date.
 - **Single-page date and amount questions are where passages are weakest**: the saving is
   small and the risk of a missing fact is high.
 
-More pairs to follow. The ChatViewer timeline shows a "downloads" row under the answer step
-but no row for passage calls, so a passage run's tool time has to be read from the trace.
+**Pattern so far (three pairs, one run each):**
+- **Multi-page questions** (pair 2): passages saved a lot of time, mostly in generation, and
+  the answer was still correct.
+- **Single-page fact lookups** such as a date or amount (pairs 1 and 3): little or no
+  saving, and one wrong answer.
+- **Cache hits narrow the gap.** Every download in these pairs missed the cache. A hit
+  (~40 ms) beats a passage call (250–390 ms) on tool time.
+
+**Where to pick up:**
+1. Rerun pair 3's question with **Forced first** under the new download rule. It passes if
+   the model calls passages, then downloads `benefit-payment-dates.html` and gives the date.
+2. Run more pairs, mixing single-page and multi-page questions. Run Off first, then Forced
+   first, and note each download's `cacheStatus`. Compare the answer step, not the total.
+3. Open questions: whether to force passages only for some questions, how often production
+   downloads miss the cache, and whether the passage block should replace Step 3's
+   download wording instead of amending it (a base prompt change; see
+   [Trial 2 results](#trial-2-results)).
+
+The ChatViewer timeline shows a "downloads" row under the answer step but no row for passage
+calls, so a passage run's tool time has to be read from the trace. Adding a "passages" row
+would make pairs quicker to read.
 
 ### Success criteria (agree before running)
 
