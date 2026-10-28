@@ -2,7 +2,8 @@
 
 Status: Phase 1 done (see [Phase 1 findings](#phase-1-findings)). Phase 2 tool built. Phase 3
 prompt block written. Trial 1 run on 2026-10-28 (see [Trial 1 results](#trial-1-results)); the
-prompt and tool were changed after it, and trial 2 is next. Access to the Coveo Passage Retrieval (CPR) API comes through
+prompt and tool were changed after it. Trials 2 and 3 run on 2026-10-28 (see
+[Trial 2 results](#trial-2-results) and [Trial 3 results](#trial-3-results)). Access to the Coveo Passage Retrieval (CPR) API comes through
 the Canada.ca search API. The Canada.ca search team has confirmed the endpoint, that our
 existing search credentials work with it, and how to limit passages to one page (see
 [API notes](#api-notes)). Coveo's search engineer has advised on how to use it (see
@@ -351,7 +352,8 @@ page. That sets `config.passageTool` on the batch, and adds "Passage tool" to th
    `AsyncLocalStorage` that already carries the batch user into the run), not through graph
    state. `ExperimentalBatchService._processItem` sets `passageTool` from
    `batch.config.passageTool`, and `invokeAgent` reads it. This changes no graph, no
-   `sendAnswerRequest` payload and no prompt tags. Chat runs never set it.
+   `sendAnswerRequest` payload and no prompt tags. Chat runs never set it (the admin chat
+   option in item 8 sets a separate field).
 4. **Tracking.** Wrapped with `ToolTrackingHandler` like the other tools, so calls and
    durations land in `Tool` documents.
 5. **Tests.** `agents/tools/__tests__/retrievePassages.test.js` (formatting, language, empty
@@ -365,6 +367,20 @@ page. That sets `config.passageTool` on the batch, and adds "Passage tool" to th
    it did. A passage with nothing new left is dropped. Text shared by different pages is
    kept. This cuts what the model reads but not the call time; chunk size is with Coveo
    (still-open question 4).
+8. **Admin chat option (added after trial 3).** Trials kept stalling on the model's choice:
+   a single-question batch downloaded on three tries running. So the admin chat's
+   **Options** panel has a **Passage tool (trial)** setting, to run one question at a time
+   and read the trace:
+   - **Off:** today's tools.
+   - **Offered:** the tool and the Phase 3 prompt block, as in a batch, but for **any**
+     question, not only CRA ones.
+   - **Forced first:** as Offered, but the first tool call must be `retrievePassages`.
+     After any tool has run, the model chooses freely. This overrides a clarifying
+     question on the first turn. GPT-5.1 (Azure) agent only; the Claude agent refuses it.
+
+   Admins only, checked on the server (`chat-graph-run.js` sets `passageToolChatMode` in
+   the request context; partners, signed-out users and batch questions are ignored). Not
+   stored: a reload turns it off. The batch checkbox is unchanged and stays CRA-only.
 
 Without the Phase 3 prompt block the model sees the tool and its description, but
 `agenticBase.js` Step 3 still requires a download. So a run before Phase 3 measures
@@ -467,6 +483,17 @@ large duplicate, which is more than a download returns. This matches the Phase 1
 passage size. The page's processing-times content is an interactive widget, so the passage
 said to check processing times but gave no timeframe.
 
+**Expandable sections are missing from passages.** After the CRA-only check was removed,
+the test page showed `calendar.html` is in the passage index, so Q14's rejection was our
+check, not Coveo's scope. But the passage has none of the payment dates. The page keeps each
+year's dates in an expandable section, and the passage has only the section labels
+("Canada child benefit 2026", "Canada child benefit 2025") with nothing under them.
+`downloadWebPage` returned every date. For Q14 ("see my Canada child benefit payment
+dates") the passage couldn't answer, and it could mislead: a list of years with no dates
+reads like a page with no dates. The prompt's "cut off" condition should trigger a download
+here; trial 2 will show whether it does. Any page that puts its answer in expandable sections
+(common on canada.ca) has the same problem. See still-open question 11.
+
 **Changes made after trial 1:**
 - Prompt: the download rule reworded as above (Phase 3).
 - Tool: repeated text from the same page removed (Phase 2, item 7).
@@ -482,6 +509,92 @@ said to check processing times but gave no timeframe.
 - Tool: each passage attempt is logged against the chat ("retrievePassages attempt", with
   attempt number, page or open mode, URL, HTTP status, failure reason, Coveo latency and
   passage count). A slow call now shows whether it was 429 retries or one slow response.
+
+### Trial 2 results
+
+**Run:** 2026-10-28, after the [changes made after trial 1](#trial-1-results). The same 14 CRA
+questions, two trials, which gave 20 answers. Like trial 1, a check on behaviour, not a
+measurement.
+
+**Use didn't change.** 3 of 20 answers called `retrievePassages`, against 3 of 12 in trial 1.
+At this size the two can't be told apart. The choice also wasn't stable: each question that
+used passages in one trial downloaded the same page in the other.
+
+| Question | Trial A first call | Trial B first call |
+|---|---|---|
+| CERB debt (`contact-canada-revenue-agency-about-your-debt.html`) | download | passages |
+| RRSP at 72 (`rrsp-options-when-you-turn-71.html`) | passages | download |
+| Non-resident (`non-residents-canada.html`) | passages | download |
+
+All three calls were page mode, with a URL. None used open mode.
+
+**Answers that used passages didn't need a download.** Almost every answer made one tool
+call. Only 4 made a second, all downloads that followed a first download. None of the three
+passage answers downloaded afterwards. Their accuracy hasn't been checked yet.
+
+**Removing the CRA-only page check made no difference here.** Every URL the model called was
+a CRA page.
+
+**Passage calls were still slow:** 5,142, 4,898 and 5,026 ms, against 300–1,700 ms for most
+downloads. That's the same ~5 seconds as trial 1. The "retrievePassages attempt" logs should
+show whether these were 429 retries. Two trials running in parallel would add to the load on
+the shared 5 QPS limit (risk 6). Until this is fixed, a passage-only answer is slower than a
+one-download answer.
+
+**Why the model mostly skips passages (likely).** The passage block is appended to the
+prompt and amends Step 3. Step 3 of `agenticBase.js` says the opposite, more strongly:
+"DOWNLOAD RELEVANT WEBPAGES → use downloadWebPage tool", "downloadWebPage TOOL CALL —
+REQUIRED", "Call downloadWebPage tool NOW". None of the downloaded URLs carry a ⚠️DOWNLOAD
+marker in the CRA scenario, so the scenario isn't the cause.
+
+**Open next steps (not decided):**
+- Check the attempt logs for 429s before any further trial.
+- Read the three passage answers for accuracy.
+- Consider separating the two questions. "Does the model choose passages?" and "are passages
+  good enough when used?" need different arms. At 15–25% use, a choice-based arm won't give
+  enough passage answers to judge quality. A forced passage-first arm would.
+- If choice is still being tested, the passage instructions probably need to replace Step 3's
+  wording when the tool is offered, not add to it. That's a base prompt change for the
+  maintainers.
+
+### Trial 3 results
+
+**Run:** 2026-10-28, same setup as trial 2 but one trial instead of two, to test whether
+the shared 5 QPS limit was the problem.
+
+**Use:** 5 of 12 answers called `retrievePassages`. With 3 of 12 in trial 1 and 3 of 20 in
+trial 2, that's still within chance. The rate limit also couldn't change it: the model picks
+the tool before any request reaches Coveo.
+
+**Passage calls still took over 5 seconds each.**
+
+**The rate limit wasn't the cause, at least for the call we traced.** The trace of the CERB
+debt chat (admin "Trace a chat") shows one "retrievePassages attempt" entry: `attempt: 1`,
+`status: 200`, `latencyMs: 5539`, 2 passages. There was no 429 and no retry. `latencyMs`
+times only the HTTP request to Coveo, so the 5.5 seconds wasn't spent in our code.
+
+**A cache-hit download in the same chat also took about 5 seconds** (`duration: 5042`). A
+cache hit reads our own cache and never calls canada.ca. In trial 2, cache hits took 38–40
+ms. So in this run, a read from our own storage and a Coveo request both took about 5
+seconds. That points to the server or its network at the time, not to Coveo alone. A fixed
+~5 seconds on separate network calls fits a DNS lookup where the first resolver times out
+(the default is 5 seconds) before a second answers. This is a hypothesis, not confirmed.
+
+Trace timestamps are when each log entry was saved, not when the event happened
+(`ServerLoggingService` sets `createdAt` at write time). Two entries logged at the same
+moment ("Web page cache lookup" and "Tool execution completed") were saved 5 seconds apart,
+so log writes were slow too. Don't read the gaps as tool timings.
+
+The model also downloaded the page first, then called passages on the same page. Passages
+added time and nothing new.
+
+**Next:**
+- Run a few questions on the passage test page on the same deployment, once idle and once
+  during a batch. About 220 ms idle and 5 seconds during the batch means load on our side. About
+  5 seconds both times means something changed since Phase 1, in Coveo or the network path
+  to it.
+- Check `duration` on other cache-hit downloads in this run. If they're all about 5
+  seconds, the delay is in the environment.
 
 ### Success criteria (agree before running)
 
@@ -634,6 +747,10 @@ Further reading:
 9. Are the `relevanceScore` values rank-based? The top page-mode passage always scores 0.200.
 10. Pages under `.../information-been-moved/` rank first for the non-resident question. Are
     they moved or archived, and should the pipeline rank them lower?
+11. Why is content inside expandable sections (`<details>`) missing from passages? On
+    `calendar.html` every payment date is inside one, and the passage keeps only the section
+    labels. Is this the crawler, the Markdown conversion or the chunker, and can it be
+    included?
 
 ## Out of scope
 

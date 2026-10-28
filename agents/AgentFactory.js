@@ -2,6 +2,7 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatCohere } from '@langchain/cohere';
+import { ToolMessage } from '@langchain/core/messages';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
 import searchOpenDataTool from './tools/searchOpenData.js';
@@ -45,6 +46,14 @@ const createTools = (chatId = 'system', agentType = 'openai', { passageTool = fa
   };
 };
 
+// Experimental: the admin chat's "Forced first" passage option (docs/plans/coveo-passage-retrieval.md).
+// The first model call must call retrievePassages; once any tool has run, the model chooses freely.
+const forcePassagesFirst = (llm, tools) => {
+  const forced = llm.bindTools(tools, { tool_choice: 'retrievePassages' });
+  const free = llm.bindTools(tools);
+  return (state) => (state.messages.some((message) => ToolMessage.isInstance(message)) ? free : forced);
+};
+
 const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null, toolOptions = {}) => {
   const modelConfig = getModelConfig('azure', modelOverride);
   const isGPT5 = modelConfig.name === 'openai-gpt51' ||
@@ -67,8 +76,11 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null, t
   });
 
   const { tools, callbacks } = createTools(chatId, 'azure', toolOptions);
+  if (toolOptions.forcePassages && !toolOptions.passageTool) {
+    throw new Error('forcePassages needs passageTool');
+  }
   const agent = await createReactAgent({
-    llm: openai, tools,
+    llm: toolOptions.forcePassages ? forcePassagesFirst(openai, tools) : openai, tools,
     agentConfig: {
       handleParsingErrors: true,
       maxIterations: 10,
@@ -96,6 +108,9 @@ const createCohereAgent = async (chatId = 'system') => {
 };
 
 const createClaudeAgent = async (chatId = 'system', toolOptions = {}) => {
+  if (toolOptions.forcePassages) {
+    throw new Error('Forced passages are only built for the Azure OpenAI agent');
+  }
   const modelConfig = getModelConfig('anthropic');
   const claude = new ChatAnthropic({
     apiKey: process.env.REACT_APP_ANTHROPIC_API_KEY,

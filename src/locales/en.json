@@ -121,6 +121,12 @@
           "canadaca": "Canada.ca",
           "google": "Google"
         },
+        "passageTool": {
+          "label": "Passage tool (trial):",
+          "off": "Off",
+          "offered": "Offered",
+          "forced": "Forced first"
+        },
         "workflow": {
           "label": "Workflow:"
         },

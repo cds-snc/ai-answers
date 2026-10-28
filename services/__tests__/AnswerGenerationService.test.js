@@ -59,7 +59,7 @@ describe('AnswerGenerationService', () => {
 
         const result = await AnswerGenerationService.generateAnswer(params, 'test-chat');
 
-        expect(createChatAgent).toHaveBeenCalledWith('openai', 'test-chat', { passageTool: false, lang: 'en' });
+        expect(createChatAgent).toHaveBeenCalledWith('openai', 'test-chat', { passageTool: false, forcePassages: false, lang: 'en' });
         expect(mockAgent.invoke).toHaveBeenCalled();
         expect(result).toEqual({
             content: 'Hello world',
@@ -190,12 +190,12 @@ describe('AnswerGenerationService', () => {
 
         it('offers the tool when the batch turns it on and the question is CRA', async () => {
             await run({ passageTool: true }, { department: 'CRA-ARC' });
-            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: true, lang: 'en' });
+            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: true, forcePassages: false, lang: 'en' });
         });
 
         it('does not offer the tool for other departments', async () => {
             await run({ passageTool: true }, { department: 'IRCC' });
-            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: false, lang: 'en' });
+            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: false, forcePassages: false, lang: 'en' });
         });
 
         it('does not offer the tool when the batch flag is off or absent', async () => {
@@ -220,9 +220,26 @@ describe('AnswerGenerationService', () => {
             expect(systemPrompt()).not.toContain('## PASSAGE TOOL');
         });
 
+        it('offers the tool for any department when an admin chat turns it on', async () => {
+            await run({ passageToolChatMode: 'offered' }, { department: 'IRCC' });
+            expect(createChatAgent).toHaveBeenLastCalledWith('azure', 'test-chat', { passageTool: true, forcePassages: false, lang: 'en' });
+
+            await run({ passageToolChatMode: 'offered' }, { department: '' });
+            expect(createChatAgent).toHaveBeenLastCalledWith('azure', 'test-chat', { passageTool: true, forcePassages: false, lang: 'en' });
+        });
+
+        it('forces passages first only in forced mode', async () => {
+            await run({ passageToolChatMode: 'forced' }, { department: 'IRCC' });
+            expect(createChatAgent).toHaveBeenLastCalledWith('azure', 'test-chat', { passageTool: true, forcePassages: true, lang: 'en' });
+            expect(mockAgent.invoke.mock.calls.at(-1)[0].messages[0].content).toContain('## PASSAGE TOOL');
+
+            await run({ passageTool: true }, { department: 'CRA-ARC' });
+            expect(createChatAgent.mock.calls.at(-1)[2].forcePassages).toBe(false);
+        });
+
         it('passes French for French pages', async () => {
             await run({ passageTool: true }, { department: 'CRA-ARC', lang: 'fr' });
-            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: true, lang: 'fr' });
+            expect(createChatAgent).toHaveBeenCalledWith('azure', 'test-chat', { passageTool: true, forcePassages: false, lang: 'fr' });
         });
     });
 });

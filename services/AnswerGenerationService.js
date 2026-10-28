@@ -54,10 +54,14 @@ async function invokeAgent({
     originalMessage,
 }, chatId) {
     // Experimental: an experimental batch run with the passage tool on sets passageTool in
-    // the request context. Only CRA questions get the tool and its prompt block; production
-    // never sets the flag.
-    const passageTool = graphRequestContext.getStore()?.passageTool === true
-        && department === PASSAGE_TOOL_DEPARTMENT;
+    // the request context, and only CRA questions get the tool and its prompt block. An
+    // admin's chat option sets passageToolChatMode instead, for any question; 'forced' also
+    // makes retrievePassages the first tool call. Production never sets either.
+    const requestContext = graphRequestContext.getStore();
+    const passageToolChatMode = requestContext?.passageToolChatMode;
+    const passageTool = passageToolChatMode === 'offered' || passageToolChatMode === 'forced'
+        || (requestContext?.passageTool === true && department === PASSAGE_TOOL_DEPARTMENT);
+    const forcePassages = passageToolChatMode === 'forced';
 
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
@@ -70,6 +74,7 @@ async function invokeAgent({
 
     const agent = await createChatAgent(provider, chatId, {
         passageTool,
+        forcePassages,
         lang: lang === 'fr' ? 'fr' : 'en',
     });
     const messages = [

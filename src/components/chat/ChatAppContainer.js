@@ -136,6 +136,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [selectedSearch, setSelectedSearch] = useState(() => {
     return readStoredOverride('selectedSearch', SEARCH_PROVIDER_VALUES) || '';
   });
+  // Experimental passage tool option ('' = off). Not stored, so a reload turns it off.
+  const [passageToolMode, setPassageToolMode] = useState('');
   const [workflow, setWorkflow] = useState(() => readStoredOverride('workflow', WORKFLOW_VALUES));
   const [workflowIsOverride, setWorkflowIsOverride] = useState(
     () => readStoredOverride('workflow', WORKFLOW_VALUES) !== null
@@ -413,6 +415,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     setSelectedSearch(value);
   };
 
+  const handlePassageToolChange = (e) => {
+    setPassageToolMode(e.target.value);
+  };
+
   // Persist selection changes to localStorage. Only the admin's own choice is
   // stored — never the fetched model.default, which must keep following the
   // Settings value.
@@ -612,7 +618,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           workflow,
           updateStatusWithTimer,  // Pass our new status handler
           selectedSearch,  // Add this parameter
-          overrideUserId
+          overrideUserId,
+          null, // batchId
+          passageToolMode || null
         );
 
         // Capture server-generated chatId (if this was the first request)
@@ -813,6 +821,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     referringUrl,
     selectedAI,
     selectedSearch,  // Add this dependency
+    passageToolMode,
     workflow,
     lang,
     t,
@@ -1136,6 +1145,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         modelSelection={modelIsOverride ? selectedAI : ''}
         selectedSearch={selectedSearch}
         handleSearchToggle={handleSearchToggle}
+        passageToolMode={passageToolMode}
+        handlePassageToolChange={handlePassageToolChange}
         referringUrl={referringUrl}
         chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}

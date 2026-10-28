@@ -3,11 +3,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // We mock the LLM constructors so no real network calls or env var checks happen
 vi.mock('@langchain/openai', () => ({
     ChatOpenAI: vi.fn().mockImplementation(function ChatOpenAI() { return { _type: 'openai' }; }),
-    AzureChatOpenAI: vi.fn().mockImplementation(function AzureChatOpenAI() { return { _type: 'azure' }; })
+    AzureChatOpenAI: vi.fn().mockImplementation(function AzureChatOpenAI() {
+        return { _type: 'azure', bindTools: (tools, options = {}) => ({ boundToolChoice: options.tool_choice ?? null }) };
+    })
 }));
 
 vi.mock('@langchain/langgraph/prebuilt', () => ({
-    createReactAgent: vi.fn(async ({ tools }) => ({ tools }))
+    createReactAgent: vi.fn(async ({ tools, llm }) => ({ tools, llm }))
 }));
 
 // Import AFTER mocking so the mocks are in place when AgentFactory initializes
@@ -114,5 +116,28 @@ describe('createChatAgent tools', () => {
 
         const on = await createChatAgent('openai-gpt51', 'chat-1', { passageTool: true, lang: 'fr' });
         expect(toolNames(on)).toEqual(['downloadWebPage', 'checkUrl', 'searchOpenData', 'retrievePassages']);
+    });
+
+    it('lets the model choose its tools unless passages are forced', async () => {
+        const agent = await createChatAgent('openai-gpt51', 'chat-1', { passageTool: true, lang: 'en' });
+        expect(typeof agent.llm).not.toBe('function');
+    });
+
+    it('forces retrievePassages on the first call, then lets the model choose', async () => {
+        const { ToolMessage, HumanMessage } = await import('@langchain/core/messages');
+        const agent = await createChatAgent('openai-gpt51', 'chat-1', { passageTool: true, forcePassages: true, lang: 'en' });
+
+        const first = agent.llm({ messages: [new HumanMessage('Q')] });
+        expect(first.boundToolChoice).toBe('retrievePassages');
+
+        const later = agent.llm({ messages: [new HumanMessage('Q'), new ToolMessage({ content: 'passages', tool_call_id: 'call-1' })] });
+        expect(later.boundToolChoice).toBeNull();
+    });
+
+    it('refuses to force passages without the passage tool, or on the Claude agent', async () => {
+        await expect(createChatAgent('openai-gpt51', 'chat-1', { passageTool: false, forcePassages: true, lang: 'en' }))
+            .rejects.toThrow('forcePassages needs passageTool');
+        await expect(createChatAgent('claude', 'chat-1', { passageTool: true, forcePassages: true, lang: 'en' }))
+            .rejects.toThrow('only built for the Azure OpenAI agent');
     });
 });
