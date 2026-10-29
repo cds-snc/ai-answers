@@ -423,7 +423,13 @@ write and approve it. **Drafted, awaiting maintainer review.**
 - After admin chat pair 3, the download rule adds "it lacks the specific date, amount or
   figure the question asks for", says passages often leave out expandable sections and
   tables, and says not to answer around a missing fact (e.g. "sign in to check"). See
-  [Admin chat comparisons](#admin-chat-comparisons).
+  [Admin chat comparisons](#admin-chat-comparisons). Pair 3's passage turned out to have
+  the date, so this rule doesn't cover what went wrong there; see item 4 under "Where to
+  pick up".
+- After the pair 3 reruns (2026-10-29), the block says a passage also counts as
+  downloaded content wherever the prompts say to verify specifics, and to give a date or
+  amount the passage states. In two of three reruns the model had the date in the passage
+  and still sent the user to My Account.
 
 ## Phase 4 — Metrics in batch results
 
@@ -682,24 +688,47 @@ told the user to sign in first.** The download answer gave the date.
 | Answer step | 4,432 ms | 5,926 ms |
 | User-perceived total | 8,772 ms | 8,123 ms |
 
-- **This is the failure trial 1 predicted.** Trial 1 found the passage for `calendar.html`
-  had the year labels but none of the payment dates, which sit in expandable sections. This
-  is a different page, and its passage lacked the dates the same way.
-- **The model didn't download, though the prompt says to.** The Phase 3 block says to
-  download when the passage is "cut off" or leaves the answer open. Here the model answered
-  from a passage without the one fact the question asked for, and filled the gap with a
-  plausible "sign in to check" instead of the date. This is the risk with passages: a
-  wrong answer that doesn't look wrong. Confirmed: the passage had no dates. The download
-  rule in the Phase 3 block now names a missing date, amount or figure as a reason to
-  download (see [Phase 3](#phase-3--prompt-variant-maintainers-only)).
+- **The passage had the dates, but the model didn't use them.** *Corrected 2026-10-29: an
+  earlier version of this note said the passage had no dates. It did.* The passage from
+  `benefit-payment-dates.html` listed every payment date. The model left them out and told
+  the user to sign in instead. This is the risk with passages: a wrong answer that doesn't
+  look wrong.
+- **Likely cause: the base prompts only trust downloaded content for specifics.**
+  `scenarios-all.js` says "CRITICAL: Verify any specific details (numbers, dates, codes,
+  dollar amounts...) in downloaded content", and `agenticBase.js` says every claim must
+  trace to "content you downloaded". The model may not count a passage as downloaded, so
+  it won't state a date that appears only in a passage. It didn't download either. The
+  Phase 3 block doesn't say a passage counts as verified content.
+- **The download rule added after this pair doesn't address that.** It names a missing date,
+  amount or figure as a reason to download (see
+  [Phase 3](#phase-3--prompt-variant-maintainers-only)). Here the date wasn't missing, so
+  the rule wouldn't fire.
 - **Passages weren't faster here either.** The answer step was 1.5 seconds slower, all of it
   generation, despite less text to read. The download was a fast cache miss (641 ms).
 - **Single-page date and amount questions are where passages are weakest**: the saving is
   small and the risk of a missing fact is high.
-- **Update (2026-10-29): Coveo has since fixed this page's passage.** A Forced first rerun
-  under the new download rule got a passage that now lists every payment date under "All
-  payment dates", so the model had no reason to download. The rerun can't test the new
-  rule; it needs a page whose passage still leaves out the fact.
+- **Update (2026-10-29): the rerun's passage had the dates, as the first run's did.** A
+  Forced first rerun under the new download rule got the same passage, with every payment
+  date under "All payment dates", and didn't download. This time the answer gave the date
+  and cited `benefit-payment-dates.html`, though it still opened with "sign in". Later
+  reruns didn't (see the table below). This page has no expandable sections, so it says nothing about the `calendar.html` problem (open question 11). The
+  rerun can't test the new rule; it needs a page whose passage leaves out the fact.
+
+  Forced first reruns of pair 3 under the new download rule (2026-10-29). Every passage
+  had the dates.
+
+  | Rerun | Chat | Date in answer | Opened with "sign in" | Downloaded after passage |
+  |---|---|---|---|---|
+  | 1 | `97684a7d-b357-4158-b7b5-edfcd6c80227` | yes, cited `benefit-payment-dates.html` | yes | no |
+  | 2 | `78cbca8b-603f-4d69-9fbf-3036df823ff3` | no: said the date is in My Account and linked the payment dates page | yes | no |
+  | 3 | `61f59bc4-f392-4543-8bac-68d8f3ebefec` | no: said the date is in My Account and to use the schedule | yes | no |
+
+  One of three reruns gave the date. Every rerun called passages for
+  `benefit-payment-dates.html` and never downloaded. Rerun 3's call was page mode with
+  the question as the query, returned 1 passage and took 313 ms.
+  So the model usually won't state a date it has only from a passage. This supports the
+  "verify in downloaded content" explanation, and a prompt change is likely needed (item 4
+  under "Where to pick up").
 
 **Pair 4: CPP application delay** ("I applied for CPP online and haven't heard back yet -
 it's been 2 months. Why might there be a delay like this?"). Off: chat
@@ -748,7 +777,9 @@ section on `after-apply.html`, a page the passage run never read.**
 - **Multi-page questions** (pair 2): passages saved a lot of time, mostly in generation, and
   the answer was still correct.
 - **Single-page fact lookups** such as a date or amount (pairs 1 and 3): little or no
-  saving, and one wrong answer.
+  saving, and one wrong answer. That wrong answer came from a passage that had the fact
+  (pair 3), which points to the "verify in downloaded content" wording, not to the
+  passage.
 - **Passages lose the links between pages** (pair 4): from the same first page, the
   download run followed the series navigation to the page with the answer. The passage
   had no navigation, so the passage run stopped. This hits multi-page series (CPP, OAS,
@@ -758,15 +789,23 @@ section on `after-apply.html`, a page the passage run never read.**
 
 **Where to pick up:**
 1. Test the new download rule on a page whose passage leaves out the fact the question
-   asks for. Pair 3's page no longer works for this: Coveo fixed its passage, which now
-   includes the dates (see the update under pair 3). It passes if the model calls passages,
-   then downloads the page and gives the fact.
+   asks for. Pair 3's page doesn't work for this: its passage includes the dates (see the
+   update under pair 3). `calendar.html`, whose dates sit in expandable sections, may. It
+   passes if the model calls passages, then downloads the page and gives the fact.
 2. Run more pairs, mixing single-page and multi-page questions. Run Off first, then Forced
    first, and note each download's `cacheStatus`. Compare the answer step, not the total.
 3. Open questions: whether to force passages only for some questions, how often production
    downloads miss the cache, and whether the passage block should replace Step 3's
    download wording instead of amending it (a base prompt change; see
    [Trial 2 results](#trial-2-results)).
+4. Decide how the prompts should treat passages as a source. The base prompts tell the
+   model to verify dates, amounts and other specifics "in downloaded content" (see
+   pair 3). Either the Phase 3 block says a passage counts as verified content, or the
+   base wording changes to cover passages. Both are prompt changes for the maintainers.
+   Reruns of pair 3 gave the date only one time in three, so a change looks needed.
+   *Done 2026-10-29:* the Phase 3 block now says a passage counts as downloaded content
+   (see [Phase 3](#phase-3--prompt-variant-maintainers-only)). Rerun pair 3's question a
+   few times to check it.
 
 The ChatViewer timeline shows a "downloads" row under the answer step but no row for passage
 calls, so a passage run's tool time has to be read from the trace. Adding a "passages" row
@@ -927,10 +966,8 @@ Further reading:
     `calendar.html` every payment date is inside one, and the passage keeps only the section
     labels. Is this the crawler, the Markdown conversion or the chunker, and can it be
     included?
-    *Partly answered (2026-10-29):* Coveo fixed `benefit-payment-dates.html`, whose passage
-    now includes the payment dates, and pair 4's passage for `cpp/apply.html` included its
-    expand/collapse content. Check whether `calendar.html` and other pages with
-    expandable sections are fixed too.
+    Not every page loses them: pair 4's passage for `cpp/apply.html` included its
+    expand/collapse content. What differs between that page and `calendar.html`?
 12. Passages leave out a page's series navigation (the "steps" links at the top of
     multi-page content such as the CPP retirement pension pages). Downloads keep it, and
     it's how the model finds sibling pages (see pair 4). Can the passage keep it, or
