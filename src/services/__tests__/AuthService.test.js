@@ -102,6 +102,18 @@ describe('AuthService', () => {
     clearSpy.mockRestore();
   });
 
+  // Only a sign-out the user chose forgets the remembered device. keepalive so
+  // the page navigating away straight after doesn't cancel the request.
+  it('logout sends forgetDevice only when asked, with keepalive', () => {
+    AuthService.logout();
+    AuthService.logout({ forgetDevice: true });
+    const [auto, chosen] = global.fetch.mock.calls.map((c) => c[1]);
+    expect(JSON.parse(auto.body)).toEqual({ forgetDevice: false });
+    expect(JSON.parse(chosen.body)).toEqual({ forgetDevice: true });
+    expect(auto.keepalive).toBe(true);
+    expect(chosen.keepalive).toBe(true);
+  });
+
   // A session can end without logout() running (expired while the browser
   // was closed), so sign-in also drops Options choices left from before.
   const savedChoices = { 'aiAnswers.selectedAI': 'azure', 'aiAnswers.workflow': 'GenericWithQAGraph', 'aiAnswers.selectedSearch': 'canadaca' };

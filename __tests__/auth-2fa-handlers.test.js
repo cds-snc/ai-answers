@@ -9,6 +9,9 @@ vi.mock('../services/TwoFAService.js', () => ({
   CODE_TTL_MS: 10 * 60 * 1000,
   default: { verifyChallenge: vi.fn(), sendChallenge: vi.fn() },
 }));
+vi.mock('../services/TrustedDeviceService.js', () => ({
+  default: { remember: vi.fn(), isRemembered: vi.fn().mockResolvedValue(false), revokeAll: vi.fn() },
+}));
 
 vi.mock('../config/passport.js', () => ({
   default: { authenticate: vi.fn((strategy, cb) => () => cb(null, passwordUser, null)) },
@@ -19,6 +22,8 @@ import loginHandler from '../api/auth/auth-login.js';
 import verifyHandler from '../api/auth/auth-verify-2fa.js';
 import sendHandler from '../api/auth/auth-send-2fa.js';
 import TwoFAService from '../services/TwoFAService.js';
+import TrustedDeviceService from '../services/TrustedDeviceService.js';
+import passport from '../config/passport.js';
 import { User } from '../models/user.js';
 import { SettingsService } from '../services/SettingsService.js';
 
@@ -126,6 +131,49 @@ describe('auth-verify-2fa', () => {
   });
 });
 
+describe('auth-verify-2fa: remember this device', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // _id as Mongo returns it (an ObjectId), not a string: remember() only accepts strings.
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: true, user: verifiedUser({ _id: { toString: () => USER_ID } }) });
+  });
+
+  it('remembers the device after a correct code when the box is ticked', async () => {
+    const req = makeReq({ session: pendingSession(), body: { code: '123456', rememberDevice: true } });
+    const res = makeRes();
+    await verifyHandler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(TrustedDeviceService.remember).toHaveBeenCalledWith(req, res, USER_ID);
+    // The cookie has to be set before the response goes out.
+    expect(TrustedDeviceService.remember.mock.invocationCallOrder[0])
+      .toBeLessThan(res.json.mock.invocationCallOrder[0]);
+  });
+
+  it.each([[{ code: '123456' }], [{ code: '123456', rememberDevice: false }], [{ code: '123456', rememberDevice: 'true' }]])(
+    'sets no device cookie when the box is unticked (%j)', async (body) => {
+      const res = makeRes();
+      await verifyHandler(makeReq({ session: pendingSession(), body }), res);
+      expect(res.statusCode).toBe(200);
+      expect(TrustedDeviceService.remember).not.toHaveBeenCalled();
+    });
+
+  it('does not remember the device after a wrong code', async () => {
+    TwoFAService.verifyChallenge.mockResolvedValue({ success: false, reason: 'invalid' });
+    await verifyHandler(makeReq({ session: pendingSession(), body: { code: '000000', rememberDevice: true } }), makeRes());
+    expect(TrustedDeviceService.remember).not.toHaveBeenCalled();
+  });
+
+  it('still signs the user in when remembering the device fails', async () => {
+    TrustedDeviceService.remember.mockRejectedValueOnce(new Error('db down'));
+    const req = makeReq({ session: pendingSession(), body: { code: '123456', rememberDevice: true } });
+    const res = makeRes();
+    await verifyHandler(req, res);
+    await vi.waitFor(() => expect(res.json).toHaveBeenCalled());
+    expect(res.statusCode).toBe(200);
+    expect(req.login).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('auth-send-2fa (resend)', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -221,6 +269,53 @@ describe('auth-login with 2FA on', () => {
     const { res } = await login();
     expect(res.statusCode).toBe(500);
     expect(res.json.mock.calls[0][0]).toMatchObject({ reason: 'send_failed', detail: 'twofa_send_error' });
+  });
+
+  it('skips the code for a remembered device of the same user, after the password', async () => {
+    TrustedDeviceService.isRemembered.mockResolvedValueOnce(true);
+    const { req, res } = await login();
+    expect(TrustedDeviceService.isRemembered).toHaveBeenCalledWith(req, USER_ID);
+    expect(TwoFAService.sendChallenge).not.toHaveBeenCalled();
+    expect(req.login).toHaveBeenCalledTimes(1);
+    expect(req.session.pending2FA).toBeUndefined();
+    expect(res.statusCode).toBe(200);
+    expect(res.json.mock.calls[0][0].twoFA).toBeUndefined();
+  });
+
+  // Deliberate: the lockout stops code guessing, and a remembered device sends
+  // no code. Wrong codes from another browser must not lock out this one.
+  it('signs a remembered device in while 2FA codes are locked', async () => {
+    TwoFAService.sendChallenge.mockResolvedValue({ success: false, reason: 'locked' });
+    TrustedDeviceService.isRemembered.mockResolvedValueOnce(true);
+    const { req, res } = await login();
+    expect(res.statusCode).toBe(200);
+    expect(req.login).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a code when the device is not remembered', async () => {
+    TwoFAService.sendChallenge.mockResolvedValue({ success: true });
+    TrustedDeviceService.isRemembered.mockResolvedValueOnce(false);
+    const { req, res } = await login();
+    expect(TwoFAService.sendChallenge).toHaveBeenCalled();
+    expect(req.login).not.toHaveBeenCalled();
+    expect(res.json.mock.calls[0][0].twoFA).toBe(true);
+  });
+
+  it('sends a code when the device check itself fails', async () => {
+    TwoFAService.sendChallenge.mockResolvedValue({ success: true });
+    TrustedDeviceService.isRemembered.mockRejectedValueOnce(new Error('db down'));
+    const { req, res } = await login();
+    expect(TwoFAService.sendChallenge).toHaveBeenCalled();
+    expect(req.login).not.toHaveBeenCalled();
+    expect(res.json.mock.calls[0][0].twoFA).toBe(true);
+  });
+
+  it('never checks the device without the correct password', async () => {
+    passport.authenticate.mockImplementationOnce((strategy, cb) => () => cb(null, false, { message: 'Invalid credentials' }));
+    const { req, res } = await login();
+    expect(res.statusCode).toBe(401);
+    expect(TrustedDeviceService.isRemembered).not.toHaveBeenCalled();
+    expect(req.login).not.toHaveBeenCalled();
   });
 
   it("keeps TwoFAService's own fixed code in detail, for the Network tab", async () => {

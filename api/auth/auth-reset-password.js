@@ -17,6 +17,8 @@
  * - Secret cleared on successful reset (link becomes single-use)
  * - Server-side password rule (src/utils/auth/passwordRule.js), checked
  *   before the code so a refused password never uses up an attempt
+ * - Remembered devices (TrustedDeviceService) forgotten, so each one needs
+ *   a 2FA code again
  */
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
@@ -25,6 +27,7 @@ import speakeasy from 'speakeasy';
 import { meetsPasswordRule } from '../../src/utils/auth/passwordRule.js';
 import { normalizeEmail } from '../../src/utils/auth/validateEmail.js';
 import { requireString } from '../util/db-query.js';
+import TrustedDeviceService from '../../services/TrustedDeviceService.js';
 
 const MAX_RESET_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 30;
@@ -125,6 +128,11 @@ const resetPasswordHandler = async (req, res) => {
     }
 
     console.debug(`[auth-reset-password][${os.hostname()}] TOTP code validated successfully`);
+
+    // A new password also means a new 2FA code on every remembered device.
+    // Done before the save: if the save fails, the link still works for a
+    // retry, and the cost is one extra code.
+    await TrustedDeviceService.revokeAll(user._id.toString());
 
     // Update password and clear all reset state (link becomes single-use)
     user.password = newPassword;

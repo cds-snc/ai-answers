@@ -1,6 +1,7 @@
 import dbConnect from '../api/db/db-connect.js';
 import { User } from '../models/user.js';
 import { requireObjectIdString } from '../api/util/db-query.js';
+import TrustedDeviceService from './TrustedDeviceService.js';
 import { PARTNER_DEPARTMENTS } from '../src/constants/partnerDepartments.js';
 import { PARTNER_GROUPS, QA_GROUP, groupFitsInstitution } from '../src/constants/partnerGroups.js';
 
@@ -256,10 +257,18 @@ class UserServiceClass {
 
     await dbConnect();
     userId = requireObjectIdString(userId, 'user ID');
-    if (updateFields.institution !== undefined || updateFields.group !== undefined) {
-      const current = await User.findById(userId, { institution: 1, group: 1 }).lean();
+    let current = null;
+    if (updateFields.institution !== undefined || updateFields.group !== undefined || updateFields.role !== undefined) {
+      current = await User.findById(userId, { role: 1, institution: 1, group: 1 }).lean();
       if (!current) throw fail(404, 'User not found');
       assertGroupFitsInstitution(current, updateFields);
+    }
+    // Deactivation or a role change: every remembered device needs a 2FA code
+    // again. The Users page sends role on every save, so compare it. Revoked
+    // before the write: if the write fails, the cost is one extra code, and a
+    // retry still revokes.
+    if (updateFields.active === false || (updateFields.role !== undefined && updateFields.role !== current.role)) {
+      await TrustedDeviceService.revokeAll(userId);
     }
     const user = await User.findByIdAndUpdate(
       userId,
@@ -272,7 +281,10 @@ class UserServiceClass {
 
   async deleteUser(userId) {
     await dbConnect();
-    const user = await User.findByIdAndDelete(requireObjectIdString(userId, 'user ID'));
+    userId = requireObjectIdString(userId, 'user ID');
+    // Before the delete, as in adminUpdateUser.
+    await TrustedDeviceService.revokeAll(userId);
+    const user = await User.findByIdAndDelete(userId);
     if (!user) throw fail(404, 'User not found');
   }
 

@@ -14,6 +14,10 @@ vi.mock('../api/db/db-connect.js', () => ({
   default: vi.fn().mockResolvedValue(true)
 }));
 
+vi.mock('../services/TrustedDeviceService.js', () => ({
+  default: { revokeAll: vi.fn() }
+}));
+
 vi.mock('speakeasy', () => ({
   default: {
     totp: {
@@ -23,6 +27,7 @@ vi.mock('speakeasy', () => ({
 }));
 
 import speakeasy from 'speakeasy';
+import TrustedDeviceService from '../services/TrustedDeviceService.js';
 
 function makeRes() {
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
@@ -212,5 +217,35 @@ describe('Auth Reset Password Handler', () => {
     expect(user.resetPasswordAttempts).toBe(0);
     expect(user.resetPasswordLockedUntil).toBeNull();
     expect(save).toHaveBeenCalled();
+    // Every remembered device needs a 2FA code again.
+    expect(TrustedDeviceService.revokeAll).toHaveBeenCalledWith('user-123');
+  });
+
+  it('keeps the reset link usable when forgetting devices fails', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    const user = { _id: 'user-123', resetPasswordSecret: 'secret', resetPasswordAttempts: 0, save };
+    User.findOne.mockResolvedValue(user);
+    speakeasy.totp.verify.mockReturnValue(true);
+    TrustedDeviceService.revokeAll.mockRejectedValueOnce(new Error('db down'));
+
+    const res = makeRes();
+    await resetPasswordHandler({
+      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass123' }
+    }, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    // Nothing saved: the same link and code work on a retry.
+    expect(save).not.toHaveBeenCalled();
+    expect(user.resetPasswordSecret).toBe('secret');
+  });
+
+  it('keeps remembered devices when the code is wrong', async () => {
+    User.findOne.mockResolvedValue({ _id: 'user-123', resetPasswordSecret: 'secret', resetPasswordAttempts: 0 });
+    User.findOneAndUpdate.mockResolvedValue({ resetPasswordAttempts: 1 });
+    speakeasy.totp.verify.mockReturnValue(false);
+    await resetPasswordHandler({
+      body: { email: 'a@b.com', code: '000000', newPassword: 'newpass123' }
+    }, makeRes());
+    expect(TrustedDeviceService.revokeAll).not.toHaveBeenCalled();
   });
 });
