@@ -696,18 +696,71 @@ told the user to sign in first.** The download answer gave the date.
   generation, despite less text to read. The download was a fast cache miss (641 ms).
 - **Single-page date and amount questions are where passages are weakest**: the saving is
   small and the risk of a missing fact is high.
+- **Update (2026-10-29): Coveo has since fixed this page's passage.** A Forced first rerun
+  under the new download rule got a passage that now lists every payment date under "All
+  payment dates", so the model had no reason to download. The rerun can't test the new
+  rule; it needs a page whose passage still leaves out the fact.
 
-**Pattern so far (three pairs, one run each):**
+**Pair 4: CPP application delay** ("I applied for CPP online and haven't heard back yet -
+it's been 2 months. Why might there be a delay like this?"). Off: chat
+`c5806c55-021a-4165-bfab-ff026c972706`. Forced first: chat
+`d549d628-c9e2-4006-b445-d28c4f6b0841`. **The download answer was correct. The passage
+answer was poor: it left out the details the correct answer took from an expandable
+section on `after-apply.html`, a page the passage run never read.**
+
+| | Off (download) | Forced first (passages) |
+|---|---|---|
+| Tool calls | 2 downloads, both `origin` (cache miss) | 1 passage call (1 passage), no download |
+| Pages | `publicpensions/cpp/apply.html`, then `cpp/after-apply.html` | `publicpensions/cpp/apply.html` only |
+| Tool time | 1,239 ms (776 + 463) | 396 ms |
+| Generation (answer step minus tools) | 11,366 ms | ~8,727 ms |
+| Answer step | 12,605 ms | 9,123 ms |
+| User-perceived total | 17,176 ms | 12,388 ms |
+
+- **Both runs started on the same page. Only the download run went on to the page with
+  the answer.** Both chose `apply.html` first (the passage query was "CPP retirement
+  pension online application processing time and reasons for delays"). After reading it,
+  the download run fetched `after-apply.html`. The passage run stopped. Its passage gave a
+  processing time ("within 120 days") but no reasons for a delay, and the model answered
+  from that.
+- **The download showed the model where to go next, and the passage didn't.** The
+  download of `apply.html` starts with the CPP series navigation: Overview, Do you
+  qualify, When to start, How much, Apply, **After you apply**, Receive your benefits,
+  each linked to its page. That link is how the download run found `after-apply.html`. The passage starts at the
+  page's own heading ("# Apply", "## What to know before you start") with no series
+  navigation, so the model had no sign that a better page existed. This is the main
+  difference between the runs, more than anything in the prompt.
+- **This time the passage did include the expandable section, and it wasn't a chunk.** The
+  one passage returned was the whole body of `apply.html`, including the content of its
+  expand/collapse sections, but not the series navigation above it. So passages don't always drop `<details>` content (see open
+  question 11), and page mode can return a whole page as one passage (see open
+  question 8).
+- **The new download rule didn't fire, and it wouldn't have helped.** The passage held a
+  fact that looked like an answer (the 120 days), so the model saw no missing fact.
+  Downloading `apply.html` wouldn't have helped either: the passage already held the
+  whole page. What was missing was a second page. The rule covers a weak passage, not
+  stopping too early. The block may also discourage further retrieval, but with no link
+  to follow, the model had little to go on either way.
+- **Passages were faster: 3.5 seconds off the answer step, 4.8 off the total.** Most of
+  the saving was generation, as in pair 2. Both downloads missed the cache.
+
+**Pattern so far (four pairs, one run each):**
 - **Multi-page questions** (pair 2): passages saved a lot of time, mostly in generation, and
   the answer was still correct.
 - **Single-page fact lookups** such as a date or amount (pairs 1 and 3): little or no
   saving, and one wrong answer.
+- **Passages lose the links between pages** (pair 4): from the same first page, the
+  download run followed the series navigation to the page with the answer. The passage
+  had no navigation, so the passage run stopped. This hits multi-page series (CPP, OAS,
+  EI and similar), where the answer is often on a sibling page.
 - **Cache hits narrow the gap.** Every download in these pairs missed the cache. A hit
   (~40 ms) beats a passage call (250–390 ms) on tool time.
 
 **Where to pick up:**
-1. Rerun pair 3's question with **Forced first** under the new download rule. It passes if
-   the model calls passages, then downloads `benefit-payment-dates.html` and gives the date.
+1. Test the new download rule on a page whose passage leaves out the fact the question
+   asks for. Pair 3's page no longer works for this: Coveo fixed its passage, which now
+   includes the dates (see the update under pair 3). It passes if the model calls passages,
+   then downloads the page and gives the fact.
 2. Run more pairs, mixing single-page and multi-page questions. Run Off first, then Forced
    first, and note each download's `cacheStatus`. Compare the answer step, not the total.
 3. Open questions: whether to force passages only for some questions, how often production
@@ -874,6 +927,14 @@ Further reading:
     `calendar.html` every payment date is inside one, and the passage keeps only the section
     labels. Is this the crawler, the Markdown conversion or the chunker, and can it be
     included?
+    *Partly answered (2026-10-29):* Coveo fixed `benefit-payment-dates.html`, whose passage
+    now includes the payment dates, and pair 4's passage for `cpp/apply.html` included its
+    expand/collapse content. Check whether `calendar.html` and other pages with
+    expandable sections are fixed too.
+12. Passages leave out a page's series navigation (the "steps" links at the top of
+    multi-page content such as the CPP retirement pension pages). Downloads keep it, and
+    it's how the model finds sibling pages (see pair 4). Can the passage keep it, or
+    could the API return a page's links alongside its passages?
 
 ## Out of scope
 
