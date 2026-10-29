@@ -730,6 +730,22 @@ told the user to sign in first.** The download answer gave the date.
   "verify in downloaded content" explanation, and a prompt change is likely needed (item 4
   under "Where to pick up").
 
+  After the Phase 3 block began counting a passage as downloaded content (2026-10-29):
+
+  | Rerun | Chat | Date in answer | Opened with "sign in" | Downloaded after passage |
+  |---|---|---|---|---|
+  | 4 | `e4d7e066-1126-4368-8eab-4fdf01b6a699` | yes: November 20, 2026, cited `benefit-payment-dates.html` | no: date first, then My Account for the exact payment | no (same passage, with dates) |
+  | 5 | `ebbe483b-18a5-41ac-8d07-f63d1426d935` | no: "depends on today's date and your eligibility", then My Account and the schedule | yes | no (same passage, with dates) |
+  | 6 | `5d6715a6-acac-4d9e-bcb0-b8d88cf7fcfd` | yes: November 20, 2026, cited `benefit-payment-dates.html` | no: date first, then My Account and payment reminders | no (same passage, with dates) |
+  | 7 | `f8249d22-8dfa-4cbe-b03f-c17e2baa627d` | yes, but all 12 dates for 2026 instead of the next one | no: dates first, then My Account and reminders | no (same passage, with dates) |
+
+  Three of four reruns gave the date, against one of three before. All three led with
+  the dates and mentioned My Account second, which is the right order. November 20 is
+  correct for a question asked on October 29. Rerun 7 listed the whole year instead of
+  picking the next date, though `<current-date>` is in the prompt; correct, but not what
+  was asked. Rerun 5 still held back. Good enough to leave the prompt as is; a batch of
+  this question would give a real rate.
+
 **Pair 4: CPP application delay** ("I applied for CPP online and haven't heard back yet -
 it's been 2 months. Why might there be a delay like this?"). Off: chat
 `c5806c55-021a-4165-bfab-ff026c972706`. Forced first: chat
