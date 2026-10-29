@@ -1,8 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { invokeContextAgent } from "../../services/ContextAgentService.js";
 import loadContextSystemPrompt from "../prompts/contextSystemPrompt.js";
-import { contextSearch as googleSearch } from "./googleContextSearch.js";
-import { contextSearch as canadaSearch } from "./canadaCaContextSearch.js";
+import { getSearchProvider } from "./searchProvider.js";
 
 /**
  * Factory to create a context agent tool for a specific provider. The tool
@@ -14,9 +13,7 @@ const createContextAgentTool = (agentType = 'openai-gpt51') =>
     async ({ question, lang = 'en', searchProvider = 'google', chatId = 'system' }) => {
       const systemPrompt = await loadContextSystemPrompt(lang);
 
-      const searchFn = searchProvider.toLowerCase() === 'canadaca'
-        ? canadaSearch
-        : googleSearch;
+      const searchFn = getSearchProvider(searchProvider);
       const searchResults = await searchFn(question, lang);
 
       const context = await invokeContextAgent(agentType, {
@@ -40,7 +37,7 @@ const createContextAgentTool = (agentType = 'openai-gpt51') =>
           lang: { type: 'string', description: 'Language of the question' },
           searchProvider: {
             type: 'string',
-            description: 'Search provider to use (google or canadaca)',
+            description: 'Search provider to use (google, canadaca, or coveo-passage-retrieval)',
           },
         },
         required: ['question'],

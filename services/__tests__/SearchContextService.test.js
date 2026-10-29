@@ -3,6 +3,7 @@ import { SearchContextService } from '../SearchContextService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { contextSearch as canadaContextSearch } from '../../agents/tools/canadaCaContextSearch.js';
 import { contextSearch as googleContextSearch } from '../../agents/tools/googleContextSearch.js';
+import { contextSearch as coveoPassageRetrieval } from '../../agents/tools/coveoPassageRetrieval.js';
 import { getSearchResultCacheGeneration } from '../CacheCoordinator.js';
 
 // Mock dependencies
@@ -13,6 +14,9 @@ vi.mock('../../agents/tools/canadaCaContextSearch.js', () => ({
     contextSearch: vi.fn()
 }));
 vi.mock('../../agents/tools/googleContextSearch.js', () => ({
+    contextSearch: vi.fn()
+}));
+vi.mock('../../agents/tools/coveoPassageRetrieval.js', () => ({
     contextSearch: vi.fn()
 }));
 vi.mock('../ServerLoggingService.js', () => ({
@@ -60,6 +64,10 @@ describe('SearchContextService', () => {
         AgentOrchestratorService.invokeWithStrategy.mockResolvedValue({ query: 'Rewritten Query' });
         canadaContextSearch.mockResolvedValue(['Canada Result']);
         googleContextSearch.mockResolvedValue(['Google Result']);
+        coveoPassageRetrieval.mockResolvedValue({
+            results: 'Passage: first result\n\nPassage: second result',
+            provider: 'coveo-passage-retrieval'
+        });
         settingsGetMock.mockReturnValue('false');
         readCacheMock.mockResolvedValue(null);
         writeCacheMock.mockResolvedValue(undefined);
@@ -113,6 +121,15 @@ describe('SearchContextService', () => {
         expect(canadaContextSearch).not.toHaveBeenCalled();
     });
 
+    it('uses Coveo Passage Retrieval when requested', async () => {
+        const result = await SearchContextService.search({
+            searchService: 'coveo-passage-retrieval'
+        });
+
+        expect(coveoPassageRetrieval).toHaveBeenCalledWith('Rewritten Query', 'en');
+        expect(result.provider).toBe('coveo-passage-retrieval');
+        expect(canadaContextSearch).not.toHaveBeenCalled();
+        expect(googleContextSearch).not.toHaveBeenCalled();
     it('returns an exact cached result without calling the selected provider', async () => {
         settingsGetMock.mockReturnValue('true');
         const cached = { results: 'Title: Cached A\nTitle: Cached B', provider: 'google' };

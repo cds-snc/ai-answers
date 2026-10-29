@@ -1,5 +1,5 @@
-import { contextSearch as canadaContextSearch } from '../agents/tools/canadaCaContextSearch.js';
-import { contextSearch as googleContextSearch } from '../agents/tools/googleContextSearch.js';
+import { getSearchProvider } from '../agents/tools/searchProvider.js';
+import { exponentialBackoff } from '../api/util/backoff.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
@@ -11,9 +11,7 @@ import { getSearchResultCacheGeneration } from './CacheCoordinator.js';
 import { getSearchLanguage } from '../src/utils/searchLanguage.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
-    const provider = searchService.toLowerCase() === 'google' ? 'google' : 'canadaca';
-    const searchFunction = provider === 'google' ? googleContextSearch : canadaContextSearch;
-    const cacheInput = { provider, query, lang };
+    const searchFunction = getSearchProvider(searchService);
 
     const cacheEnabled = SettingsService.get('searchContext.cache.enabled') === 'true';
     let cacheGeneration;
@@ -84,9 +82,10 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
 function countSearchResults(resultsString) {
     if (!resultsString || resultsString === 'No results found.') return 0;
     // Coveo results use "Summary:", Google results use "Title:"
+    const passageCount = (resultsString.match(/^Passage: /gm) || []).length;
     const summaryCount = (resultsString.match(/^Summary: /gm) || []).length;
     const titleCount = (resultsString.match(/^Title: /gm) || []).length;
-    return Math.max(summaryCount, titleCount);
+    return Math.max(passageCount, summaryCount, titleCount);
 }
 
 export const SearchContextService = {

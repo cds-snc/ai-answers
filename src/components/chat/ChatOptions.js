@@ -235,22 +235,56 @@ const ChatOptions = ({
             </select>
           </div>
 
-          <div className="mrgn-bttm-10 settings-form-width">
-            <label htmlFor="search-provider" className="filter-label display-block">
-              {safeT('homepage.chat.options.searchSelection.label')}
-            </label>
-            <select
-              id="search-provider"
-              name="searchProvider"
-              value={draftOptions.search}
-              onChange={handleOptionDraftChange('search')}
-              className="filter-select"
-            >
-              <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
-              {SEARCH_PROVIDERS.map((provider) => (
-                <option key={provider.value} value={provider.value}>{safeT(provider.labelKey)}</option>
-              ))}
-            </select>
+          <div className="search-toggle">
+            <fieldset className="ai-toggle_fieldset">
+              <legend className="ai-toggle_legend">
+                {safeT('homepage.chat.options.searchSelection.label')}
+              </legend>
+              <div className="ai-toggle_container">
+                <div className="ai-toggle_option">
+                  <input
+                    type="radio"
+                    id="search-canadaca"
+                    name="search-selection"
+                    value="canadaca"
+                    checked={selectedSearch === 'canadaca'}
+                    onChange={handleSearchToggle}
+                    className="ai-toggle_radio-input"
+                  />
+                  <label htmlFor="search-canadaca">
+                    {safeT('homepage.chat.options.searchSelection.canadaca')}
+                  </label>
+                </div>
+                <div className="ai-toggle_option">
+                  <input
+                    type="radio"
+                    id="search-google"
+                    name="search-selection"
+                    value="google"
+                    checked={selectedSearch === 'google'}
+                    onChange={handleSearchToggle}
+                    className="ai-toggle_radio-input"
+                  />
+                  <label htmlFor="search-google">
+                    {safeT('homepage.chat.options.searchSelection.google')}
+                  </label>
+                </div>
+                <div className="ai-toggle_option">
+                  <input
+                    type="radio"
+                    id="search-coveo-passage-retrieval"
+                    name="search-selection"
+                    value="coveo-passage-retrieval"
+                    checked={selectedSearch === 'coveo-passage-retrieval'}
+                    onChange={handleSearchToggle}
+                    className="ai-toggle_radio-input"
+                  />
+                  <label htmlFor="search-coveo-passage-retrieval">
+                    {safeT('homepage.chat.options.searchSelection.coveoPassageRetrieval')}
+                  </label>
+                </div>
+              </div>
+            </fieldset>
           </div>
 
           <div className="mt-200 mb-400">

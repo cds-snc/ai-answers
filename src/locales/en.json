@@ -119,7 +119,8 @@
         "searchSelection": {
           "label": "Search:",
           "canadaca": "Canada.ca",
-          "google": "Google"
+          "google": "Google",
+          "coveoPassageRetrieval": "Coveo passage retrieval"
         },
         "workflow": {
           "label": "Workflow:"
