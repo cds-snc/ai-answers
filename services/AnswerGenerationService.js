@@ -4,9 +4,13 @@ import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { ToolTrackingHandler } from '../agents/ToolTrackingHandler.js';
 import { buildAnswerSystemPrompt } from '../agents/prompts/systemPrompt.js';
 import ConversationIntegrityService from './ConversationIntegrityService.js';
+import { graphRequestContext } from '../agents/graphs/requestContext.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
+
+// The passage tool trial covers CRA only (docs/plans/coveo-passage-retrieval.md).
+const PASSAGE_TOOL_DEPARTMENT = 'CRA-ARC';
 
 const convertInteractionsToMessages = (interactions) => {
     const messages = [];
@@ -49,15 +53,30 @@ async function invokeAgent({
     similarQuestions,
     originalMessage,
 }, chatId) {
+    // Experimental: an experimental batch run with the passage tool on sets passageTool in
+    // the request context, and only CRA questions get the tool and its prompt block. An
+    // admin's chat option sets passageToolChatMode instead, for any question; 'forced' also
+    // makes retrievePassages the first tool call. Production never sets either.
+    const requestContext = graphRequestContext.getStore();
+    const passageToolChatMode = requestContext?.passageToolChatMode;
+    const passageTool = passageToolChatMode === 'offered' || passageToolChatMode === 'forced'
+        || (requestContext?.passageTool === true && department === PASSAGE_TOOL_DEPARTMENT);
+    const forcePassages = passageToolChatMode === 'forced';
+
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
         departmentUrl,
         searchResults,
         scenarioOverrideText,
         similarQuestions,
+        passageTool,
     });
 
-    const agent = await createChatAgent(provider, chatId);
+    const agent = await createChatAgent(provider, chatId, {
+        passageTool,
+        forcePassages,
+        lang: lang === 'fr' ? 'fr' : 'en',
+    });
     const messages = [
         { role: 'system', content: systemPrompt },
         ...convertInteractionsToMessages(conversationHistory),

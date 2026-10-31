@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   recordRequest: vi.fn(),
   batchFindById: vi.fn(),
   streamInput: null,
+  contextStore: null,
 }));
 
 vi.mock('../../db/db-connect.js', () => ({ default: vi.fn() }));
@@ -47,7 +48,10 @@ vi.mock('../../../agents/graphs/registry.js', () => ({
 
 vi.mock('../../../agents/graphs/requestContext.js', () => ({
   graphRequestContext: {
-    run: async (_store, callback) => callback(),
+    run: async (store, callback) => {
+      mocks.contextStore = store;
+      return callback();
+    },
   },
 }));
 
@@ -314,6 +318,49 @@ describe('chatGraphRunHandler transport setting', () => {
     await chatGraphRunHandler(req, createResponse());
 
     expect(mocks.streamInput.overrideUserId).toBeNull();
+  });
+
+  describe('passage tool option', () => {
+    function passageRequest(user, passageTool) {
+      const req = createRequest();
+      req.user = user;
+      req.isAuthenticated = () => !!user;
+      req.body.passageTool = passageTool;
+      return req;
+    }
+
+    it('passes an admin\'s choice to the answer agent', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+
+      await chatGraphRunHandler(passageRequest({ userId: 'admin-1', role: 'admin' }, 'forced'), createResponse());
+
+      expect(mocks.contextStore.passageToolChatMode).toBe('forced');
+    });
+
+    it.each([
+      ['a partner', { userId: 'partner-1', role: 'partner' }],
+      ['a signed-out user', undefined],
+    ])('ignores the option for %s', async (_label, user) => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+
+      await chatGraphRunHandler(passageRequest(user, 'offered'), createResponse());
+
+      expect(mocks.contextStore).not.toHaveProperty('passageToolChatMode');
+    });
+
+    it('refuses an unknown value without running anything', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+      mocks.getGraphApp.mockClear();
+      const res = createResponse();
+
+      await chatGraphRunHandler(passageRequest({ userId: 'admin-1', role: 'admin' }, 'always'), res);
+
+      expect(res.statusCode).toBe(400);
+      expect(mocks.getGraphApp).not.toHaveBeenCalled();
+    });
   });
 
   describe('batch questions', () => {

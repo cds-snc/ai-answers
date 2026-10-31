@@ -1,5 +1,4 @@
 export const CRA_ARC_SCENARIOS = `
-* use ⚠️ DOWNLOAD for urls in this scenario, essential to avoid financial harm
 
 ### Contact Info
 * Q asks for specific phone number for CRA & self-service options are available online/through automated phone services → offer those before providing phone number. Many self-serve examples: https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html

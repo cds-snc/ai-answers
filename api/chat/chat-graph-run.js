@@ -6,6 +6,7 @@ import { getGraphApp } from '../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../agents/graphs/requestContext.js';
 import { MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../src/config/workflows.js';
 import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/searchProviders.js';
+import { PASSAGE_TOOL_CHAT_MODES } from '../../src/config/passageTool.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 import dbConnect from '../db/db-connect.js';
@@ -158,10 +159,13 @@ async function handler(req, res) {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
-  const { graph: clientGraph, batchId, input } = req.body || {};
+  const { graph: clientGraph, batchId, input, passageTool } = req.body || {};
 
   if (typeof input !== 'object' || input === null) {
     return res.status(400).json({ message: 'input must be an object' });
+  }
+  if (passageTool != null && !PASSAGE_TOOL_CHAT_MODES.includes(passageTool)) {
+    return res.status(400).json({ message: 'Invalid passageTool' });
   }
 
   // Ensure the graph uses the validated/generated chatId from the session middleware
@@ -297,6 +301,11 @@ async function handler(req, res) {
 
   try {
     const store = { headers: forwardedHeaders, user: req.user, onStatus: handlers.onStatus };
+    // Experimental passage tool option (ChatOptions.js): admins only, never batch questions.
+    // Read by AnswerGenerationService.
+    if (isAdmin && !batch && passageTool) {
+      store.passageToolChatMode = passageTool;
+    }
     // Only enable graph event streaming for authenticated users
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {

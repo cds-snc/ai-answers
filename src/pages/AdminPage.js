@@ -195,6 +195,11 @@ const AdminPage = ({ lang = 'en' }) => {
                       {t('admin.navigation.dataAnalysis')}
                     </GcdsLink>
                   </li>
+                  <li>
+                    <GcdsLink href={getPath('experimental-passages', lang)}>
+                      {t('experimental.passages.title')}
+                    </GcdsLink>
+                  </li>
                 </ul>
               </li>
 

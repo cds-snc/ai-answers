@@ -121,6 +121,12 @@
           "canadaca": "Canada.ca",
           "google": "Google"
         },
+        "passageTool": {
+          "label": "Outil de passages (essai) :",
+          "off": "Désactivé",
+          "offered": "Offert",
+          "forced": "Forcé en premier"
+        },
         "workflow": {
           "label": "Flux de travail :"
         },
@@ -2454,6 +2460,10 @@
       "analyzerDetailsTitle": "Détails de l'analyseur",
       "analyzerPrefix": "Analyseur :",
       "workflowLabel": "Flux de travail",
+      "passageTool": {
+        "label": "Offrir l’outil de passages aux questions de l’ARC",
+        "runName": "Outil de passages"
+      },
       "analysisMode": {
         "label": "Mode d’analyse",
         "reference": "Comparer une réponse nouvellement générée à la réponse de référence de l’ensemble de données",
@@ -2845,6 +2855,67 @@
         "flagged": "Signalé",
         "error": "Erreur",
         "missing": "Aucun résultat"
+      }
+    },
+    "passages": {
+      "title": "Test de récupération de passages",
+      "description": "Testez l'API de récupération de passages de Coveo avant d'en faire un outil de réponse. Les requêtes utilisent la clé de recherche Canada.ca sur le serveur.",
+      "singleHeading": "Requête unique",
+      "queryLabel": "Question",
+      "urlLabel": "URL d'une page (facultatif)",
+      "urlHint": "Avec une URL, les passages proviennent de cette page seulement. Sans URL, ils peuvent provenir de n'importe quelle page. Une page absente de l'index des passages ne donne aucun passage.",
+      "langLabel": "Langue",
+      "maxLabel": "Nombre maximal de passages",
+      "send": "Envoyer",
+      "sending": "Envoi de la requête…",
+      "singleDone": "Requête terminée. Passages reçus : {count}.",
+      "editRequest": "Modifier cette requête",
+      "rawLabel": "Corps de la requête (JSON)",
+      "rawHint": "Envoyé tel quel au point de terminaison des passages. Le serveur ajoute la clé d'API.",
+      "rawInvalid": "Entrez un objet JSON valide.",
+      "sendRaw": "Envoyer la requête modifiée",
+      "closeRaw": "Fermer l'éditeur",
+      "resultLine": "Statut : {status} · Durée : {latency} ms · Passages : {count}",
+      "coveoDetail": "Réponse de Coveo :",
+      "score": "Score :",
+      "dateModified": "Date de modification :",
+      "textLength": "{count} caractères",
+      "requestSent": "Requête envoyée",
+      "rawResponse": "Réponse brute",
+      "probeHeading": "Série de tests",
+      "probeDescription": "Téléversez une exportation d'entrées de lot (colonnes question, citationUrl et answer). Chaque question est envoyée une fois limitée à sa page citée et une fois sans limite, à raison d'au plus 2 appels par seconde.",
+      "fileLabel": "Fichier CSV",
+      "fileLoaded": "Questions chargées : {count}. Avec une URL citée : {withUrl}.",
+      "fileMissingQuestion": "Le fichier n'a pas de colonne question.",
+      "fileInvalid": "Le fichier n'a pas pu être lu comme un CSV.",
+      "probeStart": "Lancer la série de tests",
+      "probeStop": "Arrêter",
+      "progress": "Appels terminés : {done} sur {total}",
+      "probeDone": "Série de tests terminée. Appels effectués : {count}.",
+      "probeStopped": "Série de tests arrêtée. Appels effectués : {count}.",
+      "downloadJson": "Télécharger les résultats (JSON)",
+      "downloadCsv": "Télécharger les résultats (CSV)",
+      "tableCaption": "Résultats de la série de tests",
+      "col": {
+        "mode": "Mode",
+        "outcome": "Résultat",
+        "passages": "Passages",
+        "citedPage": "Page citée reçue",
+        "latency": "Durée (ms)"
+      },
+      "mode": {
+        "page": "Page citée",
+        "open": "Ouvert"
+      },
+      "outcomeOk": "OK",
+      "reason": {
+        "invalid_url": "Ce n'est pas une URL https valide. Aucune requête n'a été envoyée.",
+        "http_error": "Coveo a renvoyé une erreur.",
+        "timeout": "Le délai de la requête a expiré.",
+        "network_error": "Impossible de joindre Coveo.",
+        "unexpected_response": "La réponse de Coveo ne contenait pas de liste de passages.",
+        "not_configured": "Le point de terminaison de recherche n'est pas configuré pour les passages sur ce serveur.",
+        "request_failed": "La requête de test a échoué."
       }
     }
   }
