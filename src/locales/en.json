@@ -1114,7 +1114,6 @@
       "invalid": "Invalid reset link.",
       "passwordTooShort": "Password must be at least 8 characters.",
       "passwordMismatch": "Passwords do not match.",
-      "lockedOut": "Too many failed attempts. Wait 30 minutes, then request a new reset link.",
       "invalidCode": "Invalid or expired code. Please try again."
     }
   },

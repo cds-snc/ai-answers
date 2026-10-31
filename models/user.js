@@ -110,18 +110,13 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
   // Password reset fields
-  // Permanent secret for TOTP password reset codes
-  resetPasswordSecret: {
+  // SHA-256 of the token in the latest reset link, and when it stops working
+  // (api/auth/reset-token.js). Cleared when the reset succeeds.
+  resetPasswordTokenHash: {
     type: String,
     default: null,
   },
-  // Track failed reset code attempts for account-level lockout
-  resetPasswordAttempts: {
-    type: Number,
-    default: 0,
-  },
-  // Lockout timestamp after too many failed reset attempts
-  resetPasswordLockedUntil: {
+  resetPasswordExpiresAt: {
     type: Date,
     default: null,
   },

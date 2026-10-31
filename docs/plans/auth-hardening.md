@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in, password reset and two-factor authentication
 
-Status (2026-10-16): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is not started. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-10-30): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is built on branch `auth-hardening-password-reset` (2026-10-30), not yet merged. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -89,8 +89,8 @@ page replaces the saved row with that response. The 500 responses no longer incl
 `error.message`. Test: `api/user/__tests__/user-users-fields.test.js`.
 
 Follow-ups found in review, each its own PR:
-- **Hide secret fields by default.** Mark `resetPasswordSecret`, `twoFACode`, `twoFASecret` and
-  the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
+- **Hide secret fields by default.** Mark `resetPasswordTokenHash`, `twoFACode`, `twoFASecret`
+  and the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
   asks. Then F5 can't come back through some other endpoint. The sign-in, 2FA and reset code
   must then select them with `+field`.
 - **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
@@ -107,6 +107,16 @@ when the new password is submitted, not when the link is opened.
 - That makes 41 codes valid at once. The 5-try lockout clears after 30 minutes, so someone who
   keeps guessing gets about 240 guesses a day: about a 1% chance per day. Anyone can start this
   with only an email address, and the secret stays until a reset succeeds.
+- **That 1% is per account.** The lockout counts per account, so guessing against every account
+  at once adds up: about 25% a day that some account falls with 30 accounts. GC addresses
+  follow `firstname.lastname`, so the emails are easy to guess.
+- **Sign-up gave every account a reset secret.** No email has to be sent first, so the owner gets
+  no warning email while someone guesses.
+- **Simultaneous requests can probably beat the 5-try limit** (from reading the code, not
+  tested). The handler reads the lockout, then checks the code, and only locks after the 5th
+  failure, so requests that arrive together all get a guess. The API rate limiter keys on the
+  session, and a client that sends no cookie gets a new one each time.
+- With 2FA off in production, a successful reset gives full access.
 - The standard (OWASP Forgot Password cheat sheet) is a long random single-use token, stored
   hashed, with an expiry. It can't be guessed, so the link lifetime doesn't trade off against
   security.
@@ -116,6 +126,15 @@ when the new password is submitted, not when the link is opened.
   The first TOTP version reused one secret per user, which hid both. Secret rotation per request
   came back in `84ad7ac93` (2026-04-08), so today's code would hit the same failure if it still
   exists.
+- Possible causes, found 2026-10-30:
+  - A user who asks for a second email and then clicks the first link gets "invalid", because
+    the second request replaced the first. That stays: only the latest link should work.
+  - Production connects with `readPreference=secondaryPreferred`
+    (`terragrunt/aws/database/documentdb.tf`), so a read could go to a replica that hadn't
+    caught up. **Only if the cluster has more than one instance:** the Terraform default
+    (`docdb_instance_count`) is 1 and no environment overrides it, and with no replica every
+    read goes to the primary. Ask infrastructure how many instances run. The reset handler
+    reads from the primary either way.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 
@@ -268,8 +287,8 @@ before `twoFA.enabled` goes on anywhere real.
    on a preview.
 6. **Decided 2026-10-16: `twoFASecret` is no longer generated.** Sign-up stopped filling it in
    the clean-up PR. The schema field stays so existing documents still load; clearing the value
-   from existing accounts needs a migration and is not planned. `speakeasy` stays, password reset
-   still uses it.
+   from existing accounts needs a migration and is not planned. `speakeasy` was removed with the
+   F6 token change (2026-10-30).
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
    email (inherent to lockout; admin is VPN-only; blocking burst lockouts would need the per-IP
    limits dropped in item 8); a parallel burst can slip a few extra guesses past 10. The
@@ -498,18 +517,31 @@ and the code forever.
 1. **Check production logs first.** In CloudWatch Logs Insights (`/aws/ecs/ai-answers-cluster`,
    30-day retention), look for "Reset rejected: user not found or no secret configured" shortly
    after "Reset email sent successfully". If it shows, the 2026-01-06 failure is still live: find
-   its cause before switching.
+   its cause before switching. The maintainer has no CloudWatch access; the question went to
+   infrastructure (2026-10-30). This gates the release, not the build. After the switch, the
+   rejection message reads "Reset rejected: user not found, no token, or token expired".
 2. **`auth-send-reset.js`:** generate a token with `crypto.randomBytes(32)`, store its SHA-256
    hash and an expiry on the user, and email the token. A new request replaces any earlier token.
-   Decide the lifetime (PR #1978 gives 10 minutes).
+   Lifetime: 30 minutes (decided 2026-10-30; `RESET_TOKEN_TTL_MS` in
+   `api/auth/reset-token.js`). PR #1978 gave 10. The GC Notify reset template (outside the repo,
+   not checked) may still say 10 minutes. That is fine: 10 minutes is when people should use
+   it, and the extra time covers a late email. Store it with one atomic update, not `user.save()`.
 3. **`auth-reset-password.js`:** hash the submitted token, compare with `crypto.timingSafeEqual`,
-   check the expiry, and clear the token on success. Keep the attempt counter and lockout; they
-   cost nothing.
+   check the expiry, and use up the token on success. Read the user from the primary (see the
+   2026-01-06 causes above). Use up the token with one atomic write that matches only its
+   hash, before saving the password: then two submits of the same link can't both succeed,
+   and a newer link sent in between is left alone (found in code review, 2026-10-30).
+   **Lockout removed (decided 2026-10-30).** The token can't be guessed, so the attempt
+   counter protected nothing. It only let anyone who knows an email address block that
+   person's reset for 30 minutes. The `resetPasswordAttempts` and `resetPasswordLockedUntil`
+   fields and the `lockedOut` page message are gone.
 4. **Schema:** replace `resetPasswordSecret` with the hash and expiry fields. Update the F5
-   follow-up's `select: false` list to match. `speakeasy` may then be removable.
+   follow-up's `select: false` list to match. Sign-up no longer creates a secret. Existing
+   users still hold a `resetPasswordSecret` value, which nothing reads any more. `speakeasy` is
+   removed.
 5. **No change to the email or pages:** the link keeps its `code=` parameter, with a longer value.
 6. **Tests:** a token works once; an expired token fails; an older link fails after a new
-   request; a wrong token counts toward the lockout.
+   request; a wrong token never blocks the real link.
 7. **Test on staging before production.** The 2026-01-06 failure may only appear with more than
    one server, so a local run can't rule it out.
 
@@ -525,7 +557,12 @@ and the code forever.
    `GC_NOTIFY_2FA_TEMPLATE_ID`) and a test sign-in receives the code.
 4. A full pass on staging with 2FA on: the checks in Phase 1 status item 5, plus any added by
    later phases.
-5. `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` updated in the same release to say 2FA is on (and
+5. Auth reads that must see a write made moments earlier come from the primary. Production
+   reads from replicas by default (`readPreference=secondaryPreferred`), so a replica that
+   hasn't caught up could refuse a 2FA code that was just sent, or miss a lockout counter.
+   Check the 2FA code check (`TwoFAService`) and the sign-in lockout (`config/passport.js`).
+   The reset handler already reads from the primary (F6).
+6. `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md` updated in the same release to say 2FA is on (and
    whether it is required for admins, Phase 3 item 4), so the card matches production. Also
    say that a user can choose to skip the code on a device for up to 12 hours.
 
@@ -536,7 +573,7 @@ and the code forever.
 - Open, for a separate system card change: the components list (EN and FR, item 2 "Admin
   interface") says the admin interface has 2FA, but the card's authentication section says the
   codes are optional, and 2FA is off in production. Make the components list say optional, or
-  leave it until 2FA goes on ("Before turning 2FA on in production", item 5).
+  leave it until 2FA goes on ("Before turning 2FA on in production", item 6).
 - `SYSTEM_CARD.md` and `SYSTEM_CARD_FR.md`: authentication wording and any new sign-up controls
   (both languages, per AGENTS.md). Do not claim email verification, domain limits or lockout
   until they ship. The safety claims and the implementation must not differ.

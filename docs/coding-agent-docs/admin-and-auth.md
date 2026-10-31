@@ -125,17 +125,22 @@ writes; existing accounts still hold a value until a migration clears it.
 
 The admin users endpoint (`user-users`, list and PATCH) returns only the fields in
 `ADMIN_USER_FIELDS` (`services/UserService.js`), never the whole user document, which holds
-`resetPasswordSecret`, `twoFACode` and lockout counters (F5 in the plan). To show a new column on
+the reset token hash, `twoFACode` and lockout counters (F5 in the plan). To show a new column on
 the Users page, add its field to that allowlist, and keep secrets and counters out of it.
 `api/user/__tests__/user-users-fields.test.js` fails if anything else comes back.
 
 ## Password reset
 
-`auth-send-reset` → emailed link → `auth-reset-password`. Uses a separate TOTP secret
-(`resetPasswordSecret`, regenerated on each request so older codes die). The send endpoint
-returns the same message whether or not the account exists (no enumeration). Reset code window
-is ±1 minute; **5 failed attempts lock the account's reset for 30 minutes**, and the counter is
-deliberately not reset by requesting a new email. Template: `notify.resetTemplateId` or
+`auth-send-reset` → emailed link → `auth-reset-password`. The link's `code` parameter is a
+random 32-byte token; the user holds only its SHA-256 hash (`resetPasswordTokenHash`) and
+`resetPasswordExpiresAt`, 30 minutes after sending (`api/auth/reset-token.js`). A new request
+replaces the token, so older links stop working. A successful reset uses up the token in one
+atomic write that matches only that token's hash, so a link works once. The reset
+handler reads the user from the primary, because production reads from replicas by default
+and one that lags would refuse a fresh link. The send endpoint returns the same message whether
+or not the account exists (no enumeration). There is no attempt lockout: the token can't be
+guessed, and a lockout would let anyone who knows an email address block that person's reset.
+Template: `notify.resetTemplateId` or
 `GC_NOTIFY_RESET_TEMPLATE_ID`.
 
 ## Sessions

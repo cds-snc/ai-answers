@@ -3,7 +3,9 @@ import { User } from '../../models/user.js';
 import GCNotifyService from '../../services/GCNotifyService.js';
 import { SettingsService } from '../../services/SettingsService.js';
 import os from 'os';
-import speakeasy from 'speakeasy';
+import { createResetToken } from './reset-token.js';
+import { normalizeEmail } from '../../src/utils/auth/validateEmail.js';
+import { requireString } from '../util/db-query.js';
 
 function buildResetLink(baseUrl, path, email, code) {
   const normalizedBaseUrl = String(baseUrl || '').replace(/\/+$/, '');
@@ -22,7 +24,9 @@ const sendResetHandler = async (req, res) => {
     await dbConnect();
 
     // Find user — generic response regardless to prevent enumeration
-    const normalizedEmail = String(email).toLowerCase().trim();
+    // Same normalization as auth-reset-password.js, which looks the user up
+    // again from the email in the link.
+    const normalizedEmail = normalizeEmail(requireString(email, 'email')).toLowerCase();
     let user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
@@ -30,27 +34,21 @@ const sendResetHandler = async (req, res) => {
       return res.status(200).json({ success: true, message: 'If that account exists, we sent a reset email.' });
     }
 
-    // Always generate a fresh secret on each reset request to invalidate prior codes.
-    // Do not reset attempt count — preserves lockout across requests to prevent cycling attacks.
-    const secret = speakeasy.generateSecret({ length: 32 });
-    console.debug(`[auth-send-reset][${os.hostname()}] Generating new resetPasswordSecret for user`);
-    user.resetPasswordSecret = secret.base32;
-    await user.save();
+    // A new token replaces any earlier one, so older links stop working.
+    // One atomic update rather than user.save(), so a stale copy of the user
+    // can't overwrite the token.
+    const { token, tokenHash, expiresAt } = createResetToken();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { resetPasswordTokenHash: tokenHash, resetPasswordExpiresAt: expiresAt } }
+    );
 
-    // Generate TOTP code from the secret (in-memory, no DB read!)
-    const code = speakeasy.totp({
-      secret: user.resetPasswordSecret,
-      encoding: 'base32',
-      step: 30, // 30-second window
-      digits: 6
-    });
-
-    console.debug(`[auth-send-reset][${os.hostname()}] Generated TOTP code for reset`);
+    console.debug(`[auth-send-reset][${os.hostname()}] Stored new reset token hash`);
 
     // Compose trusted reset links for both languages; the template decides which to render.
     const frontendUrl = SettingsService.get('site.baseUrl') || process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetLinkEn = buildResetLink(frontendUrl, '/en/reset-complete', normalizedEmail, code);
-    const resetLinkFr = buildResetLink(frontendUrl, '/fr/reinitialisation-reussie', normalizedEmail, code);
+    const resetLinkEn = buildResetLink(frontendUrl, '/en/reset-complete', normalizedEmail, token);
+    const resetLinkFr = buildResetLink(frontendUrl, '/fr/reinitialisation-reussie', normalizedEmail, token);
 
     console.debug(`[auth-send-reset][${os.hostname()}] Reset link generated`);
 
