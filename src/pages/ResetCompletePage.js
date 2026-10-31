@@ -59,7 +59,6 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     }
     setIsLoading(true);
     try {
-      // TOTP-based password reset
       await AuthService.resetPassword({ email, code, password });
       setSuccessMessage(t('reset.complete.success'));
     } catch (err) {
@@ -70,11 +69,10 @@ const ResetCompletePage = ({ lang = 'en' }) => {
         setError(t('reset.complete.passwordTooShort'), ['password']);
         return;
       }
-      // Rate-limiting and an invalid/expired reset link aren't things the
-      // user can fix by editing password/confirm — system-level outcomes,
-      // not field errors, so they go through StatusMessage, not AnnouncedError.
+      // An invalid/expired reset link isn't something the user can fix by
+      // editing password/confirm — a system-level outcome, not a field error,
+      // so it goes through StatusMessage, not AnnouncedError.
       setSystemError(resolveErrorMessage(err.code, {
-        RESET_LOCKED_OUT: 'reset.complete.lockedOut',
         RESET_INVALID_CODE: 'reset.complete.invalidCode',
       }, 'reset.complete.error', t));
     } finally {
