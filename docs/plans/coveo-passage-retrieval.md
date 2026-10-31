@@ -674,6 +674,36 @@ chat `5972f71c-6174-4abd-9d0d-3e281397dbdb`. **Both answers were correct.**
   the 5,187 ms of download time leaves the download run's answer step at about 11 seconds,
   against 7.9 for passages, because of the extra generation.
 
+Timing reruns, Off (2026-10-29):
+
+| Run | Chat | Downloads | Generation | Answer step | Total | Answer |
+|---|---|---|---|---|---|---|
+| Original | `0a4a4bbd-d6ef-4f89-a433-b4591cf48cb0` | 3, 5,187 ms, all `origin` | 10,936 ms | 16,123 ms | 19,232 ms | correct |
+| Rerun 1 | `65d48f41-70cb-449f-905b-b63aa7fe4c97` | 3, 1,380 ms, all `origin` (2 expired, 1 miss) | 22,206 ms | 23,586 ms | 26,246 ms | hedged: "you may be able to", no age-71 rule |
+| Rerun 2 | `440b2332-1b44-4b72-9f13-d7f5546e2f62` | 4, 5,480 ms | 23,705 ms | 29,185 ms | 32,514 ms | correct: "yes … until the end of the year your spouse turns 71", cited T4040 |
+
+Rerun 1 read `registered-retirement-savings-plan-rrsp.html`, `contributing-a-rrsp-prpp.html`
+and `where-you-find-your-rrsp-prpp-deduction-limit.html`, not the T4040 page. It never
+applied the rule that decides the question: you can contribute to a spousal RRSP until the
+end of the year your spouse turns 71, so at 69 the answer is yes. Downloads were 3.8 seconds
+faster than the original; generation took twice as long.
+
+Timing reruns, Forced first (2026-10-29, same session as the Off reruns):
+
+| Run | Chat | Tool calls | Generation | Answer step | Total | Answer |
+|---|---|---|---|---|---|---|
+| Original | `5972f71c-6174-4abd-9d0d-3e281397dbdb` | 2 passages, 684 ms | ~7,258 ms | 7,942 ms | 10,173 ms | correct |
+| Rerun 1 | `4f0aaad0-2a29-43c2-9dfa-ba2ff209e468` | passages `rrsp.html` (271 ms), passages `contributing-a-rrsp-prpp.html` (326 ms), download of that same page (67 ms, `hit`), passages T4040 (336 ms, 3 passages) | ~23,400 ms | 24,398 ms | 26,419 ms | correct: age-71 rule, cited T4040 |
+
+- **Generation was as slow as today's Off runs** (22–24 seconds), against 7.3 seconds
+  yesterday. So the slowdown today isn't caused by downloads; the model endpoint or the
+  number of rounds is. Today's runs can't be compared with yesterday's.
+- **The model downloaded a page it already had passages for**, then went back to passages
+  for T4040. Four tool calls means five model rounds, so the passage run lost its
+  fewer-rounds advantage. This is risk 4 (passages plus downloads).
+- The ChatViewer timeline shows only "downloads (x1)"; the three passage calls (933 ms)
+  are in the trace only.
+
 **Pair 3: child benefit payment date** ("When will I get my next child benefit payment?").
 Off: chat `641bc14a-b7bd-43c0-b4a6-be09f61689c9`. Forced first: chat
 `fd50d027-5e37-42fe-9e3a-06e8b8d2754e`. **The passage answer was wrong: it gave no date and
@@ -746,6 +776,13 @@ told the user to sign in first.** The download answer gave the date.
   was asked. Rerun 5 still held back. Good enough to leave the prompt as is; a batch of
   this question would give a real rate.
 
+  Timing reruns, Off (2026-10-29), to compare with the original Off run:
+
+  | Run | Chat | Download | Generation | Answer step | Total |
+  |---|---|---|---|---|---|
+  | Original | `641bc14a-b7bd-43c0-b4a6-be09f61689c9` | 641 ms, `origin` | 3,791 ms | 4,432 ms | 8,772 ms |
+  | Rerun 1 | `0853be93-7b6d-49bb-a2db-edb1bf9732a4` | 926 ms | 8,029 ms | 8,955 ms | 13,143 ms |
+
 **Pair 4: CPP application delay** ("I applied for CPP online and haven't heard back yet -
 it's been 2 months. Why might there be a delay like this?"). Off: chat
 `c5806c55-021a-4165-bfab-ff026c972706`. Forced first: chat
@@ -788,6 +825,17 @@ section on `after-apply.html`, a page the passage run never read.**
   to follow, the model had little to go on either way.
 - **Passages were faster: 3.5 seconds off the answer step, 4.8 off the total.** Most of
   the saving was generation, as in pair 2. Both downloads missed the cache.
+
+Timing reruns, Off (2026-10-29):
+
+| Run | Chat | Downloads | Generation | Answer step | Total | Answer |
+|---|---|---|---|---|---|---|
+| Original | `c5806c55-021a-4165-bfab-ff026c972706` | 2, 1,239 ms, `origin` | 11,366 ms | 12,605 ms | 17,176 ms | correct |
+| Rerun 1 | `d095bef2-deee-42ba-ba57-11d51ea6b389` | 2, 101 ms, both `hit` (50 + 51) | 11,685 ms | 11,786 ms | 15,809 ms | correct (`apply.html`, then `after-apply.html`) |
+
+With both downloads cache hits, the Off answer step was still 2.7 seconds slower than the
+forced passage run (9,123 ms). The passage gain on this question comes from generation, not
+tool time.
 
 **Pattern so far (four pairs, one run each):**
 - **Multi-page questions** (pair 2): passages saved a lot of time, mostly in generation, and
