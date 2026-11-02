@@ -148,10 +148,109 @@ AGENTS.md. It is a separate PR from the plumbing.
   `/en/users/get-started/`, `/fr/utilisateurs/`) returned the site's own "Page not found –
   CanadaLogin" page (HTTP 404) to a plain request from outside the GC network. The 404
   page itself links to `/en/users/get-started/` as "CanadaLogin user help". So either
-  the site filters by network or client, or it isn't publicly launched yet. Test from
-  the production servers with the tool's real `USER_AGENT`. If it's filtered, ask the
-  CanadaLogin team to allowlist our servers. Also confirm the pages are server-rendered
-  and not built with client-side JS, which `downloadWebPage` can't run.
+  the site filters by network or client, or it isn't publicly launched yet.
+
+  **Confirmed from AI Answers itself on 2026-11-01:** in a live chat, `downloadWebPage`
+  failed with `Page not found (404): https://login.canada.ca/en/users/what-is-canadalogin/`.
+  The model then fell back to canada.ca pages (the GCKey page and PrairiesCan's
+  `…/prairies-economic-development/services/funding/cyber-authentication.html`), which it
+  could read. Lisa is raising this with the CDS CanadaLogin team. The ask: allowlist AI
+  Answers' production egress (IPs and/or `USER_AGENT`), or say when the user help pages
+  will be public.
+
+  How the block affects each part of the pipeline:
+  - `downloadWebPage`: can't read the steps. **This is the blocker.**
+  - The model's `checkUrl` tool also gets a 404 (`agents/tools/checkURL.js`), so the
+    model may decide `login.canada.ca` links are dead and stop citing or linking them,
+    even when they work fine in the user's browser.
+  - The citation check in `verifyNode` is unaffected.
+    `UrlValidationService.validateUrlFormatting` only checks formatting and makes no
+    request, so `login.canada.ca` citations pass through.
+  - Search: check whether `login.canada.ca` pages are in the search index at all.
+
+  **Interim options for a demo build while waiting:**
+  1. *(Recommended)* A temporary **snapshot of the CanadaLogin help pages as markdown
+     files in the repo**, which the model downloads on demand. See "Interim: help-page
+     snapshots" below.
+  2. Rely on portals' canada.ca pages (like the PrairiesCan cyber-authentication page),
+     which are readable. They don't have the step-by-step detail, so a proper
+     walkthrough isn't possible this way.
+  3. Wait. Nothing to demo until CDS fixes access.
+#### Interim: help-page snapshots (until `login.canada.ca` is readable)
+
+**There's already a pattern for this.** `context-sac-isc/sac-isc-scenarios.js` points the
+model at `sac-isc-contacts.md` with a `⚠️DOWNLOAD
+https://raw.githubusercontent.com/cds-snc/ai-answers/main/…` line. The model fetches it
+with `downloadWebPage` only when its trigger matches. Three pieces of support already
+exist:
+- `agenticBase.js:59`: downloads of `raw.githubusercontent.com/cds-snc/ai-answers/…` are
+  scenario instruction files and **don't count toward the 3-page download limit**
+- `agenticBase.js:57`: ⚠️DOWNLOAD URLs whose trigger matches are fetched first and take
+  priority over what the model already knows
+- `agents/__tests__/scenario-instruction-files.test.js`: fails if a referenced raw URL
+  points at a file that doesn't exist, or is pinned to a branch other than `main`
+
+The snapshots work like live pages: they're only fetched when needed and cost no tokens
+otherwise. When access is fixed, the swap is mechanical: replace each raw URL with the
+real `login.canada.ca` URL and delete the files.
+
+**Folder: a new `agents/prompts/scenarios/canadalogin/`, not `context-cds-snc/`.** The
+CDS scenario only loads when the context agent matches CDS. In assistant mode the
+department comes from the portal registry (e.g. PrairiesCan for its portal), so CDS
+files would never be pointed to. A neutral folder can be referenced from **both**:
+- the assistant-mode scenario (§3), which maps each journey step and its problems to
+  the right file
+- `cds-snc-scenarios.js`, so regular AI Answers chats about CanadaLogin get the same
+  content. This helps the existing product as well, though it's a maintainer
+  prompt edit.
+
+**One file per help page**, so the model downloads only what the current step needs, e.g.:
+
+```
+agents/prompts/scenarios/canadalogin/
+  README.md                          # TEMPORARY: why these exist, how to remove
+  how-to-create-en.md / -fr.md
+  two-step-verification-en.md / -fr.md
+  problems-creating-profile-en.md / -fr.md
+  problems-email-verification-en.md / -fr.md
+  problems-creating-password-en.md / -fr.md
+  problems-2sv-setup-en.md / -fr.md
+  problems-creating-passkey-en.md / -fr.md
+  problems-sms-phone-registering-en.md / -fr.md
+  problems-sms-phone-signing-in-en.md / -fr.md
+  supported-international-numbers-en.md / -fr.md
+  migrate-from-sic-en.md / -fr.md    # when CDS provides it
+  migrate-from-gckey-sip-en.md / -fr.md
+```
+
+Each file starts with a header the model can read:
+
+```
+TEMPORARY SNAPSHOT – source: https://login.canada.ca/en/users/get-started/
+Modified on source: 2026-10-22 · Captured: 2026-11-01
+Cite the source URL above, never this file's URL.
+```
+
+Rules and caveats:
+- **Cite the real URL, never the raw GitHub URL.** The header says so, and the scenario
+  repeats it. The citation check in `verifyNode` only checks formatting, so a
+  `login.canada.ca` citation passes. But the model's `checkUrl` tool gets a 404 for
+  those URLs, so the scenario must say "these URLs are live for users even though your
+  tools can't reach them." Otherwise the model may refuse to link them.
+- **The files must be on `main` before they can be read.** Raw URLs point at `main`, so
+  a feature-branch demo can't load files that only exist on that branch. Merge the
+  snapshot files as their own small PR first (content only, no behaviour change), then
+  build the assistant on top.
+- **EN and FR both.** Each language gets its own file. The scenario picks by the output
+  language.
+- **Body text only.** Copy the page text without navigation, footers or the Canada.ca
+  menu. Keep the "Related help guides" links as titles with their real URLs, so the
+  model can follow them to the next snapshot.
+- **Stale copies are a risk.** The source pages say "modified 2026-10-22" and are still
+  changing. Write the capture date in each file and in the README. Ask CDS to tell us
+  when pages change until access is fixed.
+- The repo is public. That's fine here: these are public help pages.
+
 - **Existing prompt conflict to flag:** `scenarios-all.js` line 50 says that for most
   accounts you "must register again to change method." Once portals move to CanadaLogin,
   that is wrong for those portals. A maintainer needs to update it, separately from this
@@ -258,7 +357,7 @@ A new mode with its own behaviour counts as a pipeline change:
 
 | Phase | Work | Depends on |
 |---|---|---|
-| 0. Discovery | **Confirm our servers can read `login.canada.ca`** (blocker). With the CanadaLogin team: the help-page URL for each journey; per-portal differences; common sticking points from call-centre data; which pages get the link. Lisa builds demo pages on the right domains for testing. | — |
+| 0. Discovery | **Get our servers access to `login.canada.ca`** (blocker; in the meantime, merge the help-page snapshot PR to `main`). With the CanadaLogin team: the help-page URL for each journey; per-portal differences; common sticking points from call-centre data; which pages get the link. Lisa builds demo pages on the right domains for testing. | — |
 | 1. Plumbing (behind a `canadaLoginAssistant.enabled` setting, off) | Portal registry, server-validated mode, `Chat.mode/portal`, mode-dependent turn cap (client + server + locale), new prompt tags + tests, similarQuestions skipped in mode, link-domain restriction in verify | — |
 | 2. Prompt | Assistant scenario, fix to the `scenarios-all.js` sign-in rule, multi-turn eval batch | Phase 0 content; multi-turn dataset support |
 | 3. Pilot | Turn on for 1–2 of the 8 SIC portals (choose by volume and partner readiness); partner expert evals; dashboard filter | Phases 1–2 |
@@ -290,4 +389,4 @@ own PR(s), reviewed by a maintainer.
    chats that hit the cap and the last step reached.
 2. Should each journey end with a "did it work?" check stored as completion data, or is
    public feedback enough?
-3. Can our servers read `login.canada.ca` (see §3)? This is a blocker.
+3. When can our servers read `login.canada.ca`? Confirmed blocked from production (see §3). Lisa is following up with CDS.
