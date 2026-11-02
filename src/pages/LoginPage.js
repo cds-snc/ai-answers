@@ -128,6 +128,8 @@ const LoginPage = ({ lang = 'en' }) => {
   // Two-step verification state
   const [showTwoStep, setShowTwoStep] = useState(false);
   const [code, setCode] = useState('');
+  // Ticked by default: government staff rarely share a computer.
+  const [rememberDevice, setRememberDevice] = useState(true);
   const {
     error: twoStepError,
     errorCount: twoStepErrorCount,
@@ -171,7 +173,7 @@ const LoginPage = ({ lang = 'en' }) => {
     announce(t('login.form.submitting'), { skippable: true });
     try {
       // backend method remains verify2FA
-      const data = await AuthService.verify2FA(normalizedCode);
+      const data = await AuthService.verify2FA(normalizedCode, rememberDevice);
       // AuthService stores token and user; refresh context
       await refreshUser();
       // Prefer explicit defaultRoute from the verify response if present
@@ -280,6 +282,17 @@ const LoginPage = ({ lang = 'en' }) => {
                 aria-describedby={twoStepError ? 'login-2fa-code-hint login-2fa-error' : 'login-2fa-code-hint'}
                 aria-invalid={!!twoStepError}
               />
+            </div>
+            <div className="gc-chckbxrdio sm mb-200">
+              <div className="checkbox">
+                <input
+                  type="checkbox"
+                  id="remember-device"
+                  checked={rememberDevice}
+                  onChange={(e) => setRememberDevice(e.target.checked)}
+                />
+                <label htmlFor="remember-device">{t('login.2fa.rememberDevice')}</label>
+              </div>
             </div>
             <div>
               <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">

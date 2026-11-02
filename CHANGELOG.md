@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.211.1](https://github.com/cds-snc/ai-answers/compare/v1.211.0...v1.211.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* give password reset link 10 minutes and state lockout wait time ([7e26ed2](https://github.com/cds-snc/ai-answers/commit/7e26ed2ad8bbc5b4d32aa044b61eb12921059b36))
+* give password reset link 10 minutes and state lockout wait time ([7ae689f](https://github.com/cds-snc/ai-answers/commit/7ae689fc53eec5ba27519e62405b0382136c0da2))
+
+
+### Documentation
+
+* add password reset token change to auth hardening plan ([ee1c6f4](https://github.com/cds-snc/ai-answers/commit/ee1c6f4bb21d3aaf02e6724b3824afede2512611))
+* link reset comment to F6, retitle auth plan ([4dfaffb](https://github.com/cds-snc/ai-answers/commit/4dfaffb05bb4a26bafc0f27fb548401e572561ba))
+
+
+### Styles
+
+* adjust spacing on 2FA code screen ([53f4ffe](https://github.com/cds-snc/ai-answers/commit/53f4ffebce1ef04223f767538f8d58178d4566d8))
+* use small checkbox for remember-device option ([ed4ed88](https://github.com/cds-snc/ai-answers/commit/ed4ed88b2b03da89d24e49d8a47f0e485510e43f))
+
+## [1.211.0](https://github.com/cds-snc/ai-answers/compare/v1.210.2...v1.211.0) (2026-10-27)
+
+
+### Features
+
+* admin home notifications for assigned questions and accounts ([3fff6d8](https://github.com/cds-snc/ai-answers/commit/3fff6d8d6f488912b29914dbaf4c169a845cab79))
+* admin home notifications for assigned questions and accounts ([4861274](https://github.com/cds-snc/ai-answers/commit/48612747c8be56b218cb14d325fd61ed4bdcc82e))
+
+
+### Bug Fixes
+
+* authenticate public ECR pulls in PR review build ([b19ba8d](https://github.com/cds-snc/ai-answers/commit/b19ba8d5ea60fdfe49f8855650b4ba784f3eb2d1))
+* authenticate public ECR pulls in PR review build ([a39abd4](https://github.com/cds-snc/ai-answers/commit/a39abd41f400386a3512fa60274ef3ef292cf055))
+* label pending filter when count fails to load ([19e2a5c](https://github.com/cds-snc/ai-answers/commit/19e2a5cf3c466a6cca4347a1ae9491513cb8d56b))
+* search results and stage timeline fit review panels ([60dd385](https://github.com/cds-snc/ai-answers/commit/60dd385ab92ea7e175061ed121c018e530fa303e))
+* search results and stage timeline fit review panels ([1ecb3c1](https://github.com/cds-snc/ai-answers/commit/1ecb3c15c53ffc70bce560fb67def97c390fc89c))
+* server-side sign-up and password rules (auth hardening phase 2, … ([51a9057](https://github.com/cds-snc/ai-answers/commit/51a90579e097cb70081afe2c8f83ada6d9c34747))
+* server-side sign-up and password rules (auth hardening phase 2, PR A) ([6e17a49](https://github.com/cds-snc/ai-answers/commit/6e17a4909bf9cbded12b800f9497635d013da8a0))
+
+
+### Documentation
+
+* update plan to reflect index rebuild ([416bf13](https://github.com/cds-snc/ai-answers/commit/416bf13a3686499f0724f26c65bb758b4985c1f1))
+
 ## [1.210.2](https://github.com/cds-snc/ai-answers/compare/v1.210.1...v1.210.2) (2026-10-23)
 
 

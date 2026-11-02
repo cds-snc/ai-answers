@@ -244,9 +244,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // The user chose to sign out (Sign out link, /logout): also forget this
+  // browser's remembered device.
   const logout = () => {
     setLoading(true);
-    AuthService.logout();
+    AuthService.logout({ forgetDevice: true });
     redirectingRef.current = false;
     sessionCheckInFlightRef.current = false;
     setSessionExpiredRedirecting(false);

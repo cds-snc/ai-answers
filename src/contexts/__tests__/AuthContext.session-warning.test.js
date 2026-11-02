@@ -99,5 +99,24 @@ describe('AuthProvider session warning timer', () => {
     });
 
     expect(mockLogout).toHaveBeenCalledTimes(1);
+    // The session ended on its own: keep the remembered device.
+    expect(mockLogout.mock.calls[0][0]?.forgetDevice).not.toBe(true);
+  });
+
+  it('forgets the remembered device when the user signs out', async () => {
+    const SignOutProbe = () => {
+      const { logout } = useAuth();
+      return <button type="button" onClick={logout}>Sign out</button>;
+    };
+    render(
+      <MemoryRouter initialEntries={['/en/admin']}>
+        <AuthProvider>
+          <SignOutProbe />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { screen.getByRole('button', { name: 'Sign out' }).click(); });
+    expect(mockLogout).toHaveBeenCalledWith({ forgetDevice: true });
   });
 });

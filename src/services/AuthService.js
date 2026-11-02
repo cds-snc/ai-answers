@@ -118,17 +118,23 @@ class AuthService {
 
 
 
-  static logout() {
+  // forgetDevice: true only when the user chose to sign out. It also forgets
+  // the remembered device; a session that ended on its own keeps it.
+  static logout({ forgetDevice = false } = {}) {
     // Clear cached user
     this.currentUser = null;
     this.sessionExpiresAt = null;
 
     try {
       const logoutUrl = getApiUrl('auth-logout');
+      // keepalive: callers navigate away straight after, which would
+      // otherwise cancel the request.
       fetch(logoutUrl, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forgetDevice })
       }).catch(() => { });
     } catch (e) {
       // ignore
@@ -202,9 +208,11 @@ class AuthService {
     return data;
   }
 
-  static async verify2FA(code) {
+  // rememberDevice: skip the code on this browser for 12 hours (the server
+  // sets its own cookie).
+  static async verify2FA(code, rememberDevice) {
     // reason: 'invalid' | 'locked' | 'expired' | 'server_error' | 'network'
-    const data = await postSignInStep('auth-verify-2fa', { code });
+    const data = await postSignInStep('auth-verify-2fa', { code, rememberDevice });
     // Cookies are set automatically by the server
     if (data.user) {
       this.currentUser = data.user;

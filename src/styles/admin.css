@@ -3154,7 +3154,7 @@ td:has(> .verdict-cell__link) {
 
 .auth-secondary-button {
   width: 100%;
-  margin-top: var(--gcds-spacing-200);
+  margin-top: var(--gcds-spacing-100);
 }
 
 .auth-links {
