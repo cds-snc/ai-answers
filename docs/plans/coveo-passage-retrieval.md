@@ -6,7 +6,10 @@ prompt and tool were changed after it. Trials 2 and 3 run on 2026-10-28 (see
 [Trial 2 results](#trial-2-results) and [Trial 3 results](#trial-3-results)). Then an admin
 chat option was added to force or offer the tool one question at a time, and three pairs were
 compared (see [Admin chat comparisons](#admin-chat-comparisons), which ends with where to
-pick up). Access to the Coveo Passage Retrieval (CPR) API comes through
+pick up). Phases 4 and 5 were not run: the API as the Canada.ca team set it up has a rate
+limit, so multi-item batches couldn't measure latency (see
+[Why Phases 4 and 5 weren't run](#why-phases-4-and-5-werent-run)).
+Access to the Coveo Passage Retrieval (CPR) API comes through
 the Canada.ca search API. The Canada.ca search team has confirmed the endpoint, that our
 existing search credentials work with it, and how to limit passages to one page (see
 [API notes](#api-notes)). Coveo's search engineer has advised on how to use it (see
@@ -431,7 +434,27 @@ write and approve it. **Drafted, awaiting maintainer review.**
   amount the passage states. In two of three reruns the model had the date in the passage
   and still sent the user to My Account.
 
+## Why Phases 4 and 5 weren't run
+
+Phases 4 and 5 depend on batch timings, and those turned out to be unusable. Passage calls
+took about 5 seconds each in multi-item batches (trials 1–3), against 220–390 ms one at a
+time (Phase 1 and the [admin chat comparisons](#admin-chat-comparisons)).
+
+The likely cause is the rate limit on our key, as the Canada.ca search team set it up. It
+is lower than the 5 queries per second Coveo quoted (see risk 6); the exact figure isn't
+confirmed. A batch sends calls faster than the limit allows, so passage calls waited. Any
+latency comparison from a batch measures the limit, not the tool.
+
+One observation the limit doesn't explain: in trial 3, a cache-hit download, which never
+calls Coveo, also took about 5 seconds (see [Trial 3 results](#trial-3-results)).
+
+Testing moved to a few single-question pairs in the admin chat instead. Running more of
+them one by one is beyond the scope of this trial. Batches can still count tool calls and
+score answers, but not time them, until the limit is raised.
+
 ## Phase 4 — Metrics in batch results
+
+Not run (see [Why Phases 4 and 5 weren't run](#why-phases-4-and-5-werent-run)).
 
 Before running arms, confirm batch items expose, per item:
 
@@ -445,6 +468,8 @@ If any of these aren't on the batch results / analysis pages, add them there, no
 one-off script, so later runs reuse them.
 
 ## Phase 5 — Experiment
+
+Not run (see [Why Phases 4 and 5 weren't run](#why-phases-4-and-5-werent-run)).
 
 Use the same dataset for both arms: about 150 CRA questions with reference answers, English (plus French if Phase 1 shows it works). Run 2–3 trials per arm to smooth
 out model nondeterminism.
@@ -856,8 +881,10 @@ tool time.
    asks for. Pair 3's page doesn't work for this: its passage includes the dates (see the
    update under pair 3). `calendar.html`, whose dates sit in expandable sections, may. It
    passes if the model calls passages, then downloads the page and gives the fact.
+   *Not pursued:* beyond the scope of this trial.
 2. Run more pairs, mixing single-page and multi-page questions. Run Off first, then Forced
    first, and note each download's `cacheStatus`. Compare the answer step, not the total.
+   *Not pursued:* running pairs one by one is beyond the scope of this trial.
 3. Open questions: whether to force passages only for some questions, how often production
    downloads miss the cache, and whether the passage block should replace Step 3's
    download wording instead of amending it (a base prompt change; see
@@ -868,8 +895,8 @@ tool time.
    base wording changes to cover passages. Both are prompt changes for the maintainers.
    Reruns of pair 3 gave the date only one time in three, so a change looks needed.
    *Done 2026-10-29:* the Phase 3 block now says a passage counts as downloaded content
-   (see [Phase 3](#phase-3--prompt-variant-maintainers-only)). Rerun pair 3's question a
-   few times to check it.
+   (see [Phase 3](#phase-3--prompt-variant-maintainers-only)). Pair 3's reruns 4–7 checked
+   it: three of four gave the date.
 
 The ChatViewer timeline shows a "downloads" row under the answer step but no row for passage
 calls, so a passage run's tool time has to be read from the trace. Adding a "passages" row
@@ -881,7 +908,8 @@ The tool arm passes if, compared with the baseline:
 
 - median `downloadWebPage` calls per answer drop by ≥ 1
 - p50 total latency drops by ≥ _N_ seconds (set _N_ after Phase 1). Passage-call time counts
-  against the savings.
+  against the savings. Can't be measured in a batch at the current rate limit (see
+  [Why Phases 4 and 5 weren't run](#why-phases-4-and-5-werent-run)).
 - expert score and citation accuracy do not drop
 - no rise in confident-but-incomplete answers (see risk 3); review a sample by hand
 
@@ -913,6 +941,9 @@ The tool arm passes if, compared with the baseline:
    call/second and retries a 429 after 2, 5 and 10 seconds, recording the retry count. The
    Phase 2 tool retries a 429 after 1 and 2 seconds, then tells the model to download
    instead. Retries count against any time saved.
+   **Later:** the limit on our key, as the Canada.ca team set it up, is lower than 5 per
+   second; the exact figure isn't confirmed. This is what made batch timings unusable (see
+   [Why Phases 4 and 5 weren't run](#why-phases-4-and-5-werent-run)).
 7. **French.** Coveo supports French in beta. Phase 1 testing showed French works in both
    modes, but see the next risk.
 8. **Pages missing from the index.** In Phase 1 testing, page mode returned 0 passages for a
