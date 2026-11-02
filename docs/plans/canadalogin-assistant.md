@@ -31,6 +31,21 @@ next to the CanadaLogin flow. For security it is never embedded in the sign-in p
 - Regular AI Answers is unchanged: same 3-turn cap, same graph, same prompts.
 - EN and FR at parity from day one.
 
+## Fit with the platform vision
+
+This is the first service in the [platform vision](platform-vision.md): the first guided,
+multi-step process built on AI Answers' shared components, not just Q&A. So the plan
+builds two things:
+
+- **This service**: the CanadaLogin scenario, portal registry and evals.
+- **What the next service reuses**: service profiles (§1a), a turn cap set per profile,
+  link-domain restriction, and multi-turn eval datasets. Build these in general form, but
+  only as general as this one service needs. Don't build profile features nobody uses yet.
+
+The vision's guarantees (no secrets, approved domains only, a way to reach a person,
+EN/FR parity, only human evals feed answers) are this plan's success criteria. If one
+changes here, change it in the vision too.
+
 ## Decisions made (2026-11-01)
 
 | Question | Decision |
@@ -40,7 +55,7 @@ next to the CanadaLogin flow. For security it is never embedded in the sign-in p
 | v1 journeys | New registration, migrating from Sign in Canada, migrating from GCKey or Interac Sign-In Partner. (Recovery and lost authenticators come later.) |
 | Content source | **Live pages first.** The CanadaLogin help pages are the source of truth, read at answer time. The scenario stays thin: how to guide, safety rules, and the portal's help-page URLs. It doesn't copy their steps. |
 | Turn limit | **Higher, still bounded, cap in assistant mode only** (starting point: 10). Regular mode stays at 3. |
-| Input | **Keep the 260-character cap.** The assistant warns up front never to share passwords or codes. PII redaction stays on. |
+| Input | **Keep the 260-character cap.** The assistant warns up front never to share passwords or codes. PI blocking stays on: a question that contains PI is blocked whole, never redacted and answered. |
 | Layout | **Normal chat page.** The existing responsive layout already works at narrow widths. No new layout. |
 | Ownership | **Joint.** The CanadaLogin team owns the help pages (the content). The AI Answers team owns the assistant scenario and evals. No separate content sign-off: the steps aren't copied into our prompts. |
 
@@ -91,22 +106,57 @@ Decided: if `mode=canadalogin` is present but the referring URL is unknown, the 
 **falls back to normal mode**. For testing before portals add the link, we use demo pages
 hosted on the right domains, so their URLs match the registry.
 
-Store `mode` and `portal` on the `Chat` document (`models/chat.js`) so dashboards and
-evals can filter assistant chats apart from regular ones.
+Store `mode` (the profile id) and `portal` on the `Chat` document (`models/chat.js`) so
+dashboards and evals can filter assistant chats apart from regular ones.
+
+### 1a. Service profiles (decided 2026-11-02)
+
+Don't scatter `if (mode === 'canadalogin')` checks through the nodes. Instead, when a
+chat starts, the server resolves a **service profile**. Nodes read the profile's fields
+and never check the mode name. With a second service, every node would otherwise grow
+another branch. With profiles, the second service is a new profile entry, not graph
+changes.
+
+A profile is a plain server-side config object, e.g. `config/service-profiles.js`:
+
+| Field | `default` (regular AI Answers) | `canadalogin` |
+|---|---|---|
+| `id` | `default` | `canadalogin` |
+| `maxTurns` | 3 | 10 |
+| `scenario` | none (context agent picks the department) | `canadalogin-assistant` |
+| `similarQuestions` | on | off |
+| `allowedLinkDomains` | none (current behaviour) | portal's domains + `login.canada.ca` + `canada.ca` |
+| `entryRegistry` | none | the portal registry (§1) |
+| `introKey` / `limitReachedKey` | current locale keys | assistant-mode locale keys |
+
+Rules:
+- **The server picks the profile.** `mode=<id>` from the URL only *asks* for a profile.
+  The server grants it only if the profile's entry registry accepts the referring URL.
+  Otherwise the chat gets `default`. (This is §1's validation, written once for every
+  profile.)
+- **`default` reproduces today's behaviour exactly.** Phase 1 must not change a regular
+  chat. Test that with the profile resolved, the regular-mode prompt, tags and turn cap
+  are unchanged.
+- **The profile is resolved once, at chat init, and stored by id on the `Chat`.** Later
+  turns look it up by id, so a client can't switch profiles mid-chat.
+- **Fail fast:** an unknown profile id in stored data is an error, not a silent fallback
+  to `default`. (AGENTS.md rule 12.)
+- Keep it a plain object. No inheritance, no per-department overrides, and no admin UI
+  to edit profiles until a second service needs one.
 
 ### 2. Pipeline: same graph, mode-aware nodes (no new graph for v1)
 
 Recommendation: **don't add a new LangGraph workflow.** The safety-critical steps
-(redact, PII guardrail, translate, verify, persist) are exactly what this mode needs.
+(PI and manipulation blocking, translate, verify, persist) are exactly what this mode needs.
 Forking a graph means two copies of that code to keep in sync. Instead, the existing nodes
-read `mode` from the graph input:
+read the **service profile** (§1a) from the graph input:
 
-| Node | Change in assistant mode |
-|---|---|
-| `contextNode` | The department comes from the portal registry (no guessing). Search still runs, scoped to CanadaLogin and the portal's help pages. |
-| `similarQuestions` | **Off in assistant mode for v1.** Past expert-rated answers come from 3-turn Q&A and would push the model toward one-shot answers. Turn it back on once there are expert-rated assistant chats. |
-| `answerNode` | Loads the CanadaLogin assistant scenario and receives the new tags (below). Uses the mode's turn cap for `<final-turn>`. |
-| `verifyNode` | Restricts citation and link URLs to the portal's allowed domains plus `login.canada.ca` and `canada.ca`. |
+| Node | Reads | Effect in the `canadalogin` profile |
+|---|---|---|
+| `contextNode` | `entryRegistry` | The department comes from the portal registry (no guessing). Search still runs, scoped to CanadaLogin and the portal's help pages. |
+| `similarQuestions` | `similarQuestions` | **Off for v1.** Past expert-rated answers come from 3-turn Q&A and would push the model toward one-shot answers. Turn it back on once there are expert-rated assistant chats. |
+| `answerNode` | `scenario`, `maxTurns` | Loads the CanadaLogin assistant scenario and receives the new tags (below). Uses the profile's turn cap for `<final-turn>`. |
+| `verifyNode` | `allowedLinkDomains` | Restricts citation and link URLs to the portal's allowed domains plus `login.canada.ca` and `canada.ca`. |
 
 **New prompt tags**, built in `api/util/prompt-tags.js` and covered by tests asserting
 they appear in the outgoing message (see AGENTS.md, "Never drop a prompt tag"):
@@ -114,9 +164,9 @@ they appear in the outgoing message (see AGENTS.md, "Never drop a prompt tag"):
 - `<assistant-mode>canadalogin</assistant-mode>`
 - `<portal>…name, journeys, per-portal notes…</portal>`
 
-**Turn cap**: replace the two hard-coded `3`s with one value that depends on the mode. The
-server sends the cap in the chat-init response, the client uses it, and
-`sendAnswerRequest` takes it from the graph input. Locale strings need a variable instead
+**Turn cap**: replace the two hard-coded `3`s with the profile's `maxTurns`. The server
+sends the cap in the chat-init response, the client uses it, and `sendAnswerRequest`
+takes it from the graph input. Locale strings need a variable instead
 of a literal "3", with an assistant-mode variant that points to the call centre.
 
 **Check before building:** confirm the server actually rejects turns past the cap, not just
@@ -358,14 +408,17 @@ A new mode with its own behaviour counts as a pipeline change:
 | Phase | Work | Depends on |
 |---|---|---|
 | 0. Discovery | **Get our servers access to `login.canada.ca`** (blocker; in the meantime, merge the help-page snapshot PR to `main`). With the CanadaLogin team: the help-page URL for each journey; per-portal differences; common sticking points from call-centre data; which pages get the link. Lisa builds demo pages on the right domains for testing. | — |
-| 1. Plumbing (behind a `canadaLoginAssistant.enabled` setting, off) | Portal registry, server-validated mode, `Chat.mode/portal`, mode-dependent turn cap (client + server + locale), new prompt tags + tests, similarQuestions skipped in mode, link-domain restriction in verify | — |
+| 1. Plumbing (behind a `canadaLoginAssistant.enabled` setting, off) | Service profiles (`default` + `canadalogin`), portal registry, server-validated profile selection, `Chat.mode/portal`, per-profile turn cap (client + server + locale), new prompt tags + tests, nodes reading profile fields (similarQuestions, link-domain restriction in verify) | — |
 | 2. Prompt | Assistant scenario, fix to the `scenarios-all.js` sign-in rule, multi-turn eval batch | Phase 0 content; multi-turn dataset support |
 | 3. Pilot | Turn on for 1–2 of the 8 SIC portals (choose by volume and partner readiness); partner expert evals; dashboard filter | Phases 1–2 |
 | 4. Expand | Remaining SIC portals; GCKey/SIP migration as more portals onboard; consider recovery and lost-authenticator journeys | Pilot results |
 
-**PR breakdown for review:** Phase 1 splits into (a) mode and portal registry + Chat
-fields, (b) turn cap, (c) prompt tags + node changes. (a) and (c) share the registry
-contract, so build and verify them together before splitting. Phase 2 prompt work is its
+**PR breakdown for review:** Phase 1 splits into (a) service profiles with only `default`,
+wired through chat init and the graph input, with no behaviour change (provable by the
+"default is unchanged" test); (b) the `canadalogin` profile, portal registry and Chat
+fields; (c) turn cap from the profile; (d) prompt tags and nodes reading profile fields.
+(b) and (d) share the registry contract, so build and verify them together before
+splitting. (a) can merge on its own first. Phase 2 prompt work is its
 own PR(s), reviewed by a maintainer.
 
 ## Risks

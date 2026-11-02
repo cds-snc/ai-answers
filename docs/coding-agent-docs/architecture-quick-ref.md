@@ -35,7 +35,7 @@ START → init → validate → redact → translate → contextNode → [simila
 |------|-------------|
 | `init` | Set start time, status, selected AI model |
 | `validate` | Reject short/invalid queries via shortQuery service |
-| `redact` | Strip PII and sensitive content |
+| `redact` | **Block** questions containing PI, threats, manipulation or profanity (never strips and continues; masking is only to show the user what was rejected — see AGENTS.md) |
 | `translate` | Detect language, translate non-English to English |
 | `contextNode` | Run `contextSystemPrompt.js` to match department abbrKey, run search, load scenarios |
 | `similarQuestions` | Inject expert-rated past Q&A as context — `GenericWithQAGraph` and `InstantAndQAGraph` only |
@@ -102,7 +102,7 @@ The "Default model family" setting selects a model **family**, not a single mode
 
 | Pipeline step | Model used |
 |---------------|-----------|
-| PII redaction | Pinned to Azure `gpt-4o` — in-region (Canada East), family setting doesn't apply |
+| PI detection (stage 2 blocking) | Pinned to Azure `gpt-4o` — in-region (Canada East), family setting doesn't apply |
 | Translation | Mini (`openai-gpt41-mini`) |
 | Query rewrite | Mini (`openai-gpt41-mini`) |
 | Context / search | Full model (e.g. GPT-5.1) |

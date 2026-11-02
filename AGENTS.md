@@ -59,6 +59,26 @@ silently absent downstream, with no error (`src/App.js`'s route `.map()` dropped
 so `titleKey`/`skipRouteFocus` never reached the router). When a `.map()`/spread rebuilds
 an object, diff the fields old vs. new, and add a test asserting the field survives.
 
+## The `redact` node blocks; it never redacts and continues
+
+Despite the names (`redact` node, `redactionService`, `RedactionError`, `redactedText`),
+**AI Answers never strips content and answers the rest.** Every match blocks the whole
+question. That covers personal information (PI), threats, manipulation, profanity and
+paired-tag injection. A blocked question is never sent to an answering AI service and is
+never stored.
+
+The masking is only for the user: their question is shown back with the matched part
+replaced (`XXX` for PI, `###` for threats, manipulation and profanity), so they can see
+which part was rejected and rephrase. Blocks are counted only by stage and type
+(`blockTypes.js`).
+
+- Write "PI blocking", not "PII redaction", in docs, plans and system card text.
+- `redactedText` in graph state is the question *after it passed* the check, so it is the
+  original text. It is not a cleaned version with personal information removed.
+- Never add a "redact and continue" path, for example letting a question through with
+  `XXX` in it. That changes a privacy guarantee in the system card. Flag it to the
+  maintainers (Lisa Fast and Ryan Hyma).
+
 ## Never let AI evaluations feed answer generation
 
 Only **human** expert evaluations may feed back into live answers. AI auto-evaluations —

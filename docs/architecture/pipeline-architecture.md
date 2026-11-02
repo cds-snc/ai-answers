@@ -172,7 +172,8 @@ The graph maintains state across all nodes with these key fields:
   translationF: boolean,         // Translation function enabled
   searchProvider: string,        // Search provider (canadaCa, google)
   overrideUserId: string,        // Override user ID for special cases
-  redactedText: string,          // Text after PI redaction
+  redactedText: string,          // Question after it passed the redact node's blocking
+                                 //   checks: unchanged original text, NOT a PI-stripped copy
   translationData: object,       // Translation results
   context: object,               // Derived context (department, search results,
                                  //   similarQuestions block, qaMatches)
@@ -238,6 +239,13 @@ match is found) and `shortCircuitDebugPayload` (candidates and reason, for ChatV
 **Status:** `moderatingQuestion`
 
 **Purpose:** Two-stage privacy protection - detect PI and block questions containing it
+
+**This node blocks; it never redacts and continues.** Any match in either stage blocks
+the whole question: it is not sent to an answering AI service and is not stored. The
+"redaction" in the names (`redactionService`, `RedactionError`, `redactedText`) is only
+the masked copy shown back to the user. PI becomes `XXX`; threats, manipulation and
+profanity become `###`. That way the user can see which part was rejected and rephrase.
+`ChatAppContainer.js` renders it from `RedactionError.redactedText`.
 
 #### Stage 1: Pattern-Based Blocking (No AI)
 - Profanity detection → block question
