@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.211.1](https://github.com/cds-snc/ai-answers/compare/v1.211.0...v1.211.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* give password reset link 10 minutes and state lockout wait time ([7e26ed2](https://github.com/cds-snc/ai-answers/commit/7e26ed2ad8bbc5b4d32aa044b61eb12921059b36))
+* give password reset link 10 minutes and state lockout wait time ([7ae689f](https://github.com/cds-snc/ai-answers/commit/7ae689fc53eec5ba27519e62405b0382136c0da2))
+
+
+### Documentation
+
+* add password reset token change to auth hardening plan ([ee1c6f4](https://github.com/cds-snc/ai-answers/commit/ee1c6f4bb21d3aaf02e6724b3824afede2512611))
+* link reset comment to F6, retitle auth plan ([4dfaffb](https://github.com/cds-snc/ai-answers/commit/4dfaffb05bb4a26bafc0f27fb548401e572561ba))
+
+
+### Styles
+
+* adjust spacing on 2FA code screen ([53f4ffe](https://github.com/cds-snc/ai-answers/commit/53f4ffebce1ef04223f767538f8d58178d4566d8))
+* use small checkbox for remember-device option ([ed4ed88](https://github.com/cds-snc/ai-answers/commit/ed4ed88b2b03da89d24e49d8a47f0e485510e43f))
+
 ## [1.211.0](https://github.com/cds-snc/ai-answers/compare/v1.210.2...v1.211.0) (2026-10-27)
 
 
