@@ -1124,10 +1124,11 @@
       "submitting": "Envoi...",
       "success": "Nous avons mis à jour votre mot de passe.",
       "error": "Échec de la réinitialisation du mot de passe.",
-      "invalid": "Lien de réinitialisation invalide.",
+      "invalid": "Ce lien de réinitialisation est incomplet. Copiez le lien complet de votre courriel ou demandez un nouveau lien de réinitialisation.",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
-      "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
+      "invalidCode": "Ce lien de réinitialisation ne fonctionne plus. Il a peut-être expiré ou déjà été utilisé. Demandez un nouveau lien de réinitialisation.",
+      "requestNewLink": "Demander un nouveau lien de réinitialisation"
     }
   },
   "account": {

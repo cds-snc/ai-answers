@@ -1111,10 +1111,11 @@
       "submitting": "Submitting...",
       "success": "We've updated your password.",
       "error": "Failed to reset password.",
-      "invalid": "Invalid reset link.",
+      "invalid": "This reset link is incomplete. Copy the full link from your email, or get a new reset link.",
       "passwordTooShort": "Password must be at least 8 characters.",
       "passwordMismatch": "Passwords do not match.",
-      "invalidCode": "Invalid or expired code. Please try again."
+      "invalidCode": "This reset link no longer works. It may have expired or been used already. Get a new reset link.",
+      "requestNewLink": "Get a new reset link"
     }
   },
   "signup": {

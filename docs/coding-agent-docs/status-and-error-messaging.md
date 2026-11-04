@@ -84,8 +84,8 @@ If existing markup is too bespoke for `StatusMessage`'s message/`children` shape
 
 `StatusMessage` doesn't move focus by default — most callers render it beside the trigger, so the announcement is enough. Two cases need focus moved:
 
-- **No adjacent trigger** — a check on mount (an invalid/expired link: `ResetCompletePage.js`).
-- **The trigger loses focus** — a Save button that disables itself drops focus to `<body>` (`ScenarioOverridesPage.js`'s `saveFocusCount`).
+- **No adjacent trigger** — a check on mount (a reset link missing parts: `ResetCompletePage.js`).
+- **The trigger loses focus** — a Save button that disables itself drops focus to `<body>` (`ScenarioOverridesPage.js`'s `saveFocusCount`), or a submit button that disables itself while the request runs and a form that hides itself after (`ResetCompletePage.js`, where every outcome is focused, so its error box shares one counter across the on-mount check and every submit error).
 
 Give the `StatusMessage` its own `useFocusOnChange(counter)` ref and `tabIndex={-1}`, driven by a counter dedicated to that one trigger — don't switch it to `AnnouncedError` to borrow its focus-move, and don't share the counter with other outcomes on the page. Two non-optional companions: `announce={false}`, and drive focus from the effect, not a synchronous `.focus()` after `setStatus(...)` (the element isn't rendered yet).
 
@@ -114,7 +114,7 @@ If the error text varies per failure, `useState` is fine but `errorCount` still 
 
 **Never show a raw `err.message`/`error.message` directly to the user.** It's untranslated English from a JS `Error`/`fetch()` rejection, often irrelevant. `err.message || t('fallback')` doesn't help — `.message` is always truthy. Two alternatives:
 
-1. **A stable backend `code`, not free text**, mapped to a `t()` key via `resolveErrorMessage()` (`src/utils/errorCodeMessage.js`; `ResetCompletePage.js` is the reference).
+1. **A stable backend `code`, not free text**, mapped to a `t()` key via `resolveErrorMessage()` (`src/utils/errorCodeMessage.js`; `BatchUpload.js` is the reference).
 2. **Wrap the raw detail in `<code lang="en">`** inside an otherwise-translated template when the detail is genuinely useful (admin/diagnostic tooling): AT pronounces it as English and `global.css`'s `code {}` gives monospace for free. See `DeleteChatSection.js`'s `resolveLook()`. A `t()` string with `.replace('{placeholder}', …)` is *not* equivalent — a plain string can't carry `lang="en"`.
 
 **For the `{ prefix, suffix, detail, isError }` shape, use `src/hooks/useErrorStatus.js`**: `const { buildErrorStatus, renderStatusMessage } = useErrorStatus(t);` once per page. `buildErrorStatus(key, error, otherPlaceholders)` takes the raw error object; `renderStatusMessage(status, successVariant)` renders it (`successVariant` defaults to `'success'`; pass `'info'` for a neutral confirmation). `DatabasePage.js` and `SettingsPage.js` use it — don't rebuild it inline.
