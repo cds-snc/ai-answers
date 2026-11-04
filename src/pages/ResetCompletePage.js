@@ -17,6 +17,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const [searchParams] = useSearchParams();
   const code = searchParams.get('code');
   const email = searchParams.get('email');
+  const linkMissing = !code || !email;
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const { successMessage, setSuccessMessage, systemError, setSystemError, clearMessages } = useAuthOutcomeMessages();
@@ -84,10 +85,18 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     <div className="auth-login-container">
       <h1>{t('reset.complete.title')}</h1>
       <StatusMessage variant="success" message={successMessage} />
-      {/* announce={false}: focus is moved here on mount (invalidLinkRef), and
-          focus landing on it already reads it — a live announcement on top
-          would be a double read. */}
-      <StatusMessage variant="error" message={systemError} ref={invalidLinkRef} tabIndex={-1} announce={false} announcedVia="focus" />
+      {/* A broken link moves focus here on mount (invalidLinkRef), which
+          reads it, so it isn't announced too. Submit errors (the only other
+          errors, since the form needs a full link) leave focus on the
+          button, so they're announced. Same split as UsersPage. */}
+      <StatusMessage
+        variant="error"
+        message={systemError}
+        ref={invalidLinkRef}
+        tabIndex={-1}
+        announce={!linkMissing}
+        announcedVia={linkMissing ? 'focus' : undefined}
+      />
       {error && (
         <AnnouncedError id="reset-complete-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
