@@ -107,9 +107,9 @@ const PROFILE_FIELDS = { email: 1, role: 1, active: 1, ...MEMBERSHIP_FIELDS };
 
 // What the admin Users page shows, for listUsers and adminUpdateUser (the
 // page swaps the saved row for the PATCH response). An allowlist, not
-// '-password': the document also holds resetPasswordSecret (enough to mint
-// valid reset codes), 2FA codes and lockout counters. No .lean(): hydrating
-// fills schema defaults, so older users without institution/group get ''.
+// '-password': the document also holds the reset token hash, 2FA codes and
+// lockout counters. No .lean(): hydrating fills schema defaults, so older
+// users without institution/group get ''.
 const ADMIN_USER_FIELDS = '_id email role active institution group createdAt';
 
 const toProfile = (user) => ({

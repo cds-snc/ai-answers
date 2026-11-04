@@ -5,7 +5,7 @@ import { User } from '../../../models/user.js';
 import UserService from '../../../services/UserService.js';
 
 // The Users page only needs these. Everything else on a user document -
-// resetPasswordSecret, 2FA codes, lockout counters - must never reach the
+// reset token hash, 2FA codes, lockout counters - must never reach the
 // browser, so both responses that feed the page are checked against an
 // exact key list rather than for the absence of a few known secrets.
 const ALLOWED = ['_id', 'active', 'createdAt', 'email', 'group', 'institution', 'role'];
@@ -40,8 +40,7 @@ async function makeUserWithSecrets(overrides = {}) {
     password: 'password123',
     role: 'partner',
     active: true,
-    resetPasswordSecret: 'reset-secret',
-    resetPasswordAttempts: 2,
+    resetPasswordTokenHash: 'reset-token-hash',
     twoFACode: 'hashed-code',
     twoFASecret: 'legacy-secret',
     twoFAAttempts: 1,

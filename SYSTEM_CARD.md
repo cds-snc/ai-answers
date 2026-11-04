@@ -272,7 +272,7 @@ Both mechanisms are implemented as selectable pipeline variants ("graphs"), requ
 - **Admin users**: Full system access including user management, database operations, and system configuration
 - **Partner users**: Access to suite of evaluation tools and reports to score sentences and citation for chat responses, batch processing, and performance metrics
 - **Accounts**: The first account created becomes an administrator. Every later signup is created as a partner and stays inactive until an administrator activates it. Administrators can also change roles, assign an institution and group, deactivate or delete accounts.
-- **Authentication**: Email and password sign-in, with optional one-time email verification codes (sent through GC Notify) that administrators can turn on in Settings. Repeated failed sign-in or verification attempts lock the account temporarily. Password reset uses a time-limited emailed link and locks out after repeated failed attempts. Session length is configurable.
+- **Authentication**: Email and password sign-in, with optional one-time email verification codes (sent through GC Notify) that administrators can turn on in Settings. Repeated failed sign-in or verification attempts lock the account temporarily. Password reset uses an emailed link that expires and works only once. The link carries a long random code that can't be guessed. Session length is configurable.
 - **Access enforcement**: Roles are checked on the server for every admin and partner request, not only by hiding pages in the interface.
 
 ### Admin tools
