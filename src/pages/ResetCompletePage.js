@@ -5,9 +5,8 @@ import AuthService from '../services/AuthService.js';
 import { getPath } from '../utils/routes.js';
 import PasswordInput from '../components/auth/PasswordInput.js';
 import AnnouncedError from '../components/auth/AnnouncedError.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
-import { useAuthOutcomeMessages } from '../hooks/auth/useAuthOutcomeMessages.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 import { meetsPasswordRule } from '../utils/auth/passwordRule.js';
 
@@ -24,36 +23,30 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   const linkDead = linkMissing || linkRefused;
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const { successMessage, setSuccessMessage, systemError, setSystemError, clearMessages } = useAuthOutcomeMessages();
   const { error, errorCount, errorRef, setError, clearError, validate, isFieldInvalid } = useAuthFormValidation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Every outcome here moves focus to its message (useFocusOnChange, the
-  // mechanism AnnouncedError uses), because none has a focused control left
-  // to stay on: a link missing parts is caught on mount, before the user has
-  // done anything; and a submit disables the button (native disabled drops
-  // focus to <body>), then either hides the form (success, refused link) or
-  // leaves the user to start again. Focus reads the message, so neither box
-  // is announced too. Counters, not booleans, so a repeat failure with the
-  // same text moves focus again.
-  const [errorFocusCount, setErrorFocusCount] = useState(0);
-  const systemErrorRef = useFocusOnChange(errorFocusCount);
-  const [successFocusCount, setSuccessFocusCount] = useState(0);
-  const successRef = useFocusOnChange(successFocusCount);
-  const showSystemError = (message) => {
-    setSystemError(message);
-    setErrorFocusCount((n) => n + 1);
-  };
+  // Outcomes no field is at fault for (link missing parts, link refused,
+  // failure, success). A status, not a form error. Every one moves focus to
+  // the message, because none has a focused control left to stay on: a link
+  // missing parts is caught on mount, before the user has done anything; and
+  // a submit disables the button, which drops focus to <body>, then either
+  // hides the form (success, refused link) or leaves it for a retry. Focus
+  // reads the message, so announce={false}. Repeatable, so the same failure
+  // twice in a row moves focus again. Same pattern as LoginPage.
+  const { message: statusText, variant: statusVariant, nonce: statusNonce, announce: showStatus, clear: clearStatus } = useRepeatableStatus();
+  const statusRef = useFocusOnChange(statusNonce);
+  const succeeded = statusVariant === 'success';
 
   useEffect(() => {
     if (!code || !email) {
-      showSystemError(t('reset.complete.invalid'));
+      showStatus(t('reset.complete.invalid'), { variant: 'error' });
     }
-  }, [code, email, t]);
+  }, [code, email, t, showStatus]);
 
   const submit = async (e) => {
     e && e.preventDefault();
-    clearMessages();
+    clearStatus();
     clearError();
     if (!validate({ password, confirm }, t)) {
       return;
@@ -69,8 +62,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
     setIsLoading(true);
     try {
       await AuthService.resetPassword({ email, code, password });
-      setSuccessMessage(t('reset.complete.success'));
-      setSuccessFocusCount((n) => n + 1);
+      showStatus(t('reset.complete.success'), { variant: 'success' });
     } catch (err) {
       // The server refused the password. The page checks the same rule first,
       // so this only happens with a stale page bundle; it's still the
@@ -84,10 +76,10 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       // so it goes through StatusMessage, not AnnouncedError.
       if (err.code === 'RESET_INVALID_CODE') {
         setLinkRefused(true);
-        showSystemError(t('reset.complete.invalidCode'));
+        showStatus(t('reset.complete.invalidCode'), { variant: 'error' });
         return;
       }
-      showSystemError(t('reset.complete.error'));
+      showStatus(t('reset.complete.error'), { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -96,21 +88,10 @@ const ResetCompletePage = ({ lang = 'en' }) => {
   return (
     <div className="auth-login-container">
       <h1>{t('reset.complete.title')}</h1>
-      {/* Both boxes are focused when they appear (see errorFocusCount), which
-          reads them, so neither is announced too. */}
       <StatusMessage
-        variant="success"
-        message={successMessage}
-        ref={successRef}
-        tabIndex={-1}
-        className="focus-target"
-        announce={false}
-        announcedVia="focus"
-      />
-      <StatusMessage
-        variant="error"
-        message={systemError}
-        ref={systemErrorRef}
+        variant={statusVariant}
+        message={statusText}
+        ref={statusRef}
         tabIndex={-1}
         className="focus-target"
         announce={false}
@@ -119,7 +100,7 @@ const ResetCompletePage = ({ lang = 'en' }) => {
       {error && (
         <AnnouncedError id="reset-complete-error" message={error} errorCount={errorCount} inputRef={errorRef} />
       )}
-      {!linkDead && !successMessage && (
+      {!linkDead && !succeeded && (
         <form onSubmit={submit} noValidate>
           {/* No code/OTP field — link verification is sufficient to set a new password */}
           <PasswordInput
