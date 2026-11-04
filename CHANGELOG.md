@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.212.0](https://github.com/cds-snc/ai-answers/compare/v1.211.1...v1.212.0) (2026-11-04)
+
+
+### Features
+
+* password reset refactor ([e81ceb7](https://github.com/cds-snc/ai-answers/commit/e81ceb70f3423b1841c7156450152530ef738180))
+* password reset refactor - tested in preview ([9079ddb](https://github.com/cds-snc/ai-answers/commit/9079ddb5f61b3fcdcc851621694876fd740190f4))
+
+
+### Bug Fixes
+
+* announce reset errors after submit ([824b0cc](https://github.com/cds-snc/ai-answers/commit/824b0cc8ecbd08616556df77a379dbf4c9704bbd))
+* per Jennifer review ([0dbb319](https://github.com/cds-snc/ai-answers/commit/0dbb319f224bbef625683512af2f459fce620cec))
+
+
+### Code Refactoring
+
+* use useRepeatableStatus on reset page ([b652b28](https://github.com/cds-snc/ai-answers/commit/b652b28e3fc039f3a184c694748a5d56b22b948c))
+
 ## [1.211.1](https://github.com/cds-snc/ai-answers/compare/v1.211.0...v1.211.1) (2026-10-29)
 
 
