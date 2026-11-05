@@ -72,6 +72,33 @@ describe('feedback-expert-never-stale', () => {
     expect(calledFeedback).toMatchObject({ neverStale: true, totalScore: 90 });
   });
 
+  it('does not write an old score over an edit that lands during the toggle', async () => {
+    const feedback = await ExpertFeedback.create({ totalScore: 90, expertEmail: 'author@canada.ca' });
+    const interaction = await Interaction.create({ expertFeedback: feedback._id });
+    const { insertedId: embeddingId } = await Embedding.collection.insertOne({
+      interactionId: interaction._id,
+      expertFeedbackId: feedback._id,
+      expertFeedbackTotalScore: 90,
+      expertFeedbackCreatedAt: new Date(),
+    });
+    // The edit lands after the toggle loaded its copy, before it syncs.
+    const realSave = ExpertFeedback.prototype.save;
+    const saveSpy = vi.spyOn(ExpertFeedback.prototype, 'save').mockImplementationOnce(async function save(...args) {
+      const saved = await realSave.apply(this, args);
+      await ExpertFeedback.updateOne({ _id: feedback._id }, { $set: { totalScore: 40 } });
+      return saved;
+    });
+
+    const res = await runPost({ interactionId: interaction._id.toString(), neverStale: true });
+    saveSpy.mockRestore();
+
+    expect(res.statusCode).toBe(200);
+    const embedding = await Embedding.collection.findOne({ _id: embeddingId });
+    expect(embedding.expertFeedbackTotalScore).toBe(40);
+    expect(embedding.expertFeedbackNeverStale).toBe(true);
+    expect(mockVectorUpdate.mock.calls[0][1]).toMatchObject({ totalScore: 40, neverStale: true });
+  });
+
   it('turns the flag back off', async () => {
     const feedback = await ExpertFeedback.create({ totalScore: 90, neverStale: true });
     const interaction = await Interaction.create({ expertFeedback: feedback._id });

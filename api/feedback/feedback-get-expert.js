@@ -35,7 +35,7 @@ async function feedbackGetExpertHandler(req, res) {
         });
       }
     }
-    return res.status(200).json({ expertFeedback: ef, sentences, canEdit: canEditExpertFeedback(req.user, ef), message: 'OK' });
+    return res.status(200).json({ expertFeedback: ef, sentences, canEdit: await canEditExpertFeedback(req.user, ef), message: 'OK' });
   } catch (err) {
     console.error('Error fetching expert feedback:', err);
     return res.status(500).json({ message: 'Failed to retrieve expert feedback', error: err.message });

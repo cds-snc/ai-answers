@@ -1,6 +1,7 @@
 
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { VectorService } from '../../services/VectorServiceFactory.js';
 import { Embedding } from '../../models/embedding.js';
@@ -8,6 +9,9 @@ import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
 import { requireString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
+import {
+  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidScore, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
+} from '../util/expert-feedback-scoring.js';
 
 async function feedbackPersistExpertHandler(req, res) {
   if (req.method !== 'POST') {
@@ -17,8 +21,12 @@ async function feedbackPersistExpertHandler(req, res) {
   try {
     await dbConnect();
     let { chatId, interactionId, expertFeedback } = req.body;
-    if (!chatId || !interactionId || !expertFeedback) {
+    if (!chatId || !interactionId || !expertFeedback || typeof expertFeedback !== 'object') {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+    const invalidScore = findInvalidScore(expertFeedback, { allowMissing: true });
+    if (invalidScore) {
+      return res.status(400).json({ message: `Invalid field: ${invalidScore}` });
     }
     chatId = requireString(chatId, 'chatId');
     let chat = await Chat.findOne({ chatId }).populate({ path: 'interactions' });
@@ -29,15 +37,40 @@ async function feedbackPersistExpertHandler(req, res) {
     if (!existingInteraction) {
       return res.status(404).json({ message: 'Interaction not found' });
     }
+    // Never replace a review: an answer gets one, changed only through
+    // feedback-update-expert. Another expert may have saved since this form opened.
+    const alreadyReviewed = () => res.status(409).json({
+      message: 'This answer already has an expert evaluation',
+      code: 'EXPERT_FEEDBACK_ALREADY_EXISTS',
+    });
+    if (existingInteraction.expertFeedback) {
+      return alreadyReviewed();
+    }
     let expertFeedbackDoc = new ExpertFeedback();
-    Object.assign(expertFeedbackDoc, expertFeedback);
+    // Only what the expert form rates. Everything else is set by the server, so
+    // a request can't set type, edit history, neverStale or answerImprovement.
+    for (const field of [...SCORE_FIELDS, ...TEXT_FIELDS, ...FLAG_FIELDS]) {
+      if (expertFeedback[field] !== undefined) expertFeedbackDoc[field] = expertFeedback[field];
+    }
+    expertFeedbackDoc.type = 'expert';
+    expertFeedbackDoc.totalScore = computeTotalScore(expertFeedback, await getAnswerSentenceCount(existingInteraction.answer));
+    expertFeedbackDoc.feedback = feedbackLabel(expertFeedbackDoc.totalScore);
     // Attach expertEmail if available (req.user set by authMiddleware)
     if (req.user && req.user.email) {
       expertFeedbackDoc.expertEmail = req.user.email;
     }
-    existingInteraction.expertFeedback = expertFeedbackDoc._id;
     await expertFeedbackDoc.save();
-    await existingInteraction.save();
+    // Linked in one atomic step, so of two saves at the same moment only one
+    // wins. Both forms are spelled out rather than relying on null matching a
+    // missing field, which DocumentDB may not treat the same as MongoDB.
+    const linked = await Interaction.findOneAndUpdate(
+      { _id: existingInteraction._id, $or: [{ expertFeedback: null }, { expertFeedback: { $exists: false } }] },
+      { $set: { expertFeedback: expertFeedbackDoc._id } }
+    );
+    if (!linked) {
+      await ExpertFeedback.deleteOne({ _id: expertFeedbackDoc._id });
+      return alreadyReviewed();
+    }
     await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc.toObject());
     // Add embedding to VectorService
     const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });

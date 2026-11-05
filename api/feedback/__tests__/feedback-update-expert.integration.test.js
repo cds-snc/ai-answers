@@ -1,15 +1,21 @@
-import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import handler from '../feedback-update-expert.js';
 import dbConnect from '../../db/db-connect.js';
 import { Interaction } from '../../../models/interaction.js';
 import { ExpertFeedback } from '../../../models/expertFeedback.js';
+import { ExpertFeedbackRevision } from '../../../models/expertFeedbackRevision.js';
+import { Embedding } from '../../../models/embedding.js';
+import { User } from '../../../models/user.js';
+import { QA_GROUP } from '../../../src/constants/partnerGroups.js';
 
 // Real database, unlike feedback-update-expert.test.js: proves the conflict
 // guard's findOneAndUpdate filter itself, which a mock can only assume.
 // Production is DocumentDB - see AGENTS.md before trusting this alone.
 
+const { mockVectorUpdate } = vi.hoisted(() => ({ mockVectorUpdate: vi.fn() }));
+
 vi.mock('../../../services/VectorServiceFactory.js', () => ({
-  VectorService: { updateExpertFeedbackMetadata: vi.fn() },
+  VectorService: { updateExpertFeedbackMetadata: mockVectorUpdate },
 }));
 vi.mock('../../../middleware/auth.js', () => ({
   authMiddleware: vi.fn(),
@@ -42,11 +48,13 @@ function createRes() {
   };
 }
 
+let qaAdmin;
+
 async function save({ interaction, feedbackId, expectedLastEditedAt, form }) {
   const res = createRes();
   await handler({
     method: 'POST',
-    user: { role: 'admin', email: 'qa@canada.ca' },
+    user: { userId: qaAdmin._id.toString(), role: 'admin', email: 'qa@canada.ca' },
     body: {
       interactionId: interaction._id.toString(),
       expertFeedbackId: feedbackId.toString(),
@@ -62,9 +70,18 @@ describe('feedback-update-expert against a real database', () => {
     await dbConnect();
   });
 
+  beforeEach(async () => {
+    qaAdmin = await User.create({ email: 'qa@canada.ca', password: 'x', role: 'admin', group: QA_GROUP });
+  });
+
   afterEach(async () => {
+    vi.restoreAllMocks();
+    mockVectorUpdate.mockClear();
+    await User.deleteMany({});
+    await ExpertFeedbackRevision.deleteMany({});
     await ExpertFeedback.collection.deleteMany({});
     await Interaction.deleteMany({});
+    await Embedding.collection.deleteMany({});
   });
 
   // Raw insert with no lastEditedAt field at all, like evaluations saved
@@ -123,5 +140,76 @@ describe('feedback-update-expert against a real database', () => {
 
     expect(res.statusCode).toBe(200);
     expect((await ExpertFeedback.findById(feedbackId).lean()).neverStale).toBe(true);
+  });
+
+  it('keeps what each edit changed, enough to step back through them', async () => {
+    const { interaction, feedbackId } = await legacyEvaluation();
+    const first = await save({ interaction, feedbackId, expectedLastEditedAt: null, form: fullForm({ sentence1Explanation: 'First' }) });
+    const { lastEditedAt } = JSON.parse(JSON.stringify(first.payload.expertFeedback));
+    await save({ interaction, feedbackId, expectedLastEditedAt: lastEditedAt, form: fullForm({ sentence1Score: 0, sentence1Explanation: 'Second' }) });
+
+    const revisions = await ExpertFeedbackRevision.find({ expertFeedbackId: feedbackId }).sort({ createdAt: 1, _id: 1 }).lean();
+
+    expect(revisions).toHaveLength(2);
+    expect(revisions[0].previous).toMatchObject({ totalScore: 100, sentence1Score: 100 });
+    expect(revisions[0].previous).not.toHaveProperty('expertEmail');
+    expect(revisions[1].previous).toEqual({ totalScore: 85, sentence1Score: 80, sentence1Explanation: 'First' });
+    expect(revisions[1].editedBy).toBe('qa@canada.ca');
+    expect(String(revisions[1].interactionId)).toBe(String(interaction._id));
+    expect(revisions[1].createdAt).toBeInstanceOf(Date);
+    expect((await ExpertFeedback.findById(feedbackId).lean()).sentence1Explanation).toBe('Second');
+  });
+
+  it('returns the saved values to the screen', async () => {
+    const { interaction, feedbackId } = await legacyEvaluation();
+
+    const res = await save({ interaction, feedbackId, expectedLastEditedAt: null, form: fullForm() });
+
+    const stored = await ExpertFeedback.findById(feedbackId).lean();
+    expect(res.payload.expertFeedback).toMatchObject({
+      totalScore: stored.totalScore, feedback: stored.feedback, lastEditedBy: stored.lastEditedBy, expertEmail: 'author@canada.ca',
+    });
+    expect(res.payload.expertFeedback.lastEditedAt).toEqual(stored.lastEditedAt);
+  });
+
+  it('removes the history when the interaction is deleted, and keeps it when only the review is', async () => {
+    const { interaction, feedbackId } = await legacyEvaluation();
+    await save({ interaction, feedbackId, expectedLastEditedAt: null, form: fullForm() });
+
+    await ExpertFeedback.deleteOne({ _id: feedbackId });
+    expect(await ExpertFeedbackRevision.countDocuments({ interactionId: interaction._id })).toBe(1);
+
+    await Interaction.deleteMany({ _id: interaction._id });
+    expect(await ExpertFeedbackRevision.countDocuments({ interactionId: interaction._id })).toBe(0);
+  });
+
+  it('does not put a deleted evaluation back on the search data when a delete lands right after the save', async () => {
+    const { interaction, feedbackId } = await legacyEvaluation();
+    // Raw insert: only the metadata fields matter here, not a valid vector.
+    const { insertedId: embeddingId } = await Embedding.collection.insertOne({
+      interactionId: interaction._id,
+      expertFeedbackId: feedbackId,
+      expertFeedbackTotalScore: 100,
+      expertFeedbackCreatedAt: new Date(),
+    });
+    // The delete lands between this edit's save and its sync.
+    const realUpdate = ExpertFeedback.findOneAndUpdate.bind(ExpertFeedback);
+    vi.spyOn(ExpertFeedback, 'findOneAndUpdate').mockImplementationOnce(async (...args) => {
+      const saved = await realUpdate(...args);
+      await Interaction.updateOne({ _id: interaction._id }, { $unset: { expertFeedback: 1 } });
+      await Embedding.collection.updateOne({ _id: embeddingId }, { $set: { expertFeedbackId: null, expertFeedbackTotalScore: null } });
+      await ExpertFeedback.deleteOne({ _id: feedbackId });
+      return saved;
+    });
+
+    const res = await save({ interaction, feedbackId, expectedLastEditedAt: null, form: fullForm() });
+
+    expect(res.statusCode).toBe(200);
+    const embedding = await Embedding.collection.findOne({ _id: embeddingId });
+    // Cleared metadata may be null or removed; either way the deleted ID is gone.
+    expect(embedding.expertFeedbackId ?? null).toBeNull();
+    expect(embedding.expertFeedbackTotalScore ?? null).toBeNull();
+    expect(mockVectorUpdate).toHaveBeenCalledTimes(1);
+    expect(mockVectorUpdate.mock.calls[0][1]).toBeNull();
   });
 });

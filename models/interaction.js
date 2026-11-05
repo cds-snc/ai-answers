@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { ASSIGN_NOTE_MAX_LENGTH } from '../src/constants/chatAssign.js';
+import { ExpertFeedbackRevision } from './expertFeedbackRevision.js';
 
 const InteractionSchema = new mongoose.Schema({
   interactionId: {
@@ -105,6 +106,7 @@ InteractionSchema.pre('deleteMany', async function () {
     Answer.deleteMany({ _id: { $in: answerIds } }),
     Question.deleteMany({ _id: { $in: questionIds } }),
     ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } }),
+    ExpertFeedbackRevision.deleteMany({ interactionId: { $in: interactions.map(i => i._id) } }),
     PublicFeedback.deleteMany({ _id: { $in: publicFeedbackIds } }),
     Context.deleteMany({ _id: { $in: contextIds } })
   ]);

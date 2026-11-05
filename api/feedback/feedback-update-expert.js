@@ -1,36 +1,37 @@
 import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
+import { ExpertFeedbackRevision } from '../../models/expertFeedbackRevision.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import EmbeddingMetadataService, { isAutoEvalFeedback } from '../../services/EmbeddingMetadataService.js';
-import { VectorService } from '../../services/VectorServiceFactory.js';
+import { isAutoEvalFeedback } from '../../services/EmbeddingMetadataService.js';
 import { canEditExpertFeedback } from '../util/expert-feedback-access.js';
+import {
+  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidScore, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
+} from '../util/expert-feedback-scoring.js';
+import { syncCurrentExpertFeedback } from '../util/expert-feedback-sync.js';
 
 // Only the rating fields the expert form edits. Never `type` (an edit must
 // not be able to turn a human evaluation into 'ai' or back), `expertEmail`
 // (the original author stays the author) or `neverStale` (own endpoint).
-// TODO: totalScore is computed in the browser (ExpertFeedbackComponent.js)
-// and stored as sent, and the scores are only checked to be numbers, not
-// allowed values. That score decides which answers are reused for live
-// answers. Recompute it here from the sentence/citation scores. Creating an
-// evaluation (feedback-persist-expert.js) trusts it the same way.
-const SCORE_FIELDS = ['sentence1Score', 'sentence2Score', 'sentence3Score', 'sentence4Score', 'citationScore', 'totalScore'];
-const TEXT_FIELDS = [
-  'sentence1Explanation', 'sentence2Explanation', 'sentence3Explanation', 'sentence4Explanation',
-  'citationExplanation', 'expertCitationUrl', 'feedback',
-];
-const FLAG_FIELDS = [
-  'sentence1Harmful', 'sentence2Harmful', 'sentence3Harmful', 'sentence4Harmful',
-  'sentence1ContentIssue', 'sentence2ContentIssue', 'sentence3ContentIssue', 'sentence4ContentIssue',
-];
+// `totalScore` and `feedback` are worked out below, not taken from the form.
 
 function findInvalidField(expertFeedback) {
-  const isScore = (v) => v === null || (typeof v === 'number' && Number.isFinite(v));
-  return SCORE_FIELDS.find((f) => !isScore(expertFeedback[f]))
+  return findInvalidScore(expertFeedback)
     || TEXT_FIELDS.find((f) => typeof expertFeedback[f] !== 'string')
     || FLAG_FIELDS.find((f) => typeof expertFeedback[f] !== 'boolean')
     || null;
+}
+
+// The old value of each field this edit changed. lastEditedBy/lastEditedAt are
+// left out: every history entry already says who edited and when.
+function changedOldValues(before, updates) {
+  const previous = {};
+  for (const field of Object.keys(updates)) {
+    if (field === 'lastEditedBy' || field === 'lastEditedAt') continue;
+    if ((before[field] ?? null) !== (updates[field] ?? null)) previous[field] = before[field] ?? null;
+  }
+  return previous;
 }
 
 async function feedbackUpdateExpertHandler(req, res) {
@@ -70,7 +71,7 @@ async function feedbackUpdateExpertHandler(req, res) {
     if (isAutoEvalFeedback(ef)) {
       return res.status(400).json({ message: 'Automated evaluations cannot be edited' });
     }
-    if (!canEditExpertFeedback(req.user, ef)) {
+    if (!await canEditExpertFeedback(req.user, ef)) {
       return res.status(403).json({ message: 'You can only edit your own expert evaluations' });
     }
 
@@ -91,23 +92,42 @@ async function feedbackUpdateExpertHandler(req, res) {
     for (const field of [...SCORE_FIELDS, ...TEXT_FIELDS, ...FLAG_FIELDS]) {
       updates[field] = expertFeedback[field];
     }
+    updates.totalScore = computeTotalScore(updates, await getAnswerSentenceCount(interaction.answer));
+    updates.feedback = feedbackLabel(updates.totalScore);
     updates.lastEditedBy = req.user.email || '';
     updates.lastEditedAt = new Date();
     // null also matches evaluations saved before lastEditedAt existed.
-    const saved = await ExpertFeedback.findOneAndUpdate(
+    // Returns the document as it was, so the history can't miss a change made
+    // since `ef` was read.
+    const before = await ExpertFeedback.findOneAndUpdate(
       { _id: ef._id, lastEditedAt: expectedDate },
       { $set: updates },
-      { new: true, lean: true }
+      { new: false, lean: true }
     );
-    if (!saved) {
+    if (!before) {
       return conflict();
+    }
+    const saved = { ...before, ...updates, updatedAt: updates.lastEditedAt };
+
+    // Also logged, not reported as a failed save: the edit itself went through.
+    try {
+      const previous = changedOldValues(before, updates);
+      if (Object.keys(previous).length > 0) {
+        await ExpertFeedbackRevision.create({
+          interactionId: interaction._id,
+          expertFeedbackId: ef._id,
+          editedBy: updates.lastEditedBy,
+          previous,
+        });
+      }
+    } catch (historyError) {
+      console.error('Expert feedback updated, but saving its history failed:', historyError);
     }
 
     // The edit is saved at this point; a failure keeping the search data in
     // step is logged, not reported as a failed save.
     try {
-      await EmbeddingMetadataService.syncForInteraction(interaction, saved);
-      VectorService?.updateExpertFeedbackMetadata(interaction._id, saved);
+      await syncCurrentExpertFeedback(interaction._id);
     } catch (syncError) {
       console.error('Expert feedback updated, but syncing search metadata failed:', syncError);
     }

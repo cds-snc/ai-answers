@@ -2,24 +2,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import handler from '../feedback-update-expert.js';
 import { canEditExpertFeedback } from '../../util/expert-feedback-access.js';
+import { QA_GROUP } from '../../../src/constants/partnerGroups.js';
 
-const { mockInteractionFindById, mockFeedbackFindById, mockFindOneAndUpdate, mockSync, mockVectorUpdate } = vi.hoisted(() => ({
+const { mockRevisionCreate, mockAnswerFindById, mockInteractionFindById, mockFeedbackFindById, mockFindOneAndUpdate, mockSync, mockUserFindById } = vi.hoisted(() => ({
+  mockRevisionCreate: vi.fn(),
+  mockAnswerFindById: vi.fn(),
   mockInteractionFindById: vi.fn(),
   mockFeedbackFindById: vi.fn(),
   mockFindOneAndUpdate: vi.fn(),
   mockSync: vi.fn(),
-  mockVectorUpdate: vi.fn(),
+  mockUserFindById: vi.fn(),
 }));
 
 vi.mock('../../db/db-connect.js', () => ({ default: vi.fn() }));
 vi.mock('../../../models/interaction.js', () => ({ Interaction: { findById: mockInteractionFindById } }));
 vi.mock('../../../models/expertFeedback.js', () => ({ ExpertFeedback: { findById: mockFeedbackFindById, findOneAndUpdate: mockFindOneAndUpdate } }));
-// Real isAutoEvalFeedback, so the AI-evaluation tests run the shared check.
-vi.mock('../../../services/EmbeddingMetadataService.js', async (importOriginal) => ({
-  ...(await importOriginal()),
-  default: { syncForInteraction: mockSync },
-}));
-vi.mock('../../../services/VectorServiceFactory.js', () => ({ VectorService: { updateExpertFeedbackMetadata: mockVectorUpdate } }));
+vi.mock('../../../models/expertFeedbackRevision.js', () => ({ ExpertFeedbackRevision: { create: mockRevisionCreate } }));
+vi.mock('../../../models/answer.js', () => ({ Answer: { findById: mockAnswerFindById } }));
+vi.mock('../../../models/user.js', () => ({ User: { findById: mockUserFindById } }));
+vi.mock('../../util/expert-feedback-sync.js', () => ({ syncCurrentExpertFeedback: mockSync }));
 vi.mock('../../../middleware/auth.js', () => ({
   authMiddleware: vi.fn(),
   partnerOrAdminMiddleware: vi.fn(),
@@ -28,11 +29,11 @@ vi.mock('../../../middleware/auth.js', () => ({
 
 const buildFeedbackDoc = (fields) => ({ lastEditedAt: null, ...fields });
 
-// Applies the $set like the database would, when the filter matches the doc.
-const updateLike = (doc) => mockFindOneAndUpdate.mockImplementation(async (filter, update) => {
+// Like the database: returns the document as it was, when the filter matches.
+const updateLike = (doc) => mockFindOneAndUpdate.mockImplementation(async (filter) => {
   const sameId = String(filter._id) === String(doc._id);
   const sameEdit = String(filter.lastEditedAt) === String(doc.lastEditedAt);
-  return sameId && sameEdit ? { ...doc, ...update.$set } : null;
+  return sameId && sameEdit ? doc : null;
 });
 
 // Every field the edit form sends.
@@ -44,22 +45,53 @@ const fullForm = () => ({
   sentence1ContentIssue: false, sentence2ContentIssue: false, sentence3ContentIssue: false, sentence4ContentIssue: false,
 });
 
+const storedUser = (user) => mockUserFindById.mockReturnValue({ lean: async () => user });
+
 describe('canEditExpertFeedback', () => {
-  const ef = { expertEmail: 'Author@canada.ca' };
-  it('lets an admin edit anyone', () => {
-    expect(canEditExpertFeedback({ role: 'admin', email: 'qa@canada.ca' }, ef)).toBe(true);
+  const ef = { expertEmail: 'author@canada.ca' };
+  const sessionUser = { userId: 'u1', role: 'admin', email: 'author@canada.ca' };
+
+  it("lets a QA admin edit anyone's", async () => {
+    storedUser({ role: 'admin', group: QA_GROUP, email: 'qa@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(true);
   });
-  it('lets a partner edit their own, ignoring case', () => {
-    expect(canEditExpertFeedback({ role: 'partner', email: 'author@canada.ca' }, ef)).toBe(true);
+  it('lets a partner edit their own, ignoring case', async () => {
+    storedUser({ role: 'partner', group: '', email: 'author@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, { expertEmail: ' Author@canada.ca ' })).toBe(true);
   });
-  it("refuses a partner editing someone else's", () => {
-    expect(canEditExpertFeedback({ role: 'partner', email: 'other@canada.ca' }, ef)).toBe(false);
+  it('lets an admin outside the QA group edit their own', async () => {
+    storedUser({ role: 'admin', group: '', email: 'author@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(true);
   });
-  it('refuses a partner when the evaluation has no author email', () => {
-    expect(canEditExpertFeedback({ role: 'partner', email: '' }, { expertEmail: '' })).toBe(false);
+  it("refuses a partner editing someone else's", async () => {
+    storedUser({ role: 'partner', group: '', email: 'other@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(false);
   });
-  it('refuses everyone, admins included, on an automated evaluation', () => {
-    expect(canEditExpertFeedback({ role: 'admin', email: 'qa@canada.ca' }, { type: 'ai' })).toBe(false);
+  it("refuses a partner in the QA group editing someone else's", async () => {
+    storedUser({ role: 'partner', group: QA_GROUP, email: 'other@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(false);
+  });
+  it("refuses an admin outside the QA group editing someone else's", async () => {
+    storedUser({ role: 'admin', group: 'Military transitions', email: 'other@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(false);
+  });
+  it('leaves an evaluation with no author to QA admins', async () => {
+    storedUser({ role: 'partner', group: '', email: 'other@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, { expertEmail: '' })).toBe(false);
+    storedUser({ role: 'admin', group: QA_GROUP, email: 'qa@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, { expertEmail: '' })).toBe(true);
+  });
+  it('uses the stored role and email, not the ones saved at login', async () => {
+    storedUser({ role: 'partner', group: QA_GROUP, email: 'other@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(false);
+  });
+  it('refuses when the account no longer exists', async () => {
+    storedUser(null);
+    expect(await canEditExpertFeedback(sessionUser, ef)).toBe(false);
+  });
+  it('refuses everyone, QA admins included, on an automated evaluation', async () => {
+    storedUser({ role: 'admin', group: QA_GROUP, email: 'qa@canada.ca' });
+    expect(await canEditExpertFeedback(sessionUser, { type: 'ai' })).toBe(false);
   });
 });
 
@@ -71,11 +103,13 @@ describe('feedback-update-expert API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     const efId = new mongoose.Types.ObjectId();
-    interaction = { _id: new mongoose.Types.ObjectId(), expertFeedback: efId };
+    interaction = { _id: new mongoose.Types.ObjectId(), expertFeedback: efId, answer: new mongoose.Types.ObjectId() };
     mockInteractionFindById.mockResolvedValue(interaction);
+    mockAnswerFindById.mockReturnValue({ lean: async () => ({ sentences: ['One sentence.'] }) });
+    storedUser({ role: 'admin', group: QA_GROUP });
     req = {
       method: 'POST',
-      user: { role: 'partner', email: 'author@canada.ca' },
+      user: { userId: 'u1', role: 'admin', email: 'author@canada.ca' },
       body: {
         interactionId: interaction._id.toString(),
         expertFeedbackId: efId.toString(),
@@ -105,8 +139,134 @@ describe('feedback-update-expert API', () => {
       lastEditedBy: 'author@canada.ca',
     });
     expect(saved.lastEditedAt).toBeInstanceOf(Date);
-    expect(mockSync).toHaveBeenCalledWith(interaction, expect.objectContaining({ totalScore: 85 }));
-    expect(mockVectorUpdate).toHaveBeenCalledWith(interaction._id, expect.objectContaining({ totalScore: 85 }));
+    expect(mockSync).toHaveBeenCalledWith(interaction._id);
+  });
+
+  it('sets the label from the score, ignoring what the form sends', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca', feedback: 'positive' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+
+    req.body.expertFeedback = { ...fullForm(), feedback: 'negative' };
+    await handler(req, res);
+    expect(res.json.mock.calls[0][0].expertFeedback.feedback).toBe('positive');
+
+    req.body.expertFeedback = { ...fullForm(), sentence1Score: 80, feedback: 'positive' };
+    await handler(req, res);
+    expect(res.json.mock.calls[1][0].expertFeedback.feedback).toBe('negative');
+  });
+
+  it('saves only the old values of what changed, and who changed it', async () => {
+    const doc = buildFeedbackDoc({
+      ...fullForm(), _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca',
+      sentence1Score: 100, totalScore: 100, feedback: 'positive', lastEditedBy: '',
+    });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+
+    await handler(req, res);
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreate).toHaveBeenCalledWith({
+      interactionId: interaction._id,
+      expertFeedbackId: doc._id,
+      editedBy: 'author@canada.ca',
+      previous: { sentence1Score: 100, sentence1Explanation: '', totalScore: 100, feedback: 'positive' },
+    });
+  });
+
+  it('saves no history when the edit changes nothing', async () => {
+    const doc = buildFeedbackDoc({
+      ...fullForm(), _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca',
+      totalScore: 100, feedback: 'positive',
+    });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    req.body.expertFeedback = fullForm();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+  });
+
+  it('still reports success when the edit saved but the history did not', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    mockRevisionCreate.mockRejectedValueOnce(new Error('history down'));
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(logged).toHaveBeenCalled();
+    expect(mockSync).toHaveBeenCalled();
+  });
+
+  it('saves no history when the edit is refused', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca', lastEditedAt: new Date('2026-10-08T12:00:00Z') });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+  });
+
+  it('calculates the total itself, ignoring the one the form sends', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    req.body.expertFeedback = { ...fullForm(), sentence1Score: 0, totalScore: 100 };
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0][0].expertFeedback).toMatchObject({ totalScore: 25, feedback: 'negative' });
+  });
+
+  it('averages over the sentences the answer has', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    mockAnswerFindById.mockReturnValue({ lean: async () => ({ sentences: ['One.', 'Two.'] }) });
+    req.body.expertFeedback = { ...fullForm(), sentence1Score: 0 };
+
+    await handler(req, res);
+
+    expect(res.json.mock.calls[0][0].expertFeedback.totalScore).toBe(62.5);
+  });
+
+  it.each([
+    ['sentence1Score', -5],
+    ['sentence1Score', 50],
+    ['sentence4Score', 25],
+    ['citationScore', 100],
+  ])('rejects %s of %s, which the form can never send', async (field, value) => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    req.body.expertFeedback = { ...fullForm(), [field]: value };
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: `Missing or invalid field: ${field}` });
+    expect(mockFindOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('saves when the form sends no label', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    req.body.expertFeedback = { ...fullForm(), totalScore: 100 };
+    delete req.body.expertFeedback.feedback;
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0][0].expertFeedback.feedback).toBe('positive');
   });
 
   it('rejects a save with a missing field instead of clearing it', async () => {
@@ -135,8 +295,10 @@ describe('feedback-update-expert API', () => {
   });
 
   it("returns 403 and saves nothing when a partner edits someone else's evaluation", async () => {
-    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'other@canada.ca' });
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
     mockFeedbackFindById.mockResolvedValue(doc);
+    storedUser({ role: 'partner', group: '', email: 'other@canada.ca' });
+    req.user.role = 'partner';
 
     await handler(req, res);
 
@@ -146,7 +308,6 @@ describe('feedback-update-expert API', () => {
   });
 
   it('refuses to edit an automated (ai) evaluation, even for an admin', async () => {
-    req.user = { role: 'admin', email: 'qa@canada.ca' };
     const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: 'ai', expertEmail: '' });
     mockFeedbackFindById.mockResolvedValue(doc);
 
@@ -167,7 +328,6 @@ describe('feedback-update-expert API', () => {
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'EXPERT_FEEDBACK_CONFLICT' }));
     expect(mockSync).not.toHaveBeenCalled();
-    expect(mockVectorUpdate).not.toHaveBeenCalled();
   });
 
   it('saves when the edit time it loaded is still the latest', async () => {

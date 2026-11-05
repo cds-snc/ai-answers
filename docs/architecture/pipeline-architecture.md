@@ -697,8 +697,8 @@ of the *judgement*, not of the conversation.
 
 Editing an evaluation
 ([`api/feedback/feedback-update-expert.js`](../../api/feedback/feedback-update-expert.js))
-updates the same `ExpertFeedback` document in place — admins can edit any, partners only
-their own (`expertEmail` match; the rule is
+updates the same `ExpertFeedback` document in place — its author or an admin in the AI Answers
+QA group can edit (the rule is
 [`api/util/expert-feedback-access.js`](../../api/util/expert-feedback-access.js), sent to the
 screen as `canEdit` by `feedback-get-expert`). `expertEmail`, `type` and `createdAt` are kept;
 the editor and time go in `lastEditedBy`/`lastEditedAt`. It re-runs step 2, then
@@ -709,6 +709,22 @@ The "never stale" toggle and deleting an evaluation go through the same
 `updateExpertFeedbackMetadata` (delete passes no feedback, which drops the interaction's
 entries), so the in-memory `IMVectorService` never keeps serving a changed or deleted
 evaluation. `DocDBVectorService` reads the `Embedding` metadata directly, so it's a no-op there.
+
+Creating and editing an evaluation accept only the form's rating options. The server works out
+`totalScore` and the `feedback` label itself
+([`api/util/expert-feedback-scoring.js`](../../api/util/expert-feedback-scoring.js)), ignoring any
+values in the request, and 100 is the only score labelled `positive`. Creating never replaces an
+existing evaluation: a second save returns 409 `EXPERT_FEEDBACK_ALREADY_EXISTS`.
+
+Each edit that changes something also saves the old values of the changed fields, with the editor,
+to [`models/expertFeedbackRevision.js`](../../models/expertFeedbackRevision.js), so it can be undone
+by hand. Nothing reads this collection to build answers or search data. It's kept if the evaluation
+is deleted and removed with its interaction.
+
+Edit and "never stale" sync through
+[`api/util/expert-feedback-sync.js`](../../api/util/expert-feedback-sync.js), which re-reads the
+evaluation first. This makes it unlikely, but not impossible, that an edit or delete landing at
+the same moment gets overwritten with older values.
 
 Older interactions are brought up to date by the backfill job
 ([`services/EmbeddingMetadataBackfillJobService.js`](../../services/EmbeddingMetadataBackfillJobService.js),
