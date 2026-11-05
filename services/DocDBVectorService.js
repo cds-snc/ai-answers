@@ -602,6 +602,14 @@ class DocDBVectorService {
     // Intentionally a no-op for DocDB.
     return;
   }
+
+  /**
+   * No-op in DocDB service: searches read the Embedding metadata that
+   * EmbeddingMetadataService keeps current. Kept for parity with IMVectorService.
+   */
+  updateExpertFeedbackMetadata() {
+    return;
+  }
 }
 
 export default DocDBVectorService;
