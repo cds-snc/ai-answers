@@ -1484,6 +1484,7 @@
     "cancelExpertFeedbackEdits": "Cancel editing",
     "expertFeedbackUpdated": "Expert evaluation updated.",
     "expertFeedbackSaveFailed": "Unable to save your changes. Try again.",
+    "expertFeedbackAlreadyReviewed": "This answer already has an evaluation, so yours wasn't saved. Reload the page to see it.",
     "neverStaleOn": "Never stale turned on.",
     "neverStaleOff": "Never stale turned off.",
     "neverStaleFailed": "Unable to change Never stale. Try again.",

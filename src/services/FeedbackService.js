@@ -30,8 +30,10 @@ class FeedbackService {
       body: JSON.stringify({ chatId, interactionId, expertFeedback: formattedExpertFeedback })
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to persist expert feedback');
+      const data = await response.json();
+      const err = new Error(data.message || 'Failed to persist expert feedback');
+      if (data.code) err.code = data.code;
+      throw err;
     }
     return await response.json();
   }

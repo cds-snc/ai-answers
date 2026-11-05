@@ -28,7 +28,7 @@ import FeedbackComponent from '../FeedbackComponent.js';
 
 afterEach(() => {
   cleanup();
-  mockPersistExpertFeedback.mockClear();
+  mockPersistExpertFeedback.mockReset();
 });
 
 const renderComponent = (props = {}) => {
@@ -101,7 +101,7 @@ describe('FeedbackComponent — source text view', () => {
     expect(screen.queryByRole('button', { name: 'homepage.expertRating.submit' })).toBeNull();
   });
 
-  it('persists positive expert feedback and shows the thank-you message when "Good" is chosen from inside the source-text view', () => {
+  it('persists positive expert feedback and shows the thank-you message when "Good" is chosen from inside the source-text view', async () => {
     mockUseHasAnyRole.mockReturnValue(true);
     renderComponent(sourceProps);
 
@@ -113,7 +113,7 @@ describe('FeedbackComponent — source text view', () => {
         expertFeedback: expect.objectContaining({ feedback: 'positive', totalScore: 100 }),
       })
     );
-    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+    expect(await screen.findByText('homepage.feedback.thankYou')).toBeTruthy();
   });
 
   it('opens the full detailed rating form when "Needs improvement" is chosen from inside the source-text view', () => {
@@ -144,7 +144,7 @@ describe('FeedbackComponent — source text view', () => {
 // `!message.interaction.expertFeedback` check never flipped and
 // ExpertFeedbackPanel's summary never appeared without a full page reload.
 describe('FeedbackComponent — expert eval submit hands off on next click', () => {
-  it('does not call onExpertFeedbackChange immediately after a quick "Good" submit', () => {
+  it('does not call onExpertFeedbackChange immediately after a quick "Good" submit', async () => {
     mockUseHasAnyRole.mockReturnValue(true);
     const onExpertFeedbackChange = vi.fn();
     renderComponent({
@@ -156,7 +156,7 @@ describe('FeedbackComponent — expert eval submit hands off on next click', () 
 
     fireEvent.click(screen.getByText('homepage.feedback.useful'));
 
-    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+    expect(await screen.findByText('homepage.feedback.thankYou')).toBeTruthy();
     expect(onExpertFeedbackChange).not.toHaveBeenCalled();
   });
 
@@ -171,6 +171,7 @@ describe('FeedbackComponent — expert eval submit hands off on next click', () 
     });
 
     fireEvent.click(screen.getByText('homepage.feedback.useful'));
+    await screen.findByText('homepage.feedback.thankYou');
     // Listener attachment is deferred one tick (setTimeout(0)) so it doesn't
     // also catch this same click while it's still bubbling to document.
     await act(async () => {
@@ -182,5 +183,107 @@ describe('FeedbackComponent — expert eval submit hands off on next click', () 
     expect(onExpertFeedbackChange).toHaveBeenCalledWith(
       expect.objectContaining({ feedback: 'positive', totalScore: 100, type: 'expert' })
     );
+  });
+});
+
+// "Thank you" used to show without waiting for the server, so a refused or
+// failed save looked saved.
+describe('FeedbackComponent — expert eval save outcome', () => {
+  const alreadyReviewed = () => Object.assign(new Error('refused'), { code: 'EXPERT_FEEDBACK_ALREADY_EXISTS' });
+  const directProps = {
+    sentences: ['Can I renew online?'],
+    questionLanguage: 'eng',
+    sentencesEnglish: ['Can I renew online?'],
+  };
+
+  const openAndSubmitForm = async () => {
+    fireEvent.click(screen.getByText('homepage.feedback.notUseful'));
+    fireEvent.click(screen.getAllByRole('radio')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'homepage.expertRating.submit' }));
+  };
+
+  it('waits for the server before saying thank you', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    let finishSave;
+    mockPersistExpertFeedback.mockReturnValue(new Promise((resolve) => { finishSave = resolve; }));
+    renderComponent(directProps);
+
+    fireEvent.click(screen.getByText('homepage.feedback.useful'));
+
+    expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+    await act(async () => finishSave({}));
+    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+  });
+
+  it('keeps the form and its ratings open and says why when the answer was already reviewed', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPersistExpertFeedback.mockRejectedValue(alreadyReviewed());
+    const onExpertFeedbackChange = vi.fn();
+    renderComponent({ ...directProps, onExpertFeedbackChange });
+
+    await openAndSubmitForm();
+
+    expect(await screen.findByText('reviewPanels.expertFeedbackAlreadyReviewed')).toBeTruthy();
+    expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+    expect(screen.getAllByRole('radio')[0].checked).toBe(true);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.click(document.body);
+    expect(onExpertFeedbackChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the form open with a try-again message when the save fails for another reason', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPersistExpertFeedback.mockRejectedValue(new Error('Server detail never shown'));
+    renderComponent(directProps);
+
+    await openAndSubmitForm();
+
+    expect(await screen.findByText('reviewPanels.expertFeedbackSaveFailed')).toBeTruthy();
+    expect(screen.queryByText(/Server detail/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'homepage.expertRating.submit' })).toBeTruthy();
+  });
+
+  it('can save on a second try after a failure, and clears the message', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPersistExpertFeedback.mockRejectedValueOnce(new Error('down'));
+    renderComponent(directProps);
+
+    await openAndSubmitForm();
+    await screen.findByText('reviewPanels.expertFeedbackSaveFailed');
+    fireEvent.click(screen.getByRole('button', { name: 'homepage.expertRating.submit' }));
+
+    expect(await screen.findByText('homepage.feedback.thankYou')).toBeTruthy();
+    expect(screen.queryByText('reviewPanels.expertFeedbackSaveFailed')).toBeNull();
+  });
+
+  it('shows the refusal beside the buttons for a quick "Good", with no thank you', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockPersistExpertFeedback.mockRejectedValue(alreadyReviewed());
+    renderComponent(directProps);
+
+    fireEvent.click(screen.getByText('homepage.feedback.useful'));
+
+    expect(await screen.findByText('reviewPanels.expertFeedbackAlreadyReviewed')).toBeTruthy();
+    expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+    expect(screen.getByText('homepage.feedback.useful')).toBeTruthy();
+  });
+
+  it('saves once when pressed twice while a save is running', async () => {
+    mockUseHasAnyRole.mockReturnValue(true);
+    let finishSave;
+    mockPersistExpertFeedback.mockReturnValue(new Promise((resolve) => { finishSave = resolve; }));
+    renderComponent(directProps);
+
+    await openAndSubmitForm();
+    fireEvent.submit(screen.getAllByRole('radio')[0].closest('form'));
+
+    expect(mockPersistExpertFeedback).toHaveBeenCalledTimes(1);
+    await act(async () => finishSave({}));
   });
 });

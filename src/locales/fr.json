@@ -1483,6 +1483,7 @@
     "cancelExpertFeedbackEdits": "Annuler la modification",
     "expertFeedbackUpdated": "Évaluation d'expert mise à jour.",
     "expertFeedbackSaveFailed": "Impossible d'enregistrer vos modifications. Réessayez.",
+    "expertFeedbackAlreadyReviewed": "Cette réponse a déjà une évaluation, donc la vôtre n'a pas été enregistrée. Rechargez la page pour la consulter.",
     "neverStaleOn": "Toujours valide activé.",
     "neverStaleOff": "Toujours valide désactivé.",
     "neverStaleFailed": "Impossible de modifier Toujours valide. Réessayez.",
