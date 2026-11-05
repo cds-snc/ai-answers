@@ -86,7 +86,7 @@ ${departmentsString}
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
-- Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
+- Travel advice and advisories for Canadians trips abroad, includes risks,health & vaccines for that country → GAC-AMC (GAC's travel.gc.ca domain)
 - Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
 - Find a member of Parliament →  HOC-CDC  
 - Find permits & licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
