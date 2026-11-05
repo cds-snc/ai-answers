@@ -111,7 +111,7 @@ async function unassignHandler(req, res) {
     }
     interactionId = requireObjectIdString(interactionId, 'interactionId');
 
-    const current = await Interaction.findOne({ _id: interactionId }, { assignedTo: 1, assignedBy: 1 }).lean();
+    const current = await Interaction.findOne({ _id: interactionId }, { assignedTo: 1, assignedBy: 1, assignedOn: 1 }).lean();
     if (!current) {
       return res.status(404).json({ message: 'Question not found' });
     }
@@ -137,9 +137,12 @@ async function unassignHandler(req, res) {
 
     // Clear only the assignment that was just authorized: if someone else
     // unassigned and reassigned in between, the filter no longer matches and
-    // the newer assignment is left alone.
+    // the newer assignment is left alone. assignedOn covers a reassignment to
+    // the same person.
+    // TODO: review out-of-date pages. The x sends only the question ID, so
+    // a page showing an old assignment can clear a newer one with no warning.
     const result = await Interaction.updateOne(
-      { _id: interactionId, assignedTo: current.assignedTo },
+      { _id: interactionId, assignedTo: current.assignedTo, assignedOn: current.assignedOn },
       { assignedTo: null, assignedBy: null, assignedOn: null, assignedNotes: '' }
     );
     if (result.matchedCount === 0) {

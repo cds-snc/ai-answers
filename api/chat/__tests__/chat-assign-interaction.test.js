@@ -270,6 +270,25 @@ describe('chat-assign-interaction DELETE (unassign)', () => {
     expect(String(unchanged.assignedTo)).toBe(second._id.toString());
   });
 
+  it('409s rather than clearing a newer assignment to the same person', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const assignee = await makeUser();
+    const question = await Interaction.create({ assignedTo: assignee._id, assignedBy: admin._id, assignedOn: new Date(), assignedNotes: 'newer note' });
+
+    // The authorization read sees the earlier assignment. The chat has since
+    // been unassigned and reassigned to the same person.
+    vi.spyOn(Interaction, 'findOne').mockReturnValueOnce({ lean: async () => ({ assignedTo: assignee._id, assignedBy: admin._id, assignedOn: new Date(0) }) });
+
+    const res = await runDelete({ interactionId: question._id.toString() }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('assignment_changed');
+    const unchanged = await Interaction.findById(question._id).lean();
+    expect(String(unchanged.assignedTo)).toBe(assignee._id.toString());
+    expect(unchanged.assignedNotes).toBe('newer note');
+  });
+
   it('lets the current assignee remove their own assignment', async () => {
     await dbConnect();
     const assignee = await makeUser();

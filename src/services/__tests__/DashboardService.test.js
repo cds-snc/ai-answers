@@ -26,4 +26,10 @@ describe('DashboardService.unassignQuestion', () => {
 
     await expect(DashboardService.unassignQuestion({ interactionId: 'q-123' })).rejects.toThrow('Failed to remove assignment');
   });
+
+  it('carries the server error code when it rejects the request', async () => {
+    AuthService.fetch.mockResolvedValue({ ok: false, status: 409, json: async () => ({ code: 'assignment_changed' }) });
+
+    await expect(DashboardService.unassignQuestion({ interactionId: 'q-123' })).rejects.toMatchObject({ code: 'assignment_changed' });
+  });
 });
