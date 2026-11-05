@@ -5,10 +5,11 @@ import { Interaction } from '../../../models/interaction.js';
 import mongoose from 'mongoose';
 import { User } from '../../../models/user.js';
 
-function createReq({ method = 'POST', body, user }) {
+function createReq({ method = 'POST', body, query = {}, user }) {
   return {
     method,
     body,
+    query,
     path: '/api/chat/chat-assign-interaction',
     user,
     isAuthenticated: () => true
@@ -37,9 +38,9 @@ async function runPost(body, user) {
   return res;
 }
 
-async function runDelete(body, user) {
+async function runDelete(query, user) {
   const res = createRes();
-  await handler(createReq({ method: 'DELETE', body, user }), res);
+  await handler(createReq({ method: 'DELETE', query, user }), res);
   return res;
 }
 
@@ -341,5 +342,14 @@ describe('chat-assign-interaction DELETE (unassign)', () => {
     const res = await runDelete({ interactionId: new mongoose.Types.ObjectId().toString() }, { role: 'admin', userId: admin._id.toString() });
 
     expect(res.statusCode).toBe(404);
+  });
+
+  it('400s when the URL has no interactionId', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+
+    const res = await runDelete({}, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(400);
   });
 });

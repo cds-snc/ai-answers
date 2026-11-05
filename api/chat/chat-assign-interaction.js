@@ -105,7 +105,7 @@ async function chatAssignHandler(req, res) {
 async function unassignHandler(req, res) {
   try {
     await dbConnect();
-    let { interactionId } = req.body || {};
+    let { interactionId } = req.query;
     if (!interactionId) {
       return res.status(400).json({ message: 'interactionId is required' });
     }

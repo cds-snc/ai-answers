@@ -50,10 +50,9 @@ class DashboardService {
   }
 
   static async unassignQuestion({ interactionId }) {
-    const response = await AuthService.fetch(getApiUrl('chat-assign-interaction'), {
-      method: 'DELETE',
-      body: JSON.stringify({ interactionId })
-    });
+    // In the URL, not the body: a DELETE body doesn't reliably reach the server once deployed.
+    const url = `${getApiUrl('chat-assign-interaction')}?interactionId=${encodeURIComponent(interactionId)}`;
+    const response = await AuthService.fetch(url, { method: 'DELETE' });
     if (!response.ok) {
       throw new Error('Failed to remove assignment');
     }
