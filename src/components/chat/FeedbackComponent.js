@@ -9,6 +9,7 @@ import { useReturnFocusOnClose } from "../../hooks/useReturnFocusOnClose.js";
 import { useAnswerNumberLabel } from "../../hooks/useAnswerNumberLabel.js";
 import { resolveDisplayContent } from "../../utils/answerLanguage.js";
 import FeedbackService from "../../services/FeedbackService.js";
+import StatusMessage from "../admin/StatusMessage.js";
 
 const FeedbackComponent = ({
   lang = "en",
@@ -58,6 +59,10 @@ const FeedbackComponent = ({
   // this "Thank you" gives way to ExpertFeedbackPanel's read-only summary.
   // Not used for public feedback - there's no equivalent summary swap there.
   const [pendingExpertFeedback, setPendingExpertFeedback] = useState(null);
+  // Expert saves only: null, 'alreadyReviewed' or 'failed'.
+  const [saveFailure, setSaveFailure] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const hasExpertRole = useHasAnyRole(["admin", "partner"]);
   const thankYouRef = useFocusOnChange(feedbackGiven);
   const expertRatingTitleRef = useFocusOnChange(showExpertRating);
@@ -107,7 +112,32 @@ const FeedbackComponent = ({
     }).isSource
   );
 
-  const handleFeedback = (isPositive) => {
+  // "Thank you" waits for this: the server refuses a second review of an answer
+  // (another expert may have saved since this page loaded). Returns whether it saved.
+  const saveExpertFeedback = async (expertFeedback) => {
+    if (savingRef.current) return false;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveFailure(null);
+    try {
+      await FeedbackService.persistExpertFeedback({
+        chatId,
+        interactionId: userMessageId,
+        expertFeedback,
+      });
+      return true;
+    } catch (err) {
+      // Detail to the console only - the person gets a translated message.
+      console.error("Expert feedback save failed:", err);
+      setSaveFailure(err?.code === "EXPERT_FEEDBACK_ALREADY_EXISTS" ? "alreadyReviewed" : "failed");
+      return false;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
+  const handleFeedback = async (isPositive) => {
     let feedbackPayload = null;
     if (isPositive) {
       if (hasExpertRole) {
@@ -116,13 +146,10 @@ const FeedbackComponent = ({
           feedback: "positive",
           totalScore: 100,
         };
-        FeedbackService.persistExpertFeedback({
-          chatId,
-          interactionId: userMessageId,
-          expertFeedback: feedbackPayload,
-        });
-        setPendingExpertFeedback(feedbackPayload);
-        setFeedbackGiven(true);
+        if (await saveExpertFeedback(feedbackPayload)) {
+          setPendingExpertFeedback(feedbackPayload);
+          setFeedbackGiven(true);
+        }
       } else {
         setPublicPositive(true);
         setShowPublicRating(true);
@@ -145,21 +172,29 @@ const FeedbackComponent = ({
     handleFeedback(isPositive);
   };
 
-  const handleExpertFeedback = (expertFeedback) => {
+  const handleExpertFeedback = async (expertFeedback) => {
     console.log("Expert feedback received:", expertFeedback);
     const feedbackWithType = {
       ...expertFeedback,
       type: "expert",
     };
-    setShowExpertRating(false);
-    FeedbackService.persistExpertFeedback({
-      chatId,
-      interactionId: userMessageId,
-      expertFeedback: feedbackWithType,
-    });
-    setPendingExpertFeedback(feedbackWithType);
-    setFeedbackGiven(true);
+    // The form stays open on a failed save, so the ratings and notes aren't lost.
+    if (await saveExpertFeedback(feedbackWithType)) {
+      setShowExpertRating(false);
+      setPendingExpertFeedback(feedbackWithType);
+      setFeedbackGiven(true);
+    }
   };
+
+  const saveFailureStatus = saveFailure && (
+    <StatusMessage
+      variant="error"
+      className="mt-200"
+      message={saveFailure === "alreadyReviewed"
+        ? t("reviewPanels.expertFeedbackAlreadyReviewed")
+        : t("reviewPanels.expertFeedbackSaveFailed")}
+    />
+  );
 
   // Once "Thank you" is showing for an expert eval, any click anywhere hands
   // the persisted feedback up to the parent (onExpertFeedbackChange), which
@@ -238,7 +273,7 @@ const FeedbackComponent = ({
     return (
       <ExpertFeedbackComponent
         onSubmit={handleExpertFeedback}
-        onClose={() => setShowExpertRating(false)}
+        onClose={() => { setSaveFailure(null); setShowExpertRating(false); }}
         lang={lang}
         sentenceCount={sentenceCount}
         sentences={sentences}
@@ -248,6 +283,9 @@ const FeedbackComponent = ({
         citationUrl={citationUrl}
         department={department}
         titleRef={expertRatingTitleRef}
+        submitLabel={saving ? t("reviewPanels.savingExpertFeedback") : undefined}
+        submitBusy={saving}
+        submitStatus={saveFailureStatus}
       />
     );
   }
@@ -311,6 +349,7 @@ const FeedbackComponent = ({
   }
 
   return (
+    <>
     <div className="feedback-container" lang={lang}>
       <span className="feedback-text" aria-hidden="true">{t("homepage.feedback.question")} </span>
       {isSource ? (
@@ -368,6 +407,8 @@ const FeedbackComponent = ({
         </>
       )}
     </div>
+    {saveFailureStatus}
+    </>
   );
 };
 
