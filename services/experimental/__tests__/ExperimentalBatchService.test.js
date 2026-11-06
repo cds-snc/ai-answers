@@ -695,7 +695,8 @@ describe('ExperimentalBatchService', () => {
             );
             expect(runSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    user: null
+                    user: null,
+                    passageTool: false
                 }),
                 expect.any(Function)
             );
@@ -767,6 +768,35 @@ describe('ExperimentalBatchService', () => {
                 expect.objectContaining({
                     user: expect.objectContaining({ userId: starterId.toString() })
                 }),
+                expect.any(Function)
+            );
+            runSpy.mockRestore();
+        });
+
+        it('should pass the passage tool flag into the graph request context', async () => {
+            const batch = await ExperimentalBatch.create({
+                name: 'Passage Tool Batch',
+                type: 'batch',
+                config: { workflow: 'TestGraph', pageLanguage: 'en', aiProvider: 'azure', passageTool: true }
+            });
+            const item = await ExperimentalBatchItem.create({
+                experimentalBatch: batch._id,
+                rowIndex: 1,
+                question: 'Can I contribute to an RRSP at 72?'
+            });
+
+            const mockStream = {
+                async *[Symbol.asyncIterator]() {
+                    yield { result: { answer: 'No' } };
+                }
+            };
+            getGraphApp.mockResolvedValue({ stream: vi.fn().mockResolvedValue(mockStream) });
+            const runSpy = vi.spyOn(graphRequestContext, 'run').mockImplementation((store, callback) => callback());
+
+            await ExperimentalBatchService._processItem(batch._id, item._id);
+
+            expect(runSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ passageTool: true }),
                 expect.any(Function)
             );
             runSpy.mockRestore();

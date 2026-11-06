@@ -22,7 +22,8 @@ export class GraphClient {
     onStatusUpdate,
     searchProvider,
     overrideUserId = null,
-    batchId = null
+    batchId = null,
+    passageToolMode = null
   ) {
     const controller = new AbortController();
     let reader = null;
@@ -43,6 +44,9 @@ export class GraphClient {
         graph: this.graphName,
         // Batch questions: the server runs the settings saved on this batch
         batchId,
+        // Experimental admin passage tool option ('offered' / 'forced'); the server ignores
+        // it for anyone but an admin.
+        ...(passageToolMode && { passageTool: passageToolMode }),
         input: {
           chatId,
           userMessage,

@@ -2,16 +2,20 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatCohere } from '@langchain/cohere';
+import { ToolMessage } from '@langchain/core/messages';
 import downloadWebPageTool from './tools/downloadWebPage.js';
 import checkUrlStatusTool from './tools/checkURL.js';
 import searchOpenDataTool from './tools/searchOpenData.js';
+import { createRetrievePassagesTool } from './tools/retrievePassages.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const createTools = (chatId = 'system', agentType = 'openai') => {
+// toolOptions.passageTool adds the experimental Coveo passage tool; AnswerGenerationService
+// decides when (see docs/plans/coveo-passage-retrieval.md).
+const createTools = (chatId = 'system', agentType = 'openai', { passageTool = false, lang = 'en' } = {}) => {
   const callbacks = [new ToolTrackingHandler(chatId)];
 
   // Wrap tools with callbacks to ensure consistent tracking
@@ -33,6 +37,7 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
       wrapToolWithCallbacks(downloadWebPageTool),
       wrapToolWithCallbacks(checkUrlStatusTool),
       wrapToolWithCallbacks(searchOpenDataTool),
+      ...(passageTool ? [wrapToolWithCallbacks(createRetrievePassagesTool({ lang, chatId }))] : []),
       // generateContext tool removed from answer agent — context is already
       // derived by the pipeline's contextNode before the answer agent runs.
       // Tool code kept in agents/tools/contextAgentTool.js for future use.
@@ -41,7 +46,15 @@ const createTools = (chatId = 'system', agentType = 'openai') => {
   };
 };
 
-const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) => {
+// Experimental: the admin chat's "Forced first" passage option (docs/plans/coveo-passage-retrieval.md).
+// The first model call must call retrievePassages; once any tool has run, the model chooses freely.
+const forcePassagesFirst = (llm, tools) => {
+  const forced = llm.bindTools(tools, { tool_choice: 'retrievePassages' });
+  const free = llm.bindTools(tools);
+  return (state) => (state.messages.some((message) => ToolMessage.isInstance(message)) ? free : forced);
+};
+
+const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null, toolOptions = {}) => {
   const modelConfig = getModelConfig('azure', modelOverride);
   const isGPT5 = modelConfig.name === 'openai-gpt51' ||
     modelConfig.name === 'openai-gpt51-chat';
@@ -62,9 +75,12 @@ const createAzureOpenAIAgent = async (chatId = 'system', modelOverride = null) =
     timeout: modelConfig.timeoutMs,
   });
 
-  const { tools, callbacks } = createTools(chatId, 'azure');
+  const { tools, callbacks } = createTools(chatId, 'azure', toolOptions);
+  if (toolOptions.forcePassages && !toolOptions.passageTool) {
+    throw new Error('forcePassages needs passageTool');
+  }
   const agent = await createReactAgent({
-    llm: openai, tools,
+    llm: toolOptions.forcePassages ? forcePassagesFirst(openai, tools) : openai, tools,
     agentConfig: {
       handleParsingErrors: true,
       maxIterations: 10,
@@ -91,7 +107,10 @@ const createCohereAgent = async (chatId = 'system') => {
   return agent;
 };
 
-const createClaudeAgent = async (chatId = 'system') => {
+const createClaudeAgent = async (chatId = 'system', toolOptions = {}) => {
+  if (toolOptions.forcePassages) {
+    throw new Error('Forced passages are only built for the Azure OpenAI agent');
+  }
   const modelConfig = getModelConfig('anthropic');
   const claude = new ChatAnthropic({
     apiKey: process.env.REACT_APP_ANTHROPIC_API_KEY,
@@ -101,7 +120,7 @@ const createClaudeAgent = async (chatId = 'system') => {
     beta: modelConfig.beta,
   });
 
-  const { tools, callbacks } = createTools(chatId, 'anthropic');
+  const { tools, callbacks } = createTools(chatId, 'anthropic', toolOptions);
   const agent = await createReactAgent({ llm: claude, tools });
   agent.callbacks = callbacks;
   return agent;
@@ -444,16 +463,16 @@ const createDetectLanguageAgent = async (agentType = 'openai-gpt51', chatId = 's
 };
 
 // New helper to create chat agents based on provider
-const createChatAgent = async (provider, chatId = 'system') => {
+const createChatAgent = async (provider, chatId = 'system', toolOptions = {}) => {
   switch (provider) {
     case 'azure':
-      return await createAzureOpenAIAgent(chatId);
+      return await createAzureOpenAIAgent(chatId, null, toolOptions);
     case 'openai-gpt51':
     case 'openai-gpt51-chat':
-      return await createAzureOpenAIAgent(chatId, provider);
+      return await createAzureOpenAIAgent(chatId, provider, toolOptions);
     case 'claude':
     case 'anthropic':
-      return await createClaudeAgent(chatId);
+      return await createClaudeAgent(chatId, toolOptions);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }

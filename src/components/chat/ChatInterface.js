@@ -42,6 +42,8 @@ const ChatInterface = ({
   modelSelection,
   selectedSearch,
   handleSearchToggle,
+  passageToolMode,
+  handlePassageToolChange,
   referringUrl,
   chatCreatedAt,
   turnCount,
@@ -1237,6 +1239,8 @@ const ChatInterface = ({
       handleAIToggle={handleAIToggle}
       selectedSearch={selectedSearch}
       handleSearchToggle={handleSearchToggle}
+      passageToolMode={passageToolMode}
+      handlePassageToolChange={handlePassageToolChange}
       workflowSelection={workflowSelection}
       handleWorkflowChange={handleWorkflowChange}
       referringUrl={referringUrl}

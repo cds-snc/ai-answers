@@ -52,7 +52,8 @@ export const ChatWorkflowService = {
     onStatusUpdate,
     searchProvider,
     overrideUserId = null,
-    batchId = null
+    batchId = null,
+    passageToolMode = null
   ) => {
     // If caller didn't provide a workflow (null/undefined/empty), we pass null to the GraphClient.
     // The server will then assign the configured 'workflow.default' for valid requests.
@@ -75,7 +76,8 @@ export const ChatWorkflowService = {
       onStatusUpdate,
       searchProvider,
       overrideUserId,
-      batchId
+      batchId,
+      passageToolMode
     );
   },
 

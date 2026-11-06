@@ -7,6 +7,7 @@ import FeedbackInlineError from './FeedbackInlineError.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { isWellFormedHttpUrl } from '../../utils/chat/referringUrl.js';
 import { SEARCH_PROVIDERS } from '../../config/searchProviders.js';
+import { PASSAGE_TOOL_CHAT_MODES } from '../../config/passageTool.js';
 import { announce as announceLive } from '../../utils/liveAnnouncer.js';
 
 // Same delay as SettingsPage's unsaved-changes warning.
@@ -22,6 +23,8 @@ const ChatOptions = ({
   handleAIToggle,
   selectedSearch,
   handleSearchToggle,
+  passageToolMode,
+  handlePassageToolChange,
   workflowSelection,
   handleWorkflowChange,
   referringUrl,
@@ -42,12 +45,13 @@ const ChatOptions = ({
     workflow: WORKFLOW_VALUES.includes(workflowSelection) ? workflowSelection : '',
     model: MODEL_VALUES.includes(modelSelection) ? modelSelection : '',
     search: selectedSearch || '',
+    passageTool: PASSAGE_TOOL_CHAT_MODES.includes(passageToolMode) ? passageToolMode : '',
   };
   const [draftOptions, setDraftOptions] = useState(savedOptions);
   useEffect(() => {
     setDraftOptions(savedOptions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedOptions.workflow, savedOptions.model, savedOptions.search]);
+  }, [savedOptions.workflow, savedOptions.model, savedOptions.search, savedOptions.passageTool]);
   const optionsDirty = Object.keys(savedOptions).some((key) => draftOptions[key] !== savedOptions[key]);
   // Shown above the panel while anything is unsaved, open or closed — the
   // chat keeps running on the saved options until Save.
@@ -104,7 +108,7 @@ const ChatOptions = ({
   };
 
   const handleSaveOptions = () => {
-    const handlers = { workflow: handleWorkflowChange, model: handleAIToggle, search: handleSearchToggle };
+    const handlers = { workflow: handleWorkflowChange, model: handleAIToggle, search: handleSearchToggle, passageTool: handlePassageToolChange };
     Object.keys(handlers)
       .filter((key) => draftOptions[key] !== savedOptions[key])
       .forEach((key) => handlers[key]({ target: { value: draftOptions[key] } }));
@@ -249,6 +253,26 @@ const ChatOptions = ({
               <option value="">{safeT('homepage.chat.options.useSystemSettings')}</option>
               {SEARCH_PROVIDERS.map((provider) => (
                 <option key={provider.value} value={provider.value}>{safeT(provider.labelKey)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Experimental (docs/plans/coveo-passage-retrieval.md). Not stored: a reload
+              turns it off. */}
+          <div className="mrgn-bttm-10 settings-form-width">
+            <label htmlFor="passage-tool" className="filter-label display-block">
+              {safeT('homepage.chat.options.passageTool.label')}
+            </label>
+            <select
+              id="passage-tool"
+              name="passageTool"
+              value={draftOptions.passageTool}
+              onChange={handleOptionDraftChange('passageTool')}
+              className="filter-select"
+            >
+              <option value="">{safeT('homepage.chat.options.passageTool.off')}</option>
+              {PASSAGE_TOOL_CHAT_MODES.map((mode) => (
+                <option key={mode} value={mode}>{safeT(`homepage.chat.options.passageTool.${mode}`)}</option>
               ))}
             </select>
           </div>

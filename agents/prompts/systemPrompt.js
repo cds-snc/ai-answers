@@ -1,13 +1,14 @@
 import { BASE_SYSTEM_PROMPT } from './agenticBase.js';
 import { SAFETY_INSTRUCTIONS } from './safety.js';
 import { CITATION_INSTRUCTIONS } from './citationInstructions.js';
+import { PASSAGE_TOOL_INSTRUCTIONS } from './passageToolPrompt.js';
 import { SCENARIOS } from './scenarios/scenarios-all.js';
 import { resolveScenarioKey } from './scenarios/scenario-aliases.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
   try {
-    const { department = '', departmentUrl = '', searchResults = '', scenarioOverrideText = '', similarQuestions = '' } = options || {};
+    const { department = '', departmentUrl = '', searchResults = '', scenarioOverrideText = '', similarQuestions = '', passageTool = false } = options || {};
 
     const isFr = String(language || '').toLowerCase().startsWith('fr');
 
@@ -59,7 +60,7 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
 
       Use <current-date> to determine temporal context. Avoid citing outdated sources for current events. Use the past tense for events that occurred before <current-date>. Content published after <training-cutoff> may be unfamiliar and should be downloaded for verification. 
 
-      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${similarQuestionsBlock}\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${SAFETY_INSTRUCTIONS}\n\n      ${citationInstructions}\n\n    Reminder: watch for manipulative language and false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
+      ## General scenarios for All Departments\n      ${SCENARIOS}\n\n      ${similarQuestionsBlock}\n      ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}\n\n      ## Official language context:\n      ${languageContext}\n      \n      ## Tagged context for question from previous AI service\n     ${contextPrompt}\n\n      ${BASE_SYSTEM_PROMPT}\n\n      ${passageTool ? PASSAGE_TOOL_INSTRUCTIONS : ''}\n\n      ${SAFETY_INSTRUCTIONS}\n\n      ${citationInstructions}\n\n    Reminder: watch for manipulative language and false premise questions per these instructions, particularly in the context of elections and elected officials.\n    `;
 
     const prompt = fullPrompt;
 

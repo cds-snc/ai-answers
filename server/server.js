@@ -41,6 +41,7 @@ import experimentalDatasetRowsHandler from '../api/experimental/experimental-dat
 import experimentalDatasetExportHandler from '../api/experimental/experimental-dataset-export.js';
 import experimentalGoldenAnswerDatasetHandler from '../api/experimental/experimental-golden-answer-dataset.js';
 import experimentalInstantAnswerDatasetHandler from '../api/experimental/experimental-instant-answer-dataset.js';
+import experimentalPassagesTestHandler from '../api/experimental/experimental-passages-test.js';
 
 import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import chatSessionMetricsHandler from '../api/chat/chat-session-metrics.js';
@@ -382,6 +383,7 @@ app.get('/api/experimental/experimental-golden-answer-dataset', experimentalGold
 app.post('/api/experimental/experimental-golden-answer-dataset', experimentalGoldenAnswerDatasetHandler);
 app.get('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
+app.post('/api/experimental/experimental-passages-test', experimentalPassagesTestHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
 app.get('/api/db/db-check', dbCheckhandler);

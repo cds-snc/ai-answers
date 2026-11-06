@@ -68,12 +68,13 @@ const normalizeWorkflow = (workflow) => (
     WORKFLOW_VALUES.includes(workflow) ? workflow : DEFAULT_WORKFLOW
 );
 
-const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId, workflowLabel, modelLabel }) => {
+const buildAnalysisRunName = ({ analyzerName, analyzerId, datasetName, datasetId, workflowLabel, modelLabel, passageToolLabel }) => {
     return [
         analyzerName || analyzerId || '',
         datasetName || datasetId || '',
         workflowLabel || '',
-        modelLabel || ''
+        modelLabel || '',
+        passageToolLabel || ''
     ].filter(Boolean).join(' \u00b7 ');
 };
 
@@ -160,6 +161,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
     const [selectedWorkflow, setSelectedWorkflow] = useState(DEFAULT_WORKFLOW);
     const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0]?.value || 'openai-gpt51');
     const [selectedSearch, setSelectedSearch] = useState('');
+    const [passageTool, setPassageTool] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [batches, setBatches] = useState([]);
@@ -404,6 +406,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
             datasetId: selectedDatasetId,
             workflowLabel: selectedWorkflowLabel ? t(selectedWorkflowLabel.labelKey) : '',
             modelLabel: selectedModelLabel ? t(selectedModelLabel.labelKey) : '',
+            passageToolLabel: passageTool ? t('experimental.analysis.passageTool.runName') : '',
         });
 
         setLoading(true);
@@ -428,6 +431,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                 workflow: normalizeWorkflow(selectedWorkflow),
                 aiProvider: selectedModel || undefined,
                 searchProvider: selectedSearch,
+                passageTool,
                 datasetId: selectedDatasetId || undefined,
                 analysisMode,
                 trials,
@@ -897,6 +901,18 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                                     <option key={provider.value} value={provider.value}>{t(provider.labelKey)}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className="mb-400 gc-chckbxrdio md">
+                            <div className="checkbox">
+                                <input
+                                    type="checkbox"
+                                    id="passage-tool-checkbox"
+                                    checked={passageTool}
+                                    onChange={(e) => setPassageTool(e.target.checked)}
+                                />
+                                <label htmlFor="passage-tool-checkbox">{t('experimental.analysis.passageTool.label')}</label>
+                            </div>
                         </div>
 
                         {/* Dataset Selection */}
