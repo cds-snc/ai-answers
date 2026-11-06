@@ -60,6 +60,15 @@ describe('QuestionAnswerService', () => {
     vi.clearAllMocks();
   });
 
+  it('forwards the department to the vector search', async () => {
+    mockMatchQuestions.mockResolvedValue([[]]);
+    mockInteractionFind.mockReturnValue(createChainableQuery([]));
+
+    await QuestionAnswerService.getSimilarQuestionsContext('when is the deadline', { k: 3, department: 'FedDev-Ontario' });
+
+    expect(mockMatchQuestions).toHaveBeenCalledWith(['when is the deadline'], expect.objectContaining({ department: 'FedDev-Ontario' }));
+  });
+
   it('returns formatted similar questions including score, feedback, citation, and flow', async () => {
     // Arrange hits from vector search
     mockMatchQuestions.mockResolvedValue([[{

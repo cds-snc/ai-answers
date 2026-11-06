@@ -44,6 +44,9 @@ const embeddingSchema = new mongoose.Schema(
     expertFeedbackTotalScore: { type: Number, required: false, default: undefined },
     expertFeedbackCreatedAt: { type: Date, required: false, default: undefined },
     expertFeedbackNeverStale: { type: Boolean, required: false, default: undefined },
+    // Context-matched department abbrKey, normalized by services/matchDepartment.js.
+    // '' = synced but context matched no department; absent = not yet synced.
+    department: { type: String, required: false, default: undefined },
 
   },
   {

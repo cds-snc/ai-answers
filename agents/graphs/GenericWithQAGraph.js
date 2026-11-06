@@ -5,6 +5,7 @@ import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
 import { EVAL_INFORMED_WORKFLOW } from '../../src/config/workflows.js';
+import { normalizeMatchDepartment } from '../../services/matchDepartment.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -145,15 +146,27 @@ graph.addNode('contextNode', async (state) => {
 });
 
 graph.addNode('similarQuestions', async (state) => {
+  // Examples only come from the department context matched for this question:
+  // generic wording ("when is the deadline?") otherwise matches evals from
+  // unrelated departments. No matched department -> no examples at all.
+  // Normalized here, not only in the vector layer: a whitespace-only value must
+  // hit the skip below, not reach the services as "no filter".
+  const department = normalizeMatchDepartment(state.context?.department);
   logGraphEvent('info', 'node:similarQuestions input', state.chatId, {
     lang: state.lang,
+    department,
   });
+  if (!department) {
+    logGraphEvent('info', 'node:similarQuestions skipped', state.chatId, { reason: 'noContextDepartment' });
+    return { context: { ...state.context, similarQuestions: '' } };
+  }
 
   let similarQuestions = '';
   let similarQuestionsDebug = null;
   try {
     const similarResult = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
+      department,
       threshold: 0.75,
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lte',
