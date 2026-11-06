@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-10-05
+**Generated:** 2026-11-06
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -247,6 +247,7 @@ GOAL:
     - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a experimental page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
     - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
+- Travel to a named country: add inurl:destinations to get that country's travel.gc.ca advisory page. E.g. "ok to bring prescription drugs on trip to Indonesia?"→"Indonesia prescription drugs inurl:destinations", "Safe to go to Russia"→"Russia advisory inurl:destinations"
 
 HISTORY-BASED QUERY CONSTRUCTION (use history when present):
 - When 'history' is provided, it contains prior user questions (strings). Use history as primary source of intent when crafting search query.
@@ -379,7 +380,7 @@ Page Language: en
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
-- Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
+- What's allowed, required or risky in another country (bringing medication/goods, vaccines, laws, safety) → GAC-AMC (travel.gc.ca), even if topic is health. What Canada allows back in → CBSA-ASFC or HC-SC
 - Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
 - Find a member of Parliament →  HOC-CDC  
 - Find permits & licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
@@ -388,11 +389,12 @@ Page Language: en
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
-- "CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- Digital Transformation Canada,"CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
 - Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
+- Original census data pre-1931 → BAC-LAC versus compiled census data after 1931 → STATCAN
 
 ## Response Format:
 <analysis>
@@ -457,6 +459,20 @@ Page Language: en
 <departmentUrl>https://www.canada.ca/en/department-national-defence.html</departmentUrl>
 </analysis>
 </example>
+<example>
+* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds pre-1931 census & resources for many other departments)
+<analysis>
+<department>BAC-LAC</department>
+<departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
+</analysis>
+</example>
+<example>
+* "Can I bring my codeine on a trip to Indonesia?" matches GAC-AMC, not HC-SC: Indonesia's laws decide
+<analysis>
+<department>GAC-AMC</department>
+<departmentUrl>https://www.international.gc.ca/global-affairs-affaires-mondiales/home-accueil.aspx?lang=eng</departmentUrl>
+</analysis>
+</example>
 </examples>
     
 ```
@@ -480,7 +496,7 @@ Page Language: en
 - If a scenario file exists, it's dynamically loaded and inserted into the Answer Generation prompt
 - If no scenario file exists for that department, the Answer Generation proceeds with only the general scenarios
 
-**Partner Departments with Custom Scenario Files (as of October 2026):**
+**Partner Departments with Custom Scenario Files (as of November 2026):**
 - [`context-aafc-aac/`](../../agents/prompts/scenarios/context-aafc-aac/) - AAFC-AAC
 - [`context-bac-lac/`](../../agents/prompts/scenarios/context-bac-lac/) - Library and Archives Canada (BAC-LAC)
 - [`context-cbsa-asfc/`](../../agents/prompts/scenarios/context-cbsa-asfc/) - CBSA-ASFC
@@ -652,7 +668,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Sunday, October 4, 2026.
+Today is Friday, November 6, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
@@ -812,6 +828,7 @@ Before finalizing, re-read each sentence in your answer:
 ### Answer structure requirements and format
 1. HELPFUL: Aim for concise, direct, helpful answers ONLY addressing user's specific question. Use plain, everyday language when responding to a question that appears unfamiliar with government. Only use technical terms if the user's question clearly shows that level of familiarity. Avoid bossy language like "You must/should do x to get y" - prefer "If you do x, you are eligible for y".
  * PRIORITIZE: scenario instructions and updates over <searchResults>, newer content over older, especially archived/closed/delayed/news
+ * Another country's rules: its page outranks general Canadian pages. Never confirm allowed unless that page says so.
 2. FORMAT: Users come from all over the world with varying familiarity with government — shorter answers are easier to understand and act on. <english-answer> and translated <answer> follow strict rules:
    - 1-4 sentences/steps/items (max 4)
    - Each item wrapped in numbered tags (<s-1>, <s-2> to <s-4>) for display formatting later (no markdown formatting - will be stripped)
