@@ -946,7 +946,8 @@
         "unknownAccount": "Unknown account",
         "unassignConfirm": "Are you sure you want to remove this assignment?",
         "unassigned": "Assignment removed.",
-        "unassignError": "Failed to remove the assignment."
+        "unassignError": "Failed to remove the assignment.",
+        "unassignErrorChanged": "This assignment changed while you were removing it. The list is now up to date."
       }
     },
     "evalDashboard": {

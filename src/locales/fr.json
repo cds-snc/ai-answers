@@ -946,7 +946,8 @@
         "unknownAccount": "Compte inconnu",
         "unassignConfirm": "Êtes-vous sûr de vouloir retirer cette attribution?",
         "unassigned": "Attribution retirée.",
-        "unassignError": "Impossible de retirer l'attribution."
+        "unassignError": "Impossible de retirer l'attribution.",
+        "unassignErrorChanged": "Cette attribution a changé pendant que vous la retiriez. La liste est maintenant à jour."
       }
     },
     "evalDashboard": {
