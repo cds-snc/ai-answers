@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.212.1](https://github.com/cds-snc/ai-answers/compare/v1.212.0...v1.212.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* budget in cra ([49af01b](https://github.com/cds-snc/ai-answers/commit/49af01b2cebf2b6f523139c2f72e13c7f4ad895a))
+* cgeb topup ([e5f477b](https://github.com/cds-snc/ai-answers/commit/e5f477bbf53cba25fd1279fb1780c06bdd064c24))
+* gac travel question still failing ([0303f6a](https://github.com/cds-snc/ai-answers/commit/0303f6a87cc556059a3f9acbf677377ff962dd31))
+* prompt tweaks based on recent tests ([35afd9e](https://github.com/cds-snc/ai-answers/commit/35afd9eaf5afb8cb62fc93bc31095bcf332d93a5))
+* reference current-date ([ad01d1d](https://github.com/cds-snc/ai-answers/commit/ad01d1d8c93035eff7316a0ee04301fd4f4310fc))
+* stale comment ([bb73636](https://github.com/cds-snc/ai-answers/commit/bb73636f1c1b7d04af33958fe45c8cfab91eb78b))
+* try again on CGEB ([cff58dc](https://github.com/cds-snc/ai-answers/commit/cff58dc5af2953b071af64a9c15e2dd722497155))
+* try CGEB again ([0e90e66](https://github.com/cds-snc/ai-answers/commit/0e90e668a6cfae33210e8025ecd621dcc3fc9434))
+
 ## [1.212.0](https://github.com/cds-snc/ai-answers/compare/v1.211.1...v1.212.0) (2026-11-04)
 
 
