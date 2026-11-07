@@ -848,6 +848,8 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
     metadataPageLanguage: 'en',
     interactionLanguage: 'fr',
     metadataInteractionLanguage: 'fr',
+    contextDepartment: 'TBS-SCT',
+    metadataDepartment: 'TBS-SCT',
     metadataStatus: 'metadataMatches',
     metadataExpertFeedbackNeverStale: false,
   };
@@ -873,7 +875,7 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
   };
   const cells = (table) => [...table.querySelectorAll('tbody tr:first-child td')];
 
-  it('has eight columns, one row per embedding', async () => {
+  it('has nine columns, one row per embedding', async () => {
     const table = await lookUp([baseRow, { ...baseRow, rowNumber: 2, interactionDisplayId: '8', interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2' }]);
     const headers = [...table.querySelectorAll('thead th')].map((th) => th.textContent);
     expect(headers).toEqual([
@@ -885,6 +887,7 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
       'vector.metadataLookup.columns.score',
       'vector.metadataLookup.columns.pageLanguage',
       'vector.metadataLookup.columns.interactionLanguage',
+      'admin.common.columns.department',
     ]);
     expect(table.querySelectorAll('tbody tr')).toHaveLength(2);
   });
@@ -897,6 +900,17 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
     expect(pageLang.textContent).toBe('en');
     expect(interactionLang.textContent).toBe('fr');
     expect(table.querySelector('.metadata-mismatch')).toBeNull();
+  });
+
+  it('shows the department, marking a mismatch when the embedding was never given one', async () => {
+    const table = await lookUp([
+      baseRow,
+      { ...baseRow, rowNumber: 2, interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2', metadataDepartment: null, metadataStatus: 'missingMetadata' },
+    ]);
+    const [first, second] = [...table.querySelectorAll('tbody tr')].map((tr) => tr.querySelectorAll('td')[8]);
+    expect(first.textContent).toBe('TBS-SCT');
+    expect(first.querySelector('.metadata-mismatch')).toBeNull();
+    expect(second.querySelector('.metadata-mismatch')).toBeTruthy();
   });
 
   it('marks a mismatch with words for screen readers, not colour alone', async () => {

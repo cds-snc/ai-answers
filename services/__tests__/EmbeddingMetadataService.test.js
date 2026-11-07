@@ -12,6 +12,7 @@ const {
   mockInteractionCountDocuments,
   mockExpertFeedbackFind,
   mockExpertFeedbackFindById,
+  mockContextFindById,
 } = vi.hoisted(() => ({
   mockUpdateMany: vi.fn(),
   mockEmbeddingAggregate: vi.fn(),
@@ -23,6 +24,7 @@ const {
   mockInteractionCountDocuments: vi.fn(),
   mockExpertFeedbackFind: vi.fn(),
   mockExpertFeedbackFindById: vi.fn(),
+  mockContextFindById: vi.fn(),
 }));
 
 vi.mock('../../api/db/db-connect.js', () => ({
@@ -47,6 +49,10 @@ vi.mock('../../models/embedding.js', () => ({
     aggregate: mockEmbeddingAggregate,
     find: mockEmbeddingFind,
   },
+}));
+
+vi.mock('../../models/context.js', () => ({
+  Context: { findById: mockContextFindById },
 }));
 
 vi.mock('../../models/expertFeedback.js', () => ({
@@ -98,6 +104,7 @@ describe('EmbeddingMetadataService', () => {
     mockInteractionCountDocuments.mockReset();
     mockExpertFeedbackFind.mockReset();
     mockExpertFeedbackFindById.mockReset();
+    mockContextFindById.mockReset();
     mockExpertFeedbackFindResult([]);
     mockEmbeddingFind.mockReturnValue({
       select: () => ({
@@ -168,9 +175,72 @@ describe('EmbeddingMetadataService', () => {
           expertFeedbackNeverStale: '',
           pageLanguage: '',
           interactionLanguage: '',
+          department: '',
         },
       }
     );
+  });
+
+  it('stores the normalized context department so examples can be kept within one department', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockContextFindById.mockReturnValue({
+      select: () => ({ lean: async () => ({ department: ' FedDev-Ontario ' }) }),
+    });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    const result = await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: '507f1f77bcf86cd799439041',
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).toHaveBeenCalledWith('507f1f77bcf86cd799439041');
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('FEDDEV-ONTARIO');
+    expect(result.metadataSnapshot.department).toBe('FEDDEV-ONTARIO');
+  });
+
+  it('uses an already-populated context department without another lookup', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: { _id: '507f1f77bcf86cd799439041', department: 'TBS-SCT' },
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).not.toHaveBeenCalled();
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('TBS-SCT');
+  });
+
+  it('treats a populated context with no department field as no department, without re-querying', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: { _id: '507f1f77bcf86cd799439041' },
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).not.toHaveBeenCalled();
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('');
+  });
+
+  it('stores an empty department (not absent) when context matched no department, so backfill treats it as done', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('');
   });
 
   it('starts backfill by clearing all existing embedding metadata once', async () => {
@@ -482,13 +552,13 @@ describe('EmbeddingMetadataService', () => {
     });
     expect(mockEmbeddingFind).toHaveBeenCalledWith({
       interactionId: { $in: [firstInteractionId, missingInteractionId] },
-      expertFeedbackId: null,
+      $or: [{ expertFeedbackId: null }, { department: null }],
     });
     expect(mockUpdateMany).toHaveBeenCalledWith(
       {
         $and: [
           { interactionId: missingInteractionId },
-          { expertFeedbackId: null },
+          { $or: [{ expertFeedbackId: null }, { department: null }] },
         ],
       },
       {
@@ -613,6 +683,69 @@ describe('EmbeddingMetadataService', () => {
       interactionLanguage: 'fr',
       metadataPageLanguage: 'fr',
       metadataInteractionLanguage: 'en',
+    }));
+  });
+
+  it('reports the context and metadata departments, and flags a synced row with no department as missing metadata', async () => {
+    mockChatFindOne.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => ({
+            _id: '507f1f77bcf86cd799439031',
+            chatId: 'chat-123',
+            pageLanguage: 'en',
+            interactions: [
+              {
+                _id: '507f1f77bcf86cd799439011',
+                interactionId: '1',
+                question: { language: 'en' },
+                context: { _id: '507f1f77bcf86cd799439041', department: 'FedDev-Ontario' },
+                expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100 },
+              },
+              {
+                _id: '507f1f77bcf86cd799439013',
+                interactionId: '2',
+                question: { language: 'en' },
+                context: { _id: '507f1f77bcf86cd799439042', department: 'TBS-SCT' },
+                expertFeedback: { _id: '507f1f77bcf86cd799439014', totalScore: 100 },
+              },
+            ],
+          }),
+        }),
+      }),
+    });
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        sort: () => ({
+          lean: async () => ([
+            {
+              _id: '507f1f77bcf86cd799439021',
+              interactionId: '507f1f77bcf86cd799439011',
+              expertFeedbackId: '507f1f77bcf86cd799439012',
+              department: 'FEDDEV-ONTARIO',
+            },
+            {
+              _id: '507f1f77bcf86cd799439022',
+              interactionId: '507f1f77bcf86cd799439013',
+              expertFeedbackId: '507f1f77bcf86cd799439014',
+              // synced before `department` existed
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const { rows } = await EmbeddingMetadataService.lookupForChat('chat-123');
+
+    expect(rows[0]).toEqual(expect.objectContaining({
+      contextDepartment: 'FEDDEV-ONTARIO',
+      metadataDepartment: 'FEDDEV-ONTARIO',
+      metadataStatus: 'metadataMatches',
+    }));
+    expect(rows[1]).toEqual(expect.objectContaining({
+      contextDepartment: 'TBS-SCT',
+      metadataDepartment: null,
+      metadataStatus: 'missingMetadata',
     }));
   });
 

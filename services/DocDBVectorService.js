@@ -7,6 +7,7 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import cosineSimilarity from 'compute-cosine-similarity';
 import EmbeddingService from './EmbeddingService.js';
+import { normalizeMatchDepartment } from './matchDepartment.js';
 import { compareVectorMatches } from './vectorMatchOrdering.js';
 
 function isFrenchLanguage(lang) {
@@ -318,6 +319,7 @@ class DocDBVectorService {
    */
   async matchQuestions(questions = [], opts = {}) {
     const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, interactionLanguage = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
+    const department = normalizeMatchDepartment(opts.department) || null;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -345,11 +347,12 @@ class DocDBVectorService {
       language,
       interactionLanguage,
       pageLang,
+      department,
       recencyDays,
       useDenormalizedPreFilter,
       returnDebugData,
     });
-    const hasPostSearchFilters = Boolean(pageLang) || typeof expertFeedbackRating === 'number';
+    const hasPostSearchFilters = Boolean(pageLang) || Boolean(department) || typeof expertFeedbackRating === 'number';
     const engineK = useDenormalizedPreFilter
       ? Math.max(k * 4, 25)
       : (hasPostSearchFilters ? Math.max(k * 20, 100) : k * 2);
@@ -381,6 +384,7 @@ class DocDBVectorService {
           if (interactionLanguage) preMatch.interactionLanguage = denormalizedLanguage;
           else preMatch.pageLanguage = denormalizedLanguage;
         }
+        if (department) preMatch.department = department;
         if (typeof recencyDays === 'number' && recencyDays > 0) {
           const cutoff = new Date(Date.now() - (recencyDays * 24 * 60 * 60 * 1000));
           preMatch.$or = [
@@ -393,6 +397,7 @@ class DocDBVectorService {
       pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: engineK, efSearch: 200 } } });
       pipeline.push({ $limit: engineK });
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
+      if (!useDenormalizedPreFilter && department) pipeline.push({ $match: { department } });
       if (!useDenormalizedPreFilter) {
         pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
         pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
