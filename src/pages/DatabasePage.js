@@ -14,6 +14,7 @@ import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
 import { useAnnounceOnChange } from '../hooks/useAnnounceOnChange.js';
 import { announce } from '../utils/liveAnnouncer.js';
+import { formatLabelValue } from '../utils/labelValue.js';
 import {
   ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT,
   EXPERT_EVAL_CHATS_EXPORT,
@@ -56,6 +57,8 @@ const DatabasePage = ({ lang }) => {
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isRepairingQaMatchScores, setIsRepairingQaMatchScores] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
+  // null | 'checking' (counting, or confirm open) | 'removing' (after the admin confirmed)
+  const [retiredFieldsStage, setRetiredFieldsStage] = useState(null);
   // Each async action below gets its own { text, isError } | null message
   // state, rendered right next to its own button, instead of one shared
   // state that only ever renders in one fixed page position regardless of
@@ -72,6 +75,7 @@ const DatabasePage = ({ lang }) => {
   const [repairExpertFeedbackMessage, setRepairExpertFeedbackMessage] = useState(null);
   const [migratePublicFeedbackMessage, setMigratePublicFeedbackMessage] = useState(null);
   const [repairQaMatchScoresMessage, setRepairQaMatchScoresMessage] = useState(null);
+  const [removeRetiredFieldsMessage, setRemoveRetiredFieldsMessage] = useState(null);
   // Keyed by check.id — each integrity check button announces its own
   // outcome next to itself, not through one shared page-level message.
   const [checksMessages, setChecksMessages] = useState({});
@@ -629,6 +633,37 @@ const DatabasePage = ({ lang }) => {
       setRepairQaMatchScoresMessage(buildErrorStatus('admin.database.repairQaMatchScoresError', error));
     } finally {
       setIsRepairingQaMatchScores(false);
+    }
+  };
+
+  // Counts first, then confirm with those counts, then remove. The server
+  // owns the field list; this page sends back the list it showed, so the
+  // server can refuse if the list changed in between.
+  const handleRemoveRetiredFields = async () => {
+    setRetiredFieldsStage('checking');
+    setRemoveRetiredFieldsMessage(null);
+    const listOf = (fields, key, separator) => fields
+      .filter((f) => f[key] > 0)
+      .map((f) => formatLabelValue(`${f.collection}.${f.field}`, formatNumber(f[key], lang), lang))
+      .join(separator);
+    try {
+      const counts = await DataStoreService.getRetiredFieldCounts();
+      const found = listOf(counts, 'count', '\n');
+      if (!found) {
+        setRemoveRetiredFieldsMessage({ text: t('admin.database.removeRetiredFieldsNone'), isError: false });
+        return;
+      }
+      if (!window.confirm(t('admin.database.removeRetiredFieldsConfirm').replace('{list}', () => found))) return;
+      setRetiredFieldsStage('removing');
+      const removed = await DataStoreService.removeRetiredFields(counts.map((f) => `${f.collection}.${f.field}`));
+      const list = listOf(removed, 'removed', '; ') || formatNumber(0, lang);
+      setRemoveRetiredFieldsMessage({ text: t('admin.database.removeRetiredFieldsSuccess').replace('{list}', () => list), isError: false });
+    } catch (error) {
+      setRemoveRetiredFieldsMessage(error.status === 409
+        ? { text: t('admin.database.removeRetiredFieldsChanged'), isError: true }
+        : buildErrorStatus('admin.database.removeRetiredFieldsError', error));
+    } finally {
+      setRetiredFieldsStage(null);
     }
   };
 
@@ -1304,6 +1339,17 @@ const DatabasePage = ({ lang }) => {
           {isRepairingQaMatchScores ? t('admin.database.repairingLabel') : t('admin.database.repairQaMatchScoresButton')}
         </GcdsButton>
         {renderStatusMessage(repairQaMatchScoresMessage, 'success', 'repairQaMatchScores')}
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{t('admin.database.removeRetiredFieldsTitle')}</GcdsHeading>
+        <GcdsText>{t('admin.database.removeRetiredFieldsDescription')}</GcdsText>
+        <GcdsButton onClick={handleRemoveRetiredFields} disabled={retiredFieldsStage !== null} buttonRole="danger" className="mb-200">
+          {retiredFieldsStage === 'checking' && t('admin.database.checkingLabel')}
+          {retiredFieldsStage === 'removing' && t('admin.database.removingLabel')}
+          {retiredFieldsStage === null && t('admin.database.removeRetiredFieldsButton')}
+        </GcdsButton>
+        {renderStatusMessage(removeRetiredFieldsMessage, 'success', 'removeRetiredFields')}
       </div>
     </GcdsContainer >
   );

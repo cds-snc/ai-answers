@@ -88,13 +88,6 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-  // Legacy TOTP secret. Nothing reads or writes it any more (sign-up stopped
-  // filling it); kept so existing documents still load. Clearing it from those
-  // documents needs a migration.
-  twoFASecret: {
-    type: String,
-    default: null,
-  },
   // Password sign-in lockout (config/passport.js)
   loginAttempts: {
     type: Number,

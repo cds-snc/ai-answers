@@ -120,8 +120,9 @@ in production" in the plan):
 
 Remaining gap: sign-up does no email verification or domain check, and still answers
 `User already exists` to a direct API call. Plan:
-[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2, PRs B and C). `twoFASecret` on the user is a legacy field that nothing reads or
-writes; existing accounts still hold a value until a migration clears it.
+[docs/plans/auth-hardening.md](../plans/auth-hardening.md) (Phase 2, PRs B and C). The legacy `twoFASecret` field is out of the user schema;
+the Database page's "Remove retired fields" button clears it from existing accounts
+(`api/db/db-remove-retired-fields.js`).
 
 The admin users endpoint (`user-users`, list and PATCH) returns only the fields in
 `ADMIN_USER_FIELDS` (`services/UserService.js`), never the whole user document, which holds
