@@ -563,6 +563,14 @@
       "repairQaMatchScoresConfirm": "Remplir maintenant les scores manquants des correspondances Q-R ?",
       "repairQaMatchScoresSuccess": "Scores des correspondances Q-R réparés. Mis à jour : {updated} ; correspondances vérifiées : {matches}.",
       "repairQaMatchScoresError": "Échec de la réparation des scores des correspondances Q-R : {error}",
+      "removeRetiredFieldsTitle": "Supprimer les champs retirés",
+      "removeRetiredFieldsDescription": "Supprimer des enregistrements les champs que l'application n'utilise plus, pour qu'ils n'apparaissent plus dans les exportations. La liste des champs est définie dans le code. Vous verrez combien d'enregistrements ont chaque champ avant toute modification. Cette action est irréversible.",
+      "removeRetiredFieldsButton": "Supprimer les champs retirés",
+      "removeRetiredFieldsConfirm": "Ces champs retirés seront supprimés. Nombre d'enregistrements :\n\n{list}\n\nCette action est irréversible. Continuer?",
+      "removeRetiredFieldsNone": "Aucun champ retiré trouvé. Rien n'a été modifié.",
+      "removeRetiredFieldsChanged": "La liste des champs retirés a changé depuis la vérification des nombres. Rien n'a été supprimé. Réessayez pour voir les nouveaux nombres.",
+      "removeRetiredFieldsSuccess": "Champs retirés supprimés. Enregistrements modifiés : {list}.",
+      "removeRetiredFieldsError": "Échec de la suppression des champs retirés : {error}",
       "migratePublicFeedbackTitle": "Migrer les commentaires publics",
       "migratePublicFeedbackDescription": "Déplacer tous les commentaires publics de la collection des commentaires d'experts vers la nouvelle collection des commentaires publics.",
       "migratePublicFeedbackButton": "Migrer les commentaires publics",
@@ -1124,11 +1132,11 @@
       "submitting": "Envoi...",
       "success": "Nous avons mis à jour votre mot de passe.",
       "error": "Échec de la réinitialisation du mot de passe.",
-      "invalid": "Lien de réinitialisation invalide.",
+      "invalid": "Ce lien de réinitialisation est incomplet. Copiez le lien complet de votre courriel ou demandez un nouveau lien de réinitialisation.",
       "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
-      "lockedOut": "Trop de tentatives échouées. Attendez 30 minutes, puis demandez un nouveau lien de réinitialisation.",
-      "invalidCode": "Code invalide ou expiré. Veuillez réessayer."
+      "invalidCode": "Ce lien de réinitialisation ne fonctionne plus. Il a peut-être expiré ou déjà été utilisé. Demandez un nouveau lien de réinitialisation.",
+      "requestNewLink": "Demander un nouveau lien de réinitialisation"
     }
   },
   "account": {

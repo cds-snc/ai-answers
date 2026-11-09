@@ -86,7 +86,7 @@ ${departmentsString}
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
-- Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
+- What's allowed, required or risky in another country (bringing medication/goods, vaccines, laws, safety) → GAC-AMC (travel.gc.ca), even if topic is health. What Canada allows back in → CBSA-ASFC or HC-SC
 - Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
 - Find a member of Parliament →  HOC-CDC  
 - Find permits & licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
@@ -170,6 +170,13 @@ ${departmentsString}
 <analysis>
 <department>BAC-LAC</department>
 <departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
+</analysis>
+</example>
+<example>
+* "Can I bring my codeine on a trip to Indonesia?" matches GAC-AMC, not HC-SC: Indonesia's laws decide
+<analysis>
+<department>GAC-AMC</department>
+<departmentUrl>https://www.international.gc.ca/global-affairs-affaires-mondiales/home-accueil.aspx?lang=eng</departmentUrl>
 </analysis>
 </example>
 </examples>

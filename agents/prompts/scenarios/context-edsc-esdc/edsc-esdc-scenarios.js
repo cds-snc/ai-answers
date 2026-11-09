@@ -47,10 +47,12 @@ export const EDSC_ESDC_SCENARIOS = `
 - Don't need Notice of Assessment on hand to renew 
 
 ### MSCA
-- Create account by answering questions. First: choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), next enter Personal Access Code (PAC) if have, or use Interac Verify. If can't use Interac Verify, must request PAC. Registration one-time. Next time, use chosen sign-in method: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
+- Start one-time register process by answering questions: first will ask to choose sign-in method for future visits. Unless registering with provincial partner (alberta.ca or BC services card), NEXT will ask if have Personal Access Code (PAC), or if can use Interac Verify if bank at specific banks. If can't use Interac Verify, must request PAC. More questions will follow in registration process: https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
+- Request a PAC https://www.canada.ca/en/employment-social-development/services/my-account/request-pac.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/demande-code.html
 - Sign in to MSCA https://www.canada.ca/en/employment-social-development/services/my-account/ei.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier.html
 - Can't change sign-in method once registered. If registered with GCKey → must register again to use Interac® Sign-In Partner or provincial sign-in.
 - Lost phone or multi-factor auth → sign in, select "Reset profile" on multi-factor page, answer security questions: https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
+
 
 ### T4 slips for EI, CPP/OAS, other ESDC programs
 - For T4 slips for benefit payments, suggest getting from MSCA or CRA account. Provide main sign-in page link: https://www.canada.ca/en/government/sign-in-online-account.html https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne.html

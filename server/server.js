@@ -112,6 +112,7 @@ import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbRepairQaMatchScoresHandler from '../api/db/db-repair-qa-match-scores.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
+import dbRemoveRetiredFieldsHandler from '../api/db/db-remove-retired-fields.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
 import chatAssignInteractionHandler from '../api/chat/chat-assign-interaction.js';
 import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
@@ -439,6 +440,7 @@ app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-repair-qa-match-scores', dbRepairQaMatchScoresHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
+app.all('/api/db/db-remove-retired-fields', dbRemoveRetiredFieldsHandler);
 
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);

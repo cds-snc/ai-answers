@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import resetPasswordHandler from '../api/auth/auth-reset-password.js';
+import { hashResetToken } from '../api/auth/reset-token.js';
 import { User } from '../models/user.js';
 
 vi.mock('../models/user.js', () => {
@@ -18,25 +19,43 @@ vi.mock('../services/TrustedDeviceService.js', () => ({
   default: { revokeAll: vi.fn() }
 }));
 
-vi.mock('speakeasy', () => ({
-  default: {
-    totp: {
-      verify: vi.fn()
-    }
-  }
-}));
-
-import speakeasy from 'speakeasy';
 import TrustedDeviceService from '../services/TrustedDeviceService.js';
+
+const TOKEN = 'good-token-from-the-email-link';
+const TOKEN_HASH = hashResetToken(TOKEN);
 
 function makeRes() {
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
   return res;
 }
 
+function makeUser(overrides = {}) {
+  return {
+    _id: 'user-123',
+    resetPasswordTokenHash: TOKEN_HASH,
+    resetPasswordExpiresAt: new Date(Date.now() + 5 * 60000),
+    save: vi.fn().mockResolvedValue(true),
+    ...overrides,
+  };
+}
+
+// findOne(...).read('primary') resolves to the user.
+function findsUser(user) {
+  const read = vi.fn().mockResolvedValue(user);
+  User.findOne.mockReturnValue({ read });
+  return read;
+}
+
+function submit(code, newPassword = 'newpass123') {
+  const res = makeRes();
+  return resetPasswordHandler({ body: { email: 'a@b.com', code, newPassword } }, res).then(() => res);
+}
+
 describe('Auth Reset Password Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // The atomic write that uses up the token finds it by default.
+    User.findOneAndUpdate.mockResolvedValue({ _id: 'user-123' });
   });
 
   it('returns 400 when required fields are missing', async () => {
@@ -45,11 +64,8 @@ describe('Auth Reset Password Handler', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it('refuses a password shorter than the rule before reading the user or counting an attempt', async () => {
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'short' }
-    }, res);
+  it('refuses a password shorter than the rule before reading the user or using up the link', async () => {
+    const res = await submit(TOKEN, 'short');
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'PASSWORD_RULE' }));
     expect(User.findOne).not.toHaveBeenCalled();
@@ -59,193 +75,156 @@ describe('Auth Reset Password Handler', () => {
   it('refuses an email that is not a string before reading the user', async () => {
     const res = makeRes();
     await resetPasswordHandler({
-      body: { email: ['a@b.com'], code: '123456', newPassword: 'newpass1' }
+      body: { email: ['a@b.com'], code: TOKEN, newPassword: 'newpass1' }
     }, res);
     expect(res.status).toHaveBeenCalledWith(500);
     expect(User.findOne).not.toHaveBeenCalled();
   });
 
+  it('refuses a code that is not a string before reading the user', async () => {
+    const res = await submit([TOKEN]);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
   it('returns generic 401 when user is not found (no enumeration)', async () => {
-    User.findOne.mockResolvedValue(null);
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'no@user.com', code: '123456', newPassword: 'newpass1' }
-    }, res);
+    findsUser(null);
+    const res = await submit(TOKEN);
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'RESET_INVALID_CODE', message: 'invalid or expired code' })
     );
   });
 
-  it('returns generic 401 when user has no resetPasswordSecret', async () => {
-    User.findOne.mockResolvedValue({ resetPasswordSecret: null, resetPasswordAttempts: 0 });
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass1' }
-    }, res);
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'RESET_INVALID_CODE' })
-    );
-  });
-
-  it('returns 429 with RESET_LOCKED_OUT when account is locked', async () => {
-    const lockedUntil = new Date(Date.now() + 20 * 60000);
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 5,
-      resetPasswordLockedUntil: lockedUntil,
-      save: vi.fn(),
-    };
-    User.findOne.mockResolvedValue(user);
-
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass1' }
-    }, res);
-
-    expect(res.status).toHaveBeenCalledWith(429);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'RESET_LOCKED_OUT' })
-    );
-    // Should not have attempted TOTP verification
-    expect(speakeasy.totp.verify).not.toHaveBeenCalled();
-  });
-
-  it('clears expired lockout and allows verification', async () => {
-    const expiredLock = new Date(Date.now() - 1000);
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 5,
-      resetPasswordLockedUntil: expiredLock,
-      save: vi.fn().mockResolvedValue(true),
-    };
-    User.findOne.mockResolvedValue(user);
-    speakeasy.totp.verify.mockReturnValue(true);
-
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass123' }
-    }, res);
-
-    // Should have cleared the stale lockout
-    expect(User.updateOne).toHaveBeenCalledWith(
-      { _id: 'user-123' },
-      { $set: { resetPasswordAttempts: 0, resetPasswordLockedUntil: null } }
-    );
+  it('reads the user from the primary, not a replica that may lag the token write', async () => {
+    const read = findsUser(makeUser());
+    const res = await submit(TOKEN);
+    expect(read).toHaveBeenCalledWith('primary');
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(user.password).toBe('newpass123');
   });
 
-  it('atomically increments resetPasswordAttempts on invalid code', async () => {
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 2,
-      resetPasswordLockedUntil: null,
-      save: vi.fn().mockResolvedValue(true),
-    };
-    User.findOne.mockResolvedValue(user);
-    speakeasy.totp.verify.mockReturnValue(false);
-    User.findOneAndUpdate.mockResolvedValue({ resetPasswordAttempts: 3 });
-
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass1' }
-    }, res);
-
+  it('returns generic 401 when the user has no reset token', async () => {
+    findsUser(makeUser({ resetPasswordTokenHash: null, resetPasswordExpiresAt: null }));
+    const res = await submit(TOKEN);
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'RESET_INVALID_CODE' })
-    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+  });
+
+  it('refuses the right token once it has expired', async () => {
+    const user = makeUser({ resetPasswordExpiresAt: new Date(Date.now() - 1000) });
+    findsUser(user);
+    const res = await submit(TOKEN);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
+  it('works once: the same link fails after a successful reset', async () => {
+    const user = makeUser();
+    findsUser(user);
+    User.findOneAndUpdate.mockResolvedValueOnce({ _id: 'user-123' }).mockResolvedValueOnce(null);
+
+    const first = await submit(TOKEN);
+    expect(first.status).toHaveBeenCalledWith(200);
+
+    const second = await submit(TOKEN, 'anotherpass1');
+    expect(second.status).toHaveBeenCalledWith(401);
+    expect(second.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+    expect(user.password).toBe('newpass123');
+    expect(user.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses up the token in one write that only matches this token', async () => {
+    findsUser(makeUser());
+    await submit(TOKEN);
+    // Matching on the hash means a newer link, sent since the read, is left
+    // alone, and a second submit of this link finds nothing to use up.
     expect(User.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: 'user-123', resetPasswordSecret: 'secret' },
-      { $inc: { resetPasswordAttempts: 1 } },
-      { new: true }
+      { _id: 'user-123', resetPasswordTokenHash: TOKEN_HASH },
+      { $set: { resetPasswordTokenHash: null, resetPasswordExpiresAt: null } }
     );
   });
 
-  it('sets timed lockout when attempts reach MAX_RESET_ATTEMPTS', async () => {
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 4,
-      resetPasswordLockedUntil: null,
-      save: vi.fn().mockResolvedValue(true),
-    };
-    User.findOne.mockResolvedValue(user);
-    speakeasy.totp.verify.mockReturnValue(false);
-    User.findOneAndUpdate.mockResolvedValue({ resetPasswordAttempts: 5 });
+  it('refuses without saving when the token was used or replaced since the read', async () => {
+    const user = makeUser();
+    findsUser(user);
+    User.findOneAndUpdate.mockResolvedValue(null);
 
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '999999', newPassword: 'newpass1' }
-    }, res);
+    const res = await submit(TOKEN);
 
-    expect(res.status).toHaveBeenCalledWith(429);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'RESET_LOCKED_OUT' })
-    );
-    expect(User.updateOne).toHaveBeenCalledWith(
-      { _id: 'user-123' },
-      { $set: { resetPasswordLockedUntil: expect.any(Date) } }
-    );
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+    expect(user.save).not.toHaveBeenCalled();
   });
 
-  it('resets password and clears all reset state on valid code', async () => {
-    const save = vi.fn().mockResolvedValue(true);
-    const user = {
-      _id: 'user-123',
-      resetPasswordSecret: 'secret',
-      resetPasswordAttempts: 1,
-      resetPasswordLockedUntil: null,
-      save,
-    };
-    User.findOne.mockResolvedValue(user);
-    speakeasy.totp.verify.mockReturnValue(true);
+  it('refuses an older link after a new reset was requested', async () => {
+    // The newer request replaced the stored hash.
+    findsUser(makeUser({ resetPasswordTokenHash: hashResetToken('newer-token') }));
+    const res = await submit(TOKEN);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+  });
 
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass123' }
-    }, res);
+  it('refuses a wrong token without using up the link or saving', async () => {
+    const user = makeUser();
+    findsUser(user);
+
+    const res = await submit('wrong-token');
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'RESET_INVALID_CODE' }));
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(user.save).not.toHaveBeenCalled();
+  });
+
+  it('has no lockout: wrong tries never block the real link', async () => {
+    findsUser(makeUser());
+    for (let i = 0; i < 10; i += 1) {
+      const res = await submit(`wrong-token-${i}`);
+      expect(res.status).toHaveBeenCalledWith(401);
+    }
+    const res = await submit(TOKEN);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('resets the password on a valid token', async () => {
+    const user = makeUser();
+    findsUser(user);
+
+    const res = await submit(TOKEN);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(user.password).toBe('newpass123');
-    expect(user.resetPasswordSecret).toBeNull();
-    expect(user.resetPasswordAttempts).toBe(0);
-    expect(user.resetPasswordLockedUntil).toBeNull();
-    expect(save).toHaveBeenCalled();
+    expect(user.save).toHaveBeenCalled();
     // Every remembered device needs a 2FA code again.
     expect(TrustedDeviceService.revokeAll).toHaveBeenCalledWith('user-123');
+    // Devices are forgotten before the link is used up, and the password is
+    // saved after.
+    const order = [
+      TrustedDeviceService.revokeAll.mock.invocationCallOrder[0],
+      User.findOneAndUpdate.mock.invocationCallOrder[0],
+      user.save.mock.invocationCallOrder[0],
+    ];
+    expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
   it('keeps the reset link usable when forgetting devices fails', async () => {
-    const save = vi.fn().mockResolvedValue(true);
-    const user = { _id: 'user-123', resetPasswordSecret: 'secret', resetPasswordAttempts: 0, save };
-    User.findOne.mockResolvedValue(user);
-    speakeasy.totp.verify.mockReturnValue(true);
+    const user = makeUser();
+    findsUser(user);
     TrustedDeviceService.revokeAll.mockRejectedValueOnce(new Error('db down'));
 
-    const res = makeRes();
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '123456', newPassword: 'newpass123' }
-    }, res);
+    const res = await submit(TOKEN);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    // Nothing saved: the same link and code work on a retry.
-    expect(save).not.toHaveBeenCalled();
-    expect(user.resetPasswordSecret).toBe('secret');
+    // Link not used up and nothing saved: the same link works on a retry.
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(user.save).not.toHaveBeenCalled();
   });
 
-  it('keeps remembered devices when the code is wrong', async () => {
-    User.findOne.mockResolvedValue({ _id: 'user-123', resetPasswordSecret: 'secret', resetPasswordAttempts: 0 });
-    User.findOneAndUpdate.mockResolvedValue({ resetPasswordAttempts: 1 });
-    speakeasy.totp.verify.mockReturnValue(false);
-    await resetPasswordHandler({
-      body: { email: 'a@b.com', code: '000000', newPassword: 'newpass123' }
-    }, makeRes());
+  it('keeps remembered devices when the token is wrong', async () => {
+    findsUser(makeUser());
+    await submit('wrong-token');
     expect(TrustedDeviceService.revokeAll).not.toHaveBeenCalled();
   });
 });

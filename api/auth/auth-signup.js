@@ -1,6 +1,5 @@
 import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
-import speakeasy from 'speakeasy';
 import { isValidEmail, normalizeEmail } from '../../src/utils/auth/validateEmail.js';
 import { meetsPasswordRule } from '../../src/utils/auth/passwordRule.js';
 
@@ -42,9 +41,6 @@ const signupHandler = async (req, res) => {
       return alreadyExists(res);
     }
 
-    // Generate secrets immediately to avoid race conditions later
-    const resetPasswordSecret = speakeasy.generateSecret({ length: 20 }).base32;
-
     // The first user ever is created as an active admin, in the same write.
     // isFirstAdmin has a unique index, so if two sign-ups both find the
     // database empty, only one save can claim it.
@@ -53,7 +49,6 @@ const signupHandler = async (req, res) => {
       password,
       role: asFirstAdmin ? 'admin' : 'partner',
       active: asFirstAdmin,
-      resetPasswordSecret,
       ...(asFirstAdmin ? { isFirstAdmin: true } : {})
     });
 

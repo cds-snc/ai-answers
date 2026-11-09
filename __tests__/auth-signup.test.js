@@ -14,13 +14,6 @@ vi.mock('../api/db/db-connect.js', () => ({
     default: vi.fn().mockResolvedValue(true)
 }));
 
-// Mock speakeasy
-vi.mock('speakeasy', () => ({
-    default: {
-        generateSecret: () => ({ base32: 'secret' })
-    }
-}));
-
 const makeRes = () => ({
     status: vi.fn().mockReturnThis(),
     json: vi.fn()

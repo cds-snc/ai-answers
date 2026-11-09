@@ -15,11 +15,13 @@ vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
-const { mockGetTableCounts, mockDropIndexes, mockCreateIndexes, mockGetIndexRebuildStatus } = vi.hoisted(() => ({
+const { mockGetTableCounts, mockDropIndexes, mockCreateIndexes, mockGetIndexRebuildStatus, mockGetRetiredFieldCounts, mockRemoveRetiredFields } = vi.hoisted(() => ({
   mockGetTableCounts: vi.fn(),
   mockDropIndexes: vi.fn(),
   mockCreateIndexes: vi.fn(),
   mockGetIndexRebuildStatus: vi.fn(),
+  mockGetRetiredFieldCounts: vi.fn(),
+  mockRemoveRetiredFields: vi.fn(),
 }));
 
 vi.mock('../../services/DataStoreService.js', () => ({
@@ -28,6 +30,8 @@ vi.mock('../../services/DataStoreService.js', () => ({
     dropIndexes: mockDropIndexes,
     createIndexes: mockCreateIndexes,
     getIndexRebuildStatus: mockGetIndexRebuildStatus,
+    getRetiredFieldCounts: mockGetRetiredFieldCounts,
+    removeRetiredFields: mockRemoveRetiredFields,
   },
 }));
 
@@ -452,5 +456,93 @@ describe('DatabasePage index rebuild', () => {
     const calls = mockGetIndexRebuildStatus.mock.calls.length;
     await vi.advanceTimersByTimeAsync(10000);
     expect(mockGetIndexRebuildStatus.mock.calls.length).toBe(calls);
+  });
+});
+
+describe('DatabasePage remove retired fields', () => {
+  const counts = [
+    { collection: 'users', field: 'resetPasswordSecret', count: 3 },
+    { collection: 'users', field: 'twoFASecret', count: 0 },
+  ];
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    mockGetTableCounts.mockReset();
+    mockGetRetiredFieldCounts.mockReset();
+    mockRemoveRetiredFields.mockReset();
+    mockT.mockImplementation((key) => key);
+  });
+
+  const renderPage = () => {
+    mockGetTableCounts.mockResolvedValue({});
+    render(<DatabasePage lang="en" />);
+  };
+
+  const clickRemove = () => fireEvent.click(screen.getByText('admin.database.removeRetiredFieldsButton'));
+
+  it('shows the counts in the confirm and removes nothing when it is cancelled', async () => {
+    mockT.mockImplementation((key) => (key === 'admin.database.removeRetiredFieldsConfirm' ? 'Confirm {list}' : key));
+    mockGetRetiredFieldCounts.mockResolvedValue(counts);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+
+    clickRemove();
+
+    await waitFor(() => expect(confirmSpy).toHaveBeenCalledWith('Confirm users.resetPasswordSecret: 3'));
+    await waitFor(() => expect(screen.getByText('admin.database.removeRetiredFieldsButton')).toBeTruthy());
+    expect(mockRemoveRetiredFields).not.toHaveBeenCalled();
+  });
+
+  it('says "Checking", not "Removing", while the confirm is open', async () => {
+    mockGetRetiredFieldCounts.mockResolvedValue(counts);
+    let labelDuringConfirm;
+    vi.spyOn(window, 'confirm').mockImplementation(() => {
+      labelDuringConfirm = screen.getByRole('button', { name: /admin\.database\.(checking|removing)Label/ }).textContent;
+      return false;
+    });
+    renderPage();
+
+    clickRemove();
+
+    await waitFor(() => expect(labelDuringConfirm).toBe('admin.database.checkingLabel'));
+  });
+
+  it('after confirming, sends back every field it was shown, including ones with no records', async () => {
+    mockGetRetiredFieldCounts.mockResolvedValue(counts);
+    mockRemoveRetiredFields.mockResolvedValue([
+      { collection: 'users', field: 'resetPasswordSecret', removed: 3 },
+      { collection: 'users', field: 'twoFASecret', removed: 0 },
+    ]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderPage();
+
+    clickRemove();
+
+    await waitForAnnouncement('admin.database.removeRetiredFieldsSuccess', 'polite');
+    expect(mockRemoveRetiredFields).toHaveBeenCalledWith(['users.resetPasswordSecret', 'users.twoFASecret']);
+  });
+
+  it('does not ask to confirm when no record has a retired field', async () => {
+    mockGetRetiredFieldCounts.mockResolvedValue(counts.map((f) => ({ ...f, count: 0 })));
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    renderPage();
+
+    clickRemove();
+
+    await waitForAnnouncement('admin.database.removeRetiredFieldsNone', 'polite');
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockRemoveRetiredFields).not.toHaveBeenCalled();
+  });
+
+  it('says the list changed when the server refuses the confirmed list', async () => {
+    mockGetRetiredFieldCounts.mockResolvedValue(counts);
+    mockRemoveRetiredFields.mockRejectedValue(Object.assign(new Error('changed'), { status: 409 }));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderPage();
+
+    clickRemove();
+
+    await waitForAnnouncement('admin.database.removeRetiredFieldsChanged', 'assertive');
   });
 });

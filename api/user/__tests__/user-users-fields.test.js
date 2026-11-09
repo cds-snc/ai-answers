@@ -5,7 +5,7 @@ import { User } from '../../../models/user.js';
 import UserService from '../../../services/UserService.js';
 
 // The Users page only needs these. Everything else on a user document -
-// resetPasswordSecret, 2FA codes, lockout counters - must never reach the
+// reset token hash, 2FA codes, lockout counters - must never reach the
 // browser, so both responses that feed the page are checked against an
 // exact key list rather than for the absence of a few known secrets.
 const ALLOWED = ['_id', 'active', 'createdAt', 'email', 'group', 'institution', 'role'];
@@ -35,19 +35,25 @@ async function run(method, { body, user }) {
 }
 
 async function makeUserWithSecrets(overrides = {}) {
-  return User.create({
+  const user = await User.create({
     email: `fields-${Date.now()}-${Math.random()}@example.com`,
     password: 'password123',
     role: 'partner',
     active: true,
-    resetPasswordSecret: 'reset-secret',
-    resetPasswordAttempts: 2,
+    resetPasswordTokenHash: 'reset-token-hash',
     twoFACode: 'hashed-code',
-    twoFASecret: 'legacy-secret',
     twoFAAttempts: 1,
     loginAttempts: 3,
     ...overrides
   });
+  // Retired secrets that old accounts may still hold until "Remove retired
+  // fields" runs. Not in the schema, so User.create would drop them: write
+  // them straight to the collection.
+  await User.collection.updateOne(
+    { _id: user._id },
+    { $set: { twoFASecret: 'legacy-secret', resetPasswordSecret: 'legacy-reset-secret' } }
+  );
+  return user;
 }
 
 describe('user-users only returns the fields the Users page uses', () => {

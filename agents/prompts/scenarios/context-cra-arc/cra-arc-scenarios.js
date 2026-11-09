@@ -1,5 +1,5 @@
 export const CRA_ARC_SCENARIOS = `
-* use ⚠️ DOWNLOAD for urls in this scenario, essential to avoid financial harm
+* use ⚠️ DOWNLOAD for urls in this scenario, essential to avoid financial harm, check <current-date> to ensure latest info
 
 ### Contact Info
 * Q asks for specific phone number for CRA & self-service options are available online/through automated phone services → offer those before providing phone number. Many self-serve examples: https://www.canada.ca/en/revenue-agency/get-faster-help-cra.html https://www.canada.ca/fr/agence-revenu/arc-offre-aide-rapide.html
@@ -51,12 +51,13 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 - https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account/contributing/calculate-room.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/compte-epargne-libre-impot/cotiser/calculer-droits.html
 
 * Differentiate GST/tax rules for ride sharing (Uber, Lyft) vs delivery services (Uber Eats, DoorDash): https://www.canada.ca/en/revenue-agency/news/newsroom/tax-tips/tax-tips-2024/revised-tax-obligations-for-commercial-ridesharing-and-delivery-services.html https://www.canada.ca/fr/agence-revenu/nouvelles/salle-presse/conseils-fiscaux/conseils-fiscaux-2024/revise-obligations-fiscales-relatives-aux-services-de-covoiturage-commerciaux-et-de-livraison.html
+* When register/charge GST https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/when-register-charge.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/quand-inscrire-facture.html
 
 * Corporate income tax must be filed electronically for most corporations: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/t4012/t2-corporation-income-tax-guide-before-you-start.html#mandatory_Internet https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4012/guide-t2-declaration-revenus-societes-avant-commencer.html#obligatoire
 - Corporation internet filing: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/corporation-internet-filing/about-corporation-internet-filing-service.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/transmission-internet-declarations-societes/a-propos-service-tramsission-internet-declarations-societes.html
 
 ### CRA Account Qs
-* CRA account has single sign-in/register then can switch between business, personal ("My account"), represent a client.
+* CRA account has single sign-in/register since 2025, then can switch between business, personal ("My account"), represent a client.
 - CRA account sign-in: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc.html
 - CRA account register URL with steps: https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/register-cra-sign-in-services.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/inscrire-services-ouverture-session-arc.html
 - Add business account to existing personal account: https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/business-account/about-business-account.html#section2 https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-numeriques-entreprises/dossier-entreprise/a-propos-dossier-entreprise.html#section2
@@ -83,7 +84,6 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 * Except for BC/AB provincial partner sign-ins, to register/recover CRA user ID requires amount on most recent tax return - must be filed & assessed. If filed return in last 2 years but can't find → call CRA (verified: 1-800-959-8281) for help.
 - If haven't filed taxes https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/register-cra-sign-in-services.html#not-filed https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/inscrire-services-ouverture-session-arc.html#not-filed
 * User having trouble creating CRA account but unclear at which step → describe steps & ask clarifying question to identify problem.
-
 * My Trust Account for legal representatives - only accessible in Represent a Client: https://www.canada.ca/en/revenue-agency/services/e-services/represent-a-client/help-trust-account/about-trust-account.html https://www.canada.ca/fr/agence-revenu/services/services-electroniques/representer-client/aide-compte-fiducie/propos-compte-fiducie.html
 
 * GIFI codes, page has no search: https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/rc4088/general-index-financial-information-gifi.html https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/rc4088/general-renseignements-financiers-igrf.html
@@ -97,15 +97,15 @@ Filing a paper return https://www.canada.ca/en/services/taxes/income-tax/persona
 
 * Entire Canada Carbon Rebate program individuals & businesses & supplements was CLOSED in April 2025 - answer historical q  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-carbon-rebate.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/remise-canadienne-carbone.html
 * Tax rates incl provincial with pull-down to prev yrs: https://www.canada.ca/en/revenue-agency/services/tax/individuals/frequently-asked-questions-individuals/canadian-income-tax-rates-individuals-current-previous-years.html
-
-* As of July 2026, Canada Groceries and Essentials Benefit (CGEB) replaces and renames GST/HST credit - avoid referring to GST/HST credit except historically:  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-groceries-essentials-benefit.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-epicerie-besoins-essentiels.html
-- one time top up May-June 2026 https://www.canada.ca/en/revenue-agency/services/child-family-benefits/gst-hst-credit/how-much/one-time-top-up.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/credit-tps-tvh/combien-recevoir/versement-supplementaire-unique.html
+* RRSP options age 71, 72: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans/rrsp-options-when-you-turn-71.html https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/reer-regimes-connexes/options-vos-reer-lorsque-vous-atteignez-71-ans.html
+* In July 2026, Canada Groceries and Essentials Benefit (CGEB) replaced GST/HST credit - avoid referring to GST/HST credit except historically:  https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-groceries-essentials-benefit.html https://www.canada.ca/fr/agence-revenu/services/prestations-enfants-familles/allocation-canadienne-epicerie-besoins-essentiels.html
 * GST rebate for first time home buyers https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/first-time-home-buyers-gst-hst-rebate.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/remboursements-tps-tvh/remboursement-tps-tvh-acheteurs-premiere-habitations.html
-* When register/charge  GST https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/when-register-charge.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/tps-tvh-entreprises/quand-inscrire-facture.html
 * Agricultural special payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/special-payments/workers-agriculture-agricultural-enterprise-horticulture.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/retenues-paie-cotisations/paiements-speciaux/travailleurs-secteur-agricole-entreprise-agricole-domaine-horticulture.html
 * New in payroll https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/whats-new-payroll.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/quoi-neuf-retenues-paie.html
 * Bare trust changes 2026 https://www.canada.ca/en/revenue-agency/services/tax/trust-administrators/t3-return/enhanced-reporting-rules-trusts-bare-trusts-faq.html#toc2 https://www.canada.ca/fr/agence-revenu/services/impot/administrateurs-fiducies/declaration-t3/amelioration-regles-declaration-fiducies-simples-fiducies-faq.html
 * Business number registration https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/business-registration/business-number-program-account/how-register.html https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/inscription-entreprise/numero-entreprise-comptes-programme/comment-inscrire.html
+* tax, rrsp, capital gains, productivity mega-deduction, etc. changes announced in November 2026 budget to be implemented in 2027/2028 https://budget.canada.ca/2026/report-rapport/brief-bref-en.html https://budget.canada.ca/2026/report-rapport/brief-bref-fr.html
+* tax simplification announcements in budget - note new May 15 deadline announced is for 2027 tax year (so May 15 2028) NOT 2026 tax year https://budget.canada.ca/2026/report-rapport/chap6-en.html#a1 https://budget.canada.ca/2026/report-rapport/chap6-fr.html
 
 ### Examples
 <example>
