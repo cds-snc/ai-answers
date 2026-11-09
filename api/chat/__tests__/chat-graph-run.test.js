@@ -316,6 +316,17 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.streamInput.overrideUserId).toBeNull();
   });
 
+  it('runs every chat with the default service profile, whatever the client sends', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.body.input.serviceProfileId = 'canadalogin';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.serviceProfileId).toBe('default');
+  });
+
   describe('batch questions', () => {
     const BATCH_ID = '64b7f0c2a1b2c3d4e5f60718';
     const savedBatch = {

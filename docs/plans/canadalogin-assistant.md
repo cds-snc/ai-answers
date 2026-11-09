@@ -33,8 +33,9 @@ next to the CanadaLogin flow. For security it is never embedded in the sign-in p
 
 ## Fit with the platform vision
 
-This is the first service in the [platform vision](platform-vision.md): the first guided,
-multi-step process built on AI Answers' shared components, not just Q&A. So the plan
+This delivers the guided sign-in support described in Phase 2 of the
+[platform vision](platform-vision.md). It is the first guided, multi-step process built on
+AI Answers' shared components, not just Q&A. So the plan
 builds two things:
 
 - **This service**: the CanadaLogin scenario, portal registry and evals.
@@ -42,9 +43,9 @@ builds two things:
   link-domain restriction, and multi-turn eval datasets. Build these in general form, but
   only as general as this one service needs. Don't build profile features nobody uses yet.
 
-The vision's guarantees (no secrets, approved domains only, a way to reach a person,
-EN/FR parity, only human evals feed answers) are this plan's success criteria. If one
-changes here, change it in the vision too.
+This plan's success criteria are guarantees every service should keep: no secrets,
+approved domains only, a way to reach a person, EN/FR parity, and only human evals feed
+answers.
 
 ## Decisions made (2026-11-01)
 
@@ -137,8 +138,10 @@ Rules:
 - **`default` reproduces today's behaviour exactly.** Phase 1 must not change a regular
   chat. Test that with the profile resolved, the regular-mode prompt, tags and turn cap
   are unchanged.
-- **The profile is resolved once, at chat init, and stored by id on the `Chat`.** Later
-  turns look it up by id, so a client can't switch profiles mid-chat.
+- **The profile is resolved once, on the chat's first turn, and stored by id on the
+  `Chat`.** There is no separate chat-init request: the `Chat` document is first saved by
+  `persistNode` after turn 1. Later turns look the profile up by id, so a client can't
+  switch profiles mid-chat.
 - **Fail fast:** an unknown profile id in stored data is an error, not a silent fallback
   to `default`. (AGENTS.md rule 12.)
 - Keep it a plain object. No inheritance, no per-department overrides, and no admin UI
@@ -165,12 +168,13 @@ they appear in the outgoing message (see AGENTS.md, "Never drop a prompt tag"):
 - `<portal>…name, journeys, per-portal notes…</portal>`
 
 **Turn cap**: replace the two hard-coded `3`s with the profile's `maxTurns`. The server
-sends the cap in the chat-init response, the client uses it, and `sendAnswerRequest`
-takes it from the graph input. Locale strings need a variable instead
+sends the cap with the first turn's result (there is no chat-init response), the client
+uses it, and `sendAnswerRequest` reads it from the profile. Locale strings need a variable instead
 of a literal "3", with an assistant-mode variant that points to the call centre.
 
-**Check before building:** confirm the server actually rejects turns past the cap, not just
-the client. Also measure token growth over 10 turns. `conversationHistory` is sent in full,
+**Checked 2026-11-09: the server does not enforce the cap.** Only the client stops at 3.
+The server adds `<final-turn>` and still answers turn 4 and beyond. Add server-side
+enforcement as its own small PR before raising any cap. Also measure token growth over 10 turns. `conversationHistory` is sent in full,
 so the context and answer costs on turn 10 may need history trimming.
 
 ### 3. Prompt and scenario content (prompt-maintainer work)

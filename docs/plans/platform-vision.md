@@ -1,67 +1,72 @@
-# Vision: AI Answers as a federated platform for public-facing AI services
+# AI Answers: A Service & Platform Vision
 
-## Executive summary
+The vision for AI Answers has two dimensions: the services it delivers to people, and the
+platform that makes those services possible. On the service side, AI Answers is designed
+to evolve in three phases, from helping people find information to helping them transact
+with the Government of Canada. Each phase builds on the platform, trust and experience
+gained in the phase before it. The first two phases stay within the Unclassified domain.
+The third moves into Protected B services, where the opportunity to use AI to support
+service is greatest but the bar for security and privacy is highest.
 
-AI Answers is a federated platform for delivering public-facing AI services, and it
-already has many of the subagents and components needed. Institutions can use it to help
-people through any AI-supported process they want to develop. The platform has
-a set of agents and tools that can be combined into a harness, with the right foundation
-model called for each agent.
+On the platform side, AI Answers is built as a federated system for delivering
+public-facing AI services, designed to extend well beyond its initial chat function. The
+platform is made up of secure, reusable, self-contained agents and tools that can be
+combined for each new public facing AI-based capability, with the most suitable AI model
+selected for each task. Because new services can reuse what already exists, each phase of
+the service vision can be delivered faster, and with less risk, than building from
+scratch or building separately.
 
-The secure admin interface for institutions supports authentication and authorization
-management, dashboards, batches, reporting, AI analysis, evaluation and access to custom
-prompt files.
+## Phase 1: Find and understand
 
-Current subagents in the AI Answers pipeline include blocking of personal information,
-threats, manipulation and obscenity, as well as translation, search, routing to the right
-department or service, injection of human expert feedback, analysis and categorization.
-More can be, and are being, added. These subagents are secure, reusable, self-contained
-components that can be used as a springboard for new services.
+In Phase 1, AI Answers will be deployed site-wide on Canada.ca so that people can ask a
+question about any topic, from any page, and get a clear, concise answer. This covers two
+needs. The first is simple discovery, finding an answer to a question such as “How do I
+apply for CPP?” The second is understanding, making sense of that answer for questions
+like “Should I take CPP now or wait?”
 
-As access to sovereign AI models becomes available, personalized Protected B agents and
-harnesses can be developed. These could assist with eligibility assessments, application
-and appeal forms (perhaps working with GC Forms), custom regulatory logic flows, and more.
-This is a separate tier with its own privacy foundations.
+This phase creates an opportunity to improve information self-service. When people can
+get the answer online, some may no longer need to call or visit an office, which could
+ease demand on those channels over time. Clearer answers may also help people avoid
+mistakes caused by misunderstanding, and reduce follow-up contacts from people who are
+unsure what applies to them.
 
-The initial focus for new public-facing services should be on those with real friction
-and real financial or access value: immigration applications, benefit applications and
-appeal processes. People will use third-party AI agents for these services anyway, so
-the GC should provide a trustworthy one. Defending these services against criminal use is
-basic security that every service must provide.
+## Phase 2: Discover, connect and prepare
 
-## How the platform is shared
+In Phase 2, AI Answers progresses to AI Assistant. From the context or question, it can
+begin guiding people through more complex situations. For discovery questions, like “What
+funding is available for my start-up?” or “How do I start selling a new pesticide?”, it
+can clarify the person’s intent and create a purpose-built workflow that identifies
+eligible programs or multi-institution regulatory processes. This has the potential to
+make services easier to reach, especially for people who don’t know which program or
+department to start with.
 
-**The institution owns** its content (its web pages are the source of truth), its
-scenario file, API tools to its own data, additional content files, and expert review of
-answers. For example, Indigenous Services Canada already has a contacts file the AI reads
-only when a question needs it. A Statistics Canada data API tool could let answers give
-current figures.
+When a question can’t be resolved online, AI Answers can connect people to basic,
+informational support without making them start over. The person gets a short reference
+code to quote when they call, or can choose to pass the conversation details to a live
+chat agent. Because the agent starts with context, there is an opportunity to shorten
+interactions and make better use of agent time.
 
-**The platform team owns** the safety pipeline, models, shared rules, evaluation tools
-and admin interface. It reviews and tests each institution's files and tools before they
-go live, so no change weakens a guarantee for anyone.
+AI Answers can also provide more hands-on help in two ways. The first is helping people
+prepare their applications for eligible programs, explaining requirements and helping
+them work through problems before they submit. This could reduce the need for paid
+outside help with complex funding and immigration programs, and opens the possibility of
+more complete and consistent submissions that could ease the administrative effort of
+processing them. The second is guided support for common service problems, such as
+sign-in, one of the most persistent sources of frustration on Canada.ca. Using publicly
+available guidance, AI Answers could walk people step by step through choosing a sign-in
+method, recovering access and resolving common errors, helping them reach their online
+accounts without needing to call for help.
 
-## What every service guarantees
+## Phase 3: Apply and get personalized support
 
-- It never asks for, accepts or repeats passwords, codes or other secrets.
-- It only links to GC domains approved for that service.
-- It always offers a way to reach a person.
-- It works in English and French at parity.
-- Only human experts' judgements improve answers. AI evaluations never feed back into
-  what the public is told.
+In Phase 3, AI Answers extends into the Protected B domain and supports transactions as
+well as information. People could get help submitting their applications and get
+advanced, personalized support on their own files, such as “Why didn’t I get my CCB
+payment?” These are frequent reasons people contact the government, so this phase may
+offer the greatest opportunity to improve the client experience and ease pressure on
+assisted channels. This phase would also require secure authentication, Protected B
+infrastructure, and a full security and privacy assessment, which the earlier phases help
+lay the groundwork for.
 
-## First service: the CanadaLogin assistant
-
-CanadaLogin is how people sign in to the services above, and every user of a
-participating portal must register or migrate. The assistant guides them step by step
-([plan](canadalogin-assistant.md)). It is the platform's first guided, multi-step process
-rather than one-off Q&A, so the longer conversations and multi-turn evaluation it needs
-become shared capabilities for later services.
-
-## Protected B: a separate tier
-
-Today's services are safe partly because they hold no personal data: any question
-containing it is blocked. Personalized Protected B services reverse that. Beyond a
-sovereign model, they need authenticated sessions, data residency, records rules and a
-privacy impact assessment. The building blocks carry over; the safety guarantees must be
-redesigned, not assumed.
+The benefits described here are opportunities to be validated through trials and
+measurement as each phase is delivered.

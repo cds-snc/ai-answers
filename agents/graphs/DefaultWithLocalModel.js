@@ -16,7 +16,7 @@ const WorkflowStatus = {
 const workflow = new GraphWorkflowHelper();
 const GraphState = Annotation.Root({
   chatId: Annotation(), userMessage: Annotation(), userMessageId: Annotation(), conversationHistory: Annotation(),
-  lang: Annotation(), department: Annotation(), referringUrl: Annotation(), selectedAI: Annotation(),
+  lang: Annotation(), department: Annotation(), referringUrl: Annotation(), serviceProfileId: Annotation(), selectedAI: Annotation(),
   translationF: Annotation(), searchProvider: Annotation(), overrideUserId: Annotation(), startTime: Annotation(),
   redactedText: Annotation(), translationData: Annotation(), cleanedHistory: Annotation(), context: Annotation(),
   usedExistingContext: Annotation(), shortCircuitPayload: Annotation(), shortCircuitDebugPayload: Annotation(), answer: Annotation(),
@@ -129,7 +129,7 @@ graph.addNode('contextNode', async (state) => {
 });
 graph.addNode('answerNode', async (state) => {
   logGraphEvent('info', 'node:answer input', state.chatId, { selectedAI: state.selectedAI, contextTopic: state.context?.topic || null, contextDepartment: state.context?.department || null, searchResultsCount: state.context?.searchResults?.length || 0 });
-  const answer = await workflow.sendAnswerRequest({ selectedAI: state.selectedAI, conversationHistory: state.cleanedHistory, lang: state.lang, context: state.context, referringUrl: state.referringUrl, chatId: state.chatId });
+  const answer = await workflow.sendAnswerRequest({ selectedAI: state.selectedAI, conversationHistory: state.cleanedHistory, lang: state.lang, context: state.context, referringUrl: state.referringUrl, chatId: state.chatId, serviceProfileId: state.serviceProfileId });
   const out = { answer, status: WorkflowStatus.VERIFYING_CITATION };
   logGraphEvent('info', 'node:answer output', state.chatId, { answerType: answer?.answerType || null });
   return out;

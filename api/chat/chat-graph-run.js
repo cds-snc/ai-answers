@@ -11,6 +11,7 @@ import ChatSessionService from '../../services/ChatSessionService.js';
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
+import { DEFAULT_SERVICE_PROFILE_ID } from '../../config/service-profiles.js';
 
 const REQUIRED_METHOD = 'POST';
 const DEFAULT_CHAT_TRANSPORT = 'sse';
@@ -169,6 +170,9 @@ async function handler(req, res) {
   // Scenario overrides (GraphWorkflowHelper.applyScenarioOverride) belong to
   // the signed-in user - never trust a client-sent user ID.
   input.overrideUserId = req.user?.userId ?? null;
+  // The server picks the service profile; never trust a client-sent one.
+  // Every chat is `default` until another profile exists.
+  input.serviceProfileId = DEFAULT_SERVICE_PROFILE_ID;
   const requestStartedAt = Date.now();
 
   // Server-side Workflow Resolution
