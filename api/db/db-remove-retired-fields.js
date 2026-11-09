@@ -45,6 +45,9 @@ function matchesConfirmedList(confirmed) {
 // nothing writes these fields any more, so the count can't change meanwhile.
 // Results are pushed as each collection finishes, so a failure partway still
 // leaves a record of what was removed.
+// updateMany isn't atomic across documents: if it fails, some documents may
+// already have changed. So on failure, count again and record before minus
+// after for that collection ('unknown' if the recount fails too).
 async function removeRetiredFields(results) {
   const byModel = new Map();
   for (const entry of RETIRED_FIELDS) {
@@ -52,12 +55,19 @@ async function removeRetiredFields(results) {
     byModel.get(entry.model).push(entry);
   }
   for (const [model, entries] of byModel) {
+    const collection = model.collection.collectionName;
     const counts = await Promise.all(entries.map(countField));
-    await model.collection.updateMany(
-      { $or: entries.map(({ field }) => ({ [field]: { $exists: true } })) },
-      { $unset: Object.fromEntries(entries.map(({ field }) => [field, ''])) }
-    );
-    entries.forEach((entry, i) => results.push({ collection: model.collection.collectionName, field: entry.field, removed: counts[i] }));
+    try {
+      await model.collection.updateMany(
+        { $or: entries.map(({ field }) => ({ [field]: { $exists: true } })) },
+        { $unset: Object.fromEntries(entries.map(({ field }) => [field, ''])) }
+      );
+    } catch (error) {
+      const after = await Promise.all(entries.map(countField)).catch(() => null);
+      entries.forEach((entry, i) => results.push({ collection, field: entry.field, removed: after ? counts[i] - after[i] : 'unknown' }));
+      throw error;
+    }
+    entries.forEach((entry, i) => results.push({ collection, field: entry.field, removed: counts[i] }));
   }
 }
 

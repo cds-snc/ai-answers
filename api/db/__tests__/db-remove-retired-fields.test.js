@@ -115,6 +115,45 @@ describe('db-remove-retired-fields', () => {
     log.mockRestore();
   });
 
+  it('logs what a failed removal had already changed', async () => {
+    const audit = vi.spyOn(SettingsAuditService, 'recordAction');
+    const realUpdate = User.collection.updateMany.bind(User.collection);
+    // Partly applied, then fails: one field is gone, the others are not.
+    const update = vi.spyOn(User.collection, 'updateMany').mockImplementationOnce(async () => {
+      await realUpdate({ resetPasswordSecret: { $exists: true } }, { $unset: { resetPasswordSecret: '' } });
+      throw new Error('failover');
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await run('POST');
+    expect(res.statusCode).toBe(500);
+    const { metadata } = audit.mock.calls[0][0];
+    expect(metadata.removed).toContain('users.resetPasswordSecret: 1');
+    expect(metadata.removed).toContain('users.resetPasswordAttempts: 0');
+    expect(metadata.removed).toContain('users.twoFASecret: 0');
+    update.mockRestore();
+    audit.mockRestore();
+    log.mockRestore();
+  });
+
+  it('logs "unknown" when the recount after a failure also fails', async () => {
+    const audit = vi.spyOn(SettingsAuditService, 'recordAction');
+    const update = vi.spyOn(User.collection, 'updateMany').mockRejectedValueOnce(new Error('failover'));
+    const realCount = User.collection.countDocuments.bind(User.collection);
+    let calls = 0;
+    // The counts before the write succeed; the recount after it fails.
+    const count = vi.spyOn(User.collection, 'countDocuments').mockImplementation((...args) => {
+      calls += 1;
+      return calls <= RETIRED_FIELDS.length ? realCount(...args) : Promise.reject(new Error('still down'));
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await run('POST');
+    expect(audit.mock.calls[0][0].metadata.removed).toContain('users.resetPasswordSecret: unknown');
+    count.mockRestore();
+    update.mockRestore();
+    audit.mockRestore();
+    log.mockRestore();
+  });
+
   it('a second run finds nothing', async () => {
     await run('POST');
     const counts = await run('GET');
