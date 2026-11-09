@@ -172,9 +172,9 @@ sends the cap with the first turn's result (there is no chat-init response), the
 uses it, and `sendAnswerRequest` reads it from the profile. Locale strings need a variable instead
 of a literal "3", with an assistant-mode variant that points to the call centre.
 
-**Checked 2026-11-09: the server does not enforce the cap.** Only the client stops at 3.
-The server adds `<final-turn>` and still answers turn 4 and beyond. Add server-side
-enforcement as its own small PR before raising any cap. Also measure token growth over 10 turns. `conversationHistory` is sent in full,
+**Server-side cap: done on this branch (2026-11-09).** Before, only the client stopped at
+3, and the server answered turn 4 and beyond. `chat-graph-run.js` now returns 409
+`turn_limit_reached` once the signed history holds `maxTurns` answers. Also measure token growth over 10 turns. `conversationHistory` is sent in full,
 so the context and answer costs on turn 10 may need history trimming.
 
 ### 3. Prompt and scenario content (prompt-maintainer work)
@@ -406,6 +406,27 @@ A new mode with its own behaviour counts as a pipeline change:
   languages must match)
 - `docs/architecture/using-evals-for-answers.md`: eval-informed answering is off in
   assistant mode
+
+## Progress
+
+As of 2026-11-09, on branch `login-assist-flow` unless noted.
+
+| Item | Status |
+|---|---|
+| Vision revised (`platform-vision.md`) and this plan updated | Committed |
+| **PR (a)**: service profiles with only `default`, `serviceProfileId` passed through all 5 graphs and the batch runner, `<final-turn>` reads the profile's `maxTurns` | Committed (`76953d56`) |
+| **`<final-turn>` count fix**: the tag was sent on turn 2 as well as turn 3, because history was counted per message, not per answer (bug since March 2026) | Separate PR #1994 (`fix/final-turn-count`). Tested on preview: turn 2 can ask a clarifying question again. |
+| **Server-side turn cap** (409 past `maxTurns`) | Committed (`cd1c724a`). That commit also has a code-review cleanup; undoing it is uncommitted. |
+| Help-page snapshots (`canadalogin-help-snapshots` branch) | Not yet a PR. Must be merged to `main` before the raw URLs can be read. |
+
+**Next:**
+1. Commit the cleanup undo on both branches. Merge PR #1994, then merge `main` into this branch.
+2. Optional, before (b): one shared graph-state definition for the 5 graphs, so a new
+   profile field is one edit and not five. Today a graph that misses a field drops it silently.
+3. PR (b): the `canadalogin` profile, the portal registry and the `Chat.mode`/`portal` fields.
+   This needs the portal help-page URLs, or demo-page URLs to start with.
+4. PR (c): the client reads the cap from the server. Must ship before any profile has a
+   cap other than 3.
 
 ## Phases
 
