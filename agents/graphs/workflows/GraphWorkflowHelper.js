@@ -22,6 +22,7 @@ import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import ServiceCallMetricsService from '../../../services/ServiceCallMetricsService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 import { referringUrlTag } from '../../../api/util/prompt-tags.js';
+import { countCompletedTurns } from '../../../api/util/conversation-turns.js';
 
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
@@ -351,7 +352,7 @@ export class GraphWorkflowHelper {
     message = `${message}${referringUrlTag(referringUrl)}`;
 
     const maxTurns = 3;
-    const currentTurn = (conversationHistory || []).length + 1;
+    const currentTurn = countCompletedTurns(conversationHistory) + 1;
     if (currentTurn >= maxTurns) {
       message = `${message}\n<final-turn>true</final-turn>`;
     }
