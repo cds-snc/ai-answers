@@ -6,6 +6,7 @@ import { invokeContextAgent } from '../../../../services/ContextAgentService.js'
 import { InteractionPersistenceService } from '../../../../services/InteractionPersistenceService.js';
 import { AnswerGenerationService } from '../../../../services/AnswerGenerationService.js';
 import ServiceCallMetricsService from '../../../../services/ServiceCallMetricsService.js';
+import { turnsOfHistory } from '../../../../test/conversationHistory.js';
 
 vi.mock('../../../../services/SearchContextService.js');
 vi.mock('../../../../services/ContextAgentService.js');
@@ -195,13 +196,6 @@ describe('GraphWorkflowHelper', () => {
 
             expect(sentMessage()).toContain('<output-lang>eng</output-lang>');
         });
-
-        // The client sends its whole messages array: a user message then an AI
-        // message per completed turn (ChatAppContainer.js).
-        const turnsOfHistory = (n) => Array.from({ length: n }, (_v, i) => [
-            { sender: 'user', text: `q${i + 1}` },
-            { sender: 'ai', interaction: { answer: { content: `a${i + 1}` } } },
-        ]).flat();
 
         it('sends <final-turn> on the last allowed turn', async () => {
             // turn 3 of 3: two completed turns in the history
