@@ -15,8 +15,7 @@ const convertInteractionsToMessages = (interactions) => {
     for (let i = reversed.length - 1; i >= 0; i--) {
         const item = reversed[i];
         // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
-        // hand-duplicated in 3 other files - ContextAgentService.js,
-        // api/util/conversation-turns.js's isAiTurn and
+        // hand-duplicated in 2 other files - ContextAgentService.js and
         // ConversationIntegrityService.js's serializeHistory (search for
         // "isUser" there). All three independently implement the same
         // invariant (originally by the same author, Ryan Hyma, in commits

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import chatGraphRunHandler, { setNdjsonHeaders, setStreamingHeaders } from '../chat-graph-run.js';
-import { turnsOfHistory } from '../../../test/conversationHistory.js';
 
 const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
@@ -329,6 +328,11 @@ describe('chatGraphRunHandler transport setting', () => {
   });
 
   describe('turn cap', () => {
+    const turnsOfHistory = (n) => Array.from({ length: n }, (_v, i) => [
+      { sender: 'user', text: `q${i + 1}` },
+      { sender: 'ai', interaction: { answer: { content: `a${i + 1}` } } },
+    ]).flat();
+
     it('runs the last allowed turn', async () => {
       mockSettingsTransport('sse');
       setupGraphStream();
