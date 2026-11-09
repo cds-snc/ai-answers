@@ -10,6 +10,7 @@ import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import { Interaction } from '../models/interaction.js';
 import { compareVectorMatches } from './vectorMatchOrdering.js';
+import { isAutoEvalFeedback } from './EmbeddingMetadataService.js';
 
 function isValidVector(vec) {
   return Array.isArray(vec) && vec.every((x) => typeof x === 'number' && Number.isFinite(x));
@@ -52,6 +53,15 @@ class IMVectorService {
     // Minimal metadata to mirror DocDBVectorService search() outputs
     this.qaMeta = new Map();       // id -> { interactionId, expertFeedbackId }
     this.sentMeta = new Map();     // id -> { interactionId, sentenceIndex, expertFeedbackId }
+    // interactionId -> Set of entry ids, one Map per index. PERFORMANCE: this
+    // runs on small servers with tens of thousands of entries loaded, and
+    // updateExpertFeedbackMetadata runs on every expert evaluation edit,
+    // delete and never-stale toggle. This lookup lets it go straight to one
+    // interaction's entries; without it, each of those requests scans every
+    // entry in qaMeta and sentMeta on the request thread. Keep it in step:
+    // add entries only through _addMeta, never qaMeta.set/sentMeta.set
+    // directly, or updates will silently miss them.
+    this.idsByInteraction = { qa: new Map(), questions: new Map(), sentences: new Map() };
 
     this.stats = {
       searches: 0,
@@ -142,7 +152,7 @@ class IMVectorService {
         const id = doc._id.toString(); // mirror DocDB returning _id
         const vec = toPlainNumberArray(doc.questionsAnswerEmbedding);
         this.qaDB.add({ id, embedding: vec });
-        this.qaMeta.set(id, {
+        this._addMeta('qa', id, {
           interactionId: doc.interactionId?.toString() || null,
           expertFeedbackId: doc.expertFeedbackId?.toString() || interactionToEF.get(doc.interactionId?.toString() || '') || null,
           expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
@@ -158,7 +168,7 @@ class IMVectorService {
           const qid = `${doc._id.toString()}:q`;
           const qvec = toPlainNumberArray(doc.questionsEmbedding);
           this.questionsDB.add({ id: qid, embedding: qvec });
-          this.qaMeta.set(qid, {
+          this._addMeta('questions', qid, {
             interactionId: doc.interactionId?.toString() || null,
             expertFeedbackId: doc.expertFeedbackId?.toString() || interactionToEF.get(doc.interactionId?.toString() || '') || null,
             expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
@@ -193,7 +203,7 @@ class IMVectorService {
         const interactionId = parentToInteraction.get(parentId) || null;
         const expertFeedbackId = interactionId ? interactionToEF.get(interactionId) || null : null;
 
-        this.sentMeta.set(id, {
+        this._addMeta('sentences', id, {
           interactionId,
           sentenceIndex: row.sentenceIndex,
           expertFeedbackId,
@@ -293,7 +303,7 @@ class IMVectorService {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
       const vec = toPlainNumberArray(questionsAnswerEmbedding);
       this.qaDB.add({ id: qaId, embedding: vec });
-      this.qaMeta.set(qaId, {
+      this._addMeta('qa', qaId, {
         interactionId: interactionId?.toString() || null,
         expertFeedbackId: expertFeedbackId?.toString() || null,
         expertFeedbackScore: expertFeedbackTotalScore,
@@ -308,7 +318,7 @@ class IMVectorService {
       const qid = `${interactionId || this.stats.embeddings}:q:${Date.now()}`;
       const qvec = toPlainNumberArray(questionsEmbedding);
       this.questionsDB.add({ id: qid, embedding: qvec });
-      this.qaMeta.set(qid, {
+      this._addMeta('questions', qid, {
         interactionId: interactionId?.toString() || null,
         expertFeedbackId: expertFeedbackId?.toString() || null,
         expertFeedbackScore: expertFeedbackTotalScore,
@@ -323,13 +333,72 @@ class IMVectorService {
         const id = `${interactionId || 'tmp'}:${idx}:${Date.now()}`;
         const vec = toPlainNumberArray(sentVec);
         this.sentenceDB.add({ id, embedding: vec });
-        this.sentMeta.set(id, {
+        this._addMeta('sentences', id, {
           interactionId: interactionId?.toString() || null,
           sentenceIndex: idx,
           expertFeedbackId: expertFeedbackId?.toString() || null,
         });
         this.stats.sentences++;
       });
+    }
+  }
+
+  // The only way entries go into qaMeta/sentMeta - see idsByInteraction.
+  // kind: 'qa' (qaDB), 'questions' (questionsDB) or 'sentences' (sentenceDB).
+  _addMeta(kind, id, meta) {
+    (kind === 'sentences' ? this.sentMeta : this.qaMeta).set(id, meta);
+    const key = meta.interactionId;
+    if (!key) return;
+    const byKind = this.idsByInteraction[kind];
+    if (!byKind.has(key)) byKind.set(key, new Set());
+    byKind.get(key).add(id);
+  }
+
+  /**
+   * Keeps entries already loaded for an interaction in step with its expert
+   * evaluation after an edit or "never stale" change, or drops them when
+   * `feedback` is null (evaluation deleted). Without this they keep the
+   * values they were loaded with until the service reinitializes.
+   * Looks entries up through idsByInteraction - never scan qaMeta/sentMeta
+   * here (see the PERFORMANCE note in the constructor).
+   */
+  updateExpertFeedbackMetadata(interactionId, feedback) {
+    const key = interactionId?.toString();
+    if (!key) return;
+    const qaIds = this.idsByInteraction.qa.get(key) || new Set();
+    const questionIds = this.idsByInteraction.questions.get(key) || new Set();
+    const sentenceIds = this.idsByInteraction.sentences.get(key) || new Set();
+
+    // Never copy an AI evaluation onto the index (AGENTS.md): its entries are
+    // dropped like a deleted evaluation's, so nothing can retrieve them.
+    if (!feedback || isAutoEvalFeedback(feedback)) {
+      for (const id of qaIds) { this.qaDB.del({ id }); this.qaMeta.delete(id); }
+      for (const id of questionIds) { this.questionsDB.del({ id }); this.qaMeta.delete(id); }
+      for (const id of sentenceIds) { this.sentenceDB.del({ id }); this.sentMeta.delete(id); }
+      this.stats.embeddings = Math.max(0, (this.stats.embeddings || 0) - qaIds.size);
+      this.stats.questions = Math.max(0, (this.stats.questions || 0) - questionIds.size);
+      this.stats.sentences = Math.max(0, (this.stats.sentences || 0) - sentenceIds.size);
+      for (const byKind of Object.values(this.idsByInteraction)) byKind.delete(key);
+      return;
+    }
+
+    // TODO (out of scope for the edit feature): expertFeedbackCreatedAt isn't
+    // refreshed here. An entry loaded without one (older rows) stays excluded
+    // by the recency filter in search() once never-stale is turned off, while
+    // the Embedding metadata (EmbeddingMetadataService.syncForInteraction)
+    // has the date - so the in-memory and DocDB backends disagree.
+    for (const id of [...qaIds, ...questionIds]) {
+      const meta = this.qaMeta.get(id);
+      if (!meta) continue;
+      meta.expertFeedbackId = feedback._id?.toString() || meta.expertFeedbackId;
+      meta.expertFeedbackScore = typeof feedback.totalScore === 'number' ? feedback.totalScore : null;
+      meta.expertFeedbackNeverStale = feedback.neverStale === true;
+    }
+    for (const id of sentenceIds) {
+      const meta = this.sentMeta.get(id);
+      if (!meta) continue;
+      meta.expertFeedbackId = feedback._id?.toString() || meta.expertFeedbackId;
+      meta.expertFeedbackScore = typeof feedback.totalScore === 'number' ? feedback.totalScore : null;
     }
   }
 

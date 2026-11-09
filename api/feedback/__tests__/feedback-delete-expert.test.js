@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import handler from '../feedback-delete-expert.js';
 import dbConnect from '../../db/db-connect.js';
 import { Interaction } from '../../../models/interaction.js';
 import { ExpertFeedback } from '../../../models/expertFeedback.js';
 import { Embedding } from '../../../models/embedding.js';
+
+const { mockVectorUpdate } = vi.hoisted(() => ({ mockVectorUpdate: vi.fn() }));
+vi.mock('../../../services/VectorServiceFactory.js', () => ({
+  VectorService: { updateExpertFeedbackMetadata: mockVectorUpdate },
+}));
 
 function createReq(body) {
   return {
@@ -44,6 +49,7 @@ describe('feedback-delete-expert', () => {
   });
 
   afterEach(async () => {
+    vi.clearAllMocks();
     await ExpertFeedback.deleteMany({});
     await Interaction.deleteMany({});
     await Embedding.collection.deleteMany({});
@@ -69,6 +75,10 @@ describe('feedback-delete-expert', () => {
     const embedding = await Embedding.collection.findOne({ _id: embeddingId });
     expect(embedding.expertFeedbackId).toBeUndefined();
     expect(embedding.expertFeedbackTotalScore).toBeUndefined();
+    // null = drop this answer's entries from the in-memory index too.
+    expect(mockVectorUpdate).toHaveBeenCalledTimes(1);
+    expect(String(mockVectorUpdate.mock.calls[0][0])).toBe(String(interaction._id));
+    expect(mockVectorUpdate.mock.calls[0][1]).toBeNull();
   });
 
   it('returns deletedCount 0 when the answer has no evaluation', async () => {
@@ -78,6 +88,7 @@ describe('feedback-delete-expert', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.payload.deletedCount).toBe(0);
+    expect(mockVectorUpdate).not.toHaveBeenCalled();
   });
 
   it('returns 404 for an unknown interaction', async () => {

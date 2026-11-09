@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
+import { syncCurrentExpertFeedback } from '../util/expert-feedback-sync.js';
 
 async function feedbackExpertNeverStaleHandler(req, res) {
   if (req.method !== 'POST') {
@@ -53,7 +53,7 @@ async function feedbackExpertNeverStaleHandler(req, res) {
       interaction.expertFeedback = ef._id;
       await interaction.save();
     }
-    await EmbeddingMetadataService.syncForInteraction(interaction, ef.toObject());
+    await syncCurrentExpertFeedback(interaction._id);
 
     return res.status(200).json({ message: 'Expert feedback updated', expertFeedback: ef });
   } catch (err) {
