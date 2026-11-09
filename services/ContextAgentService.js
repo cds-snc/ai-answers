@@ -23,7 +23,8 @@ const invokeContextAgent = async (agentType, request) => {
 
     // Add conversation history messages before the current message.
     // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
-    // hand-duplicated in 2 other files - AnswerGenerationService.js and
+    // hand-duplicated in 3 other files - AnswerGenerationService.js,
+    // api/util/conversation-turns.js's isAiTurn and
     // ConversationIntegrityService.js's serializeHistory (search for
     // "isUser" there). All three independently implement the same
     // invariant (originally by the same author, Ryan Hyma, both written in

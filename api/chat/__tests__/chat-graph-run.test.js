@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import chatGraphRunHandler, { setNdjsonHeaders, setStreamingHeaders } from '../chat-graph-run.js';
+import { turnsOfHistory } from '../../../test/conversationHistory.js';
 
 const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
@@ -325,6 +326,35 @@ describe('chatGraphRunHandler transport setting', () => {
     await chatGraphRunHandler(req, createResponse());
 
     expect(mocks.streamInput.serviceProfileId).toBe('default');
+  });
+
+  describe('turn cap', () => {
+    it('runs the last allowed turn', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+      mocks.streamInput = null;
+      const req = createRequest();
+      req.body.input.conversationHistory = turnsOfHistory(2);
+
+      await chatGraphRunHandler(req, createResponse());
+
+      expect(mocks.streamInput).not.toBeNull();
+    });
+
+    it('refuses a turn past the cap without running the graph', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+      mocks.streamInput = null;
+      const req = createRequest();
+      req.body.input.conversationHistory = turnsOfHistory(3);
+      const res = createResponse();
+
+      await chatGraphRunHandler(req, res);
+
+      expect(res.statusCode).toBe(409);
+      expect(res.jsonPayload).toEqual(expect.objectContaining({ error: 'turn_limit_reached' }));
+      expect(mocks.streamInput).toBeNull();
+    });
   });
 
   describe('batch questions', () => {

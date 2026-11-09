@@ -6,6 +6,7 @@ import { invokeContextAgent } from '../../../../services/ContextAgentService.js'
 import { InteractionPersistenceService } from '../../../../services/InteractionPersistenceService.js';
 import { AnswerGenerationService } from '../../../../services/AnswerGenerationService.js';
 import ServiceCallMetricsService from '../../../../services/ServiceCallMetricsService.js';
+import { turnsOfHistory } from '../../../../test/conversationHistory.js';
 
 vi.mock('../../../../services/SearchContextService.js');
 vi.mock('../../../../services/ContextAgentService.js');
@@ -197,21 +198,18 @@ describe('GraphWorkflowHelper', () => {
             expect(sentMessage()).toContain('<output-lang>eng</output-lang>');
         });
 
-        it('sends <final-turn> once the user reaches the last allowed turn', async () => {
-            // maxTurns is 3, and currentTurn counts this question on top of the history
-            await sendWith({ conversationHistory: [{}, {}] });
+        it('sends <final-turn> on the last allowed turn', async () => {
+            // turn 3 of 3: two completed turns in the history
+            await sendWith({ conversationHistory: turnsOfHistory(2) });
 
             expect(sentMessage()).toContain('<final-turn>true</final-turn>');
         });
 
-        it('does not send <final-turn> on earlier turns', async () => {
-            await sendWith({ conversationHistory: [] });
-
-            expect(sentMessage()).not.toContain('<final-turn>');
-        });
-
-        it('does not send <final-turn> on the turn before the last', async () => {
-            await sendWith({ conversationHistory: [{}] });
+        it.each([
+            ['turn 1', 0],
+            ['turn 2', 1],
+        ])('does not send <final-turn> on %s of 3', async (_label, completedTurns) => {
+            await sendWith({ conversationHistory: turnsOfHistory(completedTurns) });
 
             expect(sentMessage()).not.toContain('<final-turn>');
         });
