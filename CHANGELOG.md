@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.213.0](https://github.com/cds-snc/ai-answers/compare/v1.212.1...v1.213.0) (2026-11-09)
+
+
+### Features
+
+* add dept to eval selection - preview testing ([a0c66f5](https://github.com/cds-snc/ai-answers/commit/a0c66f5953833d9f0fdc07eca2f1f3c7de7b05d6))
+* add remove-remove-retired-field ([c96e176](https://github.com/cds-snc/ai-answers/commit/c96e176849f9eed2355f9b771b00694c8edcf861))
+
+
+### Bug Fixes
+
+* removal failure issue ([d189723](https://github.com/cds-snc/ai-answers/commit/d18972369f54f0e1161f255f0ef40b22577f65d9))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump follow-redirects from 1.16.1 to 1.16.2 ([8b3e8f3](https://github.com/cds-snc/ai-answers/commit/8b3e8f3deec6828ce41c8764da4123adced5f18a))
+* **deps:** bump qs and body-parser ([11bf54f](https://github.com/cds-snc/ai-answers/commit/11bf54fc7c32bc28c751a38a20b0077d6824ba84))
+* **deps:** bump qs and body-parser ([f1e0e46](https://github.com/cds-snc/ai-answers/commit/f1e0e4658d95bc1eda95127fbd1437525697caf3))
+* **deps:** bump undici from 7.30.0 to 7.30.2 ([40ee63b](https://github.com/cds-snc/ai-answers/commit/40ee63baf7ed64d3b896ec312a62ed5e1001c1fd))
+* **deps:** bump undici from 7.30.0 to 7.30.2 ([a1905fd](https://github.com/cds-snc/ai-answers/commit/a1905fdf46289e88be97448c77e0a473f2660167))
+* **deps:** bump zod and openai ([d6c0141](https://github.com/cds-snc/ai-answers/commit/d6c0141b0e75e3f771644e43ee0194365fd1e7ff))
+
 ## [1.212.1](https://github.com/cds-snc/ai-answers/compare/v1.212.0...v1.212.1) (2026-11-07)
 
 
