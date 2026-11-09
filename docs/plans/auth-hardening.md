@@ -89,7 +89,7 @@ page replaces the saved row with that response. The 500 responses no longer incl
 `error.message`. Test: `api/user/__tests__/user-users-fields.test.js`.
 
 Follow-ups found in review, each its own PR:
-- **Hide secret fields by default.** Mark `resetPasswordTokenHash`, `twoFACode`, `twoFASecret`
+- **Hide secret fields by default.** Mark `resetPasswordTokenHash`, `twoFACode`
   and the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
   asks. Then F5 can't come back through some other endpoint. The sign-in, 2FA and reset code
   must then select them with `+field`.
@@ -286,8 +286,8 @@ before `twoFA.enabled` goes on anywhere real.
    keyboard resend check and one of the message checks (lockout, timed out or no connection)
    on a preview.
 6. **Decided 2026-10-16: `twoFASecret` is no longer generated.** Sign-up stopped filling it in
-   the clean-up PR. The schema field stays so existing documents still load; clearing the value
-   from existing accounts needs a migration and is not planned. `speakeasy` was removed with the
+   the clean-up PR. **Update 2026-11-08:** the field is now out of the schema, and the Database
+   page's "Remove retired fields" button clears it from existing accounts. `speakeasy` was removed with the
    F6 token change (2026-10-30).
 7. Review leftovers accepted for now: account lockout can be triggered by anyone who knows an
    email (inherent to lockout; admin is VPN-only; blocking burst lockouts would need the per-IP
@@ -537,7 +537,8 @@ and the code forever.
    fields and the `lockedOut` page message are gone.
 4. **Schema:** replace `resetPasswordSecret` with the hash and expiry fields. Update the F5
    follow-up's `select: false` list to match. Sign-up no longer creates a secret. Existing
-   users still hold a `resetPasswordSecret` value, which nothing reads any more. `speakeasy` is
+   users still hold a `resetPasswordSecret` value, which nothing reads any more, until the
+   Database page's "Remove retired fields" button clears it (2026-11-08). `speakeasy` is
    removed.
 5. **No change to the email or pages:** the link keeps its `code=` parameter, with a longer value.
 6. **Tests:** a token works once; an expired token fails; an older link fails after a new

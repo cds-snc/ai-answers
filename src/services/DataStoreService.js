@@ -2,6 +2,19 @@
 import AuthService from './AuthService.js';
 import SessionService from './SessionService.js';
 
+// Shared by getRetiredFieldCounts and removeRetiredFields. Keeps the HTTP
+// status on the error so the page can tell a changed list (409) from a failure.
+async function retiredFieldsRequest(options) {
+  const response = await AuthService.fetch(getApiUrl('db-remove-retired-fields'), options);
+  if (!response.ok) {
+    const err = await response.json();
+    const error = new Error(err.message || 'Retired fields request failed');
+    error.status = response.status;
+    throw error;
+  }
+  return (await response.json()).fields;
+}
+
 class DataStoreService {
   static async getSettings(keys, defaults = {}) {
     if (!Array.isArray(keys) || keys.length === 0) {
@@ -358,6 +371,21 @@ class DataStoreService {
       throw new Error(err.message || 'Failed to repair QA match scores');
     }
     return await response.json();
+  }
+
+  // How many documents hold each retired field. The list is fixed on the server.
+  static async getRetiredFieldCounts() {
+    return retiredFieldsRequest({ method: 'GET' });
+  }
+
+  // `confirmed` is the 'collection.field' list the admin was shown. The server
+  // refuses with 409 if it no longer matches its own list.
+  static async removeRetiredFields(confirmed) {
+    return retiredFieldsRequest({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: confirmed }),
+    });
   }
 
   static async getChat(chatId) {
