@@ -1,13 +1,18 @@
-// The client sends its whole messages array: a user and an AI message per
-// turn, plus error messages. A turn is one AI answer, not one array entry.
+// How many question-and-answer turns a conversation history already holds.
 //
-// isAiTurn is also hand-copied (ai-turn-check-sync) in
-// ConversationIntegrityService.js, ContextAgentService.js and
-// AnswerGenerationService.js. Keep them in sync.
-export function isAiTurn(m) {
-  return Boolean(m?.interaction) && !m.error && m.sender !== 'user' && m.role !== 'user';
-}
-
+// The chat client sends its whole messages array (ChatAppContainer.js): a user
+// message and an AI message per turn, plus any error messages. Count AI
+// answers, not array entries, or every turn counts twice.
+//
+// "Is this an AI turn" follows the same rule as the ai-turn-check-sync copies
+// in ConversationIntegrityService.js, ContextAgentService.js and
+// AnswerGenerationService.js: an AI-sender message carrying `interaction`.
+// Keep it in sync with them.
 export function countCompletedTurns(history) {
-  return Array.isArray(history) ? history.filter(isAiTurn).length : 0;
+  if (!Array.isArray(history)) return 0;
+  return history.filter((m) => {
+    if (!m || m.error || !m.interaction) return false;
+    const isUser = m.sender === 'user' || m.role === 'user';
+    return !isUser;
+  }).length;
 }

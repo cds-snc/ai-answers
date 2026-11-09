@@ -77,8 +77,7 @@ class ConversationIntegrityService {
             const isUser = (m.sender === 'user' || m.role === 'user');
 
             // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
-            // hand-duplicated in 3 other files - AnswerGenerationService.js,
-            // api/util/conversation-turns.js's isAiTurn
+            // hand-duplicated in 2 other files - AnswerGenerationService.js
             // and ContextAgentService.js (search for "ai-turn-check-sync" there). All
             // three independently implement the same invariant (originally
             // by the same author, Ryan Hyma, in commits a2c70182 and

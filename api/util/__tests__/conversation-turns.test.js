@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { countCompletedTurns } from '../conversation-turns.js';
-import { userMsg, aiMsg, turnsOfHistory } from '../../../test/conversationHistory.js';
+
+// Shapes match what the client really sends: ChatAppContainer.js passes its
+// whole `messages` array, a user message then an AI message per turn.
+const userMsg = (text) => ({ id: text, sender: 'user', text });
+const aiMsg = (text) => ({ id: `${text}-ai`, sender: 'ai', interaction: { answer: { content: text } } });
 
 describe('countCompletedTurns', () => {
   it('counts no turns in an empty or missing history', () => {
@@ -9,11 +13,13 @@ describe('countCompletedTurns', () => {
   });
 
   it('counts one turn per user and AI message pair, not one per message', () => {
-    expect(countCompletedTurns(turnsOfHistory(2))).toBe(2);
+    const history = [userMsg('q1'), aiMsg('a1'), userMsg('q2'), aiMsg('a2')];
+
+    expect(countCompletedTurns(history)).toBe(2);
   });
 
-  it('does not count error messages, even one carrying an interaction', () => {
-    const history = [...turnsOfHistory(1), userMsg('q2'), { ...aiMsg('oops'), error: true }];
+  it('does not count error messages', () => {
+    const history = [userMsg('q1'), aiMsg('a1'), userMsg('q2'), { sender: 'system', error: true, text: 'oops' }];
 
     expect(countCompletedTurns(history)).toBe(1);
   });
@@ -26,6 +32,8 @@ describe('countCompletedTurns', () => {
 
   it('counts experimental batch history, which has AI entries only', () => {
     // ExperimentalBatchService.buildConversationHistoryEntry
-    expect(countCompletedTurns([aiMsg('a1'), aiMsg('a2')])).toBe(2);
+    const history = [aiMsg('a1'), aiMsg('a2')];
+
+    expect(countCompletedTurns(history)).toBe(2);
   });
 });
