@@ -104,6 +104,39 @@ describe('DocDBVectorService', () => {
     expect(capturedPipeline[0].$match).not.toHaveProperty('pageLanguage');
   });
 
+  it('restricts denormalized matches to the normalized department before vector search', async () => {
+    await service.matchQuestions(['when is the deadline'], {
+      k: 3,
+      expertFeedbackRating: 100,
+      expertFeedbackComparison: 'lte',
+      interactionLanguage: 'en',
+      recencyDays: 365,
+      useDenormalizedPreFilter: true,
+      department: 'FedDev-Ontario',
+    });
+
+    expect(capturedPipeline[0].$match.department).toBe('FEDDEV-ONTARIO');
+    expect(capturedPipeline[1].$search).toBeTruthy();
+  });
+
+  it('filters on the embedding department after search on the legacy (non-pre-filter) path', async () => {
+    await service.matchQuestions(['when is the deadline'], {
+      k: 3,
+      expertFeedbackRating: 100,
+      department: 'tbs-sct',
+    });
+
+    expect(capturedPipeline[0].$search).toBeTruthy();
+    expect(capturedPipeline).toContainEqual({ $match: { department: 'TBS-SCT' } });
+  });
+
+  it('adds no department filter when none is passed', async () => {
+    await service.matchQuestions(['q'], { k: 3, useDenormalizedPreFilter: true, recencyDays: 365 });
+
+    expect(capturedPipeline[0].$match).not.toHaveProperty('department');
+    expect(capturedPipeline.some((stage) => stage.$match && 'department' in stage.$match && !stage.$match.expertFeedbackId)).toBe(false);
+  });
+
   it('returns separate embedding group counts in stats', async () => {
     const collectionCounts = {
       questionsAnswerEmbedding: 25,

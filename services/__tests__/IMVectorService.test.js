@@ -11,6 +11,7 @@ vi.mock('../EmbeddingService.js', () => ({
   },
 }));
 
+import mongoose from 'mongoose';
 import IMVectorService from '../IMVectorService.js';
 
 describe('IMVectorService', () => {
@@ -116,6 +117,59 @@ describe('IMVectorService', () => {
     const mapped = resultsPerQuestion[0];
     // threshold null = short-circuit caller behaviour: keep everything.
     expect(mapped.map(m => m.id)).toEqual(['p', 'q']);
+  });
+
+  it('keeps only matches from the requested department, searching past other departments\' nearer hits', async () => {
+    const query = vi.fn().mockResolvedValue([
+      { document: { id: 'tbs' }, similarity: 0.99 },
+      { document: { id: 'prairies' }, similarity: 0.98 },
+      { document: { id: 'feddev' }, similarity: 0.9 },
+      { document: { id: 'no-dept' }, similarity: 0.89 },
+    ]);
+    svc.questionsDB = { size: () => 4, query };
+    svc.qaMeta.set('tbs', { interactionId: 'i1', expertFeedbackId: 'ef-1', department: 'TBS-SCT' });
+    svc.qaMeta.set('prairies', { interactionId: 'i2', expertFeedbackId: 'ef-2', department: 'PRAIRIESCAN' });
+    svc.qaMeta.set('feddev', { interactionId: 'i3', expertFeedbackId: 'ef-3', department: 'FEDDEV-ONTARIO' });
+    svc.qaMeta.set('no-dept', { interactionId: 'i4', expertFeedbackId: 'ef-4', department: '' });
+
+    const [matches] = await svc.matchQuestions(['when is the deadline'], {
+      provider: 'openai',
+      k: 1,
+      department: 'FedDev-Ontario',
+    });
+
+    // k=1 would normally only look at the top 2 hits; with a department filter it must search them all.
+    expect(query).toHaveBeenCalledWith(expect.any(Array), 4);
+    expect(matches.map((match) => match.id)).toEqual(['feddev']);
+  });
+
+  it('keeps the department filter when the language filter also runs', async () => {
+    svc.questionsDB = {
+      size: () => 2,
+      query: async () => [
+        { document: { id: 'other-dept' }, similarity: 0.99 },
+        { document: { id: 'same-dept' }, similarity: 0.9 },
+      ],
+    };
+    svc.qaMeta.set('other-dept', { interactionId: 'i1', expertFeedbackId: 'ef-1', department: 'TBS-SCT' });
+    svc.qaMeta.set('same-dept', { interactionId: 'i2', expertFeedbackId: 'ef-2', department: 'FEDDEV-ONTARIO' });
+    const modelSpy = vi.spyOn(mongoose, 'model').mockReturnValue({
+      find: () => ({
+        select: () => ({
+          lean: async () => [{ interactions: ['i1', 'i2'], pageLanguage: 'en' }],
+        }),
+      }),
+    });
+
+    const [matches] = await svc.matchQuestions(['when is the deadline'], {
+      provider: 'openai',
+      k: 3,
+      language: 'en',
+      department: 'FEDDEV-ONTARIO',
+    });
+
+    modelSpy.mockRestore();
+    expect(matches.map((match) => match.id)).toEqual(['same-dept']);
   });
 
   it('filters by denormalized feedback freshness before selecting the top results', async () => {

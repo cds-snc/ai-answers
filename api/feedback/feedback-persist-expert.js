@@ -38,7 +38,7 @@ async function feedbackPersistExpertHandler(req, res) {
     existingInteraction.expertFeedback = expertFeedbackDoc._id;
     await expertFeedbackDoc.save();
     await existingInteraction.save();
-    await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc.toObject());
+    const metadataSync = await EmbeddingMetadataService.syncForInteraction(existingInteraction, expertFeedbackDoc.toObject());
     // Add embedding to VectorService
     const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });
     if (embedding && embedding.questionsAnswerEmbedding && embedding.answerEmbedding) {
@@ -49,6 +49,7 @@ async function feedbackPersistExpertHandler(req, res) {
         expertFeedbackTotalScore: expertFeedbackDoc.totalScore,
         expertFeedbackCreatedAt: expertFeedbackDoc.createdAt,
         expertFeedbackNeverStale: expertFeedbackDoc.neverStale,
+        department: metadataSync?.metadataSnapshot?.department || '',
         questionsAnswerEmbedding: embedding.questionsAnswerEmbedding,
         questionsEmbedding: embedding.questionsEmbedding,
         sentenceEmbeddings: Array.isArray(sentenceDocs) ? sentenceDocs.map(d => d.embedding) : []
