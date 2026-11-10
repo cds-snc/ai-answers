@@ -156,7 +156,8 @@ export function useChatAssignBar() {
   // gate before calling this, same as every other destructive admin action.
   //
   // outcomeFocusCount exists purely for focus management. Two cases lose
-  // focus: an unassign, whose pill lives inside the table row that onDone's
+  // focus: an unassign (or one that found the assignment changed), whose pill
+  // lives inside the table row that onDone's
   // ajax.reload() destroys; and an assign, whose button is disabled while
   // the request runs (a focused button that becomes disabled drops focus to
   // <body>). ChatDashboardPage.js moves focus onto the assignStatus
@@ -175,6 +176,12 @@ export function useChatAssignBar() {
       setOutcomeFocusCount((n) => n + 1);
       if (onDone) onDone();
     } catch (error) {
+      if (error.code === 'assignment_changed') {
+        setAssignStatus({ isError: true, assignmentChanged: true });
+        setOutcomeFocusCount((n) => n + 1);
+        if (onDone) onDone();
+        return;
+      }
       setAssignStatus({ isError: true, unassignFailed: true });
     }
   }, []);
