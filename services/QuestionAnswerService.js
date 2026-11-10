@@ -138,16 +138,7 @@ class QuestionAnswerService {
       const debugCandidates = returnDebugData ? (Array.isArray(vectorResponse?.debug?.[0]) ? vectorResponse.debug[0] : []) : [];
       const hits = Array.isArray(matches?.[0]) ? matches[0] : [];
 
-      // Keep the first (best-ranked) hit per interaction: duplicate embeddings of
-      // one interaction must not fill several example slots with the same example.
-      const seenInteractionIds = new Set();
-      const filtered = hits.filter((h) => {
-        if (!h || !h.interactionId || !h.expertFeedbackId) return false;
-        const id = h.interactionId.toString();
-        if (seenInteractionIds.has(id)) return false;
-        seenInteractionIds.add(id);
-        return true;
-      });
+      const filtered = hits.filter((h) => h && h.interactionId && h.expertFeedbackId);
 
       const debugInteractionIds = returnDebugData ? [...new Set(debugCandidates.map((h) => h.interactionId).filter(Boolean))] : [];
       const interactionIds = [...new Set([...filtered.map((h) => h.interactionId), ...debugInteractionIds])];

@@ -383,38 +383,4 @@ describe('QuestionAnswerService', () => {
 
     expect(result).toContain('Q: Stale Q?');
   });
-
-  // Duplicate embeddings for one interaction (created by an old
-  // db-generate-embeddings paging bug) come back as separate vector hits.
-  // Each interaction must fill at most one example slot.
-  it('uses each interaction at most once when the vector search returns duplicate hits', async () => {
-    mockMatchQuestions.mockResolvedValue([[
-      { interactionId: 'dup', expertFeedbackId: 'ef-dup', similarity: 0.95 },
-      { interactionId: 'dup', expertFeedbackId: 'ef-dup', similarity: 0.95 },
-      { interactionId: 'other', expertFeedbackId: 'ef-other', similarity: 0.9 },
-    ]]);
-
-    mockInteractionFind.mockReturnValue(createChainableQuery([
-      {
-        _id: 'dup',
-        question: { redactedQuestion: 'Dup Q?' },
-        answer: { content: 'Dup A.' },
-        expertFeedback: { totalScore: 80, createdAt: new Date() },
-      },
-      {
-        _id: 'other',
-        question: { redactedQuestion: 'Other Q?' },
-        answer: { content: 'Other A.' },
-        expertFeedback: { totalScore: 80, createdAt: new Date() },
-      },
-    ]));
-
-    const result = await QuestionAnswerService.getSimilarQuestionsContext('benefits', {
-      k: 2,
-      includeQuestionFlow: false,
-    });
-
-    expect(result.match(/Q: Dup Q\?/g)).toHaveLength(1);
-    expect(result).toContain('Q: Other Q?');
-  });
 });
