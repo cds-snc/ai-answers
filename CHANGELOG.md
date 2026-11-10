@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.213.1](https://github.com/cds-snc/ai-answers/compare/v1.213.0...v1.213.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* final turn count bug ([23d5d35](https://github.com/cds-snc/ai-answers/commit/23d5d358dec2cb38070129ee4949d2ae567bc15e))
+* send unassign question ID in the URL ([4537cf8](https://github.com/cds-snc/ai-answers/commit/4537cf8a7c7b322e05d366a7d8c16396ae887dfc))
+
 ## [1.213.0](https://github.com/cds-snc/ai-answers/compare/v1.212.1...v1.213.0) (2026-11-09)
 
 
