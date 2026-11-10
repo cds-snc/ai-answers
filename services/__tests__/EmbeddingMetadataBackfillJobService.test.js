@@ -71,6 +71,39 @@ describe('EmbeddingMetadataBackfillJobService', () => {
     }));
   });
 
+  // Regression: the completing update both $set and $unset leaseUntil, which
+  // MongoDB/DocumentDB reject ("Updating the path 'leaseUntil' would create a
+  // conflict"), so every job ended as failed instead of completed.
+  it('never sets and unsets the same field in the completing update', async () => {
+    const metadataService = {
+      backfillBatch: vi.fn().mockResolvedValueOnce({
+        processed: 0,
+        updated: 0,
+        cleared: 0,
+        skipped: 0,
+        hasMore: false,
+        lastProcessedId: '507f1f77bcf86cd799439012',
+        cursorSource: 'expertFeedback',
+        batchRecords: [],
+      }),
+    };
+    const JobModel = {
+      findOneAndUpdate: vi.fn()
+        .mockResolvedValueOnce({ _id: 'job-1', status: 'running', phase: 'missing', lastProcessedId: null, delayMs: 0 })
+        .mockResolvedValueOnce({ _id: 'job-1', status: 'completed', phase: 'missing', delayMs: 0 }),
+      updateOne: vi.fn(),
+    };
+    const service = new EmbeddingMetadataBackfillJobService({ JobModel, metadataService });
+
+    await service._run('job-1');
+
+    const completingUpdate = JobModel.findOneAndUpdate.mock.calls[1][1];
+    expect(completingUpdate.$set.status).toBe('completed');
+    const setPaths = Object.keys(completingUpdate.$set);
+    const unsetPaths = Object.keys(completingUpdate.$unset || {});
+    expect(setPaths.filter((path) => unsetPaths.includes(path))).toEqual([]);
+  });
+
   it('marks a queued job stopped without starting the worker', async () => {
     const stoppedJob = {
       _id: 'job-1',

@@ -929,13 +929,16 @@ const VectorPage = ({ lang = 'en' }) => {
             import counter) — flagging for a maintainer decision rather than
             guessing at a fix. */}
         {/* "failed" isn't repeated here - metadataBackfillMessage's
-            StatusMessage above covers it. */}
+            StatusMessage above covers it. The server-side reason is only
+            on the job record (the browser console never sees it), so it's
+            shown here, as raw English detail in <code lang="en">. */}
         {metadataProgress && renderProgressList([
           isBackfillingMetadata && ['status', t('vector.progressStatus'), t('vector.autoProcessingActive')],
           stopMetadataBackfill && !isBackfillingMetadata && ['status', t('vector.progressStatus'), t('vector.metadataBackfillStopped')],
           ['processed', t('vector.metadataProcessed'), fmtN(metadataProgress.processed)],
           typeof metadataProgress.remaining === 'number' && ['remaining', t('vector.remaining'), fmtN(metadataProgress.remaining)],
           metadataProgress.lastProcessedId && ['resumeId', t('vector.metadataResumeFromId'), metadataProgress.lastProcessedId],
+          metadataProgress.status === 'failed' && metadataProgress.error && ['error', t('vector.metadataBackfillError'), <code lang="en">{metadataProgress.error}</code>],
         ])}
         {metadataBatchRecords.length > 0 && (
           <div className="mb-400">

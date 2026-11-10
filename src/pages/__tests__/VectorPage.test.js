@@ -690,6 +690,20 @@ describe('VectorPage metadata backfill job status, discovered by polling', () =>
     await expectNotAnnounced('vector.metadataBackfillFailed');
   });
 
+  it('shows the server-side reason for a failed job, as English code', async () => {
+    mockGetMetadataBackfillJob.mockResolvedValue({
+      job: { id: 'job-1', status: 'failed', processed: 0, error: "Updating the path 'leaseUntil' would create a conflict" },
+    });
+
+    renderWithRouter(<VectorPage lang="en" />);
+
+    const term = await screen.findByText('vector.metadataBackfillError');
+    expect(term.tagName).toBe('DT');
+    const detail = term.nextElementSibling.querySelector('code');
+    expect(detail.getAttribute('lang')).toBe('en');
+    expect(detail.textContent).toBe("Updating the path 'leaseUntil' would create a conflict");
+  });
+
   it('shows a completed job from before the page opened, without announcing it', async () => {
     mockGetMetadataBackfillJob.mockResolvedValue({
       job: { id: 'job-1', status: 'completed', processed: 10 },
