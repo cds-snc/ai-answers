@@ -442,9 +442,11 @@ class EmbeddingService {
         _id: { $nin: existingEmbeddingIds },
       };
 
-      // Add pagination using lastProcessedId if provided
+      // Add pagination using lastProcessedId if provided. Add to the $nin
+      // filter rather than replacing it, or already-embedded interactions get
+      // re-embedded as duplicates on every batch after the first.
       if (lastId) {
-        query._id = { $gt: new mongoose.Types.ObjectId(lastId) };
+        query._id.$gt = new mongoose.Types.ObjectId(lastId);
       }
 
       const interactions = await Interaction.find(query)

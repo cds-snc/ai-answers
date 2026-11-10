@@ -2127,6 +2127,19 @@
       "recordsWithMetadata": "Enregistrements avec métadonnées",
       "recordsMissingMetadata": "Enregistrements sans métadonnées"
     },
+    "duplicateEmbeddings": {
+      "title": "Incorporations en double",
+      "description": "Vérifiez si des interactions ont plus d’une incorporation. Cette vérification ne fait que lire les données.",
+      "check": "Rechercher les doublons",
+      "loading": "Recherche des doublons...",
+      "failed": "Échec de la recherche d’incorporations en double.",
+      "none": "Aucune incorporation en double trouvée.",
+      "found": "Certaines interactions ont plus d’une incorporation.",
+      "duplicateInteractions": "Interactions avec doublons",
+      "duplicatesWithExpertFeedback": "Interactions avec doublons et rétroaction d’expert",
+      "extraEmbeddings": "Incorporations en trop",
+      "maxCopies": "Nombre maximal d’incorporations pour une interaction"
+    },
     "metadataLookup": {
       "title": "Recherche des métadonnées des incorporations",
       "description": "Consulter les métadonnées actuelles des incorporations pour chaque interaction d’un clavardage.",

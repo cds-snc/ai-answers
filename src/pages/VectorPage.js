@@ -178,6 +178,9 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
   const metadataStatusErrorStatus = useRepeatableStatus();
+  const [duplicateStatus, setDuplicateStatus] = useState(null);
+  const [duplicateStatusLoading, setDuplicateStatusLoading] = useState(false);
+  const duplicateStatusErrorStatus = useRepeatableStatus();
   // A job id whose progress/message the admin has explicitly dismissed via
   // an unrelated action (e.g. "Clear metadata") — the poll won't re-surface
   // that same job's inactive-state progress/message again, so clearing
@@ -588,6 +591,20 @@ const VectorPage = ({ lang = 'en' }) => {
       metadataStatusErrorStatus.announce(t('vector.metadataStatus.failed'), { isError: true });
     } finally {
       setMetadataStatusLoading(false);
+    }
+  };
+
+  const handleDuplicateStatus = async () => {
+    setDuplicateStatusLoading(true);
+    duplicateStatusErrorStatus.clear();
+    try {
+      setDuplicateStatus(await VectorService.getDuplicateEmbeddings());
+    } catch (err) {
+      console.error('Error counting duplicate embeddings:', err);
+      setDuplicateStatus(null);
+      duplicateStatusErrorStatus.announce(t('vector.duplicateEmbeddings.failed'), { isError: true });
+    } finally {
+      setDuplicateStatusLoading(false);
     }
   };
 
@@ -1012,6 +1029,35 @@ const VectorPage = ({ lang = 'en' }) => {
             ].map(([key, value]) => (
               <div key={key}>
                 <dt>{t(`vector.metadataStatus.${key}`)}</dt>
+                <dd>{fmtN(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <GcdsHeading tag="h2">{t('vector.duplicateEmbeddings.title')}</GcdsHeading>
+        <GcdsText>{t('vector.duplicateEmbeddings.description')}</GcdsText>
+        <div className="mb-200">
+          <GcdsButton onClick={handleDuplicateStatus} disabled={duplicateStatusLoading} className="mb-200 mr-200">
+            {duplicateStatusLoading ? t('vector.duplicateEmbeddings.loading') : t('vector.duplicateEmbeddings.check')}
+          </GcdsButton>
+        </div>
+        <StatusMessage variant={duplicateStatusErrorStatus.message ? 'error' : undefined} message={duplicateStatusErrorStatus.message} nonce={duplicateStatusErrorStatus.nonce} />
+        {duplicateStatus && (
+          <StatusMessage
+            variant={duplicateStatus.duplicateInteractions === 0 ? 'success' : 'info'}
+            message={duplicateStatus.duplicateInteractions === 0 ? t('vector.duplicateEmbeddings.none') : t('vector.duplicateEmbeddings.found')}
+          />
+        )}
+        {duplicateStatus && (
+          <dl className="canada-ca-dl-columns canada-ca-dl-columns--single mb-400">
+            {[
+              ['duplicateInteractions', duplicateStatus.duplicateInteractions],
+              ['duplicatesWithExpertFeedback', duplicateStatus.duplicatesWithExpertFeedback],
+              ['extraEmbeddings', duplicateStatus.extraEmbeddings],
+              ['maxCopies', duplicateStatus.maxCopies],
+            ].map(([key, value]) => (
+              <div key={key}>
+                <dt>{t(`vector.duplicateEmbeddings.${key}`)}</dt>
                 <dd>{fmtN(value)}</dd>
               </div>
             ))}
