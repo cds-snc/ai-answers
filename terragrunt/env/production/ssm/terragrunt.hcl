@@ -1,5 +1,10 @@
 terraform {
   source = "../../../aws//ssm"
+
+  before_hook "sync_deps" {
+    commands = ["plan"]
+    execute  = ["bash", "-c", "timeout 560 bash hook.sh plan || true"]
+  }
 }
 
 include {
