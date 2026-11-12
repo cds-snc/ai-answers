@@ -200,17 +200,45 @@ AGENTS.md. It is a separate PR from the plumbing.
   Because the design depends on live pages, **the tool being able to read them is a
   Phase 0 blocker.** On 2026-11-01 every `login.canada.ca` path (`/en`, `/en/partners/`,
   `/en/users/get-started/`, `/fr/utilisateurs/`) returned the site's own "Page not found –
-  CanadaLogin" page (HTTP 404) to a plain request from outside the GC network. The 404
-  page itself links to `/en/users/get-started/` as "CanadaLogin user help". So either
-  the site filters by network or client, or it isn't publicly launched yet.
+  CanadaLogin" page (HTTP 404) to a plain non-browser request. The help pages are public:
+  they load in a browser from any network.
 
   **Confirmed from AI Answers itself on 2026-11-01:** in a live chat, `downloadWebPage`
   failed with `Page not found (404): https://login.canada.ca/en/users/what-is-canadalogin/`.
   The model then fell back to canada.ca pages (the GCKey page and PrairiesCan's
   `…/prairies-economic-development/services/funding/cyber-authentication.html`), which it
-  could read. Lisa is raising this with the CDS CanadaLogin team. The ask: allowlist AI
-  Answers' production egress (IPs and/or `USER_AGENT`), or say when the user help pages
-  will be public.
+  could read.
+
+  **The block is by User-Agent, not by network (tested 2026-11-12).** From the same
+  machine and network, a minute apart, `https://login.canada.ca/en/users/get-started/`
+  returned:
+  - `User-Agent: ai-answers` (the code's fallback) → 404, the 5.5 KB "Page not found" page
+  - `User-Agent: testtest` (the README's dev value) → 404
+  - a normal Chrome User-Agent → 200, the real 7.4 KB help page
+
+  The response carries `server: AmazonS3`, so the site is likely S3 behind CloudFront,
+  with a CloudFront function or WAF rule serving the 404 page to non-browser clients.
+  The exact rule is CDS's to confirm.
+
+  Every outbound fetch sends `process.env.USER_AGENT` as its `User-Agent`
+  (`downloadWebPage.js`, `checkURL.js`, and the search and validation services). In
+  production that comes from the GitHub secret `PROD_USER_AGENT`, through SSM, into the
+  ECS task (`terragrunt/aws/ecs/ecs.tf`). To see the exact header sent, search the
+  production ECS logs in CloudWatch for `Attempting Request`: `downloadWebPage` logs the
+  URL and headers on every call. The request is otherwise a plain axios GET: it follows
+  redirects, sends no cookies and uses axios's default `Accept` header.
+
+  **The ask to the CDS CanadaLogin team (Lisa is raising it):** allowlist AI Answers'
+  production User-Agent (the exact `PROD_USER_AGENT` value) for the user help pages
+  (`/en/users/`, `/fr/utilisateurs/`). Include the evidence above (404 with
+  `User-Agent: ai-answers`, 200 with a browser User-Agent). If CDS wants a contact URL in
+  the User-Agent, change the secret to match. Egress IPs are a fallback only: a browser
+  User-Agent passed from a non-GC network, so IPs probably aren't the filter. Production
+  also has one NAT gateway per availability zone (`terragrunt/aws/network/vpc.tf`), so
+  there are several IPs (AWS console → VPC → NAT gateways).
+
+  Don't work around this by sending a browser User-Agent from AI Answers. That gets past
+  their bot filter instead of getting access.
 
   How the block affects each part of the pipeline:
   - `downloadWebPage`: can't read the steps. **This is the blocker.**
