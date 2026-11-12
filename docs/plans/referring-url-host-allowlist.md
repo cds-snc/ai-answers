@@ -7,7 +7,7 @@ Status: **planned**, not started. Follows the AIA-006 fix (`api/util/referring-u
 The AIA-006 fix makes `referringUrl` *safe to embed*:
 - it must be http(s)
 - `<`, `>`, quotes and whitespace are encoded, so it can't break out of `<referring-url>`
-- the query string is dropped, and so is any anchor with `=`, `&` or `?`
+- the query string is dropped, and so is any anchor that is not a plain section name (letters, digits, `_` `-` `.`, no run of 6+ digits)
 - it's capped at 500 characters
 
 It does not restrict *which hosts* are accepted. A signed-out visitor can still send a

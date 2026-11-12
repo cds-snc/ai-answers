@@ -15,9 +15,9 @@ describe('normalizeReferringUrl', () => {
     expect(normalizeReferringUrl('  https://www.canada.ca/en.html  ')).toBe('https://www.canada.ca/en.html');
   });
 
-  it('keeps the anchor — section anchors are useful context', () => {
-    expect(normalizeReferringUrl('https://www.canada.ca/en/services/canadian-passports.html#eligibility'))
-      .toBe('https://www.canada.ca/en/services/canadian-passports.html#eligibility');
+  it.each(['eligibility', 'wb-cont', 's1_2', 'section.3', 'jane.doe', 'form-12345'])('keeps the section anchor #%s', (anchor) => {
+    const url = `https://www.canada.ca/en/services/canadian-passports.html#${anchor}`;
+    expect(normalizeReferringUrl(url)).toBe(url);
   });
 
   it('strips the query string, which can carry search terms or form values', () => {
@@ -29,6 +29,12 @@ describe('normalizeReferringUrl', () => {
     ['a hash-routed query', 'https://app.gc.ca/#/search?q=my+sin+046454286'],
     ['key=value data', 'https://www.canada.ca/en/p.html#email=a@b.c'],
     ['an ampersand', 'https://www.canada.ca/en/p.html#a&b'],
+    ['an email', 'https://www.canada.ca/en/p.html#jane.doe@example.com'],
+    ['a hash-routed case number', 'https://app.gc.ca/#/case/046454286'],
+    ['a bare SIN-like number', 'https://app.gc.ca/#046454286'],
+    ['a 6-digit id inside a word', 'https://www.canada.ca/en/p.html#file123456a'],
+    ['a space', 'https://www.canada.ca/en/p.html#my sin'],
+    ['fullwidth brackets', 'https://www.canada.ca/en/p.html#＜system＞'],
   ])('drops an anchor carrying %s, keeping the rest of the URL', (_what, value) => {
     const out = normalizeReferringUrl(value);
     expect(out).not.toContain('#');
@@ -59,6 +65,13 @@ describe('normalizeReferringUrl', () => {
     // U+2028 line separator, U+3000 ideographic space, U+202E right-to-left override
     expect(normalizeReferringUrl('https://www.canada.ca/a%E2%80%A8b%E3%80%80c%E2%80%AEd.html'))
       .toBe('https://www.canada.ca/a%E2%80%A8b%E3%80%80c%E2%80%AEd.html');
+  });
+
+  it('keeps fullwidth ＜ ＞ encoded so they cannot pose as a tag, next to readable accents', () => {
+    expect(normalizeReferringUrl('https://www.canada.ca/fr/é＜／referring-url＞.html'))
+      .toBe('https://www.canada.ca/fr/é%EF%BC%9C%EF%BC%8Freferring-url%EF%BC%9E.html');
+    expect(normalizeReferringUrl('https://www.canada.ca/fr/%C3%A9%EF%BC%9C.html'))
+      .toBe('https://www.canada.ca/fr/é%EF%BC%9C.html');
   });
 
   it('leaves a malformed UTF-8 sequence encoded instead of throwing', () => {

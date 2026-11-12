@@ -169,7 +169,7 @@ The graph maintains state across all nodes with these key fields:
   department: string,            // Department code (if provided)
   referringUrl: string,          // Page URL where question was asked. Normalized at entry
                                  //   by api/util/referring-url.js (http(s) only, query
-                                 //   stripped, anchor kept unless it has = & ?,
+                                 //   stripped, anchor kept only if section-like,
                                  //   ≤500 chars) or '' (AIA-006)
   selectedAI: string,            // AI provider (openai, azure, anthropic)
   translationF: boolean,         // Translation function enabled
