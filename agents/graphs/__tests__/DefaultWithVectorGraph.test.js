@@ -122,7 +122,8 @@ describe('DefaultWithVectorGraph Workflow', () => {
             conversationHistory: [],
             lang: 'en',
             department: 'dept',
-            selectedAI: 'openai'
+            selectedAI: 'openai',
+            serviceProfileId: 'default'
         };
 
         const resultState = await defaultWithVectorGraphApp.invoke(input);

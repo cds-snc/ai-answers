@@ -158,6 +158,7 @@ describe('GraphWorkflowHelper', () => {
                 lang: 'en',
                 context: { translatedQuestion: 'How do I apply?', outputLang: 'eng' },
                 chatId: 'test-chat-id',
+                serviceProfileId: 'default',
                 ...overrides,
             });
         };
@@ -217,6 +218,11 @@ describe('GraphWorkflowHelper', () => {
             await sendWith({ conversationHistory: turnsOfHistory(completedTurns) });
 
             expect(sentMessage()).not.toContain('<final-turn>');
+        });
+
+        it('throws when no service profile is given, rather than guessing a turn cap', async () => {
+            await expect(sendWith({ serviceProfileId: undefined })).rejects.toThrow(/service profile/i);
+            expect(AnswerGenerationService.generateAnswer).not.toHaveBeenCalled();
         });
     });
 });

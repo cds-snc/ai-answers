@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
 import { pickExplicitReferenceAnswer } from './datasetColumns.js';
+import { DEFAULT_SERVICE_PROFILE_ID } from '../../config/service-profiles.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -704,6 +705,7 @@ class ExperimentalBatchService {
                         resolveSearchProvider(SettingsService.get('search.default'))
                     ),
                     referringUrl: item.referringUrl || batch.config.referringUrl || '',
+                    serviceProfileId: DEFAULT_SERVICE_PROFILE_ID,
                 };
 
                 let workflowDebugPayload = null;

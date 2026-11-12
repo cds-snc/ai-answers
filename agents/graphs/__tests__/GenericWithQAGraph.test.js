@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { graphRequestContext } from '../requestContext.js';
 
-const { mockPersistInteraction, mockGetSimilarQuestionsContext } = vi.hoisted(() => ({
+const { mockPersistInteraction, mockGetSimilarQuestionsContext, mockSendAnswerRequest } = vi.hoisted(() => ({
     mockPersistInteraction: vi.fn().mockResolvedValue({ success: true }),
     mockGetSimilarQuestionsContext: vi.fn(),
+    mockSendAnswerRequest: vi.fn(),
 }));
 
 describe('GenericWithQAGraph Workflow', () => {
@@ -23,7 +24,7 @@ describe('GenericWithQAGraph Workflow', () => {
                 translateQuestion: vi.fn().mockResolvedValue({ translatedText: 'translated', originalLanguage: 'en' }),
                 postTranslateGuard: vi.fn().mockResolvedValue(),
                 deriveContext: vi.fn(async () => deriveContextResult),
-                sendAnswerRequest: vi.fn().mockResolvedValue({ content: 'Generated answer', answerType: 'normal', citationUrl: 'https://example.com' }),
+                sendAnswerRequest: mockSendAnswerRequest.mockResolvedValue({ content: 'Generated answer', answerType: 'normal', citationUrl: 'https://example.com' }),
                 verifyCitation: vi.fn().mockResolvedValue({ url: 'https://example.com' }),
                 persistInteraction: mockPersistInteraction,
                 buildTranslationContext: vi.fn().mockReturnValue([]),
@@ -111,5 +112,18 @@ describe('GenericWithQAGraph Workflow', () => {
         }), undefined);
         expect(mockPersistInteraction.mock.calls[0][0].context.qaMatches).toHaveLength(1);
         expect(mockPersistInteraction.mock.calls[0][0].context.qaMatches[0]).not.toHaveProperty('thresholdPassed');
+    });
+
+    // LangGraph drops input fields the graph state doesn't declare, with no error.
+    // See "Never drop a prompt tag that code has to inject" in AGENTS.md.
+    it('passes the service profile through to the answer request', async () => {
+        mockGetSimilarQuestionsContext.mockResolvedValue({ text: '', debug: {} });
+
+        await genericWithQAGraphApp.invoke({
+            chatId: 'chat-1', userMessage: 'Question', userMessageId: 'message-1', conversationHistory: [],
+            lang: 'en', department: 'department', selectedAI: 'openai', serviceProfileId: 'default',
+        });
+
+        expect(mockSendAnswerRequest).toHaveBeenCalledWith(expect.objectContaining({ serviceProfileId: 'default' }));
     });
 });
