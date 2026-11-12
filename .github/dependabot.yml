@@ -10,3 +10,12 @@ updates:
    directory: "/"
    schedule:
      interval: weekly
+ - package-ecosystem: "npm"
+   directories: ["/", "/server"]
+   schedule:
+     interval: weekly
+   open-pull-requests-limit: 0   # security updates only, no routine version bumps
+   groups:
+     npm-security:
+       applies-to: security-updates
+       patterns: ["*"]
