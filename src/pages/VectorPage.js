@@ -1098,6 +1098,7 @@ const VectorPage = ({ lang = 'en' }) => {
                   <th scope="col">{t('vector.metadataLookup.columns.score')}</th>
                   <th scope="col">{t('vector.metadataLookup.columns.pageLanguage')}</th>
                   <th scope="col">{t('vector.metadataLookup.columns.interactionLanguage')}</th>
+                  <th scope="col">{t('admin.common.columns.department')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1139,6 +1140,7 @@ const VectorPage = ({ lang = 'en' }) => {
                       <td>{compare(fmtScore(row.attachedExpertFeedbackTotalScore), fmtScore(row.metadataExpertFeedbackTotalScore))}</td>
                       <td>{compare(row.chatPageLanguage, row.metadataPageLanguage)}</td>
                       <td>{compare(row.interactionLanguage, row.metadataInteractionLanguage)}</td>
+                      <td>{compare(row.contextDepartment, row.metadataDepartment)}</td>
                     </tr>
                   );
                 })}

@@ -10,6 +10,7 @@ import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import { Interaction } from '../models/interaction.js';
 import { compareVectorMatches } from './vectorMatchOrdering.js';
+import { normalizeMatchDepartment } from './matchDepartment.js';
 
 function isValidVector(vec) {
   return Array.isArray(vec) && vec.every((x) => typeof x === 'number' && Number.isFinite(x));
@@ -85,7 +86,7 @@ class IMVectorService {
         ...this.filterQuery,
       };
       const qaDocs = await Embedding.find(qaQuery)
-        .select('_id interactionId questionsAnswerEmbedding questionsEmbedding expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale')
+        .select('_id interactionId questionsAnswerEmbedding questionsEmbedding expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale department')
         .lean();
 
       if (!qaDocs.length) {
@@ -148,6 +149,7 @@ class IMVectorService {
           expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
           expertFeedbackCreatedAt: doc.expertFeedbackCreatedAt || null,
           expertFeedbackNeverStale: doc.expertFeedbackNeverStale === true,
+          department: normalizeMatchDepartment(doc.department),
           citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
         });
       }
@@ -164,6 +166,7 @@ class IMVectorService {
             expertFeedbackScore: doc.expertFeedbackTotalScore ?? interactionToEFScore.get(doc.interactionId?.toString() || '') ?? null,
             expertFeedbackCreatedAt: doc.expertFeedbackCreatedAt || null,
             expertFeedbackNeverStale: doc.expertFeedbackNeverStale === true,
+            department: normalizeMatchDepartment(doc.department),
             citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
           });
         }
@@ -287,7 +290,7 @@ class IMVectorService {
   /**
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
-  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, expertFeedbackTotalScore = null, expertFeedbackCreatedAt = null, expertFeedbackNeverStale = false, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
+  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, expertFeedbackTotalScore = null, expertFeedbackCreatedAt = null, expertFeedbackNeverStale = false, department = '', questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
     // Add QA (questions+answer) embedding
     if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
@@ -299,6 +302,7 @@ class IMVectorService {
         expertFeedbackScore: expertFeedbackTotalScore,
         expertFeedbackCreatedAt,
         expertFeedbackNeverStale: expertFeedbackNeverStale === true,
+        department: normalizeMatchDepartment(department),
       });
       this.stats.embeddings++;
     }
@@ -314,6 +318,7 @@ class IMVectorService {
         expertFeedbackScore: expertFeedbackTotalScore,
         expertFeedbackCreatedAt,
         expertFeedbackNeverStale: expertFeedbackNeverStale === true,
+        department: normalizeMatchDepartment(department),
       });
       this.stats.questions = (this.stats.questions || 0) + 1;
     }
@@ -410,6 +415,7 @@ class IMVectorService {
    */
   async matchQuestions(questions = [], opts = {}) {
     const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = null, expertFeedbackComparison = 'eq', language = null, recencyDays = null, useDenormalizedPreFilter = false, returnDebugData = false } = opts;
+    const department = normalizeMatchDepartment(opts.department) || null;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -447,9 +453,10 @@ class IMVectorService {
       const emb = embeddings[questionIndex];
       // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
       const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
-      const searchLimit = useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0
-        ? searchDb.size()
-        : k * 2;
+      // Metadata filters that can drop many near neighbours need the full local
+      // result set, or other departments'/stale hits could starve eligible ones.
+      const searchAll = Boolean(department) || (useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0);
+      const searchLimit = searchAll ? searchDb.size() : k * 2;
       let results = await searchDb.query(emb, searchLimit);
       results = results.sort((a, b) => b.similarity - a.similarity);
       ServerLoggingService.info('matchQuestions raw search results', 'IMVectorService', {
@@ -475,7 +482,7 @@ class IMVectorService {
           expertFeedbackCreatedAt: meta.expertFeedbackCreatedAt || null,
         });
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim, expertFeedbackCreatedAt: meta.expertFeedbackCreatedAt || null });
-        if (!(useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) && mapped.length >= k * 2) break;
+        if (!searchAll && mapped.length >= k * 2) break;
       }
       debugPerQuestion.push(debugCandidates);
       ServerLoggingService.info('matchQuestions mapped results', 'IMVectorService', {
@@ -493,6 +500,15 @@ class IMVectorService {
       // whose chat.pageLanguage matches the desired one. If no language was
       // provided, keep existing behavior.
       let filtered = mapped;
+      if (department) {
+        filtered = filtered.filter(m => (this.qaMeta.get(m.id) || {}).department === department);
+        ServerLoggingService.info('matchQuestions department filter', 'IMVectorService', {
+          questionIndex,
+          department,
+          beforeCount: mapped.length,
+          afterCount: filtered.length,
+        });
+      }
       if (useDenormalizedPreFilter && typeof recencyDays === 'number' && recencyDays > 0) {
         const cutoff = Date.now() - (recencyDays * 24 * 60 * 60 * 1000);
         filtered = filtered.filter(m => {
@@ -522,7 +538,8 @@ class IMVectorService {
             }
           }
 
-          filtered = mapped.filter(m => {
+          // Narrow the already-filtered set (department/recency), not `mapped`.
+          filtered = filtered.filter(m => {
             const lang = interactionToLang[m.interactionId?.toString?.() || m.interactionId] || '';
             return lang === pageLang;
           });

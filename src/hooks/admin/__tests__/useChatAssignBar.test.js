@@ -8,13 +8,14 @@ import { useChatAssignBar } from '../useChatAssignBar.js';
 const { mockGetAssignable } = vi.hoisted(() => ({ mockGetAssignable: vi.fn() }));
 vi.mock('../../../services/UserService.js', () => ({ default: { getAssignable: mockGetAssignable } }));
 
-const { mockAssignQuestion } = vi.hoisted(() => ({ mockAssignQuestion: vi.fn() }));
-vi.mock('../../../services/DashboardService.js', () => ({ default: { assignQuestion: mockAssignQuestion } }));
+const { mockAssignQuestion, mockUnassignQuestion } = vi.hoisted(() => ({ mockAssignQuestion: vi.fn(), mockUnassignQuestion: vi.fn() }));
+vi.mock('../../../services/DashboardService.js', () => ({ default: { assignQuestion: mockAssignQuestion, unassignQuestion: mockUnassignQuestion } }));
 
 describe('useChatAssignBar', () => {
   beforeEach(() => {
     mockGetAssignable.mockReset();
     mockAssignQuestion.mockReset();
+    mockUnassignQuestion.mockReset();
   });
 
   it('setting the same mode again is a no-op (details fires toggle on mount with open=true)', async () => {
@@ -251,5 +252,31 @@ describe('useChatAssignBar', () => {
     expect(result.current.assignStatus).not.toBeNull();
     act(() => { result.current.setNoteText('a note'); });
     expect(result.current.assignStatus).toBeNull();
+  });
+
+  it('reloads the table and moves focus when the assignment changed during an unassign', async () => {
+    mockUnassignQuestion.mockRejectedValue(Object.assign(new Error('Failed to remove assignment'), { code: 'assignment_changed' }));
+    const onDone = vi.fn();
+    const { result } = renderHook(() => useChatAssignBar());
+    const focusCountBefore = result.current.outcomeFocusCount;
+
+    await act(async () => { await result.current.unassignQuestion('q-1', onDone); });
+
+    expect(result.current.assignStatus).toEqual({ isError: true, assignmentChanged: true });
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(result.current.outcomeFocusCount).toBe(focusCountBefore + 1);
+  });
+
+  it('keeps the generic error, with no reload or focus move, for any other unassign failure', async () => {
+    mockUnassignQuestion.mockRejectedValue(new Error('Failed to remove assignment'));
+    const onDone = vi.fn();
+    const { result } = renderHook(() => useChatAssignBar());
+    const focusCountBefore = result.current.outcomeFocusCount;
+
+    await act(async () => { await result.current.unassignQuestion('q-1', onDone); });
+
+    expect(result.current.assignStatus).toEqual({ isError: true, unassignFailed: true });
+    expect(onDone).not.toHaveBeenCalled();
+    expect(result.current.outcomeFocusCount).toBe(focusCountBefore);
   });
 });

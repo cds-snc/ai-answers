@@ -9,8 +9,10 @@ const { mockPersistInteraction, mockGetSimilarQuestionsContext, mockSendAnswerRe
 
 describe('GenericWithQAGraph Workflow', () => {
     let genericWithQAGraphApp;
+    let deriveContextResult;
 
     beforeEach(async () => {
+        deriveContextResult = { topic: 'topic', department: 'department', searchResults: [] };
         vi.clearAllMocks();
         vi.resetModules();
 
@@ -21,7 +23,7 @@ describe('GenericWithQAGraph Workflow', () => {
                 processRedaction: vi.fn().mockResolvedValue({ redactedText: 'redacted' }),
                 translateQuestion: vi.fn().mockResolvedValue({ translatedText: 'translated', originalLanguage: 'en' }),
                 postTranslateGuard: vi.fn().mockResolvedValue(),
-                deriveContext: vi.fn().mockResolvedValue({ topic: 'topic', department: 'department', searchResults: [] }),
+                deriveContext: vi.fn(async () => deriveContextResult),
                 sendAnswerRequest: mockSendAnswerRequest.mockResolvedValue({ content: 'Generated answer', answerType: 'normal', citationUrl: 'https://example.com' }),
                 verifyCitation: vi.fn().mockResolvedValue({ url: 'https://example.com' }),
                 persistInteraction: mockPersistInteraction,
@@ -40,6 +42,40 @@ describe('GenericWithQAGraph Workflow', () => {
         const mod = await import('../GenericWithQAGraph.js');
         genericWithQAGraphApp = mod.genericWithQAGraphApp;
         vi.spyOn(graphRequestContext, 'getStore').mockReturnValue({ user: { userId: 'test-user' } });
+    });
+
+    it('looks up eval-informed examples only within the department context matched', async () => {
+        mockGetSimilarQuestionsContext.mockResolvedValue({ text: '', debug: { matchedRecords: [], preThresholdRecords: [] } });
+
+        await genericWithQAGraphApp.invoke({
+            chatId: 'chat-1', userMessage: 'Question', userMessageId: 'message-1', conversationHistory: [],
+            lang: 'en', department: '', selectedAI: 'openai',
+        });
+
+        expect(mockGetSimilarQuestionsContext).toHaveBeenCalledWith('Question', expect.objectContaining({ department: 'DEPARTMENT' }));
+    });
+
+    it('adds no eval-informed examples when context matched no department', async () => {
+        deriveContextResult = { topic: 'topic', department: '', searchResults: [] };
+
+        await genericWithQAGraphApp.invoke({
+            chatId: 'chat-1', userMessage: 'Question', userMessageId: 'message-1', conversationHistory: [],
+            lang: 'en', department: '', selectedAI: 'openai',
+        });
+
+        expect(mockGetSimilarQuestionsContext).not.toHaveBeenCalled();
+        expect(mockPersistInteraction.mock.calls[0][0].context).not.toHaveProperty('qaMatches');
+    });
+
+    it('treats a whitespace-only department as no department', async () => {
+        deriveContextResult = { topic: 'topic', department: ' \n ', searchResults: [] };
+
+        await genericWithQAGraphApp.invoke({
+            chatId: 'chat-1', userMessage: 'Question', userMessageId: 'message-1', conversationHistory: [],
+            lang: 'en', department: '', selectedAI: 'openai',
+        });
+
+        expect(mockGetSimilarQuestionsContext).not.toHaveBeenCalled();
     });
 
     it('persists only threshold-passing Q&A matches', async () => {

@@ -375,12 +375,16 @@ avoid what they flagged as wrong. *This is the production graph's eval-driven st
 system card calls it **eval-informed answering**.*
 
 **Process:**
+0. If context matched no department (`context.department` empty), skip the lookup and add no
+   examples — generic questions ("when is the deadline?") would otherwise match evals from
+   unrelated departments.
 1. Call `QuestionAnswerService.getSimilarQuestionsContext(userMessage, opts)` with
-   `k: 3`, `threshold: 0.75`, `expertFeedbackRating: 100`, `expertFeedbackComparison: 'lte'`,
+   `department: context.department`, `k: 3`, `threshold: 0.75`, `expertFeedbackRating: 100`, `expertFeedbackComparison: 'lte'`,
    `recencyDays: 365`, `useDenormalizedPreFilter: true`, `returnDebugData: true`.
    `lte` means **both** perfect-score and lower-score pairs are eligible: perfect ones as a
    known-good model, lower ones with the expert's sentence-level comments as mistakes to avoid.
-2. Candidates below the `0.75` cosine-similarity floor are dropped at the vector layer, and
+2. Only past Q/As whose context matched the **same department** are eligible (exact abbrKey,
+   no scenario aliasing). Candidates below the `0.75` cosine-similarity floor are dropped at the vector layer, and
    hits whose expert feedback is older than 365 days are dropped (unless flagged `neverStale`).
 3. Write the formatted block back into `context.similarQuestions`, plus `context.qaMatches`
    (chatId, interactionId, similarity, score, question/answer text) for ChatViewer.
