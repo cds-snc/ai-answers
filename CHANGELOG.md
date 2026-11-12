@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.213.2](https://github.com/cds-snc/ai-answers/compare/v1.213.1...v1.213.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* correct French about-page citation URL in CEO-BEC scenario ([b590bdb](https://github.com/cds-snc/ai-answers/commit/b590bdb5b6cc1fca78d819c021b1affe5645d096))
+* correct French about-page citation URL in CEO-BEC scenario ([2259d9a](https://github.com/cds-snc/ai-answers/commit/2259d9a5b2c1e5e5e78c9784528170ec5f10c9e6))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump mongoose, fast-xml-parser, @aws-sdk/xml-builder; gr… ([f3b8cc8](https://github.com/cds-snc/ai-answers/commit/f3b8cc81515f6822e1d817ababf9b4a674062b64))
+* **deps:** bump mongoose, fast-xml-parser, @aws-sdk/xml-builder; group Dependabot security updates ([cb94134](https://github.com/cds-snc/ai-answers/commit/cb9413438b6200e6f0e6508bd7a54e5202b4eaf2))
+
 ## [1.213.1](https://github.com/cds-snc/ai-answers/compare/v1.213.0...v1.213.1) (2026-11-10)
 
 
