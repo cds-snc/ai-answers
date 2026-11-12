@@ -11,6 +11,8 @@ import ChatSessionService from '../../services/ChatSessionService.js';
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
+import { normalizeReferringUrl } from '../util/referring-url.js';
+import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 const REQUIRED_METHOD = 'POST';
 const DEFAULT_CHAT_TRANSPORT = 'sse';
@@ -166,6 +168,17 @@ async function handler(req, res) {
 
   // Ensure the graph uses the validated/generated chatId from the session middleware
   input.chatId = req.chatId;
+  // AIA-006: referringUrl is client-controlled and reaches LLM prompts, logs and the
+  // DB without passing the redaction guardrail. Normalize it once, here, so every
+  // downstream consumer sees only a validated http(s) URL (or '').
+  const rawReferringUrl = input.referringUrl;
+  input.referringUrl = normalizeReferringUrl(rawReferringUrl);
+  if (!input.referringUrl && typeof rawReferringUrl === 'string' && rawReferringUrl.trim()) {
+    // Never log the raw value — it is unvalidated and may contain PII.
+    ServerLoggingService.warn('Dropped invalid referringUrl', req.chatId, {
+      rawLength: rawReferringUrl.length,
+    }).catch(() => {});
+  }
   // Scenario overrides (GraphWorkflowHelper.applyScenarioOverride) belong to
   // the signed-in user - never trust a client-sent user ID.
   input.overrideUserId = req.user?.userId ?? null;

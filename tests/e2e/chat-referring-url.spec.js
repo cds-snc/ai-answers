@@ -75,7 +75,8 @@ test.describe('Referring URL Lifecycle', () => {
 
         const chatId = await sendQuestionAndGetChatId(page, 'Hello, catching ref from document.referrer!');
         await loginAsAdmin(page);
-        await verifyReferringUrlInReviewMode(page, chatId, referrerSite);
+        // The server strips the query string before storing (AIA-006).
+        await verifyReferringUrlInReviewMode(page, chatId, 'https://external-search.ca/search');
     });
 
     test('should allow manual override of referring URL and show it in review mode', async ({ page }) => {

@@ -12,7 +12,12 @@ import { SettingsService } from '../SettingsService.js';
 import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
-import { pickExplicitReferenceAnswer } from './datasetColumns.js';
+import {
+    REFERRING_URL_ALIASES,
+    normalizeReferringUrlColumns,
+    pickExplicitReferenceAnswer
+} from './datasetColumns.js';
+import { normalizeReferringUrl } from '../../api/util/referring-url.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -24,7 +29,6 @@ const WORKFLOW_ALIASES = {
 };
 const CHAT_ID_ALIASES = ['chatid'];
 const SOURCE_CHAT_ID_ALIASES = ['chatid'];
-const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 const ANALYSIS_MODES = new Set(['generated-answer', 'dataset-reference']);
 
@@ -384,6 +388,9 @@ class ExperimentalBatchService {
             });
         }
 
+        // AIA-006: clean CSV referring URLs before validation, the batch record or items see them.
+        finalItems = finalItems.map(normalizeReferringUrlColumns);
+
         if (finalItems.length === 0) {
             throw makeError('Batch has no rows to process', 'NO_ITEMS', 400);
         }
@@ -703,7 +710,8 @@ class ExperimentalBatchService {
                         batch.config.searchProvider,
                         resolveSearchProvider(SettingsService.get('search.default'))
                     ),
-                    referringUrl: item.referringUrl || batch.config.referringUrl || '',
+                    // AIA-006: CSV-supplied; validate before it reaches prompts/logs/DB.
+                    referringUrl: normalizeReferringUrl(item.referringUrl || batch.config.referringUrl),
                 };
 
                 let workflowDebugPayload = null;
