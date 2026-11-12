@@ -122,7 +122,8 @@ async function verifyChallenge({ userId, code } = {}) {
   const token = normalizeTwoFACode(code);
   if (!token) return { success: false, reason: 'invalid' };
 
-  const user = await loadUser(userId);
+  // twoFACode is select: false (models/user.js), so ask for it.
+  const user = await loadUser(userId).select('+twoFACode');
   if (!user) return { success: false, reason: 'invalid' };
   if (!isEnabled()) return { success: false, reason: 'twofa_disabled' };
 
@@ -154,7 +155,7 @@ async function verifyChallenge({ userId, code } = {}) {
     },
     { $inc: { twoFAAttempts: 1 } },
     { new: true }
-  );
+  ).select('+twoFACode');
   if (!counted) return { success: false, reason: 'invalid' };
   if (counted.twoFAAttempts > MAX_ATTEMPTS) return { success: false, reason: 'locked' };
 
