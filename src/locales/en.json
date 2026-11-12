@@ -2127,6 +2127,19 @@
       "recordsWithMetadata": "Records with metadata",
       "recordsMissingMetadata": "Records missing metadata"
     },
+    "duplicateEmbeddings": {
+      "title": "Duplicate embeddings",
+      "description": "Check whether any interaction has more than one embedding. This check only reads data.",
+      "check": "Check for duplicates",
+      "loading": "Checking for duplicates...",
+      "failed": "Failed to check for duplicate embeddings.",
+      "none": "No duplicate embeddings found.",
+      "found": "Some interactions have more than one embedding.",
+      "duplicateInteractions": "Interactions with duplicates",
+      "duplicatesWithExpertFeedback": "Interactions with duplicates and expert feedback",
+      "extraEmbeddings": "Extra embeddings",
+      "maxCopies": "Most embeddings for one interaction"
+    },
     "metadataLookup": {
       "title": "Embedding metadata lookup",
       "description": "Look up the current embedding metadata for each interaction in a chat.",

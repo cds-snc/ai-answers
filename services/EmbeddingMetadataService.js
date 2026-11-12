@@ -338,6 +338,44 @@ class EmbeddingMetadataService {
     return Embedding.updateMany({}, { $unset: METADATA_UNSET });
   }
 
+  // Read-only count of interactions with more than one Embedding document
+  // (an old db-generate-embeddings paging bug re-embedded already-embedded
+  // interactions). Only duplicates of expert-evaluated interactions can reach
+  // live answers, so those are counted separately.
+  async getDuplicateEmbeddingStatus() {
+    const [result] = await Embedding.aggregate([
+      // Project first so the vector fields are never loaded.
+      { $project: { interactionId: 1 } },
+      { $group: { _id: '$interactionId', copies: { $sum: 1 } } },
+      { $match: { copies: { $gt: 1 } } },
+      { $lookup: { from: 'interactions', localField: '_id', foreignField: '_id', as: 'interaction' } },
+      {
+        $project: {
+          copies: 1,
+          hasExpertFeedback: {
+            $cond: [{ $ifNull: [{ $arrayElemAt: ['$interaction.expertFeedback', 0] }, false] }, 1, 0],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          duplicateInteractions: { $sum: 1 },
+          duplicatesWithExpertFeedback: { $sum: '$hasExpertFeedback' },
+          extraEmbeddings: { $sum: { $subtract: ['$copies', 1] } },
+          maxCopies: { $max: '$copies' },
+        },
+      },
+    ]);
+
+    return {
+      duplicateInteractions: result?.duplicateInteractions || 0,
+      duplicatesWithExpertFeedback: result?.duplicatesWithExpertFeedback || 0,
+      extraEmbeddings: result?.extraEmbeddings || 0,
+      maxCopies: result?.maxCopies || 0,
+    };
+  }
+
   async getBackfillStatus() {
     const aggregation = Embedding.aggregate([
       {

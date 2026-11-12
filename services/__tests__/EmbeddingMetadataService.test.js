@@ -345,6 +345,36 @@ describe('EmbeddingMetadataService', () => {
     expect(mockChatFindOne).not.toHaveBeenCalled();
   });
 
+  it('reports duplicate embedding counts from the aggregation', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([{
+      _id: null,
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    }]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    });
+    // Must not load vector fields: the first stage projects to interactionId only.
+    expect(mockEmbeddingAggregate.mock.calls[0][0][0]).toEqual({ $project: { interactionId: 1 } });
+  });
+
+  it('reports zero duplicates when the aggregation finds none', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 0,
+      duplicatesWithExpertFeedback: 0,
+      extraEmbeddings: 0,
+      maxCopies: 0,
+    });
+  });
+
   it('reports whether embedding metadata matches linked feedback', async () => {
     mockEmbeddingAggregate.mockResolvedValue([{
       totalEmbeddings: 12,
