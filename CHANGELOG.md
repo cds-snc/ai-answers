@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.213.3](https://github.com/cds-snc/ai-answers/compare/v1.213.2...v1.213.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* code review ([aef99cf](https://github.com/cds-snc/ai-answers/commit/aef99cfbb8584a854ad755ccaa0e5434d994e4e5))
+* **deps:** bump body-parser to 2.4.0 and qs to 6.17.1 in /server ([842595e](https://github.com/cds-snc/ai-answers/commit/842595e596eadb99f233d039a0f2218fd9807717))
+* duplicate embeddings bugs ([6943fa8](https://github.com/cds-snc/ai-answers/commit/6943fa8483e6bb1b5ec94ac0f6a84d5b27dd5c08))
+
 ## [1.213.2](https://github.com/cds-snc/ai-answers/compare/v1.213.1...v1.213.2) (2026-11-12)
 
 
