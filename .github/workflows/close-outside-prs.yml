@@ -1,0 +1,33 @@
+name: Close PRs from outside the team
+
+# Closes pull requests opened from a fork by someone who is not an org member,
+# owner, or repo collaborator. Team members, Dependabot and release-please push
+# branches to this repo directly, so their PRs are never touched.
+#
+# Safety: pull_request_target runs with a write token in the context of the
+# base repo. This workflow must NEVER check out or run code from the PR.
+# It only reads event metadata and calls `gh pr close`.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  close:
+    if: >-
+      github.repository == 'cds-snc/ai-answers' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr close "$PR_NUMBER" --comment "Thanks for your interest. This repository only accepts pull requests from the team, so this one has been closed automatically."
