@@ -950,7 +950,7 @@ describe('ExperimentalBatchService', () => {
                 expect.objectContaining({
                     chatId: items[0].chatId,
                     userMessage: 'Where do I find the forms?',
-                    referringUrl: 'https://www.sac-isc.gc.ca',
+                    referringUrl: 'https://www.sac-isc.gc.ca/', // URL parser adds the root slash
                     conversationHistory: [
                         {
                             sender: 'ai',
@@ -987,7 +987,7 @@ describe('ExperimentalBatchService', () => {
             await ExperimentalBatchService._processItem(batch._id, item._id);
 
             expect(mockApp.stream).toHaveBeenCalledWith(
-                expect.objectContaining({ referringUrl: 'https://item.ca' }),
+                expect.objectContaining({ referringUrl: 'https://item.ca/' }),
                 expect.any(Object)
             );
         });

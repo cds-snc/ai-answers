@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import PQueue from 'p-queue';
 import { getPersistedAppVersion } from '../AppVersionService.js';
 import { pickExplicitReferenceAnswer } from './datasetColumns.js';
+import { normalizeReferringUrl } from '../../api/util/referring-url.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -703,7 +704,8 @@ class ExperimentalBatchService {
                         batch.config.searchProvider,
                         resolveSearchProvider(SettingsService.get('search.default'))
                     ),
-                    referringUrl: item.referringUrl || batch.config.referringUrl || '',
+                    // AIA-006: CSV-supplied; validate before it reaches prompts/logs/DB.
+                    referringUrl: normalizeReferringUrl(item.referringUrl || batch.config.referringUrl),
                 };
 
                 let workflowDebugPayload = null;
