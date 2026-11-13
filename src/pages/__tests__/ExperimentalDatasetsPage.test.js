@@ -262,4 +262,14 @@ describe('ExperimentalDatasetsPage', () => {
         await waitForAnnouncement('admin.common.resultsLoaded', 'assertive');
         await waitFor(() => expect(document.querySelector('.loading-overlay--scoped')).toBeNull());
     });
+
+    it('shows an error above the table when the table fails to load', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockListDatasets.mockRejectedValue(new Error('network'));
+
+        render(<ExperimentalDatasetsPage lang="en" />, { wrapper: MemoryRouter });
+
+        expect(await screen.findByText('admin.common.fetchFailed')).toBeTruthy();
+        await waitForAnnouncement('admin.common.fetchFailed', 'assertive');
+    });
 });

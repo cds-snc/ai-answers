@@ -1107,6 +1107,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             containerClassName="metrics-table-container experimental-table-layout table-scroll"
                             searchLabelSrOnly={t('experimental.analysis.filterBatchesLabel')}
                             searchPlaceholder={t('admin.common.filterPlaceholder')}
+                            onError={(error) => historyStatus.reportLoad(error, t('admin.common.fetchFailed'))}
                         />
                     </section>
             </>}
@@ -1204,6 +1205,7 @@ export default function ExperimentalAnalysisPage({ lang = 'en' }) {
                             containerClassName="metrics-table-container experimental-table-layout table-scroll"
                             searchLabelSrOnly={t('experimental.analysis.filterComparisonsLabel')}
                             searchPlaceholder={t('admin.common.filterPlaceholder')}
+                            onError={(error) => comparisonTableStatus.reportLoad(error, t('admin.common.fetchFailed'))}
                         />
                     </div>
                 )}

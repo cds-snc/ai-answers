@@ -36,10 +36,16 @@ export default function ExperimentalServerDataTable({
     // sr-only label for the filter-style box (docs/coding-agent-docs/tables.md).
     layout = DEFAULT_LAYOUT,
     searchLabelSrOnly,
-    searchPlaceholder
+    searchPlaceholder,
+    // Called with the error when a fetch fails, and with null when one
+    // succeeds, so the page can show the failure (as in ServerDataTable).
+    onError
 }) {
     const { t } = useTranslations(lang);
     const initialResultRef = useRef(initialResult);
+    // A ref, so a new onError each render doesn't rebuild the DataTables options.
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
     // Drives the scoped LoadingOverlay, as in ServerDataTable: DataTables'
     // own `processing` node is never announced by screen readers.
     const [loading, setLoading] = useState(true);
@@ -84,6 +90,7 @@ export default function ExperimentalServerDataTable({
                     ? result.recordsFiltered
                     : (Number.isFinite(result.pagination?.total) ? result.pagination.total : data.length);
 
+                onErrorRef.current?.(null);
                 callback({
                     draw: params.draw,
                     recordsTotal,
@@ -95,6 +102,7 @@ export default function ExperimentalServerDataTable({
                 announce(recordsFiltered === 0 ? t('admin.common.noData') : t('admin.common.resultsLoaded'), { assertive: true });
             } catch (error) {
                 console.error('Failed to load experimental table data:', error);
+                onErrorRef.current?.(error);
                 callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
                 setLoading(false);
             }

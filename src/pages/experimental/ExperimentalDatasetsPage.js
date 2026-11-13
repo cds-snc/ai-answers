@@ -499,6 +499,7 @@ export default function ExperimentalDatasetsPage({ lang = 'en' }) {
                         searchLabelSrOnly={t('experimental.datasets.filterLabel')}
                         searchPlaceholder={t('admin.common.filterPlaceholder')}
                         tableKey={`datasets-${tableRefreshKey}`}
+                        onError={(error) => tableStatus.reportLoad(error, t('admin.common.fetchFailed'))}
                     order={[[6, 'desc']]}
                 />
             )}
