@@ -37,8 +37,12 @@ vi.mock('../../../hooks/useTranslations.js', () => ({
 // filteredBatches-empty test degenerate no matter what isPaused does.
 let mockIsPaused = false;
 const mockTogglePause = vi.fn();
+// Latest fetchBatches - lets a test run a fetch after a scope change, which
+// the real hook does on its own but this mount-only stub doesn't.
+let mockPollFn = null;
 vi.mock('../../../hooks/usePauseToggle.js', () => ({
   usePausablePolling: (fn) => {
+    mockPollFn = fn;
     React.useEffect(() => { fn(); }, []);
     return { isPaused: mockIsPaused, togglePause: mockTogglePause };
   },
@@ -68,6 +72,7 @@ vi.mock('@gcds-core/components-react', () => ({
 vi.mock('datatables.net-dt', () => ({ default: () => null }));
 
 let lastOptions = null;
+let lastData = null;
 // Increments only on a genuine remount (key change tearing down and
 // recreating the component), not on an ordinary re-render with the same
 // key - a mount-only effect (empty deps) is what makes that distinction,
@@ -76,6 +81,7 @@ let mountCount = 0;
 vi.mock('datatables.net-react', () => {
   const MockDataTable = (props) => {
     lastOptions = props.options;
+    lastData = props.data;
     React.useEffect(() => { mountCount += 1; }, []);
     return React.createElement('div', { 'data-testid': 'mock-data-table' });
   };
@@ -422,5 +428,24 @@ describe('BatchList row action buttons', () => {
       rerender(<BatchList lang="en" batchStatus="uploaded,in_progress" processingBatches={['some-other-batch']} onDelete={vi.fn()} />);
     });
     expect(mountCount).toBe(2);
+  });
+
+  it('ignores a slow reply for the previous scope that arrives after the current one', async () => {
+    let resolveAll;
+    let resolveMine;
+    BatchService.getBatchList
+      .mockImplementationOnce(() => new Promise((r) => { resolveAll = r; }))
+      .mockImplementationOnce(() => new Promise((r) => { resolveMine = r; }));
+
+    const processingBatches = []; // same reference across renders
+    const { rerender } = render(<BatchList lang="en" batchStatus="processed" processingBatches={processingBatches} scope="all" />);
+    rerender(<BatchList lang="en" batchStatus="processed" processingBatches={processingBatches} scope="mine" />);
+    act(() => { mockPollFn(); });
+    expect(BatchService.getBatchList.mock.calls.map((c) => c[0])).toEqual(['all', 'mine']);
+
+    await act(async () => { resolveMine([baseBatchData({ _id: 'mine-1' })]); });
+    await act(async () => { resolveAll([baseBatchData({ _id: 'all-1' }), baseBatchData({ _id: 'all-2' })]); });
+
+    expect(lastData.map((b) => b._id)).toEqual(['mine-1']);
   });
 });

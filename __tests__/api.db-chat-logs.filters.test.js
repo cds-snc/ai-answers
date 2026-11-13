@@ -12,8 +12,8 @@ vi.mock('../api/db/db-connect.js', () => ({
 }));
 
 // Mock response objects
-function makeReq(query = {}) {
-  return { method: 'GET', query };
+function makeReq(query = {}, user) {
+  return { method: 'GET', query, user };
 }
 
 function makeRes() {
@@ -27,12 +27,14 @@ describe('db-chat-logs handler filters (V2)', () => {
   let dbModule;
   let Chat;
   let BatchItem;
+  let Batch;
 
   beforeEach(async () => {
     // load the handler module fresh each time
     dbModule = await import('../api/db/db-chat-logs.js');
     Chat = (await import('../models/chat.js')).Chat;
     BatchItem = (await import('../models/batchItem.js')).BatchItem;
+    Batch = (await import('../models/batch.js')).Batch;
   });
 
   afterEach(() => {
@@ -100,8 +102,10 @@ describe('db-chat-logs handler filters (V2)', () => {
     const batchItemSelect = vi.fn().mockResolvedValue([{ chat: 'chat-1' }]);
     const batchFind = vi.spyOn(BatchItem, 'find').mockReturnValue({ select: batchItemSelect });
     const aggregate = vi.spyOn(Chat, 'aggregate').mockResolvedValue([]);
+    // The batch must exist and be accessible (admin) before its items are read.
+    vi.spyOn(Batch, 'findById').mockReturnValue({ lean: () => Promise.resolve({ createdBy: 'someone' }) });
 
-    const req = makeReq({ batchId, limit: '5' });
+    const req = makeReq({ batchId, limit: '5' }, { role: 'admin', userId: 'test-admin' });
     const res = makeRes();
 
     const defaultExport = dbModule.default;

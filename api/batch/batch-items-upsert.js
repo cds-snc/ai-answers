@@ -3,6 +3,7 @@ import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Chat } from '../../models/chat.js';
 import { requireObjectIdString, requireString } from '../util/db-query.js';
+import { canAccessBatch } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchItemsUpsertHandler(req, res) {
@@ -37,7 +38,9 @@ async function batchItemsUpsertHandler(req, res) {
 
     const batch = await Batch.findById(batchId);
     console.log(`[batch-items-upsert] found batch:`, batch ? { _id: batch._id } : null);
-    if (!batch) return res.status(404).json({ message: 'Batch not found' });
+    if (!batch || !canAccessBatch(req.user, batch)) {
+      return res.status(404).json({ message: 'Batch not found' });
+    }
 
     const results = [];
 

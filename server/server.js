@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
 
 import dbBatchListHandler from '../api/batch/batch-list.js';
+import dbBatchListFiltersHandler from '../api/batch/batch-list-filters.js';
 import dbBatchRetrieveHandler from '../api/batch/batch-retrieve.js';
 import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
@@ -357,6 +358,7 @@ app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
+app.get('/api/batch/batch-list-filters', dbBatchListFiltersHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);

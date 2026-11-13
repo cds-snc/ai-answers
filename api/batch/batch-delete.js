@@ -3,6 +3,7 @@ import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Chat } from '../../models/chat.js';
 import { requireObjectIdString, normalizeObjectId } from '../util/db-query.js';
+import { canAccessBatch } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchDeleteHandler(req, res) {
@@ -18,7 +19,9 @@ async function batchDeleteHandler(req, res) {
     batchId = requireObjectIdString(batchId, 'batch ID');
 
     const batch = await Batch.findById(batchId);
-    if (!batch) return res.status(404).json({ message: 'Batch not found' });
+    if (!batch || !canAccessBatch(req.user, batch)) {
+      return res.status(404).json({ message: 'Batch not found' });
+    }
 
     // Find all batch items for this batch
     const items = await BatchItem.find({ batch: batch._id });

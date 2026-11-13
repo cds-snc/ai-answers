@@ -237,6 +237,14 @@
   },
   "batch": {
     "title": "Batches",
+    "scope": {
+      "label": "Show batches from",
+      "mine": "My batches",
+      "institutions": "Institutions",
+      "groups": "Groups",
+      "allBatches": "All batches",
+      "allUsers": "All users"
+    },
     "sections": {
       "evaluator": {
         "title": "Run a batch"

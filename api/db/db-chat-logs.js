@@ -4,6 +4,8 @@ import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { Batch } from '../../models/batch.js';
+import { canAccessBatch } from '../util/batch-access.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import {
   authMiddleware,
@@ -373,6 +375,11 @@ async function chatLogsHandler(req, res) {
       // Apply batch filter if batchId is provided
       if (batchId) {
         batchId = requireObjectIdString(batchId, 'batchId');
+        // Same rule as the batch endpoints (AIA-001): creator or admin only.
+        const batch = await Batch.findById(batchId, { createdBy: 1 }).lean();
+        if (!batch || !canAccessBatch(req.user, batch)) {
+          return res.status(404).json({ error: 'Batch not found' });
+        }
         const batchChatItems = await BatchItem.find({ batch: batchId }).select('chat');
         const batchChatIds = batchChatItems.filter(item => item.chat).map(item => item.chat);
         dateFilter = Object.keys(dateFilter).length

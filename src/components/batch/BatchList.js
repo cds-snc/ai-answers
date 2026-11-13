@@ -156,7 +156,7 @@ const RowActionButtons = ({ batchId, actions, t, pendingFocusRef }) => {
   );
 };
 
-const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [], announceCompletions = false }) => {
+const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [], announceCompletions = false, scope = '' }) => {
   const [batches, setBatches] = useState([]);
   const [searchText] = useState('');
   // refreshKey forces the DataTable to remount when batches change
@@ -178,6 +178,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // fetchBatches below tell "just became processed" apart from "was already
   // processed last time too" or "first time we've ever seen this batch".
   const prevStatusMapRef = useRef(new Map());
+
+  // Increments per fetchBatches call, so only the newest reply is applied.
+  const fetchSeqRef = useRef(0);
 
   // Whether the *previous* render's filtered list was empty - lets the
   // remount effect below tell "still nothing to show" apart from "something
@@ -323,9 +326,12 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 
   // Fetch batches
   const fetchBatches = useCallback(async () => {
+    const seq = ++fetchSeqRef.current;
     try {
-      const batches = await BatchService.getBatchList();
+      const batches = await BatchService.getBatchList(scope);
       const updatedBatches = await fetchStatuses(batches) || batches || [];
+      // A newer fetch started (e.g. scope changed) - drop this stale reply.
+      if (seq !== fetchSeqRef.current) return;
       const list = Array.isArray(updatedBatches) ? updatedBatches : [];
 
       // Relevant to know regardless of which section (Incomplete/Completed)
@@ -373,7 +379,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
     } catch (error) {
       console.error('Error fetching batches:', error);
     }
-  }, [fetchStatuses, announceCompletions, announce, t]);
+  }, [fetchStatuses, announceCompletions, announce, t, scope]);
 
   // WCAG 2.2.2 (Pause, Stop, Hide): the 10s poll below keeps rebuilding the
   // table, which is exactly the kind of auto-updating content that

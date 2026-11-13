@@ -91,10 +91,19 @@ class BatchService {
   }
 
 
-  async getBatchList() {
-    const url = getApiUrl('batch-list');
+  // `scope` (admins only): mine | all | institution:<abbrKey> | group:<name> | user:<userId>.
+  async getBatchList(scope = '') {
+    const url = getApiUrl(scope ? `batch-list?scope=${encodeURIComponent(scope)}` : 'batch-list');
     const res = await AuthService.fetch(url);
     if (!res.ok) throw new Error(`Failed to get batch list: ${res.status} ${res.statusText}`);
+    return await res.json();
+  }
+
+  // Admin-only options for the batch scope dropdown: { institutions, groups, users }.
+  async getBatchListFilters() {
+    const url = getApiUrl('batch-list-filters');
+    const res = await AuthService.fetch(url);
+    if (!res.ok) throw new Error(`Failed to get batch list filters: ${res.status} ${res.statusText}`);
     return await res.json();
   }
   // Persist a batch record to the database
