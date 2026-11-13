@@ -25,6 +25,9 @@ import { buildPageTitle } from '../src/config/pageTitle.js';
 import { DEFAULT_METADATA } from '../src/config/metadata.js';
 import { escapeHtml } from '../src/utils/htmlEscape.js';
 import { normalizePathname } from '../src/utils/normalizePathname.js';
+import { getPath } from '../src/utils/routes.js';
+
+const LOGOUT_PATHS = new Set([getPath('logout', 'en'), getPath('logout', 'fr')]);
 
 const setMetaContent = (html, attr, attrValue, content) => {
   const pattern = new RegExp(`(<meta\\s+${attr}="${attrValue}"\\s+content=")[^"]*("\\s*/?>)`);
@@ -112,7 +115,9 @@ export const renderIndexHtml = (template, pathname, { contentRoot, hostname } = 
   } else {
     const titleKey = getTitleKeyForPath(pathname);
     const pageTitle = titleKey ? translate(titleKey, lang) : null;
-    title = buildPageTitle(pageTitle, lang);
+    // Untitled paths are public (home, 404) except logout.
+    const canadaCa = !titleKey && !LOGOUT_PATHS.has(normalizePathname(pathname));
+    title = buildPageTitle(pageTitle, lang, { canadaCa });
     description = DEFAULT_METADATA.DESCRIPTION[langKey];
   }
 

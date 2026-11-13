@@ -13,8 +13,7 @@
 // src/config/__tests__/routeTitleKeys.test.js guards against drift by
 // parsing App.js's route entries and diffing them against the expanded map.
 //
-// Deliberately NOT covered (falls back to the generic site title, same as
-// before this map existed):
+// Deliberately NOT covered (generic site title, + "- Canada.ca" if public):
 //   - Routes with no titleKey (home, about, logout, HowToPage's
 //     markdown-driven routes, which set their own title from frontmatter).
 //   - The `*` wildcard 404 route - would need the full route surface

@@ -80,6 +80,11 @@ describe('LoginPage two-step messages', () => {
     mockVerify2FA.mockReset();
   });
 
+  it('gives the two-factor step its own page title', async () => {
+    await reachTwoStep();
+    expect(document.title).toBe('login.2fa.pageTitle - Beta: AI Answers');
+  });
+
   it('tells the user to wait when a resend is inside the cooldown', async () => {
     await reachTwoStep();
     mockSend2FA.mockImplementation(() => rejectWith('cooldown'));

@@ -24,27 +24,33 @@ describe('renderIndexHtml', () => {
   it('treats bare / on a reponses-ia host as French', () => {
     const html = renderIndexHtml(template, '/', { hostname: 'reponses-ia.alpha.canada.ca' });
     expect(html).toContain('<html lang="fr">');
-    expect(html).toContain('<title>Bêta : Réponses IA</title>');
+    expect(html).toContain('<title>Bêta : Réponses IA - Canada.ca</title>');
     expect(html).toContain('<meta name="dcterms.language" content="fra" />');
   });
 
   it('treats bare / on any other host (or no host) as English', () => {
     expect(renderIndexHtml(template, '/', { hostname: 'ai-answers.alpha.canada.ca' })).toContain('<html lang="en">');
-    expect(renderIndexHtml(template, '/')).toContain('<title>Beta: AI Answers</title>');
+    expect(renderIndexHtml(template, '/')).toContain('<title>Beta: AI Answers - Canada.ca</title>');
     // A trailing slash is the same root.
     expect(renderIndexHtml(template, '//', { hostname: 'reponses-ia.alpha.canada.ca' })).toContain('<html lang="fr">');
   });
 
-  it('sets the generic site title and lang for an untitled route (e.g. home)', () => {
+  it('sets the generic site title, with the Canada.ca suffix, for an untitled route (e.g. home)', () => {
     const html = renderIndexHtml(template, '/en');
     expect(html).toContain('<html lang="en">');
-    expect(html).toContain('<title>Beta: AI Answers</title>');
+    expect(html).toContain('<title>Beta: AI Answers - Canada.ca</title>');
+  });
+
+  it('leaves the Canada.ca suffix off the untitled logout pages', () => {
+    expect(renderIndexHtml(template, '/en/logout')).toContain('<title>Beta: AI Answers</title>');
+    expect(renderIndexHtml(template, '/fr/deconnexion')).toContain('<title>Bêta : Réponses IA</title>');
   });
 
   it('sets the page title, lang, and dcterms.language for a titled English route', () => {
     const html = renderIndexHtml(template, '/en/admin');
     expect(html).toContain('<html lang="en">');
     expect(html).toMatch(/<title>[^<]+ - Beta: AI Answers<\/title>/);
+    expect(html).not.toContain('Canada.ca</title>');
     expect(html).toContain('<meta name="dcterms.language" content="eng" />');
   });
 
@@ -76,13 +82,13 @@ describe('renderIndexHtml', () => {
     it('falls back to the generic site title when no contentRoot is given', () => {
       // Matches the status quo before this fix - not a regression.
       const html = renderIndexHtml(template, '/en/about');
-      expect(html).toContain('<title>Beta: AI Answers</title>');
+      expect(html).toContain('<title>Beta: AI Answers - Canada.ca</title>');
     });
 
     it('reads the About page title straight from its markdown frontmatter (no site-title suffix)', () => {
       const html = renderIndexHtml(template, '/en/about', { contentRoot });
-      expect(html).toContain('<title>About AI Answers</title>');
-      expect(html).toContain('<meta name="dcterms.title" content="About AI Answers" />');
+      expect(html).toContain('<title>About AI Answers - Canada.ca</title>');
+      expect(html).toContain('<meta name="dcterms.title" content="About AI Answers - Canada.ca" />');
     });
 
     it('reads the French About page title too', () => {
@@ -93,9 +99,7 @@ describe('renderIndexHtml', () => {
 
     it('reads a how-to guide title from its markdown frontmatter', () => {
       const html = renderIndexHtml(template, '/en/how-to/partner-onboarding', { contentRoot });
-      const titleMatch = html.match(/<title>([^<]+)<\/title>/);
-      expect(titleMatch[1]).not.toBe('Beta: AI Answers');
-      expect(titleMatch[1]).not.toMatch(/ - Beta: AI Answers$/);
+      expect(html).toContain('<title>Partner onboarding - Beta: AI Answers</title>');
     });
 
     it('reads each markdown file from disk once, then serves later requests from cache', () => {
@@ -119,7 +123,7 @@ describe('renderIndexHtml', () => {
       const html = renderIndexHtml(template, '/en/about', {
         contentRoot: path.join(__dirname, 'nonexistent-content-root'),
       });
-      expect(html).toContain('<title>Beta: AI Answers</title>');
+      expect(html).toContain('<title>Beta: AI Answers - Canada.ca</title>');
     });
   });
 });

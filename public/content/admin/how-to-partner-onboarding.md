@@ -1,5 +1,5 @@
 ---
-title: "Partner onboarding"
+title: "Partner onboarding - Beta: AI Answers"
 description: "What a partner institution does when it joins AI Answers: choosing questions, running an evaluation set, and fixing what the evaluations turn up."
 ---
 
