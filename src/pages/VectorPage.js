@@ -181,6 +181,8 @@ const VectorPage = ({ lang = 'en' }) => {
   const [duplicateStatus, setDuplicateStatus] = useState(null);
   const [duplicateStatusLoading, setDuplicateStatusLoading] = useState(false);
   const duplicateStatusErrorStatus = useRepeatableStatus();
+  const [removeDuplicatesLoading, setRemoveDuplicatesLoading] = useState(false);
+  const removeDuplicatesStatus = useRepeatableStatus();
   // A job id whose progress/message the admin has explicitly dismissed via
   // an unrelated action (e.g. "Clear metadata") — the poll won't re-surface
   // that same job's inactive-state progress/message again, so clearing
@@ -605,6 +607,26 @@ const VectorPage = ({ lang = 'en' }) => {
       duplicateStatusErrorStatus.announce(t('vector.duplicateEmbeddings.failed'), { isError: true });
     } finally {
       setDuplicateStatusLoading(false);
+    }
+  };
+
+  // Shows the counts it removed, then re-checks so the list above reflects
+  // what is left (0 when the cleanup is complete).
+  const handleRemoveDuplicates = async () => {
+    setRemoveDuplicatesLoading(true);
+    removeDuplicatesStatus.clear();
+    try {
+      const result = await VectorService.removeDuplicateEmbeddings();
+      removeDuplicatesStatus.announce(t('vector.duplicateEmbeddings.removeSuccess')
+        .replace('{embeddings}', fmtN(result.deletedEmbeddings))
+        .replace('{interactions}', fmtN(result.duplicateInteractions))
+        .replace('{sentences}', fmtN(result.deletedSentenceEmbeddings)), { isError: false });
+      await handleDuplicateStatus();
+    } catch (err) {
+      console.error('Error removing duplicate embeddings:', err);
+      removeDuplicatesStatus.announce(t('vector.duplicateEmbeddings.removeFailed'), { isError: true });
+    } finally {
+      setRemoveDuplicatesLoading(false);
     }
   };
 
@@ -1037,7 +1059,7 @@ const VectorPage = ({ lang = 'en' }) => {
         <GcdsHeading tag="h2">{t('vector.duplicateEmbeddings.title')}</GcdsHeading>
         <GcdsText>{t('vector.duplicateEmbeddings.description')}</GcdsText>
         <div className="mb-200">
-          <GcdsButton onClick={handleDuplicateStatus} disabled={duplicateStatusLoading} className="mb-200 mr-200">
+          <GcdsButton onClick={handleDuplicateStatus} disabled={duplicateStatusLoading || removeDuplicatesLoading} className="mb-200 mr-200">
             {duplicateStatusLoading ? t('vector.duplicateEmbeddings.loading') : t('vector.duplicateEmbeddings.check')}
           </GcdsButton>
         </div>
@@ -1063,6 +1085,18 @@ const VectorPage = ({ lang = 'en' }) => {
             ))}
           </dl>
         )}
+        {/* Only offered once a check has found duplicates. */}
+        {duplicateStatus?.duplicateInteractions > 0 && (
+          <>
+            <GcdsText>{t('vector.duplicateEmbeddings.removeDescription')}</GcdsText>
+            <div className="mb-200">
+              <GcdsButton onClick={handleRemoveDuplicates} disabled={removeDuplicatesLoading || duplicateStatusLoading} className="mb-200 mr-200">
+                {removeDuplicatesLoading ? t('vector.duplicateEmbeddings.removing') : t('vector.duplicateEmbeddings.remove')}
+              </GcdsButton>
+            </div>
+          </>
+        )}
+        <StatusMessage variant={removeDuplicatesStatus.message ? (removeDuplicatesStatus.isError ? 'error' : 'success') : undefined} message={removeDuplicatesStatus.message} nonce={removeDuplicatesStatus.nonce} />
         <GcdsHeading tag="h2" id="metadata-lookup-heading">{t('vector.metadataLookup.title')}</GcdsHeading>
         <GcdsText>
           {t('vector.metadataLookup.description')}

@@ -80,6 +80,12 @@ const VectorService = {
     return await response.json();
   },
 
+  async removeDuplicateEmbeddings() {
+    const response = await AuthService.fetch(getApiUrl('vector-remove-duplicate-embeddings'), { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to remove duplicate embeddings');
+    return await response.json();
+  },
+
   async clearMetadata() {
     const response = await AuthService.fetch(getApiUrl('vector-metadata-clear'), { method: 'POST' });
     if (!response.ok) throw new Error('Failed to clear embedding metadata');

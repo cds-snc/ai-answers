@@ -2138,7 +2138,12 @@
       "duplicateInteractions": "Interactions with duplicates",
       "duplicatesWithExpertFeedback": "Interactions with duplicates and expert feedback",
       "extraEmbeddings": "Extra embeddings",
-      "maxCopies": "Most embeddings for one interaction"
+      "maxCopies": "Most embeddings for one interaction",
+      "removeDescription": "Remove the extra embeddings so each interaction keeps one. If a copy has expert feedback metadata, that copy is kept. You can run this again if it stops part-way.",
+      "remove": "Remove duplicates",
+      "removing": "Removing duplicates...",
+      "removeSuccess": "Removed {embeddings} extra embeddings from {interactions} interactions, and {sentences} sentence embeddings.",
+      "removeFailed": "Failed to remove duplicate embeddings."
     },
     "metadataLookup": {
       "title": "Embedding metadata lookup",
