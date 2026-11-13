@@ -1,7 +1,5 @@
 import ExcelJS from 'exceljs';
 import { flatten } from 'flat';
-import { getApiUrl } from '../utils/apiToUrl.js';
-import AuthService from './AuthService.js';
 import { serializeCsvRows } from '../utils/spreadsheets/csv.js';
 
 function columnNumberToLetter(columnNumber) {
@@ -16,37 +14,6 @@ function columnNumberToLetter(columnNumber) {
 }
 
 class ExportService {
-  static async exportChatLogs(format = 'json', filters = {}) {
-    try {
-      const queryParams = new URLSearchParams({
-        ...filters,
-        format
-      }).toString();
-
-      const response = await AuthService.fetch(getApiUrl(`db-chat-logs/export?${queryParams}`));
-
-      if (!response.ok) throw new Error('Failed to export chat logs');
-
-      const blob = await response.blob();
-      const filename = `chat-logs-${new Date().toISOString()}.${format}`;
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting chat logs:', error);
-      throw error;
-    }
-  }
-
-
-
   static jsonToFlatTable(data, headers) {
     // Ensure data is an array and not null/undefined
     if (!Array.isArray(data) || data.length === 0) {

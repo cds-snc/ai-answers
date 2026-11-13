@@ -84,11 +84,11 @@ describe('reviewer filter reaches every consumer pipeline', () => {
     expectReviewerMatchInPipeline();
   });
 
-  it('chat viewer logs', async () => {
+  it('db-chat-logs refuses it rather than ignoring it', async () => {
+    // Only batch lookups use db-chat-logs; it has no reviewer filter.
     const res = createRes();
     await chatLogsHandler(createReq({ ...DATES, group: 'Military transitions' }), res);
-    expect(res.statusCode).toBe(200);
-    expectReviewerMatchInPipeline();
+    expect(res.statusCode).toBe(400);
   });
 
   it('eval dashboard', async () => {

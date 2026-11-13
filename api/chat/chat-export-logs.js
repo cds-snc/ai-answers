@@ -566,8 +566,8 @@ export async function chatExportHandler(req, res) {
         // Query Logic (Aggregate vs Find)
         // Note: For aggregation, we need to manually reconstruct the 'populate' logic using $lookups if we want to be exact,
         // OR we can fetch IDs and then hydrate/populate.
-        // Given the requirement to optimize, and the complexity of duplicate code, duplicating the $lookup mess from db-chat-logs is risky if we change populates dynamicallly.
-        // HOWEVER, db-chat-logs uses aggregate mainly for filtering by nested fields (department etc).
+        // Duplicating $lookups for every populate is risky if populates change dynamically.
+        // Aggregation is needed mainly for filtering by nested fields (department etc).
         // If we use `Chat.find` we can use `populate(chatPopulate)`.
         // If we use aggregate, we have to write lookups manually.
         // Implementation Plan Step: "Duplicate query logic".
