@@ -20,13 +20,14 @@ export const VERDICT_CELL_CLASSES = {
 
 const VERDICT_SYMBOLS = {
     pass: '✓',
-    flagged: '✗',
+    flagged: '⚑',
     error: '!',
     missing: '·'
 };
 
 const CELL_BASE = {
-    border: '1px solid #ddd',
+    border: 'var(--gcds-border-width-sm) solid var(--gcds-border-default)',
+    fontSize: '1rem',
     padding: '0.5rem 0.75rem',
     textAlign: 'center',
     fontWeight: 'bold',
@@ -41,7 +42,7 @@ const displayVerdict = (cell) => {
     return 'missing';
 };
 
-// Cell body: single trial keeps the plain ✓/✗ symbol; multiple trials show
+// Cell body: single trial keeps the plain verdict symbol; multiple trials show
 // k/n with a per-trial mini strip underneath. Symbols are hidden from screen
 // readers (the cell's sr-only text says the verdict); k/n stays readable so
 // the spoken name starts with the visible text (WCAG 2.5.3).
@@ -52,7 +53,7 @@ const renderCellContent = (cell, verdict) => {
     return (
         <div>
             <div>{cell.passCount}/{cell.total}</div>
-            <div aria-hidden="true" style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>
+            <div aria-hidden="true" style={{ fontSize: '0.875rem', letterSpacing: '2px' }}>
                 {cell.trials.map(t => VERDICT_SYMBOLS[t] || VERDICT_SYMBOLS.missing).join('')}
             </div>
         </div>
@@ -84,7 +85,8 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHr
     }, { all: 0, any: 0, hasTrials: false });
 
     return (
-        <div className="overflow-auto">
+        // tabIndex: keyboard users can reach and scroll the grid when it overflows.
+        <div className="table-scroll" tabIndex={0}>
             <table style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
@@ -106,7 +108,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHr
                             >
                                 <div style={{ whiteSpace: 'nowrap' }}>{truncate(test.testName, 14)}</div>
                                 {test.caseType && (
-                                    <div style={{ fontWeight: 'normal', fontSize: '0.75rem', color: '#555' }}>
+                                    <div style={{ fontWeight: 'normal', fontSize: '0.875rem', color: '#555' }}>
                                         {t(`experimental.suite.caseType.${test.caseType}`)}
                                     </div>
                                 )}
@@ -121,11 +123,11 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHr
                             <th scope="row" style={{ ...CELL_BASE, textAlign: 'left', fontWeight: 'normal' }}>
                                 <div><strong>{truncate(runLabel(run, index), 60)}</strong></div>
                                 {run.referenceCapture && (
-                                    <div style={{ fontSize: '0.75rem', color: '#7a5a00', fontWeight: 'bold' }}>
+                                    <div style={{ fontSize: '0.875rem', color: '#7a5a00', fontWeight: 'bold' }}>
                                         {t('experimental.suite.captureRun')}
                                     </div>
                                 )}
-                                <div style={{ fontSize: '0.75rem', color: '#555' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#555' }}>
                                     {[
                                         run.appVersion ? String(run.appVersion).slice(-10) : '',
                                         new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(run.createdAt))
@@ -140,7 +142,7 @@ export default function SuiteGridTable({ tests, runs, cells, lang = 'en', cellHr
                                         return `${formatNumber(scores.all, lang)}/${formatNumber(tests.length, lang)}`;
                                     }
                                     return (
-                                        <div style={{ fontWeight: 'normal', fontSize: '0.85rem' }}>
+                                        <div style={{ fontWeight: 'normal', fontSize: '0.875rem' }}>
                                             <div><strong>{formatNumber(scores.all, lang)}/{formatNumber(tests.length, lang)}</strong> {t('experimental.suite.scoreAll')}</div>
                                             <div>{formatNumber(scores.any, lang)}/{formatNumber(tests.length, lang)} {t('experimental.suite.scoreAny')}</div>
                                         </div>

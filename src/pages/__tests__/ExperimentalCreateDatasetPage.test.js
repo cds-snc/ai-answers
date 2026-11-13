@@ -44,6 +44,24 @@ vi.mock('@cdssnc/gcds-components-react', () => ({
     GcdsLink: ({ children, href }) => <a href={href}>{children}</a>
 }));
 
+vi.mock('@gcds-core/components-react', () => ({
+    GcdsIcon: () => null,
+    GcdsInput: ({ label, hint, inputId, type = 'text', value, onGcdsInput }) => (
+        <label htmlFor={inputId}>
+            {label}
+            <span>{hint}</span>
+            <input id={inputId} type={type} value={value} onChange={onGcdsInput} />
+        </label>
+    ),
+    GcdsSelect: ({ label, selectId, value, onGcdsChange, children }) => (
+        <label htmlFor={selectId}>
+            {label}
+            <select id={selectId} value={value} onChange={(e) => onGcdsChange({ detail: e.target.value })}>{children}</select>
+        </label>
+    ),
+    GcdsFieldset: ({ legend, children }) => <fieldset><legend>{legend}</legend>{children}</fieldset>
+}));
+
 describe('ExperimentalCreateDatasetPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();

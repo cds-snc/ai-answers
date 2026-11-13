@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsInput, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsInput, GcdsSelect, GcdsFieldset } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { ExperimentalBatchClientService } from '../../services/experimental/ExperimentalBatchClientService.js';
 import { formatNumber } from '../../utils/numberFormat.js';
@@ -119,27 +120,52 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                     ? t('experimental.datasets.instantAnswerDescription')
                     : t('experimental.datasets.goldenAnswerDescription')}
             </GcdsText>
-            <div className="d-grid gap-300">
-                <GcdsInput label={t('experimental.datasets.nameLabel')} id="dataset-name" value={name} onGcdsInput={(e) => setName(e.target.value)} required />
-                <GcdsInput label={t('experimental.datasets.descLabel')} id="dataset-description" value={description} onGcdsInput={(e) => setDescription(e.target.value)} />
-                <div>
-                    <label className="mb-200 display-block" htmlFor="dataset-method">{t('experimental.datasets.creationMethodLabel')}</label>
-                    <select id="dataset-method" value={method} onChange={(e) => setMethod(e.target.value)} required>
-                        <option value="golden-answer">{t('experimental.datasets.goldenAnswerMethod')}</option>
-                        <option value="instant-answer">{t('experimental.datasets.instantAnswerMethod')}</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="mb-200 display-block" htmlFor="dataset-type">{t('experimental.datasets.typeLabel')}</label>
-                    <select id="dataset-type" value={type} onChange={(e) => setType(e.target.value)} required>
-                        <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
-                    </select>
-                </div>
+            {/* Same field treatment as the Database and Eval pages: GC DS
+                inputs and selects, and native date fields grouped in a
+                fieldset with the shared field style. */}
+            <div className="text-measure filter-fields-full-size">
+                <GcdsInput
+                    inputId="dataset-name"
+                    name="dataset-name"
+                    label={t('experimental.datasets.nameLabel')}
+                    value={name}
+                    onGcdsInput={(e) => setName(e.target.value)}
+                    required
+                />
+                <GcdsInput
+                    inputId="dataset-description"
+                    name="dataset-description"
+                    label={t('experimental.datasets.descLabel')}
+                    value={description}
+                    onGcdsInput={(e) => setDescription(e.target.value)}
+                />
+                <GcdsSelect
+                    selectId="dataset-method"
+                    name="dataset-method"
+                    label={t('experimental.datasets.creationMethodLabel')}
+                    value={method}
+                    onGcdsChange={(e) => setMethod(e.detail)}
+                    required
+                >
+                    <option value="golden-answer">{t('experimental.datasets.goldenAnswerMethod')}</option>
+                    <option value="instant-answer">{t('experimental.datasets.instantAnswerMethod')}</option>
+                </GcdsSelect>
+                <GcdsSelect
+                    selectId="dataset-type"
+                    name="dataset-type"
+                    label={t('experimental.datasets.typeLabel')}
+                    value={type}
+                    onGcdsChange={(e) => setType(e.detail)}
+                    required
+                >
+                    <option value="qa-pair">{t('experimental.datasets.type.qaPair')}</option>
+                </GcdsSelect>
                 {method === 'instant-answer' && (
                     <GcdsInput
+                        inputId="dataset-occurrences"
+                        name="dataset-occurrences"
                         label={t('experimental.datasets.occurrencesPerQuestion')}
                         hint={t('experimental.datasets.occurrencesPerQuestionHint')}
-                        id="dataset-occurrences"
                         type="number"
                         min="1"
                         max="10"
@@ -148,18 +174,43 @@ export default function ExperimentalCreateDatasetPage({ lang = 'en' }) {
                         required
                     />
                 )}
-                <div>
-                    <label className="mb-200 display-block" htmlFor="dataset-category">{t('experimental.datasets.categoryLabel')}</label>
-                    <input id="dataset-category" type="text" value={category} maxLength={100} onChange={(e) => setCategory(e.target.value)} placeholder={t('experimental.datasets.categoryPlaceholder')} />
-                </div>
-                <div>
-                    <label className="mb-200 display-block" htmlFor="dataset-start-date">{t('experimental.datasets.startDate')}</label>
-                    <input id="dataset-start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
-                </div>
-                <div>
-                    <label className="mb-200 display-block" htmlFor="dataset-end-date">{t('experimental.datasets.endDate')}</label>
-                    <input id="dataset-end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
-                </div>
+                <GcdsInput
+                    inputId="dataset-category"
+                    name="dataset-category"
+                    label={t('experimental.datasets.categoryLabel')}
+                    hint={t('experimental.datasets.categoryPlaceholder')}
+                    maxlength={100}
+                    value={category}
+                    onGcdsInput={(e) => setCategory(e.target.value)}
+                />
+                <GcdsFieldset className="mb-300" legend={t('experimental.datasets.dateRangeLegend')} legendSize="h6">
+                    <div className="mb-300">
+                        <label htmlFor="dataset-start-date" className="filter-label display-block">
+                            {t('experimental.datasets.startDate')}
+                        </label>
+                        <input
+                            id="dataset-start-date"
+                            type="date"
+                            className="filter-input filter-input--narrow"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="dataset-end-date" className="filter-label display-block">
+                            {t('experimental.datasets.endDate')}
+                        </label>
+                        <input
+                            id="dataset-end-date"
+                            type="date"
+                            className="filter-input filter-input--narrow"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            required
+                        />
+                    </div>
+                </GcdsFieldset>
                 <GcdsText aria-live="polite">
                     {loadingCount
                         ? t('experimental.datasets.loadingGoldenCount')

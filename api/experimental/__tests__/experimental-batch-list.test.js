@@ -9,6 +9,12 @@ vi.mock('../../../models/experimentalBatch.js', () => ({
     }
 }));
 
+const { mockUserFind } = vi.hoisted(() => ({ mockUserFind: vi.fn() }));
+
+vi.mock('../../../models/user.js', () => ({
+    User: { find: mockUserFind }
+}));
+
 vi.mock('../../../middleware/auth.js', () => ({
     authMiddleware: vi.fn((req, res, next) => next()),
     adminMiddleware: vi.fn((req, res, next) => next()),
@@ -112,5 +118,58 @@ describe('experimental-batch-list API', () => {
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({ error: 'Failed to list batches' });
         spy.mockRestore();
+    });
+
+    it('finds batches by the analyzer ids the page matched to the search, including older batches', async () => {
+        req.query = { search: 'Expert', analyzerIds: 'expert-scorer' };
+        const findQuery = {
+            populate: vi.fn().mockReturnThis(),
+            sort: vi.fn().mockReturnThis(),
+            skip: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue([])
+        };
+        ExperimentalBatch.find.mockReturnValue(findQuery);
+        ExperimentalBatch.countDocuments.mockResolvedValue(0);
+        mockUserFind.mockReturnValue({ select: () => ({ lean: () => Promise.resolve([]) }) });
+
+        await handler(req, res);
+
+        const { $or } = ExperimentalBatch.find.mock.calls[0][0];
+        expect($or).toContainEqual({ 'config.analyzerId': { $in: ['expert-scorer'] } });
+        expect($or).toContainEqual({ 'config.analyzerIds': { $in: ['expert-scorer'] } });
+    });
+
+    it('does not sort by analyzer', async () => {
+        req.query = { orderBy: 'config.analyzerId', orderDir: 'asc' };
+        const findQuery = {
+            populate: vi.fn().mockReturnThis(),
+            sort: vi.fn().mockReturnThis(),
+            skip: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue([])
+        };
+        ExperimentalBatch.find.mockReturnValue(findQuery);
+        ExperimentalBatch.countDocuments.mockResolvedValue(0);
+
+        await handler(req, res);
+
+        expect(findQuery.sort).toHaveBeenCalledWith({ createdAt: 1 });
+    });
+
+    it('finds batches by the creator\'s email', async () => {
+        req.query = { search: 'admin@admin.com' };
+        const findQuery = {
+            populate: vi.fn().mockReturnThis(),
+            sort: vi.fn().mockReturnThis(),
+            skip: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue([])
+        };
+        ExperimentalBatch.find.mockReturnValue(findQuery);
+        ExperimentalBatch.countDocuments.mockResolvedValue(0);
+        mockUserFind.mockReturnValue({ select: () => ({ lean: () => Promise.resolve([{ _id: 'user-1' }]) }) });
+
+        await handler(req, res);
+
+        expect(mockUserFind).toHaveBeenCalledWith({ email: { $regex: 'admin@admin\\.com', $options: 'i' } });
+        expect(ExperimentalBatch.find.mock.calls[0][0].$or).toContainEqual({ createdBy: { $in: ['user-1'] } });
     });
 });

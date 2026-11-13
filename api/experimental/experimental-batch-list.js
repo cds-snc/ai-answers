@@ -1,4 +1,5 @@
 import { ExperimentalBatch } from '../../models/experimentalBatch.js';
+import { User } from '../../models/user.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import { requireLiteralString, requireObjectIdString } from '../util/db-query.js';
 
@@ -34,8 +35,28 @@ async function handler(req, res) {
                 { description: { $regex: escaped, $options: 'i' } },
                 { status: { $regex: escaped, $options: 'i' } },
                 { 'config.workflow': { $regex: escaped, $options: 'i' } },
-                { 'config.aiProvider': { $regex: escaped, $options: 'i' } }
+                { 'config.aiProvider': { $regex: escaped, $options: 'i' } },
+                { 'config.analyzerId': { $regex: escaped, $options: 'i' } },
+                { 'config.analyzerIds': { $regex: escaped, $options: 'i' } }
             ];
+            // The Analyzer column shows a translated name the server doesn't
+            // have, so the page sends the ids whose name matches the search.
+            const analyzerIds = String(req.query.analyzerIds || '')
+                .split(',')
+                .filter(Boolean)
+                .map(id => requireLiteralString(id, 'analyzerIds'));
+            if (analyzerIds.length > 0) {
+                query.$or.push(
+                    { 'config.analyzerId': { $in: analyzerIds } },
+                    { 'config.analyzerIds': { $in: analyzerIds } }
+                );
+            }
+            // "Created by" shows the creator's email, which lives on the user,
+            // so match those users first and search by their ids.
+            const creators = await User.find({ email: { $regex: escaped, $options: 'i' } }).select('_id').lean();
+            if (creators.length > 0) {
+                query.$or.push({ createdBy: { $in: creators.map(user => user._id) } });
+            }
         }
 
         const total = await ExperimentalBatch.countDocuments(baseQuery);
