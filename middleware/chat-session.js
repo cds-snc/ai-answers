@@ -268,16 +268,13 @@ export function validateConversationIntegrity(req, res) {
 
   const body = req.body || {};
   const input = body.input || body;
+  if (typeof input !== 'object' || input === null) return true;
   const history = input.conversationHistory;
-  const historyArray = Array.isArray(history) ? history : [];
+  if (history === undefined) return true;
 
-  // Filter out error messages - they don't participate in integrity checking
-  const filteredHistory = historyArray.filter(m => !m.error);
-
-  if (filteredHistory.length === 0) return true;
-
-  // Delegate prefix-signature extraction and verification to the integrity service
-  const verification = ConversationIntegrityService.verifySignedPrefix(historyArray, input.historySignature);
+  // The integrity service decides what counts as empty, verifies the signed
+  // prefix and returns the history that is safe to consume.
+  const verification = ConversationIntegrityService.verifySignedPrefix(history, input.historySignature);
 
   if (!verification.valid) {
     if (verification.reason === 'missing_signature') {
@@ -286,7 +283,7 @@ export function validateConversationIntegrity(req, res) {
       return false;
     }
     if (verification.reason === 'invalid_signature') {
-      console.error('[Integrity] Signature mismatch!', { received: verification.signature, historyLength: history.length, chatId: req.chatId });
+      console.error('[Integrity] Signature mismatch!', { received: verification.signature, historyLength: Array.isArray(history) ? history.length : 0, chatId: req.chatId });
       res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
       return false;
     }
@@ -295,6 +292,19 @@ export function validateConversationIntegrity(req, res) {
     res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
     return false;
   }
+
+  // AIA-002: hand the handler only what the signature covers. Turns appended
+  // after the signed one, error messages and questions that never got an answer
+  // must not reach the graph.
+  const isAiTurn = (m) => m && typeof m === 'object' && !m.error && m.sender !== 'user' && m.role !== 'user';
+  const sentAiTurns = Array.isArray(history) ? history.filter(isAiTurn).length : 0;
+  const keptAiTurns = verification.history.filter(isAiTurn).length;
+  if (keptAiTurns < sentAiTurns) {
+    // A real client never sends an unsigned AI turn, so this is tampering or a
+    // bug that lost a signature. Counts only - never log the content.
+    console.warn('[Integrity] Dropped unverified AI turns', { chatId: req.chatId, sent: sentAiTurns, kept: keptAiTurns });
+  }
+  input.conversationHistory = verification.history;
 
   return true;
 }
