@@ -2,6 +2,8 @@
 // action and details are shown. Actions come from SettingsAuditService
 // callers on the server.
 
+// These locale keys are used. find-dead-locale-keys only sees keys written
+// inside t('...'), so it lists them as dead. Don't delete them.
 const ACTION_LABEL_KEYS = {
   'setting.updated': 'settings.auditHistory.actions.settingUpdated',
   'settings.cache_refreshed': 'settings.auditHistory.actions.cacheRefreshed',
