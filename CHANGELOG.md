@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.213.4](https://github.com/cds-snc/ai-answers/compare/v1.213.3...v1.213.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* AIA-009 part 2 ([839c6f4](https://github.com/cds-snc/ai-answers/commit/839c6f4a3d8861eac883436720304e925b72f532))
+* AIA-009 part 2 ([acad38c](https://github.com/cds-snc/ai-answers/commit/acad38cdda393ff9aef7f5b82ff324adb8f61cf4))
+* remove sessionstate ([c6a40b7](https://github.com/cds-snc/ai-answers/commit/c6a40b7ca9c63521ccf30a391376e50d640189c2))
+* settings history wasn't showing ([eb2aace](https://github.com/cds-snc/ai-answers/commit/eb2aaceab54602acfd89484c10d1f908d0a0fd52))
+
 ## [1.213.3](https://github.com/cds-snc/ai-answers/compare/v1.213.2...v1.213.3) (2026-11-12)
 
 
