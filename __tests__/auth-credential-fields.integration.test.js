@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+process.env.TWOFA_SECRET = process.env.TWOFA_SECRET || 'test-twofa-secret';
+
 // Real module needs GC_NOTIFY_API_KEY at import time.
 vi.mock('../services/GCNotifyService.js', () => ({ default: { sendEmail: vi.fn() } }));
 
