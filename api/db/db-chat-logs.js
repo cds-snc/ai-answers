@@ -3,6 +3,7 @@
 import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { omitUserSecrets } from '../../models/user.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { Batch } from '../../models/batch.js';
 import { canAccessBatch } from '../util/batch-access.js';
@@ -204,6 +205,8 @@ async function chatLogsHandler(req, res) {
           user: { $arrayElemAt: ['$user', 0] }
         }
       });
+      // The response goes to the browser: never the user's credential hashes.
+      pipeline.push(omitUserSecrets('user'));
 
       pipeline.push({
         $lookup: {

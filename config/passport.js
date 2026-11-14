@@ -50,7 +50,7 @@ passport.use(new LocalStrategy({
 }, async (email, password, done) => {
   try {
     await dbConnect();
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
     if (!user) {
       await bcrypt.compare(String(password), DUMMY_HASH);
@@ -63,7 +63,15 @@ passport.use(new LocalStrategy({
       return done(null, false, { message: 'Invalid credentials' });
     }
 
-    const isValid = await user.comparePassword(password);
+    // A user restored from a database export has no password (exports leave
+    // it out) and must reset it. Refuse like a wrong password, with the same
+    // timing; bcrypt would throw on the missing hash.
+    let isValid = false;
+    if (user.password) {
+      isValid = await user.comparePassword(password);
+    } else {
+      await bcrypt.compare(String(password), DUMMY_HASH);
+    }
     if (!isValid) {
       const windowStart = new Date(Date.now() - LOGIN_ATTEMPT_WINDOW_MS);
       const lastFailed = user.loginLastFailedAt?.getTime?.() ?? 0;

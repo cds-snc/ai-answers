@@ -6,10 +6,18 @@ const __dirname = path.dirname(__filename);
 import dbConnect from './db-connect.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 import mongoose from 'mongoose';
+import SettingsAuditService from '../../services/SettingsAuditService.js';
 import fs from 'fs';
 import crypto from 'crypto'; // Import crypto for generating UUIDs
 
 const EXPERT_EVAL_CHATS_SCOPE = 'expertEvalChats';
+
+// Left out of export and import. A remembered-device row is useless without
+// its token hash, which exports leave out (select: false in
+// models/trustedDevice.js), and the unique index on that hash would reject the
+// rows anyway. After a restore, users just enter a 2FA code again.
+const NOT_EXPORTED = new Set(['trusteddevice']);
+const isExportable = (name) => !NOT_EXPORTED.has(String(name || '').toLowerCase());
 
 function addIdPaginationFilter(queryFilter, lastId) {
   if (!lastId) return queryFilter;
@@ -310,13 +318,14 @@ async function databaseManagementHandler(req, res) {
       const dateField = 'updatedAt';
       if (!collection || collection === 'All') {
         // Return list of available collections
+        const exportable = Object.keys(collections).filter(isExportable);
         return res.status(200).json({
-          collections: Object.keys(collections),
+          collections: exportable,
           // No updatedAt means the export's date filter can't apply
-          collectionsWithoutDates: Object.keys(collections).filter(name => !collections[name].schema?.paths?.updatedAt)
+          collectionsWithoutDates: exportable.filter(name => !collections[name].schema?.paths?.updatedAt)
         });
       }
-      const model = collections[collection.toLowerCase()];
+      const model = isExportable(collection) ? collections[collection.toLowerCase()] : undefined;
       if (!model) {
         return res.status(400).json({ message: `Collection '${collection}' not found` });
       }
@@ -345,7 +354,28 @@ async function databaseManagementHandler(req, res) {
         .sort({ _id: 1 }) // Ensure consistent ordering between chunks
         .limit(Number(limit))
         .lean();
-      const total = await model.countDocuments(queryFilter);
+      // One audit entry per collection per export, on its first page: who
+      // exported what, so we know which export files exist. Keyed on the
+      // request having no lastId, so a retried first page writes a second
+      // entry and a caller starting mid-collection writes none. Only admins
+      // reach this, and they can read the data anyway; it is a record, not a
+      // control. Written alongside the count to save a round trip.
+      const recordExport = lastId ? null : SettingsAuditService.recordAuditSafely(
+        () => SettingsAuditService.recordAction({
+          actorUserId: req.user?.userId,
+          actorEmail: req.user?.email || 'Unknown admin',
+          source: 'admin',
+          action: 'database.exported',
+          metadata: {
+            collection: collection.toLowerCase(),
+            scope: exportScope || 'all',
+            startDate: startDate || null,
+            endDate: endDate || null,
+          },
+        }),
+        'Failed to record database export audit entry'
+      );
+      const [total] = await Promise.all([model.countDocuments(queryFilter), recordExport]);
       console.log(`Exported ${docs.length} documents from collection '${collection}'`);
       return res.status(200).json({
         collection,
@@ -474,6 +504,12 @@ async function processLines(lines, collections, stats, collectionFilter = () => 
         } catch (e) {
           // ignore push errors
         }
+        continue;
+      }
+
+      // Older export files may still hold these rows.
+      if (!isExportable(collectionName)) {
+        stats.skipped++;
         continue;
       }
 

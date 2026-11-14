@@ -54,7 +54,7 @@ const resetPasswordHandler = async (req, res) => {
     // Production reads from replicas by default (secondaryPreferred). The
     // token was just written to the primary, so read it from there: a replica
     // that hasn't caught up would refuse a valid link.
-    const user = await User.findOne({ email: normalizedEmail }).read('primary');
+    const user = await User.findOne({ email: normalizedEmail }).select('+resetPasswordTokenHash').read('primary');
 
     // One generic error for every refusal, to prevent enumeration. There is
     // no attempt counter: the token is 32 random bytes, so guessing can't
