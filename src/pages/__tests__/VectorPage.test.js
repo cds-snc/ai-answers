@@ -623,15 +623,33 @@ describe('VectorPage duplicate embeddings check', () => {
       duplicateInteractions: 2, deletedEmbeddings: 3, deletedSentenceEmbeddings: 9,
     });
 
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
     fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
 
-    await waitForAnnouncement('vector.duplicateEmbeddings.removeSuccess');
+    expect(window.confirm).toHaveBeenCalledWith('vector.duplicateEmbeddings.removeConfirm');
     await screen.findByText('vector.duplicateEmbeddings.none');
     expect(mockGetDuplicateEmbeddings).toHaveBeenCalledTimes(2);
-    // Nothing left to remove, so the button goes away.
+    // Nothing left to remove, so the button goes away — and focus lands on
+    // the outcome message rather than dropping to <body>.
     expect(screen.queryByText('vector.duplicateEmbeddings.remove')).toBeNull();
+    const message = screen.getByText('vector.duplicateEmbeddings.removeSuccess');
+    await waitFor(() => expect(message.closest('[tabindex="-1"]')).toBe(document.activeElement));
+  });
+
+  it('does nothing when the confirm is cancelled', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
+
+    expect(mockRemoveDuplicateEmbeddings).not.toHaveBeenCalled();
   });
 
   it('disables the check button while a removal is running', async () => {
@@ -639,6 +657,7 @@ describe('VectorPage duplicate embeddings check', () => {
       duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
     });
     mockRemoveDuplicateEmbeddings.mockReturnValue(new Promise(() => {}));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
@@ -653,6 +672,7 @@ describe('VectorPage duplicate embeddings check', () => {
       duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
     });
     mockRemoveDuplicateEmbeddings.mockRejectedValue(new Error('boom'));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderWithRouter(<VectorPage lang="en" />);
     fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));

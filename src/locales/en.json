@@ -2141,6 +2141,7 @@
       "maxCopies": "Most embeddings for one interaction",
       "removeDescription": "Remove the extra embeddings so each interaction keeps one. If a copy has expert feedback metadata, that copy is kept. You can run this again if it stops part-way.",
       "remove": "Remove duplicates",
+      "removeConfirm": "This permanently deletes the extra embeddings. You can't undo this. Do you want to continue?",
       "removing": "Removing duplicates...",
       "removeSuccess": "Removed {embeddings} extra embeddings from {interactions} interactions, and {sentences} sentence embeddings.",
       "removeFailed": "Failed to remove duplicate embeddings."
