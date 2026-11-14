@@ -98,8 +98,9 @@ Follow-ups found in review, each its own PR:
   filter on `tokenHash`, so they need no change. The lockout counters stay readable: they are
   not secrets. Aggregation `$lookup` ignores `select: false`, so every pipeline that joins
   `users` and returns or writes the user adds `omitUserSecrets('user')` (`models/user.js`) right
-  after the join: `api/db/db-chat-logs.js`, whose filtered branch sent the hashes to any
-  signed-in user, and `api/chat/chat-export-logs.js`. Trusted devices are left out of database
+  after the join: `api/chat/chat-export-logs.js`. `api/db/db-chat-logs.js` had the same join in
+  a filtered branch that sent the hashes to any signed-in user; no page called that branch, so
+  it was removed (branch `chore/remove-dead-chat-logs-filters`). Trusted devices are left out of database
   export and import: without the hash the rows are useless. Each Database page export writes a
   `database.exported` audit entry; it is a record, not a control (a retried first page logs
   twice, a caller starting mid-collection logs nothing). Tests:
