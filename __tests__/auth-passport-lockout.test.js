@@ -12,9 +12,17 @@ const verify = passport._strategy('local')._verify;
 const run = (email, password) => new Promise((resolve, reject) =>
   verify(email, password, (err, user, info) => (err ? reject(err) : resolve({ user, info }))));
 
+// findOne(...).select('+password') resolves to the user. The hash is
+// select: false (models/user.js), so the strategy has to ask for it.
+function findsUser(user) {
+  User.findOne.mockReturnValue({
+    select: vi.fn(async (fields) => (fields === '+password' ? user : user && { ...user, password: undefined })),
+  });
+}
+
 function makeUser(over = {}) {
   return {
-    _id: 'u1', email: 'a@canada.ca', active: true, loginAttempts: 0, loginLockedUntil: null,
+    _id: 'u1', email: 'a@canada.ca', password: 'stored-bcrypt-hash', active: true, loginAttempts: 0, loginLockedUntil: null,
     comparePassword: vi.fn().mockResolvedValue(true), ...over,
   };
 }
@@ -22,15 +30,26 @@ function makeUser(over = {}) {
 describe('password sign-in lockout', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('refuses a user with no stored password like a wrong password', async () => {
+    // A user restored from a database export has no password until they reset it.
+    const user = makeUser({ password: undefined });
+    findsUser(user);
+    User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
+    const { user: signedIn, info } = await run('a@canada.ca', 'anything');
+    expect(signedIn).toBe(false);
+    expect(info.message).toBe('Invalid credentials');
+    expect(user.comparePassword).not.toHaveBeenCalled();
+  });
+
   it('signs in with the right password and clears old failures', async () => {
-    User.findOne.mockResolvedValue(makeUser({ loginAttempts: 3 }));
+    findsUser(makeUser({ loginAttempts: 3 }));
     const { user } = await run('A@Canada.ca', 'pw');
     expect(user).toBeTruthy();
     expect(User.updateOne).toHaveBeenCalledWith({ _id: 'u1' }, { $set: { loginAttempts: 0, loginLockedUntil: null } });
   });
 
   it('counts a wrong password without locking below the limit', async () => {
-    User.findOne.mockResolvedValue(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
+    findsUser(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
     User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
     const { user, info } = await run('a@canada.ca', 'bad');
     expect(user).toBe(false);
@@ -39,7 +58,7 @@ describe('password sign-in lockout', () => {
   });
 
   it('records when each failure happened', async () => {
-    User.findOne.mockResolvedValue(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
+    findsUser(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
     User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
     await run('a@canada.ca', 'bad');
     const [, update] = User.findOneAndUpdate.mock.calls[0];
@@ -48,7 +67,7 @@ describe('password sign-in lockout', () => {
   });
 
   it('starts the count again when the last failure is older than the window', async () => {
-    User.findOne.mockResolvedValue(makeUser({
+    findsUser(makeUser({
       loginAttempts: 9,
       loginLastFailedAt: new Date(Date.now() - LOGIN_ATTEMPT_WINDOW_MS - 1000),
       comparePassword: vi.fn().mockResolvedValue(false),
@@ -63,7 +82,7 @@ describe('password sign-in lockout', () => {
   });
 
   it('keeps counting failures that come close together', async () => {
-    User.findOne.mockResolvedValue(makeUser({
+    findsUser(makeUser({
       loginAttempts: 9,
       loginLastFailedAt: new Date(Date.now() - 60 * 1000),
       comparePassword: vi.fn().mockResolvedValue(false),
@@ -75,7 +94,7 @@ describe('password sign-in lockout', () => {
   });
 
   it('locks the account on the MAX_LOGIN_ATTEMPTS-th failure', async () => {
-    User.findOne.mockResolvedValue(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
+    findsUser(makeUser({ comparePassword: vi.fn().mockResolvedValue(false) }));
     User.findOneAndUpdate.mockResolvedValue({ loginAttempts: MAX_LOGIN_ATTEMPTS });
     await run('a@canada.ca', 'bad');
     const [, update] = User.updateOne.mock.calls[0];
@@ -85,7 +104,7 @@ describe('password sign-in lockout', () => {
 
   it('rejects the right password while locked, with the same message', async () => {
     const comparePassword = vi.fn().mockResolvedValue(true);
-    User.findOne.mockResolvedValue(makeUser({ comparePassword, loginLockedUntil: new Date(Date.now() + 60000) }));
+    findsUser(makeUser({ comparePassword, loginLockedUntil: new Date(Date.now() + 60000) }));
     const { user, info } = await run('a@canada.ca', 'right');
     expect(user).toBe(false);
     expect(info.message).toBe('Invalid credentials');
@@ -93,18 +112,18 @@ describe('password sign-in lockout', () => {
   });
 
   it('answers an unknown email exactly like a wrong password', async () => {
-    User.findOne.mockResolvedValue(null);
+    findsUser(null);
     const { user, info } = await run('nobody@canada.ca', 'x');
     expect(user).toBe(false);
     expect(info.message).toBe('Invalid credentials');
   });
 
   it('only reveals a deactivated account after the correct password', async () => {
-    User.findOne.mockResolvedValue(makeUser({ active: false, comparePassword: vi.fn().mockResolvedValue(false) }));
+    findsUser(makeUser({ active: false, comparePassword: vi.fn().mockResolvedValue(false) }));
     User.findOneAndUpdate.mockResolvedValue({ loginAttempts: 1 });
     expect((await run('a@canada.ca', 'bad')).info.message).toBe('Invalid credentials');
 
-    User.findOne.mockResolvedValue(makeUser({ active: false }));
+    findsUser(makeUser({ active: false }));
     expect((await run('a@canada.ca', 'right')).info.message).toBe('Account is deactivated');
   });
 });

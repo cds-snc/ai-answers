@@ -1377,7 +1377,10 @@
         "settingUpdated": "Paramètre modifié",
         "cacheRefreshed": "Cache des paramètres rafraîchi",
         "downloadWebPageCacheCleared": "Cache des pages Web téléchargées vidé",
-        "searchCacheCleared": "Cache de recherche vidé"
+        "searchCacheCleared": "Cache de recherche vidé",
+        "databaseExported": "Base de données exportée",
+        "retiredFieldsRemoved": "Champs retirés supprimés",
+        "retiredFieldsRemovalFailed": "Échec de la suppression des champs retirés"
       }
     },
     "baseUrlLabel": "URL de base (ex. https://exemple.com)",

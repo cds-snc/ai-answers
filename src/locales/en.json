@@ -1377,7 +1377,10 @@
         "settingUpdated": "Setting updated",
         "cacheRefreshed": "Settings cache refreshed",
         "downloadWebPageCacheCleared": "Downloaded web page cache cleared",
-        "searchCacheCleared": "Search cache cleared"
+        "searchCacheCleared": "Search cache cleared",
+        "databaseExported": "Database exported",
+        "retiredFieldsRemoved": "Retired fields removed",
+        "retiredFieldsRemovalFailed": "Retired field removal failed"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",

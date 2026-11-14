@@ -89,10 +89,22 @@ page replaces the saved row with that response. The 500 responses no longer incl
 `error.message`. Test: `api/user/__tests__/user-users-fields.test.js`.
 
 Follow-ups found in review, each its own PR:
-- **Hide secret fields by default.** Mark `resetPasswordTokenHash`, `twoFACode`
-  and the lockout counters `select: false` in `models/user.js`, so no query returns them unless it
-  asks. Then F5 can't come back through some other endpoint. The sign-in, 2FA and reset code
-  must then select them with `+field`.
+- **Hide secret fields by default.** Done (2026-11-12, branch `fix/hide-credential-fields`).
+  `password`, `resetPasswordTokenHash` and `twoFACode` in `models/user.js`, and `tokenHash` in
+  `models/trustedDevice.js`, are `select: false`, so no query returns them unless it asks. Then
+  F5 can't come back through some other endpoint, and database exports leave them out. Sign-in
+  (`config/passport.js`), 2FA verify (`services/TwoFAService.js`) and reset
+  (`api/auth/auth-reset-password.js`) select them with `+field`. Trusted-device lookups only
+  filter on `tokenHash`, so they need no change. The lockout counters stay readable: they are
+  not secrets. Aggregation `$lookup` ignores `select: false`, so every pipeline that joins
+  `users` and returns or writes the user adds `omitUserSecrets('user')` (`models/user.js`) right
+  after the join: `api/db/db-chat-logs.js`, whose filtered branch sent the hashes to any
+  signed-in user, and `api/chat/chat-export-logs.js`. Trusted devices are left out of database
+  export and import: without the hash the rows are useless. Each Database page export writes a
+  `database.exported` audit entry; it is a record, not a control (a retried first page logs
+  twice, a caller starting mid-collection logs nothing). Tests:
+  `__tests__/auth-credential-fields.integration.test.js` and
+  `api/db/__tests__/db-export-credentials.test.js`.
 - **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
   schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
   `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.

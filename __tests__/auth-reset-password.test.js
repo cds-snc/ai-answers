@@ -39,10 +39,15 @@ function makeUser(overrides = {}) {
   };
 }
 
-// findOne(...).read('primary') resolves to the user.
+// findOne(...).select('+resetPasswordTokenHash').read('primary') resolves to
+// the user. The hash is select: false (models/user.js), so without that select
+// the handler would see no token and refuse every link.
 function findsUser(user) {
   const read = vi.fn().mockResolvedValue(user);
-  User.findOne.mockReturnValue({ read });
+  const select = vi.fn((fields) => ({
+    read: fields === '+resetPasswordTokenHash' ? read : vi.fn().mockResolvedValue(user && { ...user, resetPasswordTokenHash: undefined }),
+  }));
+  User.findOne.mockReturnValue({ select });
   return read;
 }
 
