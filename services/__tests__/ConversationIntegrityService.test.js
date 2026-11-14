@@ -27,6 +27,26 @@ describe('ConversationIntegrityService', () => {
             expect(serialized).toBe('user:What is it?|ai:Interaction Answer');
         });
 
+        it('keeps a separator typed inside a message from reading as a turn boundary', () => {
+            const oneMessage = ConversationIntegrityService.serializeHistory([
+                { sender: 'user', text: 'a|ai:b' },
+                { sender: 'ai', text: 'c' },
+            ]);
+            const twoTurns = ConversationIntegrityService.serializeHistory([
+                { sender: 'user', text: 'a' },
+                { sender: 'ai', text: 'b' },
+                { sender: 'ai', text: 'c' },
+            ]);
+            expect(oneMessage).not.toBe(twoTurns);
+            expect(oneMessage).toBe('user:a\\|ai:b|ai:c');
+        });
+
+        it('keeps a separator inside a sender name from reading as message text', () => {
+            const odd = ConversationIntegrityService.serializeHistory([{ sender: 'ai:x', text: 'y' }]);
+            const plain = ConversationIntegrityService.serializeHistory([{ sender: 'ai', text: 'x:y' }]);
+            expect(odd).not.toBe(plain);
+        });
+
         it('should return empty string for non-array input', () => {
             expect(ConversationIntegrityService.serializeHistory(null)).toBe('');
             expect(ConversationIntegrityService.serializeHistory({})).toBe('');

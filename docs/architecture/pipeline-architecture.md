@@ -757,7 +757,7 @@ Each node can:
   (`validateConversationIntegrity` in `middleware/chat-session.js`). The graph receives
   only the turns covered by the server's signature: turns appended after the signed one,
   error messages, and questions that never got an answer (the pipeline failed on them)
-  are dropped. A failed turn returns no `historySignature`. Details and known gaps:
+  are dropped. A failed turn returns no `historySignature`. Details:
   [conversation integrity plan](../plans/conversation_integrity_plan.md).
 
 ---

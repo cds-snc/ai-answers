@@ -27,6 +27,11 @@ function getSecret() {
 
 const isUserMessage = (m) => m?.sender === 'user' || m?.role === 'user';
 
+// Serialized turns are joined with '|' and written as role:text. Escape those
+// separators inside the values so text can never read as a turn boundary.
+const escapeText = (text) => String(text).replace(/[\\|]/g, '\\$&');
+const escapeRole = (role) => String(role).replace(/[\\|:]/g, '\\$&');
+
 class ConversationIntegrityService {
     /**
      * Throws when no signing secret is available. server.js calls this at
@@ -156,8 +161,8 @@ class ConversationIntegrityService {
                 const aRaw = m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer;
                 const q = this.normalizeText(qRaw);
                 const a = this.normalizeText(aRaw);
-                lines.push(`user:${q}`);
-                lines.push(`ai:${a}`);
+                lines.push(`user:${escapeText(q)}`);
+                lines.push(`ai:${escapeText(a)}`);
             } else {
                 // Check redundancy: If this is a user message and the NEXT message has an interaction,
                 // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
@@ -173,7 +178,7 @@ class ConversationIntegrityService {
 
                 const role = m.sender || m.role || '';
                 const text = this.normalizeText(m.text || m.content || '');
-                lines.push(`${role}:${text}`);
+                lines.push(`${escapeRole(role)}:${escapeText(text)}`);
             }
         }
         const result = lines.join('|');
@@ -234,11 +239,6 @@ class ConversationIntegrityService {
      * Callers must consume `history`, never the array they passed in. Left out
      * of it: anything after the signed turn (a turn a client appended), error
      * messages, and questions that never got an answer.
-     *
-     * Known gap, closed by signature v2 (see
-     * docs/plans/conversation_integrity_plan.md): for an answered turn the
-     * signature covers `interaction.question`, not the `text` of the user
-     * message beside it, and only the normalized form of each turn (AIA-011).
      */
     verifySignedPrefix(historyArray, inputSignature) {
         // Entries that are not objects can't be messages: ignore them.

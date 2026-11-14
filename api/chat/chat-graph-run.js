@@ -354,11 +354,10 @@ async function handler(req, res) {
 
     if (!resultSent) {
       try {
-        // AIA-005: never sign anything here. A failed turn has no server-written
-        // answer, so a signature could only cover what the client sent - which
-        // made this path a way to get any history signed. The next request
-        // needs no token for the failed question: the integrity check drops a
-        // question that never got an answer (middleware/chat-session.js).
+        // AIA-005: never sign anything here. Only completed turns are signed, and
+        // a failed turn has no server-written answer. The next request needs no
+        // token for the failed question: the integrity check drops a question
+        // that never got an answer (middleware/chat-session.js).
         writeGraphEvent('error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails

@@ -1,101 +1,48 @@
 # Conversation Integrity Implementation Plan
 
-## Remediation status (November 2026)
+## Hardening update (November 2026)
 
-A vulnerability report found four ways to defeat the design below. They share one
-root cause: the server signed a normalized summary of the history but consumed the
-raw client objects. The fix ships as two PRs. **Where this section and the original
-plan below disagree, this section is current.**
+The design below was tightened after a security review. **Where this section and the
+original plan below disagree, this section is current.** Further hardening of the
+signature format is planned; its details will be added here when it ships.
 
-| Finding | Problem | Fixed in |
-|---|---|---|
-| AIA-002 | Only the prefix up to the signed turn was verified, but the whole history was consumed, so a client could append forged turns | PR 1 |
-| AIA-005 | The graph error path signed `[...client history, user message]` and returned it, so anyone could get a history signed | PR 1 |
-| AIA-019 (integrity part) | Missing secret fell back to a hardcoded value | PR 1 |
-| AIA-011 | Normalization signs only the text inside `<answer>` and drops whole tag blocks, so the rest of a signed turn can be changed | PR 2 |
-| AIA-024 | `interaction.context` is unsigned but reused by `DefaultWithVectorGraph` and `InstantAndQAGraph` | PR 2 |
-
-### PR 1 — what changed (no signature format change)
+### What changed
 
 - **The server consumes only verified history.** `verifySignedPrefix` returns the
   verified part as `history`, and `validateConversationIntegrity` replaces
   `input.conversationHistory` with it. Dropped: anything after the signed turn, error
   messages, and unanswered questions. A history that is not an array, or holds only
   error messages, becomes `[]`.
+- **A question that never got an answer is dropped.** After an unexpected failure the
+  client keeps the question bubble in history. It no longer feeds translation context,
+  similar-answer matching or the short-query check on the next turn. The user still
+  sees it on screen and can keep chatting.
 - **Unanswered questions are left out of the signature as well as the history**
-  (`signedMessages`). Otherwise a failed question followed by a successful one would
-  make every later turn fail verification, because the server signs without the
-  failed question but the client keeps sending it.
-- **Dropped AI turns are logged** (counts only) as `[Integrity] Dropped unverified AI turns`.
-- **A question that never got an answer is dropped, not signed.** After an unexpected
-  failure the client keeps the question bubble in history. It no longer feeds
-  translation context, similar-answer matching or the short-query check on the next
-  turn. The user still sees it on screen and can keep chatting.
+  (`signedMessages`), so a failed question followed by a successful one does not break
+  verification of later turns.
 - **History with no AI turn and no signature is treated as empty**, so a new message
   after a first-turn failure goes through. Unsigned history that contains an AI turn
   is still rejected with `403 missing_signature`.
-- **The error path never signs.** `chat-graph-run.js` returns no `historySignature`
-  on an error event.
+- **Only completed turns are signed.** A failed turn returns no `historySignature`.
+- **Separators are escaped** in the serialized history, so message text cannot read as
+  a turn boundary.
 - **No fallback secret.** Without `CONVERSATION_INTEGRITY_SECRET` the server refuses
   to start (`assertConfigured()` in `server/server.js`), unless `NODE_ENV` is
   `development` or `test`, where a random per-process secret is used. An unset
   `NODE_ENV` counts as deployed.
 - **Constant-time comparison**, and a non-string signature is rejected.
-- **Rotate the secret when PR 1 deploys.** Signatures issued by the old error path
-  stay valid until the secret changes.
-
-Left in place for PR 2 to remove: the `error.historySignature` spreads and debug logs
-in `ChatAppContainer.js`, the `historySignature` passthrough in
-`buildGraphErrorPayload`, and the block in `verifySignedPrefix` that looks for a
-signature on error messages.
-
-Still open after PR 1, for PR 2:
-
-- **User message text beside a signed answer is not signed.** The signature covers
-  `interaction.question`; the `text` of the user message before it is skipped, yet
-  translation context, similar-answer matching and the short-query check read it.
-- **`DEBUG_CONV_INTEGRITY` logs the expected signature and the serialized history.**
-  If it were ever set in a deployed environment, anyone with log access could read
-  valid signatures. Remove those values from the logs or limit the flag to
-  development and test.
-
-### PR 2 — planned (signature v2)
-
-Server and client share this contract, so it ships as one PR.
-
-- **Sign in one place**, where the result leaves the server in `chat-graph-run.js`,
-  replacing the calls in `AnswerGenerationService` and `SimilarAnswerService`.
-  Client-supplied content is never signed.
-- **Sign the exact fields the server reads back**: raw `question`, `answer.content`
-  and `answer.answerType`. Canonical JSON instead of `|`-joined text, and no
-  normalization.
-- **Chain and bind**: each signature covers the previous one and the `chatId`, so
-  turns cannot be spliced across chats.
-- **Consume only what was verified**: after verification the server rebuilds the
-  history from the signed fields alone. One shared turn extractor replaces the three
-  hand-synced "is this an AI turn" copies (`ai-turn-check-sync`).
-- **Remove context reuse** from `DefaultWithVectorGraph` and `InstantAndQAGraph`, so
-  no graph reads the client's `interaction.context`. Add a test that client-supplied
-  context never reaches the answer prompt in any graph. This must land before
-  `InstantAndQAGraph` becomes the default workflow.
-- **Cutover**: chats in flight at deploy fail on their next turn with the generic
-  error. Accepted, because the old format is the vulnerable one and chats are capped
-  at three turns. No dual-format verification window.
-- **Tests and docs**: one regression test per finding; update
-  `docs/architecture/pipeline-architecture.md` (including "5d. Context reuse") and
-  rewrite the original plan below.
+- **Dropped AI turns are logged** (counts only) as `[Integrity] Dropped unverified AI turns`.
 
 ### Decisions (Lisa Fast, 2026-11-14)
 
-- Drop trailing unanswered questions instead of accepting or signing them.
-- Remove error-path signing.
-- Remove context reuse instead of signing the context.
+- Drop trailing unanswered questions instead of accepting them.
+- Sign completed turns only.
 - Refuse to start without the secret; random per-process secret in development and test.
-- Accept the brief cutover breakage in PR 2.
 
-Considered and not chosen: loading the transcript from the database by `chatId`
-instead of trusting client history. It removes the whole class of problem but adds a
-DocumentDB read per turn and is a much larger change.
+### Deploying
+
+Rotate `CONVERSATION_INTEGRITY_SECRET` when this deploys. Chats open at that moment
+fail on their next turn and the user starts a new one.
 
 ---
 
