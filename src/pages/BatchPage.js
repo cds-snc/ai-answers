@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { GcdsContainer, GcdsLink } from '@gcds-core/components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
+import BatchScopeSelect from '../components/batch/BatchScopeSelect.js';
+import useBatchListFilters from '../hooks/batch/useBatchListFilters.js';
+import { useAuth } from '../contexts/AuthContext.js';
 import StatusMessage from '../components/admin/StatusMessage.js';
 import { announce as announceSuccessRaw } from '../utils/liveAnnouncer.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -12,6 +15,13 @@ import BatchService from '../services/BatchService.js';
 const BatchPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { language } = usePageContext();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
+  // Admins pick whose batches each list shows, independently; partners
+  // always get their own only (the server ignores scope for them).
+  const [scopes, setScopes] = useState({ running: 'mine', processed: 'mine' });
+  const setScope = (section) => (value) => setScopes((prev) => ({ ...prev, [section]: value }));
+  const scopeFilters = useBatchListFilters(isAdmin);
 
   // Action-outcome announcement: BatchList's per-row buttons hide themselves
   // immediately on click (see BatchList.js) with no other feedback, so this
@@ -205,6 +215,16 @@ const BatchPage = ({ lang = 'en' }) => {
 
       <section className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.running.title')}</h2>
+        {isAdmin && (
+          <BatchScopeSelect
+            id="batch-scope-running"
+            lang={lang}
+            value={scopes.running}
+            onChange={setScope('running')}
+            filters={scopeFilters}
+            currentUser={currentUser}
+          />
+        )}
         {/* Scoped to this table specifically - delete/process/cancel/export
             failures from a row here shouldn't render above the *other*
             table instead. */}
@@ -222,6 +242,7 @@ const BatchPage = ({ lang = 'en' }) => {
           // Include 'uploaded' so freshly created batches appear in the running list
           batchStatus="uploaded,validating,failed,in_progress,finalizing,completed,expired"
           key={`running-${refreshKey}`}
+          scope={isAdmin ? scopes.running : ''}
           processingBatches={processingBatches}
           unmarkProcessing={unmarkProcessing}
           lang={lang}
@@ -231,6 +252,16 @@ const BatchPage = ({ lang = 'en' }) => {
       <section id="processed-evaluation" className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.processed.title')}</h2>
         <p className="mb-400">{t('batch.sections.processed.description')}</p>
+        {isAdmin && (
+          <BatchScopeSelect
+            id="batch-scope-processed"
+            lang={lang}
+            value={scopes.processed}
+            onChange={setScope('processed')}
+            filters={scopeFilters}
+            currentUser={currentUser}
+          />
+        )}
         <StatusMessage
           variant={errors.processed ? 'error' : undefined}
           message={errors.processed?.text}
@@ -244,6 +275,7 @@ const BatchPage = ({ lang = 'en' }) => {
           onExport={(id, type, name) => onExport(id, type, name, 'processed')}
           batchStatus="processed"
           key={`processed-${refreshKey}`}
+          scope={isAdmin ? scopes.processed : ''}
           processingBatches={processingBatches}
           unmarkProcessing={unmarkProcessing}
           lang={lang}
