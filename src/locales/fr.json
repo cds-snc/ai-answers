@@ -2141,7 +2141,13 @@
       "duplicateInteractions": "Interactions avec doublons",
       "duplicatesWithExpertFeedback": "Interactions avec doublons et rétroaction d’expert",
       "extraEmbeddings": "Incorporations en trop",
-      "maxCopies": "Nombre maximal d’incorporations pour une interaction"
+      "maxCopies": "Nombre maximal d’incorporations pour une interaction",
+      "removeDescription": "Supprimez les incorporations en trop pour que chaque interaction n’en garde qu’une. Si une copie a des métadonnées de rétroaction d’expert, c’est celle-ci qui est conservée. Vous pouvez relancer l’opération si elle s’arrête en cours de route.",
+      "remove": "Supprimer les doublons",
+      "removeConfirm": "Cette action supprime définitivement les incorporations en trop. Vous ne pourrez pas l’annuler. Voulez-vous continuer?",
+      "removing": "Suppression des doublons...",
+      "removeSuccess": "{embeddings} incorporations en trop supprimées pour {interactions} interactions, ainsi que {sentences} incorporations de phrases.",
+      "removeFailed": "Échec de la suppression des incorporations en double."
     },
     "metadataLookup": {
       "title": "Recherche des métadonnées des incorporations",
