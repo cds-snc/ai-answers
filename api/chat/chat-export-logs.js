@@ -2,6 +2,7 @@
 import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { omitUserSecrets } from '../../models/user.js';
 import { BatchItem } from '../../models/batchItem.js';
 import {
     authMiddleware,
@@ -615,6 +616,7 @@ export async function chatExportHandler(req, res) {
             pipeline.push({ $unwind: '$interactions' });
             pipeline.push({ $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } });
             pipeline.push({ $addFields: { user: { $arrayElemAt: ['$user', 0] } } });
+            pipeline.push(omitUserSecrets('user'));
 
             // Context matches
             pipeline.push({ $lookup: { from: 'contexts', localField: 'interactions.context', foreignField: '_id', as: 'interactions.context_doc' } });
