@@ -116,6 +116,9 @@ metrics.blockedQueries.<type>.{ total, en, fr } // tooShort, piStage1, piStage2,
                                                 //   manipulation, azureGuardrail, unsupportedLanguage, total
 metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERSATIONS
 metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
+metrics.evalCoverage        // partner: { programs: [{ program, programFr, questions, humanEvals, scoredEvals, nonPerfectEvals,
+                            //   usableEvals, expiringEvals, informedAnswers, actions: [{ action, actionFr, count }] }],  // usable/expiring: all dates, dept only; null for 'unknown'
+                            //   recencyDays, expiringWindowDays }; top 25 by questions
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
 metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
@@ -163,6 +166,7 @@ const chartA11y = {
 | `CitationPagesCard.js` | `CollapsibleCard` + `CountTable` of top citation pages. Partner only. |
 | `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
+| `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
 | `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
@@ -219,6 +223,17 @@ Ranked bar of `context.program`, directly under the accuracy row.
 - **Bars are % of all *classified* questions**; top-N bars intentionally don't sum to 100%. Raw count + EN/FR split ride in the tooltip. The subtitle count reads lower than "Questions asked" because only `normal` answers are classified.
 - **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`, grouped by `$program` with an `en`/`fr` split by `pageLanguage`; `programFr` is the curated French name (empty → English). `'unknown'` is pulled out of the bars into the subtitle.
 - Subtitle is terse at partner request. Tests: `__tests__/api.metrics-programs.test.js`.
+
+## Evaluation coverage by service (partner only)
+
+Table in the eval-informed section: per program, questions vs human expert evaluations, how many evaluations eval-informed answering can still use, and answers that used past evaluations.
+
+- **Same scope as the volume chart.** `metrics-eval-coverage.js` reuses `buildProgramScopeStages` from `metrics-programs.js` (normal answers, all filters), so the two can't count different questions.
+- **Human only.** Counts `interaction.expertFeedback`, and drops any doc with `type: 'ai'` defensively.
+- **"In use" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore`, evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
+- **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
+- **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first.
+- Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
 
 ## Satisfaction section (partner only)
 

@@ -53,6 +53,16 @@ The **Partner dashboard** shows an **Eval-informed answers** card in its own sec
 
 Open a chat ID in the list to see the past evaluations it used.
 
+## See where evaluations are missing
+
+Below that card, **Evaluation coverage by service** lists the services with the most questions. Use it to decide where to evaluate next.
+
+- **Evaluation coverage** is expert evaluations as a share of questions. A busy service with low coverage has few examples to draw on.
+- **Evaluations in use** counts evaluations from the past year, plus any marked **Never stale**. Only these can be used as examples. This column and the next ignore the date range.
+- **Expiring soon** counts evaluations that will stop being used within 60 days. Evaluate new questions for that service to replace them.
+- **Actions asked about** lists what people asked to do, most common first.
+- It follows the dashboard's filters.
+
 ## Rules the system applies
 
 - Matches on meaning rather than wording.

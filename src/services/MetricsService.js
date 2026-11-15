@@ -54,6 +54,10 @@ class MetricsService {
     return this._fetchMetric('metrics-programs', filters, signal);
   }
 
+  static async getEvalCoverageMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-coverage', filters, signal);
+  }
+
   static async getCitationMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-citations', filters, signal);
   }

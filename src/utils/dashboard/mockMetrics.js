@@ -155,6 +155,19 @@ export const MOCK_METRICS = {
   harmfulChats: [
     { chatId: 'e19496bb-c253-4320-9c1f-6bbdbc73a97e', interactionId: '3f94b153ecd6fd60b20d4cab', pageLanguage: 'en', questionNumber: 2, createdAt: '2026-08-07T15:03:00Z' },
   ],
+  // Evaluation coverage by service (EvalCoverageCard). Includes a service with
+  // no French name (tagged lang="en" on the French dashboard), one with no
+  // evaluations (below-perfect shows "not applicable") and the unclassified row.
+  evalCoverage: {
+    recencyDays: 365,
+    expiringWindowDays: 60,
+    programs: [
+      { program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', questions: 230, humanEvals: 18, scoredEvals: 18, nonPerfectEvals: 5, usableEvals: 15, expiringEvals: 3, informedAnswers: 96, actions: [{ action: 'Apply', actionFr: 'Présenter une demande', count: 140 }, { action: 'Check status', actionFr: "Vérifier l'état", count: 60 }, { action: 'Get help with', actionFr: "Obtenir de l'aide", count: 30 }] },
+      { program: 'Tax-free savings account (TFSA)', programFr: 'Compte d’épargne libre d’impôt (CELI)', questions: 70, humanEvals: 1, scoredEvals: 1, nonPerfectEvals: 0, usableEvals: 1, expiringEvals: 0, informedAnswers: 4, actions: [{ action: 'Get info', actionFr: "Obtenir de l'information", count: 70 }] },
+      { program: 'Canada Groceries and Essentials Benefit', programFr: '', questions: 20, humanEvals: 0, scoredEvals: 0, nonPerfectEvals: 0, usableEvals: 0, expiringEvals: 0, informedAnswers: 0, actions: [] },
+      { program: 'unknown', programFr: '', questions: 12, humanEvals: 2, scoredEvals: 2, nonPerfectEvals: 1, usableEvals: null, expiringEvals: null, informedAnswers: 1, actions: [] },
+    ],
+  },
   // Most recent sample only (server caps at 20), not all evalInformed.total.
   evalInformedChats: [
     { chatId: '2b7f0c1e-6d4a-4f2b-9a51-3c8e7d1f0a42', interactionId: '6f1a2b3c4d5e6f7a8b9c0d1e', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-08T12:10:00Z' },

@@ -15,6 +15,7 @@ import AnswerTypesCard from './dashboard/AnswerTypesCard.js';
 import ContentIssueChatsCard from './dashboard/ContentIssueChatsCard.js';
 import CollapsibleCard from './dashboard/CollapsibleCard.js';
 import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
+import EvalCoverageCard from './dashboard/EvalCoverageCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
@@ -39,7 +40,7 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true, includeEvalCoverage: true });
   useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
@@ -665,6 +666,16 @@ const PartnerDashboard = ({ lang = 'en' }) => {
           </div>
         )}
       </div>
+
+      {/* Evaluation coverage by service — where eval-informed answering has
+          few or no expert evaluations to draw on, and which evaluations are
+          about to stop being used. Presence-gated like the programs chart:
+          hidden when no question in scope has been classified. */}
+      {metrics.evalCoverage?.programs?.length > 0 && (
+        <div className="dashboard-section">
+          <EvalCoverageCard coverage={metrics.evalCoverage} lang={lang} />
+        </div>
+      )}
 
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from

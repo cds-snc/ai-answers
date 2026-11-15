@@ -53,6 +53,16 @@ Le **Tableau de bord partenaire** affiche une carte **Réponses informées par l
 
 Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures qu'il a utilisées.
 
+## Voir où il manque des évaluations
+
+Sous cette carte, **Couverture des évaluations par service** présente les services ayant reçu le plus de questions. Utilisez-la pour choisir quoi évaluer ensuite.
+
+- **Couverture des évaluations** indique les évaluations d'experts en proportion des questions. Un service très sollicité dont la couverture est faible a peu d'exemples sur lesquels s'appuyer.
+- **Évaluations utilisées** compte les évaluations de la dernière année, ainsi que celles marquées **Toujours valide**. Seules celles-ci peuvent servir d'exemples. Cette colonne et la suivante ne tiennent pas compte de la période choisie.
+- **Expirent bientôt** compte les évaluations qui cesseront d'être utilisées d'ici 60 jours. Évaluez de nouvelles questions pour ce service afin de les remplacer.
+- **Actions demandées** énumère ce que les gens ont demandé de faire, de la plus fréquente à la moins fréquente.
+- La carte suit les filtres du tableau de bord.
+
 ## Règles appliquées par le système
 
 - Correspondance sur le sens plutôt que sur la formulation.

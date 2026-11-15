@@ -1789,6 +1789,26 @@
       "trigger": "See all harmful chats by ID",
       "noData": "No harmful chats flagged in this period."
     },
+    "evalCoverage": {
+      "title": "Evaluation coverage by service",
+      "subtitle": "Up to 25 services with the most questions. Counts questions that got a direct answer.",
+      "colActions": "Actions asked about",
+      "colQuestions": "Questions",
+      "colEvaluations": "Expert evaluations",
+      "colCoverage": "Evaluation coverage",
+      "colUsable": "Evaluations in use",
+      "colExpiring": "Expiring soon",
+      "colInformed": "Answers using evaluations",
+      "colBelowPerfect": "Below perfect",
+      "unclassified": "Not yet classified",
+      "notApplicable": "Not applicable",
+      "noActions": "No actions recorded",
+      "noteCoverage": "Expert evaluations as a share of questions.",
+      "noteUsable": "Evaluations from the last {days} days, or marked to never expire. Only these can be shown to the AI as examples for new answers. Counts every evaluation for the service, whatever the date range.",
+      "noteExpiring": "Evaluations that will stop being used within {days} days, whatever the date range. Evaluate new questions for these services to keep examples available.",
+      "noteInformed": "Answers where the AI was given past expert evaluations as examples.",
+      "noteBelowPerfect": "Share of scored expert evaluations under 100."
+    },
     "evalInformedChats": {
       "title": "Eval-informed answers by chat ID",
       "subtitle": "Shows up to the {n} most recent",
