@@ -673,8 +673,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 text: safeT('homepage.chat.messages.privateContent'),
                 sender: 'system',
                 error: true,
-                isRedactionError: true,
-                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+                isRedactionError: true
               }
             ]);
           } else {
@@ -697,8 +696,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
                 sender: 'system',
                 error: true,
                 isRedactionError: true,
-                isBlockedError: true,
-                ...(error.historySignature ? { historySignature: error.historySignature } : {})
+                isBlockedError: true
               }
             ]);
           }
@@ -718,8 +716,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               searchUrl: error.searchUrl,
               searchQuery: error.userMessage,
               sender: 'system',
-              error: true,
-              ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              error: true
             }
           ]);
           clearInput();
@@ -731,7 +728,6 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             console.log('handleSendMessage: caught error details', {
               name: error?.name,
               message: error?.message,
-              historySignature: error?.historySignature,
               stack: error?.stack
             });
           } catch (e) {
@@ -747,10 +743,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
             }
           }
 
-          // Handle session timeout / invalid chatId (403)
-          if (error.message?.includes('status=403') && (error.message?.includes('invalid_chatId') || error.message?.includes('no_session'))) {
+          // Handle session timeout / invalid chatId (403). A history the server
+          // can no longer verify (for example a chat left open across a deploy)
+          // has the same remedy - reload to start a new chat - so it gets the
+          // same message instead of a generic error that fails on every retry.
+          if (error.message?.includes('status=403') && ['invalid_chatId', 'no_session', 'invalid_signature', 'missing_signature'].some(code => error.message?.includes(code))) {
             try {
-              console.log('handleSendMessage: mapping 403->sessionTimedOut', { message: error?.message, historySignature: error?.historySignature });
+              console.log('handleSendMessage: mapping 403->sessionTimedOut', { message: error?.message });
             } catch (e) {
               // ignore logging errors
             }
@@ -785,7 +784,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           }
 
           try {
-            console.log('handleSendMessage: falling back to generic error branch', { historySignature: error?.historySignature });
+            console.log('handleSendMessage: falling back to generic error branch');
           } catch (e) {
             // ignore logging errors
           }
@@ -797,8 +796,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               id: errorMessageId,
               text: safeT('homepage.chat.messages.error'),
               sender: 'system',
-              error: true,
-              ...(error.historySignature ? { historySignature: error.historySignature } : {})
+              error: true
             }
           ]);
           clearInput();
