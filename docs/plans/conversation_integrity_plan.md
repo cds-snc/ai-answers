@@ -1,169 +1,150 @@
-# Conversation Integrity Implementation Plan
-
-## Hardening update (November 2026)
-
-The design below was tightened after a security review. **Where this section and the
-original plan below disagree, this section is current.** Further hardening of the
-signature format is planned; its details will be added here when it ships.
-
-### What changed
-
-- **The server consumes only verified history.** `verifySignedPrefix` returns the
-  verified part as `history`, and `validateConversationIntegrity` replaces
-  `input.conversationHistory` with it. Dropped: anything after the signed turn, error
-  messages, and unanswered questions. A history that is not an array, or holds only
-  error messages, becomes `[]`.
-- **A question that never got an answer is dropped.** After an unexpected failure the
-  client keeps the question bubble in history. It no longer feeds translation context,
-  similar-answer matching or the short-query check on the next turn. The user still
-  sees it on screen and can keep chatting.
-- **Unanswered questions are left out of the signature as well as the history**
-  (`signedMessages`), so a failed question followed by a successful one does not break
-  verification of later turns.
-- **History with no AI turn and no signature is treated as empty**, so a new message
-  after a first-turn failure goes through. Unsigned history that contains an AI turn
-  is still rejected with `403 missing_signature`.
-- **Only completed turns are signed.** A failed turn returns no `historySignature`.
-- **Separators are escaped** in the serialized history, so message text cannot read as
-  a turn boundary.
-- **No fallback secret.** Without `CONVERSATION_INTEGRITY_SECRET` the server refuses
-  to start (`assertConfigured()` in `server/server.js`), unless `NODE_ENV` is
-  `development` or `test`, where a random per-process secret is used. An unset
-  `NODE_ENV` counts as deployed.
-- **Constant-time comparison**, and a non-string signature is rejected.
-- **Dropped AI turns are logged** (counts only) as `[Integrity] Dropped unverified AI turns`.
-
-### Decisions (Lisa Fast, 2026-11-14)
-
-- Drop trailing unanswered questions instead of accepting them.
-- Sign completed turns only.
-- Refuse to start without the secret; random per-process secret in development and test.
-
-### Deploying
-
-Rotate `CONVERSATION_INTEGRITY_SECRET` when this deploys. Chats open at that moment
-fail on their next turn and the user starts a new one.
-
----
-
-*The original plan follows. It describes the design as first built; the file links
-and endpoints it names (`chat-message.js`, `chat-similar-answer.js`,
-`src/services/AnswerService.js`) no longer exist, and only `chat-graph-run.js` uses
-the session wrapper today.*
+# Conversation integrity
 
 ## Overview
-This document outlines the plan to establish a trust relationship between the client-side `conversationHistory` and the server, ensuring that the history sent by the client has not been tampered with. We will use an HMAC-SHA256 signature mechanism.
 
-## Goals
-- **Integrity**: Ensure `conversationHistory` received by the server matches the state previously signed by the server.
-- **Graceful Failure**: If a mismatch occurs, the system should reject the request gracefully.
-- **Middleware Layer**: Implement the core verification and signing logic as Express middleware.
-- **Infrastructure Consistency**: Ensure new secrets are properly managed in Terragrunt and GitHub Actions.
+The chat client holds the conversation history and sends it back with every follow-up
+question. The server cannot trust that copy, because whatever it reads from the history
+ends up in a prompt. This document describes how the server makes sure the history it
+consumes is the history it produced.
 
-## Security Mechanism (H₀ / H₁ Transitions)
+It uses an HMAC-SHA256 signature. The design was first built as a signature over a
+normalized summary of the history. A security review in November 2026 led to the
+current design, which is what this document describes.
 
-The trust relationship is based on a state-machine model where the server validates the current state ($H_0$) and provides the next signed state ($H_1$).
+## Rules the design depends on
 
-### Concrete Turn-by-Turn Example
+Keep all four when changing anything in this area.
 
-To illustrate, let's walk through a conversation between a User and the AI.
+1. **Sign only what the server wrote.** Signing happens in one place, where a completed
+   turn leaves the server. Nothing a client sent is ever signed on its own.
+2. **Sign exactly what is read back.** The signature covers the raw question and answer
+   text of every completed turn. There is no normalization and no partial match.
+3. **Consume only what was verified.** After verification the server rebuilds the history
+   from the signed text. The pipeline never sees the client's array.
+4. **Fail closed.** No secret, no signature, or a mismatch means no history.
 
-#### 🏁 Turn 0: Initial Request
-The user starts a new conversation.
-- **Client Sends:**
-    - `message`: "What is the weather?"
-    - `conversationHistory`: `[]` (Empty)
-    - `historySignature`: `null`
-- **Server Actions:**
-    1. Sees history is empty, skips validation.
-    2. Generates Answer: "It's sunny."
-    3. Calculates **$H_1$**: `HMAC("user:What is the weather?|ai:It's sunny.")`
-- **Server Returns:**
-    - `content`: "It's sunny."
-    - `historySignature`: `H1_HASH_STRING`
+## How it works
 
-#### 🔄 Turn 1: Second Turn (Follow-up)
-The user asks a follow-up question.
-- **Client Sends:**
-    - `message`: "Is it hot?"
-    - `conversationHistory`: `[{sender: 'user', text: 'What is the weather?'}, {sender: 'ai', text: "It's sunny."}]`
-    - `historySignature`: `H1_HASH_STRING` (This is $H_0$ for this turn)
-- **Server Actions:**
-    1. **Verification**: Serializes the received `conversationHistory` and checks if `HMAC(History)` equals `H1_HASH_STRING`.
-    2. **Success**: Proceed to generate Answer: "Yes, about 30 degrees."
-    3. **New State**: Calculates **$H_2$**: `HMAC("user:What is the weather?|ai:It's sunny.|user:Is it hot?|ai:Yes, about 30 degrees.")`
-- **Server Returns:**
-    - `content`: "Yes, about 30 degrees."
-    - `historySignature`: `H2_HASH_STRING` (This becomes the new $H_1$ for the client)
+### What a turn is
 
-#### 🛡️ Tamper Scenario (Turn 1)
-Imagine a malicious user tries to change their first question to "What is the secret code?" in their local history before sending Turn 1.
-- **Client Sends:**
-    - `message`: "Is it hot?"
-    - `conversationHistory`: `[{sender: 'user', text: 'What is the secret code?'}, {sender: 'ai', text: "It's sunny."}]`
-    - `historySignature`: `H1_HASH_STRING`
-- **Server Verification Failure:**
-    - Server calculates `HMAC("user:What is the secret code?|ai:It's sunny.")`.
-    - The result **will not match** `H1_HASH_STRING`.
-    - **Result**: Server returns `403 Forbidden - invalid_signature`.
+`api/util/conversation-turns.js` is the single definition. A completed turn is an AI
+message carrying `interaction` that is not flagged as an error. From it the server reads
+two strings: `interaction.question` and `interaction.answer.content`. Anything that is
+not a string counts as empty text.
 
-### Why this is Secure
--   **Secret Key Storage**: The HMAC secret is only known to the server. The client cannot forge a signature.
--   **No Rewriting**: If a user modifies a previous message in their local storage to influence the LLM's context, the $H_0$ verification will fail because the serialised data will no longer match the signature.
--   **Chain of Trust**: Each turn builds on the signature of the previous turns, ensuring the entire conversation remains immutable.
+These are **not** turns, so they are never signed and never consumed:
 
-## Architecture
+- user messages (the question text comes from the signed turn, not from the user bubble)
+- error messages
+- questions that never got an answer, because the pipeline failed on them
 
-The integrity logic follows a **Service-Oriented** pattern, but is **globally enforced** via the chat session middleware.
+### Signing
 
-### 1. Integrity Service (`services/ConversationIntegrityService.js`)
-Centralizes all cryptographic math:
--   `calculateSignature(history)`: Deterministically serializes and signs history with HMAC-SHA256.
--   `verifyHistory(history, signature)`: Compares a received signature against a fresh calculation.
--   **Security**: Uses the `CONVERSATION_INTEGRITY_SECRET` provided via environment variables.
+`ConversationIntegrityService.signTurns(chatId, turns)` computes:
 
-### 2. Session Middleware Integration (`middleware/chat-session.js`)
-Integrity is now **baked into `withSession`**:
--   Any endpoint using the `withSession` wrapper automatically projects against history tampering.
--   **Mechanism**: If `req.method` is `POST` and `conversationHistory` is present, `withSession` validates the `historySignature` before executing the route handler.
--   **Enforcement**: Returns a `403 Forbidden` if the signature is missing (for non-empty history) or invalid.
+```
+HMAC-SHA256(secret, JSON.stringify(["v2", chatId, [[question, answer], ...]]))
+```
 
-### 3. Backend Implementation (Protected Routes)
-The following endpoints are protected by default because they use `withSession`:
+- **JSON payload:** text can never read as a boundary between turns.
+- **`chatId`:** a signature from one chat does not verify in another.
+- **Version tag:** bump it when the payload changes shape, so old signatures stop
+  verifying.
 
-#### [chat-message.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-message.js)
--   **Verification**: Automatic via `withSession`.
--   **Signing**: Still manual in the handler to compute the *new* $H_1$ signature after generating a response.
+The only caller is the `result` event in `api/chat/chat-graph-run.js`. It signs the turns
+verified on the way in, plus the new question and answer it is about to send. The client
+stores that result object as the turn, so what is signed is exactly what comes back.
 
-#### [chat-similar-answer.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-similar-answer.js)
--   **Verification**: Automatic via `withSession`.
--   **Signing**: If a similar answer is found, computes and returns the signature for the new history state.
+A failed turn returns no signature.
 
-#### [chat-graph-run.js](file:///c:/Users/hymary/repos/ai-answers/api/chat/chat-graph-run.js)
--   **Verification**: Automatic via `withSession`. Supports nested `input` payload.
--   **Signing**: Computes and returns the signature in the SSE `result` event.
+### Verifying
 
-### 4. Frontend Implementation (`src/services/AnswerService.js`)
--   Automatically extracts the last signature from the previous turn's AI message and attaches it to the current request.
--   Ensures compatibility across all workflows (standard LLM, vector matches, and graphs).
+`validateConversationIntegrity` in `middleware/chat-session.js` runs before the handler,
+for every request wrapped in `withChatSession`. It calls
+`ConversationIntegrityService.verifyHistory(chatId, history, signature)`:
 
-## Infrastructure Changes
+| History holds | Signature | Outcome |
+|---|---|---|
+| No completed turn | Any | Accepted, history becomes `[]` |
+| One or more completed turns | Missing | `403 missing_signature` |
+| One or more completed turns | Does not match | `403 invalid_signature` |
+| One or more completed turns | Matches | Accepted, history is rebuilt |
 
-To support the new `CONVERSATION_INTEGRITY_SECRET`, the following components have been updated:
+The rebuilt history holds a user message and an AI message per turn, with only the signed
+question and answer text. Context, citations, extra fields and extra messages the client
+sent do not survive. `input.conversationHistory` is replaced with it.
 
-### Terragrunt / Terraform
--   **[ssm.tf](file:///c:/Users/hymary/repos/ai-answers/terragrunt/aws/ssm/ssm.tf)**: Added `aws_ssm_parameter.conversation_integrity_secret`.
--   **[ecs.tf](file:///c:/Users/hymary/repos/ai-answers/terragrunt/aws/ecs/ecs.tf)**: Mapped `CONVERSATION_INTEGRITY_SECRET` to the ECS container.
+The comparison is constant-time. Failures are logged with counts only, never the
+signature or the content.
 
-### GitHub Workflows
--   Updated staging and production Terraform workflows to pass the secret from GitHub Repository Secrets to the deployment pipelines.
+### What the client does
 
-## Verification Plan
+`src/workflows/GraphClient.js` sends the `historySignature` from the last answered turn in
+its messages array. It needs no other logic: the server decides what counts.
 
-### Automated
--   Unit tests for `ConversationIntegrityService`.
+After an unexpected failure the client keeps the failed question on screen. The user can
+keep chatting. That question is not used as context for later questions.
+
+When the server rejects a history (`invalid_signature` or `missing_signature`), the
+client shows the same message as a session timeout: reload the page to start a new chat
+(`ChatAppContainer.js`). Retrying cannot work, because the history would be sent again
+unchanged.
+
+### Context is never reused from history
+
+Context (department, scenarios, search results, similar questions) feeds the system
+prompt. Every graph derives it fresh on every turn. `DefaultWithVectorGraph` and
+`InstantAndQAGraph` used to reuse the previous turn's context from the client-held
+history; that was removed.
+
+Experimental batches (`services/experimental/ExperimentalBatchService.js`) call the
+graphs directly with a history the server builds from its own database. That history is
+not client-held, so it does not go through signature verification. Its follow-up rows
+now also get fresh context on those two workflows, so results can differ from runs made
+before this change.
+
+## The secret
+
+- `CONVERSATION_INTEGRITY_SECRET` is required. There is no fallback value.
+- The server refuses to start without it (`assertConfigured()` in `server/server.js`),
+  unless `NODE_ENV` is `development` or `test`. There, a random per-process secret is
+  used, so chats open in a browser fail their next turn after a server restart.
+- An unset `NODE_ENV` counts as deployed.
+- Infrastructure: stored as a SecureString in Parameter Store (`terragrunt/aws/ssm`),
+  injected into the ECS container (`terragrunt/aws/ecs`), supplied from GitHub
+  repository secrets by the staging and production Terraform workflows.
+
+## Deploying a change to the signature
+
+Any change to what is signed, or a secret rotation, makes existing signatures stop
+verifying. Chats open at that moment fail on their next turn and the user starts a new
+one. This is accepted: chats are capped at three turns, and there is no transition
+period in which an older format is still accepted.
+
+## Decisions (Lisa Fast, 2026-11-14)
+
+- Drop questions that never got an answer instead of accepting or signing them.
+- Sign completed turns only, in one place.
+- Remove context reuse instead of signing the context.
+- Refuse to start without the secret; random per-process secret in development and test.
+- Accept that open chats fail on their next turn when the signature changes.
+
+Considered and not chosen: loading the transcript from the database by `chatId` instead
+of trusting client history at all. It removes the need for a signature but adds a
+database read per turn and is a much larger change.
+
+## Tests
+
+- `services/__tests__/ConversationIntegrityService.test.js` — signing, verification,
+  failed questions, the secret
+- `api/util/__tests__/conversation-turns.test.js` — what counts as a turn
+- `middleware/__tests__/session-logic.test.js` — the handler only sees rebuilt history
+- `api/chat/__tests__/chat-graph-run.test.js` — results are signed, errors are not
+- `agents/graphs/__tests__/DefaultWithVectorGraph.test.js` and
+  `InstantAndQAGraph.test.js` — context is derived fresh on follow-ups
 
 ### Manual
-1.  **Turn Chain**: Verify Turn 0 → Turn 1 moves forward successfully.
-2.  **Vector Shortcut**: Take a "similar answer" path and verify the *next* follow-up question is still accepted (proving the similar answer was correctly signed).
-3.  **Tampering**: Modify history in Redux/State and verify the server rejects the next request.
+
+1. Ask a question, then two follow-ups. All three are answered.
+2. Block the `chat-graph-run` request in browser dev tools to force a failed question,
+   unblock, and confirm the next two questions are answered.

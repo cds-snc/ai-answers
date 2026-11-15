@@ -129,7 +129,7 @@ fine and deliberate. What must never differ:
 - **Behavioural claims about the production graph.** Check the graph the
   `workflow.default` setting names before writing "the system does X"; a claim inherited
   from an older default silently becomes false (e.g. context reuse, which only the
-  short-circuit variants do).
+  short-circuit variants ever did, and which no graph does now).
 
 ## Documentation Regeneration
 

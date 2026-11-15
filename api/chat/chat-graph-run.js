@@ -7,6 +7,8 @@ import { MODEL_VALUES, WORKFLOW_VALUES, DEFAULT_WORKFLOW } from '../../src/confi
 import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/searchProviders.js';
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
+import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
+import { extractCompletedTurns } from '../util/conversation-turns.js';
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
@@ -121,11 +123,6 @@ function buildGraphErrorPayload(error) {
     base.stack = error.stack;
   }
 
-  // Include any server-provided history signature so clients can persist it
-  if (error?.historySignature) {
-    base.historySignature = error.historySignature;
-  }
-
   return base;
 }
 
@@ -163,6 +160,12 @@ async function handler(req, res) {
 
   if (typeof input !== 'object' || input === null) {
     return res.status(400).json({ message: 'input must be an object' });
+  }
+
+  // Every answer is signed for its chat, so a request the session middleware
+  // could not give a chatId cannot be answered. Stop before running the graph.
+  if (typeof req.chatId !== 'string' || !req.chatId) {
+    return res.status(500).json({ message: 'session error' });
   }
 
   // Ensure the graph uses the validated/generated chatId from the session middleware
@@ -286,6 +289,9 @@ async function handler(req, res) {
 
   let resultSent = false;
   let streamError = null;
+  // withChatSession has already replaced input.conversationHistory with the
+  // verified history. Read the turns now, before any graph code can touch it.
+  const verifiedTurns = extractCompletedTurns(input.conversationHistory);
 
   const handlers = {
     onStatus: (status) => {
@@ -300,9 +306,19 @@ async function handler(req, res) {
     },
     onResult: (result) => {
       if (!resultSent && result && result.answer && result.answer.answerType) {
+        // The one place a history signature is created: a completed turn the
+        // server just wrote, appended to the turns it verified on the way in.
+        // The client stores this result as the turn and sends it back, so sign
+        // exactly the question and answer text being sent.
+        // Sign before marking the result as sent: if signing throws, the catch
+        // below must still send the client an error event.
+        const historySignature = ConversationIntegrityService.signTurns(req.chatId, [
+          ...verifiedTurns,
+          ...extractCompletedTurns([{ sender: 'ai', interaction: result }]),
+        ]);
         resultSent = true;
         // Include server-generated chatId so client can store it
-        writeGraphEvent('result', { ...result, chatId: req.chatId });
+        writeGraphEvent('result', { ...result, historySignature, chatId: req.chatId });
       }
     },
   };
@@ -356,8 +372,8 @@ async function handler(req, res) {
       try {
         // AIA-005: never sign anything here. Only completed turns are signed, and
         // a failed turn has no server-written answer. The next request needs no
-        // token for the failed question: the integrity check drops a question
-        // that never got an answer (middleware/chat-session.js).
+        // token for the failed question: a question that never got an answer is
+        // not a turn (api/util/conversation-turns.js).
         writeGraphEvent('error', buildGraphErrorPayload(err));
       } catch (_e) {
         // fallback to minimal message if serialization fails

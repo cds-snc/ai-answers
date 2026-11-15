@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import chatGraphRunHandler, { setNdjsonHeaders, setStreamingHeaders } from '../chat-graph-run.js';
+import ConversationIntegrityService from '../../../services/ConversationIntegrityService.js';
 
 const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
@@ -488,6 +489,75 @@ describe('setNdjsonHeaders', () => {
     expect(res.setHeader).toHaveBeenCalledWith('CDN-Cache-Control', 'no-store');
     expect(res.socket.setNoDelay).toHaveBeenCalledWith(true);
     expect(res.flushHeaders).toHaveBeenCalled();
+  });
+});
+
+// The result event is the only place a history signature is created.
+describe('chatGraphRunHandler history signature', () => {
+  const runTurn = async (conversationHistory, answer) => {
+    mockSettingsTransport('ndjson');
+    mocks.getGraphApp.mockResolvedValue({
+      stream: async function* (input) {
+        yield { verify: { result: { question: input.userMessage, answer: { answerType: 'normal', content: answer }, historySignature: 'from-graph' } } };
+      },
+    });
+    const req = createRequest();
+    req.body.input.conversationHistory = conversationHistory;
+    const res = createResponse();
+
+    await chatGraphRunHandler(req, res);
+
+    const records = res.chunks.join('').trim().split('\n').map((line) => JSON.parse(line));
+    return records.find((record) => record.event === 'result').data;
+  };
+
+  it('signs the turns it was given plus the new question and answer, for this chat', async () => {
+    const earlier = [
+      { sender: 'user', text: 'earlier question' },
+      { sender: 'ai', interaction: { question: 'earlier question', answer: { content: 'earlier answer' } } },
+    ];
+
+    const result = await runTurn(earlier, 'done');
+
+    expect(result.historySignature).toBe(
+      ConversationIntegrityService.signTurns('chat-from-session', [
+        { question: 'earlier question', answer: 'earlier answer' },
+        { question: 'question', answer: 'done' },
+      ])
+    );
+  });
+
+  it('returns a result the client can send back as verified history', async () => {
+    const result = await runTurn([], 'done');
+    const clientHistory = [
+      { sender: 'user', text: 'question' },
+      { sender: 'ai', interaction: result },
+    ];
+
+    const verification = ConversationIntegrityService.verifyHistory(
+      'chat-from-session',
+      clientHistory,
+      result.historySignature
+    );
+
+    expect(verification.valid).toBe(true);
+  });
+});
+
+describe('chatGraphRunHandler without a chat ID', () => {
+  it('refuses the request before running the graph', async () => {
+    mockSettingsTransport('ndjson');
+    setupGraphStream();
+    mocks.streamInput = null;
+    const req = createRequest();
+    // The mocked session wrapper assigns a chatId, so make the property unsettable.
+    Object.defineProperty(req, 'chatId', { get: () => undefined, set: () => {} });
+    const res = createResponse();
+
+    await chatGraphRunHandler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(mocks.streamInput).toBeNull();
   });
 });
 
