@@ -145,6 +145,12 @@ database read per turn and is a much larger change.
 
 ### Manual
 
-1. Ask a question, then two follow-ups. All three are answered.
-2. Block the `chat-graph-run` request in browser dev tools to force a failed question,
-   unblock, and confirm the next two questions are answered.
+Chats are capped at three answered questions, so run these as separate chats and reload
+the page between them. A failed question does not count toward the cap.
+
+1. **Normal chat:** ask a question, then two follow-ups. All three are answered.
+2. **First question fails:** reload. Block the `chat-graph-run` request in browser dev
+   tools and ask a question, which fails. Unblock, then ask two more. Both are answered.
+3. **Middle question fails:** reload. Ask a question and get an answer. Block the request
+   and ask a second question, which fails. Unblock, then ask a third. It is answered and
+   still takes the first question and answer into account.
