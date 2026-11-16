@@ -237,6 +237,14 @@
   },
   "batch": {
     "title": "Lots",
+    "scope": {
+      "label": "Afficher les lots de",
+      "mine": "Mes lots",
+      "institutions": "Institutions",
+      "groups": "Groupes",
+      "allBatches": "Tous les lots",
+      "allUsers": "Tous les utilisateurs"
+    },
     "sections": {
       "evaluator": {
         "title": "Exécuter un lot"

@@ -17,8 +17,16 @@ vi.mock('../../../services/ServerLoggingService.js', () => ({
 vi.mock('../../db/db-connect.js', () => ({ default: vi.fn() }));
 
 vi.mock('../../../models/batch.js', () => ({
+  // findAccessibleBatch looks up { _id, createdBy? }; apply that filter to
+  // whatever batch the test says is stored under the id, like Mongo would.
   Batch: {
-    findById: (id) => ({ lean: () => mocks.batchFindById(id) }),
+    findOne: (filter) => ({
+      lean: async () => {
+        const found = await mocks.batchFindById(filter._id);
+        if (!found) return null;
+        return filter.createdBy === undefined || filter.createdBy === found.createdBy ? found : null;
+      },
+    }),
   },
 }));
 

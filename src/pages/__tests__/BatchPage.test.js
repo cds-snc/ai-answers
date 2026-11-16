@@ -23,6 +23,9 @@ vi.mock('../../services/BatchService.js', () => ({
     retrieveBatch: vi.fn(),
   },
 }));
+vi.mock('../../contexts/AuthContext.js', () => ({
+  useAuth: () => ({ currentUser: { role: 'partner' } }),
+}));
 vi.mock('../../services/ExportService.js', () => ({ default: { export: vi.fn() } }));
 
 vi.mock('../../components/batch/BatchUpload.js', () => ({ default: () => null }));

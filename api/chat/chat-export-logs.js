@@ -4,6 +4,7 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { omitUserSecrets } from '../../models/user.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import {
     authMiddleware,
     withProtection
@@ -731,6 +732,10 @@ export async function chatExportHandler(req, res) {
             // Non-Aggregate Optimized Path - used when no filters are specified
             if (!useExplicitChatIds && batchId) {
                 batchId = requireObjectIdString(batchId, 'batchId');
+                // Same rule as the batch endpoints (AIA-001): creator or admin only.
+                if (!(await findAccessibleBatch(req.user, batchId, { _id: 1 }))) {
+                    return res.status(404).json({ error: 'Batch not found' });
+                }
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
                 dateFilter._id = { $in: bIds };
