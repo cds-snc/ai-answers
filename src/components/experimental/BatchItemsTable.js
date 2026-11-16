@@ -47,8 +47,7 @@ export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, 
                         return (
                             <tr
                                 key={item._id || selectedIndex}
-                                style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }}
-                                onClick={() => onSelect(selectedIndex)}
+                                style={{ borderBottom: '1px solid #eee' }}
                             >
                                 <td className="p-200">{formatNumber(item.rowIndex ?? (selectedIndex + 1), lang)}</td>
                                 <td className="p-200">{chatId || t('experimental.results.table.noChatId')}</td>
@@ -64,10 +63,7 @@ export default function BatchItemsTable({ items, groups, lang = 'en', onSelect, 
                                     <GcdsButton
                                         size="small"
                                         buttonRole="secondary"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onSelect(selectedIndex);
-                                        }}
+                                        onClick={() => onSelect(selectedIndex)}
                                     >
                                         {t('experimental.results.table.view')}
                                     </GcdsButton>
