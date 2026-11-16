@@ -1803,6 +1803,10 @@
       "unclassified": "Not yet classified",
       "notApplicable": "Not applicable",
       "noActions": "No actions recorded",
+      "moreActions": {
+        "one": "and {count} more",
+        "other": "and {count} more"
+      },
       "noteCoverage": "Expert evaluations as a share of questions.",
       "noteUsable": "Evaluations from the last {days} days, or marked to never expire. Only these can be shown to the AI as examples for new answers. Counts every evaluation for the service, whatever the date range.",
       "noteExpiring": "Evaluations that will stop being used within {days} days, whatever the date range. Evaluate new questions for these services to keep examples available.",

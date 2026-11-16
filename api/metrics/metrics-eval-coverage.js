@@ -58,13 +58,18 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
         { $addFields: { ef: { $arrayElemAt: ['$efDocs', 0] } } },
         {
             $addFields: {
-                // Human = feedback present and not AI-typed. interaction.expertFeedback
-                // only ever holds human feedback today; the type check keeps an
-                // AI-typed doc out of the count if that ever changes.
+                // Human evaluation = feedback present, not AI-typed, and scored.
+                // Toggling "Never stale" on an unevaluated question creates a
+                // blank feedback doc with totalScore null
+                // (feedback-expert-never-stale.js) — not an evaluation, and
+                // excluded here the same way metrics-expert-feedback.js does.
+                // interaction.expertFeedback only ever holds human feedback
+                // today; the type check keeps an AI-typed doc out if that changes.
                 isHuman: {
                     $and: [
                         { $ne: [{ $ifNull: ['$ef', null] }, null] },
-                        { $ne: ['$ef.type', 'ai'] }
+                        { $ne: ['$ef.type', 'ai'] },
+                        { $ne: [{ $ifNull: ['$ef.totalScore', null] }, null] }
                     ]
                 },
                 category: getPartnerEvalAggregationExpression('$ef'),
@@ -117,8 +122,8 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
 // Mirrors the conditions QuestionAnswerService and the vector services apply
 // before an evaluation can be injected: human (not type 'ai'), has a total
 // score (retrieval filters totalScore <= 100, so a missing one never
-// matches — the expert form always sets one, so this only guards bad or
-// legacy data), and evaluated within the recency limit or flagged neverStale
+// matches; it also drops the blank docs the "Never stale" toggle creates on
+// unevaluated questions), and evaluated within the recency limit or flagged neverStale
 // (boolean or the string 'true', as QuestionAnswerService accepts). Not
 // mirrored: whether the embedding has synced — counted as usable regardless.
 // Starts from interactions with feedback (indexed), so the work is bounded by

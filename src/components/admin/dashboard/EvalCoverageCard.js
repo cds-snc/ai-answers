@@ -1,6 +1,19 @@
 import React, { useId } from 'react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
-import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
+import { formatNumber, formatPercent, formatDecimal, isSingular } from '../../../utils/numberFormat.js';
+
+// Most actions a row lists before "and N more".
+export const MAX_ACTIONS_SHOWN = 3;
+
+// Which actions a row names. `actions` arrive most-asked first. Actions asked
+// only once are noise in a busy service, so they're skipped — unless nothing
+// else is left, in which case the top one is shown so the cell never claims
+// there are no actions. Everything not shown is counted in `hiddenCount`.
+export function pickActions(actions = []) {
+  const repeated = actions.filter((a) => a.count > 1).slice(0, MAX_ACTIONS_SHOWN);
+  const shown = repeated.length > 0 ? repeated : actions.slice(0, 1);
+  return { shown, hiddenCount: actions.length - shown.length };
+}
 
 // Evaluation coverage by service (program) for the partner dashboard: how many
 // questions each service gets, how many have a human expert evaluation, how
@@ -51,12 +64,24 @@ const EvalCoverageCard = ({ coverage, lang = 'en' }) => {
         </>
       );
     }
-    return actions.map((a, i) => (
-      <React.Fragment key={a.action}>
-        {i > 0 && ', '}
-        {localized(a.action, a.actionFr)}
-      </React.Fragment>
-    ));
+    const { shown, hiddenCount } = pickActions(actions);
+    return (
+      <>
+        {shown.map((a, i) => (
+          <React.Fragment key={a.action}>
+            {i > 0 && ', '}
+            {localized(a.action, a.actionFr)}
+          </React.Fragment>
+        ))}
+        {hiddenCount > 0 && (
+          <>
+            {' '}
+            {t(isSingular(hiddenCount, lang) ? 'partnerDashboard.evalCoverage.moreActions.one' : 'partnerDashboard.evalCoverage.moreActions.other')
+              .replace('{count}', () => fmtN(hiddenCount))}
+          </>
+        )}
+      </>
+    );
   };
 
   const title = k('title');
@@ -71,7 +96,7 @@ const EvalCoverageCard = ({ coverage, lang = 'en' }) => {
           <thead>
             <tr>
               <th scope="col">{t('admin.common.columns.program')}</th>
-              <th scope="col">{k('colActions')}</th>
+              <th scope="col" className="dashboard-data-table__list">{k('colActions')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colQuestions')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colEvaluations')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colCoverage')}</th>

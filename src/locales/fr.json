@@ -1803,6 +1803,10 @@
       "unclassified": "Pas encore classées",
       "notApplicable": "Sans objet",
       "noActions": "Aucune action enregistrée",
+      "moreActions": {
+        "one": "et {count} autre",
+        "other": "et {count} autres"
+      },
       "noteCoverage": "Évaluations d'experts en proportion des questions.",
       "noteUsable": "Évaluations des {days} derniers jours, ou marquées pour ne jamais expirer. Seules celles-ci peuvent être montrées à l'IA comme exemples pour de nouvelles réponses. Compte toutes les évaluations du service, quelle que soit la période choisie.",
       "noteExpiring": "Évaluations qui cesseront d'être utilisées d'ici {days} jours, quelle que soit la période choisie. Évaluez de nouvelles questions pour ces services afin de garder des exemples disponibles.",

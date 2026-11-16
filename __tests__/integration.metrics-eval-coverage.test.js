@@ -76,9 +76,9 @@ describe('Integration: evaluation coverage by program', () => {
         // Question asked outside the 30-day range, evaluated 100 days ago:
         // not a question or evaluation in range, but retrieval can still use it.
         await seedQuestion({ ...gst, action: 'Apply', askedDaysAgo: 200, feedback: { createdAt: daysAgo(100) } });
-        // Evaluation saved without a total score (the form always sets one;
-        // this is bad/legacy data): an evaluation, but retrieval can't use it.
-        await seedQuestion({ ...gst, action: 'Apply', feedback: { createdAt: daysAgo(20), totalScore: null, sentence1Score: null } });
+        // Blank feedback doc with no score — what the "Never stale" toggle
+        // creates on an unevaluated question. Not an evaluation, not usable.
+        await seedQuestion({ ...gst, action: 'Apply', feedback: { createdAt: daysAgo(20), totalScore: null, sentence1Score: null, neverStale: true } });
         // Legacy neverStale stored as a string — retrieval accepts it.
         await seedQuestion({ ...gst, action: 'Apply', feedback: { createdAt: daysAgo(400), neverStale: 'true' } });
         // An AI-typed feedback must never count as a human evaluation.
@@ -110,7 +110,7 @@ describe('Integration: evaluation coverage by program', () => {
             programFr: 'TPS/TVH',
             // In the date range only.
             questions: 8,
-            humanEvals: 6,
+            humanEvals: 5,
             scoredEvals: 5,
             nonPerfectEvals: 1,
             informedAnswers: 1,

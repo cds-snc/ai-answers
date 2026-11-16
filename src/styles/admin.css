@@ -3784,6 +3784,20 @@ fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
   white-space: nowrap;
 }
 
+/* Number headers may wrap ("Expert evaluations" over two lines) so they
+   don't take the width a text column needs; the numbers below stay on one
+   line. */
+.dashboard-data-table thead th.dashboard-data-table__num {
+  white-space: normal;
+}
+
+/* A text column holding a short list (EvalCoverageCard's actions). Hardcoded:
+   no GC DS sizing token fits a column minimum — wide enough for about three
+   short action names per line instead of one word per line. */
+.dashboard-data-table .dashboard-data-table__list {
+  min-width: 14rem;
+}
+
 /* Wide table scrolls inside its own box so the page never scrolls sideways.
    Focusable (tabIndex=0) so keyboard users can scroll it; inset focus ring
    matches .dashboard-table-container. */

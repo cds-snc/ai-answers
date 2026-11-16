@@ -229,10 +229,10 @@ Ranked bar of `context.program`, directly under the accuracy row.
 Table in the eval-informed section: per program, questions vs human expert evaluations, how many evaluations eval-informed answering can still use, and answers that used past evaluations.
 
 - **Same scope as the volume chart.** `metrics-eval-coverage.js` reuses `buildProgramScopeStages` from `metrics-programs.js` (normal answers, all filters), so the two can't count different questions.
-- **Human only.** Counts `interaction.expertFeedback`, and drops any doc with `type: 'ai'` defensively.
+- **Human, scored evaluations only.** Counts `interaction.expertFeedback` with a `totalScore` — the "Never stale" toggle creates blank, unscored docs on unevaluated questions, which are not evaluations (same exclusion as `metrics-expert-feedback.js`) — and drops any `type: 'ai'` doc defensively.
 - **"In use" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore`, evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
 - **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
-- **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first.
+- **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first. The card shows at most 3, skipping actions asked only once unless that's all there is, then "and N more" (`pickActions` in `EvalCoverageCard.js`).
 - Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
 
 ## Satisfaction section (partner only)

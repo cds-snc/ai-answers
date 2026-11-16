@@ -4,7 +4,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import EvalCoverageCard from '../dashboard/EvalCoverageCard.js';
+import EvalCoverageCard, { pickActions } from '../dashboard/EvalCoverageCard.js';
 import { MOCK_METRICS } from '../../../utils/dashboard/mockMetrics.js';
 
 // Real translations (no useTranslations mock) so the FR copy is exercised too.
@@ -59,6 +59,33 @@ describe('EvalCoverageCard', () => {
     expect(unknownCells[5].textContent).toContain('Not applicable');
     // The em dash is visual only.
     expect(within(groceryCells[7]).getByText('—').getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('lists at most 3 repeated actions, then "and N more"', () => {
+    const many = [
+      { action: 'Get info', actionFr: "Obtenir de l'information", count: 90 },
+      { action: 'Check status', actionFr: "Vérifier l'état", count: 40 },
+      { action: 'Apply', actionFr: 'Présenter une demande', count: 20 },
+      { action: 'Send', actionFr: 'Envoyer', count: 5 },
+      { action: 'Contact', actionFr: 'Communiquer', count: 1 },
+      { action: 'Use MFA', actionFr: "Utiliser l'authentification multifacteur", count: 1 },
+    ];
+    const row = { ...coverage.programs[0], actions: many };
+    render(<EvalCoverageCard coverage={{ ...coverage, programs: [row] }} lang="en" />);
+    const cell = within(screen.getByRole('rowheader').closest('tr')).getAllByRole('cell')[0];
+    expect(cell.textContent).toBe('Get info, Check status, Apply and 3 more');
+    cleanup();
+    render(<EvalCoverageCard coverage={{ ...coverage, programs: [row] }} lang="fr" />);
+    expect(within(screen.getByRole('rowheader').closest('tr')).getAllByRole('cell')[0].textContent)
+      .toBe("Obtenir de l'information, Vérifier l'état, Présenter une demande et 3 autres");
+  });
+
+  it('skips actions asked only once, unless that is all there is', () => {
+    expect(pickActions([{ action: 'Apply', count: 4 }, { action: 'Send', count: 1 }]))
+      .toEqual({ shown: [{ action: 'Apply', count: 4 }], hiddenCount: 1 });
+    expect(pickActions([{ action: 'Apply', count: 1 }, { action: 'Send', count: 1 }]))
+      .toEqual({ shown: [{ action: 'Apply', count: 1 }], hiddenCount: 1 });
+    expect(pickActions([])).toEqual({ shown: [], hiddenCount: 0 });
   });
 
   it('explains the columns and the recency limit in visible text', () => {

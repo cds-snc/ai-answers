@@ -37,7 +37,7 @@ only looks at evaluated rows and knows nothing about reuse.
 | Scope | Human expert evaluations only. **AI auto-evaluations stay out of scope.** |
 | LLM classification in the analysis (v1 Tier 2) | **Remove.** Use stored `context.program`/`action` only. Rows without a program show as "Not yet classified". |
 | Historical program backfill | **Skipped** (decided 2026-11-15). Older questions stay unclassified; the coverage table mostly matters for recent ranges. (This was only ever about program classification — reuse data can't be backfilled, since `qaMatches` wasn't recorded before late August 2026.) |
-| Actions in the coverage table | **One "Actions asked about" column per service**, most frequent first — not a program × action breakdown. `''`, `unknown` and `Other` are left out. |
+| Actions in the coverage table | **One "Actions asked about" column per service**, most frequent first — not a program × action breakdown. `''`, `unknown` and `Other` are left out. Shows at most 3, skips actions asked only once (unless that's all there is), then "and N more". |
 | Volume gates (min 20 / max 200) | **Remove both.** The statistics are database aggregation and need no cap. A small-sample note replaces the minimum. Only the LLM insights call is limited, by the number of rows it is sent. |
 | Institution gate | The deterministic section follows the dashboard filters like every other card (no gate). The insights button still requires an institution, because themes across departments aren't actionable for one team. |
 | Insights prompt (Tier 3) | Kept. **Wording was reviewed by the prompt maintainers.** The "not reviewed" note in `evalAnalysisInsightsStrategy.js` is stale and should be removed. |
