@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.213.6](https://github.com/cds-snc/ai-answers/compare/v1.213.5...v1.213.6) (2026-11-16)
+
+
+### Bug Fixes
+
+* address AIA-001 review feedback ([c786479](https://github.com/cds-snc/ai-answers/commit/c786479970bc9491fa00b6e12b5b415cf4ade863))
+* enforce batch ownership on batch endpoints (AIA-001) ([df657d6](https://github.com/cds-snc/ai-answers/commit/df657d649126d0a8d5b8e01c8797580a10bc9ebe))
+* experimental analysis page status messages and layout ([56bd71d](https://github.com/cds-snc/ai-answers/commit/56bd71ded51fdf48f871de05814f1626cfa4cd5d))
+
 ## [1.213.5](https://github.com/cds-snc/ai-answers/compare/v1.213.4...v1.213.5) (2026-11-16)
 
 
