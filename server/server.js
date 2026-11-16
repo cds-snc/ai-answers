@@ -123,6 +123,7 @@ import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadat
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
 import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
 import vectorDuplicateEmbeddingsHandler from '../api/vector/vector-duplicate-embeddings.js';
+import vectorRemoveDuplicateEmbeddingsHandler from '../api/vector/vector-remove-duplicate-embeddings.js';
 import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import vectorMetadataBackfillJobHandler from '../api/vector/vector-metadata-backfill-job.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
@@ -332,6 +333,7 @@ app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
 app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
 app.get('/api/vector/vector-duplicate-embeddings', vectorDuplicateEmbeddingsHandler);
+app.post('/api/vector/vector-remove-duplicate-embeddings', vectorRemoveDuplicateEmbeddingsHandler);
 app.get('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.post('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.delete('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
