@@ -1,10 +1,13 @@
 import { User } from '../../models/user.js';
+import { Batch } from '../../models/batch.js';
 import { normalizeInstitution, normalizeGroup } from '../../services/UserService.js';
 import { normalizeObjectIdString } from './db-query.js';
 
 // Who may see / change / run a batch (security finding AIA-001): admins and
-// the batch's creator only. Every batch endpoint and chat-graph-run.js's
-// findRunnableBatch use canAccessBatch, so the rule lives in one place.
+// the batch's creator only. Every batch endpoint, the batch filter on the
+// chat-log exports, and chat-graph-run.js's findRunnableBatch go through
+// batchAccessFilter (mostly via findAccessibleBatch), so the rule lives in
+// one place and a new endpoint can't look a batch up without it.
 //
 // Legacy batches with no createdBy belong to no one: admins only.
 //
@@ -15,11 +18,26 @@ const MATCH_NOTHING = { _id: { $in: [] } };
 
 export const isAdmin = (user) => user?.role === 'admin';
 
-/** The batch's creator, or an admin. */
-export function canAccessBatch(user, batch) {
-  if (!user || !batch) return false;
-  if (isAdmin(user)) return true;
-  return Boolean(batch.createdBy) && String(batch.createdBy) === String(user.userId);
+/**
+ * Mongo conditions limiting batches to the ones `user` may access: none
+ * extra for an admin, `createdBy` for anyone else. null when `user` can
+ * access no batch at all (signed out, no userId).
+ */
+export function batchAccessFilter(user) {
+  if (isAdmin(user)) return {};
+  const userId = user?.userId ? String(user.userId) : '';
+  return userId ? { createdBy: userId } : null;
+}
+
+/**
+ * The batch with this id if `user` may access it, else null (also for an
+ * invalid id). One query, lean. Callers answer 404 on null.
+ */
+export async function findAccessibleBatch(user, batchId, projection) {
+  const id = normalizeObjectIdString(batchId);
+  const access = batchAccessFilter(user);
+  if (!id || !access) return null;
+  return Batch.findOne({ _id: id, ...access }, projection).lean();
 }
 
 async function creatorFilter(userQuery) {

@@ -4,7 +4,7 @@ import { Batch } from '../../../models/batch.js';
 import { BatchItem } from '../../../models/batchItem.js';
 import { User } from '../../../models/user.js';
 import {
-  canAccessBatch,
+  findAccessibleBatch,
   parseBatchScope,
   batchListFilter,
 } from '../../util/batch-access.js';
@@ -90,10 +90,13 @@ describe('batch-access rules', () => {
     const admin = await makeUser({ role: 'admin' });
     const batch = await makeBatch(owner);
 
-    expect(canAccessBatch(asReqUser(owner), batch)).toBe(true);
-    expect(canAccessBatch(asReqUser(admin), batch)).toBe(true);
-    expect(canAccessBatch(asReqUser(institutionMate), batch)).toBe(false);
-    expect(canAccessBatch(asReqUser(groupMate), batch)).toBe(false);
+    const id = String(batch._id);
+    expect(await findAccessibleBatch(asReqUser(owner), id)).toBeTruthy();
+    expect(await findAccessibleBatch(asReqUser(admin), id)).toBeTruthy();
+    expect(await findAccessibleBatch(asReqUser(institutionMate), id)).toBeNull();
+    expect(await findAccessibleBatch(asReqUser(groupMate), id)).toBeNull();
+    expect(await findAccessibleBatch(undefined, id)).toBeNull();
+    expect(await findAccessibleBatch(asReqUser(owner), { $ne: null })).toBeNull();
   });
 
   it('keeps legacy batches with no creator admin-only', async () => {
@@ -101,8 +104,8 @@ describe('batch-access rules', () => {
     const admin = await makeUser({ role: 'admin' });
     const legacy = await makeBatch(null);
 
-    expect(canAccessBatch(asReqUser(partner), legacy)).toBe(false);
-    expect(canAccessBatch(asReqUser(admin), legacy)).toBe(true);
+    expect(await findAccessibleBatch(asReqUser(partner), String(legacy._id))).toBeNull();
+    expect(await findAccessibleBatch(asReqUser(admin), String(legacy._id))).toBeTruthy();
   });
 
   it('falls back to "mine" for unknown scopes and rejects bad values', () => {
@@ -285,6 +288,27 @@ describe('batch-list-filters', () => {
     const userIds = res.payload.users.map((u) => u.id);
     expect(userIds).toContain(String(withBatch._id));
     expect(userIds).not.toContain(String(withoutBatch._id));
+  });
+});
+
+describe('batch-list-filters retired values', () => {
+  it('leaves out institutions and groups no longer in the curated lists', async () => {
+    const admin = await makeUser({ role: 'admin' });
+    // Saved before the value was retired - written straight to the collection
+    // so no model validation gets in the way.
+    const { insertedId } = await User.collection.insertOne({
+      email: `retired-${Date.now()}@example.com`, role: 'partner', active: true,
+      institution: 'RETIRED-INST', group: 'Retired group',
+    });
+    created.users.push(insertedId);
+    await makeBatch({ _id: insertedId });
+
+    const res = await call(listFiltersHandler, { user: asReqUser(admin) });
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.institutions).not.toContain('RETIRED-INST');
+    expect(res.payload.groups).not.toContain('Retired group');
+    // The user still shows, so their batches stay reachable.
+    expect(res.payload.users.map((u) => u.id)).toContain(String(insertedId));
   });
 });
 

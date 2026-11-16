@@ -182,6 +182,13 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // Increments per fetchBatches call, so only the newest reply is applied.
   const fetchSeqRef = useRef(0);
 
+  // The scope `batches` was fetched for, and the scope the table last drew.
+  // When they differ the person picked a new scope, so the remount effect
+  // below redraws even while paused - pausing stops automatic updates, not
+  // ones the person asked for.
+  const batchesScopeRef = useRef(scope);
+  const drawnScopeRef = useRef(scope);
+
   // Whether the *previous* render's filtered list was empty - lets the
   // remount effect below tell "still nothing to show" apart from "something
   // actually changed." Starts true: nothing's rendered yet on mount either way.
@@ -339,10 +346,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
       // change polling exists to surface, and unlike every other change
       // this table announces, it's not tied to something the admin just
       // clicked themselves. announceCompletions gates this to a single
-      // BatchList instance (see BatchPage.js) - getBatchList() returns
-      // every batch regardless of the batchStatus this instance filters to,
-      // so both instances would otherwise detect and announce the same
-      // transition at the same time.
+      // BatchList instance (see BatchPage.js) - getBatchList() ignores
+      // batchStatus, so two instances on the same scope would otherwise
+      // announce the same transition twice. It does follow `scope`: only
+      // batches in this instance's scope are announced (intended - a batch
+      // the admin has scoped out of view isn't announced).
       if (announceCompletions) {
         const newlyCompleted = [];
         // A batch failing mid-run (a backend error, not a click the admin
@@ -375,6 +383,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
         }
       }
 
+      batchesScopeRef.current = scope;
       setBatches(list);
     } catch (error) {
       console.error('Error fetching batches:', error);
@@ -444,7 +453,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // once nothing's left incomplete) from visibly flickering every 10s for as
   // long as it stays empty.
   useEffect(() => {
-    if (isPaused) return;
+    const scopeChanged = batchesScopeRef.current !== drawnScopeRef.current;
+    if (isPaused && !scopeChanged) return;
+    drawnScopeRef.current = batchesScopeRef.current;
     const isEmpty = filteredBatches.length === 0;
     if (isEmpty && wasEmptyRef.current) return;
     wasEmptyRef.current = isEmpty;

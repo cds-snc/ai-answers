@@ -12,7 +12,6 @@ vi.mock('../api/db/db-connect.js', () => ({
 
 const batchModelMock = vi.hoisted(() => ({
   findOneAndUpdate: vi.fn(),
-  findById: vi.fn(),
 }));
 const settingsServiceMock = vi.hoisted(() => ({
   get: vi.fn(() => null),
@@ -45,11 +44,6 @@ function makeRes() {
 describe('api/batch/batch-persist handler', () => {
   beforeEach(() => {
     batchModelMock.findOneAndUpdate.mockReset();
-    batchModelMock.findById.mockReset();
-    // The update path checks ownership first (canAccessBatch).
-    batchModelMock.findById.mockReturnValue({
-      lean: () => Promise.resolve({ _id: '64fec1000000000000000001', createdBy: 'test-partner' }),
-    });
     settingsServiceMock.get.mockReset();
     settingsServiceMock.get.mockReturnValue(null);
   });
@@ -75,7 +69,7 @@ describe('api/batch/batch-persist handler', () => {
     await handler(req, res);
 
     expect(batchModelMock.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: '64fec1000000000000000001' },
+      { _id: '64fec1000000000000000001' }, // admin: no owner condition
       { $set: { status: 'ready', workflow: 'Default' } },
       { new: true }
     );
@@ -126,7 +120,8 @@ describe('api/batch/batch-persist handler', () => {
     await handler(req, res);
 
     expect(batchModelMock.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: '64fec1000000000000000001' },
+      // Partner: ownership is part of the update's own filter.
+      { _id: '64fec1000000000000000001', createdBy: 'test-partner' },
       { $set: { searchProvider: 'canadaca' } },
       { new: true }
     );

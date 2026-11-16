@@ -430,6 +430,30 @@ describe('BatchList row action buttons', () => {
     expect(mountCount).toBe(2);
   });
 
+  it('redraws for a new scope even while paused, but still ignores other changes while paused', async () => {
+    BatchService.getBatchList
+      .mockResolvedValueOnce([baseBatchData({ _id: 'mine-1' })])
+      .mockResolvedValueOnce([baseBatchData({ _id: 'all-1' }), baseBatchData({ _id: 'all-2' })]);
+
+    const processingBatches = []; // same reference across renders
+    const { rerender } = render(<BatchList lang="en" batchStatus="processed" processingBatches={processingBatches} scope="mine" />);
+    await act(async () => {}); // flush the mount-time fetch
+    const mountsAfterLoad = mountCount;
+
+    // Pause, then pick a different scope: the person asked for these rows.
+    mockIsPaused = true;
+    rerender(<BatchList lang="en" batchStatus="processed" processingBatches={processingBatches} scope="all" />);
+    await act(async () => { await mockPollFn(); });
+    expect(mountCount).toBe(mountsAfterLoad + 1);
+    expect(lastData.map((b) => b._id)).toEqual(['all-1', 'all-2']);
+
+    // Still paused: a shared processingBatches change doesn't redraw.
+    await act(async () => {
+      rerender(<BatchList lang="en" batchStatus="processed" processingBatches={['other']} scope="all" />);
+    });
+    expect(mountCount).toBe(mountsAfterLoad + 1);
+  });
+
   it('ignores a slow reply for the previous scope that arrives after the current one', async () => {
     let resolveAll;
     let resolveMine;

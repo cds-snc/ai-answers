@@ -279,6 +279,7 @@ const BatchPage = ({ lang = 'en' }) => {
           processingBatches={processingBatches}
           unmarkProcessing={unmarkProcessing}
           lang={lang}
+          // Announces completions for batches in this list's scope only.
           announceCompletions
         />
       </section>

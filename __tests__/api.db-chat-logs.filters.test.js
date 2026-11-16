@@ -103,7 +103,7 @@ describe('db-chat-logs handler filters (V2)', () => {
     const batchFind = vi.spyOn(BatchItem, 'find').mockReturnValue({ select: batchItemSelect });
     const aggregate = vi.spyOn(Chat, 'aggregate').mockResolvedValue([]);
     // The batch must exist and be accessible (admin) before its items are read.
-    vi.spyOn(Batch, 'findById').mockReturnValue({ lean: () => Promise.resolve({ createdBy: 'someone' }) });
+    vi.spyOn(Batch, 'findOne').mockReturnValue({ lean: () => Promise.resolve({ _id: batchId }) });
 
     const req = makeReq({ batchId, limit: '5' }, { role: 'admin', userId: 'test-admin' });
     const res = makeRes();

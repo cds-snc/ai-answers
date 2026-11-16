@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { User } from '../../models/user.js';
+import { normalizeInstitution, normalizeGroup } from '../../services/UserService.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 // Options for the admin batch-scope dropdown on BatchPage: only the
@@ -20,8 +21,10 @@ async function batchListFiltersHandler(req, res) {
       ? await User.find({ _id: { $in: creatorIds } }, { email: 1, institution: 1, group: 1 }).lean()
       : [];
 
-    const institutions = [...new Set(users.map((u) => u.institution).filter(Boolean))].sort();
-    const groups = [...new Set(users.map((u) => u.group).filter(Boolean))].sort();
+    // Only values parseBatchScope still accepts: a retired institution or
+    // group would be an option that always lists nothing.
+    const institutions = [...new Set(users.map((u) => normalizeInstitution(u.institution)).filter(Boolean))].sort();
+    const groups = [...new Set(users.map((u) => normalizeGroup(u.group)).filter(Boolean))].sort();
     const userOptions = users
       .map((u) => ({ id: String(u._id), email: u.email || '' }))
       .sort((a, b) => a.email.localeCompare(b.email));

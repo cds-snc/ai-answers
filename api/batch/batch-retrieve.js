@@ -1,8 +1,7 @@
 import dbConnect from '../db/db-connect.js';
-import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString } from '../util/db-query.js';
-import { canAccessBatch } from '../util/batch-access.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchRetrieveHandler(req, res) {
@@ -20,8 +19,8 @@ async function batchRetrieveHandler(req, res) {
         await dbConnect();
         batchId = requireObjectIdString(batchId, 'batch ID');
 
-        const batch = await Batch.findById(batchId);
-        if (!batch || !canAccessBatch(req.user, batch)) {
+        const batch = await findAccessibleBatch(req.user, batchId);
+        if (!batch) {
             return res.status(404).json({ message: 'Batch not found' });
         }
 
@@ -30,7 +29,7 @@ async function batchRetrieveHandler(req, res) {
             .select('rowIndex originalData chat')
             .lean();
 
-        const out = batch.toObject();
+        const out = { ...batch };
         out.items = items;
         return res.status(200).json(out);
     } catch (error) {
