@@ -11,19 +11,15 @@ import { parseRequestFilters, executeWithRetry, questionNumberLookupStages } fro
 // evaluations each one used.
 const TOP_N = EVAL_INFORMED_CHATS_LIMIT;
 
-// Most recent eval-informed questions in the current filter scope. Same
-// definition as metrics-usage.js's evalInformed count: answered by the
-// eval-informed workflow, with at least one expert-rated example injected.
-//
-// Sorted newest-first up front (index-backed on Chat.createdAt) and never
-// re-sorted, so every later stage streams and $limit stops the pipeline once
-// it has TOP_N rows — the joins run only on the newest chats rather than on
-// every chat in the range. Don't add a $sort after the lookups: it would
-// force the whole range through them again.
-export function buildEvalInformedChatsPipeline(dateFilter, extraFilters = [], departmentFilter = []) {
+// The eval-informed answers in scope, after the caller's own date $match
+// (and $sort, if any): one document per question, with the full chat
+// document kept (chat-level fields like `user` are what the userType and
+// reviewer filters read), `interactions` as that question, `questionNumber`,
+// `ctx` (its context) and `department`. Same definition as the eval-informed
+// rate in metrics-usage.js. Shared with metrics-eval-reuse.js so the list,
+// the most-used evaluations and the rate can't drift apart.
+export function evalInformedAnswerStages(extraFilters = [], departmentFilter = []) {
     return [
-        { $match: dateFilter },
-        { $sort: { createdAt: -1 } },
         ...questionNumberLookupStages(),
         ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
         // Before the context lookup, so other workflows' questions skip it.
@@ -44,6 +40,23 @@ export function buildEvalInformedChatsPipeline(dateFilter, extraFilters = [], de
         },
         ...(departmentFilter.length > 0 ? [{ $match: { $and: departmentFilter } }] : []),
         { $match: { evalInformed: true } },
+    ];
+}
+
+// Most recent eval-informed questions in the current filter scope. Same
+// definition as metrics-usage.js's evalInformed count: answered by the
+// eval-informed workflow, with at least one expert-rated example injected.
+//
+// Sorted newest-first up front (index-backed on Chat.createdAt) and never
+// re-sorted, so every later stage streams and $limit stops the pipeline once
+// it has TOP_N rows — the joins run only on the newest chats rather than on
+// every chat in the range. Don't add a $sort after the lookups: it would
+// force the whole range through them again.
+export function buildEvalInformedChatsPipeline(dateFilter, extraFilters = [], departmentFilter = []) {
+    return [
+        { $match: dateFilter },
+        { $sort: { createdAt: -1 } },
+        ...evalInformedAnswerStages(extraFilters, departmentFilter),
         {
             $project: {
                 _id: 0,

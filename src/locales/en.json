@@ -1813,6 +1813,13 @@
       "noteInformed": "Answers where the AI was given past expert evaluations as examples.",
       "noteBelowPerfect": "Share of scored expert evaluations under 100."
     },
+    "mostUsedEvals": {
+      "title": "Most-used evaluations",
+      "subtitle": "Up to {n} expert evaluations given to the AI most often as examples in this period",
+      "trigger": "See the most-used evaluations",
+      "colUses": "Times used",
+      "colEvaluated": "Date evaluated"
+    },
     "evalInformedChats": {
       "title": "Eval-informed answers by chat ID",
       "subtitle": "Shows up to the {n} most recent",

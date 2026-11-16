@@ -43,3 +43,7 @@ export const EVAL_INFORMED_RECENCY_DAYS = 365;
 // Rows in the partner dashboard's eval-informed chats list. The server caps
 // the query at this and the list's subtitle states it, so they can't drift.
 export const EVAL_INFORMED_CHATS_LIMIT = 20;
+
+// Rows in the partner dashboard's most-used evaluations list. Same idea: the
+// server caps the query and the list's subtitle states it.
+export const MOST_USED_EVALS_LIMIT = 20;

@@ -122,6 +122,7 @@ metrics.evalCoverage        // partner: { programs: [{ program, programFr, quest
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
 metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
+metrics.mostUsedEvals[]                         // partner: [{ chatId, interactionId, pageLanguage, questionNumber, program, programFr, totalScore, evaluatedAt, uses }]; top 20 (MOST_USED_EVALS_LIMIT) by uses in range
 metrics.evalInformedChats[]                     // partner: same shape, no status; one row per question, so a chat can repeat; 20 most recent (a sample, not all)
 ```
 
@@ -167,6 +168,7 @@ const chartA11y = {
 | `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
 | `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
+| `MostUsedEvalsCard.js` | Collapsible table of the evaluations injected into the most answers, each linking to review mode. Same table classes as `EvalCoverageCard`. Partner only. |
 | `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
@@ -234,6 +236,15 @@ Table in the eval-informed section: per program, questions vs human expert evalu
 - **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
 - **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first. The card shows at most 3, skipping actions asked only once unless that's all there is, then "and N more" (`pickActions` in `EvalCoverageCard.js`).
 - Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
+
+## Most-used evaluations (partner only)
+
+Below the coverage table: the human evaluations eval-informed answering injected into the most answers in the period.
+
+- **Same answers and filters as the eval-informed chats list** — both build on `evalInformedAnswerStages` (`metrics-eval-informed-chats.js`): `EVAL_INFORMED_WORKFLOW` + `qaMatches`, filtered by date range, user/URL filters and department. Don't `$project` the chat down before those stages: userType and reviewer filters read the chat-level `user` field.
+- **Two steps** (`metrics-eval-reuse.js`): the aggregation ranks `qaMatches.interactionId` and keeps twice `MOST_USED_EVALS_LIMIT` (20, `src/config/workflows.js`) as candidates; details (score, evaluation date, service, chat, question number) come from indexed finds in JS. Evaluations deleted since use are dropped, then the list is cut to 20.
+- Links go to the **evaluated** question in review mode, in that chat's language. A chat can hold two evaluated questions, so each link has a sr-only question number.
+- Tests: `__tests__/integration.metrics-eval-reuse.test.js`, `src/components/admin/__tests__/MostUsedEvalsCard.test.js`.
 
 ## Satisfaction section (partner only)
 
