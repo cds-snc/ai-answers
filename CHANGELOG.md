@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.213.5](https://github.com/cds-snc/ai-answers/compare/v1.213.4...v1.213.5) (2026-11-16)
+
+
+### Bug Fixes
+
+* add button to remove duplicate embeddings. ([c3b8a18](https://github.com/cds-snc/ai-answers/commit/c3b8a189916c8eac678ff04a06b88b78784d6ce8))
+
 ## [1.213.4](https://github.com/cds-snc/ai-answers/compare/v1.213.3...v1.213.4) (2026-11-14)
 
 
