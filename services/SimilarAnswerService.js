@@ -5,7 +5,6 @@ import mongoose from 'mongoose';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
 import { translationStrategy } from '../agents/strategies/translationStrategy.js';
 import { createTranslationAgent } from '../agents/AgentFactory.js';
-import ConversationIntegrityService from './ConversationIntegrityService.js';
 
 // Comparator abstraction for question flow comparison
 // Toggle between LLM and local cross-encoder by changing the import:
@@ -419,13 +418,6 @@ export const SimilarAnswerService = {
         // Return the selected answer and include the persisted `interactionId` string (if present)
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, chatId: formatted.chatId, sourceSimilarity: chosen.match?.similarity });
 
-        // Calculate signature for conversation integrity verification
-        const historySignature = ConversationIntegrityService.calculateSignature([
-            ...conversationHistory,
-            { sender: 'user', text: Array.isArray(questions) ? questions[questions.length - 1] : '' },
-            { sender: 'ai', text: formatted.text }
-        ]);
-
         const selectedCandidate = nlpCandidates.find(candidate => candidate.index === topIndex) || null;
 
         return {
@@ -446,7 +438,6 @@ export const SimilarAnswerService = {
                 results: llmResult.results || [],
                 metadata: llmResult.metadata || {},
             },
-            historySignature
         };
     }
 };

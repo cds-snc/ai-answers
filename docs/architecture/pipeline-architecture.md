@@ -179,8 +179,8 @@ The graph maintains state across all nodes with these key fields:
   translationData: object,       // Translation results
   context: object,               // Derived context (department, search results,
                                  //   similarQuestions block, qaMatches)
-  usedExistingContext: boolean,  // Whether context was reused (always false in the
-                                 //   production graph — see step 5d)
+  usedExistingContext: boolean,  // Whether context was reused (always false in
+                                 //   every graph — see step 5d)
   answer: object,                // Generated answer
   finalCitationUrl: string,      // Verified citation URL
   status: string,                // Current pipeline status (camelCase)
@@ -339,15 +339,16 @@ verified answer is found
   classification, which runs after the answer
   ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
 
-**5d. Context Reuse — variant graphs only**
-- **The production graph does not reuse context.** `GenericWithQAGraph` and `GenericGraph`
-  call `deriveContext` directly and hardcode `usedExistingContext: false`
+**5d. No context reuse — every graph**
+- **No graph reuses context.** Every graph calls `deriveContext` directly and sets
+  `usedExistingContext: false`
   ([`GenericWithQAGraph.js:123-139`](../../agents/graphs/GenericWithQAGraph.js#L123)), so
   fresh context is derived for **every** question, follow-ups included. This matters for
   institution identification on multi-turn conversations.
-- `DefaultWithVectorGraph` and `InstantAndQAGraph` instead call `getContextForFlow()`,
-  which reuses a previous turn's context when it is still valid and sets
-  `usedExistingContext` accordingly.
+- Context feeds the system prompt, and the conversation history is held by the client, so
+  context must never be read from the history. `DefaultWithVectorGraph` and
+  `InstantAndQAGraph` used to reuse a previous turn's context; that helper has been
+  removed.
 
 **Files:**
 - [`agents/graphs/services/contextService.js`](../../agents/graphs/services/contextService.js)
@@ -754,11 +755,14 @@ Each node can:
 - Each user question triggers a new graph execution
 - Conversation history passed as input, not stored in graph state
 - The client holds the history, so the server checks it before any graph runs
-  (`validateConversationIntegrity` in `middleware/chat-session.js`). The graph receives
-  only the turns covered by the server's signature: turns appended after the signed one,
-  error messages, and questions that never got an answer (the pipeline failed on them)
-  are dropped. A failed turn returns no `historySignature`. Details:
-  [conversation integrity plan](../plans/conversation_integrity_plan.md).
+  (`validateConversationIntegrity` in `middleware/chat-session.js`). The signature covers
+  the question and answer text of every completed turn, and the chat ID. The graph
+  receives a history rebuilt from that signed text only: nothing else the client sent
+  (context, citations, extra fields, error messages, questions that never got an answer)
+  reaches it. A history that does not match its signature is rejected with a 403.
+- The signature is created in one place, where a completed turn leaves the server
+  (`api/chat/chat-graph-run.js`). A failed turn returns no `historySignature`. Details:
+  [conversation integrity](../plans/conversation_integrity_plan.md).
 
 ---
 
@@ -874,7 +878,7 @@ The LangGraph-based architecture provides:
 
 ✅ **Reliability**: Deterministic execution with clear error handling
 ✅ **Observability**: Complete state tracking and logging
-✅ **Performance**: Prompt caching (plus context reuse and short-circuit reuse in the experimental variants)
+✅ **Performance**: Prompt caching (plus short-circuit reuse in the experimental variants)
 ✅ **Maintainability**: Clear node boundaries, easy to extend
 ✅ **Scalability**: Stateless execution, horizontal scaling ready
 ✅ **Auditability**: Complete execution history for compliance
