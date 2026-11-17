@@ -98,16 +98,27 @@ Follow-ups found in review, each its own PR:
   filter on `tokenHash`, so they need no change. The lockout counters stay readable: they are
   not secrets. Aggregation `$lookup` ignores `select: false`, so every pipeline that joins
   `users` and returns or writes the user adds `omitUserSecrets('user')` (`models/user.js`) right
-  after the join: `api/db/db-chat-logs.js`, whose filtered branch sent the hashes to any
-  signed-in user, and `api/chat/chat-export-logs.js`. Trusted devices are left out of database
+  after the join: `api/chat/chat-export-logs.js`. `api/db/db-chat-logs.js` had the same join in
+  a filtered branch that sent the hashes to any signed-in user; no page called that branch, so
+  it was removed (branch `chore/remove-dead-chat-logs-filters`). Trusted devices are left out of database
   export and import: without the hash the rows are useless. Each Database page export writes a
   `database.exported` audit entry; it is a record, not a control (a retried first page logs
   twice, a caller starting mid-collection logs nothing). Tests:
-  `__tests__/auth-credential-fields.integration.test.js` and
-  `api/db/__tests__/db-export-credentials.test.js`.
+  `__tests__/auth-credential-fields.integration.test.js`,
+  `api/db/__tests__/db-export-credentials.test.js` and (chat owner as email only)
+  `api/db/__tests__/db-chat-logs.test.js`.
 - **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
   schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
-  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.
+  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`. Until then, the
+  chat-log endpoints' `partnerOrAdminMiddleware` turns such an account away (added on branch
+  `chore/remove-dead-chat-logs-filters`).
+- **Remove or fix the `batchId` path in `api/chat/chat-export-logs.js`.** Separate from
+  `api/db/db-chat-logs.js`, the Batches page's export, which `chore/remove-dead-chat-logs-filters`
+  fixed. No page sends `batchId` to `chat-export-logs.js`. It has two bugs: it keeps the default
+  7-day `createdAt` window, so a batch that ran earlier exports nothing, and only the unfiltered
+  branch reads it, so adding any dashboard filter (e.g. `department`) drops `batchId` and its
+  `findAccessibleBatch` check and exports every matching chat. Likely remove it, as
+  `chore/remove-dead-chat-logs-filters` did for `db-chat-logs.js`'s unused filters.
 
 ### F6. Password reset links use a guessable 6-digit code (Medium, found 2026-10-28)
 

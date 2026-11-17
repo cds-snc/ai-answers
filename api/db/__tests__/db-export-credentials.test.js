@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import handler from '../db-database-management.js';
-import chatLogsHandler from '../db-chat-logs.js';
 import dbConnect from '../db-connect.js';
 import { User } from '../../../models/user.js';
 import { TrustedDevice } from '../../../models/trustedDevice.js';
@@ -150,53 +149,6 @@ describe('database export audit', () => {
 
     const entry = await AuditLog.findOne({ action: 'database.exported' }).lean();
     expect(entry.metadata).toMatchObject({ collection: 'chat', scope: 'expertEvalChats' });
-  });
-});
-
-describe('filtered chat logs', () => {
-  // A filter sends db-chat-logs down its aggregation path, which joins in the
-  // user with $lookup. $lookup ignores select: false, so the handler strips the
-  // secrets itself. Any signed-in user, partners included, can call this.
-  // Any filter takes the aggregation path; "not evaluated" matches a bare interaction.
-  async function unevaluatedChat(chatId, user) {
-    const interaction = await Interaction.create({});
-    await Chat.create({ chatId, ...(user ? { user: user._id } : {}), interactions: [interaction._id] });
-  }
-
-  async function getLogs(query) {
-    const res = createRes();
-    await chatLogsHandler({
-      method: 'GET', query, path: '/api/db/db-chat-logs',
-      user: { role: 'partner', userId: 'partner-test' }, isAuthenticated: () => true
-    }, res);
-    return { ...res, payload: JSON.parse(JSON.stringify(res.payload)) };
-  }
-
-  it('returns the chat owner without credential hashes', async () => {
-    await dbConnect();
-    const user = await makeUserWithSecrets();
-    await unevaluatedChat('owned-chat', user);
-
-    const res = await getLogs({ partnerEval: 'noEval' });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.payload.logs).toHaveLength(1);
-    expect(res.payload.logs[0].user.email).toBe('reviewer@canada.ca');
-    expectNoSecrets(res.payload.logs.map(chat => chat.user), USER_SECRETS);
-  });
-
-  it('still tells public chats apart from signed-in ones', async () => {
-    // The public filter checks that `user` is missing after the join; the
-    // stripping stage must not create an empty user object.
-    await dbConnect();
-    const user = await makeUserWithSecrets();
-    await unevaluatedChat('owned-chat', user);
-    await unevaluatedChat('public-chat', null);
-
-    const res = await getLogs({ partnerEval: 'noEval', userType: 'public' });
-
-    expect(res.payload.logs.map(chat => chat.chatId)).toEqual(['public-chat']);
-    expect(res.payload.logs[0]).not.toHaveProperty('user');
   });
 });
 
