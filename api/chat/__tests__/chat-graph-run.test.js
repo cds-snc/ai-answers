@@ -498,3 +498,31 @@ describe('setNdjsonHeaders', () => {
     expect(res.flushHeaders).toHaveBeenCalled();
   });
 });
+
+// AIA-005: a failed turn has no server-written answer, so there is nothing
+// for the server to sign.
+describe('chatGraphRunHandler error path', () => {
+  it('never returns a history signature when the graph fails', async () => {
+    mockSettingsTransport('ndjson');
+    mocks.getGraphApp.mockResolvedValue({
+      stream: async function* () {
+        throw new Error('graph failed');
+      },
+    });
+    const req = createRequest();
+    const res = createResponse();
+
+    await chatGraphRunHandler(req, res);
+
+    const records = res.chunks
+      .join('')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    const errorRecord = records.find((record) => record.event === 'error');
+
+    expect(errorRecord).toBeDefined();
+    expect(errorRecord.data).not.toHaveProperty('historySignature');
+    expect(res.chunks.join('')).not.toContain('historySignature');
+  });
+});

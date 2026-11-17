@@ -140,6 +140,7 @@ import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
 import systemHealthMonitor from '../services/SystemHealthMonitor.js';
+import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
 
 
 
@@ -147,6 +148,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// Refuse to start without the conversation-integrity secret (AIA-019).
+ConversationIntegrityService.assertConfigured();
 
 const app = express();
 

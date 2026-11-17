@@ -1,5 +1,56 @@
 # Conversation Integrity Implementation Plan
 
+## Hardening update (November 2026)
+
+The design below was tightened after a security review. **Where this section and the
+original plan below disagree, this section is current.** Further hardening of the
+signature format is planned; its details will be added here when it ships.
+
+### What changed
+
+- **The server consumes only verified history.** `verifySignedPrefix` returns the
+  verified part as `history`, and `validateConversationIntegrity` replaces
+  `input.conversationHistory` with it. Dropped: anything after the signed turn, error
+  messages, and unanswered questions. A history that is not an array, or holds only
+  error messages, becomes `[]`.
+- **A question that never got an answer is dropped.** After an unexpected failure the
+  client keeps the question bubble in history. It no longer feeds translation context,
+  similar-answer matching or the short-query check on the next turn. The user still
+  sees it on screen and can keep chatting.
+- **Unanswered questions are left out of the signature as well as the history**
+  (`signedMessages`), so a failed question followed by a successful one does not break
+  verification of later turns.
+- **History with no AI turn and no signature is treated as empty**, so a new message
+  after a first-turn failure goes through. Unsigned history that contains an AI turn
+  is still rejected with `403 missing_signature`.
+- **Only completed turns are signed.** A failed turn returns no `historySignature`.
+- **Separators are escaped** in the serialized history, so message text cannot read as
+  a turn boundary.
+- **No fallback secret.** Without `CONVERSATION_INTEGRITY_SECRET` the server refuses
+  to start (`assertConfigured()` in `server/server.js`), unless `NODE_ENV` is
+  `development` or `test`, where a random per-process secret is used. An unset
+  `NODE_ENV` counts as deployed.
+- **Constant-time comparison**, and a non-string signature is rejected.
+- **Dropped AI turns are logged** (counts only) as `[Integrity] Dropped unverified AI turns`.
+
+### Decisions (Lisa Fast, 2026-11-14)
+
+- Drop trailing unanswered questions instead of accepting them.
+- Sign completed turns only.
+- Refuse to start without the secret; random per-process secret in development and test.
+
+### Deploying
+
+Rotate `CONVERSATION_INTEGRITY_SECRET` when this deploys. Chats open at that moment
+fail on their next turn and the user starts a new one.
+
+---
+
+*The original plan follows. It describes the design as first built; the file links
+and endpoints it names (`chat-message.js`, `chat-similar-answer.js`,
+`src/services/AnswerService.js`) no longer exist, and only `chat-graph-run.js` uses
+the session wrapper today.*
+
 ## Overview
 This document outlines the plan to establish a trust relationship between the client-side `conversationHistory` and the server, ensuring that the history sent by the client has not been tampered with. We will use an HMAC-SHA256 signature mechanism.
 

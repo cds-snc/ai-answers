@@ -1,8 +1,48 @@
 import crypto from 'crypto';
 
-const SECRET = process.env.CONVERSATION_INTEGRITY_SECRET || 'dev-secret-key';
+// AIA-019: there is no hardcoded fallback secret. A known secret lets anyone
+// sign a history they wrote, so a missing one must fail closed.
+//
+// Read lazily, not at import: server.js loads .env after its imports run.
+// "Not development and not test" is how this codebase spots a deployed
+// environment (see middleware/express-session.js) - NODE_ENV is not reliably
+// 'production' there, so an unset NODE_ENV has to count as deployed.
+let cachedSecret = null;
+function getSecret() {
+    if (cachedSecret) return cachedSecret;
+    const configured = process.env.CONVERSATION_INTEGRITY_SECRET;
+    if (configured) {
+        cachedSecret = configured;
+    } else if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        // Local only: a throwaway secret that lasts until the process exits.
+        cachedSecret = crypto.randomBytes(32).toString('hex');
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('[ConversationIntegrityService] CONVERSATION_INTEGRITY_SECRET is not set: using a temporary secret. Chats open in a browser will fail their next turn after a server restart.');
+        }
+    } else {
+        throw new Error('CONVERSATION_INTEGRITY_SECRET is not set. Refusing to sign or verify conversation history without it.');
+    }
+    return cachedSecret;
+}
+
+const isUserMessage = (m) => m?.sender === 'user' || m?.role === 'user';
+
+// Serialized turns are joined with '|' and written as role:text. Escape those
+// separators inside the values so text can never read as a turn boundary.
+const escapeText = (text) => String(text).replace(/[\\|]/g, '\\$&');
+const escapeRole = (role) => String(role).replace(/[\\|:]/g, '\\$&');
 
 class ConversationIntegrityService {
+    /**
+     * Throws when no signing secret is available. server.js calls this at
+     * startup so a misconfigured deployment fails to boot instead of failing
+     * on the first follow-up question.
+     */
+    assertConfigured() {
+        getSecret();
+    }
+
+
     /**
      * Normalizes text by stripping internal XML tags and metadata
      * to ensure signatures match between raw LLM output and cleaned UI state.
@@ -62,14 +102,34 @@ class ConversationIntegrityService {
 
 
     /**
+     * The messages that take part in signing: everything except error messages
+     * and questions that never got an answer.
+     *
+     * A question the pipeline failed on stays in the client's history as a
+     * plain user message, followed by another user message (the next question)
+     * or by nothing. The server drops it before answering the next turn, so it
+     * is never part of what gets signed - it must be left out when verifying
+     * too, or the first follow-up after a failed question is rejected.
+     */
+    signedMessages(history) {
+        if (!Array.isArray(history)) return [];
+        const kept = history.filter(m => m && typeof m === 'object' && !m.error);
+        return kept.filter((m, i) => {
+            if (!isUserMessage(m)) return true;
+            const next = kept[i + 1];
+            return Boolean(next) && !isUserMessage(next);
+        });
+    }
+
+    /**
      * Deterministically serializes conversation history for signing/verification.
      */
     serializeHistory(history) {
         if (!Array.isArray(history)) return '';
 
-        // Filter out error messages - they don't affect conversation integrity
-        // and their presence/absence shouldn't change the signature
-        const filteredHistory = history.filter(m => !m.error);
+        // Error messages and unanswered questions don't affect conversation
+        // integrity, and their presence/absence shouldn't change the signature
+        const filteredHistory = this.signedMessages(history);
  
         const lines = [];
         for (let i = 0; i < filteredHistory.length; i++) {
@@ -101,8 +161,8 @@ class ConversationIntegrityService {
                 const aRaw = m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer;
                 const q = this.normalizeText(qRaw);
                 const a = this.normalizeText(aRaw);
-                lines.push(`user:${q}`);
-                lines.push(`ai:${a}`);
+                lines.push(`user:${escapeText(q)}`);
+                lines.push(`ai:${escapeText(a)}`);
             } else {
                 // Check redundancy: If this is a user message and the NEXT message has an interaction,
                 // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
@@ -118,7 +178,7 @@ class ConversationIntegrityService {
 
                 const role = m.sender || m.role || '';
                 const text = this.normalizeText(m.text || m.content || '');
-                lines.push(`${role}:${text}`);
+                lines.push(`${escapeRole(role)}:${escapeText(text)}`);
             }
         }
         const result = lines.join('|');
@@ -137,7 +197,7 @@ class ConversationIntegrityService {
      */
     calculateSignature(history) {
         const data = this.serializeHistory(history);
-        const signature = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+        const signature = crypto.createHmac('sha256', getSecret()).update(data).digest('hex');
         if (process.env.DEBUG_CONV_INTEGRITY) {
             // eslint-disable-next-line no-console
             console.log('[ConversationIntegrityService] calculateSignature:', { data, signature });
@@ -153,13 +213,17 @@ class ConversationIntegrityService {
      * @returns {boolean} - True if valid, false otherwise.
      */
     verifyHistory(history, signature) {
-        if (!signature) return false;
+        if (!signature || typeof signature !== 'string') return false;
         const expected = this.calculateSignature(history);
+        // Constant-time compare, so response timing can't reveal the signature.
+        const received = Buffer.from(signature);
+        const wanted = Buffer.from(expected);
+        const match = received.length === wanted.length && crypto.timingSafeEqual(received, wanted);
         if (process.env.DEBUG_CONV_INTEGRITY) {
             // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] verifyHistory:', { signature, expected, match: signature === expected });
+            console.log('[ConversationIntegrityService] verifyHistory:', { signature, expected, match });
         }
-        return signature === expected;
+        return match;
     }
 
     /**
@@ -169,10 +233,16 @@ class ConversationIntegrityService {
      *
      * @param {Array} historyArray - Full conversation history (may include error turns)
      * @param {string|null} inputSignature - Optional signature provided by client
-     * @returns {Object} - { valid: boolean, reason?: string, signature?: string, signatureSourceIndex?: number }
+     * @returns {Object} - { valid: boolean, reason?: string, signature?: string, signatureSourceIndex?: number, history?: Array }
+     *
+     * AIA-002: when valid, `history` holds only messages the signature covers.
+     * Callers must consume `history`, never the array they passed in. Left out
+     * of it: anything after the signed turn (a turn a client appended), error
+     * messages, and questions that never got an answer.
      */
     verifySignedPrefix(historyArray, inputSignature) {
-        const history = Array.isArray(historyArray) ? historyArray : [];
+        // Entries that are not objects can't be messages: ignore them.
+        const history = (Array.isArray(historyArray) ? historyArray : []).filter(m => m && typeof m === 'object');
 
         // Filter out error messages - they don't participate in integrity checking
         const filteredHistory = history.filter(m => !m.error);
@@ -182,7 +252,7 @@ class ConversationIntegrityService {
             console.log('[ConversationIntegrityService] verifySignedPrefix input:', { historyArray, inputSignature, filteredHistory });
         }
 
-        if (filteredHistory.length === 0) return { valid: true };
+        if (filteredHistory.length === 0) return { valid: true, history: [] };
 
         // Extract signature from possible locations
         const lastAi = [...filteredHistory].reverse().find(m => m.sender === 'ai' || m.interaction?.answer);
@@ -228,6 +298,13 @@ class ConversationIntegrityService {
         }
 
         if (!signature) {
+            // Nothing but questions that never got an answer (the pipeline
+            // failed before any turn completed). There is no signed turn to
+            // verify, so there is no history: drop them rather than reject the
+            // request or, as the error path once did, sign them (AIA-005).
+            if (filteredHistory.every(isUserMessage)) {
+                return { valid: true, history: [] };
+            }
             if (process.env.DEBUG_CONV_INTEGRITY) {
                 // eslint-disable-next-line no-console
                 console.log('[ConversationIntegrityService] verifySignedPrefix: missing signature');
@@ -259,7 +336,12 @@ class ConversationIntegrityService {
             }
             return { valid: false, reason: 'invalid_signature', signature };
         }
-        return { valid: true, signature, signatureSourceIndex: signatureSource ? history.findIndex(m => m === signatureSource) : null };
+        return {
+            valid: true,
+            signature,
+            signatureSourceIndex: signatureSource ? history.findIndex(m => m === signatureSource) : null,
+            history: this.signedMessages(historyToVerify),
+        };
     }
 }
 

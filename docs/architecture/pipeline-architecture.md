@@ -753,6 +753,12 @@ Each node can:
 - State is **not persisted** between graph executions (stateless)
 - Each user question triggers a new graph execution
 - Conversation history passed as input, not stored in graph state
+- The client holds the history, so the server checks it before any graph runs
+  (`validateConversationIntegrity` in `middleware/chat-session.js`). The graph receives
+  only the turns covered by the server's signature: turns appended after the signed one,
+  error messages, and questions that never got an answer (the pipeline failed on them)
+  are dropped. A failed turn returns no `historySignature`. Details:
+  [conversation integrity plan](../plans/conversation_integrity_plan.md).
 
 ---
 
