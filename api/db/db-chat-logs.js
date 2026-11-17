@@ -5,6 +5,7 @@ import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { omitUserSecrets } from '../../models/user.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import { requireObjectIdString } from '../util/db-query.js';
 import {
   authMiddleware,
@@ -376,6 +377,10 @@ async function chatLogsHandler(req, res) {
       // Apply batch filter if batchId is provided
       if (batchId) {
         batchId = requireObjectIdString(batchId, 'batchId');
+        // Same rule as the batch endpoints (AIA-001): creator or admin only.
+        if (!(await findAccessibleBatch(req.user, batchId, { _id: 1 }))) {
+          return res.status(404).json({ error: 'Batch not found' });
+        }
         const batchChatItems = await BatchItem.find({ batch: batchId }).select('chat');
         const batchChatIds = batchChatItems.filter(item => item.chat).map(item => item.chat);
         dateFilter = Object.keys(dateFilter).length

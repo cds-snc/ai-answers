@@ -1,7 +1,7 @@
 import dbConnect from '../db/db-connect.js';
-import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString } from '../util/db-query.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const COUNT_MAX_TIME_MS = 20000;
@@ -16,10 +16,12 @@ async function batchStatsHandler(req, res) {
     await dbConnect();
     batchId = requireObjectIdString(batchId, 'batchId');
 
-    const batch = await Batch.findById(batchId);
+    const batch = await findAccessibleBatch(req.user, batchId, { workflow: 1 });
     if (batch) console.log(`[batch-stats] Found batch by _id: _id=${batch._id}`);
     
-    if (!batch) return res.status(404).json({ message: 'Batch not found' });
+    if (!batch) {
+      return res.status(404).json({ message: 'Batch not found' });
+    }
 
     // Query by both ObjectId and string batch IDs to stay compatible with any
     // legacy rows, but keep the predicate index-friendly.

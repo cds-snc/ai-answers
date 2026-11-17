@@ -8,8 +8,8 @@ import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 import dbConnect from '../db/db-connect.js';
-import { Batch } from '../../models/batch.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import { normalizeReferringUrl } from '../util/referring-url.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
@@ -18,14 +18,12 @@ const DEFAULT_CHAT_TRANSPORT = 'sse';
 const NDJSON_CHAT_TRANSPORT = 'ndjson';
 
 // The batch a batch question belongs to, or null when the signed-in user
-// can't run it (not theirs, not found, signed out). Admins can run any batch.
+// can't run it (see batch-access.js; also not found, signed out).
 async function findRunnableBatch(batchId, user) {
   batchId = normalizeObjectIdString(batchId);
   if (!batchId || !user) return null;
   await dbConnect();
-  const batch = await Batch.findById(batchId).lean();
-  if (!batch) return null;
-  return user.role === 'admin' || batch.createdBy === user.userId ? batch : null;
+  return findAccessibleBatch(user, batchId);
 }
 
 function normalizeChatTransport(value) {
