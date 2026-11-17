@@ -13,7 +13,7 @@ import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { findAccessibleBatch } from '../util/batch-access.js';
-import { normalizeObjectIdString } from '../util/db-query.js';
+import { requireObjectIdString } from '../util/db-query.js';
 import {
   authMiddleware,
   partnerOrAdminMiddleware,
@@ -21,7 +21,9 @@ import {
 } from '../../middleware/auth.js';
 
 const ALLOWED_PARAMS = new Set(['batchId', 'limit']);
-// Batches hold at most MAX_BATCH_ITEMS (src/config/batch.js) chats.
+// Above MAX_BATCH_ITEMS (src/config/batch.js, 200) on purpose: batches made
+// before that cap can hold more chats, and a lower limit would cut their
+// exports short.
 const MAX_LIMIT = 1000;
 
 const chatPopulate = [
@@ -72,16 +74,15 @@ async function chatLogsHandler(req, res) {
   if (unsupported.length) {
     return res.status(400).json({ error: `Unsupported parameter: ${unsupported.join(', ')}` });
   }
-  const batchId = normalizeObjectIdString(req.query.batchId);
-  if (!batchId) {
-    return res.status(400).json({ error: 'A valid batchId is required' });
-  }
   const limit = parseLimit(req.query.limit);
   if (limit === null) {
     return res.status(400).json({ error: `limit must be a whole number from 1 to ${MAX_LIMIT}` });
   }
 
   try {
+    // A missing or invalid batchId throws into the catch below (500), as it
+    // did before this endpoint was narrowed to batch exports.
+    const batchId = requireObjectIdString(req.query.batchId, 'batchId');
     await dbConnect();
     // Same rule as the batch endpoints (AIA-001): creator or admin only.
     if (!(await findAccessibleBatch(req.user, batchId, { _id: 1 }))) {

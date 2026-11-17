@@ -104,11 +104,21 @@ Follow-ups found in review, each its own PR:
   export and import: without the hash the rows are useless. Each Database page export writes a
   `database.exported` audit entry; it is a record, not a control (a retried first page logs
   twice, a caller starting mid-collection logs nothing). Tests:
-  `__tests__/auth-credential-fields.integration.test.js` and
-  `api/db/__tests__/db-export-credentials.test.js`.
+  `__tests__/auth-credential-fields.integration.test.js`,
+  `api/db/__tests__/db-export-credentials.test.js` and (chat owner as email only)
+  `api/db/__tests__/db-chat-logs.test.js`.
 - **Validate `role` in `adminUpdateUser`.** It accepts any string, and the update runs without
   schema validators, so the `['admin', 'partner']` enum is never checked. A PATCH with
-  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`.
+  `role: 'superadmin'` is saved as is. Check it like `institution` and `group`. Until then, the
+  chat-log endpoints' `partnerOrAdminMiddleware` turns such an account away (added on branch
+  `chore/remove-dead-chat-logs-filters`).
+- **Remove or fix the `batchId` path in `api/chat/chat-export-logs.js`.** Separate from
+  `api/db/db-chat-logs.js`, the Batches page's export, which `chore/remove-dead-chat-logs-filters`
+  fixed. No page sends `batchId` to `chat-export-logs.js`. It has two bugs: it keeps the default
+  7-day `createdAt` window, so a batch that ran earlier exports nothing, and only the unfiltered
+  branch reads it, so adding any dashboard filter (e.g. `department`) drops `batchId` and its
+  `findAccessibleBatch` check and exports every matching chat. Likely remove it, as
+  `chore/remove-dead-chat-logs-filters` did for `db-chat-logs.js`'s unused filters.
 
 ### F6. Password reset links use a guessable 6-digit code (Medium, found 2026-10-28)
 

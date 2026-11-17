@@ -137,9 +137,16 @@ describe('db-chat-logs (batch export)', () => {
   });
 
   it.each([
-    [{}, 'A valid batchId is required'],
-    [{ batchId: 'not-an-id' }, 'A valid batchId is required'],
-    [{ batchId: { $ne: null } }, 'A valid batchId is required'],
+    [{}],
+    [{ batchId: 'not-an-id' }],
+    [{ batchId: { $ne: null } }],
+  ])('fails a missing or invalid batchId with the catch-all 500: %o', async (query) => {
+    const res = await getLogs(query);
+    expect(res.statusCode).toBe(500);
+    expect(res.payload).toEqual({ error: 'Failed to fetch logs' });
+  });
+
+  it.each([
     [{ batchId: '64fec1000000000000000001', limit: 'abc' }, 'limit must be a whole number from 1 to 1000'],
     [{ batchId: '64fec1000000000000000001', limit: '0' }, 'limit must be a whole number from 1 to 1000'],
     [{ batchId: '64fec1000000000000000001', limit: '1001' }, 'limit must be a whole number from 1 to 1000'],

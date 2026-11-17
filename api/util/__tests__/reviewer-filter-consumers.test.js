@@ -87,8 +87,9 @@ describe('reviewer filter reaches every consumer pipeline', () => {
   it('db-chat-logs refuses it rather than ignoring it', async () => {
     // Only batch lookups use db-chat-logs; it has no reviewer filter.
     const res = createRes();
-    await chatLogsHandler(createReq({ ...DATES, group: 'Military transitions' }), res);
+    await chatLogsHandler(createReq({ batchId: '64fec1000000000000000001', group: 'Military transitions' }), res);
     expect(res.statusCode).toBe(400);
+    expect(res.payload).toEqual({ error: 'Unsupported parameter: group' });
   });
 
   it('eval dashboard', async () => {
