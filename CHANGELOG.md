@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.213.6](https://github.com/cds-snc/ai-answers/compare/v1.213.5...v1.213.6) (2026-11-16)
+
+
+### Bug Fixes
+
+* address AIA-001 review feedback ([c786479](https://github.com/cds-snc/ai-answers/commit/c786479970bc9491fa00b6e12b5b415cf4ade863))
+* enforce batch ownership on batch endpoints (AIA-001) ([df657d6](https://github.com/cds-snc/ai-answers/commit/df657d649126d0a8d5b8e01c8797580a10bc9ebe))
+* experimental analysis page status messages and layout ([56bd71d](https://github.com/cds-snc/ai-answers/commit/56bd71ded51fdf48f871de05814f1626cfa4cd5d))
+
+## [1.213.5](https://github.com/cds-snc/ai-answers/compare/v1.213.4...v1.213.5) (2026-11-16)
+
+
+### Bug Fixes
+
+* add button to remove duplicate embeddings. ([c3b8a18](https://github.com/cds-snc/ai-answers/commit/c3b8a189916c8eac678ff04a06b88b78784d6ce8))
+
+## [1.213.4](https://github.com/cds-snc/ai-answers/compare/v1.213.3...v1.213.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* AIA-009 part 2 ([839c6f4](https://github.com/cds-snc/ai-answers/commit/839c6f4a3d8861eac883436720304e925b72f532))
+* AIA-009 part 2 ([acad38c](https://github.com/cds-snc/ai-answers/commit/acad38cdda393ff9aef7f5b82ff324adb8f61cf4))
+* remove sessionstate ([c6a40b7](https://github.com/cds-snc/ai-answers/commit/c6a40b7ca9c63521ccf30a391376e50d640189c2))
+* settings history wasn't showing ([eb2aace](https://github.com/cds-snc/ai-answers/commit/eb2aaceab54602acfd89484c10d1f908d0a0fd52))
+
 ## [1.213.3](https://github.com/cds-snc/ai-answers/compare/v1.213.2...v1.213.3) (2026-11-12)
 
 

@@ -5,6 +5,7 @@ import dbConnect from '../db-connect.js';
 import { Chat } from '../../../models/chat.js';
 import { Interaction } from '../../../models/interaction.js';
 import { BatchItem } from '../../../models/batchItem.js';
+import { Batch } from '../../../models/batch.js';
 import { User } from '../../../models/user.js';
 
 // db-chat-logs serves the Batches page's CSV/Excel export only
@@ -26,14 +27,22 @@ function createRes() {
   };
 }
 
-async function getLogs(query) {
+const PARTNER = { role: 'partner', userId: 'partner-test' };
+
+async function getLogs(query, user = PARTNER) {
   const res = createRes();
   await handler({
     method: 'GET', query, path: '/api/db/db-chat-logs',
-    user: { role: 'partner', userId: 'partner-test' }, isAuthenticated: () => true
+    user, isAuthenticated: () => true
   }, res);
   // Serialize like Express would.
   return { ...res, payload: JSON.parse(JSON.stringify(res.payload)) };
+}
+
+// A batch the test partner created, so it passes the AIA-001 access check.
+async function ownBatch(createdBy = PARTNER.userId) {
+  const batch = await Batch.create({ name: 'b', type: 'question', aiProvider: 'openai', pageLanguage: 'en', createdBy });
+  return batch._id;
 }
 
 async function chatInBatch(batchId, chatId, { user, daysAgo = 0 } = {}) {
@@ -51,7 +60,7 @@ describe('db-chat-logs (batch export)', () => {
   it('returns the chats of a batch that ran weeks ago', async () => {
     // It used to search only the last 7 days, so older batches exported nothing.
     await dbConnect();
-    const batchId = new mongoose.Types.ObjectId();
+    const batchId = await ownBatch();
     await chatInBatch(batchId, 'old-batch-chat', { daysAgo: 30 });
 
     const res = await getLogs({ batchId: batchId.toString(), limit: '1000' });
@@ -62,7 +71,7 @@ describe('db-chat-logs (batch export)', () => {
 
   it('returns only the chats of that batch', async () => {
     await dbConnect();
-    const batchId = new mongoose.Types.ObjectId();
+    const batchId = await ownBatch();
     await chatInBatch(batchId, 'in-batch');
     await chatInBatch(new mongoose.Types.ObjectId(), 'other-batch');
     await chatInBatch(null, 'no-batch');
@@ -76,7 +85,7 @@ describe('db-chat-logs (batch export)', () => {
     await dbConnect();
     const user = await User.create({ email: 'reviewer@canada.ca', password: 'original-password', institution: 'IRCC' });
     await User.updateOne({ _id: user._id }, { $set: { twoFACode: 'twofa-code-hash', resetPasswordTokenHash: 'reset-hash' } });
-    const batchId = new mongoose.Types.ObjectId();
+    const batchId = await ownBatch();
     await chatInBatch(batchId, 'owned-chat', { user });
 
     const res = await getLogs({ batchId: batchId.toString() });
@@ -87,13 +96,44 @@ describe('db-chat-logs (batch export)', () => {
 
   it('applies the limit', async () => {
     await dbConnect();
-    const batchId = new mongoose.Types.ObjectId();
+    const batchId = await ownBatch();
     await chatInBatch(batchId, 'first');
     await chatInBatch(batchId, 'second');
 
     const res = await getLogs({ batchId: batchId.toString(), limit: '1' });
 
     expect(res.payload.logs.map(chat => chat.chatId)).toEqual(['first']);
+  });
+
+  it("refuses another partner's batch with a 404", async () => {
+    await dbConnect();
+    const batchId = await ownBatch('someone-else');
+    await chatInBatch(batchId, 'not-mine');
+
+    const res = await getLogs({ batchId: batchId.toString() });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.payload).toEqual({ error: 'Batch not found' });
+  });
+
+  it("lets an admin export anyone's batch", async () => {
+    await dbConnect();
+    const batchId = await ownBatch('someone-else');
+    await chatInBatch(batchId, 'partner-chat');
+
+    const res = await getLogs({ batchId: batchId.toString() }, { role: 'admin', userId: 'admin-test' });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.logs.map(chat => chat.chatId)).toEqual(['partner-chat']);
+  });
+
+  it('refuses a signed-in user who is neither partner nor admin', async () => {
+    await dbConnect();
+    const batchId = await ownBatch('viewer-test');
+
+    const res = await getLogs({ batchId: batchId.toString() }, { role: 'viewer', userId: 'viewer-test' });
+
+    expect(res.statusCode).toBe(403);
   });
 
   it.each([

@@ -4,16 +4,19 @@
 // api/chat/chat-dashboard.js, api/eval/eval-dashboard.js and
 // api/chat/chat-export-logs.js.
 //
-// Any signed-in user can call this, so it does only what the export needs:
+// Partners and admins can call this, and only for a batch they may access
+// (its creator or an admin, AIA-001), so it does only what the export needs:
 // a batchId is required and any other parameter is refused, so a direct call
 // can't read chats outside a batch.
 
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
 import {
   authMiddleware,
+  partnerOrAdminMiddleware,
   withProtection
 } from '../../middleware/auth.js';
 
@@ -80,6 +83,10 @@ async function chatLogsHandler(req, res) {
 
   try {
     await dbConnect();
+    // Same rule as the batch endpoints (AIA-001): creator or admin only.
+    if (!(await findAccessibleBatch(req.user, batchId, { _id: 1 }))) {
+      return res.status(404).json({ error: 'Batch not found' });
+    }
     // No date window: a batch's chats are exported whenever the batch ran.
     const batchItems = await BatchItem.find({ batch: batchId }).select('chat').lean();
     const chatIds = batchItems.map((item) => item.chat).filter(Boolean);
@@ -102,6 +109,7 @@ async function chatLogsHandler(req, res) {
 export default function handler(req, res) {
   return withProtection(
     chatLogsHandler,
-    authMiddleware
+    authMiddleware,
+    partnerOrAdminMiddleware
   )(req, res);
 }
