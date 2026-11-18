@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.213.8](https://github.com/cds-snc/ai-answers/compare/v1.213.7...v1.213.8) (2026-11-18)
+
+
+### Bug Fixes
+
+* fail closed on a missing session secret (AIA-004) ([901985b](https://github.com/cds-snc/ai-answers/commit/901985b925ee21fbcd7c010f7b3cdd7f281bd2af))
+* skip onnxruntime CUDA binary download in Docker builds ([f1f82d4](https://github.com/cds-snc/ai-answers/commit/f1f82d433cd9a6c4a3ed40f15ba6eeb03cd4c024))
+* skip onnxruntime CUDA binary download in Docker builds ([3dbd32e](https://github.com/cds-snc/ai-answers/commit/3dbd32e88dc759277b4009bfec13430e28edd7f9))
+
 ## [1.213.7](https://github.com/cds-snc/ai-answers/compare/v1.213.6...v1.213.7) (2026-11-17)
 
 
