@@ -2,15 +2,16 @@ import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { Interaction } from '../../models/interaction.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-import { getPartnerEvalAggregationExpression, getEvalInformedAggregationExpression } from '../util/chat-filters.js';
+import { getEvalInformedAggregationExpression } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
 import { OTHER_LABEL } from '../data/programActionSeeds.js';
 import { EVAL_INFORMED_WORKFLOW, EVAL_INFORMED_RECENCY_DAYS } from '../../src/config/workflows.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
 import { buildProgramScopeStages } from './metrics-programs.js';
 
-// Same cap as the question-volume chart (metrics-programs.js).
-const MAX_PROGRAMS = 25;
+// Fewer rows than the question-volume chart (25, metrics-programs.js): the
+// table is wide, and the busiest services are where evaluations matter most.
+const MAX_PROGRAMS = 10;
 
 // An evaluation counts as "expiring" when it will pass the recency limit
 // within this many days.
@@ -22,8 +23,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 //
 // 1. buildEvalCoveragePipeline — the questions in the date range, same scope
 //    as the question-volume chart (normal answers, all applied filters). Per
-//    program: questions, human evaluations, how many scored below perfect,
-//    answers that were given past evaluations (same definition as the
+//    program: questions, answers that were given past evaluations (same definition as the
 //    eval-informed rate in metrics-usage.js), and the actions asked about.
 //
 // 2. buildUsableEvalsPipeline — what eval-informed answering can draw on
@@ -32,7 +32,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 //    questions from the last EVAL_INFORMED_RECENCY_DAYS (or flagged
 //    neverStale), whenever the question was asked. Scoped by department and
 //    program only. Per program: usable evaluations, and how many stop being
-//    usable within EXPIRING_WINDOW_DAYS.
+//    usable within EXPIRING_WINDOW_DAYS. This is the card's only evaluation
+//    count: evaluations of questions asked in the date range (7 days by
+//    default) said nothing about what answering can draw on.
 //
 // TODO: split the counts EN/FR. Retrieval matches same language only, so
 // combined coverage overstates it for the less-evaluated language — see
@@ -54,25 +56,8 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
     );
 
     stages.push(
-        { $lookup: { from: 'expertfeedbacks', localField: 'expertFeedbackId', foreignField: '_id', as: 'efDocs' } },
-        { $addFields: { ef: { $arrayElemAt: ['$efDocs', 0] } } },
         {
             $addFields: {
-                // Human evaluation = feedback present, not AI-typed, and scored.
-                // Toggling "Never stale" on an unevaluated question creates a
-                // blank feedback doc with totalScore null
-                // (feedback-expert-never-stale.js) — not an evaluation, and
-                // excluded here the same way metrics-expert-feedback.js does.
-                // interaction.expertFeedback only ever holds human feedback
-                // today; the type check keeps an AI-typed doc out if that changes.
-                isHuman: {
-                    $and: [
-                        { $ne: [{ $ifNull: ['$ef', null] }, null] },
-                        { $ne: ['$ef.type', 'ai'] },
-                        { $ne: [{ $ifNull: ['$ef.totalScore', null] }, null] }
-                    ]
-                },
-                category: getPartnerEvalAggregationExpression('$ef'),
                 // '' (never classified), 'unknown' (not confident) and 'Other'
                 // say nothing about what was asked, so they're left out of the list.
                 action: {
@@ -84,10 +69,7 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
             $project: {
                 program: 1,
                 action: 1,
-                evalInformed: 1,
-                isHuman: 1,
-                isScored: { $and: ['$isHuman', { $ne: ['$category', null] }] },
-                isNonPerfect: { $and: ['$isHuman', { $ne: ['$category', null] }, { $ne: ['$category', 'correct'] }] }
+                evalInformed: 1
             }
         },
         // Two-stage group: per program+action first (so actions can be ranked),
@@ -96,9 +78,6 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
             $group: {
                 _id: { program: '$program', action: '$action' },
                 questions: { $sum: 1 },
-                humanEvals: { $sum: { $cond: ['$isHuman', 1, 0] } },
-                scoredEvals: { $sum: { $cond: ['$isScored', 1, 0] } },
-                nonPerfectEvals: { $sum: { $cond: ['$isNonPerfect', 1, 0] } },
                 informedAnswers: { $sum: { $cond: ['$evalInformed', 1, 0] } }
             }
         },
@@ -106,9 +85,6 @@ export function buildEvalCoveragePipeline({ dateFilter, extraFilterConditions, d
             $group: {
                 _id: '$_id.program',
                 questions: { $sum: '$questions' },
-                humanEvals: { $sum: '$humanEvals' },
-                scoredEvals: { $sum: '$scoredEvals' },
-                nonPerfectEvals: { $sum: '$nonPerfectEvals' },
                 informedAnswers: { $sum: '$informedAnswers' },
                 actions: { $push: { action: '$_id.action', count: '$questions' } }
             }
@@ -186,9 +162,6 @@ export function toCoverageRow(row, usable) {
         program: row._id,
         programFr: row._id === 'unknown' ? '' : frForProgram(row._id),
         questions: row.questions || 0,
-        humanEvals: row.humanEvals || 0,
-        scoredEvals: row.scoredEvals || 0,
-        nonPerfectEvals: row.nonPerfectEvals || 0,
         usableEvals: row._id === 'unknown' ? null : (usable?.usableEvals || 0),
         expiringEvals: row._id === 'unknown' ? null : (usable?.expiringEvals || 0),
         informedAnswers: row.informedAnswers || 0,

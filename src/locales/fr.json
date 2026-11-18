@@ -1799,15 +1799,13 @@
     },
     "evalCoverage": {
       "title": "Couverture des évaluations par service",
-      "subtitle": "Jusqu'à 25 services ayant reçu le plus de questions. Compte les questions ayant reçu une réponse directe.",
+      "subtitle": "Jusqu'à 10 services ayant reçu le plus de questions. Compte les questions ayant reçu une réponse directe.",
+      "trigger": "Principaux services par couverture des évaluations",
       "colActions": "Actions demandées",
       "colQuestions": "Questions",
       "colEvaluations": "Évaluations d'experts",
-      "colCoverage": "Couverture des évaluations",
-      "colUsable": "Évaluations utilisées",
       "colExpiring": "Expirent bientôt",
       "colInformed": "Réponses utilisant des évaluations",
-      "colBelowPerfect": "Sous la note parfaite",
       "unclassified": "Pas encore classées",
       "notApplicable": "Sans objet",
       "noActions": "Aucune action enregistrée",
@@ -1815,11 +1813,9 @@
         "one": "et {count} autre",
         "other": "et {count} autres"
       },
-      "noteCoverage": "Évaluations d'experts en proportion des questions.",
-      "noteUsable": "Évaluations des {days} derniers jours, ou marquées pour ne jamais expirer. Seules celles-ci peuvent être montrées à l'IA comme exemples pour de nouvelles réponses. Compte toutes les évaluations du service, quelle que soit la période choisie.",
+      "noteEvaluations": "Évaluations que l'IA peut utiliser comme exemples pour de nouvelles réponses : celles des {days} derniers jours, ou marquées pour ne jamais expirer. Compte toutes les évaluations du service, quelle que soit la période choisie. Les services en haut du tableau qui ont peu d'évaluations sont ceux à évaluer en priorité.",
       "noteExpiring": "Évaluations qui cesseront d'être utilisées d'ici {days} jours, quelle que soit la période choisie. Évaluez de nouvelles questions pour ces services afin de garder des exemples disponibles.",
-      "noteInformed": "Réponses pour lesquelles l'IA a reçu des évaluations d'experts antérieures comme exemples.",
-      "noteBelowPerfect": "Proportion des évaluations d'experts notées sous 100."
+      "noteInformed": "Réponses pour lesquelles l'IA a reçu des évaluations d'experts antérieures comme exemples."
     },
     "evalInformedChats": {
       "title": "Réponses informées par les évaluations, par ID de clavardage",

@@ -55,13 +55,14 @@ Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures
 
 ## Voir où il manque des évaluations
 
-Sous cette carte, **Couverture des évaluations par service** présente les services ayant reçu le plus de questions. Utilisez-la pour choisir quoi évaluer ensuite.
+Sous cette carte, **Couverture des évaluations par service** présente les 10 services ayant reçu le plus de questions. Utilisez-la pour choisir quoi évaluer ensuite.
 
-- **Couverture des évaluations** indique les évaluations d'experts en proportion des questions. Un service très sollicité dont la couverture est faible a peu d'exemples sur lesquels s'appuyer.
-- **Évaluations utilisées** compte les évaluations de la dernière année, ainsi que celles marquées **Toujours valide**. Seules celles-ci peuvent servir d'exemples. Cette colonne et la suivante ne tiennent pas compte de la période choisie.
-- **Expirent bientôt** compte les évaluations qui cesseront d'être utilisées d'ici 60 jours. Évaluez de nouvelles questions pour ce service afin de les remplacer.
+- Ouvrez-la avec **Principaux services par couverture des évaluations**.
+- **Évaluations d'experts** compte les évaluations que l'IA peut utiliser comme exemples : celles de la dernière année, ainsi que celles marquées **Toujours valide**. Cette colonne ne tient pas compte de la période choisie. Le tableau présente d'abord les services les plus sollicités. Ceux en haut du tableau qui ont peu d'évaluations sont donc ceux à évaluer en priorité.
+- **Réponses utilisant des évaluations** indique si les évaluations faites correspondent à ce que les gens demandent.
+- **Expirent bientôt** compte les évaluations qui cesseront d'être utilisées d'ici 60 jours. Évaluez de nouvelles questions pour ce service afin de les remplacer. Cette colonne ne tient pas compte non plus de la période choisie.
 - **Actions demandées** énumère jusqu'à trois choses que les gens ont demandé de faire, de la plus fréquente à la moins fréquente. Les actions demandées une seule fois sont omises.
-- La carte suit les filtres du tableau de bord.
+- Les autres colonnes suivent les filtres du tableau de bord.
 
 ## Règles appliquées par le système
 

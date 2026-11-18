@@ -117,9 +117,9 @@ metrics.blockedQueries.<type>.{ total, en, fr } // tooShort, piStage1, piStage2,
                                                 //   manipulation, azureGuardrail, unsupportedLanguage, total
 metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERSATIONS
 metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
-metrics.evalCoverage        // partner: { programs: [{ program, programFr, questions, humanEvals, scoredEvals, nonPerfectEvals,
+metrics.evalCoverage        // partner: { programs: [{ program, programFr, questions,
                             //   usableEvals, expiringEvals, informedAnswers, actions: [{ action, actionFr, count }] }],  // usable/expiring: all dates, dept only; null for 'unknown'
-                            //   recencyDays, expiringWindowDays }; top 25 by questions
+                            //   recencyDays, expiringWindowDays }; top 10 by questions
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
 metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
@@ -167,7 +167,7 @@ const chartA11y = {
 | `CitationPagesCard.js` | `CollapsibleCard` + `CountTable` of top citation pages. Partner only. |
 | `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
-| `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
+| `EvalCoverageCard.js` | `CollapsibleCard` (closed by default) + evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
 | `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
@@ -227,11 +227,12 @@ Ranked bar of `context.program`, directly under the accuracy row.
 
 ## Evaluation coverage by service (partner only)
 
-Table in the eval-informed section: per program, questions vs human expert evaluations, how many evaluations eval-informed answering can still use, and answers that used past evaluations.
+Table in the eval-informed section, collapsed by default: per program, questions, the expert evaluations eval-informed answering can use, answers that used past evaluations, and evaluations expiring soon.
+
+- **One evaluation count, and it ignores the date range.** The "Expert evaluations" column is `usableEvals`. A date-range count of evaluations (dropped 2026-11-18) was near zero under the 7-day default and told partners nothing about what answering can draw on.
 
 - **Same scope as the volume chart.** `metrics-eval-coverage.js` reuses `buildProgramScopeStages` from `metrics-programs.js` (normal answers, all filters), so the two can't count different questions.
-- **Human, scored evaluations only.** Counts `interaction.expertFeedback` with a `totalScore` — the "Never stale" toggle creates blank, unscored docs on unevaluated questions, which are not evaluations (same exclusion as `metrics-expert-feedback.js`) — and drops any `type: 'ai'` doc defensively.
-- **"In use" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore`, evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
+- **"Expert evaluations" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore` (the "Never stale" toggle creates blank, unscored docs on unevaluated questions — not evaluations), evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
 - **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
 - **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first. The card shows at most 3, skipping actions asked only once unless that's all there is, then "and N more" (`pickActions` in `EvalCoverageCard.js`).
 - Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
