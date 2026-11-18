@@ -10,65 +10,34 @@ const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign:
 const numHead = { ...head, textAlign: 'right' };
 const numCell = { ...cell, textAlign: 'right', whiteSpace: 'nowrap' };
 
-// Renders a stored eval-analysis report: computed tables (programs/actions
-// cross-tab, EN/FR, evaluators) interleaved with the LLM narrative sections.
-// Everything is read from the stored analysis doc — no fetching here.
+// Renders a stored eval-analysis report: computed tables (EN/FR, evaluators)
+// interleaved with the LLM narrative sections. Everything is read from the
+// stored analysis doc — no fetching here. v1 reports also stored a scores by
+// service and action table (crossTab); it still renders for them, and new
+// runs don't have one.
 const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtScore = (n) => (typeof n === 'number' ? formatDecimal(n, lang, 1) : '—');
   const pctOrDash = (n) => (n !== null && n !== undefined ? fmtPct(n) : '—');
-  const noValue = t('partnerDashboard.evalAnalysis.report.noValue');
 
   if (!analysis) return null;
   const stats = analysis.stats || null;
   const crossTab = analysis.crossTab || null;
   const insights = analysis.insights || null;
+  const input = analysis.insightInput || null;
+  const basedOnNotes = input
+    ? [
+        { key: 'basedOn', sent: input.nonPerfectSent, total: input.nonPerfectTotal },
+        { key: 'basedOnContentIssues', sent: input.contentIssueSent, total: input.contentIssueTotal }
+      ].filter((n) => n.sent < n.total)
+    : [];
 
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
 
   const narrative = (text) => (text ? <p style={{ whiteSpace: 'pre-wrap' }}>{text}</p> : null);
-
-  const rowTable = Array.isArray(analysis.rows) && analysis.rows.length > 0 && (
-    <div className="dashboard-section">
-      <h3 id="eval-analysis-rows-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.rowsTitle')}</h3>
-      <div style={{ overflowX: 'auto' }}>
-        <table className="display" aria-labelledby="eval-analysis-rows-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colQuestion')}</th>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-              <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colScore')}</th>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colProgram')}</th>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colAction')}</th>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-              <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colDetails')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {analysis.rows.map((row) => (
-              <tr key={row.id}>
-                <td style={{ ...cell, minWidth: 280 }}>{row.q || noValue}</td>
-                <td style={cell}>{row.lang === 'fr' ? t('partnerDashboard.evalAnalysis.report.lang.fr') : t('partnerDashboard.evalAnalysis.report.lang.en')}</td>
-                <td style={numCell}>{row.score === null || row.score === undefined ? noValue : fmtN(row.score)}</td>
-                <td style={cell}>{row.program || noValue}</td>
-                <td style={cell}>{row.action || noValue}</td>
-                <td style={{ ...cell, wordBreak: 'break-all' }}>{row.evaluator || noValue}</td>
-                <td style={cell}>
-                  <details>
-                    <summary style={{ cursor: 'pointer' }}>{t('partnerDashboard.evalAnalysis.report.viewRowData')}</summary>
-                    <pre style={{ whiteSpace: 'pre-wrap', maxWidth: 600 }}>{JSON.stringify(row, null, 2)}</pre>
-                  </details>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
 
   // Older stored reports have no example.
   const exampleLink = (example) => {
@@ -133,9 +102,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
 
   return (
     <div>
-      {analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <StatusMessage variant="info" message={t('partnerDashboard.evalAnalysis.report.running').replace('{status}', t(`partnerDashboard.evalAnalysis.status.${analysis.status}`))} />
-      )}
       {/* Header: what was analyzed. Plain sections with dashboard-style
           headings — the card border/box chrome is reserved for the stat and
           chart cards elsewhere on the dashboard. */}
@@ -160,12 +126,22 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
               t('partnerDashboard.evalAnalysis.report.unclassified').replace('{count}', fmtN(crossTab.unclassifiedCount))}
           </p>
         )}
+        {/* When there are many, only part of each list is sent to the model
+            (errors first, then most recent). Said here, not under a section,
+            so it shows even when the model reports no themes. */}
+        {basedOnNotes.map(({ key, sent, total }) => (
+          <p key={key} className="font-size-text-xsm-nr">
+            {t(`partnerDashboard.evalAnalysis.report.${key}`)
+              .replace('{sent}', fmtN(sent))
+              .replace('{total}', fmtN(total))}
+          </p>
+        ))}
         {analysis.status === 'error' && (
           <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.report.partial')} />
         )}
       </div>
 
-      {/* Scores by combined program — action group (Tier 2 cross-tab) */}
+      {/* Scores by combined program — action group: v1 reports only */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
           <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
@@ -289,7 +265,6 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           </div>
         </div>
       )}
-      {rowTable}
     </div>
   );
 };
