@@ -31,6 +31,7 @@ const INITIAL_METRICS = {
   topCitations: [],
   answerTypeBreakdown: {},
   topPrograms: [],
+  evalCoverage: { programs: [], recencyDays: null, expiringWindowDays: null },
   contentIssueChats: [],
   harmfulChats: [],
   evalInformedChats: [],
@@ -53,7 +54,7 @@ const INITIAL_METRICS = {
 // Like blocked queries, they're best-effort: a failure leaves an empty result
 // rather than taking down the whole dashboard.
 export function useDashboardMetrics(options = {}) {
-  const { includeReferrals = false, includeCitations = false, includePrograms = false, includeContentIssueChats = false, includeHarmfulChats = false, includeEvalInformedChats = false } = options;
+  const { includeReferrals = false, includeCitations = false, includePrograms = false, includeContentIssueChats = false, includeHarmfulChats = false, includeEvalInformedChats = false, includeEvalCoverage = false } = options;
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -94,7 +95,7 @@ export function useDashboardMetrics(options = {}) {
       // Best-effort tail fetches run together: blocked queries always, top
       // referrals / citations only when opted in. Each falls back to its empty
       // shape so one failing endpoint can't blank the rest of the dashboard.
-      const [blocked, referrals, citations, programs, contentIssueChats, harmfulChats, evalInformedChats] = await Promise.all([
+      const [blocked, referrals, citations, programs, contentIssueChats, harmfulChats, evalInformedChats, evalCoverage] = await Promise.all([
         MetricsService.getBlockedMetrics(filters, signal)
           .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries })),
         includeReferrals
@@ -121,16 +122,20 @@ export function useDashboardMetrics(options = {}) {
           ? MetricsService.getEvalInformedChatsMetrics(filters, signal)
               .catch(() => ({ evalInformedChats: INITIAL_METRICS.evalInformedChats }))
           : Promise.resolve({ evalInformedChats: INITIAL_METRICS.evalInformedChats }),
+        includeEvalCoverage
+          ? MetricsService.getEvalCoverageMetrics(filters, signal)
+              .catch(() => ({ evalCoverage: INITIAL_METRICS.evalCoverage }))
+          : Promise.resolve({ evalCoverage: INITIAL_METRICS.evalCoverage }),
       ]);
       if (!signal.aborted) {
-        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations, ...programs, ...contentIssueChats, ...harmfulChats, ...evalInformedChats });
+        setMetrics({ ...INITIAL_METRICS, ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...blocked, ...referrals, ...citations, ...programs, ...contentIssueChats, ...harmfulChats, ...evalInformedChats, ...evalCoverage });
       }
     } catch (err) {
       if (!signal.aborted) setError(err);
     } finally {
       if (!signal.aborted) setLoading(false);
     }
-  }, [includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats, includeEvalInformedChats]);
+  }, [includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats, includeEvalInformedChats, includeEvalCoverage]);
 
   return { metrics, loading, error, fetchMetrics };
 }

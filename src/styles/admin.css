@@ -3832,3 +3832,71 @@ fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
   font-weight: 700;
   padding-bottom: var(--gcds-spacing-75);
 }
+
+/* Plain data table inside a dashboard card (EvalCoverageCard). Same look as
+   the inline-styled tables in CountTable/ContentIssueChatsCard, as classes. */
+.dashboard-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-data-table th,
+.dashboard-data-table td {
+  padding: var(--gcds-spacing-100);
+  border-bottom: var(--gcds-border-width-sm) solid var(--gcds-color-grayscale-100);
+  text-align: left;
+  vertical-align: top;
+}
+
+.dashboard-data-table thead th {
+  border-bottom-width: var(--gcds-border-width-md);
+  vertical-align: bottom;
+}
+
+/* Row headers name the row; keep them regular weight like the cells. */
+.dashboard-data-table tbody th {
+  font-weight: var(--gcds-font-weights-regular);
+}
+
+.dashboard-data-table .dashboard-data-table__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Number headers may wrap ("Expert evaluations" over two lines) so they
+   don't take the width a text column needs; the numbers below stay on one
+   line. */
+.dashboard-data-table thead th.dashboard-data-table__num {
+  white-space: normal;
+}
+
+/* A text column holding a short list (EvalCoverageCard's actions). Hardcoded:
+   no GC DS sizing token fits a column minimum — wide enough for about three
+   short action names per line instead of one word per line. */
+.dashboard-data-table .dashboard-data-table__list {
+  min-width: 14rem;
+}
+
+/* Wide table scrolls inside its own box so the page never scrolls sideways.
+   Focusable (tabIndex=0) so keyboard users can scroll it; inset focus ring
+   matches .dashboard-table-container. */
+.dashboard-table-scroll {
+  overflow-x: auto;
+}
+
+.dashboard-table-scroll:focus-visible {
+  outline: var(--gcds-input-outline-width) solid var(--gcds-input-focus-border);
+  outline-offset: calc(-1 * var(--gcds-input-outline-width));
+}
+
+.dashboard-table-notes {
+  margin: var(--gcds-spacing-200) 0 0;
+}
+
+.dashboard-table-notes dt {
+  font-weight: var(--gcds-font-weights-semibold);
+}
+
+.dashboard-table-notes dd {
+  margin: 0 0 var(--gcds-spacing-100);
+}
