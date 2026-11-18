@@ -1,6 +1,6 @@
 # Partner dashboard — eval analysis (v2 redesign)
 
-**Status:** v2 redesign in progress — PR 1 (coverage table) built on `analysis-update`. v1 is implemented and live (see
+**Status:** v2 redesign in progress — PR 1 (coverage table) on `analysis-update`; PR 2 (most-used evaluations) on `eval-reuse-lists`. v1 is implemented and live (see
 [What v1 does today](#what-v1-does-today)).
 **Owner:** Lisa Fast
 **Written:** 2026-07-10 (v1) · **Rewritten:** 2026-11-15 (v2)
@@ -94,18 +94,19 @@ named by the caption; em dashes are `aria-hidden` with a spoken equivalent;
 English fallback names on the French dashboard carry `lang="en"`; column
 definitions are visible text under the table, not tooltips; no inline styles.
 
-Two lists go below the table.
+One list goes below the table (PR 2, built).
 
-- **Most-used evaluations.** These are the human evals injected into the most
-  later answers, showing the use count, score, program and a review-mode link.
+- **Most-used evaluations.** The human evals injected into the most answers in
+  the period (top 20, `MOST_USED_EVALS_LIMIT`), showing a review-mode link to
+  the evaluated question, service, expert score, times used and evaluation date.
   This is reuse counted from the *eval's* side: unwind `context.qaMatches` and
-  group by `interactionId`.
-- **Weak examples in use.** These are non-perfect human evals that have been
-  injected at least once **and** give the model little to work with: no
-  sentence explanation on any deducted sentence, no `answerImprovement`, and no
-  corrected citation URL when the citation was marked down. Error-scored evals
-  come first. Each row links to review mode so an evaluator can add an
-  explanation.
+  group by `interactionId`. Same answers and filters as the eval-informed chats
+  list.
+- ~~Weak examples in use~~ — **dropped** (decided 2026-11-16). Explanations have
+  been required for every deduction since 2026-08-12 (`2495d615`), so missing
+  explanations are legacy-only and age out of the 365-day window by about
+  August 2027. A wrong citation with no corrected URL is still possible today
+  (`expertCitationUrl` is optional) — revisit only if that turns out to matter.
 
 The existing human-only stats from v1 (the EN vs FR table and the evaluators
 table) move into Part A, computed by aggregation over the same scope.
@@ -142,12 +143,12 @@ the result would be misleading. Revisit only if volume grows.
   adds the expert-feedback, freshness and `qaMatches` columns. The 365-day
   limit is the shared `EVAL_INFORMED_RECENCY_DAYS` in `src/config/workflows.js`,
   now also used by `GenericWithQAGraph`.
-- `api/metrics/metrics-eval-reuse.js` holds the most-used and weak-examples
-  lists. It unwinds `context.qaMatches` in scope, groups by `interactionId`,
-  then looks up the matched interaction's expert feedback and context. It is
-  bounded with a top N.
-- Pure helper for the weak-example rule in `services/evalAnalysisStats.js`,
-  with a vitest test first.
+- `api/metrics/metrics-eval-reuse.js` holds the most-used list (**PR 2,
+  built**). The aggregation unwinds `context.qaMatches` in scope and ranks by
+  `interactionId`, so only the top N ids leave the database; their details come
+  from two indexed finds in JS (`qaMatches` stores ids as strings — avoids
+  relying on `$toObjectId` on DocumentDB). Evaluations deleted since use are
+  dropped.
 
 **Changed**
 
@@ -208,7 +209,8 @@ already groups `en`/`fr` the same way). Kept out of PR 1 to keep it reviewable.
 
 1. **Part A, coverage table** (built): endpoint, card, EN/FR copy, how-to guide
    section, dashboards doc. It stands alone and carries most of the value.
-2. **Part A, reuse lists**: most-used and weak examples.
+2. **Part A, most-used evaluations** (built): endpoint, card, EN/FR copy,
+   how-to guide, dashboards doc. The weak-examples list was dropped.
 3. **Part B simplification**: one call, input limit, removals, and moving the
    EN/FR and evaluator tables into Part A.
 

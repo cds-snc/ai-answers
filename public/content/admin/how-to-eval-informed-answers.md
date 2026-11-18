@@ -64,6 +64,8 @@ Below that card, **Evaluation coverage by service** lists the 10 services with t
 - **Actions asked about** lists up to three things people asked to do, most common first. Actions asked only once are left out.
 - The other columns follow the dashboard's filters.
 
+**Most-used evaluations** lists the evaluations given to the AI most often in the period. Open a chat ID to check that an evaluation is still right. A wrong evaluation that is used often affects many answers.
+
 ## Rules the system applies
 
 - Matches on meaning rather than wording.

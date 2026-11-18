@@ -168,6 +168,15 @@ export const MOCK_METRICS = {
       { program: 'unknown', programFr: '', questions: 12, usableEvals: null, expiringEvals: null, informedAnswers: 1, actions: [] },
     ],
   },
+  // Most-used evaluations (MostUsedEvalsCard), ranked by uses. Includes a
+  // chat with two evaluated questions (unique link text via question number),
+  // a service with no French name and an unclassified one.
+  mostUsedEvals: [
+    { chatId: '5b2e8c1d-7a4f-4e3b-9c6d-1f8a2b3c4d5e', interactionId: '6a1b2c3d4e5f6a7b8c9d0e1f', pageLanguage: 'en', questionNumber: 1, program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', totalScore: 100, evaluatedAt: '2026-07-14T15:00:00Z', uses: 42 },
+    { chatId: '5b2e8c1d-7a4f-4e3b-9c6d-1f8a2b3c4d5e', interactionId: '6a1b2c3d4e5f6a7b8c9d0e2a', pageLanguage: 'en', questionNumber: 2, program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', totalScore: 80, evaluatedAt: '2026-07-14T15:05:00Z', uses: 17 },
+    { chatId: 'c7d9e1f3-2a4b-4c6d-8e0f-1a3b5c7d9e1f', interactionId: '7b2c3d4e5f6a7b8c9d0e1f2a', pageLanguage: 'fr', questionNumber: 1, program: 'Canada Groceries and Essentials Benefit', programFr: '', totalScore: 92.5, evaluatedAt: '2026-09-02T12:30:00Z', uses: 9 },
+    { chatId: 'e3f5a7b9-4c6d-4e8f-a0b1-2c3d4e5f6a7b', interactionId: '8c3d4e5f6a7b8c9d0e1f2a3b', pageLanguage: 'en', questionNumber: 3, program: '', programFr: '', totalScore: 100, evaluatedAt: '2026-10-21T09:10:00Z', uses: 3 },
+  ],
   // Most recent sample only (server caps at 20), not all evalInformed.total.
   evalInformedChats: [
     { chatId: '2b7f0c1e-6d4a-4f2b-9a51-3c8e7d1f0a42', interactionId: '6f1a2b3c4d5e6f7a8b9c0d1e', pageLanguage: 'en', questionNumber: 1, createdAt: '2026-08-08T12:10:00Z' },

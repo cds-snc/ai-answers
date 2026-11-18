@@ -1817,6 +1817,13 @@
       "noteExpiring": "Evaluations that will stop being used within {days} days, whatever the date range. Evaluate new questions for these services to keep examples available.",
       "noteInformed": "Answers where the AI was given past expert evaluations as examples."
     },
+    "mostUsedEvals": {
+      "title": "Most-used evaluations",
+      "subtitle": "Up to {n} expert evaluations given to the AI most often as examples in this period",
+      "trigger": "See the most-used evaluations",
+      "colUses": "Times used",
+      "colEvaluated": "Date evaluated"
+    },
     "evalInformedChats": {
       "title": "Eval-informed answers by chat ID",
       "subtitle": "Shows up to the {n} most recent",

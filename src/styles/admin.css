@@ -3870,6 +3870,12 @@ fieldset.canada-ca-choice-fieldset fieldset.canada-ca-choice-fieldset {
   white-space: normal;
 }
 
+/* A long unbroken ID (a chat UUID) — let it wrap anywhere instead of
+   forcing the table wider. */
+.dashboard-data-table .dashboard-data-table__id {
+  word-break: break-all;
+}
+
 /* A text column holding a short list (EvalCoverageCard's actions). Hardcoded:
    no GC DS sizing token fits a column minimum — wide enough for about three
    short action names per line instead of one word per line. */

@@ -1817,6 +1817,13 @@
       "noteExpiring": "Évaluations qui cesseront d'être utilisées d'ici {days} jours, quelle que soit la période choisie. Évaluez de nouvelles questions pour ces services afin de garder des exemples disponibles.",
       "noteInformed": "Réponses pour lesquelles l'IA a reçu des évaluations d'experts antérieures comme exemples."
     },
+    "mostUsedEvals": {
+      "title": "Évaluations les plus utilisées",
+      "subtitle": "Jusqu'à {n} évaluations d'experts fournies le plus souvent à l'IA comme exemples pendant cette période",
+      "trigger": "Voir les évaluations les plus utilisées",
+      "colUses": "Nombre d'utilisations",
+      "colEvaluated": "Date de l'évaluation"
+    },
     "evalInformedChats": {
       "title": "Réponses informées par les évaluations, par ID de clavardage",
       "subtitle": "Affiche jusqu'aux {n} plus récentes",
