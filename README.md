@@ -30,6 +30,8 @@ AZURE_OPENAI_API_VERSION=2024-06-01                 # Azure OpenAI API version
 
 # Required for application security
 JWT_SECRET_KEY=your_random_secret_key               # Secret key for JWT token signing
+CONVERSATION_INTEGRITY_SECRET=your_random_secret    # Signs conversation history. Required unless NODE_ENV is development or test
+SESSION_SECRET=your_random_secret                   # Signs session cookies. Required unless NODE_ENV is development or test
 
 # Optional - Google Search (for context retrieval)
 GOOGLE_API_KEY=your_google_api_key                  # Google Custom Search API key

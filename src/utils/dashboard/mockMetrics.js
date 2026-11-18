@@ -162,10 +162,10 @@ export const MOCK_METRICS = {
     recencyDays: 365,
     expiringWindowDays: 60,
     programs: [
-      { program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', questions: 230, humanEvals: 18, scoredEvals: 18, nonPerfectEvals: 5, usableEvals: 15, expiringEvals: 3, informedAnswers: 96, actions: [{ action: 'Apply', actionFr: 'Présenter une demande', count: 140 }, { action: 'Check status', actionFr: "Vérifier l'état", count: 60 }, { action: 'Get help with', actionFr: "Obtenir de l'aide", count: 30 }] },
-      { program: 'Tax-free savings account (TFSA)', programFr: 'Compte d’épargne libre d’impôt (CELI)', questions: 70, humanEvals: 1, scoredEvals: 1, nonPerfectEvals: 0, usableEvals: 1, expiringEvals: 0, informedAnswers: 4, actions: [{ action: 'Get info', actionFr: "Obtenir de l'information", count: 70 }] },
-      { program: 'Canada Groceries and Essentials Benefit', programFr: '', questions: 20, humanEvals: 0, scoredEvals: 0, nonPerfectEvals: 0, usableEvals: 0, expiringEvals: 0, informedAnswers: 0, actions: [] },
-      { program: 'unknown', programFr: '', questions: 12, humanEvals: 2, scoredEvals: 2, nonPerfectEvals: 1, usableEvals: null, expiringEvals: null, informedAnswers: 1, actions: [] },
+      { program: 'Secure Certificate of Indian Status (SCIS)', programFr: 'Certificat sécurisé de statut d’Indien (CSSI)', questions: 230, usableEvals: 15, expiringEvals: 3, informedAnswers: 96, actions: [{ action: 'Apply', actionFr: 'Présenter une demande', count: 140 }, { action: 'Check status', actionFr: "Vérifier l'état", count: 60 }, { action: 'Get help with', actionFr: "Obtenir de l'aide", count: 30 }] },
+      { program: 'Tax-free savings account (TFSA)', programFr: 'Compte d’épargne libre d’impôt (CELI)', questions: 70, usableEvals: 1, expiringEvals: 0, informedAnswers: 4, actions: [{ action: 'Get info', actionFr: "Obtenir de l'information", count: 70 }] },
+      { program: 'Canada Groceries and Essentials Benefit', programFr: '', questions: 20, usableEvals: 0, expiringEvals: 0, informedAnswers: 0, actions: [] },
+      { program: 'unknown', programFr: '', questions: 12, usableEvals: null, expiringEvals: null, informedAnswers: 1, actions: [] },
     ],
   },
   // Most-used evaluations (MostUsedEvalsCard), ranked by uses. Includes a

@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
 
 import dbBatchListHandler from '../api/batch/batch-list.js';
+import dbBatchListFiltersHandler from '../api/batch/batch-list-filters.js';
 import dbBatchRetrieveHandler from '../api/batch/batch-retrieve.js';
 import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
@@ -125,6 +126,7 @@ import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadat
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
 import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
 import vectorDuplicateEmbeddingsHandler from '../api/vector/vector-duplicate-embeddings.js';
+import vectorRemoveDuplicateEmbeddingsHandler from '../api/vector/vector-remove-duplicate-embeddings.js';
 import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import vectorMetadataBackfillJobHandler from '../api/vector/vector-metadata-backfill-job.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
@@ -134,12 +136,13 @@ import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
-import createSessionMiddleware from '../middleware/express-session.js';
+import createSessionMiddleware, { resolveSessionSecret } from '../middleware/express-session.js';
 import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
 import systemHealthMonitor from '../services/SystemHealthMonitor.js';
+import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
 
 
 
@@ -147,6 +150,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// Refuse to start without the conversation-integrity secret (AIA-019).
+ConversationIntegrityService.assertConfigured();
 
 const app = express();
 
@@ -334,6 +340,7 @@ app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
 app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
 app.get('/api/vector/vector-duplicate-embeddings', vectorDuplicateEmbeddingsHandler);
+app.post('/api/vector/vector-remove-duplicate-embeddings', vectorRemoveDuplicateEmbeddingsHandler);
 app.get('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.post('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.delete('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
@@ -359,6 +366,7 @@ app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
+app.get('/api/batch/batch-list-filters', dbBatchListFiltersHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
@@ -479,6 +487,10 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    // Refuse to start without a session secret (AIA-004). Runs after settings
+    // load because session.secret can come from the database.
+    resolveSessionSecret();
 
     systemHealthMonitor.start();
     console.log("System health monitor started...");

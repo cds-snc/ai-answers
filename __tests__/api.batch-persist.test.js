@@ -69,9 +69,9 @@ describe('api/batch/batch-persist handler', () => {
     await handler(req, res);
 
     expect(batchModelMock.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: '64fec1000000000000000001' },
+      { _id: '64fec1000000000000000001' }, // admin: no owner condition
       { $set: { status: 'ready', workflow: 'Default' } },
-      { new: true, upsert: true }
+      { new: true }
     );
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -120,9 +120,10 @@ describe('api/batch/batch-persist handler', () => {
     await handler(req, res);
 
     expect(batchModelMock.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: '64fec1000000000000000001' },
+      // Partner: ownership is part of the update's own filter.
+      { _id: '64fec1000000000000000001', createdBy: 'test-partner' },
       { $set: { searchProvider: 'canadaca' } },
-      { new: true, upsert: true }
+      { new: true }
     );
   });
 });

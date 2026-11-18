@@ -169,47 +169,6 @@ export class GraphWorkflowHelper {
     });
   }
 
-  async getContextForFlow({ conversationHistory, translationData, userMessage, lang, searchProvider, chatId, selectedAI, department, overrideUserId }) {
-    const safeHistory = (conversationHistory || []).filter(m => m && !m.error);
-    const cleanedHistory = safeHistory;
-    const aiHistory = safeHistory.filter(m => m.sender === 'ai');
-    const lastMessage = aiHistory.length > 0 ? aiHistory[aiHistory.length - 1] : null;
-
-    const hasUsableExisting = (
-      lastMessage &&
-      lastMessage.interaction &&
-      lastMessage.interaction.context &&
-      lastMessage.interaction.context.searchQuery &&
-      lastMessage.interaction.answer &&
-      typeof lastMessage.interaction.answer.answerType === 'string' &&
-      !lastMessage.interaction.answer.answerType.includes('question')
-    );
-
-    if (hasUsableExisting) {
-      const context = { ...lastMessage.interaction.context };
-      context.translatedQuestion = translationData?.translatedText || userMessage;
-      context.originalLang = translationData?.originalLanguage || lang;
-      context.outputLang = this.determineOutputLang(translationData);
-      const departmentKey = department || context.department;
-      const updatedContext = await this.applyScenarioOverride({
-        context,
-        departmentKey,
-        overrideUserId,
-        chatId,
-      });
-      return { context: updatedContext, usedExistingContext: true, conversationHistory: safeHistory };
-    }
-
-    const minimalContext = {
-      translatedQuestion: translationData?.translatedText || userMessage,
-      originalLang: translationData?.originalLanguage || lang,
-      searchProvider: searchProvider || '',
-      systemPrompt: '',
-    };
-
-    return { context: minimalContext, usedExistingContext: false, conversationHistory: safeHistory };
-  }
-
   buildShortCircuitPayload({ similarShortCircuit, startTime, endTime, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider, contextOverride = null }) {
     const totalResponseTimeSC = endTime - startTime;
     const scContext = contextOverride || {
@@ -241,7 +200,6 @@ export class GraphWorkflowHelper {
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
         englishAnswer: englishAnswerText,
-        historySignature: similarShortCircuit.historySignature || similarShortCircuit.answer?.historySignature || null,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -249,7 +207,6 @@ export class GraphWorkflowHelper {
         citationUrl: aiCitationUrl,
       },
       finalCitationUrl: providedCitationUrl,
-      historySignature: similarShortCircuit.historySignature || null,
       context: scContext,
       chatId,
       pageLanguage: lang,
@@ -309,7 +266,6 @@ export class GraphWorkflowHelper {
           paragraphs: [answerText],
           sentences: [answerText],
           englishAnswer: englishAnswerText,
-          historySignature: similarJson.historySignature || similarJson.answer?.historySignature || null,
           instantAnswerChatId: instantAnswerChatId,
           instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
@@ -319,7 +275,6 @@ export class GraphWorkflowHelper {
         question: userMessage,
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
         sourceCitation: similarJson.citation || null,
-        historySignature: similarJson.historySignature || null,
         instantAnswerChatId,
         instantAnswerInteractionId,
         vectorMatches: similarJson.vectorMatches || [],

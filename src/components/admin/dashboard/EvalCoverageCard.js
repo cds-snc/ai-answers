@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
-import { formatNumber, formatPercent, formatDecimal, isSingular } from '../../../utils/numberFormat.js';
+import { formatNumber, isSingular } from '../../../utils/numberFormat.js';
+import CollapsibleCard from './CollapsibleCard.js';
 
 // Most actions a row lists before "and N more".
 export const MAX_ACTIONS_SHOWN = 3;
@@ -16,12 +17,14 @@ export function pickActions(actions = []) {
 }
 
 // Evaluation coverage by service (program) for the partner dashboard: how many
-// questions each service gets, how many have a human expert evaluation, how
-// many of those evaluations eval-informed answering can still use, and how
-// many answers used past evaluations. Data: metrics.evalCoverage
+// questions each service gets, how many expert evaluations eval-informed
+// answering can use for it (all dates, not the date range), how many answers
+// used past evaluations, and how many evaluations expire soon. Data: metrics.evalCoverage
 // (api/metrics/metrics-eval-coverage.js).
 //
 // Accessibility:
+// - Collapsed by default (CollapsibleCard): the table is long. The heading and
+//   subtitle stay visible outside the <details>.
 // - Real <table> with a caption, column headers (scope="col") and the service
 //   name as each row's header (scope="row"), so a screen reader announces
 //   "GST/HST, Questions, 120" when moving across a row.
@@ -40,7 +43,6 @@ const EvalCoverageCard = ({ coverage, lang = 'en' }) => {
   if (rows.length === 0) return null;
 
   const fmtN = (n) => formatNumber(n, lang);
-  const fmtPct = (n) => formatPercent(n, lang);
   const k = (key) => t(`partnerDashboard.evalCoverage.${key}`);
 
   const localized = (en, fr) => {
@@ -87,9 +89,7 @@ const EvalCoverageCard = ({ coverage, lang = 'en' }) => {
   const title = k('title');
 
   return (
-    <div className="dashboard-card">
-      <h3 className="card-title card-title--has-subtitle">{title}</h3>
-      <p className="card-subtitle font-size-text-xsm-nr">{k('subtitle')}</p>
+    <CollapsibleCard heading={title} subtext={k('subtitle')} triggerLabel={k('trigger')}>
       <div className="dashboard-table-scroll" role="region" aria-labelledby={captionId} tabIndex={0}>
         <table className="dashboard-data-table">
           <caption id={captionId} className="sr-only">{title}</caption>
@@ -99,56 +99,38 @@ const EvalCoverageCard = ({ coverage, lang = 'en' }) => {
               <th scope="col" className="dashboard-data-table__list">{k('colActions')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colQuestions')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colEvaluations')}</th>
-              <th scope="col" className="dashboard-data-table__num">{k('colCoverage')}</th>
-              <th scope="col" className="dashboard-data-table__num">{k('colUsable')}</th>
-              <th scope="col" className="dashboard-data-table__num">{k('colExpiring')}</th>
               <th scope="col" className="dashboard-data-table__num">{k('colInformed')}</th>
-              <th scope="col" className="dashboard-data-table__num">{k('colBelowPerfect')}</th>
+              <th scope="col" className="dashboard-data-table__num">{k('colExpiring')}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const coveragePct = row.questions > 0 ? (row.humanEvals / row.questions) * 100 : null;
-              const belowPerfectPct = row.scoredEvals > 0 ? Math.round((row.nonPerfectEvals / row.scoredEvals) * 100) : null;
-              return (
-                <tr key={row.program}>
-                  <th scope="row">
-                    {row.program === 'unknown' ? k('unclassified') : localized(row.program, row.programFr)}
-                  </th>
-                  <td>{renderActions(row.actions || [])}</td>
-                  <td className="dashboard-data-table__num">{fmtN(row.questions)}</td>
-                  <td className="dashboard-data-table__num">{fmtN(row.humanEvals)}</td>
-                  <td className="dashboard-data-table__num">
-                    {coveragePct === null ? notApplicable : fmtPct(formatDecimal(coveragePct, lang, 1))}
-                  </td>
-                  {/* null for the unclassified row: its evaluations can't be
-                      traced to a service. */}
-                  <td className="dashboard-data-table__num">{row.usableEvals == null ? notApplicable : fmtN(row.usableEvals)}</td>
-                  <td className="dashboard-data-table__num">{row.expiringEvals == null ? notApplicable : fmtN(row.expiringEvals)}</td>
-                  <td className="dashboard-data-table__num">{fmtN(row.informedAnswers)}</td>
-                  <td className="dashboard-data-table__num">
-                    {belowPerfectPct === null ? notApplicable : fmtPct(belowPerfectPct)}
-                  </td>
-                </tr>
-              );
-            })}
+            {rows.map((row) => (
+              <tr key={row.program}>
+                <th scope="row">
+                  {row.program === 'unknown' ? k('unclassified') : localized(row.program, row.programFr)}
+                </th>
+                <td>{renderActions(row.actions || [])}</td>
+                <td className="dashboard-data-table__num">{fmtN(row.questions)}</td>
+                {/* Evaluations / expiring are null for the unclassified row: its
+                    evaluations can't be traced to a service. */}
+                <td className="dashboard-data-table__num">{row.usableEvals == null ? notApplicable : fmtN(row.usableEvals)}</td>
+                <td className="dashboard-data-table__num">{fmtN(row.informedAnswers)}</td>
+                <td className="dashboard-data-table__num">{row.expiringEvals == null ? notApplicable : fmtN(row.expiringEvals)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
       {/* Term/definition pairs, so a <dl>: the term is the column header. */}
       <dl className="dashboard-table-notes font-size-text-xsm-nr">
-        <dt>{k('colCoverage')}</dt>
-        <dd>{k('noteCoverage')}</dd>
-        <dt>{k('colUsable')}</dt>
-        <dd>{k('noteUsable').replace('{days}', () => fmtN(coverage.recencyDays))}</dd>
-        <dt>{k('colExpiring')}</dt>
-        <dd>{k('noteExpiring').replace('{days}', () => fmtN(coverage.expiringWindowDays))}</dd>
+        <dt>{k('colEvaluations')}</dt>
+        <dd>{k('noteEvaluations').replace('{days}', () => fmtN(coverage.recencyDays))}</dd>
         <dt>{k('colInformed')}</dt>
         <dd>{k('noteInformed')}</dd>
-        <dt>{k('colBelowPerfect')}</dt>
-        <dd>{k('noteBelowPerfect')}</dd>
+        <dt>{k('colExpiring')}</dt>
+        <dd>{k('noteExpiring').replace('{days}', () => fmtN(coverage.expiringWindowDays))}</dd>
       </dl>
-    </div>
+    </CollapsibleCard>
   );
 };
 

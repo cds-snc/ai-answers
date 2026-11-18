@@ -106,8 +106,7 @@ Requirements and gotchas when turning 2FA on (the full go-live list is "Before t
 in production" in the plan):
 
 - The code hash is keyed from `TWOFA_SECRET`, else `SESSION_SECRET`, else `JWT_SECRET_KEY`. Every
-  deployed environment has `JWT_SECRET_KEY` (PR previews have no `SESSION_SECRET`), so nothing
-  needs setting. With none of the three, login returns 500 with `reason: "send_failed"` and
+  deployed environment has `SESSION_SECRET` and `JWT_SECRET_KEY`, so nothing needs setting. With none of the three, login returns 500 with `reason: "send_failed"` and
   `detail: "twofa_no_secret"`. Other `detail` values on that 500: `twofa_no_template`,
   `send_failed` (GC Notify did not send the email) and `twofa_send_error` (any other error).
 - Settings are cached per instance at startup with no refresh, so on a multi-instance deployment

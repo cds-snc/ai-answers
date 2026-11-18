@@ -109,7 +109,6 @@ graph.addNode('shortCircuit', async (state) => {
     vectorMatches: payload.vectorMatches,
     nlpCandidates: payload.nlpCandidates,
     llmSelection: payload.llmSelection,
-    historySignature: payload.historySignature,
     payload,
   });
   return out;
@@ -144,7 +143,7 @@ graph.addNode('verifyNode', async (state) => {
     finalCitationUrl = citation.url || citation.fallbackUrl;
   }
   logGraphEvent('info', 'node:verify input', state.chatId, { answer, shortCircuit });
-  const out = { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl, historySignature: answer?.historySignature || null } };
+  const out = { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl } };
   logGraphEvent('info', 'node:verify output', state.chatId, { finalCitationUrl, shortCircuit });
   return out;
 });

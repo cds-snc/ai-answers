@@ -19,6 +19,7 @@ vi.mock('../../../models/chat.js', () => ({
 // Mock auth middleware (though we're calling handlers directly, useful if we import the default export)
 vi.mock('../../../middleware/auth.js', () => ({
     authMiddleware: (handler) => handler,
+    partnerOrAdminMiddleware: (handler) => handler,
     withProtection: (handler) => handler,
 }));
 

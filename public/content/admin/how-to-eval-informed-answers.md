@@ -55,13 +55,14 @@ Open a chat ID in the list to see the past evaluations it used.
 
 ## See where evaluations are missing
 
-Below that card, **Evaluation coverage by service** lists the services with the most questions. Use it to decide where to evaluate next.
+Below that card, **Evaluation coverage by service** lists the 10 services with the most questions. Use it to decide where to evaluate next.
 
-- **Evaluation coverage** is expert evaluations as a share of questions. A busy service with low coverage has few examples to draw on.
-- **Evaluations in use** counts evaluations from the past year, plus any marked **Never stale**. Only these can be used as examples. This column and the next ignore the date range.
-- **Expiring soon** counts evaluations that will stop being used within 60 days. Evaluate new questions for that service to replace them.
+- Open it with **Top services by evaluation coverage**.
+- **Expert evaluations** counts the evaluations the AI can use as examples: those from the past year, plus any marked **Never stale**. It ignores the date range. The table lists the busiest services first, so services near the top with few evaluations are the ones to evaluate next.
+- **Answers using evaluations** shows whether the evaluations you did match what people ask.
+- **Expiring soon** counts evaluations that will stop being used within 60 days. Evaluate new questions for that service to replace them. It also ignores the date range.
 - **Actions asked about** lists up to three things people asked to do, most common first. Actions asked only once are left out.
-- It follows the dashboard's filters.
+- The other columns follow the dashboard's filters.
 
 **Most-used evaluations** lists the evaluations given to the AI most often in the period. Open a chat ID to check that an evaluation is still right. A wrong evaluation that is used often affects many answers.
 

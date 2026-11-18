@@ -18,6 +18,15 @@ describe('EvalCoverageCard', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('is collapsed by default, with the heading and subtitle outside the collapse', () => {
+    render(<EvalCoverageCard coverage={coverage} lang="en" />);
+    const details = document.querySelector('details');
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary').textContent).toBe('Top services by evaluation coverage');
+    expect(details.contains(screen.getByRole('heading', { name: 'Evaluation coverage by service' }))).toBe(false);
+    expect(details.contains(screen.getByRole('table', { hidden: true }))).toBe(true);
+  });
+
   it('is a captioned table inside a focusable, named scroll region', () => {
     render(<EvalCoverageCard coverage={coverage} lang="en" />);
     const table = screen.getByRole('table', { name: 'Evaluation coverage by service' });
@@ -30,7 +39,9 @@ describe('EvalCoverageCard', () => {
     render(<EvalCoverageCard coverage={coverage} lang="en" />);
     const table = screen.getByRole('table');
     const colHeaders = within(table).getAllByRole('columnheader');
-    expect(colHeaders).toHaveLength(9);
+    expect(colHeaders.map((th) => th.textContent)).toEqual([
+      'Service', 'Actions asked about', 'Questions', 'Expert evaluations', 'Answers using evaluations', 'Expiring soon',
+    ]);
     colHeaders.forEach((th) => expect(th.getAttribute('scope')).toBe('col'));
 
     const rowHeaders = within(table).getAllByRole('rowheader');
@@ -46,19 +57,18 @@ describe('EvalCoverageCard', () => {
     render(<EvalCoverageCard coverage={coverage} lang="en" />);
     const scis = screen.getByRole('rowheader', { name: 'Secure Certificate of Indian Status (SCIS)' }).closest('tr');
     const cells = within(scis).getAllByRole('cell').map((td) => td.textContent);
-    // actions, questions, evals, coverage, in use, expiring, informed, below perfect
-    expect(cells).toEqual(['Apply, Check status, Get help with', '230', '18', '7.8%', '15', '3', '96', '28%']);
+    // actions, questions, evals (usable, all dates), informed, expiring
+    expect(cells).toEqual(['Apply, Check status, Get help with', '230', '15', '96', '3']);
 
     const groceries = screen.getByRole('rowheader', { name: 'Canada Groceries and Essentials Benefit' }).closest('tr');
     const groceryCells = within(groceries).getAllByRole('cell');
     expect(groceryCells[0].textContent).toContain('No actions recorded');
-    expect(groceryCells[7].textContent).toContain('Not applicable');
-    // The unclassified row has no in-use / expiring counts.
+    // The unclassified row has no evaluation / expiring counts.
     const unknownCells = within(screen.getByRole('rowheader', { name: 'Not yet classified' }).closest('tr')).getAllByRole('cell');
+    expect(unknownCells[2].textContent).toContain('Not applicable');
     expect(unknownCells[4].textContent).toContain('Not applicable');
-    expect(unknownCells[5].textContent).toContain('Not applicable');
     // The em dash is visual only.
-    expect(within(groceryCells[7]).getByText('—').getAttribute('aria-hidden')).toBe('true');
+    expect(within(unknownCells[4]).getByText('—').getAttribute('aria-hidden')).toBe('true');
   });
 
   it('lists at most 3 repeated actions, then "and N more"', () => {
@@ -93,7 +103,7 @@ describe('EvalCoverageCard', () => {
     const dl = document.querySelector('dl.dashboard-table-notes');
     // Each term is the column header it defines.
     expect([...dl.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual([
-      'Evaluation coverage', 'Evaluations in use', 'Expiring soon', 'Answers using evaluations', 'Below perfect',
+      'Expert evaluations', 'Answers using evaluations', 'Expiring soon',
     ]);
     expect(screen.getByText(/from the last 365 days/).tagName).toBe('DD');
     expect(screen.getByText(/stop being used within 60 days/).tagName).toBe('DD');
@@ -110,7 +120,5 @@ describe('EvalCoverageCard', () => {
     // A curated French name is shown as-is, not wrapped.
     const scis = screen.getByRole('rowheader', { name: 'Certificat sécurisé de statut d’Indien (CSSI)' });
     expect(scis.querySelector('[lang="en"]')).toBeNull();
-    // French number formatting: decimal comma and a (non-breaking) space before %.
-    expect(within(scis.closest('tr')).getAllByRole('cell')[3].textContent).toMatch(/^7,8\s%$/);
   });
 });

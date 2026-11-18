@@ -59,21 +59,31 @@ is no Run button and nothing is stored. It shows one table **by program**
 | Column | Source | Tells evaluators |
 |---|---|---|
 | Questions | all normal-answer interactions in scope, `context.program` | demand |
-| Human evals | interactions with `expertFeedback` (not `type: 'ai'`) | supply |
-| Eval coverage % | evals ÷ questions | **where eval-informed answering has little to draw on** |
-| Usable evals | **all** human evals for the service and department evaluated within 365 days (or `neverStale`), with a total score — **not limited by the date range or other filters**, because retrieval isn't | what retrieval can actually see today |
-| Expiring soon | usable evals that pass 365 days within the next 60 days (same all-dates scope) | where to re-evaluate |
+| Usable evals (shown as "Expert evaluations") | **all** human evals for the service and department evaluated within 365 days (or `neverStale`), with a total score — **not limited by the date range or other filters**, because retrieval isn't | what retrieval can actually see today |
 | Answers that used an eval | interactions with a `qaMatches` entry | reuse volume |
-| % non-perfect | among human evals | quality (current v1 cross-tab column) |
+| Expiring soon | usable evals that pass 365 days within the next 60 days (same all-dates scope) | where to re-evaluate |
 | Actions asked about | `context.action` per program, most frequent first | what people want to do |
 
-Sort by questions, descending (top 25, like the volume chart). Busy services
-with low coverage are where to evaluate next — the sort and the coverage column
-show that; there is no separate highlight in PR 1 (thresholds would be
+Column order on the card: service, actions, questions, usable evals, answers
+that used an eval, expiring soon (last). The card is collapsed by
+default (`CollapsibleCard`) because the table is long.
+
+**Dropped after review (2026-11-18):** "Eval coverage %" (evals ÷ questions —
+both numbers are already in the row, and it read as overlapping with "in use")
+and "% non-perfect" (quality is covered by the eval analysis below; the
+`scoredEvals`/`nonPerfectEvals` fields were removed from the endpoint too).
+"Human evals" in the date range was dropped as well: with the 7-day default it
+was near zero and said nothing about what retrieval can use, so it pointed
+partners at the wrong services. Usable evals is the only evaluation count, and
+it is labelled "Expert evaluations".
+
+Sort by questions, descending, top 10 (the volume chart shows 25; cut to 10 on 2026-11-18 because the table is wide). Busy services
+with few evaluations are where to evaluate next — the sort and the questions and
+evaluations columns show that; there is no separate highlight in PR 1 (thresholds would be
 arbitrary). The per-service example chat link was dropped from PR 1: the reuse
 lists in PR 2 link to real evaluations instead.
 
-**Known limit:** "in use" doesn't check whether the evaluation's embedding has
+**Known limit:** usable evals don't check whether the evaluation's embedding has
 synced to the vector index. An evaluation whose sync failed is counted but can't
 be retrieved. Checking would mean joining the embeddings collection; not worth
 it unless sync failures turn out to be common.
@@ -191,7 +201,7 @@ the result would be misleading. Revisit only if volume grows.
 
 Eval-informed retrieval matches **same language only**, so a service with only
 English evaluations has nothing to draw on for French questions — today's
-single coverage column hides that. Split questions, evaluations, in-use,
+single count per service hides that. Split questions, usable evaluations,
 expiring and answers-using-evaluations by `pageLanguage` (the volume chart
 already groups `en`/`fr` the same way). Kept out of PR 1 to keep it reviewable.
 
