@@ -132,7 +132,9 @@ describe('DefaultWithVectorGraph Workflow', () => {
         // The answerNode returns { answer: { ... } }
         // Verify result structure
         expect(resultState.status).toBe('complete');
-        expect(resultState.result.historySignature).toBe('sig-123');
+        // History signatures are added where the result leaves the server
+        // (api/chat/chat-graph-run.js), never by a graph.
+        expect(resultState.result).not.toHaveProperty('historySignature');
 
         expect(SearchContextService.search).toHaveBeenCalled();
         expect(AnswerGenerationService.generateAnswer).toHaveBeenCalled();
@@ -182,7 +184,7 @@ describe('DefaultWithVectorGraph Workflow', () => {
         const resultState = await defaultWithVectorGraphApp.invoke(input);
 
         expect(resultState.status).toBe('complete');
-        expect(resultState.result.historySignature).toBe('sc-sig');
+        expect(resultState.result).not.toHaveProperty('historySignature');
         expect(resultState.result.answer.content).toBe('Cached answer text');
         expect(resultState.shortCircuitPayload.similarityLatencyMs).toEqual(expect.any(Number));
 
@@ -190,5 +192,41 @@ describe('DefaultWithVectorGraph Workflow', () => {
         expect(SearchContextService.search).not.toHaveBeenCalled();
         expect(AnswerGenerationService.generateAnswer).not.toHaveBeenCalled();
         expect(InteractionPersistenceService.persistInteraction).toHaveBeenCalledTimes(1);
+    });
+    // AIA-024: context feeds the system prompt, so it must come from this
+    // turn's search and context agent - never from the client-held history.
+    it('derives context fresh on a follow-up instead of reusing the history\'s context', async () => {
+        const input = {
+            chatId: 'chat-1',
+            userMessage: 'Follow-up question here',
+            userMessageId: 'msg-2',
+            conversationHistory: [
+                { sender: 'user', text: 'First question' },
+                {
+                    sender: 'ai',
+                    interaction: {
+                        question: 'First question',
+                        answer: { content: 'First answer', answerType: 'normal' },
+                        context: {
+                            searchQuery: 'client query',
+                            department: 'CLIENT-DEPT',
+                            systemPrompt: 'CLIENT SYSTEM PROMPT',
+                            similarQuestions: 'CLIENT SIMILAR QUESTIONS',
+                            searchResults: 'CLIENT SEARCH RESULTS',
+                        },
+                    },
+                },
+            ],
+            lang: 'en',
+            selectedAI: 'openai',
+        };
+
+        const resultState = await defaultWithVectorGraphApp.invoke(input);
+
+        expect(SearchContextService.search).toHaveBeenCalled();
+        expect(resultState.usedExistingContext).toBe(false);
+        const answerPayload = AnswerGenerationService.generateAnswer.mock.calls[0][0];
+        const promptInputs = JSON.stringify({ ...answerPayload, conversationHistory: undefined });
+        expect(promptInputs).not.toContain('CLIENT');
     });
 });

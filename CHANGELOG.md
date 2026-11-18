@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.213.7](https://github.com/cds-snc/ai-answers/compare/v1.213.6...v1.213.7) (2026-11-17)
+
+
+### Bug Fixes
+
+* fix:  ([8c8d585](https://github.com/cds-snc/ai-answers/commit/8c8d585eab935967c708e9aa5203f12bad3b0413))
+* consume only verified conversation history; stop signing on the error path ([75eb1f2](https://github.com/cds-snc/ai-answers/commit/75eb1f24210cf4bd4ccfe85945df802c734e429c))
+* consume only verified conversation history; stop signing on the error path ([f2ab5e4](https://github.com/cds-snc/ai-answers/commit/f2ab5e4867ef99b510dbb218c825c01077f16025))
+* conversation-signature part2 ([2f9d918](https://github.com/cds-snc/ai-answers/commit/2f9d9180d76dfdebf4ceb3512eeb5bc03953419e))
+
+
+### Documentation
+
+* manual test plan ([bd50693](https://github.com/cds-snc/ai-answers/commit/bd50693b54b45dc00a6a719f80facf6adffde3c7))
+* updates ([75eb1f2](https://github.com/cds-snc/ai-answers/commit/75eb1f24210cf4bd4ccfe85945df802c734e429c))
+* updates ([f2ab5e4](https://github.com/cds-snc/ai-answers/commit/f2ab5e4867ef99b510dbb218c825c01077f16025))
+
+## [1.213.6](https://github.com/cds-snc/ai-answers/compare/v1.213.5...v1.213.6) (2026-11-16)
+
+
+### Bug Fixes
+
+* address AIA-001 review feedback ([c786479](https://github.com/cds-snc/ai-answers/commit/c786479970bc9491fa00b6e12b5b415cf4ade863))
+* enforce batch ownership on batch endpoints (AIA-001) ([df657d6](https://github.com/cds-snc/ai-answers/commit/df657d649126d0a8d5b8e01c8797580a10bc9ebe))
+* experimental analysis page status messages and layout ([56bd71d](https://github.com/cds-snc/ai-answers/commit/56bd71ded51fdf48f871de05814f1626cfa4cd5d))
+
+## [1.213.5](https://github.com/cds-snc/ai-answers/compare/v1.213.4...v1.213.5) (2026-11-16)
+
+
+### Bug Fixes
+
+* add button to remove duplicate embeddings. ([c3b8a18](https://github.com/cds-snc/ai-answers/commit/c3b8a189916c8eac678ff04a06b88b78784d6ce8))
+
 ## [1.213.4](https://github.com/cds-snc/ai-answers/compare/v1.213.3...v1.213.4) (2026-11-14)
 
 

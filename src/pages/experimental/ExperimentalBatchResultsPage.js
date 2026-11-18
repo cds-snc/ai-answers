@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { GcdsContainer, GcdsHeading, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsButton, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import { useExperimentalBatchItems } from '../../hooks/experimental/useExperimentalBatchItems.js';
 import { formatNumber, formatPercent } from '../../utils/numberFormat.js';
 import BatchItemsTable from '../../components/experimental/BatchItemsTable.js';
 import BatchItemDetail from '../../components/experimental/BatchItemDetail.js';
+import { isReviewShortcut } from '../../utils/experimental/batchItems.js';
 import StatusMessage from '../../components/admin/StatusMessage.js';
 
 const FILTERS = ['attention', 'all', 'errors'];
@@ -56,8 +57,7 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     useEffect(() => {
         if (selectedIndex === null) return undefined;
         const onKeyDown = (e) => {
-            const tag = String(e.target?.tagName || '').toLowerCase();
-            if (['input', 'textarea', 'select'].includes(tag)) return;
+            if (!isReviewShortcut(e)) return;
             if (e.key === 'ArrowRight') goNext();
             if (e.key === 'ArrowLeft') goPrev();
             if (e.key === 'Escape') backToList();
@@ -72,23 +72,44 @@ export default function ExperimentalBatchResultsPage({ lang = 'en' }) {
     return (
         <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
-                <GcdsHeading tag="h1">
-                    {batch?.name || t('experimental.results.title')}
-                </GcdsHeading>
-                {batch?.description && <GcdsText className="mb-200">{batch.description}</GcdsText>}
-                <nav aria-label={t('admin.navigation.ariaLabel')} style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <GcdsLink href={`${getPath('experimental-analysis', lang)}${batch?.config?.datasetId
-                        ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}${returnToComparisonTab ? '&tab=comparison' : ''}`
-                        : returnToComparisonTab ? '?tab=comparison' : ''}`}>
-                        {t('experimental.results.backToRuns')}
-                    </GcdsLink>
-                    {batch?.config?.datasetId && (
-                        <GcdsLink href={`${getPath('experimental-suites', lang)}/${batch.config.datasetId}`}>
-                            {t('experimental.analysis.suiteView')}
-                        </GcdsLink>
-                    )}
+                {/* Stacked h1 (admin.css .canada-ca-h1-stacked__eyebrow): this page
+                    is about one batch, so its name is the title. */}
+                <h1 className="mb-400">
+                    {batch ? (
+                        <>
+                            <span className="canada-ca-h1-stacked__eyebrow">{t('experimental.results.title')}</span>
+                            <span className="canada-ca-h1-stacked__title">{batch.name}</span>
+                        </>
+                    ) : t('experimental.results.title')}
+                </h1>
+                <nav aria-label={t('admin.navigation.ariaLabel')}>
+                    <ul className="list-none p-0 m-0">
+                        <li className="mb-100">
+                            <GcdsLink href={`${getPath('experimental-analysis', lang)}${batch?.config?.datasetId
+                                ? `?datasetId=${encodeURIComponent(batch.config.datasetId)}${returnToComparisonTab ? '&tab=comparison' : ''}`
+                                : returnToComparisonTab ? '?tab=comparison' : ''}`}>
+                                {t('experimental.results.backToRuns')}
+                            </GcdsLink>
+                        </li>
+                        {batch?.config?.datasetId && (
+                            <li>
+                                <GcdsLink href={`${getPath('experimental-suites', lang)}/${batch.config.datasetId}`}>
+                                    {t('experimental.results.backToSuiteGrid')}
+                                </GcdsLink>
+                            </li>
+                        )}
+                    </ul>
                 </nav>
             </header>
+
+            {batch?.description && (
+                <dl className="canada-ca-dl-inline mb-400">
+                    <div>
+                        <dt>{t('experimental.suite.descriptionLabel')}</dt>
+                        <dd>{batch.description}</dd>
+                    </div>
+                </dl>
+            )}
 
             {error && (
                 <StatusMessage variant="error" message={t('experimental.results.loadError')} />

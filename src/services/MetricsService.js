@@ -2,18 +2,6 @@ import AuthService from './AuthService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 
 class MetricsService {
-  static async getChatLogs(filters = {}, limit = 100, lastId = null) {
-    try {
-      const queryParams = new URLSearchParams({ ...filters, limit, lastId }).toString();
-      const response = await AuthService.fetch(getApiUrl(`db-chat-logs?${queryParams}`));
-      if (!response.ok) throw new Error('Failed to get chat logs');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting chat logs:', error);
-      throw error;
-    }
-  }
-
   static async getUsageMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-usage', filters, signal);
   }

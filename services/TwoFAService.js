@@ -26,9 +26,9 @@ function codedError(code, message) {
   return err;
 }
 
-// Any server-only secret works as the HMAC key. JWT_SECRET_KEY is last because it
-// is the one every environment has: staging/production (ECS) and PR previews
-// (Lambda, which gets no SESSION_SECRET). The "twofa:" prefix keeps these hashes
+// Any server-only secret works as the HMAC key. Every deployed environment has
+// SESSION_SECRET and JWT_SECRET_KEY: staging/production (ECS) and PR previews
+// (Lambda). The "twofa:" prefix keeps these hashes
 // distinct from anything else signed with the same key.
 function hashCode(userId, code) {
   const key = process.env.TWOFA_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET_KEY;

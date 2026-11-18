@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { batchListFilter } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchListHandler(req, res) {
@@ -11,10 +12,9 @@ async function batchListHandler(req, res) {
   try {
     await dbConnect();
 
-    // Only return batches created by the logged-in user.
-    // Admins see all batches (including legacy ones without createdBy).
-    const userId = req.user?.userId;
-    const filter = req.user?.role === 'admin' ? {} : { createdBy: userId };
+    // Partners: their own batches only.
+    // Admins: whatever `scope` picks (default: their own). See batch-access.js.
+    const filter = await batchListFilter(req.user, req.query?.scope);
     let batches = await Batch.find(filter).sort({ createdAt: -1 }).lean();
 
     // Inline stats for every batch in a single aggregation so the frontend
