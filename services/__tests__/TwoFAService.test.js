@@ -45,15 +45,34 @@ vi.mock('../../models/user.js', () => {
     for (const [k, v] of Object.entries(update.$inc || {})) d[k] = (d[k] || 0) + v;
     for (const [k, v] of Object.entries(update.$set || {})) d[k] = v;
   };
+  // Like a Mongoose query: runs when awaited, and leaves out twoFACode
+  // (select: false in models/user.js) unless asked for with .select('+twoFACode').
+  const query = (run) => {
+    let withCode = false;
+    const q = {
+      select(fields) {
+        if (String(fields).split(/\s+/).includes('+twoFACode')) withCode = true;
+        return q;
+      },
+      then(resolve, reject) {
+        return Promise.resolve().then(run).then((d) => {
+          if (!d || withCode) return d;
+          const { twoFACode, ...rest } = d;
+          return rest;
+        }).then(resolve, reject);
+      },
+    };
+    return q;
+  };
   return {
     User: {
-      findById: vi.fn(async (id) => clone(docs.get(String(id)))),
-      findOneAndUpdate: vi.fn(async (filter, update) => {
+      findById: vi.fn((id) => query(() => clone(docs.get(String(id))))),
+      findOneAndUpdate: vi.fn((filter, update) => query(() => {
         const d = docs.get(String(filter._id));
         if (!d || !matches(d, filter)) return null;
         apply(d, update);
         return clone(d);
-      }),
+      })),
       updateOne: vi.fn(async (filter, update) => {
         const d = docs.get(String(filter._id));
         if (d && matches(d, filter)) apply(d, update);
@@ -171,7 +190,10 @@ describe('TwoFAService', () => {
     const { code } = await sendAndCapture();
     const res = await TwoFAService.verifyChallenge({ userId: ID, code });
     expect(res.success).toBe(true);
-    expect(res.user).toMatchObject({ _id: ID, email: 'admin@canada.ca', twoFACode: null, twoFAAttempts: 0 });
+    expect(res.user).toMatchObject({ _id: ID, email: 'admin@canada.ca', twoFAAttempts: 0 });
+    // The code hash stays out of the returned user (select: false); it is cleared in the database.
+    expect(res.user).not.toHaveProperty('twoFACode');
+    expect(docs.get(ID).twoFACode).toBeNull();
   });
 
   it('uses a user document it is given instead of reading it again', async () => {
@@ -233,7 +255,7 @@ describe('TwoFAService', () => {
     expect(docs.get(ID).twoFAAttempts).toBe(MAX_ATTEMPTS - 1);
 
     // A slow parallel guess resumes with its stale read. It must not clear the count.
-    User.findById.mockResolvedValueOnce(staleRead);
+    User.findById.mockReturnValueOnce({ select: async () => staleRead });
     const res = await TwoFAService.verifyChallenge({ userId: ID, code: wrong });
     expect(res.reason).toBe('locked');
   });
@@ -243,7 +265,7 @@ describe('TwoFAService', () => {
     const { code } = await sendAndCapture();
     const staleRead = { ...docs.get(ID) };
     vi.advanceTimersByTime(CODE_TTL_MS + 1000);
-    User.findById.mockResolvedValueOnce(staleRead);
+    User.findById.mockReturnValueOnce({ select: async () => staleRead });
     const res = await TwoFAService.verifyChallenge({ userId: ID, code });
     expect(res).toEqual({ success: false, reason: 'invalid' });
     expect(docs.get(ID).twoFAAttempts).toBe(0);

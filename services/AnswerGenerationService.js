@@ -3,7 +3,6 @@ import ServerLoggingService from './ServerLoggingService.js';
 import ServiceCallMetricsService from './ServiceCallMetricsService.js';
 import { ToolTrackingHandler } from '../agents/ToolTrackingHandler.js';
 import { buildAnswerSystemPrompt } from '../agents/prompts/systemPrompt.js';
-import ConversationIntegrityService from './ConversationIntegrityService.js';
 
 const NUM_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
@@ -16,8 +15,8 @@ const convertInteractionsToMessages = (interactions) => {
         const item = reversed[i];
         // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
         // hand-duplicated in 2 other files - ContextAgentService.js and
-        // ConversationIntegrityService.js's serializeHistory (search for
-        // "isUser" there). All three independently implement the same
+        // api/util/conversation-turns.js (isCompletedTurn, which decides what
+        // gets signed). All three independently implement the same
         // invariant (originally by the same author, Ryan Hyma, in commits
         // a2c70182 and b585a348 - a2c70182 wrote this file's own copy;
         // b585a348, five weeks later, added the other two after a real
@@ -47,7 +46,6 @@ async function invokeAgent({
     searchResults,
     scenarioOverrideText,
     similarQuestions,
-    originalMessage,
 }, chatId) {
     const systemPrompt = await buildAnswerSystemPrompt(lang || 'en', {
         department,
@@ -86,14 +84,6 @@ async function invokeAgent({
             model: lastMessage.response_metadata.model_name,
             tools: toolUsage,
         };
-
-        // Calculate signature for conversation integrity verification
-        const finalHistory = [
-            ...conversationHistory,
-            { sender: 'user', text: originalMessage || message },
-            { sender: 'ai', text: lastMessage.content }
-        ];
-        response.historySignature = ConversationIntegrityService.calculateSignature(finalHistory);
 
         ServerLoggingService.info(`${provider} chat request completed`, chatId, response);
         return response;

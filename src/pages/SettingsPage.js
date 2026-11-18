@@ -20,6 +20,7 @@ import ExplanationErrorSummary from '../components/chat/ExplanationErrorSummary.
 import ServerDataTable from '../components/admin/ServerDataTable.js';
 import { escapeHtmlAttribute } from '../utils/reviewLink.js';
 import { formatLocaleDate } from '../utils/formatLocaleDate.js';
+import { auditActionLabelKey, formatAuditMetadata } from '../utils/settings/auditHistory.js';
 
 const UNSAVED_WARNING_ANNOUNCE_DELAY_MS = 4000;
 
@@ -525,15 +526,10 @@ const SettingsPage = ({ lang = 'en' }) => {
     {
       data: 'action',
       title: t('settings.auditHistory.action'),
-      render: (value) => escapeHtmlAttribute(
-        value === 'settings.cache_refreshed'
-          ? t('settings.auditHistory.actions.cacheRefreshed')
-          : value === 'download_web_page.cache_cleared'
-            ? t('settings.auditHistory.actions.downloadWebPageCacheCleared')
-          : value === 'search_context.cache_cleared'
-            ? t('settings.auditHistory.actions.searchCacheCleared')
-          : t('settings.auditHistory.actions.settingUpdated')
-      ),
+      render: (value) => {
+        const labelKey = auditActionLabelKey(value);
+        return escapeHtmlAttribute(labelKey ? t(labelKey) : (value || ''));
+      },
     },
     {
       data: 'settingKey',
@@ -548,7 +544,11 @@ const SettingsPage = ({ lang = 'en' }) => {
     {
       data: 'newValue',
       title: t('settings.auditHistory.newValue'),
-      render: (value) => renderAuditValueHtml(value, t('settings.auditHistory.notApplicable')),
+      // Action rows (exports, cache clears) carry metadata instead of a value.
+      render: (value, type, row) => renderAuditValueHtml(
+        value ?? formatAuditMetadata(row?.metadata),
+        t('settings.auditHistory.notApplicable')
+      ),
     },
     {
       data: 'createdAt',

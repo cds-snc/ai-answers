@@ -14,6 +14,7 @@ import { announce } from '../utils/liveAnnouncer.js';
 import FeedbackInlineError from '../components/chat/FeedbackInlineError.js';
 import { useInlineFormError } from '../hooks/useInlineFormError.js';
 import { useErrorStatus } from '../hooks/useErrorStatus.js';
+import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
 
 const ACTIVE_METADATA_JOB_STATUSES = new Set(['queued', 'running', 'stopping']);
 
@@ -178,6 +179,16 @@ const VectorPage = ({ lang = 'en' }) => {
   const [metadataStatus, setMetadataStatus] = useState(null);
   const [metadataStatusLoading, setMetadataStatusLoading] = useState(false);
   const metadataStatusErrorStatus = useRepeatableStatus();
+  const [duplicateStatus, setDuplicateStatus] = useState(null);
+  const [duplicateStatusLoading, setDuplicateStatusLoading] = useState(false);
+  const duplicateStatusErrorStatus = useRepeatableStatus();
+  const [removeDuplicatesLoading, setRemoveDuplicatesLoading] = useState(false);
+  const removeDuplicatesStatus = useRepeatableStatus();
+  // A successful removal re-checks, finds 0, and unmounts the Remove button
+  // that had focus — so focus moves to the outcome message instead of
+  // dropping to <body>. Counter so a repeat run re-focuses.
+  const [removeDuplicatesFocusCount, setRemoveDuplicatesFocusCount] = useState(0);
+  const removeDuplicatesStatusRef = useFocusOnChange(removeDuplicatesFocusCount);
   // A job id whose progress/message the admin has explicitly dismissed via
   // an unrelated action (e.g. "Clear metadata") — the poll won't re-surface
   // that same job's inactive-state progress/message again, so clearing
@@ -588,6 +599,42 @@ const VectorPage = ({ lang = 'en' }) => {
       metadataStatusErrorStatus.announce(t('vector.metadataStatus.failed'), { isError: true });
     } finally {
       setMetadataStatusLoading(false);
+    }
+  };
+
+  const handleDuplicateStatus = async () => {
+    setDuplicateStatusLoading(true);
+    duplicateStatusErrorStatus.clear();
+    try {
+      setDuplicateStatus(await VectorService.getDuplicateEmbeddings());
+    } catch (err) {
+      console.error('Error counting duplicate embeddings:', err);
+      setDuplicateStatus(null);
+      duplicateStatusErrorStatus.announce(t('vector.duplicateEmbeddings.failed'), { isError: true });
+    } finally {
+      setDuplicateStatusLoading(false);
+    }
+  };
+
+  // Shows the counts it removed, then re-checks so the list above reflects
+  // what is left (0 when the cleanup is complete).
+  const handleRemoveDuplicates = async () => {
+    if (!window.confirm(t('vector.duplicateEmbeddings.removeConfirm'))) return;
+    setRemoveDuplicatesLoading(true);
+    removeDuplicatesStatus.clear();
+    try {
+      const result = await VectorService.removeDuplicateEmbeddings();
+      removeDuplicatesStatus.announce(t('vector.duplicateEmbeddings.removeSuccess')
+        .replace('{embeddings}', fmtN(result.deletedEmbeddings))
+        .replace('{interactions}', fmtN(result.duplicateInteractions))
+        .replace('{sentences}', fmtN(result.deletedSentenceEmbeddings)), { isError: false, quiet: true });
+      await handleDuplicateStatus();
+      setRemoveDuplicatesFocusCount((n) => n + 1);
+    } catch (err) {
+      console.error('Error removing duplicate embeddings:', err);
+      removeDuplicatesStatus.announce(t('vector.duplicateEmbeddings.removeFailed'), { isError: true });
+    } finally {
+      setRemoveDuplicatesLoading(false);
     }
   };
 
@@ -1017,6 +1064,58 @@ const VectorPage = ({ lang = 'en' }) => {
             ))}
           </dl>
         )}
+        <GcdsHeading tag="h2">{t('vector.duplicateEmbeddings.title')}</GcdsHeading>
+        <GcdsText>{t('vector.duplicateEmbeddings.description')}</GcdsText>
+        <div className="mb-200">
+          <GcdsButton onClick={handleDuplicateStatus} disabled={duplicateStatusLoading || removeDuplicatesLoading} className="mb-200 mr-200">
+            {duplicateStatusLoading ? t('vector.duplicateEmbeddings.loading') : t('vector.duplicateEmbeddings.check')}
+          </GcdsButton>
+        </div>
+        <StatusMessage variant={duplicateStatusErrorStatus.message ? 'error' : undefined} message={duplicateStatusErrorStatus.message} nonce={duplicateStatusErrorStatus.nonce} />
+        {duplicateStatus && (
+          <StatusMessage
+            variant={duplicateStatus.duplicateInteractions === 0 ? 'success' : 'info'}
+            message={duplicateStatus.duplicateInteractions === 0 ? t('vector.duplicateEmbeddings.none') : t('vector.duplicateEmbeddings.found')}
+          />
+        )}
+        {duplicateStatus && (
+          <dl className="canada-ca-dl-columns canada-ca-dl-columns--single mb-400">
+            {[
+              ['duplicateInteractions', duplicateStatus.duplicateInteractions],
+              ['duplicatesWithExpertFeedback', duplicateStatus.duplicatesWithExpertFeedback],
+              ['extraEmbeddings', duplicateStatus.extraEmbeddings],
+              ['maxCopies', duplicateStatus.maxCopies],
+            ].map(([key, value]) => (
+              <div key={key}>
+                <dt>{t(`vector.duplicateEmbeddings.${key}`)}</dt>
+                <dd>{fmtN(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {/* Only offered once a check has found duplicates. */}
+        {duplicateStatus?.duplicateInteractions > 0 && (
+          <>
+            <GcdsText>{t('vector.duplicateEmbeddings.removeDescription')}</GcdsText>
+            <div className="mb-200">
+              <GcdsButton onClick={handleRemoveDuplicates} disabled={removeDuplicatesLoading || duplicateStatusLoading} className="mb-200 mr-200">
+                {removeDuplicatesLoading ? t('vector.duplicateEmbeddings.removing') : t('vector.duplicateEmbeddings.remove')}
+              </GcdsButton>
+            </div>
+          </>
+        )}
+        {/* Success is read out by moving focus here (quiet); a failure keeps
+            the button, so it is announced instead. */}
+        <StatusMessage
+          ref={removeDuplicatesStatusRef}
+          tabIndex={-1}
+          className="focus-target"
+          announce={!removeDuplicatesStatus.quiet}
+          announcedVia={removeDuplicatesStatus.quiet ? 'focus' : undefined}
+          variant={removeDuplicatesStatus.message ? (removeDuplicatesStatus.isError ? 'error' : 'success') : undefined}
+          message={removeDuplicatesStatus.message}
+          nonce={removeDuplicatesStatus.nonce}
+        />
         <GcdsHeading tag="h2" id="metadata-lookup-heading">{t('vector.metadataLookup.title')}</GcdsHeading>
         <GcdsText>
           {t('vector.metadataLookup.description')}

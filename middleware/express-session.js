@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { RedisStore } from 'connect-redis';
@@ -27,12 +28,39 @@ export const getSessionTtlMs = (req) => {
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
 };
 
+// AIA-004: there is no hardcoded fallback secret. A known secret lets anyone
+// forge a session cookie, so a missing one must fail closed. Same rule as
+// ConversationIntegrityService: only development and test get a throwaway
+// secret, and an unset NODE_ENV counts as deployed.
+//
+// The env variable wins over the database setting, so someone who can edit
+// settings cannot replace the deployed secret with a weak one. server.js calls
+// this after SettingsService.loadAll(), so a server with no secret refuses to
+// start instead of failing every request.
+let devSecret = null;
+export const resolveSessionSecret = () => {
+  const configured = process.env.SESSION_SECRET || _getSetting(['session.secret', 'SESSION_SECRET']);
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    if (!devSecret) {
+      devSecret = crypto.randomBytes(32).toString('hex');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[SESSION] SESSION_SECRET is not set: using a temporary secret. Sessions end when the server restarts.');
+      }
+    }
+    return devSecret;
+  }
+
+  throw new Error('SESSION_SECRET is not set. Refusing to sign session cookies without it.');
+};
+
 // Singleton session middleware instance
 let instance = null;
 
 const buildSessionMiddleware = (app) => {
   const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
-  const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
+  const sessionSecret = resolveSessionSecret();
 
   let sessionStore = null;
 

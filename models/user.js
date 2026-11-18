@@ -9,9 +9,14 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  // The secret fields (password, twoFACode, resetPasswordTokenHash) are
+  // select: false, so no query or export returns them unless it asks with
+  // '+field'. Only sign-in (config/passport.js), 2FA (services/TwoFAService.js)
+  // and password reset (api/auth/auth-reset-password.js) ask.
   password: {
     type: String,
-    required: true
+    required: true,
+    select: false
   },
   role: {
     type: String,
@@ -69,6 +74,7 @@ const userSchema = new mongoose.Schema({
   twoFACode: {
     type: String,
     default: null,
+    select: false,
   },
   twoFAExpires: {
     type: Date,
@@ -108,6 +114,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordTokenHash: {
     type: String,
     default: null,
+    select: false,
   },
   resetPasswordExpiresAt: {
     type: Date,
@@ -131,5 +138,15 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Aggregation $lookup ignores select: false, so a pipeline that joins users
+// gets the secret fields too. Add this stage right after the join (path is
+// where the joined user sits, e.g. 'user'). The list comes from the schema, so
+// a field marked select: false later is stripped here as well.
+const SECRET_FIELDS = Object.keys(userSchema.paths)
+  .filter((field) => userSchema.paths[field].options.select === false);
+export const omitUserSecrets = (path) => ({
+  $project: Object.fromEntries(SECRET_FIELDS.map((field) => [`${path}.${field}`, 0]))
+});
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);

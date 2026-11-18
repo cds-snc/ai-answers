@@ -2,9 +2,12 @@
 import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { omitUserSecrets } from '../../models/user.js';
 import { BatchItem } from '../../models/batchItem.js';
+import { findAccessibleBatch } from '../util/batch-access.js';
 import {
     authMiddleware,
+    partnerOrAdminMiddleware,
     withProtection
 } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
@@ -565,8 +568,8 @@ export async function chatExportHandler(req, res) {
         // Query Logic (Aggregate vs Find)
         // Note: For aggregation, we need to manually reconstruct the 'populate' logic using $lookups if we want to be exact,
         // OR we can fetch IDs and then hydrate/populate.
-        // Given the requirement to optimize, and the complexity of duplicate code, duplicating the $lookup mess from db-chat-logs is risky if we change populates dynamicallly.
-        // HOWEVER, db-chat-logs uses aggregate mainly for filtering by nested fields (department etc).
+        // Duplicating $lookups for every populate is risky if populates change dynamically.
+        // Aggregation is needed mainly for filtering by nested fields (department etc).
         // If we use `Chat.find` we can use `populate(chatPopulate)`.
         // If we use aggregate, we have to write lookups manually.
         // Implementation Plan Step: "Duplicate query logic".
@@ -615,6 +618,7 @@ export async function chatExportHandler(req, res) {
             pipeline.push({ $unwind: '$interactions' });
             pipeline.push({ $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } });
             pipeline.push({ $addFields: { user: { $arrayElemAt: ['$user', 0] } } });
+            pipeline.push(omitUserSecrets('user'));
 
             // Context matches
             pipeline.push({ $lookup: { from: 'contexts', localField: 'interactions.context', foreignField: '_id', as: 'interactions.context_doc' } });
@@ -729,6 +733,10 @@ export async function chatExportHandler(req, res) {
             // Non-Aggregate Optimized Path - used when no filters are specified
             if (!useExplicitChatIds && batchId) {
                 batchId = requireObjectIdString(batchId, 'batchId');
+                // Same rule as the batch endpoints (AIA-001): creator or admin only.
+                if (!(await findAccessibleBatch(req.user, batchId, { _id: 1 }))) {
+                    return res.status(404).json({ error: 'Batch not found' });
+                }
                 const bItems = await BatchItem.find({ batch: batchId }).select('chat');
                 const bIds = bItems.map(i => i.chat);
                 dateFilter._id = { $in: bIds };
@@ -822,5 +830,5 @@ export async function chatExportHandler(req, res) {
 }
 
 export default function handler(req, res) {
-    return withProtection(chatExportHandler, authMiddleware)(req, res);
+    return withProtection(chatExportHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }

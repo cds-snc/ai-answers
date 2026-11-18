@@ -268,16 +268,15 @@ export function validateConversationIntegrity(req, res) {
 
   const body = req.body || {};
   const input = body.input || body;
+  if (typeof input !== 'object' || input === null) return true;
   const history = input.conversationHistory;
-  const historyArray = Array.isArray(history) ? history : [];
+  if (history === undefined) return true;
 
-  // Filter out error messages - they don't participate in integrity checking
-  const filteredHistory = historyArray.filter(m => !m.error);
-
-  if (filteredHistory.length === 0) return true;
-
-  // Delegate prefix-signature extraction and verification to the integrity service
-  const verification = ConversationIntegrityService.verifySignedPrefix(historyArray, input.historySignature);
+  // The integrity service checks the signature over every completed turn and
+  // returns a history rebuilt from the signed text. The handler only ever sees
+  // that rebuilt history - never the client's array, so nothing unsigned (an
+  // appended turn, a context object, an extra field) can reach the graph.
+  const verification = ConversationIntegrityService.verifyHistory(req.chatId, history, input.historySignature);
 
   if (!verification.valid) {
     if (verification.reason === 'missing_signature') {
@@ -285,16 +284,13 @@ export function validateConversationIntegrity(req, res) {
       res.status(403).json({ error: 'missing_signature', message: 'Conversation history signature missing' });
       return false;
     }
-    if (verification.reason === 'invalid_signature') {
-      console.error('[Integrity] Signature mismatch!', { received: verification.signature, historyLength: history.length, chatId: req.chatId });
-      res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
-      return false;
-    }
-    // Unknown reason -> block by default
-    console.error('[Integrity] Verification failed', { reason: verification.reason, chatId: req.chatId });
+    // Counts only - never log the signature or the content.
+    console.error('[Integrity] Signature mismatch', { historyLength: Array.isArray(history) ? history.length : 0, chatId: req.chatId });
     res.status(403).json({ error: 'invalid_signature', message: 'Conversation history integrity check failed' });
     return false;
   }
+
+  input.conversationHistory = verification.history;
 
   return true;
 }

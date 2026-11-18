@@ -76,3 +76,16 @@ export const humanizeFieldName = (name) => String(name || '')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .toLowerCase()
     .replace(/^./, (c) => c.toUpperCase());
+
+const TYPING_TAGS = new Set(['input', 'textarea', 'select', 'gcds-input', 'gcds-textarea', 'gcds-select']);
+
+// Whether a keydown should drive the item review shortcuts (arrows, Escape):
+// never while typing in a field, and never with a modifier, so browser
+// shortcuts like Alt+Left (back) keep working.
+export const isReviewShortcut = (e) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+    const target = e.target;
+    if (target?.isContentEditable) return false;
+    if (TYPING_TAGS.has(String(target?.tagName || '').toLowerCase())) return false;
+    return ['ArrowLeft', 'ArrowRight', 'Escape'].includes(e.key);
+};

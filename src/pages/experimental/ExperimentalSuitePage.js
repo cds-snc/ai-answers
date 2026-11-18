@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import { useExperimentalSuiteGrid } from '../../hooks/experimental/useExperimentalSuiteGrid.js';
@@ -21,31 +21,57 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
 
     const { dataset, tests, runs, cells, loading, error } = useExperimentalSuiteGrid(datasetId);
 
+    // TODO(design): the suite grid should hold its data itself rather than
+    // linking each cell out to Batch results. Leaving loses the grid's
+    // context, the run summary there belongs with the grid's own summary, and
+    // symbol cells (✓ ⚑ ! ·) are confusing things to click.
     const cellHref = (run, test) => `${getPath('experimental-analysis', lang)}/${run._id}?open=${test.position}`;
 
     return (
         <GcdsContainer layout="page" className="mb-600">
             <header className="mb-400">
-                <GcdsHeading tag="h1">
-                    {dataset?.name || t('experimental.suite.title')}
-                </GcdsHeading>
-                {dataset?.description && <GcdsText className="mb-200">{dataset.description}</GcdsText>}
-                <div className="mb-200">
-                    {dataset?.category && (
-                        <span className="mr-300">
-                            <strong>{t('experimental.suite.categoryLabel')}</strong> {dataset.category}
-                        </span>
-                    )}
-                </div>
-                <nav aria-label={t('admin.navigation.ariaLabel')} style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                {/* Stacked h1 (admin.css .canada-ca-h1-stacked__eyebrow): this page
+                    is about one dataset, so its name is the title. */}
+                <h1 className="mb-400">
+                    {dataset ? (
+                        <>
+                            <span className="canada-ca-h1-stacked__eyebrow">{t('experimental.suite.title')}</span>
+                            <span className="canada-ca-h1-stacked__title">{dataset.name}</span>
+                        </>
+                    ) : t('experimental.suite.title')}
+                </h1>
+                <nav aria-label={t('admin.navigation.ariaLabel')}>
                     <GcdsLink href={getPath('experimental-datasets', lang)}>
                         {t('experimental.datasets.backToList')}
                     </GcdsLink>
-                    <GcdsLink href={`${getPath('experimental-analysis', lang)}?datasetId=${datasetId}`}>
-                        {t('experimental.suite.newRun')}
-                    </GcdsLink>
                 </nav>
             </header>
+
+            {dataset && (
+                <div className="mb-400">
+                    {(dataset.description || dataset.category) && (
+                        <dl className="canada-ca-dl-inline">
+                            {dataset.description && (
+                                <div>
+                                    <dt>{t('experimental.suite.descriptionLabel')}</dt>
+                                    <dd>{dataset.description}</dd>
+                                </div>
+                            )}
+                            {dataset.category && (
+                                <div>
+                                    <dt>{t('experimental.suite.categoryLabel')}</dt>
+                                    <dd>{dataset.category}</dd>
+                                </div>
+                            )}
+                        </dl>
+                    )}
+                    <GcdsText marginBottom="0">
+                        <GcdsLink href={`${getPath('experimental-analysis', lang)}?datasetId=${datasetId}`}>
+                            {t('experimental.suite.newRun')}
+                        </GcdsLink>
+                    </GcdsText>
+                </div>
+            )}
 
             {error && (
                 <StatusMessage variant="error" message={t('experimental.suite.loadError')} />
@@ -64,7 +90,7 @@ export default function ExperimentalSuitePage({ lang = 'en' }) {
                     />
 
                     {runs.length > 0 && (
-                        <div className="mt-300" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                        <div className="mt-300" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.875rem' }}>
                             {LEGEND_VERDICTS.map((verdict) => (
                                 <span
                                     key={verdict}

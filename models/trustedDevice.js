@@ -8,7 +8,9 @@ import mongoose from 'mongoose';
 // same user remembers another device. Confirm TTL index behaviour on
 // DocumentDB 8 before adding one on expiresAt.
 const trustedDeviceSchema = new mongoose.Schema({
-  tokenHash: { type: String, required: true },
+  // select: false keeps it out of queries and database exports. Lookups only
+  // filter on it, so nothing needs to read it back.
+  tokenHash: { type: String, required: true, select: false },
   userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
   expiresAt: { type: Date, required: true },
 }, {

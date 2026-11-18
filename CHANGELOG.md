@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.213.7](https://github.com/cds-snc/ai-answers/compare/v1.213.6...v1.213.7) (2026-11-17)
+
+
+### Bug Fixes
+
+* fix:  ([8c8d585](https://github.com/cds-snc/ai-answers/commit/8c8d585eab935967c708e9aa5203f12bad3b0413))
+* consume only verified conversation history; stop signing on the error path ([75eb1f2](https://github.com/cds-snc/ai-answers/commit/75eb1f24210cf4bd4ccfe85945df802c734e429c))
+* consume only verified conversation history; stop signing on the error path ([f2ab5e4](https://github.com/cds-snc/ai-answers/commit/f2ab5e4867ef99b510dbb218c825c01077f16025))
+* conversation-signature part2 ([2f9d918](https://github.com/cds-snc/ai-answers/commit/2f9d9180d76dfdebf4ceb3512eeb5bc03953419e))
+
+
+### Documentation
+
+* manual test plan ([bd50693](https://github.com/cds-snc/ai-answers/commit/bd50693b54b45dc00a6a719f80facf6adffde3c7))
+* updates ([75eb1f2](https://github.com/cds-snc/ai-answers/commit/75eb1f24210cf4bd4ccfe85945df802c734e429c))
+* updates ([f2ab5e4](https://github.com/cds-snc/ai-answers/commit/f2ab5e4867ef99b510dbb218c825c01077f16025))
+
+## [1.213.6](https://github.com/cds-snc/ai-answers/compare/v1.213.5...v1.213.6) (2026-11-16)
+
+
+### Bug Fixes
+
+* address AIA-001 review feedback ([c786479](https://github.com/cds-snc/ai-answers/commit/c786479970bc9491fa00b6e12b5b415cf4ade863))
+* enforce batch ownership on batch endpoints (AIA-001) ([df657d6](https://github.com/cds-snc/ai-answers/commit/df657d649126d0a8d5b8e01c8797580a10bc9ebe))
+* experimental analysis page status messages and layout ([56bd71d](https://github.com/cds-snc/ai-answers/commit/56bd71ded51fdf48f871de05814f1626cfa4cd5d))
+
+## [1.213.5](https://github.com/cds-snc/ai-answers/compare/v1.213.4...v1.213.5) (2026-11-16)
+
+
+### Bug Fixes
+
+* add button to remove duplicate embeddings. ([c3b8a18](https://github.com/cds-snc/ai-answers/commit/c3b8a189916c8eac678ff04a06b88b78784d6ce8))
+
+## [1.213.4](https://github.com/cds-snc/ai-answers/compare/v1.213.3...v1.213.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* AIA-009 part 2 ([839c6f4](https://github.com/cds-snc/ai-answers/commit/839c6f4a3d8861eac883436720304e925b72f532))
+* AIA-009 part 2 ([acad38c](https://github.com/cds-snc/ai-answers/commit/acad38cdda393ff9aef7f5b82ff324adb8f61cf4))
+* remove sessionstate ([c6a40b7](https://github.com/cds-snc/ai-answers/commit/c6a40b7ca9c63521ccf30a391376e50d640189c2))
+* settings history wasn't showing ([eb2aace](https://github.com/cds-snc/ai-answers/commit/eb2aaceab54602acfd89484c10d1f908d0a0fd52))
+
+## [1.213.3](https://github.com/cds-snc/ai-answers/compare/v1.213.2...v1.213.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* code review ([aef99cf](https://github.com/cds-snc/ai-answers/commit/aef99cfbb8584a854ad755ccaa0e5434d994e4e5))
+* **deps:** bump body-parser to 2.4.0 and qs to 6.17.1 in /server ([842595e](https://github.com/cds-snc/ai-answers/commit/842595e596eadb99f233d039a0f2218fd9807717))
+* duplicate embeddings bugs ([6943fa8](https://github.com/cds-snc/ai-answers/commit/6943fa8483e6bb1b5ec94ac0f6a84d5b27dd5c08))
+
+## [1.213.2](https://github.com/cds-snc/ai-answers/compare/v1.213.1...v1.213.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* correct French about-page citation URL in CEO-BEC scenario ([b590bdb](https://github.com/cds-snc/ai-answers/commit/b590bdb5b6cc1fca78d819c021b1affe5645d096))
+* correct French about-page citation URL in CEO-BEC scenario ([2259d9a](https://github.com/cds-snc/ai-answers/commit/2259d9a5b2c1e5e5e78c9784528170ec5f10c9e6))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump mongoose, fast-xml-parser, @aws-sdk/xml-builder; gr… ([f3b8cc8](https://github.com/cds-snc/ai-answers/commit/f3b8cc81515f6822e1d817ababf9b4a674062b64))
+* **deps:** bump mongoose, fast-xml-parser, @aws-sdk/xml-builder; group Dependabot security updates ([cb94134](https://github.com/cds-snc/ai-answers/commit/cb9413438b6200e6f0e6508bd7a54e5202b4eaf2))
+
 ## [1.213.1](https://github.com/cds-snc/ai-answers/compare/v1.213.0...v1.213.1) (2026-11-10)
 
 

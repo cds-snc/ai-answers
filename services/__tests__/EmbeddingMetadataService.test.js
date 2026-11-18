@@ -5,6 +5,8 @@ const {
   mockUpdateMany,
   mockEmbeddingAggregate,
   mockEmbeddingFind,
+  mockEmbeddingDeleteMany,
+  mockSentenceEmbeddingDeleteMany,
   mockChatFind,
   mockChatFindOne,
   mockInteractionFind,
@@ -17,6 +19,8 @@ const {
   mockUpdateMany: vi.fn(),
   mockEmbeddingAggregate: vi.fn(),
   mockEmbeddingFind: vi.fn(),
+  mockEmbeddingDeleteMany: vi.fn(),
+  mockSentenceEmbeddingDeleteMany: vi.fn(),
   mockChatFind: vi.fn(),
   mockChatFindOne: vi.fn(),
   mockInteractionFind: vi.fn(),
@@ -48,7 +52,12 @@ vi.mock('../../models/embedding.js', () => ({
     updateMany: mockUpdateMany,
     aggregate: mockEmbeddingAggregate,
     find: mockEmbeddingFind,
+    deleteMany: mockEmbeddingDeleteMany,
   },
+}));
+
+vi.mock('../../models/sentenceEmbedding.js', () => ({
+  SentenceEmbedding: { deleteMany: mockSentenceEmbeddingDeleteMany },
 }));
 
 vi.mock('../../models/context.js', () => ({
@@ -97,6 +106,8 @@ describe('EmbeddingMetadataService', () => {
     mockUpdateMany.mockReset();
     mockEmbeddingAggregate.mockReset();
     mockEmbeddingFind.mockReset();
+    mockEmbeddingDeleteMany.mockReset();
+    mockSentenceEmbeddingDeleteMany.mockReset();
     mockChatFind.mockReset();
     mockChatFindOne.mockReset();
     mockInteractionFind.mockReset();
@@ -343,6 +354,87 @@ describe('EmbeddingMetadataService', () => {
     expect(mockEmbeddingFind).toHaveBeenCalledWith({ interactionId: { $in: [interactionId] } });
     expect(mockChatFind).not.toHaveBeenCalled();
     expect(mockChatFindOne).not.toHaveBeenCalled();
+  });
+
+  it('reports duplicate embedding counts from the aggregation', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([{
+      _id: null,
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    }]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    });
+    // Must not load vector fields: the first stage projects to interactionId only.
+    expect(mockEmbeddingAggregate.mock.calls[0][0][0]).toEqual({ $project: { interactionId: 1 } });
+  });
+
+  it('reports zero duplicates when the aggregation finds none', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 0,
+      duplicatesWithExpertFeedback: 0,
+      extraEmbeddings: 0,
+      maxCopies: 0,
+    });
+  });
+
+  it('removes extra embeddings, keeping the copy with expert feedback metadata', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([
+      // Oldest first: no metadata on the oldest, so the second copy is kept.
+      { _id: 'i1', copies: [{ id: 'e1' }, { id: 'e2', expertFeedbackId: 'f1' }, { id: 'e3' }] },
+      // No copy has metadata: the oldest is kept, even when the pipeline
+      // returns the copies out of order.
+      { _id: 'i2', copies: [{ id: 'e5' }, { id: 'e4' }] },
+    ]);
+    mockSentenceEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 9 });
+    mockEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 3 });
+
+    await expect(EmbeddingMetadataService.removeDuplicateEmbeddings()).resolves.toEqual({
+      duplicateInteractions: 2,
+      deletedEmbeddings: 3,
+      deletedSentenceEmbeddings: 9,
+    });
+    expect(mockSentenceEmbeddingDeleteMany).toHaveBeenCalledWith({ parentEmbeddingId: { $in: ['e1', 'e3', 'e5'] } });
+    expect(mockEmbeddingDeleteMany).toHaveBeenCalledWith({ _id: { $in: ['e1', 'e3', 'e5'] } });
+    // Sentences are deleted before their parents so a re-run never leaves orphans.
+    expect(mockSentenceEmbeddingDeleteMany.mock.invocationCallOrder[0])
+      .toBeLessThan(mockEmbeddingDeleteMany.mock.invocationCallOrder[0]);
+    // Must not load vector fields.
+    expect(mockEmbeddingAggregate.mock.calls[0][0][0]).toEqual({ $project: { interactionId: 1, expertFeedbackId: 1 } });
+  });
+
+  it('deletes in batches', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([
+      { _id: 'i1', copies: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }, { id: 'e4' }] },
+    ]);
+    mockSentenceEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 0 });
+    mockEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 2 });
+
+    const result = await EmbeddingMetadataService.removeDuplicateEmbeddings({ batchSize: 2 });
+
+    expect(mockEmbeddingDeleteMany).toHaveBeenNthCalledWith(1, { _id: { $in: ['e2', 'e3'] } });
+    expect(mockEmbeddingDeleteMany).toHaveBeenNthCalledWith(2, { _id: { $in: ['e4'] } });
+    expect(result.deletedEmbeddings).toBe(4);
+  });
+
+  it('deletes nothing when there are no duplicates', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([]);
+
+    await expect(EmbeddingMetadataService.removeDuplicateEmbeddings()).resolves.toEqual({
+      duplicateInteractions: 0,
+      deletedEmbeddings: 0,
+      deletedSentenceEmbeddings: 0,
+    });
+    expect(mockEmbeddingDeleteMany).not.toHaveBeenCalled();
+    expect(mockSentenceEmbeddingDeleteMany).not.toHaveBeenCalled();
   });
 
   it('reports whether embedding metadata matches linked feedback', async () => {

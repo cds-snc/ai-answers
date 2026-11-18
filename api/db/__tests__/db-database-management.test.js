@@ -9,6 +9,9 @@ import { Answer } from '../../../models/answer.js';
 import { ExpertFeedback } from '../../../models/expertFeedback.js';
 import { Logs } from '../../../models/logs.js';
 import { Eval } from '../../../models/eval.js';
+import { SessionState } from '../../../models/sessionState.js';
+import { User } from '../../../models/user.js';
+import { getDatabaseExportCollections, EXPERT_EVAL_CHATS_EXPORT } from '../../../src/utils/database/exportCollections.js';
 
 function createReq(query, method = 'GET') {
   return {
@@ -220,5 +223,27 @@ describe('db-database-management collection list', () => {
     expect(res.payload.collections).toContain('chat');
     expect(res.payload.collectionsWithoutDates).toContain('sessionstate');
     expect(res.payload.collectionsWithoutDates).not.toContain('chat');
+  });
+});
+
+describe('db-database-management expert evaluation preset', () => {
+  // The Database page exports the preset's collections one by one and stops
+  // at the first refusal, so a collection the server's scope doesn't know
+  // breaks the whole export.
+  it('accepts every collection the page asks for', async () => {
+    await dbConnect();
+    const list = await runGet({ collection: 'All' });
+    const requested = getDatabaseExportCollections(EXPERT_EVAL_CHATS_EXPORT, list.payload.collections);
+    expect(requested).toContain('chat');
+
+    for (const collection of requested) {
+      const res = await runGet({ collection, exportScope: 'expertEvalChats' });
+      expect({ collection, status: res.statusCode }).toEqual({ collection, status: 200 });
+    }
+  });
+
+  it('leaves out session state', async () => {
+    expect(getDatabaseExportCollections(EXPERT_EVAL_CHATS_EXPORT, ['chat', 'sessionstate', 'user']))
+      .toEqual(['chat', 'user']);
   });
 });

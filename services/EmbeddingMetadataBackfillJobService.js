@@ -247,6 +247,9 @@ export class EmbeddingMetadataBackfillJobService {
         if (!result.hasMore) {
           update.$set.status = 'completed';
           update.$set.completedAt = now;
+          // A path can't be both $set and $unset in one update: the database
+          // rejects it and the job would end as failed instead of completed.
+          delete update.$set.leaseUntil;
           update.$unset = { leaseOwner: 1, leaseUntil: 1 };
         }
 

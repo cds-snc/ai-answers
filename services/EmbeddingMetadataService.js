@@ -2,6 +2,7 @@ import { normalizeObjectId } from '../api/util/db-query.js';
 import { Chat } from '../models/chat.js';
 import { Context } from '../models/context.js';
 import { Embedding } from '../models/embedding.js';
+import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import { ExpertFeedback } from '../models/expertFeedback.js';
 import { Interaction } from '../models/interaction.js';
 import { normalizeMatchDepartment } from './matchDepartment.js';
@@ -336,6 +337,91 @@ class EmbeddingMetadataService {
 
   async clearAllMetadata() {
     return Embedding.updateMany({}, { $unset: METADATA_UNSET });
+  }
+
+  // Read-only count of interactions with more than one Embedding document
+  // (an old db-generate-embeddings paging bug re-embedded already-embedded
+  // interactions). Only duplicates of expert-evaluated interactions can reach
+  // live answers, so those are counted separately.
+  async getDuplicateEmbeddingStatus() {
+    const [result] = await Embedding.aggregate([
+      // Project first so the vector fields are never loaded.
+      { $project: { interactionId: 1 } },
+      { $group: { _id: '$interactionId', copies: { $sum: 1 } } },
+      { $match: { copies: { $gt: 1 } } },
+      { $lookup: { from: 'interactions', localField: '_id', foreignField: '_id', as: 'interaction' } },
+      {
+        $project: {
+          copies: 1,
+          hasExpertFeedback: {
+            $cond: [{ $ifNull: [{ $arrayElemAt: ['$interaction.expertFeedback', 0] }, false] }, 1, 0],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          duplicateInteractions: { $sum: 1 },
+          duplicatesWithExpertFeedback: { $sum: '$hasExpertFeedback' },
+          extraEmbeddings: { $sum: { $subtract: ['$copies', 1] } },
+          maxCopies: { $max: '$copies' },
+        },
+      },
+    ]);
+
+    return {
+      duplicateInteractions: result?.duplicateInteractions || 0,
+      duplicatesWithExpertFeedback: result?.duplicatesWithExpertFeedback || 0,
+      extraEmbeddings: result?.extraEmbeddings || 0,
+      maxCopies: result?.maxCopies || 0,
+    };
+  }
+
+  // Deletes the extra Embedding documents (and their SentenceEmbeddings) so
+  // each interaction keeps exactly one. Keeps a copy that has expert feedback
+  // metadata if any copy does, otherwise the oldest. Safe to re-run.
+  async removeDuplicateEmbeddings({ batchSize = 500 } = {}) {
+    const groups = await Embedding.aggregate([
+      // Project first so the vector fields are never loaded.
+      { $project: { interactionId: 1, expertFeedbackId: 1 } },
+      {
+        $group: {
+          _id: '$interactionId',
+          copies: { $push: { id: '$_id', expertFeedbackId: '$expertFeedbackId' } },
+        },
+      },
+      { $match: { 'copies.1': { $exists: true } } },
+    ]);
+
+    const idsToDelete = [];
+    for (const { copies } of groups) {
+      // Oldest first. Sorted here, not in the pipeline: $push order after a
+      // $sort is not guaranteed (DocumentDB included). ObjectId hex strings
+      // sort by creation time.
+      copies.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      const keep = copies.find((c) => c.expertFeedbackId) || copies[0];
+      for (const c of copies) {
+        if (c !== keep) idsToDelete.push(c.id);
+      }
+    }
+
+    let deletedEmbeddings = 0;
+    let deletedSentenceEmbeddings = 0;
+    for (let i = 0; i < idsToDelete.length; i += batchSize) {
+      const batch = idsToDelete.slice(i, i + batchSize);
+      // Sentences first: if a batch fails part-way, a re-run still finds the
+      // parent duplicates, so no sentence embeddings are left orphaned.
+      const sentenceResult = await SentenceEmbedding.deleteMany({ parentEmbeddingId: { $in: batch } });
+      const embeddingResult = await Embedding.deleteMany({ _id: { $in: batch } });
+      deletedSentenceEmbeddings += sentenceResult.deletedCount || 0;
+      deletedEmbeddings += embeddingResult.deletedCount || 0;
+    }
+
+    return {
+      duplicateInteractions: groups.length,
+      deletedEmbeddings,
+      deletedSentenceEmbeddings,
+    };
   }
 
   async getBackfillStatus() {
