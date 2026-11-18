@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.213.9](https://github.com/cds-snc/ai-answers/compare/v1.213.8...v1.213.9) (2026-11-18)
+
+
+### Bug Fixes
+
+* design changes ([b431439](https://github.com/cds-snc/ai-answers/commit/b4314390dccaf62749590471eb61f6bf2cd8b04d))
+* update department URLs and add 19 organizations ([fd5bfec](https://github.com/cds-snc/ai-answers/commit/fd5bfec6e8ba6f6cd61ff1566eeb5e508775d7f8))
+* update department URLs and add 19 organizations ([9cfe655](https://github.com/cds-snc/ai-answers/commit/9cfe65512b208eb15dcf4b13d500b8fbdc96a9fc))
+
 ## [1.213.8](https://github.com/cds-snc/ai-answers/compare/v1.213.7...v1.213.8) (2026-11-18)
 
 
