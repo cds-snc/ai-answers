@@ -443,28 +443,29 @@ short-circuit variants when a verified match was found)
 **Type:** Programmatic URL validation
 **Status:** `verifyingCitation`
 
-**Purpose:** Ensure citation URL is accessible and build final result object
+**Purpose:** Gate the model's citation URL on host, then build the final result object
 
-**Process:**
-1. Send HEAD request to URL (fast, low bandwidth)
-2. If fails: try GET request
-3. Follow up to 10 redirects
-4. Timeout: 10 seconds
-5. Check for known 404 pages
+**Process** (`GraphWorkflowHelper.verifyCitation` → `UrlValidationService.validateUrlFormatting`;
+no network request — the page is not fetched):
+1. No URL → no citation (`verifyCitation` returns `{ url: null, fallbackUrl: null }`
+   before reaching the validator).
+2. URL must be absolute `http(s)`, carry no credentials, and have a Government of Canada
+   host: `canada.ca`/`gc.ca` or a subdomain, or a host from `departments_EN.js` /
+   `departments_FR.js` (`api/util/govHost.js`). Matching is exact or dot-boundary suffix,
+   never substring. Anything else → fallback, and a `warn` graph event is logged with the
+   hostname only (AIA-007).
+3. Allowed URL is passed through unchanged (no http→https upgrade).
+4. If the validator throws → general/department search fallback (fails closed).
 
-**Output:**
-```javascript
-{
-  isValid: boolean,
-  url: string,
-  status: number,
-  confidenceRating: 0 | 1,
-  error?: string
-}
-```
+Reused answers (short circuit / instant answer) skip this node, so
+`buildShortCircuitPayload` runs the same check (`UrlValidationService.checkCitationUrl`)
+on the stored citation.
+
+**Output:** `{ isValid: true, url }`, or on fallback `{ isValid: false, fallbackUrl, fallbackText }`
 
 **Fallback:**
-- If invalid: use `fallbackUrl` or Canada.ca search
+- Department search page (CRA, IRCC, ISC) or the general Canada.ca search, with the question as the query
+- `src/utils/safeUrl.js` (`safeHttpHref`) remains the client-side scheme backstop
 
 **File:** [`services/UrlValidationService.js`](../../services/UrlValidationService.js)
 
