@@ -259,7 +259,8 @@ before `twoFA.enabled` goes on anywhere real.
    `twofa_no_secret` (now sent as `detail`, see item 4) because preview Lambdas get neither `TWOFA_SECRET` nor
    `SESSION_SECRET` (`.github/scripts/create-lambda-function.sh`). `TwoFAService.hashCode` now
    also falls back to `JWT_SECRET_KEY`, which every environment has. No infrastructure change
-   needed.
+   needed. (Since AIA-004, previews also get `SESSION_SECRET`: the session middleware refuses
+   to run without it.)
 2. **Settings are cached per server instance, loaded once at startup**
    (`SettingsService.loadAll()`, `server/server.js`; no timer). Saving a setting updates the
    database and only the cache of the instance that served the save. With several Lambda or ECS

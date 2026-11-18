@@ -134,7 +134,7 @@ import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
-import createSessionMiddleware from '../middleware/express-session.js';
+import createSessionMiddleware, { resolveSessionSecret } from '../middleware/express-session.js';
 import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
@@ -483,6 +483,10 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    // Refuse to start without a session secret (AIA-004). Runs after settings
+    // load because session.secret can come from the database.
+    resolveSessionSecret();
 
     systemHealthMonitor.start();
     console.log("System health monitor started...");
