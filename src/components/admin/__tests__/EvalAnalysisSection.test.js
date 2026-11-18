@@ -4,6 +4,7 @@
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 // EvalAnalysisReport's example-chatId link renders via <GcdsLink> (real
 // custom element, shadow DOM) — jsdom doesn't expose its shadow-DOM anchor
@@ -85,6 +86,37 @@ describe('EvalAnalysisSection', () => {
     expect(screen.getByText('Complete')).toBeTruthy();
     expect(screen.getAllByText('Did not finish')).toHaveLength(2);
     expect(screen.getByText('In progress')).toBeTruthy();
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('announces when a run finishes with a report', async () => {
+    const props = { lang: 'en', appliedDepartment: 'TBS-SCT', appliedFilters: { department: 'TBS-SCT' } };
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, running: true });
+    const { rerender } = render(<EvalAnalysisSection {...props} />);
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      analysis: { _id: 'a1', status: 'complete', stats: null, insights: null, evalCount: 3 }
+    });
+    rerender(<EvalAnalysisSection {...props} />);
+    await waitForAnnouncement('Results loaded.', 'assertive');
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('keeps the View button focusable while its report loads', () => {
+    const loadAnalysis = vi.fn();
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      loadAnalysis,
+      loadingAnalysisId: 'r1',
+      pastRuns: [{ _id: 'r1', status: 'complete', evalCount: 10, createdAt: '2026-11-01T00:00:00Z' }]
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    const button = screen.getByRole('button', { name: 'Loading...' });
+    // Native disabled would drop focus to the top of the page.
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    button.click();
+    expect(loadAnalysis).not.toHaveBeenCalled();
     mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 

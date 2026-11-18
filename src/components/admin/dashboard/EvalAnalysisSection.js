@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
+import { useResultsLoadedAnnouncement } from '../../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
 import StatusMessage from '../StatusMessage.js';
@@ -46,6 +47,17 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
   }, [filtersKey, appliedDepartment, clearAnalysis, refreshList]);
 
   const canRun = Boolean(appliedDepartment) && !running;
+
+  // The report appears silently below, after a wait of up to a minute (a
+  // run) or a fetch (a past run's View): say it arrived, like every other
+  // dashboard. A failure has its own error message instead.
+  // A past run that never finished shows a warning instead, which announces
+  // itself.
+  const loadingPastRun = Boolean(loadingAnalysisId);
+  const reportShown = Boolean(analysis) && (analysis.status === 'complete' || analysis.status === 'error');
+  const loadedCount = reportShown ? null : 0;
+  useResultsLoadedAnnouncement({ loading: running, count: loadedCount, error: runError, t });
+  useResultsLoadedAnnouncement({ loading: loadingPastRun, count: loadedCount, error: runError, t });
 
   // Ties the (possibly disabled) Run analysis button to the text explaining
   // why, so screen reader users hear the reason instead of just "dimmed".
@@ -136,12 +148,18 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
                         <td style={cellStyle}>{statusLabel(run)}</td>
                         <td style={{ ...cellStyle, wordBreak: 'break-all' }}>{run.requestedBy || '—'}</td>
                         <td style={cellStyle}>
+                          {/* aria-disabled, not native disabled: disabling
+                              the button that has focus drops focus to the
+                              top of the page. */}
                           <button
                             type="button"
                             className="link-button"
-                            onClick={() => loadAnalysis(run._id)}
-                            disabled={running || loadingAnalysisId === run._id}
-                            style={{ background: 'none', border: 'none', padding: 0, color: '#284162', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={() => {
+                              if (running || loadingPastRun) return;
+                              loadAnalysis(run._id);
+                            }}
+                            aria-disabled={running || loadingPastRun || undefined}
+                            style={{ background: 'none', border: 'none', padding: 0, color: '#284162', textDecoration: 'underline', cursor: running || loadingPastRun ? 'not-allowed' : 'pointer' }}
                           >
                             {loadingAnalysisId === run._id
                               ? t('common.loading')
@@ -158,7 +176,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
       )}
 
       {/* Report (completed run, or partial results after an error) */}
-      {analysis && (analysis.status === 'complete' || analysis.status === 'error') && (
+      {reportShown && (
         <div className="dashboard-section">
           <EvalAnalysisReport analysis={analysis} lang={lang} />
         </div>
