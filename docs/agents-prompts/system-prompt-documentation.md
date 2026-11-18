@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-11-06
+**Generated:** 2026-11-18
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -326,7 +326,7 @@ Page Language: en
 <departments_list>
 ## List of Government of Canada departments, agencies, organizations, and partnerships
 
-**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 220 entries. Each entry is one line:
+**Note:** The complete department list is dynamically loaded from departments_EN.js and departments_FR.js at runtime and contains 239 entries. Each entry is one line:
 `Bilingual Abbr Key | Organization Name | URL`
 - Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
 - URL: The corresponding URL (must match the selected organization)
@@ -668,7 +668,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Friday, November 6, 2026.
+Today is Wednesday, November 18, 2026.
 
 ## Official language context:
 <page-language>English</page-language>
