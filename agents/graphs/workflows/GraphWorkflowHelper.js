@@ -178,7 +178,16 @@ export class GraphWorkflowHelper {
     };
 
     const aiCitationUrl = similarShortCircuit.sourceCitation?.aiCitationUrl || similarShortCircuit.citationUrl || null;
-    const providedCitationUrl = similarShortCircuit.sourceCitation?.providedCitationUrl || similarShortCircuit.citationUrl || null;
+    const storedCitationUrl = similarShortCircuit.sourceCitation?.providedCitationUrl || similarShortCircuit.citationUrl || null;
+    // A reused answer's citation was stored before the AIA-007 host check
+    // existed (and similarShortCircuit.citationUrl can be the raw model
+    // aiCitationUrl), so gate it again here. verifyNode doesn't see it: on a
+    // short circuit it only checks state.answer, which isn't set.
+    let providedCitationUrl = null;
+    if (storedCitationUrl) {
+      const checked = UrlValidationService.checkCitationUrl(storedCitationUrl, lang, userMessage, undefined, null, chatId);
+      providedCitationUrl = checked.url || checked.fallbackUrl;
+    }
     const citationHead = similarShortCircuit.answer?.citationHead || similarShortCircuit.sourceCitation?.citationHead || null;
 
     const contentText = similarShortCircuit.answer?.content || (Array.isArray(similarShortCircuit.answer?.paragraphs) ? similarShortCircuit.answer.paragraphs.join('\n\n') : '') || '';
@@ -363,13 +372,18 @@ export class GraphWorkflowHelper {
         translationF,
         chatId
       );
+      // Never default `url` to the raw citationUrl: when the validator
+      // rejects it (AIA-007) it returns only fallbackUrl, and callers pick
+      // `url || fallbackUrl`, so echoing citationUrl here would undo the gate.
       return {
-        url: result.url || citationUrl,
+        url: result.url || null,
         fallbackUrl: result.fallbackUrl || null,
       };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);
-      return fallback;
+      // Fail closed to the search page rather than to no link, so nothing
+      // downstream falls back to the unchecked model URL.
+      return { ...fallback, fallbackUrl: UrlValidationService.fallbackSearchUrl(lang, question, department) };
     }
   }
 
