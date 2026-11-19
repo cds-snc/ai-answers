@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.213.10](https://github.com/cds-snc/ai-answers/compare/v1.213.9...v1.213.10) (2026-11-19)
+
+
+### Bug Fixes
+
+* restrict citation links to Government of Canada hosts (AIA-007) ([d7e084b](https://github.com/cds-snc/ai-answers/commit/d7e084b65e7fa80f0da8c6c058e607b14589af98))
+* restrict citation links to Government of Canada hosts (AIA-007) ([9e51d05](https://github.com/cds-snc/ai-answers/commit/9e51d05f92eb1466bfd9117e115aff4512bcc39c))
+
+
+### Code Refactoring
+
+* share URL parsing between referring-url and citation checks ([ed9c4b5](https://github.com/cds-snc/ai-answers/commit/ed9c4b5d08f2cfe5e46e550909b9250cf8103b37))
+
 ## [1.213.9](https://github.com/cds-snc/ai-answers/compare/v1.213.8...v1.213.9) (2026-11-18)
 
 
