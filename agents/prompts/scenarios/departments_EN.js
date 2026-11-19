@@ -85,11 +85,6 @@ export const departments_EN = [
     "abbrKey": "CBSA-ASFC"
   },
   {
-    "name": "Canada Brand",
-    "url": "https://agriclient.powerappsportals.com/en-CA/home-accueil/",
-    "abbrKey": "CB-MC"
-  },
-  {
     "name": "Canada.ca Experience Office",
     "url": "https://design.canada.ca/index.html",
     "abbrKey": "CEO-BEC"
@@ -146,7 +141,7 @@ export const departments_EN = [
   },
   {
     "name": "Canada Lands Company Limited",
-    "url": "https://www.clc-sic.ca/",
+    "url": "https://www.clcl-sicl.ca/",
     "abbrKey": "CLC-SIC"
   },
   {
@@ -841,7 +836,7 @@ export const departments_EN = [
   },
   {
     "name": "National Capital Commission",
-    "url": "https://www.ncc-ccn.gc.ca/",
+    "url": "https://ncc-ccn.gc.ca/",
     "abbrKey": "NCC-CCN"
   },
   {

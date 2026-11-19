@@ -1,7 +1,10 @@
 import http from 'http';
+import { X509Certificate } from 'crypto';
+import { rootCertificates } from 'tls';
 import axios from 'axios';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  ENTRUST_OV_CA2_PEM,
   guardRedirect,
   guardedLookup,
   guardedRequestOptions,
@@ -68,11 +71,19 @@ describe('guardRedirect', () => {
     expect(() => guardRedirect({ protocol: 'https:', hostname: 'www.canada.ca', port: 8443, path: '/x' }))
       .toThrow(/www\.canada\.ca/);
     expect(() => guardRedirect({ protocol: 'http:', hostname: 'www.canada.ca', port: 8080, path: '/x' }))
-      .toThrow(/http:\/\/www\.canada\.ca:8080\/x/);
+      .toThrow(/https:\/\/www\.canada\.ca:8080\/x/);
   });
 
-  it('blocks a downgrade to http', () => {
-    expect(() => guardRedirect(hop('http://www.canada.ca/en'))).toThrow(/non-https/);
+  // veterans.gc.ca and pm.gc.ca redirect https -> http -> https.
+  it('upgrades an http hop to https instead of following it over http', () => {
+    const options = { protocol: 'http:', hostname: 'www.veterans.gc.ca', port: 80, path: '/en' };
+    expect(() => guardRedirect(options)).not.toThrow();
+    expect(options.protocol).toBe('https:');
+    expect(options.port).toBeUndefined();
+  });
+
+  it('blocks a non-https, non-http hop', () => {
+    expect(() => guardRedirect({ protocol: 'ftp:', hostname: 'www.canada.ca', path: '/x' })).toThrow(/non-https/);
   });
 });
 
@@ -113,5 +124,36 @@ describe('guardedRequestOptions with axios', () => {
     await expect(
       axios.get(`http://127.0.0.1:${redirectorPort}/`, { ...guardedRequestOptions(), timeout: 3000 })
     ).rejects.toThrow(/Blocked redirect/);
+  });
+});
+
+describe('TLS verification', () => {
+  it('verifies certificates on the https agent', () => {
+    const { httpsAgent } = guardedRequestOptions();
+    expect(httpsAgent.options.rejectUnauthorized).not.toBe(false);
+    expect(httpsAgent.options.ca).toContain(ENTRUST_OV_CA2_PEM);
+    // Supplying `ca` replaces Node's defaults, so the public roots must be kept.
+    expect(httpsAgent.options.ca.length).toBe(rootCertificates.length + 1);
+  });
+
+  const cert = new X509Certificate(ENTRUST_OV_CA2_PEM);
+
+  it('bundles the Entrust intermediate that some GC servers omit', () => {
+    expect(cert.subject).toContain('CN=Entrust OV TLS Issuing RSA CA 2');
+    expect(cert.fingerprint256).toBe(
+      '1F:92:7F:37:47:03:06:AF:C3:01:8A:B0:49:E6:BE:1D:3C:0A:3A:45:CA:20:7F:64:F5:32:51:2B:A9:69:EB:94'
+    );
+  });
+
+  it('chains to a root in Node\'s trust store', () => {
+    const issuedByRoot = rootCertificates.some((pem) => cert.checkIssued(new X509Certificate(pem)));
+    expect(issuedByRoot).toBe(true);
+  });
+
+  // Fails 90 days before expiry so the certificate can be replaced in time.
+  // Replace it from the AIA URL in the leaf certificate (crt.sectigo.com).
+  it('is not within 90 days of expiry', () => {
+    const ninetyDays = 90 * 24 * 60 * 60 * 1000;
+    expect(new Date(cert.validTo).getTime() - Date.now()).toBeGreaterThan(ninetyDays);
   });
 });

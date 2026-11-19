@@ -11,11 +11,30 @@
 //   connection, including each redirect hop.
 // - Where a redirect goes. Every hop is re-checked against the same allowlist
 //   and must stay on https (beforeRedirect).
+import { readFileSync } from 'fs';
 import { Agent as HttpAgent } from 'http';
 import { Agent } from 'https';
 import { lookup as dnsLookup } from 'dns';
 import { BlockList, isIP } from 'net';
+import { rootCertificates } from 'tls';
 import { isAllowedFetchUrl } from './normalizeFetchUrl.js';
+
+// TLS certificates are verified. Several GC sites on Shared Services Canada
+// certificates (e.g. clo-ocol.gc.ca, housing-infrastructure.canada.ca) don't
+// send their intermediate, "Entrust OV TLS Issuing RSA CA 2". Browsers fetch a
+// missing intermediate themselves; Node doesn't, so without it those pages
+// fail to verify. It is public (from the certificate's AIA URL,
+// crt.sectigo.com) and chains to Sectigo Public Server Authentication Root R46
+// in Node's root store. Expires 2027-12-10: fetchGuard.test.js fails 90 days
+// ahead, so it can be replaced before fetches start failing.
+//
+// Scoped to this agent rather than NODE_EXTRA_CA_CERTS, so no other outbound
+// connection trusts anything extra.
+export const ENTRUST_OV_CA2_PEM = readFileSync(
+  new URL('./certs/entrust-ov-tls-issuing-rsa-ca-2.pem', import.meta.url),
+  'utf8'
+);
+const FETCH_CA = [...rootCertificates, ENTRUST_OV_CA2_PEM];
 
 // Addresses a public GC page never resolves to: loopback, private, link-local
 // (incl. the 169.254.169.254 metadata endpoint), CGN, multicast, reserved and
@@ -100,9 +119,17 @@ export function guardedLookup(hostname, options, callback) {
   });
 }
 
-// follow-redirects calls this before each hop with the next request's options;
-// throwing aborts the request.
+// follow-redirects calls this before each hop with the next request's options
+// (and uses them for that hop, so changes here take effect); throwing aborts.
+//
+// An http hop is upgraded to https, like normalizeFetchUrl does for the first
+// URL. Some GC sites redirect https -> http -> https (veterans.gc.ca, pm.gc.ca),
+// and in the VPC an http hop never connects (443-only egress).
 export function guardRedirect(options) {
+  if (options.protocol === 'http:') {
+    options.protocol = 'https:';
+    if (String(options.port) === '80') delete options.port;
+  }
   const port = options.port ? `:${options.port}` : '';
   const next = `${options.protocol}//${options.hostname}${port}${options.path || ''}`;
   if (options.protocol !== 'https:') {
@@ -115,7 +142,7 @@ export function guardRedirect(options) {
     throw new Error(`Blocked redirect to an unparseable URL: ${next}`);
   }
   if (!isAllowedFetchUrl(parsed)) {
-    throw new Error(`Blocked redirect to a non-Government of Canada site: ${parsed.hostname}`);
+    throw new Error(`Blocked redirect to a non-Government of Canada URL: ${next}`);
   }
 }
 
@@ -125,12 +152,10 @@ export function guardRedirect(options) {
 // https: its header documents a shape ("ht\ttp://…") that slips past the
 // upgrade, and that request must not skip the address check.
 //
-// rejectUnauthorized:false is carried over unchanged from the tools; see the
-// AIA-010 PR for why it is left for a separate decision.
 export function guardedRequestOptions() {
   return {
     httpAgent: new HttpAgent({ lookup: guardedLookup }),
-    httpsAgent: new Agent({ rejectUnauthorized: false, lookup: guardedLookup }),
+    httpsAgent: new Agent({ ca: FETCH_CA, lookup: guardedLookup }),
     beforeRedirect: guardRedirect,
   };
 }

@@ -396,7 +396,7 @@ export const departments_FR = [
   },
   {
     "name": "Commission de la capitale nationale",
-    "url": "https://www.ccn-ncc.gc.ca/",
+    "url": "https://ccn-ncc.gc.ca/",
     "abbrKey": "NCC-CCN"
   },
   {
@@ -785,11 +785,6 @@ export const departments_FR = [
     "abbrKey": "RCN-MRC"
   },
   {
-    "name": "Marque Canada",
-    "url": "https://agriclient.powerappsportals.com/fr-CA/home-accueil/",
-    "abbrKey": "CB-MC"
-  },
-  {
     "name": "Mesures Canada",
     "url": "https://ised-isde.canada.ca/site/mesures-canada/fr",
     "abbrKey": "MC"
@@ -1111,7 +1106,7 @@ export const departments_FR = [
   },
   {
     "name": "Société immobilière du Canada Limitée",
-    "url": "https://www.clc-sic.ca/francais",
+    "url": "https://www.clcl-sicl.ca/francais",
     "abbrKey": "CLC-SIC"
   },
   {

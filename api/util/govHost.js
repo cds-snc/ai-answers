@@ -9,6 +9,9 @@
 // Matching is on the parsed hostname, by exact match or dot-boundary suffix,
 // never by substring: `canada.ca.attacker.example` and `evilcanada.ca` must
 // both fail.
+//
+// Before changing what's allowed, run scripts/check-allowlist-urls.js on recent
+// batch/chat-log exports to see which real citations and fetches would change.
 import { departments_EN } from '../../agents/prompts/scenarios/departments_EN.js';
 import { departments_FR } from '../../agents/prompts/scenarios/departments_FR.js';
 import { parseHttpUrl } from './parseHttpUrl.js';
