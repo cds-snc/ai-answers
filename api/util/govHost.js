@@ -10,6 +10,7 @@
 // both fail.
 import { departments_EN } from '../../agents/prompts/scenarios/departments_EN.js';
 import { departments_FR } from '../../agents/prompts/scenarios/departments_FR.js';
+import { parseHttpUrl } from './parseHttpUrl.js';
 
 const GC_ROOT_DOMAINS = ['canada.ca', 'gc.ca'];
 
@@ -47,19 +48,9 @@ export function isGovernmentHost(hostname) {
   return false;
 }
 
-// True only for an absolute http(s) URL whose host passes isGovernmentHost.
-// Relative and protocol-relative URLs, other schemes, and URLs carrying
-// credentials (https://canada.ca@attacker.example parses with host
-// attacker.example, but a user reading it sees canada.ca) are rejected.
+// True only for an absolute http(s) URL with no credentials (see
+// parseHttpUrl) whose host passes isGovernmentHost.
 export function isGovernmentUrl(url) {
-  if (typeof url !== 'string') return false;
-  let parsed;
-  try {
-    parsed = new URL(url.trim());
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
-  if (parsed.username || parsed.password) return false;
-  return isGovernmentHost(parsed.hostname);
+  const parsed = parseHttpUrl(url);
+  return parsed !== null && isGovernmentHost(parsed.hostname);
 }

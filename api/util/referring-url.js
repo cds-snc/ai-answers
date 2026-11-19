@@ -21,6 +21,8 @@
  * portal/host match) should rely on this value rather than re-parsing the raw input.
  */
 
+import { parseHttpUrl } from './parseHttpUrl.js';
+
 // The longest canada.ca/gc.ca page URL in our content is ~275 characters; 500 leaves
 // room for long slugs and percent-encoded accents.
 export const MAX_REFERRING_URL_LENGTH = 500;
@@ -60,18 +62,8 @@ function decodeReadableNonAscii(href) {
  * @returns {string} the normalized URL, or '' when the value is absent or unusable
  */
 export function normalizeReferringUrl(raw) {
-  if (typeof raw !== 'string') return '';
-  const trimmed = raw.trim();
-  if (!trimmed) return '';
-
-  let parsed;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    return '';
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
-  if (parsed.username || parsed.password) return '';
+  const parsed = parseHttpUrl(raw);
+  if (!parsed) return '';
 
   parsed.search = '';
   let href = decodeReadableNonAscii(parsed.href);
